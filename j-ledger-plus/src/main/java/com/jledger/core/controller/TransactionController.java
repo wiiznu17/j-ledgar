@@ -48,7 +48,7 @@ public class TransactionController {
     })
     public ResponseEntity<Transaction> transfer(
             @Parameter(description = "Unique key provided by the client to avoid duplicate transaction processing", required = true)
-            @RequestHeader(value = "Idempotency-Key", required = false) String idempotencyKey,
+            @RequestHeader(value = "Idempotency-Key") String idempotencyKey,
             @Valid @RequestBody TransferRequest request) {
 
         Transaction transaction = transferService.executeTransfer(idempotencyKey, request);
