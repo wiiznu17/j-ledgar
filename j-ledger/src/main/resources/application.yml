@@ -1,0 +1,40 @@
+spring:
+  application:
+    name: j-ledger
+  
+  # ตั้งค่าเชื่อมต่อ PostgreSQL (ตรงกับ Docker Compose)
+  datasource:
+    url: jdbc:postgresql://localhost:5432/jledger_db
+    username: ledger_admin
+    password: ledger_password
+    driver-class-name: org.postgresql.Driver
+
+  # ตั้งค่า JPA / Hibernate
+  jpa:
+    show-sql: true # เปิดดู SQL Command ตอน Dev เพื่อเช็คประสิทธิภาพ
+    properties:
+      hibernate:
+        format_sql: true
+        # ห้ามใช้ update ใน Production เด็ดขาด! เราใช้ validate 
+        # เพราะเราจะใช้ Flyway เป็นตัวจัดการ Schema สร้างตารางแทน
+    hibernate:
+      ddl-auto: validate 
+
+  # ตั้งค่า Database Migration (Flyway)
+  flyway:
+    enabled: true
+    baseline-on-migrate: true
+
+# ตั้งค่า OpenAPI / Swagger UI
+springdoc:
+  api-docs:
+    path: /v3/api-docs
+  swagger-ui:
+    path: /swagger-ui.html
+    operationsSorter: method
+
+# ปรับระดับ Log ให้เห็นรายละเอียดของ Transaction ชัดเจน
+logging:
+  level:
+    org.springframework.orm.jpa: DEBUG
+    org.springframework.transaction: DEBUG
