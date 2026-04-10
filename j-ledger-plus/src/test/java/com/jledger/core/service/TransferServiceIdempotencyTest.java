@@ -11,6 +11,7 @@ import com.jledger.core.domain.Transaction;
 import com.jledger.core.dto.TransferRequest;
 import com.jledger.core.exception.ConflictException;
 import com.jledger.core.repository.AccountRepository;
+import com.jledger.core.repository.IntegrationOutboxRepository;
 import com.jledger.core.repository.LedgerEntryRepository;
 import com.jledger.core.repository.TransactionRepository;
 import java.math.BigDecimal;
@@ -29,11 +30,12 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.context.DynamicPropertyRegistry;
 import org.springframework.test.context.DynamicPropertySource;
+import org.testcontainers.containers.GenericContainer;
 import org.testcontainers.containers.PostgreSQLContainer;
 import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
 
-@SpringBootTest
+@SpringBootTest(properties = "jledger.outbox.initial-delay-ms=600000")
 @Testcontainers
 class TransferServiceIdempotencyTest {
 
@@ -42,6 +44,10 @@ class TransferServiceIdempotencyTest {
             .withDatabaseName("jledger_test")
             .withUsername("ledger_test")
             .withPassword("ledger_test");
+
+    @Container
+    static final GenericContainer<?> REDIS = new GenericContainer<>("redis:7-alpine")
+            .withExposedPorts(6379);
 
     @Autowired
     private TransferService transferService;
@@ -55,6 +61,9 @@ class TransferServiceIdempotencyTest {
     @Autowired
     private LedgerEntryRepository ledgerEntryRepository;
 
+    @Autowired
+    private IntegrationOutboxRepository integrationOutboxRepository;
+
     @DynamicPropertySource
     static void configureProperties(DynamicPropertyRegistry registry) {
         registry.add("spring.datasource.url", POSTGRESQL::getJdbcUrl);
@@ -63,10 +72,13 @@ class TransferServiceIdempotencyTest {
         registry.add("spring.flyway.url", POSTGRESQL::getJdbcUrl);
         registry.add("spring.flyway.user", POSTGRESQL::getUsername);
         registry.add("spring.flyway.password", POSTGRESQL::getPassword);
+        registry.add("jledger.redis.address", () -> "redis://" + REDIS.getHost() + ":" + REDIS.getMappedPort(6379));
+        registry.add("jledger.redis.password", () -> "");
     }
 
     @BeforeEach
     void cleanDatabase() {
+        integrationOutboxRepository.deleteAllInBatch();
         ledgerEntryRepository.deleteAllInBatch();
         transactionRepository.deleteAllInBatch();
         accountRepository.deleteAllInBatch();
@@ -77,13 +89,15 @@ class TransferServiceIdempotencyTest {
         Account sender = createAccount("Sender", "1000.0000");
         Account receiver = createAccount("Receiver", "0.0000");
         TransferRequest request = new TransferRequest(sender.getId(), receiver.getId(), new BigDecimal("100.0000"), "THB");
+        String idempotencyKey = "same-key-replay";
 
-        Transaction firstTransaction = transferService.executeTransfer("same-key", request);
-        Transaction replayedTransaction = transferService.executeTransfer("same-key", request);
+        Transaction firstTransaction = transferService.executeTransfer(idempotencyKey, request);
+        Transaction replayedTransaction = transferService.executeTransfer(idempotencyKey, request);
 
         assertEquals(firstTransaction.getId(), replayedTransaction.getId());
         assertEquals(1L, transactionRepository.count());
         assertEquals(2L, ledgerEntryRepository.count());
+        assertEquals(1L, integrationOutboxRepository.count());
         assertEquals(new BigDecimal("900.0000"), accountRepository.findById(sender.getId()).orElseThrow().getBalance());
         assertEquals(new BigDecimal("100.0000"), accountRepository.findById(receiver.getId()).orElseThrow().getBalance());
     }
@@ -93,16 +107,17 @@ class TransferServiceIdempotencyTest {
         Account sender = createAccount("Sender", "1000.0000");
         Account firstReceiver = createAccount("Receiver-A", "0.0000");
         Account secondReceiver = createAccount("Receiver-B", "0.0000");
+        String idempotencyKey = "same-key-different-payload";
 
         transferService.executeTransfer(
-                "same-key",
+                idempotencyKey,
                 new TransferRequest(sender.getId(), firstReceiver.getId(), new BigDecimal("100.0000"), "THB")
         );
 
         ConflictException exception = assertThrows(
                 ConflictException.class,
                 () -> transferService.executeTransfer(
-                        "same-key",
+                        idempotencyKey,
                         new TransferRequest(sender.getId(), secondReceiver.getId(), new BigDecimal("100.0000"), "THB")
                 )
         );
@@ -110,6 +125,7 @@ class TransferServiceIdempotencyTest {
         assertEquals("Idempotency-Key cannot be reused with a different transfer request", exception.getMessage());
         assertEquals(1L, transactionRepository.count());
         assertEquals(2L, ledgerEntryRepository.count());
+        assertEquals(1L, integrationOutboxRepository.count());
     }
 
     @Test
@@ -117,6 +133,7 @@ class TransferServiceIdempotencyTest {
         Account sender = createAccount("Sender", "1000.0000");
         Account receiver = createAccount("Receiver", "0.0000");
         TransferRequest request = new TransferRequest(sender.getId(), receiver.getId(), new BigDecimal("250.0000"), "THB");
+        String idempotencyKey = "concurrent-shared-key";
 
         ExecutorService executorService = Executors.newFixedThreadPool(2);
         CountDownLatch readyLatch = new CountDownLatch(2);
@@ -129,7 +146,7 @@ class TransferServiceIdempotencyTest {
             readyLatch.countDown();
             try {
                 startLatch.await();
-                Transaction transaction = transferService.executeTransfer("shared-key", request);
+                Transaction transaction = transferService.executeTransfer(idempotencyKey, request);
                 transactionIds.add(transaction.getId());
             } catch (Throwable throwable) {
                 unexpectedFailure.compareAndSet(null, throwable);
@@ -154,6 +171,7 @@ class TransferServiceIdempotencyTest {
         assertEquals(transactionIds.get(0), transactionIds.get(1));
         assertEquals(1L, transactionRepository.count());
         assertEquals(2L, ledgerEntryRepository.count());
+        assertEquals(1L, integrationOutboxRepository.count());
         assertEquals(new BigDecimal("750.0000"), accountRepository.findById(sender.getId()).orElseThrow().getBalance());
         assertEquals(new BigDecimal("250.0000"), accountRepository.findById(receiver.getId()).orElseThrow().getBalance());
     }

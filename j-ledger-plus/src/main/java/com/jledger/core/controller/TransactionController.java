@@ -39,6 +39,8 @@ public class TransactionController {
                     content = @Content(schema = @Schema(implementation = com.jledger.core.exception.ApiErrorResponse.class))),
             @ApiResponse(responseCode = "404", description = "Sender or receiver account not found",
                     content = @Content(schema = @Schema(implementation = com.jledger.core.exception.ApiErrorResponse.class))),
+            @ApiResponse(responseCode = "429", description = "Concurrent transfer is already in progress for one of the accounts. Client should retry.",
+                    content = @Content(schema = @Schema(implementation = com.jledger.core.exception.ApiErrorResponse.class))),
             @ApiResponse(responseCode = "409", description = "Conflict due to concurrent update (Optimistic Locking failure). Client should retry.",
                     content = @Content(schema = @Schema(implementation = com.jledger.core.exception.ApiErrorResponse.class))),
             @ApiResponse(responseCode = "500", description = "Unexpected internal server error",

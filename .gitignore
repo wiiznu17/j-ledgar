@@ -18,6 +18,7 @@ out/
 *.jar
 *.war
 *.ear
+.m2/
 
 # Logs and JVM crash files
 *.log
