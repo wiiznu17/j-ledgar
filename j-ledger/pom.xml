@@ -17,6 +17,7 @@
     <properties>
         <java.version>21</java.version>
         <lombok.version>1.18.32</lombok.version>
+        <java21.home>${env.JAVA_HOME}</java21.home>
     </properties>
 
     <dependencies>
@@ -81,6 +82,9 @@
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-compiler-plugin</artifactId>
                 <configuration>
+                    <release>${java.version}</release>
+                    <fork>true</fork>
+                    <executable>${java21.home}/bin/javac</executable>
                     <annotationProcessorPaths>
                         <path>
                             <groupId>org.projectlombok</groupId>
@@ -102,6 +106,27 @@
                     </excludes>
                 </configuration>
             </plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-surefire-plugin</artifactId>
+                <configuration>
+                    <jvm>${java21.home}/bin/java</jvm>
+                </configuration>
+            </plugin>
         </plugins>
     </build>
+
+    <profiles>
+        <profile>
+            <id>homebrew-java21</id>
+            <activation>
+                <file>
+                    <exists>/opt/homebrew/opt/openjdk@21/bin/java</exists>
+                </file>
+            </activation>
+            <properties>
+                <java21.home>/opt/homebrew/opt/openjdk@21/libexec/openjdk.jdk/Contents/Home</java21.home>
+            </properties>
+        </profile>
+    </profiles>
 </project>
