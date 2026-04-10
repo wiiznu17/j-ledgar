@@ -1,0 +1,34 @@
+spring:
+  application:
+    name: j-ledger
+  
+  datasource:
+    url: ${JLEDGER_DATASOURCE_URL:jdbc:postgresql://localhost:5432/jledger_db}
+    username: ${JLEDGER_DATASOURCE_USERNAME:ledger_admin}
+    password: ${JLEDGER_DATASOURCE_PASSWORD:ledger_password}
+    driver-class-name: org.postgresql.Driver
+
+  jpa:
+    open-in-view: false
+    show-sql: ${JLEDGER_SHOW_SQL:false}
+    properties:
+      hibernate:
+        format_sql: true
+    hibernate:
+      ddl-auto: validate 
+  
+  flyway:
+    enabled: true
+    baseline-on-migrate: true
+
+springdoc:
+  api-docs:
+    path: /v3/api-docs
+  swagger-ui:
+    path: /swagger-ui.html
+    operationsSorter: method
+
+logging:
+  level:
+    org.springframework.orm.jpa: ${JLEDGER_JPA_LOG_LEVEL:INFO}
+    org.springframework.transaction: ${JLEDGER_TX_LOG_LEVEL:INFO}
