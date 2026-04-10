@@ -1,0 +1,30 @@
+# OS files
+.DS_Store
+
+# Editor / IDE
+.idea/
+.vscode/
+*.iml
+*.ipr
+*.iws
+.classpath
+.project
+.settings/
+out/
+
+# Java / Maven build output
+**/target/
+*.class
+*.jar
+*.war
+*.ear
+
+# Logs and JVM crash files
+*.log
+hs_err_pid*
+replay_pid*
+
+# Local environment files
+.env
+.env.local
+.env.*.local
