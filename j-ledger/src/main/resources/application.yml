@@ -30,5 +30,5 @@ springdoc:
 
 logging:
   level:
-    org.springframework.orm.jpa: DEBUG
-    org.springframework.transaction: DEBUG
+    org.springframework.orm.jpa: ${JLEDGER_JPA_LOG_LEVEL:INFO}
+    org.springframework.transaction: ${JLEDGER_TX_LOG_LEVEL:INFO}
