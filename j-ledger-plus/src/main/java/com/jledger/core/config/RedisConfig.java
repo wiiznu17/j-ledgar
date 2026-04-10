@@ -18,7 +18,12 @@ public class RedisConfig {
     ) {
         Config config = new Config();
         SingleServerConfig singleServerConfig = config.useSingleServer()
-                .setAddress(redisAddress);
+                .setAddress(redisAddress)
+                .setConnectTimeout(2000)   // ms — fail fast on connection
+                .setTimeout(3000)          // ms — max wait for Redis response
+                .setRetryAttempts(2)       // retry on transient errors
+                .setConnectionPoolSize(10) // max connections per pod
+                .setConnectionMinimumIdleSize(2);
 
         if (redisPassword != null && !redisPassword.isBlank()) {
             singleServerConfig.setPassword(redisPassword);

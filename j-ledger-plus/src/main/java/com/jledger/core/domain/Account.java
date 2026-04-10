@@ -59,6 +59,11 @@ public class Account {
     private ZonedDateTime updatedAt;
 
     public void withdraw(BigDecimal amount) {
+        if (this.balance.compareTo(amount) < 0) {
+            // Guard against programming errors — primary validation is in validateTransfer().
+            throw new IllegalStateException(
+                    "Insufficient balance on account " + this.id + ": cannot withdraw " + amount);
+        }
         balance = balance.subtract(amount);
     }
 

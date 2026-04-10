@@ -2,11 +2,11 @@ package com.jledger.core.service;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.jledger.core.domain.Account;
 import com.jledger.core.domain.IntegrationOutbox;
 import com.jledger.core.domain.LedgerEntry;
 import com.jledger.core.domain.Transaction;
+import com.jledger.core.dto.TransferCompletedEvent;
 import com.jledger.core.dto.TransferRequest;
 import com.jledger.core.exception.ConflictException;
 import com.jledger.core.exception.ResourceNotFoundException;
@@ -54,7 +54,8 @@ public class TransferExecutionService {
         return processTransfer(transaction, request, normalizedAmount);
     }
 
-    public void validateIdempotentReplay(
+    /** @implNote Called only by {@link TransferService} — not part of the public API contract. */
+    void validateIdempotentReplay(
             Transaction existingTransaction,
             TransferRequest request,
             BigDecimal normalizedAmount
@@ -91,14 +92,14 @@ public class TransferExecutionService {
         LedgerEntry senderEntry = LedgerEntry.builder()
                 .transaction(transaction)
                 .account(sender)
-                .entryType(CREDIT_ENTRY)
+                .entryType(DEBIT_ENTRY)  // Money leaves sender
                 .amount(normalizedAmount)
                 .build();
 
         LedgerEntry receiverEntry = LedgerEntry.builder()
                 .transaction(transaction)
                 .account(receiver)
-                .entryType(DEBIT_ENTRY)
+                .entryType(CREDIT_ENTRY)  // Money enters receiver
                 .amount(normalizedAmount)
                 .build();
 
@@ -159,20 +160,16 @@ public class TransferExecutionService {
     }
 
     private JsonNode buildTransferPayload(Transaction transaction) {
-        ObjectNode payload = objectMapper.createObjectNode();
-        payload.put("transactionId", transaction.getId().toString());
-        payload.put("idempotencyKey", transaction.getIdempotencyKey());
-        payload.put("fromAccountId", transaction.getFromAccountId().toString());
-        payload.put("toAccountId", transaction.getToAccountId().toString());
-        payload.put("transactionType", transaction.getTransactionType());
-        payload.put("amount", transaction.getAmount().toPlainString());
-        payload.put("currency", transaction.getCurrency());
-        payload.put("status", transaction.getStatus());
-
-        if (transaction.getCreatedAt() != null) {
-            payload.put("createdAt", transaction.getCreatedAt().toString());
-        }
-
-        return payload;
+        return objectMapper.valueToTree(new TransferCompletedEvent(
+                transaction.getId(),
+                transaction.getIdempotencyKey(),
+                transaction.getFromAccountId(),
+                transaction.getToAccountId(),
+                transaction.getTransactionType(),
+                transaction.getAmount(),
+                transaction.getCurrency(),
+                transaction.getStatus(),
+                transaction.getCreatedAt()
+        ));
     }
 }

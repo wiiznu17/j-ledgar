@@ -29,16 +29,16 @@ public class RedisIdempotencyService {
         this.idempotencyTtlHours = idempotencyTtlHours;
     }
 
-    public boolean isProcessed(String idempotencyKey) {
-        return getBucket(idempotencyKey).isExists();
-    }
-
-    public Optional<Transaction> getCachedResponse(String idempotencyKey) {
+    /**
+     * Atomically fetches the cached transaction in a single Redis GET.
+     * Returns empty if not yet processed, avoiding the TOCTOU race of calling
+     * isProcessed() and getCachedResponse() separately.
+     */
+    public Optional<Transaction> getIfProcessed(String idempotencyKey) {
         String payload = getBucket(idempotencyKey).get();
         if (payload == null) {
             return Optional.empty();
         }
-
         try {
             return Optional.of(objectMapper.readValue(payload, Transaction.class));
         } catch (JsonProcessingException exception) {

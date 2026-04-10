@@ -12,6 +12,7 @@ import org.redisson.api.RLock;
 import org.redisson.api.RedissonClient;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
 @Service
@@ -19,11 +20,21 @@ import org.springframework.stereotype.Service;
 public class TransferService {
 
     private static final int MONETARY_SCALE = 4;
-    private static final long LOCK_WAIT_SECONDS = 3;
-    private static final long LOCK_LEASE_SECONDS = 10;
     private static final String ACCOUNT_LOCK_PREFIX = "account_lock:";
     private static final String LOCK_TIMEOUT_MESSAGE = "System busy, please try again.";
     private static final Logger LOGGER = LoggerFactory.getLogger(TransferService.class);
+
+    /** How long to wait to acquire a lock before returning 429. Configurable via {@code jledger.lock.wait-seconds}. */
+    @Value("${jledger.lock.wait-seconds:3}")
+    private long lockWaitSeconds;
+
+    /**
+     * Redisson auto-releases the lock after this duration even if the holder crashes.
+     * Must be >= P99 DB transaction latency to avoid premature release under load.
+     * Configurable via {@code jledger.lock.lease-seconds}.
+     */
+    @Value("${jledger.lock.lease-seconds:10}")
+    private long lockLeaseSeconds;
 
     private final RedissonClient redissonClient;
     private final RedisIdempotencyService redisIdempotencyService;
@@ -51,12 +62,12 @@ public class TransferService {
         boolean firstLocked = false;
         boolean secondLocked = false;
         try {
-            firstLocked = firstLock.tryLock(LOCK_WAIT_SECONDS, LOCK_LEASE_SECONDS, TimeUnit.SECONDS);
+            firstLocked = firstLock.tryLock(lockWaitSeconds, lockLeaseSeconds, TimeUnit.SECONDS);
             if (!firstLocked) {
                 throw new ConcurrentOperationException(LOCK_TIMEOUT_MESSAGE);
             }
 
-            secondLocked = secondLock.tryLock(LOCK_WAIT_SECONDS, LOCK_LEASE_SECONDS, TimeUnit.SECONDS);
+            secondLocked = secondLock.tryLock(lockWaitSeconds, lockLeaseSeconds, TimeUnit.SECONDS);
             if (!secondLocked) {
                 throw new ConcurrentOperationException(LOCK_TIMEOUT_MESSAGE);
             }
@@ -126,11 +137,7 @@ public class TransferService {
             TransferRequest request,
             BigDecimal normalizedAmount
     ) {
-        if (!redisIdempotencyService.isProcessed(idempotencyKey)) {
-            return null;
-        }
-
-        return redisIdempotencyService.getCachedResponse(idempotencyKey)
+        return redisIdempotencyService.getIfProcessed(idempotencyKey)
                 .map(transaction -> {
                     transferExecutionService.validateIdempotentReplay(transaction, request, normalizedAmount);
                     return transaction;
@@ -146,14 +153,18 @@ public class TransferService {
         }
     }
 
+    private static int compareUuids(UUID a, UUID b) {
+        return a.toString().compareTo(b.toString());
+    }
+
     private String smallerUuidString(UUID firstAccountId, UUID secondAccountId) {
-        return firstAccountId.toString().compareTo(secondAccountId.toString()) <= 0
+        return compareUuids(firstAccountId, secondAccountId) <= 0
                 ? firstAccountId.toString()
                 : secondAccountId.toString();
     }
 
     private String largerUuidString(UUID firstAccountId, UUID secondAccountId) {
-        return firstAccountId.toString().compareTo(secondAccountId.toString()) <= 0
+        return compareUuids(firstAccountId, secondAccountId) <= 0
                 ? secondAccountId.toString()
                 : firstAccountId.toString();
     }
