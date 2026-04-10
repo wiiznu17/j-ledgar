@@ -53,12 +53,14 @@ class TransactionControllerTest {
     // ─── Infrastructure ────────────────────────────────────────────────────────
 
     @Container
+    @SuppressWarnings("resource")  // Lifecycle managed by @Testcontainers JUnit extension
     static final PostgreSQLContainer<?> POSTGRESQL = new PostgreSQLContainer<>("postgres:15-alpine")
             .withDatabaseName("jledger_plus_ctrl_test")
             .withUsername("ledger_test")
             .withPassword("ledger_test");
 
     @Container
+    @SuppressWarnings("resource")  // Lifecycle managed by @Testcontainers JUnit extension
     static final GenericContainer<?> REDIS = new GenericContainer<>("redis:7-alpine")
             .withExposedPorts(6379);
 
