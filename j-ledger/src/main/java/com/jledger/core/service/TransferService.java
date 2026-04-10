@@ -66,14 +66,14 @@ public class TransferService {
         LedgerEntry senderEntry = LedgerEntry.builder()
                 .transaction(transaction)
                 .account(sender)
-                .entryType(CREDIT_ENTRY)
+                .entryType(DEBIT_ENTRY)   // Money leaves sender
                 .amount(normalizedAmount)
                 .build();
 
         LedgerEntry receiverEntry = LedgerEntry.builder()
                 .transaction(transaction)
                 .account(receiver)
-                .entryType(DEBIT_ENTRY)
+                .entryType(CREDIT_ENTRY)  // Money enters receiver
                 .amount(normalizedAmount)
                 .build();
 
@@ -123,11 +123,17 @@ public class TransferService {
         if (!sender.getCurrency().equals(request.currency()) || !receiver.getCurrency().equals(request.currency())) {
             throw new IllegalArgumentException("Currency mismatch");
         }
-        if (!ACTIVE_STATUS.equals(sender.getStatus()) || !ACTIVE_STATUS.equals(receiver.getStatus())) {
-            if (FROZEN_STATUS.equals(sender.getStatus()) || FROZEN_STATUS.equals(receiver.getStatus())) {
-                throw new ConflictException("Account is frozen");
-            }
-            throw new ConflictException("Account is not active");
+        if (FROZEN_STATUS.equals(sender.getStatus())) {
+            throw new ConflictException("Sender account is frozen");
+        }
+        if (FROZEN_STATUS.equals(receiver.getStatus())) {
+            throw new ConflictException("Receiver account is frozen");
+        }
+        if (!ACTIVE_STATUS.equals(sender.getStatus())) {
+            throw new ConflictException("Sender account is not active");
+        }
+        if (!ACTIVE_STATUS.equals(receiver.getStatus())) {
+            throw new ConflictException("Receiver account is not active");
         }
         if (sender.getBalance().compareTo(normalizedAmount) < 0) {
             throw new ConflictException("Insufficient balance");

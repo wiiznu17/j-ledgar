@@ -1,6 +1,7 @@
 package com.jledger.core.controller;
 
 import com.jledger.core.domain.Transaction;
+import com.jledger.core.dto.TransactionResponse;
 import com.jledger.core.dto.TransferRequest;
 import com.jledger.core.service.TransferService;
 import io.swagger.v3.oas.annotations.Operation;
@@ -44,12 +45,12 @@ public class TransactionController {
             @ApiResponse(responseCode = "500", description = "Unexpected internal server error",
                     content = @Content(schema = @Schema(implementation = com.jledger.core.exception.ApiErrorResponse.class)))
     })
-    public ResponseEntity<Transaction> transfer(
+    public ResponseEntity<TransactionResponse> transfer(
             @Parameter(description = "Unique key provided by the client to avoid duplicate transaction processing", required = true)
-            @RequestHeader(value = "Idempotency-Key", required = false) String idempotencyKey,
+            @RequestHeader(value = "Idempotency-Key") String idempotencyKey,
             @Valid @RequestBody TransferRequest request) {
 
         Transaction transaction = transferService.executeTransfer(idempotencyKey, request);
-        return ResponseEntity.ok(transaction);
+        return ResponseEntity.ok(TransactionResponse.from(transaction));
     }
 }

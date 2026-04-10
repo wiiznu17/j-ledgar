@@ -71,6 +71,10 @@ class TransferServiceConcurrencyTest {
     void concurrentTransfersCatchOptimisticLockingFailure() throws InterruptedException {
         boolean optimisticLockObserved = false;
 
+        // This test is probabilistic: race conditions cannot be guaranteed in a single attempt.
+        // Up to 15 attempts are made with 8 threads each to maximize the chance of triggering
+        // a concurrent version conflict. In CI with CPU throttling, this may occasionally take
+        // all 15 attempts. Consider pinning thread count to available processors if flaky.
         for (int attempt = 0; attempt < 15 && !optimisticLockObserved; attempt++) {
             cleanDatabase();
 
@@ -114,7 +118,12 @@ class TransferServiceConcurrencyTest {
                 } catch (ObjectOptimisticLockingFailureException exception) {
                     optimisticFailureCount.incrementAndGet();
                 } catch (IllegalStateException exception) {
-                    // Some threads may read the committed balance after the winner completes.
+                    // After the winner commits, late-arriving threads see "Insufficient balance".
+                    // Re-record any unexpected IllegalStateException so it is surfaced by the assertion below.
+                    if (!exception.getMessage().contains("Insufficient balance") &&
+                        !exception.getMessage().contains("cannot withdraw")) {
+                        unexpectedFailure.compareAndSet(null, exception);
+                    }
                 } catch (Exception exception) {
                     unexpectedFailure.compareAndSet(null, exception);
                 } finally {
