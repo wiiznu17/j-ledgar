@@ -33,6 +33,12 @@ public class Transaction {
     @Column(name = "idempotency_key", nullable = false, unique = true, length = 100)
     private String idempotencyKey;
 
+    @Column(name = "from_account_id", nullable = false)
+    private UUID fromAccountId;
+
+    @Column(name = "to_account_id", nullable = false)
+    private UUID toAccountId;
+
     @Column(name = "transaction_type", nullable = false, length = 50)
     private String transactionType;
 

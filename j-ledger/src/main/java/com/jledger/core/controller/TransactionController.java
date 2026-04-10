@@ -37,7 +37,11 @@ public class TransactionController {
             @ApiResponse(responseCode = "200", description = "Transfer successful or idempotency key matched"),
             @ApiResponse(responseCode = "400", description = "Invalid request or business validation failed",
                     content = @Content(schema = @Schema(implementation = com.jledger.core.exception.ApiErrorResponse.class))),
+            @ApiResponse(responseCode = "404", description = "Sender or receiver account not found",
+                    content = @Content(schema = @Schema(implementation = com.jledger.core.exception.ApiErrorResponse.class))),
             @ApiResponse(responseCode = "409", description = "Conflict due to concurrent update (Optimistic Locking failure). Client should retry.",
+                    content = @Content(schema = @Schema(implementation = com.jledger.core.exception.ApiErrorResponse.class))),
+            @ApiResponse(responseCode = "500", description = "Unexpected internal server error",
                     content = @Content(schema = @Schema(implementation = com.jledger.core.exception.ApiErrorResponse.class)))
     })
     public ResponseEntity<Transaction> transfer(
