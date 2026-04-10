@@ -40,6 +40,7 @@ class TransferServiceBusinessRulesTest {
     // ─── Infrastructure ────────────────────────────────────────────────────────
 
     @Container
+    @SuppressWarnings("resource")  // Lifecycle managed by @Testcontainers JUnit extension — close() is called automatically
     static final PostgreSQLContainer<?> POSTGRESQL = new PostgreSQLContainer<>("postgres:15-alpine")
             .withDatabaseName("jledger_test")
             .withUsername("ledger_test")
@@ -123,7 +124,7 @@ class TransferServiceBusinessRulesTest {
         Account sender = createActiveAccount("Sender", "1000.0000");
         Account receiver = createActiveAccount("Receiver", "0.0000");
 
-        Transaction tx = transferService.executeTransfer(
+        transferService.executeTransfer(
                 UUID.randomUUID().toString(),
                 new TransferRequest(sender.getId(), receiver.getId(), new BigDecimal("400.0000"), "THB")
         );
@@ -137,7 +138,7 @@ class TransferServiceBusinessRulesTest {
         Account sender = createActiveAccount("Sender", "1000.0000");
         Account receiver = createActiveAccount("Receiver", "0.0000");
 
-        Transaction tx = transferService.executeTransfer(
+        transferService.executeTransfer(
                 UUID.randomUUID().toString(),
                 new TransferRequest(sender.getId(), receiver.getId(), new BigDecimal("200.0000"), "THB")
         );

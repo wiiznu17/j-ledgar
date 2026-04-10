@@ -38,6 +38,7 @@ import org.testcontainers.junit.jupiter.Testcontainers;
 class TransferServiceIdempotencyTest {
 
     @Container
+    @SuppressWarnings("resource")  // Lifecycle managed by @Testcontainers JUnit extension
     static final PostgreSQLContainer<?> POSTGRESQL = new PostgreSQLContainer<>("postgres:15-alpine")
             .withDatabaseName("jledger_test")
             .withUsername("ledger_test")
