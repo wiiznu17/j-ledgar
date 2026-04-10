@@ -9,19 +9,32 @@ CREATE TABLE accounts (
     status VARCHAR(20) NOT NULL,
     version INTEGER NOT NULL DEFAULT 0,
     created_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP
+    updated_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    CONSTRAINT chk_accounts_balance_non_negative CHECK (balance >= 0),
+    CONSTRAINT chk_accounts_currency_format CHECK (currency ~ '^[A-Z]{3}$'),
+    CONSTRAINT chk_accounts_status CHECK (status IN ('ACTIVE', 'FROZEN'))
 );
 
 CREATE TABLE transactions (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     idempotency_key VARCHAR(100) NOT NULL UNIQUE,
+    from_account_id UUID NOT NULL,
+    to_account_id UUID NOT NULL,
     transaction_type VARCHAR(50) NOT NULL,
     amount DECIMAL(20, 4) NOT NULL,
     currency VARCHAR(3) NOT NULL,
     status VARCHAR(20) NOT NULL,
     created_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    CONSTRAINT chk_transactions_amount_positive CHECK (amount > 0)
+    CONSTRAINT fk_transactions_from_account
+        FOREIGN KEY (from_account_id) REFERENCES accounts (id),
+    CONSTRAINT fk_transactions_to_account
+        FOREIGN KEY (to_account_id) REFERENCES accounts (id),
+    CONSTRAINT chk_transactions_amount_positive CHECK (amount > 0),
+    CONSTRAINT chk_transactions_accounts_distinct CHECK (from_account_id <> to_account_id),
+    CONSTRAINT chk_transactions_type CHECK (transaction_type IN ('TRANSFER')),
+    CONSTRAINT chk_transactions_currency_format CHECK (currency ~ '^[A-Z]{3}$'),
+    CONSTRAINT chk_transactions_status CHECK (status IN ('PENDING', 'SUCCESS'))
 );
 
 CREATE TABLE ledger_entries (
