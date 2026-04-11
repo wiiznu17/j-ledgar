@@ -6,6 +6,18 @@ spring:
     name: api-gateway
   cloud:
     gateway:
+      globalcors:
+        corsConfigurations:
+          '[/**]':
+            allowedOrigins:
+              - "http://localhost:3000"
+            allowedMethods:
+              - GET
+              - POST
+              - OPTIONS
+            allowedHeaders:
+              - "*"
+            allowCredentials: false
       routes:
         - id: core-service-route
           uri: lb://j-ledger
