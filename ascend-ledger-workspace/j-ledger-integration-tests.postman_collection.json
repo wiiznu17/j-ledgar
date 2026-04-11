@@ -26,15 +26,21 @@
     },
     {
       "key": "fromAccountId",
-      "value": "11111111-0000-0000-0000-000000000001",
+      "value": "00000000-0000-0000-0000-000000000001",
       "type": "string",
-      "description": "Sender account ID (seed in DB first)"
+      "description": "Sender account ID (Alice - seeded in DB)"
     },
     {
       "key": "toAccountId",
-      "value": "22222222-0000-0000-0000-000000000002",
+      "value": "00000000-0000-0000-0000-000000000002",
       "type": "string",
-      "description": "Receiver account ID (seed in DB first)"
+      "description": "Receiver account ID (Bob - seeded in DB)"
+    },
+    {
+      "key": "notification",
+      "value": "http://localhost:8082",
+      "type": "string",
+      "description": "Notification Service direct URL"
     }
   ],
   "item": [
@@ -56,7 +62,7 @@
               "host": ["{{eureka}}"],
               "path": ["eureka", "apps"]
             },
-            "description": "Returns all services registered with Eureka. Verify that j-ledger (core-service), api-gateway, and notification-service all appear with status UP."
+            "description": "Returns all services registered with Eureka. Verify that core-service, api-gateway, and notification-service all appear with status UP."
           },
           "response": [],
           "event": [
@@ -151,7 +157,7 @@
               "host": ["{{gateway}}"],
               "path": ["api", "v1", "transactions", "transfer"]
             },
-            "description": "Executes a transfer routed through the API Gateway (port 8080) → core-service (port 8081 via lb://j-ledger). Verify the response includes a transaction ID and status COMPLETED."
+            "description": "Executes a transfer routed through the API Gateway (port 8080) → core-service (port 8081 via lb://core-service). Verify the response includes a transaction ID and status SUCCESS."
           },
           "response": [],
           "event": [
@@ -169,9 +175,9 @@
                   "    pm.collectionVariables.set('lastTxId', body.id);",
                   "});",
                   "",
-                  "pm.test('Transaction status is COMPLETED', function() {",
+                  "pm.test('Transaction status is SUCCESS', function() {",
                   "    const body = pm.response.json();",
-                  "    pm.expect(body.status).to.equal('COMPLETED');",
+                  "    pm.expect(body.status).to.equal('SUCCESS');",
                   "});"
                 ],
                 "type": "text/javascript"
