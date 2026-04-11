@@ -1,156 +1,88 @@
-# J-Ledger
+# J-Ledger Ecosystem 🏦
 
-## Tech Stack
+[![Java](https://img.shields.io/badge/Java-21-orange.svg?style=for-the-badge&logo=openjdk)](https://openjdk.org/)
+[![Kotlin](https://img.shields.io/badge/Kotlin-1.9-7F52FF.svg?style=for-the-badge&logo=kotlin)](https://kotlinlang.org/)
+[![Spring Boot](https://img.shields.io/badge/Spring_Boot-3.2-6DB33F.svg?style=for-the-badge&logo=springboot)](https://spring.io/projects/spring-boot)
+[![Next.js](https://img.shields.io/badge/Next.js-15-black.svg?style=for-the-badge&logo=nextdotjs)](https://nextjs.org/)
+[![Kafka](https://img.shields.io/badge/Apache_Kafka-3.6-231F20.svg?style=for-the-badge&logo=apachekafka)](https://kafka.apache.org/)
 
-- Java 21
-- Spring Boot 3.2
-- Spring Data JPA / Hibernate
-- PostgreSQL 15
-- Flyway
-- Testcontainers + JUnit 5
-- Docker Compose
+**J-Ledger** is a high-performance, cloud-native financial ledger system built for strict consistency, atomicity, and high availability. It implements a double-entry accounting engine with distributed locking and idempotent processing.
 
-## Project Structure
+---
+
+## 🏗️ System Architecture
+
+The project has evolved into a distributed microservices architecture (Phase 6), centralized within the `ascend-ledger-workspace`.
 
 ```text
 .
-├── README.md
-├── detail.md
-└── j-ledger
-    ├── docker-compose.yml
-    ├── pom.xml
-    └── src
+├── ascend-ledger-workspace/      # 🚀 Primary Cloud-Native Workspace
+│   ├── api-gateway/              # Spring Cloud Gateway (Port 8080)
+│   ├── core-service/             # Java Financial Engine (Port 8081)
+│   ├── notification-service/     # Kotlin Kafka Consumer (Port 8082)
+│   ├── eureka-server/            # Service Registry (Port 8761)
+│   ├── admin-web/                # Next.js Admin Dashboard (Port 3000)
+│   └── k8s/                      # Kubernetes Manifests
+└── j-ledger-legacy/              # 🏛️ Original Monolithic Core
 ```
 
-## Prerequisites
+### Key Technical Blocks
+- **Atomic Transfers**: Transactional double-entry logic with Redisson distributed locking.
+- **Service Discovery**: Netflix Eureka for seamless microservice registration.
+- **Resilient Routing**: Spring Cloud Gateway with Resilience4j Circuit Breakers.
+- **Event-Driven**: Transaction events are persisted via the **Outbox Pattern** and streamed through **Kafka**.
+- **Admin GUI**: Modern Next.js dashboard with React Server Components (RSC) and Shadcn/UI.
 
-- JDK 21
-- Maven 3.9+
-- Docker Desktop หรือ Docker Engine
+---
 
-## Setup
+## 🚀 Quick Start (Local Development)
 
-1. เปิด PostgreSQL ด้วย Docker Compose
+The entire ecosystem is orchestrated via Docker Compose.
 
+### 1. Start all Services
+Ensure Docker is running, then execute from the root:
 ```bash
-cd j-ledger
-docker compose up -d postgres
+cd ascend-ledger-workspace
+docker-compose up -d --build
 ```
 
-ถ้าต้องการเปิด service ทั้งหมดใน compose:
+### 2. Verify System Health
+Check the service registration status on the **Eureka Dashboard**:
+👉 [http://localhost:8761](http://localhost:8761) (Wait until `CORE-SERVICE`, `API-GATEWAY`, and `NOTIFICATION-SERVICE` appear as **UP**)
 
-```bash
-cd j-ledger
-docker compose up -d
-```
+### 3. Access Dashboards
+- **Admin Dashboard**: [http://localhost:3000](http://localhost:3000)
+- **API Documentation (Swagger)**: [http://localhost:8081/swagger-ui.html](http://localhost:8081/swagger-ui.html)
+- **Gateway Entry**: [http://localhost:8080/api/v1/...](http://localhost:8080/api/v1/...)
 
-2. ตรวจสอบว่า Java เป็นเวอร์ชัน 21
+---
 
-```bash
-java -version
-```
+## 🧪 Testing & Verification
 
-ถ้าใช้ macOS และมีหลาย JDK แนะนำ:
+Comprehensive test suites are available for every layer:
 
-```bash
-export JAVA_HOME=$(/usr/libexec/java_home -v 21)
-```
+- **Integration Tests (JVM)**: Includes `Testcontainers` for Postgres, Redis, and Kafka.
+  ```bash
+  mvn clean test # Run in respective service directories
+  ```
+- **Frontend Tests (Jest)**: 
+  ```bash
+  npm test # Run in admin-web/
+  ```
+- **Postman**: Import `j-ledger-integration-tests.postman_collection.json` from the workspace root for system-wide verification.
 
-3. ติดตั้งและรัน test
+---
 
-```bash
-cd j-ledger
-mvn clean test
-```
+## ☸️ Production Deployment
+Production-ready Kubernetes manifests are located in `ascend-ledger-workspace/k8s/`.
+Standard ports:
+- **Gateway**: 8080
+- **Core**: 8081
+- **Notification**: 8082
+- **Eureka**: 8761
+- **Web**: 3000
 
-หมายเหตุ:
-- โปรเจกต์นี้บังคับ compile และ test ด้วย JDK 21 ใน `pom.xml`
-- ถ้าใช้ Homebrew Maven บน macOS ที่ default ไป Java 25 โปรเจกต์นี้ถูกตั้งค่าไว้ให้ fork ไปใช้ `javac`/`java` ของ JDK 21 แล้ว
-- การรัน test ต้องมี Docker เปิดอยู่ เพราะใช้ Testcontainers
+---
 
-## Run Application
-
-จาก root ของ repo:
-
-```bash
-cd j-ledger
-mvn spring-boot:run
-```
-
-เมื่อแอปรันแล้ว:
-
-- API base URL: `http://localhost:8080`
-- Swagger UI: `http://localhost:8080/swagger-ui.html`
-- OpenAPI JSON: `http://localhost:8080/v3/api-docs`
-
-## Default Database Config
-
-ค่าปกติของแอป:
-
-- Host: `localhost`
-- Port: `5432`
-- Database: `jledger_db`
-- Username: `ledger_admin`
-- Password: `ledger_password`
-
-Config เหล่านี้ override ได้ผ่าน environment variables:
-
-```bash
-export JLEDGER_DATASOURCE_URL=jdbc:postgresql://localhost:5432/jledger_db
-export JLEDGER_DATASOURCE_USERNAME=ledger_admin
-export JLEDGER_DATASOURCE_PASSWORD=ledger_password
-export JLEDGER_SHOW_SQL=false
-export JLEDGER_JPA_LOG_LEVEL=INFO
-export JLEDGER_TX_LOG_LEVEL=INFO
-```
-
-## Flyway Migration
-
-Flyway จะรันอัตโนมัติเมื่อแอป start โดยใช้ไฟล์ migration:
-
-- [V1__init_schema.sql](/Users/wiiznu/project/j-ledgar/j-ledger/src/main/resources/db/migration/V1__init_schema.sql)
-
-ดังนั้นถ้า PostgreSQL พร้อม แอปจะสร้าง schema ให้เองตอนเริ่มทำงาน
-
-## Run Tests
-
-รันทุก test:
-
-```bash
-cd j-ledger
-mvn clean test
-```
-
-รันเฉพาะ test class:
-
-```bash
-cd j-ledger
-mvn -Dtest=TransferServiceConcurrencyTest test
-mvn -Dtest=TransferServiceIdempotencyTest test
-```
-
-สิ่งที่ test ครอบตอนนี้:
-
-- optimistic locking ของ account update
-- idempotent replay ด้วย `Idempotency-Key`
-- concurrent duplicate request ต้องไม่ลงบัญชีซ้ำ
-
-## Example API Call
-
-```bash
-curl -X POST http://localhost:8080/api/v1/transactions/transfer \
-  -H "Content-Type: application/json" \
-  -H "Idempotency-Key: transfer-001" \
-  -d '{
-    "fromAccountId": "00000000-0000-0000-0000-000000000001",
-    "toAccountId": "00000000-0000-0000-0000-000000000002",
-    "amount": 100.0000,
-    "currency": "THB"
-  }'
-```
-
-## Notes
-
-- Redis มีอยู่ใน `docker-compose.yml` แต่ปัจจุบัน flow ในแอปยังไม่ได้ใช้งานโดยตรง
-- แอปนี้เน้น correctness ของ ledger, optimistic locking และ idempotency เป็นหลัก
-- ถ้าเพิ่ง clone โปรเจกต์ แนะนำเริ่มจาก `mvn clean test` ก่อน เพื่อเช็ค environment ให้ครบ
+> [!IMPORTANT]
+> For detailed instructions on Database management, Flyway migrations, and Kubernetes scaling, please refer to the [Workspace README](ascend-ledger-workspace/README.md).
