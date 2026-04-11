@@ -68,8 +68,8 @@
                   "    pm.response.to.have.status(200);",
                   "});",
                   "",
-                  "pm.test('Core service (j-ledger) is registered', function() {",
-                  "    pm.expect(pm.response.text()).to.include('J-LEDGER');",
+                  "pm.test('Core service (core-service) is registered', function() {",
+                  "    pm.expect(pm.response.text()).to.include('CORE-SERVICE');",
                   "});",
                   "",
                   "pm.test('API Gateway is registered', function() {",
@@ -92,9 +92,9 @@
               }
             ],
             "url": {
-              "raw": "{{eureka}}/eureka/apps/j-ledger",
+              "raw": "{{eureka}}/eureka/apps/core-service",
               "host": ["{{eureka}}"],
-              "path": ["eureka", "apps", "j-ledger"]
+              "path": ["eureka", "apps", "core-service"]
             },
             "description": "Get detailed instance info for core-service. Verify port 8081 and status UP."
           },
