@@ -20,7 +20,7 @@ spring:
             allowCredentials: false
       routes:
         - id: core-service-route
-          uri: lb://j-ledger
+          uri: lb://core-service
           predicates:
             - Path=/api/v1/**
           filters:

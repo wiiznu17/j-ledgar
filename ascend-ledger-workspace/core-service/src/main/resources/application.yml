@@ -8,7 +8,7 @@ eureka:
 
 spring:
   application:
-    name: j-ledger
+    name: core-service
   
   datasource:
     url: ${JLEDGER_DATASOURCE_URL:jdbc:postgresql://localhost:5432/jledger_db}
