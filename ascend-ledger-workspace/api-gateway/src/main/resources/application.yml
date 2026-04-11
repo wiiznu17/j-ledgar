@@ -19,6 +19,18 @@ spring:
               - "*"
             allowCredentials: false
       routes:
+        - id: core-api-docs
+          uri: lb://core-service
+          predicates:
+            - Path=/api-docs/core
+          filters:
+            - SetPath=/v3/api-docs
+        - id: notification-api-docs
+          uri: lb://notification-service
+          predicates:
+            - Path=/api-docs/notification
+          filters:
+            - SetPath=/v3/api-docs
         - id: core-service-route
           uri: lb://core-service
           predicates:
@@ -30,6 +42,17 @@ spring:
                 fallbackUri: forward:/fallback/core-service
                 statusCodes:
                   - 500
+
+springdoc:
+  swagger-ui:
+    path: /swagger-ui.html
+    urls:
+      - name: Core Service
+        url: /api-docs/core
+        displayName: Ledger Core API
+      - name: Notification Service
+        url: /api-docs/notification
+        displayName: Notification Worker API
 
 eureka:
   client:
