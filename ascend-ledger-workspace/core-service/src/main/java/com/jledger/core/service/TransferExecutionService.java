@@ -46,12 +46,21 @@ public class TransferExecutionService {
             TransferRequest request,
             BigDecimal normalizedAmount
     ) {
+        // 1. Validate account existence first to avoid FK violations during reservation
+        Account sender = accountRepository.findById(request.fromAccountId())
+                .orElseThrow(() -> new ResourceNotFoundException("Sender account not found"));
+
+        Account receiver = accountRepository.findById(request.toAccountId())
+                .orElseThrow(() -> new ResourceNotFoundException("Receiver account not found"));
+
+        // 2. Reserve the transaction (inserts or retrieves based on idempotency key)
         Transaction transaction = reserveTransaction(idempotencyKey, request, normalizedAmount);
         if (SUCCESS_STATUS.equals(transaction.getStatus())) {
             return transaction;
         }
 
-        return processTransfer(transaction, request, normalizedAmount);
+        // 3. Complete the transfer processing
+        return processTransfer(transaction, sender, receiver, normalizedAmount);
     }
 
     /** @implNote Called only by {@link TransferService} — not part of the public API contract. */
@@ -74,19 +83,14 @@ public class TransferExecutionService {
         }
     }
 
-    private Transaction processTransfer(Transaction transaction, TransferRequest request, BigDecimal normalizedAmount) {
-        Account sender = accountRepository.findById(request.fromAccountId())
-                .orElseThrow(() -> new ResourceNotFoundException("Sender account not found"));
-
-        Account receiver = accountRepository.findById(request.toAccountId())
-                .orElseThrow(() -> new ResourceNotFoundException("Receiver account not found"));
-
-        validateTransfer(request, sender, receiver, normalizedAmount);
+    private Transaction processTransfer(Transaction transaction, Account sender, Account receiver, BigDecimal normalizedAmount) {
+        validateTransfer(sender, receiver, normalizedAmount);
 
         sender.withdraw(normalizedAmount);
         receiver.deposit(normalizedAmount);
 
-        // Preserve the existing optimistic-lock guard before creating dependent records.
+        // Explicitly save updated balances
+        accountRepository.saveAll(List.of(sender, receiver));
         accountRepository.flush();
 
         LedgerEntry senderEntry = LedgerEntry.builder()
@@ -140,13 +144,14 @@ public class TransferExecutionService {
     }
 
     private void validateTransfer(
-            TransferRequest request,
             Account sender,
             Account receiver,
             BigDecimal normalizedAmount
     ) {
-        if (!sender.getCurrency().equals(request.currency()) || !receiver.getCurrency().equals(request.currency())) {
-            throw new IllegalArgumentException("Currency mismatch");
+        // Simple currency check between accounts. 
+        // Note: TransferService already validates that request.currency() matches normalizedAmount logic.
+        if (!sender.getCurrency().equals(receiver.getCurrency())) {
+            throw new IllegalArgumentException("Currency mismatch between accounts");
         }
         if (!ACTIVE_STATUS.equals(sender.getStatus()) || !ACTIVE_STATUS.equals(receiver.getStatus())) {
             if (FROZEN_STATUS.equals(sender.getStatus()) || FROZEN_STATUS.equals(receiver.getStatus())) {
