@@ -1,11 +1,38 @@
-# J-Ledger Phase 6 - Kubernetes Deployment
+# J-Ledger Phase 6 - Ecosystem Deployment Guide
 
-This guide outlines how to build and deploy the complete J-Ledger Cloud-Native ecosystem locally using `minikube` or `kind`.
+This guide outlines how to build and deploy the complete J-Ledger Cloud-Native ecosystem locally. You can either use **Docker Compose** for a quick local setup, or **Kubernetes** to mirror production.
 
 ## Prerequisites
 - Docker
-- Minikube or Docker Desktop (with Kubernetes enabled)
-- `kubectl`
+- (For Kubernetes only) Minikube or Docker Desktop (with Kubernetes enabled) & `kubectl`
+
+---
+
+## 🔥 Option A: Docker Compose (Quick Local Setup)
+
+To spin up the entire ecosystem (Databases, Message Brokers, Backend Services, and Frontend Web) using the centralized `docker-compose.yml`, run the following command from the root workspace:
+
+```bash
+docker-compose up -d --build
+```
+
+### When to use `--build`?
+- `docker-compose up -d`: Starts the containers using pre-existing images. Best used when you just want to turn on the system and haven't modified any source code.
+- `docker-compose up -d --build`: Forces Docker to re-compile the source code and build fresh images before starting. **Always use this if you have edited any code** (e.g., changed an API endpoint, updated the Next.js UI) so your changes are reflected locally.
+
+**Access Points:**
+- **Admin Web Dashboard**: `http://localhost:3000`
+- **API Gateway**: `http://localhost:8080`
+- **Eureka Dashboard**: `http://localhost:8761`
+
+To tear down the environment:
+```bash
+docker-compose down
+```
+
+---
+
+## ☸️ Option B: Kubernetes Deployment
 
 ## 1. Setup Local Kubernetes Environment
 Start your cluster if using minikube:
