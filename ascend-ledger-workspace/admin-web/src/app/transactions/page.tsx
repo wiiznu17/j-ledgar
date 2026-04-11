@@ -12,8 +12,9 @@ type Transaction = {
 
 async function getTransactions(): Promise<Transaction[]> {
   try {
-    // Explicitly routing through the api-gateway on port 8080 as required.
-    const res = await fetch('http://localhost:8080/api/v1/transactions', { cache: 'no-store' });
+    // Explicitly routing through the api-gateway via ENV var in K8s, fallback to 8080 locally
+    const gatewayUrl = process.env.API_GATEWAY_URL || 'http://localhost:8080';
+    const res = await fetch(`${gatewayUrl}/api/v1/transactions`, { cache: 'no-store' });
     if (!res.ok) {
       throw new Error(`Failed to fetch from API Gateway, status: ${res.status}`);
     }
