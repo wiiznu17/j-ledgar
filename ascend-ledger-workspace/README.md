@@ -30,6 +30,25 @@ To tear down the environment:
 docker-compose down
 ```
 
+### 🗄️ Database Management & Persistence
+
+The `core-service` manages the database schema automatically using **Flyway** migrations.
+
+**Check Schema & Migration History:**
+Run these commands to verify the state of your database inside the running container:
+```bash
+# View all tables
+docker exec -it jledger-postgres psql -U ledger_admin -d jledger_db -c "\dt"
+
+# View Flyway migration history
+docker exec -it jledger-postgres psql -U ledger_admin -d jledger_db -c "SELECT version, description, installed_on, success FROM flyway_schema_history;"
+```
+
+**Data Persistence:**
+- `docker-compose down`: Stops and removes containers, but **keeps your data** because `pgdata` and `redisdata` are stored in Docker volumes.
+- `docker-compose down -v`: Stops containers and **deletes the volumes**. Use this if you want to completely wipe the database and start fresh with empty accounts.
+- `docker volume ls | grep jledger`: Check existing data volumes.
+
 ---
 
 ## ☸️ Option B: Kubernetes Deployment
