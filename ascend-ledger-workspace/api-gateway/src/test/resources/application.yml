@@ -1,14 +1,13 @@
-server:
-  port: 8080
+eureka:
+  client:
+    enabled: false
 
 spring:
-  application:
-    name: api-gateway
   cloud:
     gateway:
       routes:
         - id: core-service-route
-          uri: lb://j-ledger
+          uri: http://localhost:${wiremock.server.port}
           predicates:
             - Path=/api/v1/**
           filters:
@@ -18,8 +17,3 @@ spring:
                 fallbackUri: forward:/fallback/core-service
                 statusCodes:
                   - 500
-
-eureka:
-  client:
-    serviceUrl:
-      defaultZone: http://localhost:8761/eureka/
