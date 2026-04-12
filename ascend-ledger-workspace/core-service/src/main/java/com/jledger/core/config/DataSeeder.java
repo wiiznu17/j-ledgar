@@ -22,6 +22,12 @@ public class DataSeeder implements CommandLineRunner {
     private final LedgerEntryRepository ledgerEntryRepository;
     private final PasswordEncoder passwordEncoder;
 
+    @org.springframework.beans.factory.annotation.Value("${jledger.admin.email}")
+    private String adminEmail;
+
+    @org.springframework.beans.factory.annotation.Value("${jledger.admin.password}")
+    private String adminPassword;
+
     private final Random random = new Random();
 
     @Override
@@ -36,12 +42,12 @@ public class DataSeeder implements CommandLineRunner {
     private void seedAdminUser() {
         if (userRepository.count() == 0) {
             AdminUser admin = AdminUser.builder()
-                    .email("admin@jledger.io")
-                    .passwordHash(passwordEncoder.encode("password123"))
+                    .email(adminEmail)
+                    .passwordHash(passwordEncoder.encode(adminPassword))
                     .role(Role.SUPER_ADMIN)
                     .build();
             userRepository.save(admin);
-            System.out.println("Default Super Admin created: admin@jledger.io / password123");
+            System.out.println("Default Super Admin created: " + adminEmail);
         }
     }
 

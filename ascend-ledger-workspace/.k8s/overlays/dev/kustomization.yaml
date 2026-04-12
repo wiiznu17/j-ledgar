@@ -3,6 +3,13 @@ kind: Kustomization
 
 resources:
   - ../../base
+  - pgadmin.yaml
+
+secretGenerator:
+  - name: jledger-secrets
+    behavior: merge
+    envs:
+      - .env.admin
 
 namePrefix: dev-
 

@@ -10,13 +10,3 @@ data:
   JLEDGER_KAFKA_BOOTSTRAP_SERVERS: "kafka-service:9092"
   EUREKA_CLIENT_SERVICEURL_DEFAULTZONE: "http://eureka-server:8761/eureka/"
   API_GATEWAY_URL: "http://api-gateway:8080"
----
-apiVersion: v1
-kind: Secret
-metadata:
-  name: jledger-secrets
-type: Opaque
-stringData:
-  DB_USER: "ledger_admin"
-  DB_PASSWORD: "ledger_password"
-  REDIS_PASSWORD: "redis_password"

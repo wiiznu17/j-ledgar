@@ -96,8 +96,18 @@ spec:
             - name: JLEDGER_DATASOURCE_PASSWORD
               valueFrom:
                 secretKeyRef:
+                   name: jledger-secrets
+                   key: DB_PASSWORD
+            - name: JLEDGER_ADMIN_EMAIL
+              valueFrom:
+                secretKeyRef:
                   name: jledger-secrets
-                  key: DB_PASSWORD
+                  key: ADMIN_EMAIL
+            - name: JLEDGER_ADMIN_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: jledger-secrets
+                  key: ADMIN_PASSWORD
 ---
 apiVersion: v1
 kind: Service
