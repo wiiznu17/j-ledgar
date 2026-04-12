@@ -457,6 +457,207 @@
           ]
         }
       ]
+    },
+    {
+      "name": "6. Admin & System APIs",
+      "item": [
+        {
+          "name": "6.1 List Transactions (Paginated)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{gateway}}/api/v1/transactions?page=0&size=20",
+              "host": ["{{gateway}}"],
+              "path": ["api", "v1", "transactions"],
+              "query": [
+                { "key": "page", "value": "0" },
+                { "key": "size", "value": "20" }
+              ]
+            },
+            "description": "Returns a paginated list of all transactions, ordered by created_at DESC."
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Response is 200 OK', function() {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "pm.test('Pagination fields exist', function() {",
+                  "    const body = pm.response.json();",
+                  "    pm.expect(body.content).to.be.an('array');",
+                  "    pm.expect(body.totalElements).to.exist;",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ]
+        },
+        {
+          "name": "6.2 Get Transaction Details with LedgerEntries",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{gateway}}/api/v1/transactions/{{lastTxId}}",
+              "host": ["{{gateway}}"],
+              "path": ["api", "v1", "transactions", "{{lastTxId}}"]
+            },
+            "description": "Returns full details for a specific transaction, including its associated double-entry ledger records. {{lastTxId}} is set automatically after running request 2.1."
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Response is 200 OK', function() {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "pm.test('Details include ledger entries', function() {",
+                  "    const body = pm.response.json();",
+                  "    pm.expect(body.transaction).to.exist;",
+                  "    pm.expect(body.ledgerEntries).to.be.an('array');",
+                  "    pm.expect(body.ledgerEntries.length).to.be.at.least(2);",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ]
+        },
+        {
+          "name": "6.3 List All Accounts (Paginated)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{gateway}}/api/v1/accounts",
+              "host": ["{{gateway}}"],
+              "path": ["api", "v1", "accounts"]
+            },
+            "description": "Returns a paginated list of accounts with their current balances and status."
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Response is 200 OK', function() {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "pm.test('Accounts list returned', function() {",
+                  "    pm.expect(pm.response.json().content).to.be.an('array');",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ]
+        },
+        {
+          "name": "6.4 Update Account Status (e.g. FROZEN)",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"status\": \"FROZEN\"\n}"
+            },
+            "url": {
+              "raw": "{{gateway}}/api/v1/accounts/{{fromAccountId}}/status",
+              "host": ["{{gateway}}"],
+              "path": ["api", "v1", "accounts", "{{fromAccountId}}", "status"]
+            },
+            "description": "Updates the status of an account. Set to FROZEN to test circuit breaker or business rule failures."
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status update returns 200', function() {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "pm.test('Account status is now FROZEN', function() {",
+                  "    pm.expect(pm.response.json().status).to.equal('FROZEN');",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ]
+        },
+        {
+          "name": "6.5 Get System Outbox",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{gateway}}/api/v1/system/outbox",
+              "host": ["{{gateway}}"],
+              "path": ["api", "v1", "system", "outbox"]
+            },
+            "description": "Returns all records in the integration_outbox table."
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Response is 200 OK', function() {",
+                  "    pm.response.to.have.status(200);",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ]
+        },
+        {
+          "name": "6.6 System Reconciliation Summary",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "{{gateway}}/api/v1/system/reconcile",
+              "host": ["{{gateway}}"],
+              "path": ["api", "v1", "system", "reconcile"]
+            },
+            "description": "Calculates and returns a reconciliation summary: sum of balance vs. sum of ledger entries."
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Reconciliation returns valid summary', function() {",
+                  "    pm.response.to.have.status(200);",
+                  "    const body = pm.response.json();",
+                  "    pm.expect(body.totalAccountBalances).to.exist;",
+                  "    pm.expect(body.totalCredits).to.exist;",
+                  "    pm.expect(body.totalDebits).to.exist;",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ]
+        }
+      ]
     }
   ]
 }
