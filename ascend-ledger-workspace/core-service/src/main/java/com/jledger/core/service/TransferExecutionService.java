@@ -151,7 +151,7 @@ public class TransferExecutionService {
         // Simple currency check between accounts. 
         // Note: TransferService already validates that request.currency() matches normalizedAmount logic.
         if (!sender.getCurrency().equals(receiver.getCurrency())) {
-            throw new IllegalArgumentException("Currency mismatch between accounts");
+            throw new IllegalArgumentException("Currency mismatch");
         }
         if (!ACTIVE_STATUS.equals(sender.getStatus()) || !ACTIVE_STATUS.equals(receiver.getStatus())) {
             if (FROZEN_STATUS.equals(sender.getStatus()) || FROZEN_STATUS.equals(receiver.getStatus())) {
