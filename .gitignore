@@ -65,3 +65,7 @@ replay_pid*
 .env.local
 .env.*.local
 
+# Legacy Artifacts
+j-ledger/
+j-ledger-plus/
+
