@@ -5,6 +5,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { useEffect, useState } from 'react';
 import { toast } from 'sonner';
+import { API_BASE_URL } from '@/lib/api-config';
 
 interface OutboxEvent {
   id: string;
@@ -18,7 +19,7 @@ export default function SystemOutboxPage() {
   const [data, setData] = useState<OutboxEvent[]>([]);
 
   useEffect(() => {
-    fetch('http://localhost:8080/api/v1/system/outbox')
+    fetch(`${API_BASE_URL}/api/v1/system/outbox`)
       .then((res) => {
         if (!res.ok) throw new Error('Network response was not ok');
         return res.json();

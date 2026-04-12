@@ -2,6 +2,7 @@
 
 import { cookies } from 'next/headers';
 import { redirect } from 'next/navigation';
+import { API_BASE_URL } from '@/lib/api-config';
 
 export async function login(formData: FormData) {
   const email = formData.get('email');
@@ -10,7 +11,7 @@ export async function login(formData: FormData) {
   if (!email || !password) return;
 
   try {
-    const response = await fetch('http://localhost:8080/api/v1/auth/login', {
+    const response = await fetch(`${API_BASE_URL}/api/v1/auth/login`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ email, password }),

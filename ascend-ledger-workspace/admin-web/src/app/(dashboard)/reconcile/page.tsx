@@ -5,6 +5,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { ShieldCheck, AlertTriangle } from 'lucide-react';
 import { useState } from 'react';
 import { toast } from 'sonner';
+import { API_BASE_URL } from '@/lib/api-config';
 
 interface ReconcileSummary {
   timestamp: string;
@@ -24,7 +25,7 @@ export default function ReconcilePage() {
     setLoading(true);
     setSummary(null);
     try {
-      const res = await fetch('http://localhost:8080/api/v1/system/reconcile', { method: 'POST' });
+      const res = await fetch(`${API_BASE_URL}/api/v1/system/reconcile`, { method: 'POST' });
       if (!res.ok) throw new Error('Failed to run reconciliation');
       const data = await res.json();
       setSummary(data);

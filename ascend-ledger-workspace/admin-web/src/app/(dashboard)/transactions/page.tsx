@@ -4,6 +4,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
 import { toast } from 'sonner';
+import { API_BASE_URL } from '@/lib/api-config';
 import { Transaction, TransactionTable } from '@/components/tables/TransactionTable';
 
 export default function TransactionsPage() {
@@ -11,7 +12,7 @@ export default function TransactionsPage() {
   const router = useRouter();
 
   useEffect(() => {
-    fetch('http://localhost:8080/api/v1/transactions?page=0&size=20')
+    fetch(`${API_BASE_URL}/api/v1/transactions?page=0&size=20`)
       .then((res) => {
         if (!res.ok) throw new Error('Network response was not ok');
         return res.json();

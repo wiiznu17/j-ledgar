@@ -6,6 +6,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { useParams } from 'next/navigation';
 import { useEffect, useState } from 'react';
 import { toast } from 'sonner';
+import { API_BASE_URL } from '@/lib/api-config';
 
 interface Transaction {
   id: string;
@@ -39,7 +40,7 @@ export default function TransactionDetailsPage() {
 
   useEffect(() => {
     if (!id) return;
-    fetch(`http://localhost:8080/api/v1/transactions/${id}`)
+    fetch(`${API_BASE_URL}/api/v1/transactions/${id}`)
       .then((res) => {
         if (!res.ok) throw new Error('Network response was not ok');
         return res.json();

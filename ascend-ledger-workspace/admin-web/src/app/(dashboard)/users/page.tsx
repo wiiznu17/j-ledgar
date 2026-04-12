@@ -11,6 +11,7 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Plus, UserPlus, Trash2 } from 'lucide-react';
 import { toast } from 'sonner';
+import { API_BASE_URL } from '@/lib/api-config';
 
 interface AdminUser {
   id: number;
@@ -29,7 +30,7 @@ export default function UsersPage() {
   const [newRole, setNewRole] = useState('SUPPORT_STAFF');
 
   const fetchUsers = () => {
-    fetch('http://localhost:8080/api/v1/users', { credentials: 'include' })
+    fetch(`${API_BASE_URL}/api/v1/users`, { credentials: 'include' })
       .then(res => {
         if (!res.ok) throw new Error('Unauthorized');
         return res.json();
@@ -46,7 +47,7 @@ export default function UsersPage() {
     e.preventDefault();
     setLoading(true);
     try {
-      const res = await fetch('http://localhost:8080/api/v1/users', {
+      const res = await fetch(`${API_BASE_URL}/api/v1/users`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email: newEmail, password: newPassword, role: newRole }),
@@ -71,7 +72,7 @@ export default function UsersPage() {
     if (!confirm('Are you sure you want to delete this user?')) return;
     
     try {
-      const res = await fetch(`http://localhost:8080/api/v1/users/${id}`, {
+      const res = await fetch(`${API_BASE_URL}/api/v1/users/${id}`, {
         method: 'DELETE',
         credentials: 'include'
       });
