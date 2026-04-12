@@ -88,6 +88,7 @@ export function Sidebar({ onLogout, isCollapsed = false, userRole = 'SUPPORT_STA
       }`}>
         <form action={onLogout} className="w-full">
           <Button 
+            type="submit"
             variant="ghost" 
             className={`text-slate-600 hover:bg-slate-500/5 hover:text-slate-900 w-full transition-all ${
               isCollapsed ? 'px-0 justify-center' : 'justify-start'
