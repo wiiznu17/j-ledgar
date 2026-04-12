@@ -10,6 +10,7 @@ export async function login(formData: FormData) {
   
   if (!email || !password) return;
 
+  let success = false;
   try {
     const response = await fetch(`${API_BASE_URL}/api/v1/auth/login`, {
       method: 'POST',
@@ -41,9 +42,13 @@ export async function login(formData: FormData) {
       path: '/',
     });
     
-    redirect('/dashboard');
+    success = true;
   } catch (error) {
     console.error('Login error:', error);
+  }
+
+  if (success) {
+    redirect('/dashboard');
   }
 }
 
