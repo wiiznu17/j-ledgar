@@ -56,7 +56,7 @@ public class DataSeeder implements CommandLineRunner {
         UUID systemUserId = UUID.randomUUID();
 
         // 1. Create Accounts
-        Account cash = createAccount(systemUserId, "Cash on Hand", "10000.00", "THB");
+        Account cash = createAccount(systemUserId, "Cash on Hand", "100000.00", "THB");
         Account revenue = createAccount(systemUserId, "Sales Revenue", "0.00", "THB");
         Account expense = createAccount(systemUserId, "Utility Expenses", "0.00", "THB");
         Account customerA = createAccount(UUID.randomUUID(), "Customer: John Doe", "500.00", "THB");
@@ -94,9 +94,7 @@ public class DataSeeder implements CommandLineRunner {
     }
 
     private void createTransaction(Account from, Account to, BigDecimal amount, ZonedDateTime timestamp) {
-        String type = "TRANSFER";
-        if (to.getAccountName().contains("Revenue")) type = "SALES";
-        if (from.getAccountName().contains("Expenses")) type = "PAYMENT";
+        String type = "TRANSFER"; // Matches chk_transactions_type
 
         Transaction tx = Transaction.builder()
                 .idempotencyKey("seed-" + UUID.randomUUID())
@@ -105,7 +103,7 @@ public class DataSeeder implements CommandLineRunner {
                 .transactionType(type)
                 .amount(amount)
                 .currency(from.getCurrency())
-                .status("COMPLETED")
+                .status("SUCCESS") // Matches chk_transactions_status
                 .createdAt(timestamp) // We attempt to set historical date
                 .build();
         
@@ -116,10 +114,14 @@ public class DataSeeder implements CommandLineRunner {
         createLedgerEntry(tx, to, "CREDIT", amount, timestamp);
 
         // Update account balances (direct update for seeding speed)
-        from.withdraw(amount);
-        to.deposit(amount);
-        accountRepository.save(from);
-        accountRepository.save(to);
+        if (from.getBalance().compareTo(amount) >= 0) {
+            from.withdraw(amount);
+            to.deposit(amount);
+            accountRepository.save(from);
+            accountRepository.save(to);
+        } else {
+            System.out.println("Skipping seed transaction: Insufficient balance on " + from.getAccountName());
+        }
     }
 
     private void createLedgerEntry(Transaction tx, Account acc, String type, BigDecimal amount, ZonedDateTime timestamp) {
