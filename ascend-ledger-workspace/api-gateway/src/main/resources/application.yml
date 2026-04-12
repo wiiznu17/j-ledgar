@@ -59,4 +59,4 @@ springdoc:
 eureka:
   client:
     serviceUrl:
-      defaultZone: ${JLEDGER_EUREKA_ZONE:http://jledger-eureka:8761/eureka/}
+      defaultZone: ${JLEDGER_EUREKA_ZONE:http://localhost:8761/eureka/}

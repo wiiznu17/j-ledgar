@@ -1,5 +1,7 @@
 'use server'
 
+import { API_BASE_URL } from '@/lib/api-config';
+
 export async function executeTransfer(formData: FormData) {
   const sourceAccountId = formData.get('sourceAccountId') as string;
   const destinationAccountId = formData.get('destinationAccountId') as string;
@@ -7,7 +9,7 @@ export async function executeTransfer(formData: FormData) {
   const currency = formData.get('currency') as string || 'THB';
 
   const idempotencyKey = crypto.randomUUID();
-  const gatewayUrl = process.env.API_GATEWAY_URL || 'http://localhost:8080';
+  const gatewayUrl = API_BASE_URL;
 
   if (!sourceAccountId || !destinationAccountId || !amount) {
     return { success: false, error: 'Missing required fields' };

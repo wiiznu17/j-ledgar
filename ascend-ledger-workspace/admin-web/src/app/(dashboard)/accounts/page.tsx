@@ -3,6 +3,7 @@
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { useEffect, useState } from 'react';
 import { toast } from 'sonner';
+import { API_BASE_URL } from '@/lib/api-config';
 import { Account, AccountTable } from '@/components/tables/AccountTable';
 
 export default function AccountsPage() {
@@ -19,7 +20,7 @@ export default function AccountsPage() {
   }, []);
 
   const fetchAccounts = () => {
-    fetch('http://localhost:8080/api/v1/accounts?page=0&size=50', {
+    fetch(`${API_BASE_URL}/api/v1/accounts?page=0&size=50`, {
       credentials: 'include'
     })
       .then((res) => {
@@ -38,7 +39,7 @@ export default function AccountsPage() {
     const newStatus = currentStatus === 'ACTIVE' ? 'FROZEN' : 'ACTIVE';
     setLoading(true);
     try {
-      const res = await fetch(`http://localhost:8080/api/v1/accounts/${accountId}/status`, {
+      const res = await fetch(`${API_BASE_URL}/api/v1/accounts/${accountId}/status`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ status: newStatus }),

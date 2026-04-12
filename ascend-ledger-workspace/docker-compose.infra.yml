@@ -1,0 +1,88 @@
+services:
+  # ----------------------------------------------------
+  # 1. Database - PostgreSQL
+  # ----------------------------------------------------
+  postgres:
+    image: postgres:15-alpine
+    container_name: jledger-postgres-infra
+    environment:
+      POSTGRES_DB: jledger_db
+      POSTGRES_USER: ledger_admin
+      POSTGRES_PASSWORD: ledger_password
+    ports:
+      - "5432:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ledger_admin -d jledger_db"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    networks:
+      - jledger-infra-network
+
+  # ----------------------------------------------------
+  # 2. Redis - Cache & Idempotency
+  # ----------------------------------------------------
+  redis:
+    image: redis:7-alpine
+    container_name: jledger-redis-infra
+    command: redis-server --requirepass redis_password
+    ports:
+      - "6379:6379"
+    healthcheck:
+      test: ["CMD", "redis-cli", "-a", "redis_password", "ping"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    networks:
+      - jledger-infra-network
+
+  # ----------------------------------------------------
+  # 3. Message Broker - Zookeeper & Kafka
+  # ----------------------------------------------------
+  zookeeper:
+    image: confluentinc/cp-zookeeper:7.4.0
+    container_name: jledger-zookeeper-infra
+    environment:
+      ZOOKEEPER_CLIENT_PORT: 2181
+      ZOOKEEPER_TICK_TIME: 2000
+    ports:
+      - "2181:2181"
+    networks:
+      - jledger-infra-network
+
+  kafka:
+    image: confluentinc/cp-kafka:7.4.0
+    container_name: jledger-kafka-infra
+    depends_on:
+      - zookeeper
+    ports:
+      - "9092:9092"
+    environment:
+      KAFKA_BROKER_ID: 1
+      KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka:29092,PLAINTEXT_HOST://localhost:9092
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: PLAINTEXT:PLAINTEXT,PLAINTEXT_HOST:PLAINTEXT
+      KAFKA_INTER_BROKER_LISTENER_NAME: PLAINTEXT
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+    networks:
+      - jledger-infra-network
+
+  # ----------------------------------------------------
+  # 4. Local DB Management (Optional but useful)
+  # ----------------------------------------------------
+  pgadmin:
+    image: dpage/pgadmin4
+    container_name: jledger-pgadmin-infra
+    environment:
+      PGADMIN_DEFAULT_EMAIL: admin@jledger.io
+      PGADMIN_DEFAULT_PASSWORD: admin_password
+    ports:
+      - "5050:80"
+    depends_on:
+      - postgres
+    networks:
+      - jledger-infra-network
+
+networks:
+  jledger-infra-network:
+    driver: bridge

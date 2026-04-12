@@ -7,24 +7,26 @@ import { logout } from '@/app/actions/auth';
 
 interface DashboardWrapperProps {
   children: React.ReactNode;
-  pathname: string;
   userRole: string;
 }
 
-export function DashboardWrapper({ children, pathname, userRole }: DashboardWrapperProps) {
+export function DashboardWrapper({ children, userRole }: DashboardWrapperProps) {
   const [isCollapsed, setIsCollapsed] = useState(false);
 
   return (
     <div className="min-h-screen bg-slate-50 flex h-screen overflow-hidden">
       <Sidebar 
-        pathname={pathname} 
         onLogout={logout} 
         isCollapsed={isCollapsed} 
         userRole={userRole} 
       />
 
       <div className={`flex-1 flex flex-col min-w-0 h-full transition-all duration-300 ease-in-out`}>
-        <Topbar title="J-Ledger Admin" onToggle={() => setIsCollapsed(!isCollapsed)} />
+        <Topbar 
+          title="J-Ledger Admin" 
+          onToggle={() => setIsCollapsed(!isCollapsed)} 
+          onLogout={logout}
+        />
         <main className="flex-1 p-8 overflow-auto bg-white">
           {children}
         </main>

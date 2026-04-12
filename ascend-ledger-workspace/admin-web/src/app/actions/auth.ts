@@ -2,6 +2,7 @@
 
 import { cookies } from 'next/headers';
 import { redirect } from 'next/navigation';
+import { API_BASE_URL } from '@/lib/api-config';
 
 export async function login(formData: FormData) {
   const email = formData.get('email');
@@ -9,8 +10,9 @@ export async function login(formData: FormData) {
   
   if (!email || !password) return;
 
+  let success = false;
   try {
-    const response = await fetch('http://localhost:8080/api/v1/auth/login', {
+    const response = await fetch(`${API_BASE_URL}/api/v1/auth/login`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ email, password }),
@@ -40,14 +42,19 @@ export async function login(formData: FormData) {
       path: '/',
     });
     
-    redirect('/dashboard');
+    success = true;
   } catch (error) {
     console.error('Login error:', error);
+  }
+
+  if (success) {
+    redirect('/dashboard');
   }
 }
 
 export async function logout() {
   const cookieStore = await cookies();
   cookieStore.delete('admin_session');
+  cookieStore.delete('user_role');
   redirect('/login');
 }
