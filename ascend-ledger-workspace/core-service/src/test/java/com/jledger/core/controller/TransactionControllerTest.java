@@ -4,8 +4,10 @@ import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.notNullValue;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
+import static org.hamcrest.Matchers.hasSize;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.jledger.core.domain.Account;
@@ -374,5 +376,47 @@ class TransactionControllerTest {
                 .andExpect(jsonPath("$.error", notNullValue()))
                 .andExpect(jsonPath("$.message", notNullValue()))
                 .andExpect(jsonPath("$.path", notNullValue()));
+    }
+    @Test
+    void listAllTransactions_returnsPaginatedList() throws Exception {
+        Account sender = createActiveAccount("Sender", "1000.0000");
+        Account receiver = createActiveAccount("Receiver", "0.0000");
+
+        mockMvc.perform(post("/api/v1/transactions/transfer")
+                        .header("Idempotency-Key", UUID.randomUUID().toString())
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(transferBody(sender.getId(), receiver.getId(), "100.00", "THB")))
+                .andExpect(status().isOk());
+
+        mockMvc.perform(get("/api/v1/transactions?page=0&size=10"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.content", hasSize(1)))
+                .andExpect(jsonPath("$.content[0].transactionType", is("TRANSFER")));
+    }
+
+    @Test
+    void getTransactionDetails_existing_returnsDetailsList() throws Exception {
+        Account sender = createActiveAccount("Sender", "1000.0000");
+        Account receiver = createActiveAccount("Receiver", "0.0000");
+
+        String response = mockMvc.perform(post("/api/v1/transactions/transfer")
+                        .header("Idempotency-Key", UUID.randomUUID().toString())
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(transferBody(sender.getId(), receiver.getId(), "100.00", "THB")))
+                .andExpect(status().isOk())
+                .andReturn().getResponse().getContentAsString();
+
+        String txId = objectMapper.readTree(response).get("id").asText();
+
+        mockMvc.perform(get("/api/v1/transactions/" + txId))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.transaction.id", is(txId)))
+                .andExpect(jsonPath("$.ledgerEntries", hasSize(2)));
+    }
+
+    @Test
+    void getTransactionDetails_notFound_returns404() throws Exception {
+        mockMvc.perform(get("/api/v1/transactions/" + UUID.randomUUID()))
+                .andExpect(status().isNotFound());
     }
 }
