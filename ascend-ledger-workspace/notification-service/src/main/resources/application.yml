@@ -1,0 +1,22 @@
+server:
+  port: 8082
+
+spring:
+  application:
+    name: notification-service
+  kafka:
+    bootstrap-servers: ${JLEDGER_KAFKA_BOOTSTRAP_SERVERS:localhost:9092}
+
+springdoc:
+  api-docs:
+    path: /v3/api-docs
+    consumer:
+      group-id: notification-group
+      auto-offset-reset: earliest
+      key-deserializer: org.apache.kafka.common.serialization.StringDeserializer
+      value-deserializer: org.apache.kafka.common.serialization.StringDeserializer
+
+eureka:
+  client:
+    serviceUrl:
+      defaultZone: ${JLEDGER_EUREKA_ZONE:http://jledger-eureka:8761/eureka/}

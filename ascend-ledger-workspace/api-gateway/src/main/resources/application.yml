@@ -1,0 +1,62 @@
+server:
+  port: 8080
+
+spring:
+  application:
+    name: api-gateway
+  cloud:
+    gateway:
+      globalcors:
+        corsConfigurations:
+          '[/**]':
+            allowedOrigins:
+              - "http://localhost:3000"
+            allowedMethods:
+              - GET
+              - POST
+              - PUT
+              - DELETE
+              - OPTIONS
+            allowedHeaders:
+              - "*"
+            allowCredentials: true
+      routes:
+        - id: core-api-docs
+          uri: lb://core-service
+          predicates:
+            - Path=/api-docs/core
+          filters:
+            - SetPath=/v3/api-docs
+        - id: notification-api-docs
+          uri: lb://notification-service
+          predicates:
+            - Path=/api-docs/notification
+          filters:
+            - SetPath=/v3/api-docs
+        - id: core-service-route
+          uri: lb://core-service
+          predicates:
+            - Path=/api/v1/**
+          filters:
+            - name: CircuitBreaker
+              args:
+                name: coreServiceCircuitBreaker
+                fallbackUri: forward:/fallback/core-service
+                statusCodes:
+                  - 500
+
+springdoc:
+  swagger-ui:
+    path: /swagger-ui.html
+    urls:
+      - name: Core Service
+        url: /api-docs/core
+        displayName: Ledger Core API
+      - name: Notification Service
+        url: /api-docs/notification
+        displayName: Notification Worker API
+
+eureka:
+  client:
+    serviceUrl:
+      defaultZone: ${JLEDGER_EUREKA_ZONE:http://jledger-eureka:8761/eureka/}

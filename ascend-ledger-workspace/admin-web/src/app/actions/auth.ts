@@ -1,0 +1,53 @@
+'use server';
+
+import { cookies } from 'next/headers';
+import { redirect } from 'next/navigation';
+
+export async function login(formData: FormData) {
+  const email = formData.get('email');
+  const password = formData.get('password');
+  
+  if (!email || !password) return;
+
+  try {
+    const response = await fetch('http://localhost:8080/api/v1/auth/login', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email, password }),
+    });
+
+    if (!response.ok) {
+      // For now, handle errors simply. In a real app, return an error message to display in UI.
+      return;
+    }
+
+    const data = await response.json();
+    const cookieStore = await cookies();
+    
+    // JWT Token for authentication
+    cookieStore.set('admin_session', data.token, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      maxAge: 60 * 60 * 24, // 1 day
+      path: '/',
+    });
+    
+    // Storing role separately for easier access in UI components
+    cookieStore.set('user_role', data.role, {
+      httpOnly: false, // Accessible by client-side components if needed, or stick to Server side
+      secure: process.env.NODE_ENV === 'production',
+      maxAge: 60 * 60 * 24,
+      path: '/',
+    });
+    
+    redirect('/dashboard');
+  } catch (error) {
+    console.error('Login error:', error);
+  }
+}
+
+export async function logout() {
+  const cookieStore = await cookies();
+  cookieStore.delete('admin_session');
+  redirect('/login');
+}

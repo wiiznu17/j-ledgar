@@ -1,30 +1,71 @@
+# ==============================================================================
 # OS files
+# ==============================================================================
 .DS_Store
+Thumbs.db
+*.swp
+*.swo
 
+# ==============================================================================
 # Editor / IDE
+# ==============================================================================
 .idea/
 .vscode/
 *.iml
-*.ipr
 *.iws
+*.ipr
 .classpath
 .project
 .settings/
+.factorypath
 out/
+.history/
 
-# Java / Maven build output
+# ==============================================================================
+# Java / Maven
+# ==============================================================================
 **/target/
 *.class
 *.jar
 *.war
 *.ear
+*.nar
+*.zip
+*.tar.gz
+*.rar
+.m2/
+.mvn/
+mvnw
+mvnw.cmd
+HELP.md
 
+# Maven specific backups & logs
+pom.xml.tag
+pom.xml.releaseBackup
+pom.xml.versionsBackup
+pom.xml.restore
+release.properties
+dependency-reduced-pom.xml
+buildNumber.properties
+.mvn/timing.properties
+
+# ==============================================================================
 # Logs and JVM crash files
+# ==============================================================================
 *.log
+logs/
+**/logs/
 hs_err_pid*
 replay_pid*
 
+# ==============================================================================
 # Local environment files
+# ==============================================================================
 .env
 .env.local
 .env.*.local
+
+# Legacy Artifacts
+j-ledger/
+j-ledger-plus/
+
