@@ -2,6 +2,7 @@
 
 import { Activity, CreditCard, LayoutDashboard, LogOut, Send, ShieldCheck, Users, LucideIcon } from 'lucide-react';
 import Link from 'next/link';
+import { usePathname } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 
 interface NavigationItem {
@@ -12,7 +13,6 @@ interface NavigationItem {
 }
 
 interface SidebarProps {
-  pathname: string;
   onLogout: (formData: FormData) => void;
   isCollapsed?: boolean;
   userRole?: string;
@@ -27,7 +27,8 @@ const navigation: NavigationItem[] = [
   { name: 'Users', href: '/users', icon: Users, roles: ['SUPER_ADMIN'] },
 ];
 
-export function Sidebar({ pathname, onLogout, isCollapsed = false, userRole = 'SUPPORT_STAFF' }: SidebarProps) {
+export function Sidebar({ onLogout, isCollapsed = false, userRole = 'SUPPORT_STAFF' }: SidebarProps) {
+  const pathname = usePathname();
   return (
     <aside 
       className={`bg-gradient-to-b from-[#E0F2FE] via-white to-[#FCE7F3] border-r border-border flex-col hidden lg:flex h-full transition-all duration-300 ease-in-out ${

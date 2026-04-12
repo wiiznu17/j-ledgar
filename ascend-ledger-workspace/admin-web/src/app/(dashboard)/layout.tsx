@@ -8,12 +8,12 @@ export default async function DashboardLayout({ children }: { children: React.Re
   
   // Workaround to get pathname in server component if needed, 
   // or just handle it in the client wrapper.
-  const headersList = await headers();
-  const pathname = headersList.get('x-pathname') || '/dashboard';
+  // const headersList = await headers();
+  // const pathname = headersList.get('x-pathname') || '/dashboard';
 
   return (
     <>
-      <DashboardWrapper pathname={pathname} userRole={userRole}>
+      <DashboardWrapper userRole={userRole}>
         {children}
       </DashboardWrapper>
       <Toaster position="top-right" />

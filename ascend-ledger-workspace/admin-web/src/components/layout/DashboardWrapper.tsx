@@ -7,17 +7,15 @@ import { logout } from '@/app/actions/auth';
 
 interface DashboardWrapperProps {
   children: React.ReactNode;
-  pathname: string;
   userRole: string;
 }
 
-export function DashboardWrapper({ children, pathname, userRole }: DashboardWrapperProps) {
+export function DashboardWrapper({ children, userRole }: DashboardWrapperProps) {
   const [isCollapsed, setIsCollapsed] = useState(false);
 
   return (
     <div className="min-h-screen bg-slate-50 flex h-screen overflow-hidden">
       <Sidebar 
-        pathname={pathname} 
         onLogout={logout} 
         isCollapsed={isCollapsed} 
         userRole={userRole} 
