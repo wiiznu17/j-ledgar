@@ -1,5 +1,5 @@
 {
-  "name": "ascend-frontend-workspace",
+  "name": "j-ledger-portal",
   "private": true,
   "scripts": {
     "build": "turbo run build",
