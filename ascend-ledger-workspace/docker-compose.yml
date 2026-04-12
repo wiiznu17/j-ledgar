@@ -129,6 +129,7 @@ services:
         condition: service_healthy
       eureka-server:
         condition: service_started
+    restart: on-failure
     ports:
       - "8081:8081"
     environment:
