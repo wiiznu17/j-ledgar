@@ -13,6 +13,7 @@ interface NavigationItem {
 interface SidebarProps {
   pathname: string;
   onLogout: (formData: FormData) => void;
+  isCollapsed?: boolean;
 }
 
 const navigation: NavigationItem[] = [
@@ -23,44 +24,70 @@ const navigation: NavigationItem[] = [
   { name: 'Reconcile', href: '/reconcile', icon: ShieldCheck },
 ];
 
-export function Sidebar({ pathname, onLogout }: SidebarProps) {
+export function Sidebar({ pathname, onLogout, isCollapsed = false }: SidebarProps) {
   return (
-    <aside className="w-64 bg-white border-r border-border flex-col hidden lg:flex h-full">
-      <div className="h-16 flex items-center px-6 border-b border-border flex-shrink-0">
-        <div className="w-8 h-8 rounded-lg bg-gradient-to-r from-[var(--color-magenta)] to-[var(--color-pink)] mr-3 flex items-center justify-center">
+    <aside 
+      className={`bg-gradient-to-b from-[#E0F2FE] via-white to-[#FCE7F3] border-r border-border flex-col hidden lg:flex h-full transition-all duration-300 ease-in-out ${
+        isCollapsed ? 'w-20' : 'w-64'
+      }`}
+    >
+      <div className={`h-16 flex items-center border-b border-border/50 flex-shrink-0 transition-all duration-300 ${
+        isCollapsed ? 'justify-center px-0' : 'px-6'
+      }`}>
+        <div className="w-8 h-8 rounded-lg bg-gradient-to-r from-[var(--color-magenta)] to-[var(--color-pink)] flex items-center justify-center shadow-md flex-shrink-0">
           <ShieldCheck className="w-5 h-5 text-white" />
         </div>
-        <span className="text-xl font-bold text-foreground">J-Ledger</span>
+        {!isCollapsed && (
+          <span className="ml-3 text-xl font-bold text-slate-800 animate-in fade-in duration-500">
+            J-Ledger
+          </span>
+        )}
       </div>
       
-      <nav className="flex-1 px-4 py-6 space-y-1 overflow-y-auto">
+      <nav className="flex-1 px-3 py-6 space-y-2 overflow-y-auto">
         {navigation.map((item) => {
           const isActive = pathname === item.href || pathname.startsWith(item.href + '/');
           return (
             <Link
               key={item.name}
               href={item.href}
-              className={`flex items-center px-4 py-3 text-sm font-medium rounded-lg transition-colors ${
+              title={isCollapsed ? item.name : ''}
+              className={`flex items-center rounded-xl transition-all duration-200 group ${
+                isCollapsed ? 'justify-center px-0 py-3' : 'px-4 py-3'
+              } ${
                 isActive
-                  ? 'bg-gradient-to-r from-[var(--color-magenta)] to-[var(--color-pink)] text-white'
-                  : 'text-foreground hover:bg-secondary'
+                  ? 'bg-gradient-to-r from-[#BFDBFE] to-[#E9D5FF] text-slate-800 shadow-[0_4px_0_0_#A5B4FC] border-t border-[#FFFFFF/60]'
+                  : 'text-slate-600 hover:bg-slate-500/10 hover:text-slate-900'
               }`}
             >
               <item.icon
-                className={`mr-3 h-5 w-5 ${isActive ? 'text-white' : 'text-accent'}`}
+                className={`flex-shrink-0 transition-colors ${
+                  isCollapsed ? 'h-6 w-6' : 'mr-3 h-5 w-5'
+                } ${isActive ? 'text-slate-800' : 'text-slate-500 group-hover:text-slate-900'}`}
                 aria-hidden="true"
               />
-              {item.name}
+              {!isCollapsed && (
+                <span className="text-sm font-semibold truncate animate-in fade-in slide-in-from-left-2 duration-300">
+                  {item.name}
+                </span>
+              )}
             </Link>
           );
         })}
       </nav>
       
-      <div className="p-4 border-t border-border flex-shrink-0">
-        <form action={onLogout}>
-          <Button variant="ghost" className="w-full justify-start text-foreground hover:bg-secondary">
-            <LogOut className="mr-3 w-5 h-5 text-accent" />
-            Sign out
+      <div className={`p-4 border-t border-border/50 flex-shrink-0 transition-all duration-300 ${
+        isCollapsed ? 'flex justify-center' : ''
+      }`}>
+        <form action={onLogout} className="w-full">
+          <Button 
+            variant="ghost" 
+            className={`text-slate-600 hover:bg-slate-500/5 hover:text-slate-900 w-full transition-all ${
+              isCollapsed ? 'px-0 justify-center' : 'justify-start'
+            }`}
+          >
+            <LogOut className={`flex-shrink-0 ${isCollapsed ? 'h-6 w-6' : 'mr-3 w-5 h-5 text-slate-500'}`} />
+            {!isCollapsed && <span className="font-semibold text-sm">Sign out</span>}
           </Button>
         </form>
       </div>
