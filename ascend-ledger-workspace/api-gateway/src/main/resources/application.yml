@@ -14,10 +14,12 @@ spring:
             allowedMethods:
               - GET
               - POST
+              - PUT
+              - DELETE
               - OPTIONS
             allowedHeaders:
               - "*"
-            allowCredentials: false
+            allowCredentials: true
       routes:
         - id: core-api-docs
           uri: lb://core-service

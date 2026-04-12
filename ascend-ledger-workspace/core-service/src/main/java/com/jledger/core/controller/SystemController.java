@@ -9,6 +9,7 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -30,6 +31,7 @@ public class SystemController {
     }
 
     @PostMapping("/reconcile")
+    @PreAuthorize("hasAnyRole('SUPER_ADMIN', 'RECONCILER')")
     @Operation(summary = "Reconcile system", description = "Calculates total balances and ledger entries to detect discrepancies")
     public ResponseEntity<ReconciliationSummary> reconcile() {
         return ResponseEntity.ok(systemService.reconcile());

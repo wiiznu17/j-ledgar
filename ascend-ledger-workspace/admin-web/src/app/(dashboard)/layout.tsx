@@ -1,34 +1,22 @@
-'use client';
-
-import { logout } from '@/app/actions/auth';
+import { cookies, headers } from 'next/headers';
 import { Toaster } from '@/components/ui/sonner';
-import { usePathname } from 'next/navigation';
-import { Sidebar } from '@/components/layout/Sidebar';
-import { Topbar } from '@/components/layout/Topbar';
-import { useState } from 'react';
+import { DashboardWrapper } from '@/components/layout/DashboardWrapper';
 
-export default function DashboardLayout({ children }: { children: React.ReactNode }) {
-  const pathname = usePathname();
-  const [isCollapsed, setIsCollapsed] = useState(false);
+export default async function DashboardLayout({ children }: { children: React.ReactNode }) {
+  const cookieStore = await cookies();
+  const userRole = cookieStore.get('user_role')?.value || 'SUPPORT_STAFF';
+  
+  // Workaround to get pathname in server component if needed, 
+  // or just handle it in the client wrapper.
+  const headersList = await headers();
+  const pathname = headersList.get('x-pathname') || '/dashboard';
 
   return (
-    <div className="min-h-screen bg-slate-50 flex h-screen overflow-hidden">
-      {/* Sidebar Component */}
-      <Sidebar pathname={pathname} onLogout={logout} isCollapsed={isCollapsed} />
-
-      {/* Main content area */}
-      <div className={`flex-1 flex flex-col min-w-0 h-full transition-all duration-300 ease-in-out`}>
-        {/* Topbar Component */}
-        <Topbar title="J-Ledger Admin" onToggle={() => setIsCollapsed(!isCollapsed)} />
-
-        {/* Content injection */}
-        <main className="flex-1 p-8 overflow-auto bg-white">
-          {children}
-        </main>
-      </div>
-
+    <>
+      <DashboardWrapper pathname={pathname} userRole={userRole}>
+        {children}
+      </DashboardWrapper>
       <Toaster position="top-right" />
-    </div>
+    </>
   );
 }
-

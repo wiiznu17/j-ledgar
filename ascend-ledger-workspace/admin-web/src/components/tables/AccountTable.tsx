@@ -17,9 +17,12 @@ interface AccountTableProps {
   data: Account[];
   onToggleStatus: (accountId: string, currentStatus: string) => void;
   loading?: boolean;
+  userRole?: string;
 }
 
-export function AccountTable({ data, onToggleStatus, loading = false }: AccountTableProps) {
+export function AccountTable({ data, onToggleStatus, loading = false, userRole = 'SUPPORT_STAFF' }: AccountTableProps) {
+  const isSuperAdmin = userRole === 'SUPER_ADMIN';
+
   return (
     <div className="border rounded-lg overflow-hidden border-border bg-white">
       <Table>
@@ -29,7 +32,7 @@ export function AccountTable({ data, onToggleStatus, loading = false }: AccountT
             <TableHead className="hidden md:table-cell">Account ID</TableHead>
             <TableHead className="text-right">Balance</TableHead>
             <TableHead className="text-center">Status</TableHead>
-            <TableHead className="text-right">Actions</TableHead>
+            {isSuperAdmin && <TableHead className="text-right">Actions</TableHead>}
           </TableRow>
         </TableHeader>
         <TableBody>
@@ -47,17 +50,19 @@ export function AccountTable({ data, onToggleStatus, loading = false }: AccountT
                   {acc.status}
                 </Badge>
               </TableCell>
-              <TableCell className="text-right">
-                <Button 
-                  variant={acc.status === 'ACTIVE' ? 'destructive' : 'default'} 
-                  size="sm"
-                  disabled={loading}
-                  className={acc.status !== 'ACTIVE' ? 'bg-primary hover:bg-primary/90 text-white' : ''}
-                  onClick={() => onToggleStatus(acc.id, acc.status)}
-                >
-                  {acc.status === 'ACTIVE' ? 'Freeze' : 'Unfreeze'}
-                </Button>
-              </TableCell>
+              {isSuperAdmin && (
+                <TableCell className="text-right">
+                  <Button 
+                    variant={acc.status === 'ACTIVE' ? 'destructive' : 'default'} 
+                    size="sm"
+                    disabled={loading}
+                    className={acc.status !== 'ACTIVE' ? 'bg-primary hover:bg-primary/90 text-white' : ''}
+                    onClick={() => onToggleStatus(acc.id, acc.status)}
+                  >
+                    {acc.status === 'ACTIVE' ? 'Freeze' : 'Unfreeze'}
+                  </Button>
+                </TableCell>
+              )}
             </TableRow>
           ))}
           {data.length === 0 && (

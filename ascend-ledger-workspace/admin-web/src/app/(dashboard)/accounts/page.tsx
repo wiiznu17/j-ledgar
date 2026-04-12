@@ -8,9 +8,20 @@ import { Account, AccountTable } from '@/components/tables/AccountTable';
 export default function AccountsPage() {
   const [data, setData] = useState<Account[]>([]);
   const [loading, setLoading] = useState(false);
+  const [userRole, setUserRole] = useState('SUPPORT_STAFF');
+
+  useEffect(() => {
+    const role = document.cookie
+      .split('; ')
+      .find(row => row.startsWith('user_role='))
+      ?.split('=')[1];
+    if (role) setUserRole(role);
+  }, []);
 
   const fetchAccounts = () => {
-    fetch('http://localhost:8080/api/v1/accounts?page=0&size=50')
+    fetch('http://localhost:8080/api/v1/accounts?page=0&size=50', {
+      credentials: 'include'
+    })
       .then((res) => {
         if (!res.ok) throw new Error('Network response was not ok');
         return res.json();
@@ -31,6 +42,7 @@ export default function AccountsPage() {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ status: newStatus }),
+        credentials: 'include'
       });
       if (!res.ok) throw new Error('Update failed');
       toast.success(`Account status updated to ${newStatus}`);
@@ -44,7 +56,7 @@ export default function AccountsPage() {
 
   return (
     <div className="space-y-6">
-      <h2 className="text-3xl font-bold tracking-tight">Accounts Management</h2>
+      <h2 className="text-3xl font-bold tracking-tight text-[#2D3748]">Accounts Management</h2>
       
       <Card className="border-border shadow-sm">
         <CardHeader>
@@ -56,6 +68,7 @@ export default function AccountsPage() {
             data={data} 
             onToggleStatus={handleToggleStatus} 
             loading={loading} 
+            userRole={userRole}
           />
         </CardContent>
       </Card>

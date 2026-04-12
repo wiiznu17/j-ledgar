@@ -1,6 +1,6 @@
 'use client';
 
-import { Activity, CreditCard, LayoutDashboard, LogOut, Send, ShieldCheck, LucideIcon } from 'lucide-react';
+import { Activity, CreditCard, LayoutDashboard, LogOut, Send, ShieldCheck, Users, LucideIcon } from 'lucide-react';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 
@@ -8,23 +8,26 @@ interface NavigationItem {
   name: string;
   href: string;
   icon: LucideIcon;
+  roles?: string[];
 }
 
 interface SidebarProps {
   pathname: string;
   onLogout: (formData: FormData) => void;
   isCollapsed?: boolean;
+  userRole?: string;
 }
 
 const navigation: NavigationItem[] = [
   { name: 'Dashboard', href: '/dashboard', icon: LayoutDashboard },
   { name: 'Transactions', href: '/transactions', icon: Activity },
-  { name: 'Accounts', href: '/accounts', icon: CreditCard },
+  { name: 'Accounts', href: '/accounts', icon: CreditCard, roles: ['SUPER_ADMIN', 'SUPPORT_STAFF'] },
   { name: 'System Outbox', href: '/system/outbox', icon: Send },
   { name: 'Reconcile', href: '/reconcile', icon: ShieldCheck },
+  { name: 'Users', href: '/users', icon: Users, roles: ['SUPER_ADMIN'] },
 ];
 
-export function Sidebar({ pathname, onLogout, isCollapsed = false }: SidebarProps) {
+export function Sidebar({ pathname, onLogout, isCollapsed = false, userRole = 'SUPPORT_STAFF' }: SidebarProps) {
   return (
     <aside 
       className={`bg-gradient-to-b from-[#E0F2FE] via-white to-[#FCE7F3] border-r border-border flex-col hidden lg:flex h-full transition-all duration-300 ease-in-out ${
@@ -46,6 +49,8 @@ export function Sidebar({ pathname, onLogout, isCollapsed = false }: SidebarProp
       
       <nav className="flex-1 px-3 py-6 space-y-2 overflow-y-auto">
         {navigation.map((item) => {
+          if (item.roles && !item.roles.includes(userRole)) return null;
+          
           const isActive = pathname === item.href || pathname.startsWith(item.href + '/');
           return (
             <Link
@@ -75,6 +80,7 @@ export function Sidebar({ pathname, onLogout, isCollapsed = false }: SidebarProp
           );
         })}
       </nav>
+
       
       <div className={`p-4 border-t border-border/50 flex-shrink-0 transition-all duration-300 ${
         isCollapsed ? 'flex justify-center' : ''

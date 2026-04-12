@@ -11,6 +11,7 @@ import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -67,6 +68,7 @@ public class AccountController {
     }
 
     @PutMapping("/{id}/status")
+    @PreAuthorize("hasRole('SUPER_ADMIN')")
     @Operation(summary = "Change account status", description = "Updates the status of an account (e.g., to FROZEN or ACTIVE).")
     @ApiResponses(value = {
             @ApiResponse(responseCode = "200", description = "Account status updated"),
