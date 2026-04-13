@@ -8,20 +8,37 @@ metadata:
     nginx.ingress.kubernetes.io/proxy-body-size: "10m"
 spec:
   rules:
-    - host: admin.jledger.local
+    - host: admin.j-ledger.local
       http:
         paths:
-          - path: /api
-            pathType: Prefix
+          - path: /api/core
+            pathType: ImplementationSpecific
             backend:
               service:
                 name: api-gateway
                 port:
                   number: 8080
+          - path: /api
+            pathType: ImplementationSpecific
+            backend:
+              service:
+                name: admin-api
+                port:
+                  number: 3001
           - path: /
-            pathType: Prefix
+            pathType: ImplementationSpecific
             backend:
               service:
                 name: admin-web
                 port:
                   number: 3000
+    - host: wallet.j-ledger.local
+      http:
+        paths:
+          - path: /
+            pathType: ImplementationSpecific
+            backend:
+              service:
+                name: wallet-api
+                port:
+                  number: 3002

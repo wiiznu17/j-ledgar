@@ -16,38 +16,17 @@ import java.util.*;
 @RequiredArgsConstructor
 public class DataSeeder implements CommandLineRunner {
 
-    private final AdminUserRepository userRepository;
     private final AccountRepository accountRepository;
     private final TransactionRepository transactionRepository;
     private final LedgerEntryRepository ledgerEntryRepository;
-    private final PasswordEncoder passwordEncoder;
-
-    @org.springframework.beans.factory.annotation.Value("${jledger.admin.email}")
-    private String adminEmail;
-
-    @org.springframework.beans.factory.annotation.Value("${jledger.admin.password}")
-    private String adminPassword;
 
     private final Random random = new Random();
 
     @Override
     @Transactional
     public void run(String... args) {
-        seedAdminUser();
         if (accountRepository.count() == 0) {
             seedSampleData();
-        }
-    }
-
-    private void seedAdminUser() {
-        if (userRepository.count() == 0) {
-            AdminUser admin = AdminUser.builder()
-                    .email(adminEmail)
-                    .passwordHash(passwordEncoder.encode(adminPassword))
-                    .role(Role.SUPER_ADMIN)
-                    .build();
-            userRepository.save(admin);
-            System.out.println("Default Super Admin created: " + adminEmail);
         }
     }
 

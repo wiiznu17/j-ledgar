@@ -44,6 +44,7 @@ spring:
                 fallbackUri: forward:/fallback/core-service
                 statusCodes:
                   - 500
+            - AddRequestHeader=X-Internal-Secret, ${JLEDGER_INTERNAL_SECRET:jledger_ecosystem_secret_2024}
 
 springdoc:
   swagger-ui:

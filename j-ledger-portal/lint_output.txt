@@ -1,0 +1,27 @@
+
+> admin-web@0.1.0 lint
+> eslint
+
+
+Oops! Something went wrong! :(
+
+ESLint: 9.39.4
+
+ConfigError: Config "next": Key "plugins": Cannot redefine plugin "@next/next".
+    at rethrowConfigError (/Users/wiiznu/project/fintech/j-ledger-portal/node_modules/@eslint/config-array/dist/cjs/index.cjs:343:8)
+    at /Users/wiiznu/project/fintech/j-ledger-portal/node_modules/@eslint/config-array/dist/cjs/index.cjs:1405:5
+    at Array.reduce (<anonymous>)
+    at FlatConfigArray.getConfigWithStatus (/Users/wiiznu/project/fintech/j-ledger-portal/node_modules/@eslint/config-array/dist/cjs/index.cjs:1398:43)
+    at FlatConfigArray.getConfig (/Users/wiiznu/project/fintech/j-ledger-portal/node_modules/@eslint/config-array/dist/cjs/index.cjs:1427:15)
+    at entryFilter (/Users/wiiznu/project/fintech/j-ledger-portal/node_modules/eslint/lib/eslint/eslint-helpers.js:323:27)
+    at async NodeHfs.<anonymous> (file:///Users/wiiznu/project/fintech/j-ledger-portal/node_modules/@humanfs/core/src/hfs.js:574:24)
+    at async NodeHfs.<anonymous> (file:///Users/wiiznu/project/fintech/j-ledger-portal/node_modules/@humanfs/core/src/hfs.js:604:6)
+    at async NodeHfs.walk (file:///Users/wiiznu/project/fintech/j-ledger-portal/node_modules/@humanfs/core/src/hfs.js:614:3)
+    at async globSearch (/Users/wiiznu/project/fintech/j-ledger-portal/node_modules/eslint/lib/eslint/eslint-helpers.js:364:20)
+npm error Lifecycle script `lint` failed with error:
+npm error code 2
+npm error path /Users/wiiznu/project/fintech/j-ledger-portal/apps/admin-web
+npm error workspace admin-web@0.1.0
+npm error location /Users/wiiznu/project/fintech/j-ledger-portal/apps/admin-web
+npm error command failed
+npm error command sh -c eslint

@@ -1,6 +1,6 @@
-import { create } from "zustand";
-import * as SecureStore from "expo-secure-store";
-import { Platform } from "react-native";
+import { create } from 'zustand';
+import * as SecureStore from 'expo-secure-store';
+import { Platform } from 'react-native';
 
 interface AuthState {
   token: string | null;
@@ -13,7 +13,7 @@ interface AuthState {
   logout: () => Promise<void>;
 }
 
-const isWeb = Platform.OS === "web";
+const isWeb = Platform.OS === 'web';
 
 export const useAuthStore = create<AuthState>((set) => ({
   token: null,
@@ -24,16 +24,16 @@ export const useAuthStore = create<AuthState>((set) => ({
   setToken: async (token: string | null) => {
     if (token) {
       if (isWeb) {
-        localStorage.setItem("auth_token", token);
+        localStorage.setItem('auth_token', token);
       } else {
-        await SecureStore.setItemAsync("auth_token", token);
+        await SecureStore.setItemAsync('auth_token', token);
       }
       set({ token, isAuthenticated: true });
     } else {
       if (isWeb) {
-        localStorage.removeItem("auth_token");
+        localStorage.removeItem('auth_token');
       } else {
-        await SecureStore.deleteItemAsync("auth_token");
+        await SecureStore.deleteItemAsync('auth_token');
       }
       set({ token: null, isAuthenticated: false });
     }
@@ -45,14 +45,14 @@ export const useAuthStore = create<AuthState>((set) => ({
     set({ isLoading: true });
     try {
       const token = isWeb
-        ? localStorage.getItem("auth_token")
-        : await SecureStore.getItemAsync("auth_token");
-      
+        ? localStorage.getItem('auth_token')
+        : await SecureStore.getItemAsync('auth_token');
+
       if (token) {
         set({ token, isAuthenticated: true });
       }
     } catch (e) {
-      console.error("Failed to initialize auth store", e);
+      console.error('Failed to initialize auth store', e);
     } finally {
       set({ isLoading: false });
     }
@@ -60,9 +60,9 @@ export const useAuthStore = create<AuthState>((set) => ({
 
   logout: async () => {
     if (isWeb) {
-      localStorage.removeItem("auth_token");
+      localStorage.removeItem('auth_token');
     } else {
-      await SecureStore.deleteItemAsync("auth_token");
+      await SecureStore.deleteItemAsync('auth_token');
     }
     set({ token: null, isAuthenticated: false, user: null });
   },
