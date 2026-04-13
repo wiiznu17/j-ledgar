@@ -1,765 +1,102 @@
 {
   "info": {
-    "_postman_id": "jledger-system-verification-v1",
-    "name": "J-Ledger Integration Tests",
-    "description": "System-wide integration verification for J-Ledger microservices. Tests Eureka registration, Gateway routing, Idempotency, Circuit Breaker fallback, and CORS.\n\nPrerequisites:\n1. Run `docker-compose up -d --build` in ascend-ledger-workspace/\n2. Seed two test accounts in PostgreSQL (see README)\n3. All containers must be in healthy/running state",
+    "_postman_id": "jledger-headless-v1",
+    "name": "J-Ledger BFF Integration",
+    "description": "System-wide integration verification for J-Ledger Headless Architecture.\n\nStructure:\n1. Wallet API (External): Customer-facing endpoints.\n2. Admin API (External): Staff-facing endpoints.\n3. Core Engine (Internal): Direct ledger logic (requires X-Internal-Secret).",
     "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
   },
   "variable": [
-    {
-      "key": "gateway",
-      "value": "http://localhost",
-      "type": "string",
-      "description": "API Gateway URL (via Nginx Port 80)"
-    },
-    {
-      "key": "core",
-      "value": "http://localhost:8081",
-      "type": "string",
-      "description": "Core Service direct URL (bypass gateway)"
-    },
-    {
-      "key": "eureka",
-      "value": "http://localhost:8761",
-      "type": "string",
-      "description": "Eureka Service Registry URL"
-    },
-    {
-      "key": "fromAccountId",
-      "value": "00000000-0000-0000-0000-000000000001",
-      "type": "string",
-      "description": "Sender account ID (Alice - seeded in DB)"
-    },
-    {
-      "key": "toAccountId",
-      "value": "00000000-0000-0000-0000-000000000002",
-      "type": "string",
-      "description": "Receiver account ID (Bob - seeded in DB)"
-    },
-    {
-      "key": "notification",
-      "value": "http://localhost:8082",
-      "type": "string",
-      "description": "Notification Service direct URL"
-    },
-    {
-      "key": "adminEmail",
-      "value": "admin@jledger.io",
-      "type": "string"
-    },
-    {
-      "key": "adminPassword",
-      "value": "password123",
-      "type": "string"
-    },
-    {
-      "key": "token",
-      "value": "",
-      "type": "string",
-      "description": "JWT Token populated by Login request"
-    }
+    { "key": "gateway", "value": "http://localhost:8080", "type": "string" },
+    { "key": "wallet_api", "value": "http://localhost:3002", "type": "string" },
+    { "key": "admin_api", "value": "http://localhost:3001", "type": "string" },
+    { "key": "internal_secret", "value": "jledger_ecosystem_secret_2024", "type": "string" },
+    { "key": "customer_token", "value": "", "type": "string" },
+    { "key": "admin_token", "value": "", "type": "string" }
   ],
   "item": [
     {
-      "name": "0. Authentication",
+      "name": "1. Wallet API (External)",
       "item": [
         {
-          "name": "0.1 Admin Login",
+          "name": "1.1 Register Customer",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"customer@jledger.local\",\n  \"password\": \"password123\",\n  \"pin\": \"123456\"\n}"
+            },
+            "url": { "raw": "{{wallet_api}}/users/register", "host": ["{{wallet_api}}"], "path": ["users", "register"] }
+          }
+        },
+        {
+          "name": "1.2 Customer Login",
+          "event": [{
+            "listen": "test",
+            "script": { "exec": ["const body = pm.response.json();", "pm.collectionVariables.set('customer_token', body.access_token);"], "type": "text/javascript" }
+          }],
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"customer@jledger.local\",\n  \"password\": \"password123\"\n}"
+            },
+            "url": { "raw": "{{wallet_api}}/auth/login", "host": ["{{wallet_api}}"], "path": ["auth", "login"] }
+          }
+        },
+        {
+          "name": "1.3 Execute Transfer (BFF)",
           "request": {
             "method": "POST",
             "header": [
-              {
-                "key": "Content-Type",
-                "value": "application/json"
-              }
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{customer_token}}" },
+              { "key": "Idempotency-Key", "value": "{{$guid}}" }
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n    \"email\": \"{{adminEmail}}\",\n    \"password\": \"{{adminPassword}}\"\n}"
+              "raw": "{\n  \"fromAccountId\": \"00000000-0000-0000-0000-000000000001\",\n  \"toAccountId\": \"00000000-0000-0000-0000-000000000002\",\n  \"amount\": \"100.00\",\n  \"currency\": \"THB\",\n  \"pin\": \"123456\"\n}"
             },
-            "url": {
-              "raw": "{{gateway}}/api/v1/auth/login",
-              "host": ["{{gateway}}"],
-              "path": ["api", "v1", "auth", "login"]
-            },
-            "description": "Authenticate with the system to obtain a JWT token. The token is automatically saved into the 'token' variable via the Test script."
-          },
-          "event": [
-            {
-              "listen": "test",
-              "script": {
-                "exec": [
-                  "pm.test('Login Successful', function() {",
-                  "    pm.response.to.have.status(200);",
-                  "    const body = pm.response.json();",
-                  "    pm.expect(body.token).to.exist;",
-                  "    pm.collectionVariables.set('token', body.token);",
-                  "});"
-                ],
-                "type": "text/javascript"
-              }
-            }
-          ]
+            "url": { "raw": "{{wallet_api}}/transactions/transfer", "host": ["{{wallet_api}}"], "path": ["transactions", "transfer"] }
+          }
         }
       ]
     },
     {
-      "name": "1. Service Discovery",
+      "name": "2. Admin API (External)",
       "item": [
         {
-          "name": "1.1 Get All Registered Eureka Apps",
+          "name": "2.1 Admin Login (Placeholder)",
           "request": {
-            "method": "GET",
-            "header": [
-              {
-                "key": "Accept",
-                "value": "application/json"
-              }
-            ],
-            "url": {
-              "raw": "{{eureka}}/eureka/apps",
-              "host": ["{{eureka}}"],
-              "path": ["eureka", "apps"]
-            },
-            "description": "Returns all services registered with Eureka. Verify that core-service, api-gateway, and notification-service all appear with status UP."
-          },
-          "response": [],
-          "event": [
-            {
-              "listen": "test",
-              "script": {
-                "exec": [
-                  "pm.test('Response is 200 OK', function() {",
-                  "    pm.response.to.have.status(200);",
-                  "});",
-                  "",
-                  "pm.test('Core service (core-service) is registered', function() {",
-                  "    pm.expect(pm.response.text()).to.include('CORE-SERVICE');",
-                  "});",
-                  "",
-                  "pm.test('API Gateway is registered', function() {",
-                  "    pm.expect(pm.response.text()).to.include('API-GATEWAY');",
-                  "});"
-                ],
-                "type": "text/javascript"
-              }
-            }
-          ]
-        },
-        {
-          "name": "1.2 Get Core Service Instance Details",
-          "request": {
-            "method": "GET",
-            "header": [
-              {
-                "key": "Accept",
-                "value": "application/json"
-              }
-            ],
-            "url": {
-              "raw": "{{eureka}}/eureka/apps/core-service",
-              "host": ["{{eureka}}"],
-              "path": ["eureka", "apps", "core-service"]
-            },
-            "description": "Get detailed instance info for core-service. Verify port 8081 and status UP."
-          },
-          "response": [],
-          "event": [
-            {
-              "listen": "test",
-              "script": {
-                "exec": [
-                  "pm.test('Response is 200 OK', function() {",
-                  "    pm.response.to.have.status(200);",
-                  "});",
-                  "",
-                  "pm.test('Instance status is UP', function() {",
-                  "    pm.expect(pm.response.text()).to.include('UP');",
-                  "});"
-                ],
-                "type": "text/javascript"
-              }
-            }
-          ]
+            "method": "POST",
+            "url": { "raw": "{{admin_api}}/auth/login", "host": ["{{admin_api}}"], "path": ["auth", "login"] }
+          }
         }
       ]
     },
     {
-      "name": "2. Gateway Routing",
+      "name": "3. Core Engine (Internal)",
       "item": [
         {
-          "name": "2.1 POST Transfer via Gateway (Routed to core-service)",
-          "request": {
-            "method": "POST",
-            "header": [
-              {
-                "key": "Content-Type",
-                "value": "application/json"
-              },
-              {
-                "key": "Authorization",
-                "value": "Bearer {{token}}"
-              },
-              {
-                "key": "Idempotency-Key",
-                "value": "{{$guid}}",
-                "description": "Dynamic UUID generated by Postman for each request"
-              }
-            ],
-            "body": {
-              "mode": "raw",
-              "raw": "{\n    \"fromAccountId\": \"{{fromAccountId}}\",\n    \"toAccountId\": \"{{toAccountId}}\",\n    \"amount\": \"100.0000\",\n    \"currency\": \"THB\"\n}",
-              "options": {
-                "raw": {
-                  "language": "json"
-                }
-              }
-            },
-            "url": {
-              "raw": "{{gateway}}/api/v1/transactions/transfer",
-              "host": ["{{gateway}}"],
-              "path": ["api", "v1", "transactions", "transfer"]
-            },
-            "description": "Executes a transfer routed through the API Gateway (port 8080) → core-service (port 8081 via lb://core-service). Verify the response includes a transaction ID and status SUCCESS."
-          },
-          "response": [],
-          "event": [
-            {
-              "listen": "test",
-              "script": {
-                "exec": [
-                  "pm.test('Response is 200 OK', function() {",
-                  "    pm.response.to.have.status(200);",
-                  "});",
-                  "",
-                  "pm.test('Response contains transaction ID', function() {",
-                  "    const body = pm.response.json();",
-                  "    pm.expect(body.id).to.exist;",
-                  "    pm.collectionVariables.set('lastTxId', body.id);",
-                  "});",
-                  "",
-                  "pm.test('Transaction status is SUCCESS', function() {",
-                  "    const body = pm.response.json();",
-                  "    pm.expect(body.status).to.equal('SUCCESS');",
-                  "});"
-                ],
-                "type": "text/javascript"
-              }
-            }
-          ]
-        },
-        {
-          "name": "2.2 POST Transfer Direct to Core (Bypass Gateway)",
-          "request": {
-            "method": "POST",
-            "header": [
-              {
-                "key": "Content-Type",
-                "value": "application/json"
-              },
-              {
-                "key": "Authorization",
-                "value": "Bearer {{token}}"
-              },
-              {
-                "key": "Idempotency-Key",
-                "value": "{{$guid}}"
-              }
-            ],
-            "body": {
-              "mode": "raw",
-              "raw": "{\n    \"fromAccountId\": \"{{fromAccountId}}\",\n    \"toAccountId\": \"{{toAccountId}}\",\n    \"amount\": \"50.0000\",\n    \"currency\": \"THB\"\n}",
-              "options": {
-                "raw": {
-                  "language": "json"
-                }
-              }
-            },
-            "url": {
-              "raw": "{{core}}/api/v1/transactions/transfer",
-              "host": ["{{core}}"],
-              "path": ["api", "v1", "transactions", "transfer"]
-            },
-            "description": "Calls core-service directly at port 8081, bypassing the gateway. Used to confirm the core service itself is healthy independent of gateway routing."
-          },
-          "response": [],
-          "event": [
-            {
-              "listen": "test",
-              "script": {
-                "exec": [
-                  "pm.test('Direct core-service call returns 200', function() {",
-                  "    pm.response.to.have.status(200);",
-                  "});",
-                  "",
-                  "pm.test('Response contains transaction ID', function() {",
-                  "    const body = pm.response.json();",
-                  "    pm.expect(body.id).to.exist;",
-                  "});"
-                ],
-                "type": "text/javascript"
-              }
-            }
-          ]
-        },
-        {
-          "name": "2.3 POST Idempotency — Duplicate Key (Expect Same TX ID)",
-          "request": {
-            "method": "POST",
-            "header": [
-              {
-                "key": "Content-Type",
-                "value": "application/json"
-              },
-              {
-                "key": "Authorization",
-                "value": "Bearer {{token}}"
-              },
-              {
-                "key": "Idempotency-Key",
-                "value": "test-idempotency-key-fixed-001",
-                "description": "FIXED key — run request 2.1 once with this key first, then run this to verify same TX is returned"
-              }
-            ],
-            "body": {
-              "mode": "raw",
-              "raw": "{\n    \"fromAccountId\": \"{{fromAccountId}}\",\n    \"toAccountId\": \"{{toAccountId}}\",\n    \"amount\": \"25.0000\",\n    \"currency\": \"THB\"\n}",
-              "options": {
-                "raw": {
-                  "language": "json"
-                }
-              }
-            },
-            "url": {
-              "raw": "{{gateway}}/api/v1/transactions/transfer",
-              "host": ["{{gateway}}"],
-              "path": ["api", "v1", "transactions", "transfer"]
-            },
-            "description": "Send the same Idempotency-Key twice. The second call must return the same transaction ID from Redis cache — the DB must NOT be hit again. Run twice and compare the `id` fields."
-          },
-          "response": [],
-          "event": [
-            {
-              "listen": "test",
-              "script": {
-                "exec": [
-                  "pm.test('Response is 200 OK', function() {",
-                  "    pm.response.to.have.status(200);",
-                  "});",
-                  "",
-                  "const body = pm.response.json();",
-                  "const previousTxId = pm.collectionVariables.get('idempotencyTestTxId');",
-                  "",
-                  "if (!previousTxId) {",
-                  "    pm.collectionVariables.set('idempotencyTestTxId', body.id);",
-                  "    console.log('First call — stored TX ID:', body.id);",
-                  "} else {",
-                  "    pm.test('Idempotency: Same TX ID returned from cache', function() {",
-                  "        pm.expect(body.id).to.equal(previousTxId);",
-                  "    });",
-                  "    pm.collectionVariables.unset('idempotencyTestTxId');",
-                  "}"
-                ],
-                "type": "text/javascript"
-              }
-            }
-          ]
-        }
-      ]
-    },
-    {
-      "name": "3. Resilience — Circuit Breaker",
-      "item": [
-        {
-          "name": "3.1 Transfer when Core-Service is DOWN (Expect Fallback)",
-          "request": {
-            "method": "POST",
-            "header": [
-              {
-                "key": "Content-Type",
-                "value": "application/json"
-              },
-              {
-                "key": "Authorization",
-                "value": "Bearer {{token}}"
-              },
-              {
-                "key": "Idempotency-Key",
-                "value": "{{$guid}}"
-              }
-            ],
-            "body": {
-              "mode": "raw",
-              "raw": "{\n    \"fromAccountId\": \"{{fromAccountId}}\",\n    \"toAccountId\": \"{{toAccountId}}\",\n    \"amount\": \"10.0000\",\n    \"currency\": \"THB\"\n}",
-              "options": {
-                "raw": {
-                  "language": "json"
-                }
-              }
-            },
-            "url": {
-              "raw": "{{gateway}}/api/v1/transactions/transfer",
-              "host": ["{{gateway}}"],
-              "path": ["api", "v1", "transactions", "transfer"]
-            },
-            "description": "PREREQUISITE: Run `docker stop jledger-core` before sending this request.\n\nThe gateway should return a fallback 503 response from FallbackController, NOT a raw connection error or 502.\n\nRestore with: `docker start jledger-core`"
-          },
-          "response": [],
-          "event": [
-            {
-              "listen": "test",
-              "script": {
-                "exec": [
-                  "pm.test('Fallback returns 503 Service Unavailable (not 502)', function() {",
-                  "    pm.expect(pm.response.code).to.be.oneOf([503, 200]);",
-                  "});",
-                  "",
-                  "pm.test('Fallback response body is not empty', function() {",
-                  "    pm.expect(pm.response.text()).to.not.be.empty;",
-                  "});"
-                ],
-                "type": "text/javascript"
-              }
-            }
-          ]
-        }
-      ]
-    },
-    {
-      "name": "4. CORS Verification",
-      "item": [
-        {
-          "name": "4.1 OPTIONS Preflight from admin-web Origin",
-          "request": {
-            "method": "OPTIONS",
-            "header": [
-              {
-                "key": "Origin",
-                "value": "http://localhost:3000",
-                "description": "Simulates browser preflight from Next.js admin-web"
-              },
-              {
-                "key": "Access-Control-Request-Method",
-                "value": "POST"
-              },
-              {
-                "key": "Access-Control-Request-Headers",
-                "value": "Content-Type, Idempotency-Key"
-              }
-            ],
-            "url": {
-              "raw": "{{gateway}}/api/v1/transactions/transfer",
-              "host": ["{{gateway}}"],
-              "path": ["api", "v1", "transactions", "transfer"]
-            },
-            "description": "Simulates the browser CORS preflight OPTIONS request that fires before any cross-origin POST. The response must include Access-Control-Allow-Origin: http://localhost:3000 for the browser to proceed."
-          },
-          "response": [],
-          "event": [
-            {
-              "listen": "test",
-              "script": {
-                "exec": [
-                  "pm.test('Preflight returns 200 OK', function() {",
-                  "    pm.response.to.have.status(200);",
-                  "});",
-                  "",
-                  "pm.test('Access-Control-Allow-Origin header is set for localhost:3000', function() {",
-                  "    pm.expect(pm.response.headers.get('Access-Control-Allow-Origin')).to.equal('http://localhost:3000');",
-                  "});",
-                  "",
-                  "pm.test('Access-Control-Allow-Methods includes POST', function() {",
-                  "    const methods = pm.response.headers.get('Access-Control-Allow-Methods');",
-                  "    pm.expect(methods).to.include('POST');",
-                  "});"
-                ],
-                "type": "text/javascript"
-              }
-            }
-          ]
-        }
-      ]
-    },
-    {
-      "name": "5. Swagger & Health",
-      "item": [
-        {
-          "name": "5.1 Core Service Swagger UI",
-          "request": {
-            "method": "GET",
-            "header": [],
-            "url": {
-              "raw": "{{core}}/swagger-ui.html",
-              "host": ["{{core}}"],
-              "path": ["swagger-ui.html"]
-            },
-            "description": "Verify Swagger UI is accessible on core-service. Should redirect to the full Swagger UI page."
-          },
-          "response": []
-        },
-        {
-          "name": "5.2 Core Service OpenAPI Spec",
+          "name": "3.1 Get All Eureka Apps",
           "request": {
             "method": "GET",
             "header": [
-              {
-                "key": "Accept",
-                "value": "application/json"
-              }
+              { "key": "X-Internal-Secret", "value": "{{internal_secret}}" }
             ],
-            "url": {
-              "raw": "{{core}}/v3/api-docs",
-              "host": ["{{core}}"],
-              "path": ["v3", "api-docs"]
-            },
-            "description": "Returns the full OpenAPI 3.0 spec JSON from core-service. Used to validate all endpoint definitions."
-          },
-          "response": [],
-          "event": [
-            {
-              "listen": "test",
-              "script": {
-                "exec": [
-                  "pm.test('OpenAPI spec is returned', function() {",
-                  "    pm.response.to.have.status(200);",
-                  "    const body = pm.response.json();",
-                  "    pm.expect(body.openapi).to.exist;",
-                  "});"
-                ],
-                "type": "text/javascript"
-              }
-            }
-          ]
-        }
-      ]
-    },
-    {
-      "name": "6. Admin & System APIs",
-      "item": [
+            "url": { "raw": "http://localhost:8761/eureka/apps", "protocol": "http", "host": ["localhost"], "port": "8761", "path": ["eureka", "apps"] }
+          }
+        },
         {
-          "name": "6.1 List Transactions (Paginated)",
+          "name": "3.2 Health Check (Gateway Path)",
           "request": {
             "method": "GET",
             "header": [
-              {
-                "key": "Authorization",
-                "value": "Bearer {{token}}"
-              }
+              { "key": "X-Internal-Secret", "value": "{{internal_secret}}" }
             ],
-            "url": {
-              "raw": "{{gateway}}/api/v1/transactions?page=0&size=20",
-              "host": ["{{gateway}}"],
-              "path": ["api", "v1", "transactions"],
-              "query": [
-                { "key": "page", "value": "0" },
-                { "key": "size", "value": "20" }
-              ]
-            },
-            "description": "Returns a paginated list of all transactions, ordered by created_at DESC."
-          },
-          "response": [],
-          "event": [
-            {
-              "listen": "test",
-              "script": {
-                "exec": [
-                  "pm.test('Response is 200 OK', function() {",
-                  "    pm.response.to.have.status(200);",
-                  "});",
-                  "pm.test('Pagination fields exist', function() {",
-                  "    const body = pm.response.json();",
-                  "    pm.expect(body.content).to.be.an('array');",
-                  "    pm.expect(body.totalElements).to.exist;",
-                  "});"
-                ],
-                "type": "text/javascript"
-              }
-            }
-          ]
-        },
-        {
-          "name": "6.2 Get Transaction Details with LedgerEntries",
-          "request": {
-            "method": "GET",
-            "header": [
-              {
-                "key": "Authorization",
-                "value": "Bearer {{token}}"
-              }
-            ],
-            "url": {
-              "raw": "{{gateway}}/api/v1/transactions/{{lastTxId}}",
-              "host": ["{{gateway}}"],
-              "path": ["api", "v1", "transactions", "{{lastTxId}}"]
-            },
-            "description": "Returns full details for a specific transaction, including its associated double-entry ledger records. {{lastTxId}} is set automatically after running request 2.1."
-          },
-          "response": [],
-          "event": [
-            {
-              "listen": "test",
-              "script": {
-                "exec": [
-                  "pm.test('Response is 200 OK', function() {",
-                  "    pm.response.to.have.status(200);",
-                  "});",
-                  "pm.test('Details include ledger entries', function() {",
-                  "    const body = pm.response.json();",
-                  "    pm.expect(body.transaction).to.exist;",
-                  "    pm.expect(body.ledgerEntries).to.be.an('array');",
-                  "    pm.expect(body.ledgerEntries.length).to.be.at.least(2);",
-                  "});"
-                ],
-                "type": "text/javascript"
-              }
-            }
-          ]
-        },
-        {
-          "name": "6.3 List All Accounts (Paginated)",
-          "request": {
-            "method": "GET",
-            "header": [
-              {
-                "key": "Authorization",
-                "value": "Bearer {{token}}"
-              }
-            ],
-            "url": {
-              "raw": "{{gateway}}/api/v1/accounts",
-              "host": ["{{gateway}}"],
-              "path": ["api", "v1", "accounts"]
-            },
-            "description": "Returns a paginated list of accounts with their current balances and status."
-          },
-          "response": [],
-          "event": [
-            {
-              "listen": "test",
-              "script": {
-                "exec": [
-                  "pm.test('Response is 200 OK', function() {",
-                  "    pm.response.to.have.status(200);",
-                  "});",
-                  "pm.test('Accounts list returned', function() {",
-                  "    pm.expect(pm.response.json().content).to.be.an('array');",
-                  "});"
-                ],
-                "type": "text/javascript"
-              }
-            }
-          ]
-        },
-        {
-          "name": "6.4 Update Account Status (e.g. FROZEN)",
-          "request": {
-            "method": "PUT",
-            "header": [
-              {
-                "key": "Content-Type",
-                "value": "application/json"
-              },
-              {
-                "key": "Authorization",
-                "value": "Bearer {{token}}"
-              }
-            ],
-            "body": {
-              "mode": "raw",
-              "raw": "{\n    \"status\": \"FROZEN\"\n}"
-            },
-            "url": {
-              "raw": "{{gateway}}/api/v1/accounts/{{fromAccountId}}/status",
-              "host": ["{{gateway}}"],
-              "path": ["api", "v1", "accounts", "{{fromAccountId}}", "status"]
-            },
-            "description": "Updates the status of an account. Set to FROZEN to test circuit breaker or business rule failures."
-          },
-          "response": [],
-          "event": [
-            {
-              "listen": "test",
-              "script": {
-                "exec": [
-                  "pm.test('Status update returns 200', function() {",
-                  "    pm.response.to.have.status(200);",
-                  "});",
-                  "pm.test('Account status is now FROZEN', function() {",
-                  "    pm.expect(pm.response.json().status).to.equal('FROZEN');",
-                  "});"
-                ],
-                "type": "text/javascript"
-              }
-            }
-          ]
-        },
-        {
-          "name": "6.5 Get System Outbox",
-          "request": {
-            "method": "GET",
-            "header": [
-              {
-                "key": "Authorization",
-                "value": "Bearer {{token}}"
-              }
-            ],
-            "url": {
-              "raw": "{{gateway}}/api/v1/system/outbox",
-              "host": ["{{gateway}}"],
-              "path": ["api", "v1", "system", "outbox"]
-            },
-            "description": "Returns all records in the integration_outbox table."
-          },
-          "response": [],
-          "event": [
-            {
-              "listen": "test",
-              "script": {
-                "exec": [
-                  "pm.test('Response is 200 OK', function() {",
-                  "    pm.response.to.have.status(200);",
-                  "});"
-                ],
-                "type": "text/javascript"
-              }
-            }
-          ]
-        },
-        {
-          "name": "6.6 System Reconciliation Summary",
-          "request": {
-            "method": "POST",
-            "header": [
-              {
-                "key": "Authorization",
-                "value": "Bearer {{token}}"
-              }
-            ],
-            "url": {
-              "raw": "{{gateway}}/api/v1/system/reconcile",
-              "host": ["{{gateway}}"],
-              "path": ["api", "v1", "system", "reconcile"]
-            },
-            "description": "Calculates and returns a reconciliation summary: sum of balance vs. sum of ledger entries."
-          },
-          "response": [],
-          "event": [
-            {
-              "listen": "test",
-              "script": {
-                "exec": [
-                  "pm.test('Reconciliation returns valid summary', function() {",
-                  "    pm.response.to.have.status(200);",
-                  "    const body = pm.response.json();",
-                  "    pm.expect(body.totalAccountBalances).to.exist;",
-                  "    pm.expect(body.totalCredits).to.exist;",
-                  "    pm.expect(body.totalDebits).to.exist;",
-                  "});"
-                ],
-                "type": "text/javascript"
-              }
-            }
-          ]
+            "url": { "raw": "{{gateway}}/api/core/actuator/health", "host": ["{{gateway}}"], "path": ["api", "core", "actuator", "health"] }
+          }
         }
       ]
     }
