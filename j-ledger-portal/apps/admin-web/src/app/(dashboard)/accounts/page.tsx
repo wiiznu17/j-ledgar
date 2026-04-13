@@ -14,14 +14,14 @@ export default function AccountsPage() {
   useEffect(() => {
     const role = document.cookie
       .split('; ')
-      .find(row => row.startsWith('user_role='))
+      .find((row) => row.startsWith('user_role='))
       ?.split('=')[1];
     if (role) setUserRole(role);
   }, []);
 
   const fetchAccounts = () => {
     fetch(`${API_BASE_URL}/api/v1/accounts?page=0&size=50`, {
-      credentials: 'include'
+      credentials: 'include',
     })
       .then((res) => {
         if (!res.ok) throw new Error('Network response was not ok');
@@ -43,7 +43,7 @@ export default function AccountsPage() {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ status: newStatus }),
-        credentials: 'include'
+        credentials: 'include',
       });
       if (!res.ok) throw new Error('Update failed');
       toast.success(`Account status updated to ${newStatus}`);
@@ -58,17 +58,17 @@ export default function AccountsPage() {
   return (
     <div className="space-y-6">
       <h2 className="text-3xl font-bold tracking-tight text-[#2D3748]">Accounts Management</h2>
-      
+
       <Card className="border-border shadow-sm">
         <CardHeader>
           <CardTitle>System Accounts</CardTitle>
           <CardDescription>View all accounts and manage their operational status.</CardDescription>
         </CardHeader>
         <CardContent>
-          <AccountTable 
-            data={data} 
-            onToggleStatus={handleToggleStatus} 
-            loading={loading} 
+          <AccountTable
+            data={data}
+            onToggleStatus={handleToggleStatus}
+            loading={loading}
             userRole={userRole}
           />
         </CardContent>
@@ -76,4 +76,3 @@ export default function AccountsPage() {
     </div>
   );
 }
-

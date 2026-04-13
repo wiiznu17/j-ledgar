@@ -4,7 +4,7 @@ import { executeTransfer } from '../src/app/actions/transfer';
 import React from 'react';
 
 jest.mock('../src/app/actions/transfer', () => ({
-  executeTransfer: jest.fn()
+  executeTransfer: jest.fn(),
 }));
 
 describe('TransferForm Client Component Isolation Test', () => {
@@ -22,15 +22,17 @@ describe('TransferForm Client Component Isolation Test', () => {
   it('displays accurate success state resolving mock action perfectly', async () => {
     (executeTransfer as jest.Mock).mockResolvedValueOnce({
       success: true,
-      data: { id: 'tx-223344' }
+      data: { id: 'tx-223344' },
     });
 
     render(<TransferForm />);
-    
+
     fireEvent.change(screen.getByLabelText('Source Account ID'), { target: { value: 'user-a' } });
-    fireEvent.change(screen.getByLabelText('Destination Account ID'), { target: { value: 'user-b' } });
+    fireEvent.change(screen.getByLabelText('Destination Account ID'), {
+      target: { value: 'user-b' },
+    });
     fireEvent.change(screen.getByLabelText('Amount'), { target: { value: '100' } });
-    
+
     fireEvent.submit(screen.getByTestId('transfer-form'));
 
     expect(screen.getByText('Processing...')).toBeInTheDocument();
@@ -43,14 +45,16 @@ describe('TransferForm Client Component Isolation Test', () => {
   it('displays accurate error boundary text resolving failed mock seamlessly', async () => {
     (executeTransfer as jest.Mock).mockResolvedValueOnce({
       success: false,
-      error: 'Lock contention blocked explicitly'
+      error: 'Lock contention blocked explicitly',
     });
 
     render(<TransferForm />);
 
     // Must populate required fields so native form validation doesn't block submission
     fireEvent.change(screen.getByLabelText('Source Account ID'), { target: { value: 'ac-1' } });
-    fireEvent.change(screen.getByLabelText('Destination Account ID'), { target: { value: 'ac-2' } });
+    fireEvent.change(screen.getByLabelText('Destination Account ID'), {
+      target: { value: 'ac-2' },
+    });
     fireEvent.change(screen.getByLabelText('Amount'), { target: { value: '22' } });
 
     fireEvent.submit(screen.getByTestId('transfer-form'));

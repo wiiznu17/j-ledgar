@@ -2,7 +2,14 @@
 
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from '@/components/ui/table';
 import { useParams } from 'next/navigation';
 import { useEffect, useState } from 'react';
 import { toast } from 'sonner';
@@ -50,18 +57,25 @@ export default function TransactionDetailsPage() {
   }, [id]);
 
   if (!data) {
-    return <div className="p-8 text-muted-foreground animate-pulse">Loading transaction details...</div>;
+    return (
+      <div className="p-8 text-muted-foreground animate-pulse">Loading transaction details...</div>
+    );
   }
 
   return (
     <div className="space-y-6">
       <div className="flex items-center gap-4">
         <h2 className="text-3xl font-bold tracking-tight">Transaction Details</h2>
-        <Badge variant="outline" className={
-          data.transaction.status === 'SUCCESS' ? 'border-green-500 text-green-600 bg-green-50' : 
-          data.transaction.status === 'FAILED' ? 'border-red-500 text-red-600 bg-red-50' : 
-          'border-orange-500 text-orange-600 bg-orange-50'
-        }>
+        <Badge
+          variant="outline"
+          className={
+            data.transaction.status === 'SUCCESS'
+              ? 'border-green-500 text-green-600 bg-green-50'
+              : data.transaction.status === 'FAILED'
+                ? 'border-red-500 text-red-600 bg-red-50'
+                : 'border-orange-500 text-orange-600 bg-orange-50'
+          }
+        >
           {data.transaction.status}
         </Badge>
       </div>
@@ -86,7 +100,9 @@ export default function TransactionDetailsPage() {
             </div>
             <div>
               <p className="text-sm text-muted-foreground">Amount Configured</p>
-              <p className="font-bold text-lg">{data.transaction.amount.toFixed(4)} {data.transaction.currency}</p>
+              <p className="font-bold text-lg">
+                {data.transaction.amount.toFixed(4)} {data.transaction.currency}
+              </p>
             </div>
           </CardContent>
         </Card>
@@ -110,12 +126,20 @@ export default function TransactionDetailsPage() {
                   {data.ledgerEntries.map((entry) => (
                     <TableRow key={entry.id}>
                       <TableCell>
-                        <Badge variant={entry.entryType === 'CREDIT' ? 'default' : 'destructive'} 
-                               className={entry.entryType === 'CREDIT' ? 'bg-chart-4 text-white hover:bg-chart-4/80 border-0' : 'bg-chart-3 text-white hover:bg-chart-3/80 border-0'}>
+                        <Badge
+                          variant={entry.entryType === 'CREDIT' ? 'default' : 'destructive'}
+                          className={
+                            entry.entryType === 'CREDIT'
+                              ? 'bg-chart-4 text-white hover:bg-chart-4/80 border-0'
+                              : 'bg-chart-3 text-white hover:bg-chart-3/80 border-0'
+                          }
+                        >
                           {entry.entryType}
                         </Badge>
                       </TableCell>
-                      <TableCell className="font-medium">{entry.account?.accountName || 'Unknown'}</TableCell>
+                      <TableCell className="font-medium">
+                        {entry.account?.accountName || 'Unknown'}
+                      </TableCell>
                       <TableCell className="text-right font-mono">
                         {entry.amount.toFixed(4)}
                       </TableCell>

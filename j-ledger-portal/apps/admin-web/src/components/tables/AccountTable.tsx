@@ -2,7 +2,14 @@
 
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from '@/components/ui/table';
 
 export interface Account {
   id: string;
@@ -20,7 +27,12 @@ interface AccountTableProps {
   userRole?: string;
 }
 
-export function AccountTable({ data, onToggleStatus, loading = false, userRole = 'SUPPORT_STAFF' }: AccountTableProps) {
+export function AccountTable({
+  data,
+  onToggleStatus,
+  loading = false,
+  userRole = 'SUPPORT_STAFF',
+}: AccountTableProps) {
   const isSuperAdmin = userRole === 'SUPER_ADMIN';
 
   return (
@@ -39,24 +51,33 @@ export function AccountTable({ data, onToggleStatus, loading = false, userRole =
           {data.map((acc) => (
             <TableRow key={acc.id} className="hover:bg-secondary/30 transition-colors">
               <TableCell className="font-medium">{acc.accountName}</TableCell>
-              <TableCell className="font-mono text-xs text-muted-foreground hidden md:table-cell">{acc.id}</TableCell>
+              <TableCell className="font-mono text-xs text-muted-foreground hidden md:table-cell">
+                {acc.id}
+              </TableCell>
               <TableCell className="text-right font-semibold">
                 {acc.balance.toFixed(4)} {acc.currency}
               </TableCell>
               <TableCell className="text-center">
-                <Badge variant="outline" className={
-                  acc.status === 'ACTIVE' ? 'border-primary text-primary bg-primary/5' : 'border-destructive text-destructive bg-destructive/5'
-                }>
+                <Badge
+                  variant="outline"
+                  className={
+                    acc.status === 'ACTIVE'
+                      ? 'border-primary text-primary bg-primary/5'
+                      : 'border-destructive text-destructive bg-destructive/5'
+                  }
+                >
                   {acc.status}
                 </Badge>
               </TableCell>
               {isSuperAdmin && (
                 <TableCell className="text-right">
-                  <Button 
-                    variant={acc.status === 'ACTIVE' ? 'destructive' : 'default'} 
+                  <Button
+                    variant={acc.status === 'ACTIVE' ? 'destructive' : 'default'}
                     size="sm"
                     disabled={loading}
-                    className={acc.status !== 'ACTIVE' ? 'bg-primary hover:bg-primary/90 text-white' : ''}
+                    className={
+                      acc.status !== 'ACTIVE' ? 'bg-primary hover:bg-primary/90 text-white' : ''
+                    }
                     onClick={() => onToggleStatus(acc.id, acc.status)}
                   >
                     {acc.status === 'ACTIVE' ? 'Freeze' : 'Unfreeze'}

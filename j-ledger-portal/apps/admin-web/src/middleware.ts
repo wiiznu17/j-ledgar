@@ -5,11 +5,11 @@ const SECRET = new TextEncoder().encode('JLedgerSecretKeyForJWTSecurityPhase7_20
 
 export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
-  
+
   // Exclude public files and auth APIs
   if (
-    pathname.startsWith('/_next') || 
-    pathname.startsWith('/api/auth') || 
+    pathname.startsWith('/_next') ||
+    pathname.startsWith('/api/auth') ||
     pathname === '/login' ||
     pathname === '/' ||
     pathname.includes('.')
@@ -35,7 +35,7 @@ export async function middleware(request: NextRequest) {
     if (role === 'RECONCILER' && (pathname === '/accounts' || pathname === '/users')) {
       return NextResponse.redirect(new URL('/dashboard', request.url));
     }
-    
+
     if (role !== 'SUPER_ADMIN' && pathname === '/users') {
       return NextResponse.redirect(new URL('/dashboard', request.url));
     }

@@ -7,7 +7,7 @@ import { API_BASE_URL } from '@/lib/api-config';
 export async function login(formData: FormData) {
   const email = formData.get('email');
   const password = formData.get('password');
-  
+
   if (!email || !password) return;
 
   let success = false;
@@ -25,7 +25,7 @@ export async function login(formData: FormData) {
 
     const data = await response.json();
     const cookieStore = await cookies();
-    
+
     // JWT Token for authentication
     cookieStore.set('admin_session', data.token, {
       httpOnly: true,
@@ -33,7 +33,7 @@ export async function login(formData: FormData) {
       maxAge: 60 * 60 * 24, // 1 day
       path: '/',
     });
-    
+
     // Storing role separately for easier access in UI components
     cookieStore.set('user_role', data.role, {
       httpOnly: false, // Accessible by client-side components if needed, or stick to Server side
@@ -41,7 +41,7 @@ export async function login(formData: FormData) {
       maxAge: 60 * 60 * 24,
       path: '/',
     });
-    
+
     success = true;
   } catch (error) {
     console.error('Login error:', error);

@@ -10,6 +10,7 @@
   },
   "devDependencies": {
     "prettier": "^3.7.4",
+    "@repo/prettier-config": "*",
     "react": "19.1.0",
     "react-dom": "19.1.0",
     "turbo": "^2.9.6",

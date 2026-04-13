@@ -1,4 +1,4 @@
-'use server'
+'use server';
 
 import { API_BASE_URL } from '@/lib/api-config';
 
@@ -6,7 +6,7 @@ export async function executeTransfer(formData: FormData) {
   const sourceAccountId = formData.get('sourceAccountId') as string;
   const destinationAccountId = formData.get('destinationAccountId') as string;
   const amount = formData.get('amount') as string;
-  const currency = formData.get('currency') as string || 'THB';
+  const currency = (formData.get('currency') as string) || 'THB';
 
   const idempotencyKey = crypto.randomUUID();
   const gatewayUrl = API_BASE_URL;
@@ -38,7 +38,7 @@ export async function executeTransfer(formData: FormData) {
     const data = await response.json();
     return { success: true, data };
   } catch (err: any) {
-    console.error("Transfer Error", err);
+    console.error('Transfer Error', err);
     return { success: false, error: 'Network error or gateway unreachable' };
   }
 }

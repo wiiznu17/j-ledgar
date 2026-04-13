@@ -2,7 +2,14 @@
 
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from '@/components/ui/table';
 import { useEffect, useState } from 'react';
 import { toast } from 'sonner';
 import { API_BASE_URL } from '@/lib/api-config';
@@ -31,11 +38,13 @@ export default function SystemOutboxPage() {
   return (
     <div className="space-y-6">
       <h2 className="text-3xl font-bold tracking-tight">System Outbox</h2>
-      
+
       <Card className="border-border shadow-sm">
         <CardHeader>
           <CardTitle>Kafka Event Outbox</CardTitle>
-          <CardDescription>Monitor pending and completed integration events to be published to Kafka.</CardDescription>
+          <CardDescription>
+            Monitor pending and completed integration events to be published to Kafka.
+          </CardDescription>
         </CardHeader>
         <CardContent>
           <div className="border rounded-lg overflow-hidden border-border bg-white">
@@ -53,16 +62,23 @@ export default function SystemOutboxPage() {
                 {data.map((event) => (
                   <TableRow key={event.id} className="hover:bg-secondary/30 transition-colors">
                     <TableCell>
-                      <Badge variant="outline" className={
-                        event.status === 'COMPLETED' ? 'border-primary text-primary bg-primary/5' : 
-                        event.status === 'FAILED' ? 'border-destructive text-destructive bg-destructive/5' :
-                        'border-accent text-accent bg-accent/5'
-                      }>
+                      <Badge
+                        variant="outline"
+                        className={
+                          event.status === 'COMPLETED'
+                            ? 'border-primary text-primary bg-primary/5'
+                            : event.status === 'FAILED'
+                              ? 'border-destructive text-destructive bg-destructive/5'
+                              : 'border-accent text-accent bg-accent/5'
+                        }
+                      >
                         {event.status}
                       </Badge>
                     </TableCell>
                     <TableCell className="font-medium">{event.eventType}</TableCell>
-                    <TableCell className="font-mono text-xs text-muted-foreground hidden lg:table-cell">{event.id}</TableCell>
+                    <TableCell className="font-mono text-xs text-muted-foreground hidden lg:table-cell">
+                      {event.id}
+                    </TableCell>
                     <TableCell>{new Date(event.createdAt).toLocaleString()}</TableCell>
                     <TableCell className="text-muted-foreground">
                       {event.processedAt ? new Date(event.processedAt).toLocaleString() : '-'}

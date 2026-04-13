@@ -65,8 +65,8 @@ export function LoginForm({ action }: LoginFormProps) {
         </div>
       </div>
 
-      <Button 
-        type="submit" 
+      <Button
+        type="submit"
         className="w-full h-12 text-base font-semibold text-white bg-gradient-to-r from-[var(--color-magenta)] to-[var(--color-pink)] hover:opacity-90 transition-opacity border-0"
       >
         Sign in

@@ -30,9 +30,9 @@ export function Topbar({ title = 'J-Ledger Admin', onToggle, onLogout }: TopbarP
         <ThemeToggle />
         {onLogout && (
           <form action={onLogout}>
-            <Button 
+            <Button
               type="submit"
-              variant="ghost" 
+              variant="ghost"
               size="sm"
               className="text-slate-600 hover:text-red-600 hover:bg-red-50 flex items-center gap-2 font-semibold"
             >

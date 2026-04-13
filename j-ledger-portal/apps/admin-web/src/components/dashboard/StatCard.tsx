@@ -9,7 +9,13 @@ interface StatCardProps {
   iconClassName?: string;
 }
 
-export function StatCard({ title, value, description, icon: Icon, iconClassName = "text-accent" }: StatCardProps) {
+export function StatCard({
+  title,
+  value,
+  description,
+  icon: Icon,
+  iconClassName = 'text-accent',
+}: StatCardProps) {
   return (
     <Card className="border-border shadow-sm">
       <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">

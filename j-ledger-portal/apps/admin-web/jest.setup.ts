@@ -1,4 +1,4 @@
-import '@testing-library/jest-dom'
+import '@testing-library/jest-dom';
 
 // Global mock for fetch can go here if needed.
 import { TextEncoder, TextDecoder } from 'util';

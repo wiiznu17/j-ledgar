@@ -45,8 +45,8 @@ export default function ReconcilePage() {
     <div className="space-y-6 max-w-4xl">
       <h2 className="text-3xl font-bold tracking-tight">System Reconciliation</h2>
       <p className="text-muted-foreground">
-        Run the end-of-day reconciliation hook to verify that total system balances match 
-        the double-entry ledger records exactly.
+        Run the end-of-day reconciliation hook to verify that total system balances match the
+        double-entry ledger records exactly.
       </p>
 
       <Card className="border-border shadow-sm">
@@ -55,8 +55,8 @@ export default function ReconcilePage() {
           <CardDescription>Operations may take a few moments on large datasets.</CardDescription>
         </CardHeader>
         <CardContent className="flex items-center gap-4">
-          <Button 
-            onClick={runReconciliation} 
+          <Button
+            onClick={runReconciliation}
             disabled={loading}
             className="h-12 px-8 text-base font-semibold text-white bg-gradient-to-r from-[var(--color-magenta)] to-[var(--color-pink)] hover:opacity-90 transition-opacity border-0"
           >
@@ -66,7 +66,9 @@ export default function ReconcilePage() {
       </Card>
 
       {summary && (
-        <Card className={`border-border shadow-sm ${(!summary.isBalanced || !summary.ledgerIntegrityIntact) ? 'border-destructive/50 bg-destructive/5' : 'border-primary/50 bg-primary/5'}`}>
+        <Card
+          className={`border-border shadow-sm ${!summary.isBalanced || !summary.ledgerIntegrityIntact ? 'border-destructive/50 bg-destructive/5' : 'border-primary/50 bg-primary/5'}`}
+        >
           <CardHeader>
             <div className="flex items-center gap-3">
               {summary.isBalanced && summary.ledgerIntegrityIntact ? (
@@ -76,36 +78,56 @@ export default function ReconcilePage() {
               )}
               <div>
                 <CardTitle>Reconciliation Report</CardTitle>
-                <CardDescription>Generated at {new Date(summary.timestamp).toLocaleString()}</CardDescription>
+                <CardDescription>
+                  Generated at {new Date(summary.timestamp).toLocaleString()}
+                </CardDescription>
               </div>
             </div>
           </CardHeader>
           <CardContent>
             <div className="grid gap-6 md:grid-cols-3 mb-6">
               <div className="bg-white p-4 rounded-lg border border-border">
-                <p className="text-sm border-b pb-2 mb-2 text-muted-foreground font-medium">Total Account Balances</p>
-                <p className="text-2xl font-mono text-foreground">{summary.totalAccountBalances.toFixed(4)}</p>
+                <p className="text-sm border-b pb-2 mb-2 text-muted-foreground font-medium">
+                  Total Account Balances
+                </p>
+                <p className="text-2xl font-mono text-foreground">
+                  {summary.totalAccountBalances.toFixed(4)}
+                </p>
               </div>
               <div className="bg-white p-4 rounded-lg border border-border">
-                <p className="text-sm border-b pb-2 mb-2 text-muted-foreground font-medium">Total Ledger Credits</p>
-                <p className="text-2xl font-mono text-foreground">{summary.totalCredits.toFixed(4)}</p>
+                <p className="text-sm border-b pb-2 mb-2 text-muted-foreground font-medium">
+                  Total Ledger Credits
+                </p>
+                <p className="text-2xl font-mono text-foreground">
+                  {summary.totalCredits.toFixed(4)}
+                </p>
               </div>
               <div className="bg-white p-4 rounded-lg border border-border">
-                <p className="text-sm border-b pb-2 mb-2 text-muted-foreground font-medium">Total Ledger Debits</p>
-                <p className="text-2xl font-mono text-foreground">{summary.totalDebits.toFixed(4)}</p>
+                <p className="text-sm border-b pb-2 mb-2 text-muted-foreground font-medium">
+                  Total Ledger Debits
+                </p>
+                <p className="text-2xl font-mono text-foreground">
+                  {summary.totalDebits.toFixed(4)}
+                </p>
               </div>
             </div>
 
             <div className="bg-white p-4 rounded-lg border border-border space-y-3">
               <div className="flex items-center justify-between">
-                <span className="font-medium text-foreground">Ledger Integrity (Debits == Credits):</span>
-                <span className={`font-semibold ${summary.ledgerIntegrityIntact ? 'text-green-600' : 'text-red-600'}`}>
+                <span className="font-medium text-foreground">
+                  Ledger Integrity (Debits == Credits):
+                </span>
+                <span
+                  className={`font-semibold ${summary.ledgerIntegrityIntact ? 'text-green-600' : 'text-red-600'}`}
+                >
                   {summary.ledgerIntegrityIntact ? 'PASSED' : 'FAILED'}
                 </span>
               </div>
               <div className="flex items-center justify-between border-t pt-3">
                 <span className="font-medium text-foreground">Total Balance vs Credits Valid:</span>
-                <span className={`font-semibold ${summary.isBalanced ? 'text-green-600' : 'text-red-600'}`}>
+                <span
+                  className={`font-semibold ${summary.isBalanced ? 'text-green-600' : 'text-red-600'}`}
+                >
                   {summary.isBalanced ? 'PASSED' : 'FAILED'}
                 </span>
               </div>

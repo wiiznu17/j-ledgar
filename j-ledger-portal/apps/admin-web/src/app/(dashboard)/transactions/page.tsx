@@ -24,20 +24,16 @@ export default function TransactionsPage() {
   return (
     <div className="space-y-6">
       <h2 className="text-3xl font-bold tracking-tight">Transactions</h2>
-      
+
       <Card className="border-border shadow-sm">
         <CardHeader>
           <CardTitle>Recent Transactions</CardTitle>
           <CardDescription>A paginated list of all ledger transactions.</CardDescription>
         </CardHeader>
         <CardContent>
-          <TransactionTable 
-            data={data} 
-            onRowClick={(id) => router.push(`/transactions/${id}`)} 
-          />
+          <TransactionTable data={data} onRowClick={(id) => router.push(`/transactions/${id}`)} />
         </CardContent>
       </Card>
     </div>
   );
 }
-

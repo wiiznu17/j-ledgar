@@ -62,25 +62,27 @@ export default function DashboardPage() {
     <div className="space-y-8">
       <div>
         <h2 className="text-3xl font-bold tracking-tight">Dashboard Overview</h2>
-        <p className="text-muted-foreground mt-2">Welcome back. Here is the daily summary of your ledger system.</p>
+        <p className="text-muted-foreground mt-2">
+          Welcome back. Here is the daily summary of your ledger system.
+        </p>
       </div>
 
       <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4">
-        <StatCard 
+        <StatCard
           title="Total System Balance"
           value={`${totalBalance} THB`}
           description="Across all ledgers"
           icon={DollarSign}
         />
-        
-        <StatCard 
+
+        <StatCard
           title="Total Transactions"
           value={totalTransactions}
           description="Processed successfully"
           icon={ArrowRightLeft}
         />
 
-        <StatCard 
+        <StatCard
           title="Active Accounts"
           value={totalAccounts}
           description="Total registered users"
@@ -94,4 +96,3 @@ export default function DashboardPage() {
     </div>
   );
 }
-

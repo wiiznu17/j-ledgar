@@ -1,7 +1,14 @@
 'use client';
 
 import { Badge } from '@/components/ui/badge';
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from '@/components/ui/table';
 
 export interface Transaction {
   id: string;
@@ -32,8 +39,8 @@ export function TransactionTable({ data, onRowClick }: TransactionTableProps) {
         </TableHeader>
         <TableBody>
           {data.map((tx) => (
-            <TableRow 
-              key={tx.id} 
+            <TableRow
+              key={tx.id}
               className="cursor-pointer hover:bg-secondary/30 transition-colors"
               onClick={() => onRowClick(tx.id)}
             >
@@ -44,11 +51,16 @@ export function TransactionTable({ data, onRowClick }: TransactionTableProps) {
                 {tx.amount.toFixed(4)} {tx.currency}
               </TableCell>
               <TableCell className="text-center">
-                <Badge variant="outline" className={
-                  tx.status === 'SUCCESS' ? 'border-green-500 text-green-600 bg-green-50' : 
-                  tx.status === 'FAILED' ? 'border-red-500 text-red-600 bg-red-50' : 
-                  'border-orange-500 text-orange-600 bg-orange-50'
-                }>
+                <Badge
+                  variant="outline"
+                  className={
+                    tx.status === 'SUCCESS'
+                      ? 'border-green-500 text-green-600 bg-green-50'
+                      : tx.status === 'FAILED'
+                        ? 'border-red-500 text-red-600 bg-red-50'
+                        : 'border-orange-500 text-orange-600 bg-orange-50'
+                  }
+                >
                   {tx.status}
                 </Badge>
               </TableCell>

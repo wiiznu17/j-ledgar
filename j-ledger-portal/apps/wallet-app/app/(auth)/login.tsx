@@ -1,8 +1,8 @@
-import React from "react";
-import { View, Text, TouchableOpacity, TextInput } from "react-native";
-import { SafeAreaView } from "react-native-safe-area-context";
-import { useAuthStore } from "@/src/store/auth";
-import { useRouter } from "expo-router";
+import React from 'react';
+import { View, Text, TouchableOpacity, TextInput } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
+import { useAuthStore } from '@/src/store/auth';
+import { useRouter } from 'expo-router';
 
 export default function LoginScreen() {
   const setToken = useAuthStore((state) => state.setToken);
@@ -10,8 +10,8 @@ export default function LoginScreen() {
 
   const handleLogin = async () => {
     // Mock login for now
-    await setToken("mock_token_123");
-    router.replace("/(tabs)");
+    await setToken('mock_token_123');
+    router.replace('/(tabs)');
   };
 
   return (

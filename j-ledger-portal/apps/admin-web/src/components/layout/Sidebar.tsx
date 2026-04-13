@@ -1,6 +1,15 @@
 'use client';
 
-import { Activity, CreditCard, LayoutDashboard, LogOut, Send, ShieldCheck, Users, LucideIcon } from 'lucide-react';
+import {
+  Activity,
+  CreditCard,
+  LayoutDashboard,
+  LogOut,
+  Send,
+  ShieldCheck,
+  Users,
+  LucideIcon,
+} from 'lucide-react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { Button } from '@/components/ui/button';
@@ -21,23 +30,34 @@ interface SidebarProps {
 const navigation: NavigationItem[] = [
   { name: 'Dashboard', href: '/dashboard', icon: LayoutDashboard },
   { name: 'Transactions', href: '/transactions', icon: Activity },
-  { name: 'Accounts', href: '/accounts', icon: CreditCard, roles: ['SUPER_ADMIN', 'SUPPORT_STAFF'] },
+  {
+    name: 'Accounts',
+    href: '/accounts',
+    icon: CreditCard,
+    roles: ['SUPER_ADMIN', 'SUPPORT_STAFF'],
+  },
   { name: 'System Outbox', href: '/system/outbox', icon: Send },
   { name: 'Reconcile', href: '/reconcile', icon: ShieldCheck },
   { name: 'Users', href: '/users', icon: Users, roles: ['SUPER_ADMIN'] },
 ];
 
-export function Sidebar({ onLogout, isCollapsed = false, userRole = 'SUPPORT_STAFF' }: SidebarProps) {
+export function Sidebar({
+  onLogout,
+  isCollapsed = false,
+  userRole = 'SUPPORT_STAFF',
+}: SidebarProps) {
   const pathname = usePathname();
   return (
-    <aside 
+    <aside
       className={`bg-gradient-to-b from-[#E0F2FE] via-white to-[#FCE7F3] border-r border-border flex-col hidden lg:flex h-full transition-all duration-300 ease-in-out ${
         isCollapsed ? 'w-20' : 'w-64'
       }`}
     >
-      <div className={`h-16 flex items-center border-b border-border/50 flex-shrink-0 transition-all duration-300 ${
-        isCollapsed ? 'justify-center px-0' : 'px-6'
-      }`}>
+      <div
+        className={`h-16 flex items-center border-b border-border/50 flex-shrink-0 transition-all duration-300 ${
+          isCollapsed ? 'justify-center px-0' : 'px-6'
+        }`}
+      >
         <div className="w-8 h-8 rounded-lg bg-gradient-to-r from-[var(--color-magenta)] to-[var(--color-pink)] flex items-center justify-center shadow-md flex-shrink-0">
           <ShieldCheck className="w-5 h-5 text-white" />
         </div>
@@ -47,11 +67,11 @@ export function Sidebar({ onLogout, isCollapsed = false, userRole = 'SUPPORT_STA
           </span>
         )}
       </div>
-      
+
       <nav className="flex-1 px-3 py-6 space-y-2 overflow-y-auto">
         {navigation.map((item) => {
           if (item.roles && !item.roles.includes(userRole)) return null;
-          
+
           const isActive = pathname === item.href || pathname.startsWith(item.href + '/');
           return (
             <Link
@@ -82,19 +102,22 @@ export function Sidebar({ onLogout, isCollapsed = false, userRole = 'SUPPORT_STA
         })}
       </nav>
 
-      
-      <div className={`p-4 border-t border-border/50 flex-shrink-0 transition-all duration-300 ${
-        isCollapsed ? 'flex justify-center' : ''
-      }`}>
+      <div
+        className={`p-4 border-t border-border/50 flex-shrink-0 transition-all duration-300 ${
+          isCollapsed ? 'flex justify-center' : ''
+        }`}
+      >
         <form action={onLogout} className="w-full">
-          <Button 
+          <Button
             type="submit"
-            variant="ghost" 
+            variant="ghost"
             className={`text-slate-600 hover:bg-slate-500/5 hover:text-slate-900 w-full transition-all ${
               isCollapsed ? 'px-0 justify-center' : 'justify-start'
             }`}
           >
-            <LogOut className={`flex-shrink-0 ${isCollapsed ? 'h-6 w-6' : 'mr-3 w-5 h-5 text-slate-500'}`} />
+            <LogOut
+              className={`flex-shrink-0 ${isCollapsed ? 'h-6 w-6' : 'mr-3 w-5 h-5 text-slate-500'}`}
+            />
             {!isCollapsed && <span className="font-semibold text-sm">Sign out</span>}
           </Button>
         </form>

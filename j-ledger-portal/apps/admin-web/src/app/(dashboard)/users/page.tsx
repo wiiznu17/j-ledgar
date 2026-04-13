@@ -3,12 +3,33 @@
 import { useEffect, useState } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
-import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
 import { Plus, UserPlus, Trash2 } from 'lucide-react';
 import { toast } from 'sonner';
 import { API_BASE_URL } from '@/lib/api-config';
@@ -31,7 +52,7 @@ export default function UsersPage() {
 
   const fetchUsers = () => {
     fetch(`${API_BASE_URL}/api/v1/users`, { credentials: 'include' })
-      .then(res => {
+      .then((res) => {
         if (!res.ok) throw new Error('Unauthorized');
         return res.json();
       })
@@ -51,11 +72,11 @@ export default function UsersPage() {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email: newEmail, password: newPassword, role: newRole }),
-        credentials: 'include'
+        credentials: 'include',
       });
 
       if (!res.ok) throw new Error('Failed to create user');
-      
+
       toast.success('Admin user created successfully');
       setNewEmail('');
       setNewPassword('');
@@ -70,11 +91,11 @@ export default function UsersPage() {
 
   const handleDeleteUser = async (id: number) => {
     if (!confirm('Are you sure you want to delete this user?')) return;
-    
+
     try {
       const res = await fetch(`${API_BASE_URL}/api/v1/users/${id}`, {
         method: 'DELETE',
-        credentials: 'include'
+        credentials: 'include',
       });
       if (!res.ok) throw new Error('Delete failed');
       toast.success('User deleted');
@@ -88,14 +109,16 @@ export default function UsersPage() {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <h2 className="text-3xl font-bold tracking-tight text-[#2D3748]">User Management</h2>
-        
+
         <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-          <DialogTrigger render={
-            <Button className="bg-gradient-to-r from-[var(--color-magenta)] to-[var(--color-pink)] text-white border-0">
-              <UserPlus className="mr-2 h-4 w-4" />
-              Create User
-            </Button>
-          } />
+          <DialogTrigger
+            render={
+              <Button className="bg-gradient-to-r from-[var(--color-magenta)] to-[var(--color-pink)] text-white border-0">
+                <UserPlus className="mr-2 h-4 w-4" />
+                Create User
+              </Button>
+            }
+          />
           <DialogContent className="sm:max-w-[425px] bg-white">
             <form onSubmit={handleCreateUser}>
               <DialogHeader>
@@ -107,10 +130,10 @@ export default function UsersPage() {
               <div className="grid gap-4 py-4">
                 <div className="grid gap-2">
                   <Label htmlFor="email">Email address</Label>
-                  <Input 
-                    id="email" 
-                    type="email" 
-                    placeholder="name@jledger.io" 
+                  <Input
+                    id="email"
+                    type="email"
+                    placeholder="name@jledger.io"
                     value={newEmail}
                     onChange={(e) => setNewEmail(e.target.value)}
                     required
@@ -118,9 +141,9 @@ export default function UsersPage() {
                 </div>
                 <div className="grid gap-2">
                   <Label htmlFor="password">Temporary Password</Label>
-                  <Input 
-                    id="password" 
-                    type="password" 
+                  <Input
+                    id="password"
+                    type="password"
                     value={newPassword}
                     onChange={(e) => setNewPassword(e.target.value)}
                     required
@@ -141,7 +164,11 @@ export default function UsersPage() {
                 </div>
               </div>
               <DialogFooter>
-                <Button type="submit" disabled={loading} className="w-full bg-primary text-white hover:bg-primary/90">
+                <Button
+                  type="submit"
+                  disabled={loading}
+                  className="w-full bg-primary text-white hover:bg-primary/90"
+                >
                   {loading ? 'Creating...' : 'Confirm Registration'}
                 </Button>
               </DialogFooter>
@@ -170,15 +197,25 @@ export default function UsersPage() {
                   <TableRow key={user.id} className="hover:bg-secondary/30 transition-colors">
                     <TableCell className="font-medium">{user.email}</TableCell>
                     <TableCell>
-                      <Badge variant="outline" className={
-                        user.role === 'SUPER_ADMIN' ? 'border-primary text-primary bg-primary/5' : 'text-slate-600'
-                      }>
+                      <Badge
+                        variant="outline"
+                        className={
+                          user.role === 'SUPER_ADMIN'
+                            ? 'border-primary text-primary bg-primary/5'
+                            : 'text-slate-600'
+                        }
+                      >
                         {user.role}
                       </Badge>
                     </TableCell>
                     <TableCell className="text-right">
                       {user.email !== 'admin@jledger.io' && (
-                        <Button variant="ghost" size="icon" onClick={() => handleDeleteUser(user.id)} className="text-destructive hover:bg-destructive/5">
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          onClick={() => handleDeleteUser(user.id)}
+                          className="text-destructive hover:bg-destructive/5"
+                        >
                           <Trash2 className="h-4 w-4" />
                         </Button>
                       )}
@@ -187,7 +224,9 @@ export default function UsersPage() {
                 ))}
                 {users.length === 0 && (
                   <TableRow>
-                     <TableCell colSpan={3} className="h-24 text-center text-muted-foreground">Empty directory.</TableCell>
+                    <TableCell colSpan={3} className="h-24 text-center text-muted-foreground">
+                      Empty directory.
+                    </TableCell>
                   </TableRow>
                 )}
               </TableBody>

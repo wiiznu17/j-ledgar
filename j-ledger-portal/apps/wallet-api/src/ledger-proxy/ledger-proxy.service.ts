@@ -7,7 +7,8 @@ export class LedgerProxyService {
   constructor(private readonly httpService: HttpService) {}
 
   private readonly gatewayUrl = process.env.API_GATEWAY_URL || 'http://localhost:8080';
-  private readonly internalSecret = process.env.JLEDGER_INTERNAL_SECRET || 'jledger_ecosystem_secret_2024';
+  private readonly internalSecret =
+    process.env.JLEDGER_INTERNAL_SECRET || 'jledger_ecosystem_secret_2024';
 
   async forwardToGateway(
     method: 'get' | 'post' | 'put' | 'delete',
