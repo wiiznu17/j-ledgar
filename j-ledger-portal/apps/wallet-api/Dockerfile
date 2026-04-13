@@ -6,7 +6,7 @@ RUN apk add --no-cache libc6-compat
 WORKDIR /app
 RUN npm install -g turbo
 COPY . .
-RUN turbo prune admin-web --docker
+RUN turbo prune wallet-api --docker
 
 # --- Stage 2: Installer ---
 FROM base AS installer
@@ -22,28 +22,21 @@ RUN npm install
 # Build the project
 COPY --from=pruner /app/out/full/ .
 COPY turbo.json turbo.json
-RUN npx turbo build --filter=admin-web
+RUN npx prisma generate --schema=apps/wallet-api/prisma/schema.prisma
+RUN npx turbo build --filter=wallet-api
 
 # --- Stage 3: Runner ---
 FROM base AS runner
 WORKDIR /app
 
-ENV NODE_ENV=production
-
 # Don't run production as root
 RUN addgroup --system --gid 1001 nodejs
-RUN adduser --system --uid 1001 nextjs
+RUN adduser --system --uid 1001 nestjs
+USER nestjs
 
-# Automatically leverage output: 'standalone' from next.config.ts
-COPY --from=installer --chown=nextjs:nodejs /app/apps/admin-web/.next/standalone ./
-COPY --from=installer --chown=nextjs:nodejs /app/apps/admin-web/.next/static ./apps/admin-web/.next/static
-COPY --from=installer --chown=nextjs:nodejs /app/apps/admin-web/public ./apps/admin-web/public
+COPY --from=installer /app/apps/wallet-api/package.json .
+COPY --from=installer /app/apps/wallet-api/dist ./dist
+COPY --from=installer /app/node_modules ./node_modules
+COPY --from=installer /app/package.json .
 
-USER nextjs
-
-EXPOSE 3000
-
-ENV PORT=3000
-ENV HOSTNAME="0.0.0.0"
-
-CMD ["node", "apps/admin-web/server.js"]
+CMD ["node", "dist/main"]
