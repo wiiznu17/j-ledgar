@@ -13,6 +13,10 @@
     "check-types": {
       "dependsOn": ["^check-types"]
     },
+    "generate": {
+      "dependsOn": ["^generate"],
+      "inputs": ["prisma/schema.prisma"]
+    },
     "dev": {
       "cache": false,
       "persistent": true

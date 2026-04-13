@@ -1,13 +1,13 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { INestApplication, ValidationPipe } from '@nestjs/common';
-import * as request from 'supertest';
+import request from 'supertest';
 import { AppModule } from './../src/app.module';
 import { LedgerProxyService } from './../src/ledger-proxy/ledger-proxy.service';
 import { PrismaService } from './../src/prisma/prisma.service';
 
 describe('Transaction Flow (e2e)', () => {
   let app: INestApplication;
-  const mockUsers = [];
+  const mockUsers: any[] = [];
   const mockPrisma = {
     user: {
       findUnique: jest.fn().mockImplementation(({ where }) => {
@@ -69,7 +69,7 @@ describe('Transaction Flow (e2e)', () => {
       .post('/users/register')
       .send(testUser)
       .expect(201)
-      .expect((res) => {
+      .expect((res: any) => {
         expect(res.body.email).toEqual(testUser.email);
       });
   });
@@ -111,7 +111,7 @@ describe('Transaction Flow (e2e)', () => {
         pin: testUser.pin,
       })
       .expect(201)
-      .expect((res) => {
+      .expect((res: any) => {
         expect(res.body.status).toEqual('SUCCESS');
         expect(mockLedgerProxy.forwardToGateway).toHaveBeenCalled();
       });

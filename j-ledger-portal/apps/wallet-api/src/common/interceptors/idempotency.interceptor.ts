@@ -13,7 +13,7 @@ import { REQUIRE_IDEMPOTENCY_KEY } from '../decorators/idempotency.decorator';
 export class IdempotencyInterceptor implements NestInterceptor {
   constructor(private reflector: Reflector) {}
 
-  intercept(context: ExecutionContext, next: CallHandler): Observable<any> {
+  intercept(context: ExecutionContext, next: CallHandler): any {
     const isIdempotencyRequired = this.reflector.getAllAndOverride<boolean>(
       REQUIRE_IDEMPOTENCY_KEY,
       [context.getHandler(), context.getClass()],
@@ -28,6 +28,6 @@ export class IdempotencyInterceptor implements NestInterceptor {
       }
     }
 
-    return next.handle();
+    return next.handle() as any;
   }
 }
