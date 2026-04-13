@@ -3,7 +3,7 @@ import { jwtVerify } from 'jose';
 
 const SECRET = new TextEncoder().encode('JLedgerSecretKeyForJWTSecurityPhase7_2024_Placeholder');
 
-export async function middleware(request: NextRequest) {
+export async function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
   // Exclude public files and auth APIs

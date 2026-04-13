@@ -5,5 +5,6 @@ import { LedgerProxyService } from './ledger-proxy.service';
 @Module({
   imports: [HttpModule],
   providers: [LedgerProxyService],
+  exports: [LedgerProxyService],
 })
 export class LedgerProxyModule {}
