@@ -70,8 +70,8 @@ j-ledger/
 j-ledger-plus/
 
 docker-compose.override.yml
-ascend-ledger-workspace/.env.admin
-ascend-ledger-workspace/.k8s/overlays/dev/.env.admin
-ascend-ledger-workspace/.k8s/base/secret.yaml
-ascend-ledger-workspace/.env
+j-ledger-core/.env.admin
+j-ledger-core/.k8s/overlays/dev/.env.admin
+j-ledger-core/.k8s/base/secret.yaml
+j-ledger-core/.env
 
