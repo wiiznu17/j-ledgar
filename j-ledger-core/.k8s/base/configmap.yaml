@@ -10,3 +10,7 @@ data:
   JLEDGER_KAFKA_BOOTSTRAP_SERVERS: "kafka-service:9092"
   EUREKA_CLIENT_SERVICEURL_DEFAULTZONE: "http://eureka-server:8761/eureka/"
   API_GATEWAY_URL: "http://api-gateway:8080"
+  ADMIN_API_DATABASE_URL: "postgresql://ledger_admin:ledger_password@postgres-service:5432/jledger_db?schema=admin_schema"
+  WALLET_API_DATABASE_URL: "postgresql://ledger_admin:ledger_password@postgres-service:5432/jledger_db?schema=wallet_schema"
+  ADMIN_API_URL: "http://admin-api:3001"
+  WALLET_API_URL: "http://wallet-api:3002"
