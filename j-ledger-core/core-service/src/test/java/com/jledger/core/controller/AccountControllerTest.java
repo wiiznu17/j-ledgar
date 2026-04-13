@@ -8,8 +8,12 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import org.springframework.security.test.context.support.WithMockUser;
 import com.jledger.core.domain.Account;
 import com.jledger.core.repository.AccountRepository;
+import com.jledger.core.repository.IntegrationOutboxRepository;
+import com.jledger.core.repository.LedgerEntryRepository;
+import com.jledger.core.repository.TransactionRepository;
 import java.math.BigDecimal;
 import java.util.Map;
 import java.util.UUID;
@@ -29,10 +33,12 @@ import org.testcontainers.junit.jupiter.Testcontainers;
 
 @SpringBootTest(properties = {
     "jledger.outbox.initial-delay-ms=600000",
-    "jledger.outbox.fixed-delay-ms=600000"
+    "jledger.outbox.fixed-delay-ms=600000",
+    "eureka.client.enabled=false"
 })
-@AutoConfigureMockMvc
+@AutoConfigureMockMvc(addFilters = false)
 @Testcontainers
+@WithMockUser(roles = "SUPER_ADMIN")
 class AccountControllerTest {
 
     @Container
@@ -50,6 +56,9 @@ class AccountControllerTest {
     @Autowired private MockMvc mockMvc;
     @Autowired private ObjectMapper objectMapper;
     @Autowired private AccountRepository accountRepository;
+    @Autowired private TransactionRepository transactionRepository;
+    @Autowired private LedgerEntryRepository ledgerEntryRepository;
+    @Autowired private IntegrationOutboxRepository integrationOutboxRepository;
 
     @DynamicPropertySource
     static void configureProperties(DynamicPropertyRegistry registry) {
@@ -66,6 +75,9 @@ class AccountControllerTest {
 
     @BeforeEach
     void cleanDatabase() {
+        integrationOutboxRepository.deleteAllInBatch();
+        ledgerEntryRepository.deleteAllInBatch();
+        transactionRepository.deleteAllInBatch();
         accountRepository.deleteAllInBatch();
     }
 
