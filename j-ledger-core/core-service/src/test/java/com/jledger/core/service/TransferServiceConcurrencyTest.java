@@ -34,7 +34,10 @@ import org.testcontainers.containers.PostgreSQLContainer;
 import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
 
-@SpringBootTest(properties = "jledger.outbox.initial-delay-ms=600000")
+@SpringBootTest(properties = {
+    "jledger.outbox.initial-delay-ms=600000",
+    "eureka.client.enabled=false"
+})
 @Testcontainers
 class TransferServiceConcurrencyTest {
 

@@ -5,6 +5,7 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
+import org.springframework.security.test.context.support.WithMockUser;
 
 import com.jledger.core.domain.Account;
 import com.jledger.core.domain.IntegrationOutbox;
@@ -31,10 +32,12 @@ import org.testcontainers.junit.jupiter.Testcontainers;
 
 @SpringBootTest(properties = {
     "jledger.outbox.initial-delay-ms=600000",
-    "jledger.outbox.fixed-delay-ms=600000"
+    "jledger.outbox.fixed-delay-ms=600000",
+    "eureka.client.enabled=false"
 })
-@AutoConfigureMockMvc
+@AutoConfigureMockMvc(addFilters = false)
 @Testcontainers
+@WithMockUser(roles = "SUPER_ADMIN")
 class SystemControllerTest {
 
     @Container

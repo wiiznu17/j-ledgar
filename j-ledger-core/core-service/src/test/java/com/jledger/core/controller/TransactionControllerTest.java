@@ -46,9 +46,10 @@ import org.testcontainers.junit.jupiter.Testcontainers;
  */
 @SpringBootTest(properties = {
     "jledger.outbox.initial-delay-ms=600000",
-    "jledger.outbox.fixed-delay-ms=600000"
+    "jledger.outbox.fixed-delay-ms=600000",
+    "eureka.client.enabled=false"
 })
-@AutoConfigureMockMvc
+@AutoConfigureMockMvc(addFilters = false)
 @Testcontainers
 class TransactionControllerTest {
 
