@@ -9,7 +9,7 @@
 export const getApiBaseUrl = () => {
   if (typeof window === 'undefined') {
     // Server-side: Use the internal gateway URL
-    return process.env.API_GATEWAY_URL || 'http://api-gateway:8080';
+    return process.env.API_GATEWAY_URL || 'http://localhost:3001';
   }
   // Client-side: Use relative path (Nginx will proxy /api to the gateway)
   return '';

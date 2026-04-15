@@ -42,9 +42,10 @@ The Java core uses Flyway and will migrate automatically on startup. For the Nes
 cd ../j-ledger-portal/apps/wallet-api
 npx prisma db push --schema=./prisma/schema.prisma
 
-# Sync Admin BFF Schema
+# Sync & Seed Admin BFF Schema
 cd ../admin-api
 npx prisma db push --schema=./prisma/schema.prisma
+npm run seed  # Creates admin@jledger.com / Admin@123
 ```
 
 ---
@@ -74,7 +75,7 @@ cd j-ledger-portal
 # Install and generate all isolated Prisma clients
 npm install
 
-# Start all three portal applications
+# Start all three portal applications (Forcing Webpack for Next.js 16 stability)
 npx turbo run dev --filter=admin-api --filter=wallet-api --filter=admin-web
 ```
 

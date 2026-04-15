@@ -19,26 +19,40 @@ export async function login(formData: FormData) {
     });
 
     if (!response.ok) {
-      // For now, handle errors simply. In a real app, return an error message to display in UI.
       return;
     }
 
     const data = await response.json();
     const cookieStore = await cookies();
 
-    // JWT Token for authentication
+    // Access Token (short-lived)
     cookieStore.set('admin_session', data.token, {
       httpOnly: true,
       secure: process.env.NODE_ENV === 'production',
-      maxAge: 60 * 60 * 24, // 1 day
+      maxAge: 60 * 15, // 15 minutes
       path: '/',
     });
 
-    // Storing role separately for easier access in UI components
-    cookieStore.set('user_role', data.role, {
-      httpOnly: false, // Accessible by client-side components if needed, or stick to Server side
+    // Refresh Token (long-lived)
+    cookieStore.set('refresh_token', data.refreshToken, {
+      httpOnly: true,
       secure: process.env.NODE_ENV === 'production',
-      maxAge: 60 * 60 * 24,
+      maxAge: 60 * 60 * 24 * 7, // 7 days
+      path: '/',
+    });
+
+    // User Metadata
+    cookieStore.set('user_id', data.userId, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      maxAge: 60 * 60 * 24 * 7,
+      path: '/',
+    });
+
+    cookieStore.set('user_role', data.role, {
+      httpOnly: false,
+      secure: process.env.NODE_ENV === 'production',
+      maxAge: 60 * 60 * 24 * 7,
       path: '/',
     });
 
@@ -54,7 +68,72 @@ export async function login(formData: FormData) {
 
 export async function logout() {
   const cookieStore = await cookies();
+  
+  // Optional: Call backend logout to invalidate refresh token
+  const userId = cookieStore.get('user_id')?.value;
+  const token = cookieStore.get('admin_session')?.value;
+  
+  if (userId && token) {
+    try {
+      await fetch(`${API_BASE_URL}/api/v1/auth/logout`, {
+        method: 'POST',
+        headers: { 
+          'Authorization': `Bearer ${token}`
+        }
+      });
+    } catch (e) {
+      console.error('Remote logout failed', e);
+    }
+  }
+
   cookieStore.delete('admin_session');
+  cookieStore.delete('refresh_token');
+  cookieStore.delete('user_id');
   cookieStore.delete('user_role');
   redirect('/login');
 }
+
+export async function refreshSession() {
+  const cookieStore = await cookies();
+  const refreshToken = cookieStore.get('refresh_token')?.value;
+  const userId = cookieStore.get('user_id')?.value;
+
+  if (!refreshToken || !userId) {
+    return null;
+  }
+
+  try {
+    const response = await fetch(`${API_BASE_URL}/api/v1/auth/refresh`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ userId, refreshToken }),
+    });
+
+    if (!response.ok) {
+      throw new Error('Refresh failed');
+    }
+
+    const data = await response.json();
+
+    // Update session cookies
+    cookieStore.set('admin_session', data.token, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      maxAge: 60 * 15,
+      path: '/',
+    });
+
+    cookieStore.set('refresh_token', data.refreshToken, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      maxAge: 60 * 60 * 24 * 7,
+      path: '/',
+    });
+
+    return data.token;
+  } catch (error) {
+    console.error('Session refresh error:', error);
+    return null;
+  }
+}
+
