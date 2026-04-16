@@ -10,7 +10,7 @@ spring:
         corsConfigurations:
           '[/**]':
             allowedOrigins:
-              - "http://localhost:3000"
+              - "*" # In production, Nginx handles the host, but you can restrict this to your domain
             allowedMethods:
               - GET
               - POST

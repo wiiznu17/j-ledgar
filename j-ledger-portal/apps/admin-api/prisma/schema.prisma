@@ -18,8 +18,9 @@ datasource db {
 model AdminUser {
   id           String   @id @default(uuid())
   email        String   @unique
-  passwordHash String
-  role         String   @default("SUPPORT_STAFF")
+  passwordHash     String
+  refreshTokenHash String?
+  role             String   @default("SUPPORT_STAFF")
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
 

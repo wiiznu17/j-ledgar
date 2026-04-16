@@ -8,10 +8,12 @@
 
 export const getApiBaseUrl = () => {
   if (typeof window === 'undefined') {
-    // Server-side: Use the internal gateway URL
-    return process.env.API_GATEWAY_URL || 'http://api-gateway:8080';
+    // Server-side (SSR): Use the internal gateway URL (e.g., http://api-gateway:8080)
+    // This allows the container to talk to the gateway directly within the Docker network
+    return process.env.NEXT_PUBLIC_API_GATEWAY_URL || 'http://api-gateway:8080';
   }
-  // Client-side: Use relative path (Nginx will proxy /api to the gateway)
+  // Client-side (Browser): Use relative path.
+  // When running on production, Nginx will proxy /api to the admin-api (BFF).
   return '';
 };
 

@@ -7,6 +7,9 @@
     "experimentalDecorators": true,
     "outDir": "./dist",
     "baseUrl": "./",
+    "paths": {
+      "@prisma/client-admin": ["./node_modules/@prisma/client-admin"]
+    },
     "incremental": true
   }
 }

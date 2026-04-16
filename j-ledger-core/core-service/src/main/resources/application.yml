@@ -27,7 +27,7 @@ spring:
       hibernate:
         format_sql: true
     hibernate:
-      ddl-auto: update # Changed from validate to ensure stability if Flyway is slightly behind entity state during dev  
+      ddl-auto: validate # Use validate in production to rely on Flyway migrations
   flyway:
     enabled: true
     baseline-on-migrate: true
@@ -65,6 +65,8 @@ jledger:
   admin:
     email: ${JLEDGER_ADMIN_EMAIL:admin@jledger.io}
     password: ${JLEDGER_ADMIN_PASSWORD:password123}
+  internal:
+    secret: ${JLEDGER_INTERNAL_SECRET:jledger_ecosystem_secret_2024}
 
 logging:
   level:

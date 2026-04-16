@@ -1,7 +1,9 @@
 import { NextResponse, NextRequest } from 'next/server';
 import { jwtVerify } from 'jose';
 
-const SECRET = new TextEncoder().encode('JLedgerSecretKeyForJWTSecurityPhase7_2024_Placeholder');
+const SECRET = new TextEncoder().encode(
+  process.env.JWT_SECRET || 'jledger-local-dev-jwt-secret'
+);
 
 export async function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl;

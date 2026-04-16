@@ -61,6 +61,7 @@ public class AccountController {
         return ResponseEntity.ok(accountRepository.findByUserId(userId));
     }
     @GetMapping
+    @PreAuthorize("hasAnyRole('SUPER_ADMIN', 'INTERNAL')")
     @Operation(summary = "List all accounts", description = "Retrieves a paginated list of accounts with current balances and status.")
     public ResponseEntity<Page<Account>> listAllAccounts(
             @PageableDefault(size = 20, sort = "createdAt", direction = Sort.Direction.DESC) Pageable pageable) {
@@ -68,7 +69,7 @@ public class AccountController {
     }
 
     @PutMapping("/{id}/status")
-    @PreAuthorize("hasRole('SUPER_ADMIN')")
+    @PreAuthorize("hasAnyRole('SUPER_ADMIN', 'INTERNAL')")
     @Operation(summary = "Change account status", description = "Updates the status of an account (e.g., to FROZEN or ACTIVE).")
     @ApiResponses(value = {
             @ApiResponse(responseCode = "200", description = "Account status updated"),
