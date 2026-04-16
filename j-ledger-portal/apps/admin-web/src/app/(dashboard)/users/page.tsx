@@ -57,7 +57,7 @@ export default function UsersPage() {
         return res.json();
       })
       .then(setUsers)
-      .catch(() => toast.error('Failed to load users. Access denied.'));
+      .catch(() => showError('Access Denied', 'Failed to load users. You might need higher permissions.'));
   };
 
   useEffect(() => {
