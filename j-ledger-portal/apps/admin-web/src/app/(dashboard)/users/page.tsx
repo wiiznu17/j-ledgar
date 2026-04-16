@@ -31,8 +31,8 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { Plus, UserPlus, Trash2 } from 'lucide-react';
-import { toast } from 'sonner';
 import { API_BASE_URL } from '@/lib/api-config';
+import { showConfirm, showSuccess, showError } from '@/lib/swal';
 
 interface AdminUser {
   id: number;
@@ -77,20 +77,25 @@ export default function UsersPage() {
 
       if (!res.ok) throw new Error('Failed to create user');
 
-      toast.success('Admin user created successfully');
+      showSuccess('Success', 'Admin user created successfully');
       setNewEmail('');
       setNewPassword('');
       setIsDialogOpen(false);
       fetchUsers();
     } catch {
-      toast.error('Could not create user. Check permissions.');
+      showError('Registration Failed', 'Could not create user. The email might already be in use or you have insufficient permissions.');
     } finally {
       setLoading(false);
     }
   };
 
   const handleDeleteUser = async (id: number) => {
-    if (!confirm('Are you sure you want to delete this user?')) return;
+    const result = await showConfirm(
+      'Are you sure?',
+      'This administrator will lose all access to the system.'
+    );
+
+    if (!result.isConfirmed) return;
 
     try {
       const res = await fetch(`${API_BASE_URL}/api/v1/users/${id}`, {
@@ -98,10 +103,10 @@ export default function UsersPage() {
         credentials: 'include',
       });
       if (!res.ok) throw new Error('Delete failed');
-      toast.success('User deleted');
+      showSuccess('Deleted!', 'The user has been removed.');
       fetchUsers();
     } catch {
-      toast.error('Failed to delete user.');
+      showError('Action Failed', 'Failed to delete user. Please try again later.');
     }
   };
 
