@@ -61,6 +61,7 @@ public class AccountController {
         return ResponseEntity.ok(accountRepository.findByUserId(userId));
     }
     @GetMapping
+    @PreAuthorize("hasAnyRole('SUPER_ADMIN', 'INTERNAL')")
     @Operation(summary = "List all accounts", description = "Retrieves a paginated list of accounts with current balances and status.")
     public ResponseEntity<Page<Account>> listAllAccounts(
             @PageableDefault(size = 20, sort = "createdAt", direction = Sort.Direction.DESC) Pageable pageable) {

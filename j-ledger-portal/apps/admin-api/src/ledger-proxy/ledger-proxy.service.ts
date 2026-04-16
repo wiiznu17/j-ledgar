@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, HttpException, HttpStatus } from '@nestjs/common';
 import { HttpService } from '@nestjs/axios';
 import { firstValueFrom } from 'rxjs';
 
@@ -14,21 +14,30 @@ export class LedgerProxyService {
     method: 'get' | 'post' | 'put' | 'delete',
     path: string,
     data?: any,
+    params?: any,
   ) {
     const url = `${this.gatewayUrl}${path}`;
     const headers = {
       'X-Internal-Secret': this.internalSecret,
     };
 
-    const response = await firstValueFrom(
-      this.httpService.request({
-        method,
-        url,
-        data,
-        headers,
-      }) as any,
-    );
+    try {
+      const response = await firstValueFrom(
+        this.httpService.request({
+          method,
+          url,
+          data,
+          params,
+          headers,
+        }) as any,
+      );
 
-    return (response as any).data;
+      return (response as any).data;
+    } catch (error: any) {
+      const status = error.response?.status || HttpStatus.INTERNAL_SERVER_ERROR;
+      const message = error.response?.data?.message || error.message || 'Downstream request failed';
+      console.error(`Proxy Error [${method.toUpperCase()}] ${url}:`, message);
+      throw new HttpException(message, status);
+    }
   }
 }

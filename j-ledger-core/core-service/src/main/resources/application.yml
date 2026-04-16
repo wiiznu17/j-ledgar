@@ -65,6 +65,8 @@ jledger:
   admin:
     email: ${JLEDGER_ADMIN_EMAIL:admin@jledger.io}
     password: ${JLEDGER_ADMIN_PASSWORD:password123}
+  internal:
+    secret: ${JLEDGER_INTERNAL_SECRET:jledger_ecosystem_secret_2024}
 
 logging:
   level:

@@ -31,7 +31,7 @@ public class SystemController {
     }
 
     @PostMapping("/reconcile")
-    @PreAuthorize("hasAnyRole('SUPER_ADMIN', 'RECONCILER')")
+    @PreAuthorize("hasAnyRole('SUPER_ADMIN', 'RECONCILER', 'INTERNAL')")
     @Operation(summary = "Reconcile system", description = "Calculates total balances and ledger entries to detect discrepancies")
     public ResponseEntity<ReconciliationSummary> reconcile() {
         return ResponseEntity.ok(systemService.reconcile());

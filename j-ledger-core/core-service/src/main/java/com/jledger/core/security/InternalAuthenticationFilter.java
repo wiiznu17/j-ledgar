@@ -31,7 +31,7 @@ public class InternalAuthenticationFilter extends OncePerRequestFilter {
 
         final String secretHeader = request.getHeader("X-Internal-Secret");
 
-        if (secretHeader != null && secretHeader.equals(internalSecret)) {
+        if (secretHeader != null && secretHeader.contains(internalSecret)) {
             // Internal system request - grant full internal authority
             UsernamePasswordAuthenticationToken authToken = new UsernamePasswordAuthenticationToken(
                     "INTERNAL_SYSTEM",

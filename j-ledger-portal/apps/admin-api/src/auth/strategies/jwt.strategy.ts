@@ -6,7 +6,21 @@ import { ExtractJwt, Strategy } from 'passport-jwt';
 export class JwtStrategy extends PassportStrategy(Strategy) {
   constructor() {
     super({
-      jwtFromRequest: ExtractJwt.fromAuthHeaderAsBearerToken(),
+      jwtFromRequest: ExtractJwt.fromExtractors([
+        ExtractJwt.fromAuthHeaderAsBearerToken(),
+        (request: any) => {
+          const cookieHeader = request?.headers?.cookie;
+          if (!cookieHeader) return null;
+          
+          const data = cookieHeader
+            .split(';')
+            .map((c: string) => c.trim())
+            .find((c: string) => c.startsWith('admin_session='))
+            ?.split('=')[1];
+            
+          return data || null;
+        },
+      ]),
       ignoreExpiration: false,
       secretOrKey: process.env.JWT_SECRET || 'jledger-local-dev-jwt-secret',
     });
