@@ -179,9 +179,13 @@ services:
     depends_on:
       api-gateway:
         condition: service_started
+    command: sh -c "npx prisma db push && npx prisma db seed && node dist/src/main"
     environment:
       - PORT=3001
       - API_GATEWAY_URL=http://api-gateway:8080
+      - DATABASE_URL=postgresql://${POSTGRES_USER:-ledger_admin}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB:-jledger_db}?schema=admin_schema
+      - JWT_SECRET=${JWT_SECRET}
+      - JWT_REFRESH_SECRET=${JWT_REFRESH_SECRET}
       - JLEDGER_INTERNAL_SECRET=${JLEDGER_INTERNAL_SECRET}
     networks:
       - jledger-network
@@ -201,7 +205,7 @@ services:
       - admin-api
     environment:
       - PORT=3000
-      - NEXT_PUBLIC_API_GATEWAY_URL=/api
+      - INTERNAL_API_URL=http://admin-api:3001
     networks:
       - jledger-network
     expose:

@@ -1,8 +1,8 @@
-import { Controller, Get, UseGuards, Query } from '@nestjs/common';
+import { Controller, Get, UseGuards, Query, Param } from '@nestjs/common';
 import { LedgerProxyService } from './ledger-proxy.service';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 
-@Controller('ledger-txns')
+@Controller('transactions')
 @UseGuards(JwtAuthGuard)
 export class TransactionController {
   constructor(private readonly proxyService: LedgerProxyService) {}
@@ -20,5 +20,10 @@ export class TransactionController {
   @Get('fees')
   async getFeeSummary(@Query() query: any) {
     return this.proxyService.forwardToGateway('get', '/api/v1/transactions/fees', null, query);
+  }
+
+  @Get(':id')
+  async getTransactionById(@Param('id') id: string) {
+    return this.proxyService.forwardToGateway('get', `/api/v1/transactions/${id}`);
   }
 }

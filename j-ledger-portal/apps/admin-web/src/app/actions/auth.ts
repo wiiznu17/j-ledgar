@@ -12,17 +12,23 @@ export async function login(formData: FormData) {
 
   let success = false;
   try {
+    console.log(`[AUTH] Attempting login for ${email} at ${API_BASE_URL}/api/v1/auth/login`);
     const response = await fetch(`${API_BASE_URL}/api/v1/auth/login`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ email, password }),
     });
 
+    console.log(`[AUTH] Response status: ${response.status}`);
+
     if (!response.ok) {
+      const errorData = await response.text();
+      console.error(`[AUTH] Login failed: ${errorData}`);
       return;
     }
 
     const data = await response.json();
+    console.log(`[AUTH] Login successful for user: ${data.userId}`);
     const cookieStore = await cookies();
 
     // Access Token (short-lived)

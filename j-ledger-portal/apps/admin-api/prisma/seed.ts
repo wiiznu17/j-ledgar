@@ -4,8 +4,8 @@ import * as bcrypt from 'bcrypt';
 const prisma = new PrismaClient();
 
 async function main() {
-  const adminEmail = 'admin@jledger.com';
-  const password = 'Admin@123';
+  const adminEmail = process.env.JLEDGER_ADMIN_EMAIL || 'admin@jledger.com';
+  const password = process.env.JLEDGER_ADMIN_PASSWORD || 'Admin@123';
   const passwordHash = await bcrypt.hash(password, 10);
 
   console.log('Seeding AdminUser...');

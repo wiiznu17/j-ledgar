@@ -16,12 +16,13 @@ WORKDIR /app
 # First copy only the pruned lockfiles and package.json
 COPY .gitignore .gitignore
 COPY --from=pruner /app/out/json/ .
-COPY --from=pruner /app/out/package-lock.json ./package-lock.json
+# Copy prisma schema to allow postinstall generation
+COPY apps/admin-api/prisma/schema.prisma ./apps/admin-api/prisma/schema.prisma
+COPY turbo.json turbo.json
 RUN npm install
 
 # Build the project
 COPY --from=pruner /app/out/full/ .
-COPY turbo.json turbo.json
 RUN npx prisma generate --schema=apps/admin-api/prisma/schema.prisma
 RUN npx turbo build --filter=admin-api
 
@@ -37,6 +38,8 @@ USER nestjs
 COPY --from=installer /app/apps/admin-api/package.json .
 COPY --from=installer /app/apps/admin-api/dist ./dist
 COPY --from=installer /app/node_modules ./node_modules
+COPY --from=installer /app/apps/admin-api/node_modules/@prisma/client-admin ./node_modules/@prisma/client-admin
+COPY --from=installer /app/apps/admin-api/prisma ./prisma
 COPY --from=installer /app/package.json .
 
-CMD ["node", "dist/main"]
+CMD ["node", "dist/src/main"]

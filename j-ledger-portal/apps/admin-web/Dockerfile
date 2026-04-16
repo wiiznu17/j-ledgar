@@ -17,11 +17,11 @@ WORKDIR /app
 COPY .gitignore .gitignore
 COPY --from=pruner /app/out/json/ .
 COPY --from=pruner /app/out/package-lock.json ./package-lock.json
+COPY turbo.json turbo.json
 RUN npm install
 
 # Build the project
 COPY --from=pruner /app/out/full/ .
-COPY turbo.json turbo.json
 RUN npx turbo build --filter=admin-web
 
 # --- Stage 3: Runner ---
