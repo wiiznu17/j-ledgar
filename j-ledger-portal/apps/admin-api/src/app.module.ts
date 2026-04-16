@@ -5,6 +5,7 @@ import { AppService } from './app.service';
 import { PrismaModule } from './prisma/prisma.module';
 import { AuthModule } from './auth/auth.module';
 import { LedgerProxyModule } from './ledger-proxy/ledger-proxy.module';
+import { UsersModule } from './users/users.module';
 
 @Module({
   imports: [
@@ -12,6 +13,7 @@ import { LedgerProxyModule } from './ledger-proxy/ledger-proxy.module';
     PrismaModule,
     AuthModule,
     LedgerProxyModule,
+    UsersModule,
   ],
   controllers: [AppController],
   providers: [AppService],
