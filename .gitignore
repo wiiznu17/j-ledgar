@@ -75,3 +75,4 @@ j-ledger-core/.k8s/overlays/dev/.env.admin
 j-ledger-core/.k8s/base/secret.yaml
 j-ledger-core/.env
 
+j-ledger-key.pem
