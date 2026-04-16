@@ -9,8 +9,8 @@ spring:
       globalcors:
         corsConfigurations:
           '[/**]':
-            allowedOrigins:
-              - "*" # In production, Nginx handles the host, but you can restrict this to your domain
+            allowedOriginPatterns:
+              - ${JLEDGER_ALLOWED_ORIGINS:*} 
             allowedMethods:
               - GET
               - POST
