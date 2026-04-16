@@ -177,6 +177,8 @@ services:
     image: j-ledger/admin-api:latest
     container_name: jledger-admin-api
     depends_on:
+      postgres:
+        condition: service_healthy
       api-gateway:
         condition: service_started
     command: sh -c "npx prisma db push && npx prisma db seed && node dist/src/main"
@@ -187,6 +189,8 @@ services:
       - JWT_SECRET=${JWT_SECRET}
       - JWT_REFRESH_SECRET=${JWT_REFRESH_SECRET}
       - JLEDGER_INTERNAL_SECRET=${JLEDGER_INTERNAL_SECRET}
+      - JLEDGER_ADMIN_EMAIL=${JLEDGER_ADMIN_EMAIL}
+      - JLEDGER_ADMIN_PASSWORD=${JLEDGER_ADMIN_PASSWORD}
     networks:
       - jledger-network
     expose:
