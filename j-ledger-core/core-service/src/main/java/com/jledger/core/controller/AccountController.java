@@ -69,7 +69,7 @@ public class AccountController {
     }
 
     @PutMapping("/{id}/status")
-    @PreAuthorize("hasRole('SUPER_ADMIN')")
+    @PreAuthorize("hasAnyRole('SUPER_ADMIN', 'INTERNAL')")
     @Operation(summary = "Change account status", description = "Updates the status of an account (e.g., to FROZEN or ACTIVE).")
     @ApiResponses(value = {
             @ApiResponse(responseCode = "200", description = "Account status updated"),
