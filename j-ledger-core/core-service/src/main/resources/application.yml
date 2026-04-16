@@ -27,7 +27,7 @@ spring:
       hibernate:
         format_sql: true
     hibernate:
-      ddl-auto: update # Changed from validate to ensure stability if Flyway is slightly behind entity state during dev  
+      ddl-auto: validate # Use validate in production to rely on Flyway migrations
   flyway:
     enabled: true
     baseline-on-migrate: true
