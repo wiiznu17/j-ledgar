@@ -1,0 +1,19 @@
+eureka:
+  client:
+    enabled: false
+
+spring:
+  cloud:
+    gateway:
+      routes:
+        - id: core-service-route
+          uri: http://localhost:${wiremock.server.port}
+          predicates:
+            - Path=/api/v1/**
+          filters:
+            - name: CircuitBreaker
+              args:
+                name: coreServiceCircuitBreaker
+                fallbackUri: forward:/fallback/core-service
+                statusCodes:
+                  - 500
