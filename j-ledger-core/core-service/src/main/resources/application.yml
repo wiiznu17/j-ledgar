@@ -29,7 +29,7 @@ spring:
     hibernate:
       ddl-auto: validate # Use validate in production to rely on Flyway migrations
   flyway:
-    enabled: true
+    enabled: false
     baseline-on-migrate: true
 
   kafka:

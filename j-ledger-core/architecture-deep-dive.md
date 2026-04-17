@@ -35,15 +35,18 @@
 
 ## 🌐 3. เครือข่ายภายใน (Docker Networking)
 
-ระบบทำงานบน **Docker Bridge Network** ที่ชื่อว่า `jledger-network`
+ระบบทำงานบน **Docker Bridge Network** ที่ชื่อว่า `jledger-network` โดยมีจุดศูนย์กลางการควบคุมอยู่ที่ `docker-compose.yml` ณ บริเวณ Root ของโปรเจกต์ (Hybrid Monorepo Approach)
 
 ### การเรียกหาด้วยชื่อ (Internal DNS)
 คอนเทนเนอร์ในระบบไม่จำเป็นต้องรู้ IP ของกันและกัน แต่จะใช้วิธีเรียกผ่าน **Service Name** ที่ระบุใน `docker-compose.yml`:
 *   BFF เรียกไปที่ `http://api-gateway:8080`
 *   Core Service ต่อฐานข้อมูลที่ `jdbc:postgresql://postgres:5432/...`
 
+### 🆕 ระบบ Migration Layer
+เพื่อความปลอดภัยและความถูกต้องของข้อมูล เราแยกส่วนการ Migrate ฐานข้อมูลออกมาเป็น Service เฉพาะกิจ (`core-migration` และ `admin-migration`) ซึ่งจะรันจนเสร็จสิ้นก่อนที่แอปพลิเคชันหลักจะเริ่มทำงาน
+
 ### ระบบ Isolation
-เนื่องจากเราไม่ได้ใส่คำสั่ง `ports:` ให้กับ Postgres และ Redis ใน `docker-compose.yml` ทำให้พอร์ตเหล่านี้ **"ปิดตาย"** สำหรับโลกภายนอก (Security by Default) แต่ `core-service` ที่อยู่ใน Network เดียวกันจะเห็นและทำงานได้ปกติ
+เนื่องจากเราไม่ได้ใส่คำสั่ง `ports:` ให้กับ Postgres และ Redis ใน `docker-compose.yml` ทำให้พอร์ตเหล่านี้ **"ปิดตาย"** สำหรับโลกภายนอก (Security by Default) แต่ Services ที่อยู่ใน Network เดียวกันจะเห็นและทำงานได้ปกติ
 
 ---
 

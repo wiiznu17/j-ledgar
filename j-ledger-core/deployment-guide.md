@@ -91,8 +91,8 @@ sudo usermod -aG docker $USER
 
 1.  **ตั้งค่า .env**:
    ```bash
-   cd ~/app/j-ledger/j-ledger-core
-   cp .env.prod.example .env
+   cd ~/app/j-ledger
+   cp j-ledger-core/.env.prod.example .env
    nano .env
    ```
    **แก้ไขค่าสำคัญใน `.env`:**
@@ -108,7 +108,7 @@ sudo usermod -aG docker $USER
    ```bash
    docker compose up -d --build
    ```
-   *ระบบจะทำการตรวจสอบฐานข้อมูลและสร้าง User Admin ให้เองโดยอัตโนมัติในครั้งแรกครับ*
+   *ระบบจะทำการรัน Migration อัตโนมัติ (ผ่าน core-migration และ admin-migration) ก่อนจะเริ่มแอปหลักครับ*
    *ตรวจสอบสถานะด้วย `docker compose ps`*
 
 ---
@@ -123,7 +123,7 @@ sudo usermod -aG docker $USER
 
 2. **หยุด Nginx ชั่วคราว (เพื่อคืนพอร์ต 80 ให้ Certbot):**
    ```bash
-   cd ~/app/j-ledgar/j-ledger-core
+   cd ~/app/j-ledgar
    docker compose stop nginx
    ```
 
@@ -134,9 +134,9 @@ sudo usermod -aG docker $USER
    *กรอก Email และกดยอมรับเงื่อนไข ไฟล์ใบรับรองจะถูกเก็บไว้ที่ `/etc/letsencrypt/live/potayyr.site/`*
 
 4. **เปิดการใช้งาน HTTPS ใน Nginx:**
-   แก้ไขไฟล์ `nginx/default.conf`:
+   แก้ไขไฟล์ `docker/nginx/default.conf`:
    ```bash
-   nano nginx/default.conf
+   nano docker/nginx/default.conf
    ```
    - เอาเครื่องหมาย `#` ออกจากส่วนของ `server { listen 443 ssl; ... }`
    - (ออปชั่น) เอาเครื่องหมาย `#` ออกจากส่วน `return 301 https://...` ในพอร์ต 80 เพื่อบังคับใช้ HTTPS
