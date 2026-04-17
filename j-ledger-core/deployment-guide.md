@@ -91,7 +91,7 @@ sudo usermod -aG docker $USER
 
 1.  **ตั้งค่า .env**:
    ```bash
-   cd ~/app/j-ledgar/j-ledger-core
+   cd ~/app/j-ledger/j-ledger-core
    cp .env.prod.example .env
    nano .env
    ```
@@ -101,7 +101,8 @@ sudo usermod -aG docker $USER
    - `POSTGRES_PASSWORD`, `REDIS_PASSWORD` (เปลี่ยนให้ยากๆ)
    - `JLEDGER_ADMIN_EMAIL=admin@jledger.com` (อีเมลแอดมินเริ่มต้น)
    - `JLEDGER_ADMIN_PASSWORD=Admin@123` (รหัสผ่านแอดมินเริ่มต้น)
-   - `JLEDGER_INTERNAL_SECRET` (ใส่รหัสลับสุ่มที่ปลอดภัย)
+   - `JWT_SECRET`, `JWT_REFRESH_SECRET` (ใส่รหัสลับสุ่มที่ปลอดภัยสำหรับ Token)
+   - `JLEDGER_INTERNAL_SECRET` (ใส่รหัสลับสุ่มที่ปลอดภัยสำหรับการคุยภายใน)
 
 2.  **เริ่มระบบ (Deployment)**:
    ```bash
