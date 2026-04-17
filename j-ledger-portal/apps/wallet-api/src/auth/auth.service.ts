@@ -13,7 +13,7 @@ export class AuthService {
   async validateUser(email: string, pass: string): Promise<any> {
     const user = await this.userService.findByEmail(email);
     if (user && (await bcrypt.compare(pass, user.passwordHash))) {
-      const { passwordHash, pinHash, ...result } = user;
+      const { passwordHash, transactionPin, ...result } = user;
       return result;
     }
     throw new UnauthorizedException('Invalid credentials');
@@ -26,15 +26,13 @@ export class AuthService {
     };
   }
 
-  async validatePinById(email: string, pin: string): Promise<boolean> {
-    const user = await this.userService.findByEmail(email);
-    if (!user) {
-      throw new UnauthorizedException('User not found');
+  async validatePinByUserId(userId: string, pin: string): Promise<boolean> {
+    const user = await this.userService.findById(userId);
+    if (!user || !user.transactionPin) {
+      throw new UnauthorizedException('PIN not set');
     }
-    const isValid = await bcrypt.compare(pin, user.pinHash);
-    if (!isValid) {
-      throw new UnauthorizedException('Invalid PIN');
-    }
-    return true;
+
+    const isValid = await bcrypt.compare(pin, user.transactionPin);
+    return isValid;
   }
 }

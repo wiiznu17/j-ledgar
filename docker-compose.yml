@@ -241,7 +241,32 @@ services:
       - "3000"
 
   # ----------------------------------------------------
-  # 12. Nginx - Unified Entry Point (Reverse Proxy)
+  # 12. Wallet API
+  # ----------------------------------------------------
+  wallet-api:
+    build:
+      context: ./j-ledger-portal
+      dockerfile: apps/wallet-api/Dockerfile
+    image: j-ledger/wallet-api:latest
+    container_name: jledger-wallet-api
+    depends_on:
+      postgres:
+        condition: service_healthy
+      api-gateway:
+        condition: service_started
+    environment:
+      - PORT=3002
+      - API_GATEWAY_URL=http://api-gateway:8080
+      - DATABASE_URL=postgresql://${POSTGRES_USER:-ledger_admin}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB:-jledger_db}?schema=wallet_schema
+      - JWT_SECRET=${JWT_SECRET}
+      - JLEDGER_INTERNAL_SECRET=${JLEDGER_INTERNAL_SECRET}
+    networks:
+      - jledger-network
+    expose:
+      - "3002"
+
+  # ----------------------------------------------------
+  # 13. Nginx - Unified Entry Point (Reverse Proxy)
   # ----------------------------------------------------
   nginx:
     image: nginx:alpine
@@ -255,6 +280,7 @@ services:
     depends_on:
       - api-gateway
       - admin-web
+      - wallet-api
     networks:
       - jledger-network
 
