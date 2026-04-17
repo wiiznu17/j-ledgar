@@ -10,6 +10,7 @@ import { IdempotencyInterceptor } from './common/interceptors/idempotency.interc
 import { UserModule } from './user/user.module';
 import { TransactionModule } from './transaction/transaction.module';
 import { PaymentModule } from './payment/payment.module';
+import { MerchantModule } from './merchant/merchant.module';
 
 @Module({
   imports: [
@@ -20,6 +21,7 @@ import { PaymentModule } from './payment/payment.module';
     UserModule,
     TransactionModule,
     PaymentModule,
+    MerchantModule,
   ],
   controllers: [AppController],
   providers: [

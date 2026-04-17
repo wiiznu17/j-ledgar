@@ -16,15 +16,27 @@ datasource db {
 }
 
 model User {
-  id             String    @id @default(uuid())
-  email          String    @unique
+  id             String           @id @default(uuid())
+  email          String           @unique
   passwordHash   String
   transactionPin String?
   deviceId       String?
-  pinAttempts    Int       @default(0)
+  pinAttempts    Int              @default(0)
   pinLockedUntil DateTime?
-  createdAt      DateTime  @default(now())
-  updatedAt      DateTime  @updatedAt
+  merchant       MerchantProfile?
+  createdAt      DateTime         @default(now())
+  updatedAt      DateTime         @updatedAt
 
   @@map("users")
+}
+
+model MerchantProfile {
+  id                String @id @default(uuid())
+  userId            String @unique
+  user              User   @relation(fields: [userId], references: [id])
+  merchantAccountId String // UUID mapping to Ledger
+  storeName         String
+  qrCodeData        String @unique
+
+  @@map("merchant_profiles")
 }
