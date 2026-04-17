@@ -51,6 +51,22 @@ public class PaymentService {
         LOGGER.info("Payment reference {} updated to {}", request.reference_id(), payment.getStatus());
     }
 
+    @Transactional
+    public PaymentTransaction createPayment(com.jledger.core.dto.PaymentCreateRequest request) {
+        LOGGER.info("Initiating payment: type={}, amount={}, reference={}", 
+                request.type(), request.amount(), request.referenceId());
+
+        PaymentTransaction payment = PaymentTransaction.builder()
+                .accountId(request.accountId())
+                .referenceId(request.referenceId())
+                .amount(request.amount())
+                .type(request.type())
+                .status(PaymentTransaction.Status.PENDING)
+                .build();
+
+        return paymentTransactionRepository.save(payment);
+    }
+
     private void settlePayment(PaymentTransaction payment) {
         if (payment.getType() == PaymentTransaction.Type.TOPUP) {
             // Debit: System, Credit: User

@@ -9,6 +9,7 @@ import { LedgerProxyModule } from './ledger-proxy/ledger-proxy.module';
 import { IdempotencyInterceptor } from './common/interceptors/idempotency.interceptor';
 import { UserModule } from './user/user.module';
 import { TransactionModule } from './transaction/transaction.module';
+import { PaymentModule } from './payment/payment.module';
 
 @Module({
   imports: [
@@ -18,6 +19,7 @@ import { TransactionModule } from './transaction/transaction.module';
     LedgerProxyModule,
     UserModule,
     TransactionModule,
+    PaymentModule,
   ],
   controllers: [AppController],
   providers: [
