@@ -8,8 +8,13 @@
 รัน Infrastructure ที่จำเป็น (Database, Redis, Kafka) โดยใช้คำสั่ง:
 
 ```bash
+# 1. เริ่มระบบพื้นฐาน (Database, Redis, Kafka)
 cd j-ledger-core
 docker compose -f docker-compose.infra.yml up -d
+
+# 2. ตั้งค่า Nginx สำหรับใช้งานในเครื่อง (Local)
+cd ..
+cp docker/nginx/default.conf.local docker/nginx/default.conf
 ```
 
 **รายการพอร์ตที่เปิดใช้งานบน localhost:**

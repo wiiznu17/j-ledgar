@@ -130,7 +130,7 @@ services:
     depends_on:
       postgres:
         condition: service_healthy
-    command: sh -c "npx prisma db push && npx prisma db seed"
+    command: sh -c "npx prisma db push --skip-generate && node dist/prisma/seed.js"
     environment:
       - DATABASE_URL=postgresql://${POSTGRES_USER:-ledger_admin}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB:-jledger_db}?schema=admin_schema
     networks:

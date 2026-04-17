@@ -134,11 +134,15 @@ sudo usermod -aG docker $USER
    *กรอก Email และกดยอมรับเงื่อนไข ไฟล์ใบรับรองจะถูกเก็บไว้ที่ `/etc/letsencrypt/live/potayyr.site/`*
 
 4. **เปิดการใช้งาน HTTPS ใน Nginx:**
-   แก้ไขไฟล์ `docker/nginx/default.conf`:
+   ใช้ตัวอย่างคอนฟิกสำหรับ Production และเปิดการใช้งาน SSL:
    ```bash
+   # คัดลอกเทมเพลตสำหรับ Production
+   cp docker/nginx/default.conf.prod docker/nginx/default.conf
+   
+   # แก้ไขเพื่อตรวจสอบความถูกต้อง (หากต้องการ)
    nano docker/nginx/default.conf
    ```
-   - เอาเครื่องหมาย `#` ออกจากส่วนของ `server { listen 443 ssl; ... }`
+   - (ออปชั่น) หากในไฟล์เทมเพลตยังมีเครื่องหมาย `#` ปิดส่วน SSL ไว้ ให้เอาออกเพื่อให้ใช้งาน HTTPS ได้สมบูรณ์
    - (ออปชั่น) เอาเครื่องหมาย `#` ออกจากส่วน `return 301 https://...` ในพอร์ต 80 เพื่อบังคับใช้ HTTPS
 
 5. **เริ่มการทำงาน Nginx อีกครั้ง:**
