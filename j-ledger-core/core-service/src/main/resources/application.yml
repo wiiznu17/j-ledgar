@@ -59,7 +59,7 @@ jledger:
     wait-seconds: ${JLEDGER_LOCK_WAIT_SECONDS:3}
     lease-seconds: ${JLEDGER_LOCK_LEASE_SECONDS:10}
   outbox:
-    topic: ${JLEDGER_OUTBOX_TOPIC:transaction-events}
+    topic: ${JLEDGER_OUTBOX_TOPIC:wallet.transaction.events}
     fixed-delay-ms: ${JLEDGER_OUTBOX_FIXED_DELAY_MS:2000}
     max-retries: ${JLEDGER_OUTBOX_MAX_RETRIES:5}
   admin:

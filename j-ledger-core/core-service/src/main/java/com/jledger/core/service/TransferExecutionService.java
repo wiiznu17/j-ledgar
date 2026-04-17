@@ -109,13 +109,32 @@ public class TransferExecutionService {
 
         ledgerEntryRepository.saveAll(List.of(senderEntry, receiverEntry));
         transaction.setStatus(SUCCESS_STATUS);
+
+        // Dual-Event Strategy: Record outbox entries for both sides of the transaction
         integrationOutboxRepository.save(IntegrationOutbox.builder()
-                .eventType(OUTBOX_EVENT_TYPE)
-                .payload(buildTransferPayload(transaction))
+                .eventType("DEBIT_EVENT")
+                .payload(buildWalletEventPayload(transaction, sender.getId(), DEBIT_ENTRY))
+                .status(PENDING_STATUS)
+                .build());
+
+        integrationOutboxRepository.save(IntegrationOutbox.builder()
+                .eventType("CREDIT_EVENT")
+                .payload(buildWalletEventPayload(transaction, receiver.getId(), CREDIT_ENTRY))
                 .status(PENDING_STATUS)
                 .build());
 
         return transaction;
+    }
+
+    private JsonNode buildWalletEventPayload(Transaction transaction, UUID accountId, String entryType) {
+        return objectMapper.valueToTree(new WalletTransactionEvent(
+                transaction.getId(),
+                accountId,
+                entryType,
+                transaction.getAmount(),
+                transaction.getCurrency(),
+                transaction.getCreatedAt()
+        ));
     }
 
     private Transaction reserveTransaction(String idempotencyKey, TransferRequest request, BigDecimal normalizedAmount) {

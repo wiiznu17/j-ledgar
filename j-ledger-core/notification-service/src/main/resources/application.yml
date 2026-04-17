@@ -7,6 +7,10 @@ spring:
   kafka:
     bootstrap-servers: ${JLEDGER_KAFKA_BOOTSTRAP_SERVERS:localhost:9092}
 
+jledger:
+  outbox:
+    topic: ${JLEDGER_OUTBOX_TOPIC:wallet.transaction.events}
+
 springdoc:
   api-docs:
     path: /v3/api-docs
