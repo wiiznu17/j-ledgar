@@ -1,6 +1,7 @@
 'use server';
 
-import { API_BASE_URL } from '@/lib/api-config';
+import { transactionRequester } from '@/lib/requesters';
+import { cookies } from 'next/headers';
 
 export async function executeTransfer(formData: FormData) {
   const sourceAccountId = formData.get('sourceAccountId') as string;
@@ -9,36 +10,31 @@ export async function executeTransfer(formData: FormData) {
   const currency = (formData.get('currency') as string) || 'THB';
 
   const idempotencyKey = crypto.randomUUID();
-  const gatewayUrl = API_BASE_URL;
 
   if (!sourceAccountId || !destinationAccountId || !amount) {
     return { success: false, error: 'Missing required fields' };
   }
 
   try {
-    const response = await fetch(`${gatewayUrl}/api/v1/transactions/transfer`, {
-      method: 'POST',
+    // transactionRequester uses the standard /api/admin/transactions/transfer endpoint
+    // apiClient automatically injects auth from cookies in server-side context
+    const data = await transactionRequester.transfer({
+      fromAccountId: sourceAccountId,
+      toAccountId: destinationAccountId,
+      amount: amount,
+      currency: currency,
+    }, {
       headers: {
-        'Content-Type': 'application/json',
         'Idempotency-Key': idempotencyKey,
-      },
-      body: JSON.stringify({
-        fromAccountId: sourceAccountId,
-        toAccountId: destinationAccountId,
-        amount: amount,
-        currency: currency,
-      }),
+      }
     });
 
-    if (!response.ok) {
-      const errorData = await response.json().catch(() => null);
-      return { success: false, error: errorData?.message || 'Transaction failed at Gateway' };
-    }
-
-    const data = await response.json();
     return { success: true, data };
   } catch (err: any) {
-    console.error('Transfer Error', err);
-    return { success: false, error: 'Network error or gateway unreachable' };
+    console.error('Transfer Error:', err);
+    return { 
+      success: false, 
+      error: err.message || 'Transaction failed. Please check your balance and try again.' 
+    };
   }
 }

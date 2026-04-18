@@ -11,14 +11,7 @@ import {
   TableRow,
 } from '@/components/ui/table';
 
-export interface Account {
-  id: string;
-  userId: string;
-  accountName: string;
-  balance: number;
-  currency: string;
-  status: string;
-}
+import { Account } from '@/types/models';
 
 interface AccountTableProps {
   data: Account[];

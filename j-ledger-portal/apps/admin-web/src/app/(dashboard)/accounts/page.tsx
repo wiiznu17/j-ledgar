@@ -3,8 +3,9 @@
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { useEffect, useState } from 'react';
 import { toast } from 'sonner';
-import { API_BASE_URL } from '@/lib/api-config';
-import { Account, AccountTable } from '@/components/tables/AccountTable';
+import { AccountTable } from '@/components/tables/AccountTable';
+import { Account } from '@/types/models';
+import { accountRequester } from '@/lib/requesters';
 
 export default function AccountsPage() {
   const [data, setData] = useState<Account[]>([]);
@@ -19,16 +20,13 @@ export default function AccountsPage() {
     if (role) setUserRole(role);
   }, []);
 
-  const fetchAccounts = () => {
-    fetch(`${API_BASE_URL}/api/v1/accounts?page=0&size=50`, {
-      credentials: 'include',
-    })
-      .then((res) => {
-        if (!res.ok) throw new Error('Network response was not ok');
-        return res.json();
-      })
-      .then((d) => setData(d.content))
-      .catch(() => toast.error('Service temporarily unavailable. Please try again.'));
+  const fetchAccounts = async () => {
+    try {
+      const response = await accountRequester.getAccounts(0, 50);
+      setData(response.content);
+    } catch {
+      toast.error('Service temporarily unavailable. Please try again.');
+    }
   };
 
   useEffect(() => {
@@ -39,13 +37,7 @@ export default function AccountsPage() {
     const newStatus = currentStatus === 'ACTIVE' ? 'FROZEN' : 'ACTIVE';
     setLoading(true);
     try {
-      const res = await fetch(`${API_BASE_URL}/api/v1/accounts/${accountId}/status`, {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ status: newStatus }),
-        credentials: 'include',
-      });
-      if (!res.ok) throw new Error('Update failed');
+      await accountRequester.updateStatus(accountId, newStatus);
       toast.success(`Account status updated to ${newStatus}`);
       fetchAccounts();
     } catch {

@@ -1,27 +1,12 @@
 import { ReconciliationTable } from '@/components/reconcile/ReconciliationTable';
 import { TriggerAuditButton } from '@/components/reconcile/TriggerAuditButton';
-import { API_BASE_URL } from '@/lib/api-config';
 import { ReconciliationReport } from '@/types/reconcile';
-import { cookies } from 'next/headers';
+import { reconcileRequester } from '@/lib/requesters/reconcileRequester';
 
 async function getReconciliationReports(): Promise<ReconciliationReport[]> {
-  const cookieStore = await cookies();
-  const token = cookieStore.get('admin_session')?.value;
-
   try {
-    const res = await fetch(`${API_BASE_URL}/api/v1/system/reconcile/reports`, {
-      headers: {
-        Authorization: `Bearer ${token}`,
-      },
-      next: { revalidate: 0 }, // Ensure fresh data on every request/refresh
-    });
-
-    if (!res.ok) {
-      console.error(`[RECONCILE] Failed to fetch reports: ${res.status}`);
-      return [];
-    }
-
-    return await res.json();
+    // UI layer now only calls the requester, unaware of the underlying fetch/endpoint
+    return await reconcileRequester.getReports();
   } catch (error) {
     console.error('[RECONCILE] Fetch error:', error);
     return [];

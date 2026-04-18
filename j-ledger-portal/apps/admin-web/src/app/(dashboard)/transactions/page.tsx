@@ -4,21 +4,25 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
 import { toast } from 'sonner';
-import { API_BASE_URL } from '@/lib/api-config';
-import { Transaction, TransactionTable } from '@/components/tables/TransactionTable';
+import { TransactionTable } from '@/components/tables/TransactionTable';
+import { Transaction } from '@/types/models';
+import { transactionRequester } from '@/lib/requesters';
 
 export default function TransactionsPage() {
   const [data, setData] = useState<Transaction[]>([]);
   const router = useRouter();
 
   useEffect(() => {
-    fetch(`${API_BASE_URL}/api/v1/transactions?page=0&size=20`)
-      .then((res) => {
-        if (!res.ok) throw new Error('Network response was not ok');
-        return res.json();
-      })
-      .then((d) => setData(d.content))
-      .catch(() => toast.error('Service temporarily unavailable. Please try again.'));
+    const fetchTransactions = async () => {
+      try {
+        const response = await transactionRequester.getHistory(0, 20);
+        setData(response.content);
+      } catch {
+        toast.error('Service temporarily unavailable. Please try again.');
+      }
+    };
+    
+    fetchTransactions();
   }, []);
 
   return (

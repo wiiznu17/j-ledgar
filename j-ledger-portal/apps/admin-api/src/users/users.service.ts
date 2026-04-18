@@ -26,6 +26,20 @@ export class UsersService {
     });
   }
 
+  async findWalletUsers() {
+    return this.prisma.user.findMany({
+      select: {
+        id: true,
+        email: true,
+        isActive: true,
+        createdAt: true,
+      },
+      orderBy: {
+        createdAt: 'desc',
+      },
+    });
+  }
+
   async create(data: { email: string; password: string; role: string }) {
     const existing = await this.prisma.adminUser.findUnique({
       where: { email: data.email },

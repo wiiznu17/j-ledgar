@@ -3,10 +3,10 @@
 import { Activity, DollarSign, ArrowRightLeft, CreditCard } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { toast } from 'sonner';
-import { API_BASE_URL } from '@/lib/api-config';
 import { StatCard } from '@/components/dashboard/StatCard';
 import { TransactionVolumeChart } from '@/components/dashboard/TransactionVolumeChart';
 import { SystemHealthStatus } from '@/components/dashboard/SystemHealthStatus';
+import { accountRequester, transactionRequester, reconcileRequester } from '@/lib/requesters';
 
 const mockChartData = [
   { time: '09:00', volume: 400 },
@@ -27,26 +27,20 @@ export default function DashboardPage() {
   useEffect(() => {
     const fetchOverview = async () => {
       try {
-        // Fetch System Reconcile to get the total system balance
-        const recRes = await fetch(`${API_BASE_URL}/api/v1/system/reconcile`, { method: 'POST' });
-        if (recRes.ok) {
-          const recData = await recRes.json();
+        // 1. Fetch System Reconcile Summary
+        const recData: any = await reconcileRequester.triggerManualAudit();
+        if (recData?.totalAccountBalances) {
           setTotalBalance(recData.totalAccountBalances.toFixed(2));
         }
 
-        // Fetch Accounts to get count
-        const accRes = await fetch(`${API_BASE_URL}/api/v1/accounts?size=1`);
-        if (accRes.ok) {
-          const accData = await accRes.json();
-          setTotalAccounts(accData.totalElements);
-        }
+        // 2. Fetch Accounts count
+        const accData = await accountRequester.getAccounts(0, 1);
+        setTotalAccounts(accData.totalElements || 0);
 
-        // Fetch Transactions to get count
-        const txRes = await fetch(`${API_BASE_URL}/api/v1/transactions?size=1`);
-        if (txRes.ok) {
-          const txData = await txRes.json();
-          setTotalTransactions(txData.totalElements);
-        }
+        // 3. Fetch Transactions count
+        const txData = await transactionRequester.getHistory(0, 1);
+        setTotalTransactions(txData.totalElements || 0);
+
         setIsOnline(true);
       } catch (e) {
         setIsOnline(false);
@@ -87,6 +81,7 @@ export default function DashboardPage() {
           value={totalAccounts}
           description="Total registered users"
           icon={CreditCard}
+          iconClassName="text-blue-600"
         />
 
         <SystemHealthStatus isOnline={isOnline} />

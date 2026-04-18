@@ -23,6 +23,11 @@ export class UsersController {
     return this.usersService.findAll();
   }
 
+  @Get('wallet')
+  findWalletUsers() {
+    return this.usersService.findWalletUsers();
+  }
+
   @Post()
   create(@Body() createUserDto: { email: string; password: string; role: string }) {
     return this.usersService.create(createUserDto);

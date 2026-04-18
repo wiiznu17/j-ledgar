@@ -12,27 +12,23 @@ import {
 } from '@/components/ui/table';
 import { useEffect, useState } from 'react';
 import { toast } from 'sonner';
-import { API_BASE_URL } from '@/lib/api-config';
-
-interface OutboxEvent {
-  id: string;
-  eventType: string;
-  status: string;
-  createdAt: string;
-  processedAt: string | null;
-}
+import { systemRequester, OutboxEvent } from '@/lib/requesters/systemRequester';
 
 export default function SystemOutboxPage() {
   const [data, setData] = useState<OutboxEvent[]>([]);
 
   useEffect(() => {
-    fetch(`${API_BASE_URL}/api/v1/system/outbox`)
-      .then((res) => {
-        if (!res.ok) throw new Error('Network response was not ok');
-        return res.json();
-      })
-      .then((d) => setData(d))
-      .catch(() => toast.error('Service temporarily unavailable. Please try again.'));
+    const fetchOutbox = async () => {
+      try {
+        const d = await systemRequester.getOutbox();
+        setData(d);
+      } catch (error) {
+        console.error('[OUTBOX] Fetch error:', error);
+        toast.error('Service temporarily unavailable. Please try again.');
+      }
+    };
+    
+    fetchOutbox();
   }, []);
 
   return (

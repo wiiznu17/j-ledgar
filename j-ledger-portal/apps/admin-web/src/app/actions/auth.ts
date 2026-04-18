@@ -2,7 +2,7 @@
 
 import { cookies } from 'next/headers';
 import { redirect } from 'next/navigation';
-import { API_BASE_URL } from '@/lib/api-config';
+import { authRequester } from '@/lib/requesters';
 
 export async function login(formData: FormData) {
   const email = formData.get('email');
@@ -12,23 +12,8 @@ export async function login(formData: FormData) {
 
   let success = false;
   try {
-    console.log(`[AUTH] Attempting login for ${email} at ${API_BASE_URL}/api/v1/auth/login`);
-    const response = await fetch(`${API_BASE_URL}/api/v1/auth/login`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ email, password }),
-    });
-
-    console.log(`[AUTH] Response status: ${response.status}`);
-
-    if (!response.ok) {
-      const errorData = await response.text();
-      console.error(`[AUTH] Login failed: ${errorData}`);
-      return;
-    }
-
-    const data = await response.json();
-    console.log(`[AUTH] Login successful for user: ${data.userId}`);
+    const data = await authRequester.login({ email, password });
+    
     const cookieStore = await cookies();
 
     // Access Token (short-lived)
@@ -75,21 +60,10 @@ export async function login(formData: FormData) {
 export async function logout() {
   const cookieStore = await cookies();
   
-  // Optional: Call backend logout to invalidate refresh token
-  const userId = cookieStore.get('user_id')?.value;
-  const token = cookieStore.get('admin_session')?.value;
-  
-  if (userId && token) {
-    try {
-      await fetch(`${API_BASE_URL}/api/v1/auth/logout`, {
-        method: 'POST',
-        headers: { 
-          'Authorization': `Bearer ${token}`
-        }
-      });
-    } catch (e) {
-      console.error('Remote logout failed', e);
-    }
+  try {
+    await authRequester.logout();
+  } catch (e) {
+    console.error('Remote logout failed', e);
   }
 
   cookieStore.delete('admin_session');
@@ -109,17 +83,7 @@ export async function refreshSession() {
   }
 
   try {
-    const response = await fetch(`${API_BASE_URL}/api/v1/auth/refresh`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ userId, refreshToken }),
-    });
-
-    if (!response.ok) {
-      throw new Error('Refresh failed');
-    }
-
-    const data = await response.json();
+    const data = await authRequester.refresh({ userId, refreshToken });
 
     // Update session cookies
     cookieStore.set('admin_session', data.token, {
@@ -142,4 +106,3 @@ export async function refreshSession() {
     return null;
   }
 }
-

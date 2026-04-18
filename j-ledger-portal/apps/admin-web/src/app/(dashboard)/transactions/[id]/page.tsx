@@ -13,47 +13,28 @@ import {
 import { useParams } from 'next/navigation';
 import { useEffect, useState } from 'react';
 import { toast } from 'sonner';
-import { API_BASE_URL } from '@/lib/api-config';
-
-interface Transaction {
-  id: string;
-  transactionType: string;
-  amount: number;
-  currency: string;
-  status: string;
-  createdAt: string;
-}
-
-interface LedgerEntry {
-  id: string;
-  entryType: 'DEBIT' | 'CREDIT';
-  amount: number;
-  createdAt: string;
-  account: {
-    id: string;
-    accountName: string;
-  };
-}
-
-interface DetailsDto {
-  transaction: Transaction;
-  ledgerEntries: LedgerEntry[];
-}
+import { transactionRequester } from '@/lib/requesters';
+import { TransactionDetailsDto } from '@/types/models';
 
 export default function TransactionDetailsPage() {
   const params = useParams();
   const id = params.id as string;
-  const [data, setData] = useState<DetailsDto | null>(null);
+  const [data, setData] = useState<TransactionDetailsDto | null>(null);
 
   useEffect(() => {
     if (!id) return;
-    fetch(`${API_BASE_URL}/api/v1/transactions/${id}`)
-      .then((res) => {
-        if (!res.ok) throw new Error('Network response was not ok');
-        return res.json();
-      })
-      .then((d) => setData(d))
-      .catch(() => toast.error('Service temporarily unavailable. Please try again.'));
+    
+    const fetchDetails = async () => {
+      try {
+        const d = await transactionRequester.getDetails(id);
+        setData(d);
+      } catch (error) {
+        console.error('[TRANSACTION_DETAIL] Fetch error:', error);
+        toast.error('Service temporarily unavailable. Please try again.');
+      }
+    };
+
+    fetchDetails();
   }, [id]);
 
   if (!data) {

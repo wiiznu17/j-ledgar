@@ -5,6 +5,7 @@ import { Button } from '@/components/ui/button';
 import { useRouter } from 'next/navigation';
 import { toast } from 'sonner';
 import { Loader2, Play } from 'lucide-react';
+import { reconcileRequester } from '@/lib/requesters/reconcileRequester';
 
 export function TriggerAuditButton() {
   const [isPending, startTransition] = useTransition();
@@ -14,13 +15,8 @@ export function TriggerAuditButton() {
   const handleTrigger = async () => {
     setIsApiLoading(true);
     try {
-      const res = await fetch('/api/admin/system/reconcile/trigger', {
-        method: 'POST',
-      });
-
-      if (!res.ok) {
-        throw new Error('Failed to trigger reconciliation audit');
-      }
+      // Direct call to domain requester
+      await reconcileRequester.triggerManualAudit();
 
       toast.success('Manual audit triggered successfully');
       
