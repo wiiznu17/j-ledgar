@@ -17,11 +17,13 @@ WORKDIR /app
 COPY .gitignore .gitignore
 COPY --from=pruner /app/out/json/ .
 COPY --from=pruner /app/out/package-lock.json ./package-lock.json
+# Copy prisma schema to allow postinstall generation
+COPY apps/wallet-api/prisma/schema.prisma ./apps/wallet-api/prisma/schema.prisma
+COPY turbo.json turbo.json
 RUN npm install
 
 # Build the project
 COPY --from=pruner /app/out/full/ .
-COPY turbo.json turbo.json
 RUN npx prisma generate --schema=apps/wallet-api/prisma/schema.prisma
 RUN npx turbo build --filter=wallet-api
 
