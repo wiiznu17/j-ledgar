@@ -8,6 +8,7 @@ import com.jledger.core.domain.LedgerEntry;
 import com.jledger.core.domain.Transaction;
 import com.jledger.core.dto.TransferCompletedEvent;
 import com.jledger.core.dto.TransferRequest;
+import com.jledger.core.dto.WalletTransactionEvent;
 import com.jledger.core.exception.AccountFrozenException;
 import com.jledger.core.exception.ConflictException;
 import com.jledger.core.exception.ResourceNotFoundException;
