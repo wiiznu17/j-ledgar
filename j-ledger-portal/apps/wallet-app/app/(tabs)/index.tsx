@@ -1,4 +1,4 @@
-import { Image } from 'expo-image';
+import { useEffect } from 'react';
 import { View, Text, TouchableOpacity } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useAuthStore } from '@/src/store/auth';
@@ -7,6 +7,12 @@ import { useRouter } from 'expo-router';
 export default function HomeScreen() {
   const { isAuthenticated, logout } = useAuthStore();
   const router = useRouter();
+
+  useEffect(() => {
+    if (!isAuthenticated) {
+      router.replace('/(auth)/login');
+    }
+  }, [isAuthenticated, router]);
 
   const handleLogout = async () => {
     await logout();

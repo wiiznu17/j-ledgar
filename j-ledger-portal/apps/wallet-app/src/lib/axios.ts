@@ -4,13 +4,12 @@ import * as SecureStore from 'expo-secure-store';
 
 const getBaseUrl = () => {
   if (__DEV__) {
-    // For local development
     if (Platform.OS === 'android') {
-      return 'http://10.0.2.2/api'; // Android Emulator points to localhost of host machine
+      return 'http://10.0.2.2:3002';
     }
-    return 'http://localhost/api'; // iOS and Web
+    return 'http://localhost:3002';
   }
-  return process.env.EXPO_PUBLIC_API_URL || 'https://api.jledger.io/api';
+  return process.env.EXPO_PUBLIC_WALLET_API_URL || 'https://api.jledger.io/api/wallet';
 };
 
 export const api = axios.create({
@@ -24,7 +23,7 @@ export const api = axios.create({
 // Request Interceptor: Attach JWT Token
 api.interceptors.request.use(
   async (config) => {
-    const token = await SecureStore.getItemAsync('auth_token');
+    const token = await readToken();
     if (token) {
       config.headers.Authorization = `Bearer ${token}`;
     }
@@ -40,11 +39,25 @@ api.interceptors.response.use(
   (response) => response,
   async (error) => {
     if (error.response?.status === 401) {
-      // Potential logic for auto-logout or token refresh could go here
-      await SecureStore.deleteItemAsync('auth_token');
+      await clearToken();
     }
     return Promise.reject(error);
   },
 );
 
 export default api;
+
+async function readToken() {
+  if (Platform.OS === 'web') {
+    return localStorage.getItem('auth_token');
+  }
+  return SecureStore.getItemAsync('auth_token');
+}
+
+async function clearToken() {
+  if (Platform.OS === 'web') {
+    localStorage.removeItem('auth_token');
+    return;
+  }
+  await SecureStore.deleteItemAsync('auth_token');
+}

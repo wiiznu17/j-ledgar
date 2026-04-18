@@ -277,8 +277,13 @@ services:
       - PORT=3002
       - API_GATEWAY_URL=http://api-gateway:8080
       - DATABASE_URL=postgresql://${POSTGRES_USER:-ledger_admin}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB:-jledger_db}?schema=wallet_schema
-      - JWT_SECRET=${JWT_SECRET}
+      - JWT_ACCESS_SECRET=${JWT_ACCESS_SECRET}
+      - JWT_REFRESH_SECRET=${JWT_REFRESH_SECRET}
+      - JWT_REGISTRATION_SECRET=${JWT_REGISTRATION_SECRET}
       - JLEDGER_INTERNAL_SECRET=${JLEDGER_INTERNAL_SECRET}
+      - JLEDGER_REDIS_ADDRESS=redis://redis:6379
+      - JLEDGER_REDIS_PASSWORD=${REDIS_PASSWORD}
+      - KYC_ENCRYPTION_KEY=${KYC_ENCRYPTION_KEY}
     networks:
       - jledger-network
     expose:

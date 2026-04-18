@@ -1,17 +1,30 @@
-import { Injectable, ConflictException } from '@nestjs/common';
+import {
+  ConflictException,
+  ForbiddenException,
+  Injectable,
+  NotFoundException,
+} from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import * as bcrypt from 'bcrypt';
+import { LedgerProxyService } from '../ledger-proxy/ledger-proxy.service';
+import { DeviceTrustLevel, RegistrationState, UserStatus } from '@prisma/client-wallet';
 
 const MAX_PIN_ATTEMPTS = 3;
-const PIN_LOCK_DURATION_MS = 5 * 60 * 1000; // 5 minutes
+const PIN_LOCK_DURATION_MS = 5 * 60 * 1000;
 
 @Injectable()
 export class UserService {
-  constructor(private prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly ledgerProxyService: LedgerProxyService,
+  ) {}
 
-  async create(email: string, password: string, pin: string) {
-    const existingUser = await this.prisma.user.findUnique({
-      where: { email },
+  async create(phoneNumber: string, password: string, pin: string) {
+    const normalizedPhone = phoneNumber.trim();
+    const existingUser = await this.prisma.user.findFirst({
+      where: {
+        OR: [{ phoneNumber: normalizedPhone }, { email: normalizedPhone }],
+      },
     });
 
     if (existingUser) {
@@ -19,21 +32,39 @@ export class UserService {
     }
 
     const passwordHash = await bcrypt.hash(password, 10);
-    const transactionPin = await bcrypt.hash(pin, 10);
+    const pinHash = await bcrypt.hash(pin, 10);
 
     return this.prisma.user.create({
       data: {
-        email,
+        phoneNumber: normalizedPhone,
         passwordHash,
-        transactionPin,
+        pinHash,
+        status: UserStatus.ACTIVE,
+        registrationState: RegistrationState.COMPLETED,
       },
     });
   }
 
   async findByEmail(email: string) {
     return this.prisma.user.findUnique({
-      where: { email },
+      where: { email: email.trim() },
     });
+  }
+
+  async findByPhoneNumber(phoneNumber: string) {
+    return this.prisma.user.findUnique({
+      where: { phoneNumber: phoneNumber.trim() },
+    });
+  }
+
+  async findByIdentity(identity: string) {
+    const normalized = identity.trim();
+
+    if (normalized.includes('@')) {
+      return this.findByEmail(normalized);
+    }
+
+    return this.findByPhoneNumber(normalized);
   }
 
   async findById(id: string) {
@@ -43,35 +74,58 @@ export class UserService {
   }
 
   async updatePin(userId: string, pin: string) {
-    const transactionPin = await bcrypt.hash(pin, 10);
+    const pinHash = await bcrypt.hash(pin, 10);
     return this.prisma.user.update({
       where: { id: userId },
-      data: { transactionPin },
+      data: { pinHash },
     });
   }
 
-  async bindDevice(userId: string, deviceId: string) {
-    return this.prisma.user.update({
+  async resolveLedgerAccountId(userId: string): Promise<string> {
+    const user = await this.prisma.user.findUnique({
       where: { id: userId },
-      data: { deviceId },
     });
+
+    if (!user) {
+      throw new NotFoundException('User not found');
+    }
+
+    if (user.ledgerAccountId) {
+      return user.ledgerAccountId;
+    }
+
+    const accountResponse = await this.ledgerProxyService.getAccountByUserId(userId);
+    const accountId = accountResponse?.data?.id as string | undefined;
+    if (!accountId) {
+      throw new ForbiddenException('ACCOUNT_NOT_READY');
+    }
+
+    await this.prisma.user.update({
+      where: { id: userId },
+      data: { ledgerAccountId: accountId },
+    });
+
+    return accountId;
   }
 
-  /**
-   * Atomically increments pinAttempts using Prisma's { increment } operator.
-   *
-   * This replaces the previous non-atomic read-modify-write (findById → +1 → save)
-   * which allowed concurrent PIN attempts to bypass the 3-attempt lockout via a race
-   * condition. The { increment: 1 } translates to a single SQL:
-   *   UPDATE users SET pin_attempts = pin_attempts + 1 WHERE id = $1
-   * ensuring correctness under any level of concurrency.
-   *
-   * If the incremented count reaches MAX_PIN_ATTEMPTS, the lock timestamp is also
-   * set atomically in the same UPDATE, preventing a second concurrent call from
-   * skipping the lockout entirely.
-   */
+  async getTrustedDeviceIdByIdentifier(userId: string, deviceIdentifier: string) {
+    const device = await this.prisma.userDevice.findUnique({
+      where: {
+        userId_deviceIdentifier: {
+          userId,
+          deviceIdentifier,
+        },
+      },
+    });
+
+    if (!device || device.trustLevel !== DeviceTrustLevel.TRUSTED) {
+      return null;
+    }
+
+    return device.id;
+  }
+
   async handlePinFailure(userId: string) {
-    // Step 1: Atomically increment the counter
     const updated = await this.prisma.user.update({
       where: { id: userId },
       data: {
@@ -79,7 +133,6 @@ export class UserService {
       },
     });
 
-    // Step 2: If the new count has crossed the threshold, set the lock — also atomically
     if (updated.pinAttempts >= MAX_PIN_ATTEMPTS) {
       return this.prisma.user.update({
         where: { id: userId },

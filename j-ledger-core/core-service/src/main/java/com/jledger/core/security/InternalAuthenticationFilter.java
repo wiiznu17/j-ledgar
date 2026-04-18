@@ -21,7 +21,7 @@ import java.util.Collections;
 @Component
 public class InternalAuthenticationFilter extends OncePerRequestFilter {
 
-    @Value("${jledger.internal.secret:jledger_secret_placeholder}")
+    @Value("${jledger.internal.secret}")
     private String internalSecret;
 
     @Override

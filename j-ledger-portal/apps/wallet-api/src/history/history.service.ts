@@ -1,36 +1,53 @@
 import { Injectable } from '@nestjs/common';
 import { LedgerProxyService } from '../ledger-proxy/ledger-proxy.service';
-import { PrismaService } from '../prisma/prisma.service';
-import { LedgerEntry, PaginatedResponse, TransactionType, LedgerEntryType } from '@repo/dto';
+import { UserService } from '../user/user.service';
+
+type LedgerEntryType = 'DEBIT' | 'CREDIT';
+type TransactionType = 'TOPUP' | 'TRANSFER' | 'PAYMENT';
+
+interface LedgerEntry {
+  id: string;
+  amount: number;
+  entryType: LedgerEntryType;
+  createdAt: string;
+  transaction?: {
+    id: string;
+    status?: string;
+    transactionType?: TransactionType;
+  };
+}
+
+interface PaginatedResponse<T> {
+  content: T[];
+  totalElements: number;
+  totalPages: number;
+  number: number;
+}
 
 @Injectable()
 export class HistoryService {
   constructor(
     private readonly ledgerProxyService: LedgerProxyService,
-    private readonly prisma: PrismaService,
+    private readonly userService: UserService,
   ) {}
 
   async getTransactionHistory(userId: string, page: number = 0, size: number = 20) {
-    // 1. หา accountId จาก userId ก่อน
-    const accountResponse = await this.ledgerProxyService.getAccountByUserId(userId);
-    const accountId = accountResponse.data.id;
+    const accountId = await this.userService.resolveLedgerAccountId(userId);
 
-    // 2. ดึงประวัติจาก Java Core
     const historyResponse = await this.ledgerProxyService.forwardToGateway<PaginatedResponse<LedgerEntry>>(
       'get', 
       `/api/v1/accounts/${accountId}/transactions?page=${page}&size=${size}`
     );
     
-    // 3. Transform Data
     const formattedData = historyResponse.content.map((entry: LedgerEntry) => {
       return {
         id: entry.id,
         amount: entry.amount,
-        type: entry.entryType, // DEBIT หรือ CREDIT
+        type: entry.entryType,
         date: entry.createdAt,
         title: this.generateTransactionTitle(entry),
         status: entry.transaction?.status,
-        reference: entry.transaction?.id, // Using transaction ID as fallback if idempotencyKey not expose
+        reference: entry.transaction?.id,
       };
     });
 
@@ -45,19 +62,19 @@ export class HistoryService {
   }
 
   private generateTransactionTitle(entry: LedgerEntry): string {
-    const txnType = entry.transaction?.transactionType; // TOPUP, TRANSFER, PAYMENT
-    const isCredit = entry.entryType === LedgerEntryType.CREDIT;
+    const txnType = entry.transaction?.transactionType;
+    const isCredit = entry.entryType === 'CREDIT';
 
     if (!txnType) {
       return 'ธุรกรรมอื่นๆ';
     }
 
     switch (txnType) {
-      case TransactionType.TOPUP:
+      case 'TOPUP':
         return 'เติมเงินเข้าบัญชี';
-      case TransactionType.PAYMENT:
+      case 'PAYMENT':
         return 'ชำระเงินร้านค้า';
-      case TransactionType.TRANSFER:
+      case 'TRANSFER':
         return isCredit ? 'รับเงินโอน' : 'โอนเงินออก';
       default:
         return 'ธุรกรรมอื่นๆ';

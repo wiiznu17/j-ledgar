@@ -1,7 +1,13 @@
 import { create } from 'zustand';
 import * as SecureStore from 'expo-secure-store';
 import { Platform } from 'react-native';
-import { WalletUser } from '@repo/dto';
+
+interface WalletUser {
+  id: string;
+  email?: string;
+  phoneNumber?: string;
+  createdAt?: string;
+}
 
 interface AuthState {
   token: string | null;

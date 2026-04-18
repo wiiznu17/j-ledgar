@@ -1,11 +1,6 @@
 import { IsNotEmpty, IsNumberString, IsString } from 'class-validator';
-import { TransferRequest } from '@repo/dto';
 
-export class TransferDto implements TransferRequest {
-  @IsString()
-  @IsNotEmpty()
-  fromAccountId!: string;
-
+export class TransferDto {
   @IsString()
   @IsNotEmpty()
   toAccountId!: string;

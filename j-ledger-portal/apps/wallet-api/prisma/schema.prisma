@@ -15,29 +15,227 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
+enum UserStatus {
+  PENDING
+  ACTIVE
+  LOCKED
+  FROZEN
+  CLOSED
+}
+
+enum RegistrationState {
+  PENDING_OTP
+  OTP_VERIFIED
+  TC_ACCEPTED
+  KYC_VERIFIED
+  PROFILE_COMPLETED
+  CREDENTIALS_SET
+  COMPLETED
+}
+
+enum DeviceTrustLevel {
+  TRUSTED
+  UNTRUSTED
+  REVOKED
+}
+
+enum SessionStatus {
+  ACTIVE
+  ROTATED
+  REVOKED
+  EXPIRED
+}
+
+enum OtpPurpose {
+  REGISTRATION
+  DEVICE_TRUST
+}
+
+enum OtpStatus {
+  PENDING
+  VERIFIED
+  EXPIRED
+  LOCKED
+}
+
+enum KycVerificationStatus {
+  PENDING
+  APPROVED
+  REJECTED
+  MANUAL_REVIEW
+}
+
 model User {
-  id             String           @id @default(uuid())
-  email          String           @unique
-  passwordHash   String
-  transactionPin String?
-  deviceId       String?
-  pinAttempts    Int              @default(0)
-  pinLockedUntil DateTime?
-  isActive       Boolean          @default(true)
-  merchant       MerchantProfile?
-  createdAt      DateTime         @default(now())
-  updatedAt      DateTime         @updatedAt
+  id                     String            @id @default(uuid())
+  phoneNumber            String?           @unique @db.VarChar(20)
+  email                  String?           @unique @db.VarChar(255)
+  passwordHash           String?           @db.VarChar(255)
+  pinHash                String?           @db.VarChar(255)
+  pinAttempts            Int               @default(0)
+  pinLockedUntil         DateTime?
+  loginFailCount         Int               @default(0)
+  loginLockedUntil       DateTime?
+  status                 UserStatus        @default(PENDING)
+  registrationState      RegistrationState @default(PENDING_OTP)
+  ledgerAccountId        String?           @unique
+  currentTrustedDeviceId String?
+  merchant               MerchantProfile?
+  profile                UserProfile?
+  kycData                KycData?
+  devices                UserDevice[]
+  sessions               RefreshSession[]
+  otpChallenges          OtpChallenge[]
+  securityLogs           SecurityLog[]
+  createdAt              DateTime          @default(now())
+  updatedAt              DateTime          @updatedAt
 
   @@map("users")
 }
 
+model UserProfile {
+  id          String   @id @default(uuid())
+  userId      String   @unique
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  firstName   String
+  lastName    String
+  dateOfBirth DateTime?
+  address     String?  @db.Text
+  occupation  String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@map("user_profiles")
+}
+
+model UserDevice {
+  id               String           @id @default(uuid())
+  userId           String
+  user             User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+  deviceIdentifier String           @db.VarChar(128)
+  deviceName       String?
+  platform         String?          @db.VarChar(32)
+  appVersion       String?          @db.VarChar(32)
+  trustLevel       DeviceTrustLevel @default(UNTRUSTED)
+  lastLoginAt      DateTime?
+  createdAt        DateTime         @default(now())
+  updatedAt        DateTime         @updatedAt
+  sessions         RefreshSession[]
+
+  @@unique([userId, deviceIdentifier])
+  @@index([deviceIdentifier])
+  @@map("user_devices")
+}
+
+model RefreshSession {
+  id               String        @id @default(uuid())
+  userId           String
+  user             User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  deviceId         String
+  device           UserDevice    @relation(fields: [deviceId], references: [id], onDelete: Cascade)
+  jti              String        @unique @db.VarChar(64)
+  refreshTokenHash String        @db.VarChar(255)
+  status           SessionStatus @default(ACTIVE)
+  expiresAt        DateTime
+  revokedAt        DateTime?
+  replacedByJti    String?       @db.VarChar(64)
+  createdAt        DateTime      @default(now())
+  updatedAt        DateTime      @updatedAt
+
+  @@index([userId, status])
+  @@index([deviceId, status])
+  @@map("refresh_sessions")
+}
+
+model OtpChallenge {
+  id           String     @id @default(uuid())
+  userId       String
+  user         User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  purpose      OtpPurpose
+  phoneNumber  String     @db.VarChar(20)
+  otpHash      String     @db.VarChar(255)
+  status       OtpStatus  @default(PENDING)
+  attempts     Int        @default(0)
+  maxAttempts  Int        @default(5)
+  expiresAt    DateTime
+  consumedAt   DateTime?
+  createdAt    DateTime   @default(now())
+
+  @@index([userId, purpose, status])
+  @@index([phoneNumber, purpose, status])
+  @@map("otp_challenges")
+}
+
+model KycData {
+  id                    String                @id @default(uuid())
+  userId                String                @unique
+  user                  User                  @relation(fields: [userId], references: [id], onDelete: Cascade)
+  verificationStatus    KycVerificationStatus @default(PENDING)
+  idCardNumberEncrypted String?               @db.Text
+  idCardToken           String?               @unique @db.VarChar(128)
+  idCardImageUrl        String?
+  selfieImageUrl        String?
+  idCardImageSha256     String?               @db.Char(64)
+  selfieImageSha256     String?               @db.Char(64)
+  faceMatchScore        Float?
+  providerReference     String?               @db.VarChar(255)
+  verifiedAt            DateTime?
+  createdAt             DateTime              @default(now())
+  updatedAt             DateTime              @updatedAt
+
+  @@map("kyc_data")
+}
+
+model SecurityLog {
+  id        String   @id @default(uuid())
+  userId    String?
+  user      User?    @relation(fields: [userId], references: [id], onDelete: SetNull)
+  eventType String   @db.VarChar(64)
+  ipAddress String?  @db.VarChar(64)
+  userAgent String?  @db.VarChar(512)
+  deviceId  String?
+  metadata  Json?
+  createdAt DateTime @default(now())
+
+  @@index([userId, eventType, createdAt])
+  @@map("security_logs")
+}
+
+model LedgerOutbox {
+  id          String   @id @default(uuid())
+  aggregateId String   @db.VarChar(64)
+  eventType   String   @db.VarChar(64)
+  dedupeKey   String   @unique @db.VarChar(128)
+  payload     Json
+  status      String   @default("PENDING") @db.VarChar(32)
+  retryCount  Int      @default(0)
+  nextRetryAt DateTime @default(now())
+  lastError   String?  @db.Text
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@index([status, nextRetryAt])
+  @@map("ledger_outbox")
+}
+
+model RevokedAccessToken {
+  id        String   @id @default(uuid())
+  jti       String   @unique @db.VarChar(64)
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+
+  @@index([expiresAt])
+  @@map("revoked_access_tokens")
+}
+
 model MerchantProfile {
-  id                String @id @default(uuid())
-  userId            String @unique
-  user              User   @relation(fields: [userId], references: [id])
-  merchantAccountId String // UUID mapping to Ledger
-  storeName         String
-  qrCodeData        String @unique
+  id                String   @id @default(uuid())
+  userId            String   @unique
+  user              User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  merchantAccountId String   @db.VarChar(64)
+  storeName         String   @db.VarChar(255)
+  qrCodeData        String   @unique @db.VarChar(512)
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
 
   @@map("merchant_profiles")
 }
