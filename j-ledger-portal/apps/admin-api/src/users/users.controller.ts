@@ -32,4 +32,9 @@ export class UsersController {
   remove(@Param('id') id: string) {
     return this.usersService.remove(id);
   }
+
+  @Post(':id/freeze')
+  freeze(@Param('id') id: string) {
+    return this.usersService.freezeWalletUser(id);
+  }
 }

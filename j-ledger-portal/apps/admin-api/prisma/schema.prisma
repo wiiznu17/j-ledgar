@@ -26,3 +26,13 @@ model AdminUser {
 
   @@map("admin_users")
 }
+
+model User {
+  id        String   @id @default(uuid())
+  email     String   @unique
+  isActive  Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("users")
+}

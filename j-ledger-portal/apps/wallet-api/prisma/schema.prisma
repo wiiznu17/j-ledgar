@@ -23,6 +23,7 @@ model User {
   deviceId       String?
   pinAttempts    Int              @default(0)
   pinLockedUntil DateTime?
+  isActive       Boolean          @default(true)
   merchant       MerchantProfile?
   createdAt      DateTime         @default(now())
   updatedAt      DateTime         @updatedAt

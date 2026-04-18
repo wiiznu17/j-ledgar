@@ -4,6 +4,10 @@ server:
 spring:
   application:
     name: api-gateway
+  data:
+    redis:
+      host: ${REDIS_HOST:localhost}
+      port: ${REDIS_PORT:6379}
   cloud:
     gateway:
       globalcors:
@@ -33,6 +37,21 @@ spring:
             - Path=/api-docs/notification
           filters:
             - SetPath=/v3/api-docs
+        - id: core-service-transfer
+          uri: lb://core-service
+          predicates:
+            - Path=/api/v1/transactions/transfer/**
+          filters:
+            - name: RequestRateLimiter
+              args:
+                redis-rate-limiter.replenishRate: 1
+                redis-rate-limiter.burstCapacity: 3
+                key-resolver: "#{@userKeyResolver}"
+            - name: CircuitBreaker
+              args:
+                name: coreTransferCircuitBreaker
+                fallbackUri: forward:/fallback/core-service
+            - AddRequestHeader=X-Internal-Secret, ${JLEDGER_INTERNAL_SECRET:jledger_ecosystem_secret_2024}
         - id: core-service-route
           uri: lb://core-service
           predicates:

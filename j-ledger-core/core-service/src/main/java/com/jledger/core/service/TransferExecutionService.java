@@ -8,6 +8,7 @@ import com.jledger.core.domain.LedgerEntry;
 import com.jledger.core.domain.Transaction;
 import com.jledger.core.dto.TransferCompletedEvent;
 import com.jledger.core.dto.TransferRequest;
+import com.jledger.core.exception.AccountFrozenException;
 import com.jledger.core.exception.ConflictException;
 import com.jledger.core.exception.ResourceNotFoundException;
 import com.jledger.core.repository.AccountRepository;
@@ -173,8 +174,11 @@ public class TransferExecutionService {
             throw new IllegalArgumentException("Currency mismatch");
         }
         if (!ACTIVE_STATUS.equals(sender.getStatus()) || !ACTIVE_STATUS.equals(receiver.getStatus())) {
-            if (FROZEN_STATUS.equals(sender.getStatus()) || FROZEN_STATUS.equals(receiver.getStatus())) {
-                throw new ConflictException("Account is frozen");
+            if (FROZEN_STATUS.equals(sender.getStatus())) {
+                throw new AccountFrozenException("Sender account is frozen");
+            }
+            if (FROZEN_STATUS.equals(receiver.getStatus())) {
+                throw new AccountFrozenException("Receiver account is frozen");
             }
             throw new ConflictException("Account is not active");
         }
