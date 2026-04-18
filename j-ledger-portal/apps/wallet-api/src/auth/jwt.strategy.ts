@@ -4,7 +4,7 @@ import { ExtractJwt, Strategy } from 'passport-jwt';
 import { ConfigService } from '@nestjs/config';
 import { PrismaService } from '../prisma/prisma.service';
 import { Inject } from '@nestjs/common';
-import { REDIS_CLIENT } from './auth.module';
+import { REDIS_CLIENT } from './auth.constants';
 import Redis from 'ioredis';
 
 interface AccessJwtPayload {

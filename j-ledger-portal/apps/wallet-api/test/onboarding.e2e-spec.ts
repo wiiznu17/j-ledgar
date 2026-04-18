@@ -86,7 +86,14 @@ describe('Onboarding Flow (e2e)', () => {
     const res = await request(app.getHttpServer())
       .post('/auth/register/profile')
       .set('Authorization', `Bearer ${regToken}`)
-      .send({ firstName: 'Test', lastName: 'User', dateOfBirth: '1990-01-01' })
+      .send({ 
+        firstName: 'Test', 
+        lastName: 'User', 
+        dateOfBirth: '1990-01-01',
+        incomeRange: '50,000 - 100,000',
+        sourceOfFunds: 'Salary',
+        purposeOfAccount: 'Savings'
+      })
       .expect(200);
 
     expect(res.body.regToken).toBeDefined();
@@ -112,7 +119,8 @@ describe('Onboarding Flow (e2e)', () => {
       .set('Authorization', `Bearer ${regToken}`)
       .expect(201); // 201 CREATED
 
-    expect(res.body.accessToken).toBeDefined();
-    expect(res.body.refreshToken).toBeDefined();
+    expect(res.body.registrationStatus).toEqual('PENDING_APPROVAL');
+    expect(res.body.message).toContain('within 24 hour');
+    expect(res.body.accessToken).toBeUndefined();
   });
 });

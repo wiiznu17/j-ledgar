@@ -11,6 +11,7 @@ import { UserService } from '../user/user.service';
 import { PrismaService } from '../prisma/prisma.service';
 import {
   DeviceTrustLevel,
+  KycVerificationStatus,
   OtpPurpose,
   OtpStatus,
   Prisma,
@@ -20,7 +21,7 @@ import {
 } from '@prisma/client-wallet';
 import * as bcrypt from 'bcrypt';
 import { randomUUID } from 'crypto';
-import { REDIS_CLIENT } from './auth.module';
+import { REDIS_CLIENT } from './auth.constants';
 import Redis from 'ioredis';
 import { ISmsProvider } from '../integrations/interfaces/sms-provider.interface';
 import {
@@ -190,6 +191,9 @@ export class AuthService {
           dateOfBirth: dto.dateOfBirth ? new Date(dto.dateOfBirth) : null,
           address: dto.address,
           occupation: dto.occupation,
+          incomeRange: dto.incomeRange,
+          sourceOfFunds: dto.sourceOfFunds,
+          purposeOfAccount: dto.purposeOfAccount,
         },
         create: {
           userId: claims.sub,
@@ -198,6 +202,9 @@ export class AuthService {
           dateOfBirth: dto.dateOfBirth ? new Date(dto.dateOfBirth) : null,
           address: dto.address,
           occupation: dto.occupation,
+          incomeRange: dto.incomeRange,
+          sourceOfFunds: dto.sourceOfFunds,
+          purposeOfAccount: dto.purposeOfAccount,
         },
       });
 
@@ -293,12 +300,18 @@ export class AuthService {
       RegistrationState.CREDENTIALS_SET,
     );
 
+    const kyc = await this.prisma.kycData.findUnique({
+      where: { userId: claims.sub },
+    });
+
+    const isKycApproved = kyc?.verificationStatus === KycVerificationStatus.APPROVED;
+
     await this.prisma.$transaction(async (tx) => {
       await tx.user.update({
         where: { id: claims.sub },
         data: {
           registrationState: RegistrationState.COMPLETED,
-          status: UserStatus.ACTIVE,
+          status: isKycApproved ? UserStatus.ACTIVE : UserStatus.PENDING,
         },
       });
 
@@ -324,11 +337,19 @@ export class AuthService {
       where: { id: claims.sub },
       include: {
         devices: true,
+        kycData: true,
       },
     });
 
     if (!user) {
       throw new UnauthorizedException('User not found');
+    }
+
+    if (user.kycData?.verificationStatus !== KycVerificationStatus.APPROVED) {
+      return {
+        registrationStatus: 'PENDING_APPROVAL',
+        message: 'Your registration is under review. You should get approval within 24 hour via SMS.',
+      };
     }
 
     const trustedDevice =

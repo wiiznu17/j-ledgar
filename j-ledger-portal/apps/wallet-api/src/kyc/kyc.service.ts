@@ -73,7 +73,7 @@ export class KycService {
       await tx.kycData.upsert({
         where: { userId: claims.sub },
         update: {
-          verificationStatus: KycVerificationStatus.APPROVED,
+          verificationStatus: KycVerificationStatus.PENDING,
           idCardNumberEncrypted: encryptedId,
           idCardToken: idCardToken,
           idCardImageUrl: idCardUrl,
@@ -85,7 +85,7 @@ export class KycService {
         },
         create: {
           userId: claims.sub,
-          verificationStatus: KycVerificationStatus.APPROVED,
+          verificationStatus: KycVerificationStatus.PENDING,
           idCardNumberEncrypted: encryptedId,
           idCardToken: idCardToken,
           idCardImageUrl: idCardUrl,

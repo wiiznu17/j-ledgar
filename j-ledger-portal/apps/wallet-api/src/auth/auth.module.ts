@@ -8,7 +8,7 @@ import { JwtStrategy } from './jwt.strategy';
 import { UserModule } from '../user/user.module';
 import Redis from 'ioredis';
 
-export const REDIS_CLIENT = 'REDIS_CLIENT';
+import { REDIS_CLIENT } from './auth.constants';
 
 @Module({
   imports: [

@@ -55,6 +55,18 @@ export class RegisterProfileDto {
   @IsString()
   @IsOptional()
   occupation?: string;
+
+  @IsString()
+  @IsNotEmpty()
+  incomeRange!: string;
+
+  @IsString()
+  @IsNotEmpty()
+  sourceOfFunds!: string;
+
+  @IsString()
+  @IsNotEmpty()
+  purposeOfAccount!: string;
 }
 
 export class RegisterCredentialsDto {
