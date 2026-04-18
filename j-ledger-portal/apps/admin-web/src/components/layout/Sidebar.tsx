@@ -39,6 +39,12 @@ const navigation: NavigationItem[] = [
   { name: 'System Outbox', href: '/system/outbox', icon: Send },
   { name: 'Reconcile', href: '/reconcile', icon: ShieldCheck },
   { name: 'Users', href: '/users', icon: Users, roles: ['SUPER_ADMIN'] },
+  {
+    name: 'Admins',
+    href: '/system/admins',
+    icon: ShieldCheck,
+    roles: ['SUPER_ADMIN'],
+  },
 ];
 
 export function Sidebar({

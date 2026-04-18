@@ -24,6 +24,8 @@ RUN npm install
 
 # Build the project
 COPY --from=pruner /app/out/full/ .
+# Build shared packages first
+RUN npx turbo build --filter=@repo/dto
 RUN npx prisma generate --schema=apps/wallet-api/prisma/schema.prisma
 RUN npx turbo build --filter=wallet-api
 
@@ -39,6 +41,12 @@ USER nestjs
 COPY --from=installer /app/apps/wallet-api/package.json .
 COPY --from=installer /app/apps/wallet-api/dist ./dist
 COPY --from=installer /app/node_modules ./node_modules
+# Copy compiled shared packages
+COPY --from=installer /app/packages/dto/dist ./packages/dto/dist
+COPY --from=installer /app/packages/dto/package.json ./packages/dto/package.json
+# Copy generated Prisma client
+COPY --from=installer /app/apps/wallet-api/node_modules/@prisma/client-wallet ./node_modules/@prisma/client-wallet
+COPY --from=installer /app/apps/wallet-api/prisma ./prisma
 COPY --from=installer /app/package.json .
 
-CMD ["node", "dist/main"]
+CMD ["node", "dist/src/main"]

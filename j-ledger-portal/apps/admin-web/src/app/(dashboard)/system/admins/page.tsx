@@ -32,7 +32,7 @@ import {
 } from '@/components/ui/select';
 import { UserPlus, Trash2 } from 'lucide-react';
 import { showConfirm, showSuccess, showError } from '@/lib/swal';
-import { AdminUser } from '@/types/models';
+import { AdminUser, UserRole } from '@repo/dto';
 import { userRequester } from '@/lib/requesters';
 
 export default function UsersPage() {
@@ -43,7 +43,7 @@ export default function UsersPage() {
   // New user form state
   const [newEmail, setNewEmail] = useState('');
   const [newPassword, setNewPassword] = useState('');
-  const [newRole, setNewRole] = useState('SUPPORT_STAFF');
+  const [newRole, setNewRole] = useState<string>(UserRole.SUPPORT_STAFF);
 
   const fetchUsers = async () => {
     try {
@@ -148,9 +148,9 @@ export default function UsersPage() {
                       <SelectValue placeholder="Select a role" />
                     </SelectTrigger>
                     <SelectContent className="bg-white">
-                      <SelectItem value="SUPER_ADMIN">Super Admin</SelectItem>
-                      <SelectItem value="RECONCILER">Reconciler</SelectItem>
-                      <SelectItem value="SUPPORT_STAFF">Support Staff</SelectItem>
+                      <SelectItem value={UserRole.SUPER_ADMIN}>Super Admin</SelectItem>
+                      <SelectItem value={UserRole.RECONCILER}>Reconciler</SelectItem>
+                      <SelectItem value={UserRole.SUPPORT_STAFF}>Support Staff</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
@@ -192,7 +192,7 @@ export default function UsersPage() {
                       <Badge
                         variant="outline"
                         className={
-                          user.role === 'SUPER_ADMIN'
+                          user.role === UserRole.SUPER_ADMIN
                             ? 'border-primary text-primary bg-primary/5'
                             : 'text-slate-600'
                         }

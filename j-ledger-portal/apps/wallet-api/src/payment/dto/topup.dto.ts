@@ -1,14 +1,15 @@
 import { IsNumber, IsPositive, IsString, IsIn } from 'class-validator';
+import { TopUpRequest } from '@repo/dto';
 
-export class TopUpDto {
+export class TopUpDto implements TopUpRequest {
   @IsNumber()
   @IsPositive()
-  amount: number;
+  amount!: number;
 
   @IsString()
   @IsIn(['PROMPTPAY', 'CREDIT_CARD'])
-  channel: string;
+  channel!: string;
 
   @IsString()
-  accountId: string;
+  accountId!: string;
 }

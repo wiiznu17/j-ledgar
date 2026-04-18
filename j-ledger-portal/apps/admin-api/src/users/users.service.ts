@@ -7,6 +7,7 @@ import {
 import { PrismaService } from '../prisma/prisma.service';
 import * as bcrypt from 'bcrypt';
 import { LedgerProxyService } from '../ledger-proxy/ledger-proxy.service';
+import { WalletUser, AdminUser, CreateAdminRequest, Account, AccountStatus } from '@repo/dto';
 
 @Injectable()
 export class UsersService {
@@ -15,8 +16,8 @@ export class UsersService {
     private proxyService: LedgerProxyService,
   ) {}
 
-  async findAll() {
-    return this.prisma.adminUser.findMany({
+  async findAll(): Promise<Partial<AdminUser>[]> {
+    const users = await this.prisma.adminUser.findMany({
       select: {
         id: true,
         email: true,
@@ -24,10 +25,14 @@ export class UsersService {
         createdAt: true,
       },
     });
+    return users.map(u => ({
+      ...u,
+      createdAt: u.createdAt.toISOString(),
+    }));
   }
 
-  async findWalletUsers() {
-    return this.prisma.user.findMany({
+  async findWalletUsers(): Promise<WalletUser[]> {
+    const users = await this.prisma.user.findMany({
       select: {
         id: true,
         email: true,
@@ -38,9 +43,13 @@ export class UsersService {
         createdAt: 'desc',
       },
     });
+    return users.map(u => ({
+      ...u,
+      createdAt: u.createdAt.toISOString(),
+    }));
   }
 
-  async create(data: { email: string; password: string; role: string }) {
+  async create(data: CreateAdminRequest) {
     const existing = await this.prisma.adminUser.findUnique({
       where: { email: data.email },
     });
@@ -93,7 +102,7 @@ export class UsersService {
    */
   async freezeWalletUser(userId: string) {
     // Step 1: Resolve accountId from Java Core
-    const accounts = await this.proxyService.forwardToGateway(
+    const accounts = await this.proxyService.forwardToGateway<Account[]>(
       'get',
       `/api/v1/accounts/user/${userId}`,
     );
@@ -105,7 +114,7 @@ export class UsersService {
       await this.proxyService.forwardToGateway(
         'put',
         `/api/v1/accounts/${accountId}/status`,
-        { status: 'FROZEN' },
+        { status: AccountStatus.FROZEN },
       );
     }
 
@@ -122,7 +131,7 @@ export class UsersService {
           await this.proxyService.forwardToGateway(
             'put',
             `/api/v1/accounts/${accountId}/status`,
-            { status: 'ACTIVE' },
+            { status: AccountStatus.ACTIVE },
           );
         } catch (compensationError) {
           // Compensation itself failed — log CRITICAL for manual intervention

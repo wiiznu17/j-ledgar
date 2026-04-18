@@ -13,9 +13,9 @@ services:
       - pgdata:/var/lib/postgresql/data
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-ledger_admin} -d ${POSTGRES_DB:-jledger_db}"]
-      interval: 5s
-      timeout: 5s
-      retries: 5
+      interval: 10s
+      timeout: 10s
+      retries: 10
     networks:
       - jledger-network
 
@@ -81,9 +81,9 @@ services:
     container_name: jledger-eureka
     healthcheck:
       test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:8761/"]
-      interval: 5s
-      timeout: 5s
-      retries: 10
+      interval: 10s
+      timeout: 10s
+      retries: 15
     networks:
       - jledger-network
 
@@ -112,6 +112,7 @@ services:
   core-migration:
     image: flyway/flyway:10-alpine
     container_name: jledger-core-migration
+    platform: linux/amd64
     depends_on:
       postgres:
         condition: service_healthy
@@ -122,9 +123,6 @@ services:
       - jledger-network
 
   admin-migration:
-    build:
-      context: ./j-ledger-portal
-      dockerfile: apps/admin-api/Dockerfile
     image: j-ledger/admin-api:latest
     container_name: jledger-admin-migration
     depends_on:
@@ -133,6 +131,21 @@ services:
     command: sh -c "npx prisma db push --skip-generate && node dist/prisma/seed.js"
     environment:
       - DATABASE_URL=postgresql://${POSTGRES_USER:-ledger_admin}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB:-jledger_db}?schema=admin_schema
+    networks:
+      - jledger-network
+
+  wallet-migration:
+    build:
+      context: ./j-ledger-portal
+      dockerfile: apps/wallet-api/Dockerfile
+    image: j-ledger/wallet-api:latest
+    container_name: jledger-wallet-migration
+    depends_on:
+      postgres:
+        condition: service_healthy
+    command: sh -c "npx prisma db push --skip-generate"
+    environment:
+      - DATABASE_URL=postgresql://${POSTGRES_USER:-ledger_admin}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB:-jledger_db}?schema=wallet_schema
     networks:
       - jledger-network
 
@@ -167,6 +180,10 @@ services:
       - JLEDGER_INTERNAL_SECRET=${JLEDGER_INTERNAL_SECRET}
       - JLEDGER_ADMIN_EMAIL=${JLEDGER_ADMIN_EMAIL}
       - JLEDGER_ADMIN_PASSWORD=${JLEDGER_ADMIN_PASSWORD}
+    deploy:
+      resources:
+        limits:
+          memory: 1G
     networks:
       - jledger-network
 
@@ -254,6 +271,8 @@ services:
         condition: service_healthy
       api-gateway:
         condition: service_started
+      wallet-migration:
+        condition: service_completed_successfully
     environment:
       - PORT=3002
       - API_GATEWAY_URL=http://api-gateway:8080

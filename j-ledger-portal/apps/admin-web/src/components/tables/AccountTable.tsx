@@ -11,7 +11,7 @@ import {
   TableRow,
 } from '@/components/ui/table';
 
-import { Account } from '@/types/models';
+import { Account, AccountStatus } from '@repo/dto';
 
 interface AccountTableProps {
   data: Account[];
@@ -54,7 +54,7 @@ export function AccountTable({
                 <Badge
                   variant="outline"
                   className={
-                    acc.status === 'ACTIVE'
+                    acc.status === AccountStatus.ACTIVE
                       ? 'border-primary text-primary bg-primary/5'
                       : 'border-destructive text-destructive bg-destructive/5'
                   }
@@ -65,15 +65,15 @@ export function AccountTable({
               {isSuperAdmin && (
                 <TableCell className="text-right">
                   <Button
-                    variant={acc.status === 'ACTIVE' ? 'destructive' : 'default'}
+                    variant={acc.status === AccountStatus.ACTIVE ? 'destructive' : 'default'}
                     size="sm"
                     disabled={loading}
                     className={
-                      acc.status !== 'ACTIVE' ? 'bg-primary hover:bg-primary/90 text-white' : ''
+                      acc.status !== AccountStatus.ACTIVE ? 'bg-primary hover:bg-primary/90 text-white' : ''
                     }
                     onClick={() => onToggleStatus(acc.id, acc.status)}
                   >
-                    {acc.status === 'ACTIVE' ? 'Freeze' : 'Unfreeze'}
+                    {acc.status === AccountStatus.ACTIVE ? 'Freeze' : 'Unfreeze'}
                   </Button>
                 </TableCell>
               )}

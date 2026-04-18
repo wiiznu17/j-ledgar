@@ -14,7 +14,7 @@ import { useParams } from 'next/navigation';
 import { useEffect, useState } from 'react';
 import { toast } from 'sonner';
 import { transactionRequester } from '@/lib/requesters';
-import { TransactionDetailsDto } from '@/types/models';
+import { TransactionDetailsDto, TransactionStatus, LedgerEntryType } from '@repo/dto';
 
 export default function TransactionDetailsPage() {
   const params = useParams();
@@ -50,9 +50,9 @@ export default function TransactionDetailsPage() {
         <Badge
           variant="outline"
           className={
-            data.transaction.status === 'SUCCESS'
+            data.transaction.status === TransactionStatus.SUCCESS
               ? 'border-green-500 text-green-600 bg-green-50'
-              : data.transaction.status === 'FAILED'
+              : data.transaction.status === TransactionStatus.FAILED
                 ? 'border-red-500 text-red-600 bg-red-50'
                 : 'border-orange-500 text-orange-600 bg-orange-50'
           }
@@ -108,9 +108,9 @@ export default function TransactionDetailsPage() {
                     <TableRow key={entry.id}>
                       <TableCell>
                         <Badge
-                          variant={entry.entryType === 'CREDIT' ? 'default' : 'destructive'}
+                          variant={entry.entryType === LedgerEntryType.CREDIT ? 'default' : 'destructive'}
                           className={
-                            entry.entryType === 'CREDIT'
+                            entry.entryType === LedgerEntryType.CREDIT
                               ? 'bg-chart-4 text-white hover:bg-chart-4/80 border-0'
                               : 'bg-chart-3 text-white hover:bg-chart-3/80 border-0'
                           }

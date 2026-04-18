@@ -6,13 +6,15 @@ CREATE TABLE reward_accounts (
 );
 
 -- Seed a fixed Merchant Account (UUID chosen for easy testing)
-INSERT INTO accounts (id, name, balance, currency, status, created_at, updated_at)
+INSERT INTO accounts (id, user_id, account_name, balance, currency, status, version, created_at, updated_at)
 VALUES (
     '11111111-1111-1111-1111-111111111111',
+    '00000000-0000-0000-0000-000000000000',
     'Mock Coffee Shop',
     0.00,
     'THB',
     'ACTIVE',
+    0,
     CURRENT_TIMESTAMP,
     CURRENT_TIMESTAMP
 ) ON CONFLICT (id) DO NOTHING;

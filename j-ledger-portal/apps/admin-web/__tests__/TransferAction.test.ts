@@ -57,8 +57,11 @@ describe('Transfer Server Action', () => {
       currency: 'THB',
     });
 
-    expect(result.success).toBe(true);
-    expect(result.data.id).toBe('tx-999');
+    if (result.success && result.data) {
+      expect(result.data.id).toBe('tx-999');
+    } else {
+      throw new Error('Transfer should have succeeded');
+    }
   });
 
   it('should defensively catch API failure strings properly', async () => {

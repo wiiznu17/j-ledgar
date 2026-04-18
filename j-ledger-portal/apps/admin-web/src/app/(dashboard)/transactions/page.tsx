@@ -1,8 +1,7 @@
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { TransactionTable } from '@/components/tables/TransactionTable';
 import { transactionRequester } from '@/lib/requesters';
-import { Transaction } from '@/types/models';
-import { redirect } from 'next/navigation';
+import { Transaction } from '@repo/dto';
+import { TransactionTableWrapper } from '@/components/transactions/TransactionTableWrapper';
 
 async function getTransactions(): Promise<Transaction[]> {
   try {
@@ -17,9 +16,6 @@ async function getTransactions(): Promise<Transaction[]> {
 export default async function TransactionsPage() {
   const transactions = await getTransactions();
 
-  // Handle client-side navigation logic via a server action or simple client component pass-through
-  // In this case, TransactionTable is 'use client', so we can pass a function or let it handle its own router
-  
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
@@ -34,24 +30,9 @@ export default async function TransactionsPage() {
           </CardDescription>
         </CardHeader>
         <CardContent>
-          {/* We pass a simple navigate function logic or use the table's internal handling if preferred */}
           <TransactionTableWrapper transactions={transactions} />
         </CardContent>
       </Card>
     </div>
-  );
-}
-
-// Simple internal client wrapper to handle the router logic without polluting the main server page
-'use client';
-import { useRouter } from 'next/navigation';
-
-function TransactionTableWrapper({ transactions }: { transactions: Transaction[] }) {
-  const router = useRouter();
-  return (
-    <TransactionTable 
-      data={transactions} 
-      onRowClick={(id) => router.push(`/transactions/${id}`)} 
-    />
   );
 }

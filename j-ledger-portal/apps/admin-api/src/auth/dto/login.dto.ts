@@ -1,6 +1,7 @@
 import { IsEmail, IsNotEmpty, MinLength } from 'class-validator';
+import { LoginRequest } from '@repo/dto';
 
-export class LoginDto {
+export class LoginDto implements LoginRequest {
   @IsEmail()
   email!: string;
 

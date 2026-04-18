@@ -23,6 +23,8 @@ RUN npm install
 
 # Build the project
 COPY --from=pruner /app/out/full/ .
+# Build shared packages first
+RUN npx turbo build --filter=@repo/dto
 RUN npx prisma generate --schema=apps/admin-api/prisma/schema.prisma
 RUN npx turbo build --filter=admin-api
 
@@ -38,6 +40,9 @@ USER nestjs
 COPY --from=installer /app/apps/admin-api/package.json .
 COPY --from=installer /app/apps/admin-api/dist ./dist
 COPY --from=installer /app/node_modules ./node_modules
+# Copy compiled shared packages
+COPY --from=installer /app/packages/dto/dist ./packages/dto/dist
+COPY --from=installer /app/packages/dto/package.json ./packages/dto/package.json
 COPY --from=installer /app/apps/admin-api/node_modules/@prisma/client-admin ./node_modules/@prisma/client-admin
 COPY --from=installer /app/apps/admin-api/prisma ./prisma
 COPY --from=installer /app/package.json .

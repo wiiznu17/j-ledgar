@@ -1,14 +1,15 @@
 import { create } from 'zustand';
 import * as SecureStore from 'expo-secure-store';
 import { Platform } from 'react-native';
+import { WalletUser } from '@repo/dto';
 
 interface AuthState {
   token: string | null;
   isAuthenticated: boolean;
   isLoading: boolean;
-  user: any | null;
+  user: WalletUser | null;
   setToken: (token: string | null) => Promise<void>;
-  setUser: (user: any | null) => void;
+  setUser: (user: WalletUser | null) => void;
   initialize: () => Promise<void>;
   logout: () => Promise<void>;
 }
@@ -39,7 +40,7 @@ export const useAuthStore = create<AuthState>((set) => ({
     }
   },
 
-  setUser: (user: any | null) => set({ user }),
+  setUser: (user: WalletUser | null) => set({ user }),
 
   initialize: async () => {
     set({ isLoading: true });

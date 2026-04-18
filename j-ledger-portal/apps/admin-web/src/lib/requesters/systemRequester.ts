@@ -1,5 +1,5 @@
 // src/lib/requesters/systemRequester.ts
-import { apiClient } from '@/lib/api-client';
+import { apiClient, RequestOptions } from '@/lib/api-client';
 
 export interface OutboxEvent {
   id: string;
@@ -14,7 +14,7 @@ export const systemRequester = {
    * Fetches the current system outbox events for Kafka integration monitoring.
    * Path: /api/admin/system/outbox
    */
-  getOutbox: async () => {
-    return apiClient.get<OutboxEvent[]>('/api/admin/system/outbox');
+  getOutbox: async (options?: RequestOptions) => {
+    return apiClient.get<OutboxEvent[]>('/api/admin/system/outbox', options);
   },
 };

@@ -1,6 +1,6 @@
 import { ReconciliationTable } from '@/components/reconcile/ReconciliationTable';
 import { TriggerAuditButton } from '@/components/reconcile/TriggerAuditButton';
-import { ReconciliationReport } from '@/types/reconcile';
+import { ReconciliationReport, ReconciliationStatus } from '@repo/dto';
 import { reconcileRequester } from '@/lib/requesters/reconcileRequester';
 
 async function getReconciliationReports(): Promise<ReconciliationReport[]> {
@@ -34,7 +34,7 @@ export default async function ReconcilePage() {
         <div className="bg-card p-6 rounded-xl border-2 border-primary/10 shadow-sm">
           <h3 className="text-xl font-bold mb-4 flex items-center gap-2">
             Historical Audit Logs
-            {reports.some(r => r.status === 'DISCREPANCY') && (
+            {reports.some(r => r.status === ReconciliationStatus.DISCREPANCY) && (
               <span className="flex h-3 w-3 rounded-full bg-destructive animate-pulse" />
             )}
           </h3>

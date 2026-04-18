@@ -1,7 +1,8 @@
-import { apiClient } from '@/lib/api-client';
+import { apiClient, RequestOptions } from '@/lib/api-client';
+import { LoginRequest, AuthResponse, RefreshTokenRequest, API_PATHS } from '@repo/dto';
 
 export const authRequester = {
-  login: async (data: any) => apiClient.post('/api/admin/auth/login', data),
-  logout: async () => apiClient.post('/api/admin/auth/logout'),
-  refresh: async (data: any) => apiClient.post('/api/admin/auth/refresh', data),
+  login: async (data: LoginRequest, options?: RequestOptions) => apiClient.post<AuthResponse>(API_PATHS.ADMIN.AUTH.LOGIN, data, options),
+  logout: async (options?: RequestOptions) => apiClient.post<void>(API_PATHS.ADMIN.AUTH.LOGOUT, {}, options),
+  refresh: async (data: RefreshTokenRequest, options?: RequestOptions) => apiClient.post<AuthResponse>(API_PATHS.ADMIN.AUTH.REFRESH, data, options),
 };

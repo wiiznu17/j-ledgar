@@ -1,6 +1,7 @@
 import { Controller, Get, Query, Request, UseGuards } from '@nestjs/common';
 import { HistoryService } from './history.service';
 import { JwtAuthGuard } from '../common/guards/jwt-auth.guard';
+import { Request as ExpressRequest } from 'express';
 
 @Controller('api/history')
 @UseGuards(JwtAuthGuard)
@@ -9,7 +10,7 @@ export class HistoryController {
 
   @Get()
   async getHistory(
-    @Request() req: any,
+    @Request() req: ExpressRequest & { user: { userId: string } },
     @Query('page') page?: string,
     @Query('size') size?: string,
   ) {

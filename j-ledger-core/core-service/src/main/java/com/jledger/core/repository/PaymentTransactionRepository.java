@@ -23,8 +23,8 @@ public interface PaymentTransactionRepository extends JpaRepository<PaymentTrans
      * @return 1 if the claim succeeded (this caller owns the webhook), 0 if already claimed.
      */
     @Modifying
-    @Query("UPDATE PaymentTransaction p SET p.status = com.jledger.core.domain.PaymentTransaction.Status.PROCESSING " +
+    @Query("UPDATE PaymentTransaction p SET p.status = PROCESSING " +
            "WHERE p.referenceId = :referenceId " +
-           "AND p.status = com.jledger.core.domain.PaymentTransaction.Status.PENDING")
+           "AND p.status = PENDING")
     int claimIfPending(@Param("referenceId") String referenceId);
 }

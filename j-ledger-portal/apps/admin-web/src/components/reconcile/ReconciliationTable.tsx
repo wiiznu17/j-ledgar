@@ -1,6 +1,6 @@
 'use client';
 
-import { ReconciliationReport } from '@/types/reconcile';
+import { ReconciliationReport, ReconciliationStatus } from '@repo/dto';
 import {
   Table,
   TableBody,
@@ -50,7 +50,7 @@ export function ReconciliationTable({ reports }: ReconciliationTableProps) {
           {reports.map((report) => (
             <TableRow 
               key={report.id}
-              className={report.status === 'DISCREPANCY' ? 'bg-destructive/5 hover:bg-destructive/10 transition-colors' : ''}
+              className={report.status === ReconciliationStatus.DISCREPANCY ? 'bg-destructive/5 hover:bg-destructive/10 transition-colors' : ''}
             >
               <TableCell className="font-medium">
                 {format(new Date(report.reportDate), 'dd MMM yyyy')}
@@ -65,7 +65,7 @@ export function ReconciliationTable({ reports }: ReconciliationTableProps) {
                 {formatCurrency(report.discrepancy)}
               </TableCell>
               <TableCell className="text-center">
-                {report.status === 'MATCHED' ? (
+                {report.status === ReconciliationStatus.MATCHED ? (
                   <Badge className="bg-green-500/10 text-green-600 hover:bg-green-500/20 border-green-200/50">
                     MATCHED
                   </Badge>

@@ -9,7 +9,7 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table';
-import { WalletUser } from '@/types/models';
+import { WalletUser } from '@repo/dto';
 import { FreezeUserAction } from './FreezeUserAction';
 
 interface WalletUsersTableProps {

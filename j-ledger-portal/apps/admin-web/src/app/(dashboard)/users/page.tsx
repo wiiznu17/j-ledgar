@@ -1,7 +1,7 @@
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { WalletUsersTable } from '@/components/users/WalletUsersTable';
 import { userRequester } from '@/lib/requesters';
-import { WalletUser } from '@/types/models';
+import { WalletUser } from '@repo/dto';
 
 async function getWalletUsers(): Promise<WalletUser[]> {
   try {

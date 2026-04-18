@@ -1,6 +1,7 @@
 import { IsNotEmpty, IsString } from 'class-validator';
+import { RefreshTokenRequest } from '@repo/dto';
 
-export class RefreshTokenDto {
+export class RefreshTokenDto implements RefreshTokenRequest {
   @IsNotEmpty()
   @IsString()
   userId!: string;

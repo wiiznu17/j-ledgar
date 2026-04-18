@@ -34,9 +34,10 @@ export function FreezeUserAction({ userId, email, isActive }: FreezeUserActionPr
       await userRequester.freezeWalletUser(userId);
       toast.success(`User ${email} has been frozen successfully`);
       router.refresh();
-    } catch (error: any) {
+    } catch (error) {
       console.error('[FREEZE_USER] Error:', error);
-      toast.error(error.message || 'Failed to freeze user');
+      const message = error instanceof Error ? error.message : 'Failed to freeze user';
+      toast.error(message);
     } finally {
       setLoading(false);
     }

@@ -1,5 +1,5 @@
-import { apiClient } from '@/lib/api-client';
-import { ReconciliationReport } from '@/types/reconcile';
+import { apiClient, RequestOptions } from '@/lib/api-client';
+import { ReconciliationReport, ReconciliationSummary, API_PATHS } from '@repo/dto';
 
 /**
  * Reconcile Requester
@@ -8,19 +8,20 @@ import { ReconciliationReport } from '@/types/reconcile';
 export const reconcileRequester = {
   /**
    * Fetches the history of nightly or manual reconciliation reports.
-   * Path: /api/v1/system/reconcile/reports (Proxied to Java Core via Admin API)
+   * Path: /api/admin/system/reconcile/reports
    */
-  getReports: async () => {
-    return apiClient.get<ReconciliationReport[]>('/api/admin/system/reconcile/reports', {
-      next: { revalidate: 0 },
+  getReports: async (options?: RequestOptions) => {
+    return apiClient.get<ReconciliationReport[]>(API_PATHS.ADMIN.SYSTEM.RECONCILE_REPORTS, {
+      ...options,
+      next: { revalidate: 0, ...options?.next },
     });
   },
 
   /**
    * Manually triggers a reconciliation audit.
-   * Path: /api/admin/system/reconcile/trigger (Admin API endpoint)
+   * Path: /api/admin/system/reconcile/trigger
    */
-  triggerManualAudit: async () => {
-    return apiClient.post('/api/admin/system/reconcile/trigger');
+  triggerManualAudit: async (options?: RequestOptions) => {
+    return apiClient.post<ReconciliationSummary>(API_PATHS.ADMIN.SYSTEM.RECONCILE_TRIGGER, {}, options);
   },
 };

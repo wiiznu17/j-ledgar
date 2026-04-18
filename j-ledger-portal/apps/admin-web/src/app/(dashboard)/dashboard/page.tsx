@@ -28,7 +28,7 @@ export default function DashboardPage() {
     const fetchOverview = async () => {
       try {
         // 1. Fetch System Reconcile Summary
-        const recData: any = await reconcileRequester.triggerManualAudit();
+        const recData = await reconcileRequester.triggerManualAudit();
         if (recData?.totalAccountBalances) {
           setTotalBalance(recData.totalAccountBalances.toFixed(2));
         }

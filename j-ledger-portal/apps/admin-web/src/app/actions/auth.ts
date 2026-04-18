@@ -3,6 +3,7 @@
 import { cookies } from 'next/headers';
 import { redirect } from 'next/navigation';
 import { authRequester } from '@/lib/requesters';
+import { LoginRequest, RefreshTokenRequest } from '@repo/dto';
 
 export async function login(formData: FormData) {
   const email = formData.get('email');
@@ -10,9 +11,14 @@ export async function login(formData: FormData) {
 
   if (!email || !password) return;
 
+  const loginData: LoginRequest = {
+    email: email as string,
+    password: password as string,
+  };
+
   let success = false;
   try {
-    const data = await authRequester.login({ email, password });
+    const data = await authRequester.login(loginData);
     
     const cookieStore = await cookies();
 
@@ -82,8 +88,13 @@ export async function refreshSession() {
     return null;
   }
 
+  const refreshData: RefreshTokenRequest = {
+    userId,
+    refreshToken,
+  };
+
   try {
-    const data = await authRequester.refresh({ userId, refreshToken });
+    const data = await authRequester.refresh(refreshData);
 
     // Update session cookies
     cookieStore.set('admin_session', data.token, {

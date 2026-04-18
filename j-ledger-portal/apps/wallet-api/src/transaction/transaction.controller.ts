@@ -1,8 +1,9 @@
-import { Controller, Post, Body, UseGuards, Request } from '@nestjs/common';
+import { Controller, Post, Body, UseGuards } from '@nestjs/common';
 import { JwtAuthGuard } from '../common/guards/jwt-auth.guard';
 import { TransactionPinGuard } from '../common/guards/transaction-pin.guard';
 import { RequireIdempotency } from '../common/decorators/idempotency.decorator';
 import { LedgerProxyService } from '../ledger-proxy/ledger-proxy.service';
+import { TransferDto } from './dto/transfer.dto';
 
 @Controller('transactions')
 export class TransactionController {
@@ -11,7 +12,7 @@ export class TransactionController {
   @UseGuards(JwtAuthGuard, TransactionPinGuard)
   @RequireIdempotency()
   @Post('transfer')
-  async transfer(@Body() body: any) {
+  async transfer(@Body() body: TransferDto) {
     const { fromAccountId, toAccountId, amount, currency } = body;
 
     // Forward to Core Service via Gateway

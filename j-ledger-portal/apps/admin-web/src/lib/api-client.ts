@@ -10,15 +10,15 @@ import { API_BASE_URL } from './api-config';
  *   the infrastructure (Nginx/Next.js) to proxy requests and handle browser cookies.
  */
 
-type HttpMethod = 'GET' | 'POST' | 'PUT' | 'DELETE';
+export type HttpMethod = 'GET' | 'POST' | 'PUT' | 'DELETE';
 
-interface RequestOptions extends RequestInit {
-  data?: any;
+export interface RequestOptions extends RequestInit {
+  data?: unknown;
   params?: Record<string, string>;
 }
 
-class ApiError extends Error {
-  constructor(public status: number, public message: string, public data?: any) {
+export class ApiError extends Error {
+  constructor(public status: number, public message: string, public data?: unknown) {
     super(message);
     this.name = 'ApiError';
   }
@@ -69,15 +69,23 @@ async function request<T>(path: string, options: RequestOptions = {}): Promise<T
   const response = await fetch(fullPath, fetchOptions);
 
   if (!response.ok) {
-    let errorData;
+    let errorData: unknown;
     try {
       errorData = await response.json();
     } catch {
       errorData = await response.text();
     }
+    
+    let errorMessage = 'API Request Failed';
+    if (typeof errorData === 'string') {
+      errorMessage = errorData;
+    } else if (errorData && typeof errorData === 'object' && 'message' in errorData) {
+      errorMessage = String(errorData.message);
+    }
+
     throw new ApiError(
       response.status,
-      typeof errorData === 'string' ? errorData : errorData.message || 'API Request Failed',
+      errorMessage,
       errorData
     );
   }
@@ -92,7 +100,7 @@ async function request<T>(path: string, options: RequestOptions = {}): Promise<T
 
 export const apiClient = {
   get: <T>(path: string, options?: RequestOptions) => request<T>(path, { ...options, method: 'GET' }),
-  post: <T>(path: string, data?: any, options?: RequestOptions) => request<T>(path, { ...options, method: 'POST', data }),
-  put: <T>(path: string, data?: any, options?: RequestOptions) => request<T>(path, { ...options, method: 'PUT', data }),
+  post: <T>(path: string, data?: unknown, options?: RequestOptions) => request<T>(path, { ...options, method: 'POST', data }),
+  put: <T>(path: string, data?: unknown, options?: RequestOptions) => request<T>(path, { ...options, method: 'PUT', data }),
   delete: <T>(path: string, options?: RequestOptions) => request<T>(path, { ...options, method: 'DELETE' }),
 };

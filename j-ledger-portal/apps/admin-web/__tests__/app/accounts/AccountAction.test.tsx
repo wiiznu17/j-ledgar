@@ -1,5 +1,6 @@
 import { render, screen } from '@testing-library/react';
-import { AccountTable, Account } from '@/components/tables/AccountTable';
+import { AccountTable } from '@/components/tables/AccountTable';
+import { Account, AccountStatus } from '@repo/dto';
 import React from 'react';
 import '@testing-library/jest-dom';
 
@@ -11,7 +12,7 @@ describe('AccountTable Role-Based Actions', () => {
       accountName: 'Savings',
       balance: 1500.0,
       currency: 'THB',
-      status: 'ACTIVE',
+      status: AccountStatus.ACTIVE,
     },
   ];
 

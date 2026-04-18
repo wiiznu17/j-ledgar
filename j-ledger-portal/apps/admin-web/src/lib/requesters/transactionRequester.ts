@@ -1,11 +1,11 @@
-import { apiClient } from '@/lib/api-client';
-import { TransactionDetailsDto } from '@/types/models';
+import { apiClient, RequestOptions } from '@/lib/api-client';
+import { Transaction, TransactionDetailsDto, TransferRequest, PaginatedResponse, API_PATHS } from '@repo/dto';
 
 export const transactionRequester = {
   getHistory: async (page = 0, size = 20) =>
-    apiClient.get<any>(`/api/admin/transactions?page=${page}&size=${size}`),
+    apiClient.get<PaginatedResponse<Transaction>>(`${API_PATHS.ADMIN.TRANSACTIONS.BASE}?page=${page}&size=${size}`),
   getDetails: async (id: string) =>
-    apiClient.get<TransactionDetailsDto>(`/api/admin/transactions/${id}`),
-  transfer: async (data: any, options?: any) =>
-    apiClient.post('/api/admin/transactions/transfer', data, options),
+    apiClient.get<TransactionDetailsDto>(API_PATHS.ADMIN.TRANSACTIONS.DETAILS(id)),
+  transfer: async (data: TransferRequest, options?: RequestOptions) =>
+    apiClient.post<Transaction>(API_PATHS.ADMIN.TRANSACTIONS.TRANSFER, data, options),
 };
