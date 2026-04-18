@@ -11,6 +11,7 @@ import { UserModule } from './user/user.module';
 import { TransactionModule } from './transaction/transaction.module';
 import { PaymentModule } from './payment/payment.module';
 import { MerchantModule } from './merchant/merchant.module';
+import { HistoryModule } from './history/history.module';
 
 @Module({
   imports: [
@@ -22,6 +23,7 @@ import { MerchantModule } from './merchant/merchant.module';
     TransactionModule,
     PaymentModule,
     MerchantModule,
+    HistoryModule,
   ],
   controllers: [AppController],
   providers: [

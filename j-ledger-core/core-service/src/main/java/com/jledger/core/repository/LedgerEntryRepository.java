@@ -8,6 +8,9 @@ import java.math.BigDecimal;
 
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import java.time.ZonedDateTime;
 
 public interface LedgerEntryRepository extends JpaRepository<LedgerEntry, UUID> {
 
@@ -15,4 +18,9 @@ public interface LedgerEntryRepository extends JpaRepository<LedgerEntry, UUID> 
 
     @Query("SELECT COALESCE(SUM(l.amount), 0) FROM LedgerEntry l WHERE l.entryType = :entryType")
     BigDecimal sumAmountByEntryType(@Param("entryType") String entryType);
+
+    @Query("SELECT le FROM LedgerEntry le JOIN FETCH le.transaction t " +
+           "WHERE le.account.id = :accountId " +
+           "ORDER BY le.createdAt DESC")
+    Page<LedgerEntry> findHistoryByAccountId(@Param("accountId") UUID accountId, Pageable pageable);
 }

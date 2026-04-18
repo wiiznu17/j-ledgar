@@ -33,4 +33,14 @@ export class LedgerProxyService {
 
     return (response as any).data;
   }
+
+  async getAccountByUserId(userId: string) {
+    const accounts = await this.forwardToGateway('get', `/api/v1/accounts/user/${userId}`);
+    return { data: accounts[0] }; // Matching user's expected { data: { id: ... } } structure
+  }
+
+  async get(path: string) {
+    const response = await this.forwardToGateway('get', path);
+    return { data: response }; // Matching user's expected { data: ... } structure
+  }
 }

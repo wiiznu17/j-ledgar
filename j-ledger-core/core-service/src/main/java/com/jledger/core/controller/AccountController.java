@@ -26,8 +26,9 @@ import org.springframework.web.bind.annotation.RequestBody;
 import jakarta.validation.Valid;
 import com.jledger.core.dto.AccountStatusUpdateRequest;
 
-import java.util.List;
-import java.util.UUID;
+import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.web.bind.annotation.RequestParam;
+import com.jledger.core.service.LedgerQueryService;
 
 @RestController
 @RequestMapping("/api/v1/accounts")
@@ -36,6 +37,7 @@ import java.util.UUID;
 public class AccountController {
 
     private final AccountRepository accountRepository;
+    private final LedgerQueryService ledgerQueryService;
 
     @GetMapping("/{id}")
     @Operation(summary = "Get account details", description = "Retrieves the balance, currency, and status for a specific account.")
@@ -85,5 +87,15 @@ public class AccountController {
                     return ResponseEntity.ok(accountRepository.save(account));
                 })
                 .orElse(ResponseEntity.notFound().build());
+    }
+
+    @GetMapping("/{accountId}/transactions")
+    @PreAuthorize("hasAnyRole('SUPER_ADMIN', 'INTERNAL')")
+    @Operation(summary = "Get account transaction history", description = "Retrieves a paginated list of ledger entries with transaction context for a specific account.")
+    public ResponseEntity<Page<LedgerEntry>> getAccountTransactions(
+            @PathVariable UUID accountId,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "20") int size) {
+        return ResponseEntity.ok(ledgerQueryService.getAccountHistory(accountId, page, size));
     }
 }
