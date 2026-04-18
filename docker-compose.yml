@@ -284,13 +284,37 @@ services:
       - JLEDGER_REDIS_ADDRESS=redis://redis:6379
       - JLEDGER_REDIS_PASSWORD=${REDIS_PASSWORD}
       - KYC_ENCRYPTION_KEY=${KYC_ENCRYPTION_KEY}
+      - S3_ENDPOINT=${S3_ENDPOINT:-http://minio:9000}
+      - S3_ACCESS_KEY=${S3_ACCESS_KEY:-minioadmin}
+      - S3_SECRET_KEY=${S3_SECRET_KEY:-minioadmin}
+      - S3_BUCKET=${S3_BUCKET:-jledger-assets}
     networks:
       - jledger-network
     expose:
       - "3002"
 
   # ----------------------------------------------------
-  # 13. Nginx - Unified Entry Point (Reverse Proxy)
+  # 13. MinIO - S3 Compatible Storage
+  # ----------------------------------------------------
+  minio:
+    image: minio/minio:latest
+    container_name: jledger-minio
+    command: server /data --console-address ":9001"
+    environment:
+      MINIO_ROOT_USER: ${S3_ACCESS_KEY:-minioadmin}
+      MINIO_ROOT_PASSWORD: ${S3_SECRET_KEY:-minioadmin}
+    volumes:
+      - miniodata:/data
+    networks:
+      - jledger-network
+    expose:
+      - "9000"
+      - "9001"
+    ports:
+      - "9001:9001" # Web Console
+
+  # ----------------------------------------------------
+  # 14. Nginx - Unified Entry Point (Reverse Proxy)
   # ----------------------------------------------------
   nginx:
     image: nginx:alpine
@@ -311,6 +335,7 @@ services:
 volumes:
   pgdata:
   redisdata:
+  miniodata:
 
 networks:
   jledger-network:

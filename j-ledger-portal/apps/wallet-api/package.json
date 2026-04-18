@@ -23,6 +23,10 @@
     "dev": "npm run start:dev"
   },
   "dependencies": {
+    "@aws-sdk/client-rekognition": "^3.1032.0",
+    "@aws-sdk/client-s3": "^3.1032.0",
+    "@aws-sdk/client-textract": "^3.1032.0",
+    "@aws-sdk/s3-request-presigner": "^3.1032.0",
     "@nestjs/axios": "^4.0.0",
     "@nestjs/common": "^11.0.1",
     "@nestjs/config": "^4.0.4",
@@ -42,6 +46,7 @@
     "passport-jwt": "^4.0.1",
     "reflect-metadata": "^0.2.2",
     "rxjs": "^7.8.1",
+    "twilio": "^5.13.1",
     "uuid": "^7.0.3"
   },
   "devDependencies": {

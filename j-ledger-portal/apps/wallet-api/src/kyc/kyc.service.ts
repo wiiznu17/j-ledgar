@@ -4,6 +4,9 @@ import { AuthService } from '../auth/auth.service';
 import { KycVerificationStatus, RegistrationState } from '@prisma/client-wallet';
 import { createHash, randomBytes, createCipheriv } from 'crypto';
 import { ConfigService } from '@nestjs/config';
+import { Inject } from '@nestjs/common';
+import { IKycProvider } from '../integrations/interfaces/kyc-provider.interface';
+import { IStorageProvider } from '../integrations/interfaces/storage-provider.interface';
 
 @Injectable()
 export class KycService {
@@ -11,6 +14,8 @@ export class KycService {
     private readonly prisma: PrismaService,
     private readonly authService: AuthService,
     private readonly configService: ConfigService,
+    @Inject(IKycProvider) private readonly kycProvider: IKycProvider,
+    @Inject(IStorageProvider) private readonly storageProvider: IStorageProvider,
   ) {}
 
   async submitKyc(
@@ -24,16 +29,27 @@ export class KycService {
       RegistrationState.TC_ACCEPTED,
     );
 
-    // 2. Hash files to retain integrity records (simulating upload)
+    // 2. Compute hashes for database integrity records
     const idCardHash = this.hashBuffer(idCardImage.buffer);
     const selfieHash = this.hashBuffer(selfieImage.buffer);
 
-    // 3. Mock OCR and Face Match
-    // In production, this would call an external verification service.
-    const mockIdNumber = `1${Math.floor(Math.random() * 1000000000000).toString().padStart(12, '0')}`;
-    const mockFaceMatchScore = 0.95 + Math.random() * 0.04; // 0.95 - 0.99
+    // 3. Store images in Object Storage (MinIO/S3)
+    const idCardKey = `kyc/${claims.sub}/id-card.jpg`;
+    const selfieKey = `kyc/${claims.sub}/selfie.jpg`;
+
+    const [idCardUrl, selfieUrl] = await Promise.all([
+      this.storageProvider.uploadFile(idCardKey, idCardImage.buffer, idCardImage.mimetype),
+      this.storageProvider.uploadFile(selfieKey, selfieImage.buffer, selfieImage.mimetype),
+    ]);
+
+    // 4. Perform OCR and Face Match via Provider
+    const extraction = await this.kycProvider.extractIdData(idCardImage.buffer);
+    const comparison = await this.kycProvider.compareFaces(selfieImage.buffer, idCardImage.buffer);
+
+    const idCardNumber = extraction.idCardNumber;
+    const faceMatchScore = comparison.score;
     
-    // Provide encryption of PII using AES-256-GCM
+    // Provide encryption of PII using AES-256-GCM (Maintain vendor independence)
     const encryptionKey = this.configService.get<string>('KYC_ENCRYPTION_KEY');
     if (!encryptionKey) {
       throw new InternalServerErrorException('System missing PII encryption capabilities');
@@ -42,7 +58,7 @@ export class KycService {
     const key = Buffer.from(encryptionKey, 'hex'); // Requires a 64-character (32 byte) hex string
     const cipher = createCipheriv('aes-256-gcm', key, iv);
     
-    let encrypted = cipher.update(mockIdNumber, 'utf8', 'hex');
+    let encrypted = cipher.update(idCardNumber, 'utf8', 'hex');
     encrypted += cipher.final('hex');
     const authTag = cipher.getAuthTag().toString('hex');
     
@@ -50,9 +66,9 @@ export class KycService {
     const encryptedId = `${iv.toString('hex')}:${authTag}:${encrypted}`;
     
     // Deterministic lookup token (hash of ID number)
-    const idCardToken = this.hashString(mockIdNumber); 
+    const idCardToken = this.hashString(idCardNumber); 
 
-    // 4. Upsert KYC Data & Transition State
+    // 5. Upsert KYC Data & Transition State
     await this.prisma.$transaction(async (tx) => {
       await tx.kycData.upsert({
         where: { userId: claims.sub },
@@ -60,9 +76,11 @@ export class KycService {
           verificationStatus: KycVerificationStatus.APPROVED,
           idCardNumberEncrypted: encryptedId,
           idCardToken: idCardToken,
+          idCardImageUrl: idCardUrl,
+          selfieImageUrl: selfieUrl,
           idCardImageSha256: idCardHash,
           selfieImageSha256: selfieHash,
-          faceMatchScore: mockFaceMatchScore,
+          faceMatchScore: faceMatchScore,
           verifiedAt: new Date(),
         },
         create: {
@@ -70,9 +88,11 @@ export class KycService {
           verificationStatus: KycVerificationStatus.APPROVED,
           idCardNumberEncrypted: encryptedId,
           idCardToken: idCardToken,
+          idCardImageUrl: idCardUrl,
+          selfieImageUrl: selfieUrl,
           idCardImageSha256: idCardHash,
           selfieImageSha256: selfieHash,
-          faceMatchScore: mockFaceMatchScore,
+          faceMatchScore: faceMatchScore,
           verifiedAt: new Date(),
         },
       });

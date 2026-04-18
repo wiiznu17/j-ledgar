@@ -16,6 +16,7 @@ import { MerchantModule } from './merchant/merchant.module';
 import { HistoryModule } from './history/history.module';
 import { KycModule } from './kyc/kyc.module';
 import { OutboxModule } from './outbox/outbox.module';
+import { IntegrationsModule } from './integrations/integrations.module';
 
 @Module({
   imports: [
@@ -39,6 +40,7 @@ import { OutboxModule } from './outbox/outbox.module';
     HistoryModule,
     KycModule,
     OutboxModule,
+    IntegrationsModule,
   ],
   controllers: [AppController],
   providers: [

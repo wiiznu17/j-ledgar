@@ -22,6 +22,7 @@ import * as bcrypt from 'bcrypt';
 import { randomUUID } from 'crypto';
 import { REDIS_CLIENT } from './auth.module';
 import Redis from 'ioredis';
+import { ISmsProvider } from '../integrations/interfaces/sms-provider.interface';
 import {
   AcceptTermsDto,
   DeviceVerifyDto,
@@ -81,6 +82,7 @@ export class AuthService {
     private readonly jwtService: JwtService,
     private readonly configService: ConfigService,
     @Inject(REDIS_CLIENT) private readonly redis: Redis,
+    @Inject(ISmsProvider) private readonly smsProvider: ISmsProvider,
   ) {
     this.accessSecret = this.requireEnv('JWT_ACCESS_SECRET');
     this.refreshSecret = this.requireEnv('JWT_REFRESH_SECRET');
@@ -807,6 +809,12 @@ export class AuthService {
         expiresAt: new Date(Date.now() + OTP_TTL_SECONDS * 1000),
       },
     });
+
+    // Send the OTP via the configured provider
+    await this.smsProvider.sendMessage(
+      phoneNumber,
+      `Your J-Ledger verification code is: ${plainOtp}. Valid for 3 minutes.`,
+    );
 
     return { id: challenge.id, plainOtp };
   }
