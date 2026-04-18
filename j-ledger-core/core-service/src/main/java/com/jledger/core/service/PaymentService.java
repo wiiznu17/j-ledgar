@@ -29,22 +29,37 @@ public class PaymentService {
             throw new IllegalArgumentException("Invalid signature");
         }
 
-        // 2. Find PaymentTransaction
-        PaymentTransaction payment = paymentTransactionRepository.findByReferenceId(request.reference_id())
-                .orElseThrow(() -> new IllegalArgumentException("Payment not found for reference: " + request.reference_id()));
+        // 2. Atomically attempt to claim this webhook delivery.
+        //    The DB UPDATE is: WHERE status='PENDING' → status='PROCESSING'.
+        //    If two concurrent webhooks arrive simultaneously, only ONE will get updatedRows=1.
+        //    The other will get updatedRows=0 and exit safely — no TOCTOU race is possible.
+        int claimedRows = paymentTransactionRepository.claimIfPending(request.reference_id());
 
-        // 3. Handle Idempotency
-        if (payment.getStatus() != PaymentTransaction.Status.PENDING) {
-            LOGGER.info("Payment reference {} already processed with status {}", request.reference_id(), payment.getStatus());
+        if (claimedRows == 0) {
+            // Either already PROCESSING (concurrent call) or terminal state (SUCCESS/FAILED).
+            // Re-fetch to log the actual terminal status for observability.
+            paymentTransactionRepository.findByReferenceId(request.reference_id()).ifPresent(existing ->
+                LOGGER.info("Webhook for reference {} already handled with status {}", request.reference_id(), existing.getStatus())
+            );
             return;
         }
 
+        // 3. We are the exclusive owner. Re-fetch the now-PROCESSING record.
+        PaymentTransaction payment = paymentTransactionRepository.findByReferenceId(request.reference_id())
+                .orElseThrow(() -> new IllegalArgumentException("Payment not found for reference: " + request.reference_id()));
+
         // 4. Update Status based on Webhook
-        if ("SUCCESS".equalsIgnoreCase(request.status())) {
-            settlePayment(payment);
-            payment.setStatus(PaymentTransaction.Status.SUCCESS);
-        } else {
+        try {
+            if ("SUCCESS".equalsIgnoreCase(request.status())) {
+                settlePayment(payment);
+                payment.setStatus(PaymentTransaction.Status.SUCCESS);
+            } else {
+                payment.setStatus(PaymentTransaction.Status.FAILED);
+            }
+        } catch (Exception ex) {
+            // If settlement fails, revert to FAILED so the record is not stuck in PROCESSING
             payment.setStatus(PaymentTransaction.Status.FAILED);
+            LOGGER.error("Payment settlement failed for reference {}, marked as FAILED", request.reference_id(), ex);
         }
 
         paymentTransactionRepository.save(payment);
@@ -53,7 +68,7 @@ public class PaymentService {
 
     @Transactional
     public PaymentTransaction createPayment(com.jledger.core.dto.PaymentCreateRequest request) {
-        LOGGER.info("Initiating payment: type={}, amount={}, reference={}", 
+        LOGGER.info("Initiating payment: type={}, amount={}, reference={}",
                 request.type(), request.amount(), request.referenceId());
 
         PaymentTransaction payment = PaymentTransaction.builder()
@@ -76,13 +91,13 @@ public class PaymentService {
                     payment.getAmount(),
                     DEFAULT_CURRENCY
             );
-            
+
             // Use reference_id as idempotency key for the ledger transfer to ensure one-to-one mapping
             transferService.executeTransfer("PAY-" + payment.getReferenceId(), transferRequest);
         } else if (payment.getType() == PaymentTransaction.Type.WITHDRAW) {
-            // Withdrawal logic would be: Debit User, Credit System
-            // (Implementation skipped for now as per blueprint prioritization)
-            LOGGER.warn("Withdrawal settlement not yet implemented via TransferService");
+            // Withdrawal logic: Debit User, Credit System
+            // Not yet implemented as per blueprint prioritization
+            throw new UnsupportedOperationException("Withdrawal settlement is not yet implemented");
         }
     }
 }

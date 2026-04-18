@@ -62,12 +62,12 @@ export class TransactionPinGuard implements CanActivate {
       }
       return true;
     } else {
-      // Failure: Increment attempts and maybe lock
-      await this.userService.handlePinFailure(userId);
-      const updatedUser = await this.userService.findById(userId);
-      const remainingAttempts = 3 - updatedUser.pinAttempts;
+      // Failure: Atomically increment attempts. handlePinFailure returns the updated user record.
+      const updatedUser = await this.userService.handlePinFailure(userId);
+      const MAX_ATTEMPTS = 3;
+      const remainingAttempts = MAX_ATTEMPTS - updatedUser.pinAttempts;
 
-      if (updatedUser.pinAttempts >= 3) {
+      if (updatedUser.pinAttempts >= MAX_ATTEMPTS) {
         throw new ForbiddenException(
           'Account locked due to too many failed attempts. Please try again in 5 minutes.',
         );

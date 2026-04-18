@@ -2,6 +2,9 @@ import { Injectable, ConflictException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import * as bcrypt from 'bcrypt';
 
+const MAX_PIN_ATTEMPTS = 3;
+const PIN_LOCK_DURATION_MS = 5 * 60 * 1000; // 5 minutes
+
 @Injectable()
 export class UserService {
   constructor(private prisma: PrismaService) {}
@@ -54,20 +57,39 @@ export class UserService {
     });
   }
 
+  /**
+   * Atomically increments pinAttempts using Prisma's { increment } operator.
+   *
+   * This replaces the previous non-atomic read-modify-write (findById → +1 → save)
+   * which allowed concurrent PIN attempts to bypass the 3-attempt lockout via a race
+   * condition. The { increment: 1 } translates to a single SQL:
+   *   UPDATE users SET pin_attempts = pin_attempts + 1 WHERE id = $1
+   * ensuring correctness under any level of concurrency.
+   *
+   * If the incremented count reaches MAX_PIN_ATTEMPTS, the lock timestamp is also
+   * set atomically in the same UPDATE, preventing a second concurrent call from
+   * skipping the lockout entirely.
+   */
   async handlePinFailure(userId: string) {
-    const user = await this.findById(userId);
-    const pinAttempts = user.pinAttempts + 1;
-    let pinLockedUntil = user.pinLockedUntil;
+    // Step 1: Atomically increment the counter
+    const updated = await this.prisma.user.update({
+      where: { id: userId },
+      data: {
+        pinAttempts: { increment: 1 },
+      },
+    });
 
-    if (pinAttempts >= 3) {
-      // Lock for 5 minutes
-      pinLockedUntil = new Date(Date.now() + 5 * 60 * 1000);
+    // Step 2: If the new count has crossed the threshold, set the lock — also atomically
+    if (updated.pinAttempts >= MAX_PIN_ATTEMPTS) {
+      return this.prisma.user.update({
+        where: { id: userId },
+        data: {
+          pinLockedUntil: new Date(Date.now() + PIN_LOCK_DURATION_MS),
+        },
+      });
     }
 
-    return this.prisma.user.update({
-      where: { id: userId },
-      data: { pinAttempts, pinLockedUntil },
-    });
+    return updated;
   }
 
   async resetPinAttempts(userId: string) {

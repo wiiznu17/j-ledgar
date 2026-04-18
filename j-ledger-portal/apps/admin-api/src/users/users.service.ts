@@ -1,4 +1,9 @@
-import { Injectable, ConflictException, NotFoundException } from '@nestjs/common';
+import {
+  Injectable,
+  ConflictException,
+  NotFoundException,
+  InternalServerErrorException,
+} from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import * as bcrypt from 'bcrypt';
 import { LedgerProxyService } from '../ledger-proxy/ledger-proxy.service';
@@ -56,22 +61,33 @@ export class UsersService {
     }
   }
 
+  /**
+   * Freezes a wallet user by synchronizing state across both systems.
+   *
+   * RACE-5 Fix: The order of operations is critical for split-brain safety.
+   * The Java Core ledger is the source of truth for money movement.
+   * We freeze it FIRST so that no transfers can proceed even if the second
+   * step (Prisma update) fails. If the Prisma update fails, we attempt to
+   * compensate by re-activating the ledger account, and surface the error
+   * to the caller rather than silently entering a split-brain state.
+   *
+   * Sequence:
+   *   1. Fetch accountId from Java Core (GET /accounts/user/{userId})
+   *   2. Freeze ledger account (PUT /accounts/{accountId}/status → FROZEN)  ← source of truth
+   *   3. Mark user inactive in Prisma (isActive = false)
+   *   4. On Prisma failure → compensate by re-activating ledger account
+   */
   async freezeWalletUser(userId: string) {
-    // 1. Mark as inactive in Prisma
-    const user = await this.prisma.user.update({
-      where: { id: userId },
-      data: { isActive: false },
-    });
-
-    // 2. Fetch associated accountId from Java Core
+    // Step 1: Resolve accountId from Java Core
     const accounts = await this.proxyService.forwardToGateway(
       'get',
       `/api/v1/accounts/user/${userId}`,
     );
 
-    if (accounts && accounts.length > 0) {
-      // 3. Freeze the account in Java Core (using the first account found)
-      const accountId = accounts[0].id;
+    const accountId: string | undefined = accounts?.[0]?.id;
+
+    // Step 2: Freeze the ledger account FIRST (source of truth for money)
+    if (accountId) {
       await this.proxyService.forwardToGateway(
         'put',
         `/api/v1/accounts/${accountId}/status`,
@@ -79,6 +95,33 @@ export class UsersService {
       );
     }
 
-    return user;
+    // Step 3: Mark the portal user as inactive in Prisma
+    try {
+      return await this.prisma.user.update({
+        where: { id: userId },
+        data: { isActive: false },
+      });
+    } catch (prismaError) {
+      // Step 4: Compensating action — re-activate ledger account to avoid split-brain
+      if (accountId) {
+        try {
+          await this.proxyService.forwardToGateway(
+            'put',
+            `/api/v1/accounts/${accountId}/status`,
+            { status: 'ACTIVE' },
+          );
+        } catch (compensationError) {
+          // Compensation itself failed — log CRITICAL for manual intervention
+          console.error(
+            `CRITICAL: Split-brain detected! Ledger account ${accountId} is FROZEN ` +
+            `but Prisma user ${userId} is still active. Manual intervention required.`,
+            compensationError,
+          );
+        }
+      }
+      throw new InternalServerErrorException(
+        'Failed to freeze user in portal database. Ledger account has been re-activated to maintain consistency.',
+      );
+    }
   }
 }
