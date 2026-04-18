@@ -1,140 +1,82 @@
-'use client';
-
-import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { ShieldCheck, AlertTriangle } from 'lucide-react';
-import { useState } from 'react';
-import { toast } from 'sonner';
+import { ReconciliationTable } from '@/components/reconcile/ReconciliationTable';
+import { TriggerAuditButton } from '@/components/reconcile/TriggerAuditButton';
 import { API_BASE_URL } from '@/lib/api-config';
+import { ReconciliationReport } from '@/types/reconcile';
+import { cookies } from 'next/headers';
 
-interface ReconcileSummary {
-  timestamp: string;
-  totalAccountBalances: number;
-  totalCredits: number;
-  totalDebits: number;
-  isBalanced: boolean;
-  ledgerIntegrityIntact: boolean;
-  activeAccountsAnalyzed: boolean;
+async function getReconciliationReports(): Promise<ReconciliationReport[]> {
+  const cookieStore = await cookies();
+  const token = cookieStore.get('admin_session')?.value;
+
+  try {
+    const res = await fetch(`${API_BASE_URL}/api/v1/system/reconcile/reports`, {
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+      next: { revalidate: 0 }, // Ensure fresh data on every request/refresh
+    });
+
+    if (!res.ok) {
+      console.error(`[RECONCILE] Failed to fetch reports: ${res.status}`);
+      return [];
+    }
+
+    return await res.json();
+  } catch (error) {
+    console.error('[RECONCILE] Fetch error:', error);
+    return [];
+  }
 }
 
-export default function ReconcilePage() {
-  const [summary, setSummary] = useState<ReconcileSummary | null>(null);
-  const [loading, setLoading] = useState(false);
-
-  const runReconciliation = async () => {
-    setLoading(true);
-    setSummary(null);
-    try {
-      const res = await fetch(`${API_BASE_URL}/api/v1/system/reconcile`, { method: 'POST' });
-      if (!res.ok) throw new Error('Failed to run reconciliation');
-      const data = await res.json();
-      setSummary(data);
-      if (data.isBalanced && data.ledgerIntegrityIntact) {
-        toast.success('Reconciliation completed successfully. Ledger is perfectly balanced.');
-      } else {
-        toast.error('Reconciliation completed. Issues detected in ledger integrity!');
-      }
-    } catch {
-      toast.error('Service temporarily unavailable. Please try again.');
-    } finally {
-      setLoading(false);
-    }
-  };
+export default async function ReconcilePage() {
+  const reports = await getReconciliationReports();
 
   return (
-    <div className="space-y-6 max-w-4xl">
-      <h2 className="text-3xl font-bold tracking-tight">System Reconciliation</h2>
-      <p className="text-muted-foreground">
-        Run the end-of-day reconciliation hook to verify that total system balances match the
-        double-entry ledger records exactly.
-      </p>
+    <div className="space-y-8">
+      <div className="flex items-center justify-between">
+        <div>
+          <h2 className="text-3xl font-bold tracking-tight text-foreground">
+            System Reconciliation
+          </h2>
+          <p className="text-muted-foreground mt-1 text-lg">
+            Monitor and audit the mathematical integrity of the double-entry ledger.
+          </p>
+        </div>
+        <TriggerAuditButton />
+      </div>
 
-      <Card className="border-border shadow-sm">
-        <CardHeader>
-          <CardTitle>Reconciliation Action</CardTitle>
-          <CardDescription>Operations may take a few moments on large datasets.</CardDescription>
-        </CardHeader>
-        <CardContent className="flex items-center gap-4">
-          <Button
-            onClick={runReconciliation}
-            disabled={loading}
-            className="h-12 px-8 text-base font-semibold text-white bg-gradient-to-r from-[var(--color-magenta)] to-[var(--color-pink)] hover:opacity-90 transition-opacity border-0"
-          >
-            {loading ? 'Analyzing Databases...' : 'Run End-of-Day Reconciliation'}
-          </Button>
-        </CardContent>
-      </Card>
-
-      {summary && (
-        <Card
-          className={`border-border shadow-sm ${!summary.isBalanced || !summary.ledgerIntegrityIntact ? 'border-destructive/50 bg-destructive/5' : 'border-primary/50 bg-primary/5'}`}
-        >
-          <CardHeader>
-            <div className="flex items-center gap-3">
-              {summary.isBalanced && summary.ledgerIntegrityIntact ? (
-                <ShieldCheck className="h-8 w-8 text-primary" />
-              ) : (
-                <AlertTriangle className="h-8 w-8 text-destructive" />
-              )}
-              <div>
-                <CardTitle>Reconciliation Report</CardTitle>
-                <CardDescription>
-                  Generated at {new Date(summary.timestamp).toLocaleString()}
-                </CardDescription>
-              </div>
-            </div>
-          </CardHeader>
-          <CardContent>
-            <div className="grid gap-6 md:grid-cols-3 mb-6">
-              <div className="bg-white p-4 rounded-lg border border-border">
-                <p className="text-sm border-b pb-2 mb-2 text-muted-foreground font-medium">
-                  Total Account Balances
-                </p>
-                <p className="text-2xl font-mono text-foreground">
-                  {summary.totalAccountBalances.toFixed(4)}
-                </p>
-              </div>
-              <div className="bg-white p-4 rounded-lg border border-border">
-                <p className="text-sm border-b pb-2 mb-2 text-muted-foreground font-medium">
-                  Total Ledger Credits
-                </p>
-                <p className="text-2xl font-mono text-foreground">
-                  {summary.totalCredits.toFixed(4)}
-                </p>
-              </div>
-              <div className="bg-white p-4 rounded-lg border border-border">
-                <p className="text-sm border-b pb-2 mb-2 text-muted-foreground font-medium">
-                  Total Ledger Debits
-                </p>
-                <p className="text-2xl font-mono text-foreground">
-                  {summary.totalDebits.toFixed(4)}
-                </p>
-              </div>
-            </div>
-
-            <div className="bg-white p-4 rounded-lg border border-border space-y-3">
-              <div className="flex items-center justify-between">
-                <span className="font-medium text-foreground">
-                  Ledger Integrity (Debits == Credits):
-                </span>
-                <span
-                  className={`font-semibold ${summary.ledgerIntegrityIntact ? 'text-green-600' : 'text-red-600'}`}
-                >
-                  {summary.ledgerIntegrityIntact ? 'PASSED' : 'FAILED'}
-                </span>
-              </div>
-              <div className="flex items-center justify-between border-t pt-3">
-                <span className="font-medium text-foreground">Total Balance vs Credits Valid:</span>
-                <span
-                  className={`font-semibold ${summary.isBalanced ? 'text-green-600' : 'text-red-600'}`}
-                >
-                  {summary.isBalanced ? 'PASSED' : 'FAILED'}
-                </span>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-      )}
+      <div className="grid gap-6">
+        <div className="bg-card p-6 rounded-xl border-2 border-primary/10 shadow-sm">
+          <h3 className="text-xl font-bold mb-4 flex items-center gap-2">
+            Historical Audit Logs
+            {reports.some(r => r.status === 'DISCREPANCY') && (
+              <span className="flex h-3 w-3 rounded-full bg-destructive animate-pulse" />
+            )}
+          </h3>
+          <ReconciliationTable reports={reports} />
+        </div>
+        
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <div className="p-6 bg-green-50 rounded-xl border border-green-200">
+            <h4 className="font-bold text-green-800 text-lg mb-2">Mathematical Core Invariant</h4>
+            <p className="text-green-700 leading-relaxed text-sm">
+              The system calculates reconciliation as follows: 
+              <span className="block font-mono mt-2 bg-white/50 p-2 rounded">
+                System Bank Assets - Sum(Total User Liabilities) == 0
+              </span>
+              Any value other than zero indicates a double-entry integrity violation that requires immediate investigation.
+            </p>
+          </div>
+          <div className="p-6 bg-slate-50 rounded-xl border border-slate-200">
+            <h4 className="font-bold text-slate-800 text-lg mb-2">Nightly Automation</h4>
+            <p className="text-slate-700 leading-relaxed text-sm">
+              While manual audits can be triggered at any time, the system automatically performs 
+              this reconciliation nightly at <span className="font-bold">00:00:00 UTC</span>. 
+              The results for the previous day are recorded above.
+            </p>
+          </div>
+        </div>
+      </div>
     </div>
   );
 }
