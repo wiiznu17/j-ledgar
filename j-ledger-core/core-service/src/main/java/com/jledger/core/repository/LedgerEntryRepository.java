@@ -19,8 +19,11 @@ public interface LedgerEntryRepository extends JpaRepository<LedgerEntry, UUID> 
     @Query("SELECT COALESCE(SUM(l.amount), 0) FROM LedgerEntry l WHERE l.entryType = :entryType")
     BigDecimal sumAmountByEntryType(@Param("entryType") String entryType);
 
-    @Query("SELECT le FROM LedgerEntry le JOIN FETCH le.transaction t " +
-           "WHERE le.account.id = :accountId " +
-           "ORDER BY le.createdAt DESC")
+    @Query(
+        value = "SELECT le FROM LedgerEntry le JOIN FETCH le.transaction t " +
+                "WHERE le.account.id = :accountId " +
+                "ORDER BY le.createdAt DESC",
+        countQuery = "SELECT COUNT(le) FROM LedgerEntry le WHERE le.account.id = :accountId"
+    )
     Page<LedgerEntry> findHistoryByAccountId(@Param("accountId") UUID accountId, Pageable pageable);
 }

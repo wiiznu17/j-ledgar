@@ -46,7 +46,7 @@ public class OutboxProcessor {
     )
     public void publishPendingEvents() {
         List<IntegrationOutbox> pendingEvents =
-                integrationOutboxRepository.findTop100ByStatusOrderByCreatedAtAsc(PENDING_STATUS);
+                integrationOutboxRepository.findAndLockPendingEvents(PENDING_STATUS);
 
         for (IntegrationOutbox pendingEvent : pendingEvents) {
             try {

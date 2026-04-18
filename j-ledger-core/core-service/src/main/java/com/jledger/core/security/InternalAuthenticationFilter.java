@@ -14,6 +14,8 @@ import org.springframework.stereotype.Component;
 import org.springframework.web.filter.OncePerRequestFilter;
 
 import java.io.IOException;
+import java.nio.charset.StandardCharsets;
+import java.security.MessageDigest;
 import java.util.Collections;
 
 @Component
@@ -31,7 +33,9 @@ public class InternalAuthenticationFilter extends OncePerRequestFilter {
 
         final String secretHeader = request.getHeader("X-Internal-Secret");
 
-        if (secretHeader != null && secretHeader.contains(internalSecret)) {
+        if (secretHeader != null && MessageDigest.isEqual(
+                secretHeader.getBytes(StandardCharsets.UTF_8),
+                internalSecret.getBytes(StandardCharsets.UTF_8))) {
             // Internal system request - grant full internal authority
             UsernamePasswordAuthenticationToken authToken = new UsernamePasswordAuthenticationToken(
                     "INTERNAL_SYSTEM",
