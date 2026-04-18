@@ -13,4 +13,7 @@ public interface AccountRepository extends JpaRepository<Account, UUID> {
 
     @Query("SELECT COALESCE(SUM(a.balance), 0) FROM Account a")
     BigDecimal getSumOfAllBalances();
+
+    @Query("SELECT COALESCE(SUM(a.balance), 0) FROM Account a WHERE a.id != :systemAccountId")
+    BigDecimal getSumOfBalancesExcluding(@Param("systemAccountId") UUID systemAccountId);
 }

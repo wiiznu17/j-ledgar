@@ -7,9 +7,14 @@ import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 export class SystemController {
   constructor(private readonly proxyService: LedgerProxyService) {}
 
-  @Post('reconcile')
-  async triggerReconciliation(@Body() data: any) {
-    return this.proxyService.forwardToGateway('post', '/api/v1/system/reconcile', data);
+  @Post('reconcile/trigger')
+  async triggerReconciliation() {
+    return this.proxyService.forwardToGateway('post', '/api/v1/system/reconcile/trigger', null);
+  }
+
+  @Get('reconcile/reports')
+  async getReconciliationReports() {
+    return this.proxyService.forwardToGateway('get', '/api/v1/system/reconcile/reports', null);
   }
 
   @Get('outbox')
