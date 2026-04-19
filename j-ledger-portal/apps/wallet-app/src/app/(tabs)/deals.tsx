@@ -72,7 +72,7 @@ export default function DealsScreen() {
                 1,250 <Text className="text-sm">pts</Text>
               </Text>
               <Text className="text-[10px] font-manrope font-black text-gray-400 uppercase tracking-widest">
-                Available Balance
+                Available Points
               </Text>
             </View>
             <TouchableOpacity
