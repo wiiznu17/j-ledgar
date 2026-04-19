@@ -66,10 +66,10 @@ export default function ProfileInformationScreen() {
         contentContainerStyle={{ paddingHorizontal: 20, paddingBottom: 100 }}
         showsVerticalScrollIndicator={false}
       >
-        <UserHeaderCard 
-          nameTh={`${formData.prefixTh}${formData.nameTh}`} 
-          nameEn={`${formData.prefixEn} ${formData.nameEn}`} 
-          avatar={formData.avatar} 
+        <UserHeaderCard
+          nameTh={`${formData.prefixTh}${formData.nameTh}`}
+          nameEn={`${formData.prefixEn} ${formData.nameEn}`}
+          avatar={formData.avatar}
           phone={formData.phone}
           kycTier={formData.kycTier}
         />

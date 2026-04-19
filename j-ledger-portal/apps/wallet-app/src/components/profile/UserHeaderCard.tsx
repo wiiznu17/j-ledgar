@@ -1,7 +1,7 @@
 import React from 'react';
 import { View, Text, Image, TouchableOpacity } from 'react-native';
 import { MotiView } from 'moti';
-import { Camera, ShieldCheck,  } from 'lucide-react-native';
+import { Camera, ShieldCheck } from 'lucide-react-native';
 
 export interface UserHeaderCardProps {
   nameTh: string;
@@ -33,7 +33,9 @@ export function UserHeaderCard({ nameTh, nameEn, avatar, phone, kycTier }: UserH
         </TouchableOpacity>
       </View>
       <View className="items-center mt-4">
-        <Text className="text-2xl font-manrope font-black text-gray-800 tracking-tight">{nameTh}</Text>
+        <Text className="text-2xl font-manrope font-black text-gray-800 tracking-tight">
+          {nameTh}
+        </Text>
         <Text className="text-sm font-bold text-gray-400 mt-0.5">{nameEn}</Text>
         <Text className="text-[11px] font-bold text-gray-400 mt-1">{maskPhone(phone)}</Text>
       </View>

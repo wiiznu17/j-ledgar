@@ -31,28 +31,34 @@ export function InfoSectionsList({ formData, onEdit }: InfoSectionsListProps) {
       >
         <View className="gap-y-4">
           <View className="flex-row justify-between">
-            <InfoItem label="Verification Status" value="Tier 2 Verified" valueClass="text-green-500" />
+            <InfoItem
+              label="Verification Status"
+              value="Tier 2 Verified"
+              valueClass="text-green-500"
+            />
             <InfoItem label="Identity Type" value="ID Card" />
           </View>
           <InfoItem label="Identity Number" value={maskIdCard(formData.idNumber)} />
           <View className="flex-row">
             <View className="w-1/2">
-               <InfoItem label="Name (Thai)" value={`${formData.prefixTh}${formData.nameTh}`} />
+              <InfoItem label="Name (Thai)" value={`${formData.prefixTh}${formData.nameTh}`} />
             </View>
             <View className="w-1/2">
-               <InfoItem label="Name (English)" value={`${formData.prefixEn} ${formData.nameEn}`} />
+              <InfoItem label="Name (English)" value={`${formData.prefixEn} ${formData.nameEn}`} />
             </View>
           </View>
           <View className="flex-row">
             <View className="w-1/2">
-               <InfoItem label="Date of Birth" value={formData.dob} />
+              <InfoItem label="Date of Birth" value={formData.dob} />
             </View>
           </View>
           <View className="bg-gray-50 p-3 rounded-2xl border border-gray-100">
-             <Text className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1">Registered ID Card Address</Text>
-             <Text className="text-[11px] font-bold text-gray-500 leading-snug">
-               {`${formData.idAddress.street}, ${formData.idAddress.subdistrict}, ${formData.idAddress.district}, ${formData.idAddress.province} ${formData.idAddress.postalCode}`}
-             </Text>
+            <Text className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1">
+              Registered ID Card Address
+            </Text>
+            <Text className="text-[11px] font-bold text-gray-500 leading-snug">
+              {`${formData.idAddress.street}, ${formData.idAddress.subdistrict}, ${formData.idAddress.district}, ${formData.idAddress.province} ${formData.idAddress.postalCode}`}
+            </Text>
           </View>
         </View>
       </DataSection>
@@ -124,11 +130,13 @@ export function InfoSectionsList({ formData, onEdit }: InfoSectionsListProps) {
           </View>
         </View>
         <View className="bg-gray-50 p-3 rounded-2xl border border-gray-100 mt-4">
-             <Text className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1">Work / Study Location</Text>
-             <Text className="text-[11px] font-bold text-gray-500 leading-snug">
-               {`${formData.workAddress.street}, ${formData.workAddress.subdistrict}, ${formData.workAddress.district}, ${formData.workAddress.province} ${formData.workAddress.postalCode}`}
-             </Text>
-          </View>
+          <Text className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1">
+            Work / Study Location
+          </Text>
+          <Text className="text-[11px] font-bold text-gray-500 leading-snug">
+            {`${formData.workAddress.street}, ${formData.workAddress.subdistrict}, ${formData.workAddress.district}, ${formData.workAddress.province} ${formData.workAddress.postalCode}`}
+          </Text>
+        </View>
       </DataSection>
     </View>
   );

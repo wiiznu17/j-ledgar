@@ -80,7 +80,10 @@ export function EditSheetModal({
                     icon={<MapPin size={18} color="#9ca3af" />}
                     value={formData.currentAddress.street}
                     onChange={(v: string) =>
-                      setFormData({ ...formData, currentAddress: { ...formData.currentAddress, street: v } })
+                      setFormData({
+                        ...formData,
+                        currentAddress: { ...formData.currentAddress, street: v },
+                      })
                     }
                   />
                   <View className="flex-row gap-x-4">
@@ -103,7 +106,10 @@ export function EditSheetModal({
                         icon={<MapPin size={18} color="#9ca3af" />}
                         value={formData.currentAddress.district}
                         onChange={(v: string) =>
-                          setFormData({ ...formData, currentAddress: { ...formData.currentAddress, district: v } })
+                          setFormData({
+                            ...formData,
+                            currentAddress: { ...formData.currentAddress, district: v },
+                          })
                         }
                       />
                     </View>
@@ -115,7 +121,10 @@ export function EditSheetModal({
                         icon={<MapPin size={18} color="#9ca3af" />}
                         value={formData.currentAddress.province}
                         onChange={(v: string) =>
-                          setFormData({ ...formData, currentAddress: { ...formData.currentAddress, province: v } })
+                          setFormData({
+                            ...formData,
+                            currentAddress: { ...formData.currentAddress, province: v },
+                          })
                         }
                       />
                     </View>
@@ -152,7 +161,8 @@ export function EditSheetModal({
                     disabled
                   />
                   <Text className="text-[10px] font-medium text-gray-400 italic ml-1 leading-tight">
-                    Note: Phone number is tied to device binding and KYC verification and cannot be changed here.
+                    Note: Phone number is tied to device binding and KYC verification and cannot be
+                    changed here.
                   </Text>
                 </View>
               )}
@@ -192,7 +202,10 @@ export function EditSheetModal({
                         icon={<MapPin size={18} color="#9ca3af" />}
                         value={formData.workAddress.street}
                         onChange={(v: string) =>
-                          setFormData({ ...formData, workAddress: { ...formData.workAddress, street: v } })
+                          setFormData({
+                            ...formData,
+                            workAddress: { ...formData.workAddress, street: v },
+                          })
                         }
                       />
                       <View className="flex-row gap-x-4">
@@ -215,7 +228,10 @@ export function EditSheetModal({
                             icon={<MapPin size={18} color="#9ca3af" />}
                             value={formData.workAddress.district}
                             onChange={(v: string) =>
-                              setFormData({ ...formData, workAddress: { ...formData.workAddress, district: v } })
+                              setFormData({
+                                ...formData,
+                                workAddress: { ...formData.workAddress, district: v },
+                              })
                             }
                           />
                         </View>
@@ -227,7 +243,10 @@ export function EditSheetModal({
                             icon={<MapPin size={18} color="#9ca3af" />}
                             value={formData.workAddress.province}
                             onChange={(v: string) =>
-                              setFormData({ ...formData, workAddress: { ...formData.workAddress, province: v } })
+                              setFormData({
+                                ...formData,
+                                workAddress: { ...formData.workAddress, province: v },
+                              })
                             }
                           />
                         </View>
