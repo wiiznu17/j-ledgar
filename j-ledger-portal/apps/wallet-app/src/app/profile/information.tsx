@@ -52,15 +52,21 @@ const MOCK_USER = {
 export default function ProfileInformationScreen() {
   const [activeModal, setActiveModal] = useState<ProfileSection | null>(null);
   const [formData, setFormData] = useState(MOCK_USER);
+  const [isSaving, setIsSaving] = useState(false);
 
   const handleSave = () => {
+    if (isSaving) return;
+    setIsSaving(true);
     // ในโปรเจกต์จริงใส่ Logic อัปเดตข้อมูลตรงนี้
-    setActiveModal(null);
+    setTimeout(() => {
+      setActiveModal(null);
+      setIsSaving(false);
+    }, 1200);
   };
 
   return (
     <SafeAreaView className="flex-1 bg-[#f8f9fe]" edges={['top']}>
-      <InformationHeader />
+      <InformationHeader isSaving={isSaving} setIsSaving={setIsSaving} />
 
       <ScrollView
         contentContainerStyle={{ paddingHorizontal: 20, paddingBottom: 100 }}
@@ -85,8 +91,9 @@ export default function ProfileInformationScreen() {
         activeModal={activeModal}
         formData={formData}
         setFormData={setFormData}
-        onClose={() => setActiveModal(null)}
+        onClose={() => !isSaving && setActiveModal(null)}
         onSave={handleSave}
+        isSaving={isSaving}
       />
     </SafeAreaView>
   );

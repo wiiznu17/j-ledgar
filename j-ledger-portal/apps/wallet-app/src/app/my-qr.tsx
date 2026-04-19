@@ -20,6 +20,7 @@ export default function MyQrScreen() {
   const [amount, setAmount] = useState('');
   const [isModalVisible, setIsModalVisible] = useState(false);
   const [tempAmount, setTempAmount] = useState('');
+  const [isProcessing, setIsProcessing] = useState(false);
 
   // สร้างข้อมูลสำหรับ QR Code โดยแนบจำนวนเงินเข้าไปถ้ามีการระบุ
   const qrData =
@@ -33,13 +34,18 @@ export default function MyQrScreen() {
   )}&color=1a1a1a&bgcolor=f8f9fe`;
 
   const handleSetAmount = () => {
+    if (isProcessing) return;
+    setIsProcessing(true);
     setAmount(tempAmount);
-    setIsModalVisible(false);
+    setTimeout(() => {
+      setIsModalVisible(false);
+      setIsProcessing(false);
+    }, 400); // จำลองการคำนวณ QR เล็กน้อย
   };
 
   return (
     <SafeAreaView className="flex-1 bg-[#f8f9fe]" edges={['top']}>
-      <QRHeader />
+      <QRHeader isProcessing={isProcessing} setIsProcessing={setIsProcessing} />
 
       <ScrollView
         contentContainerStyle={{ paddingHorizontal: 20, paddingBottom: 40 }}
@@ -67,16 +73,17 @@ export default function MyQrScreen() {
           />
         </MotiView>
 
-        <QRActionButtons />
+        <QRActionButtons isProcessing={isProcessing} setIsProcessing={setIsProcessing} />
         <QRInfoBanner />
       </ScrollView>
 
       <AmountModal
         isVisible={isModalVisible}
-        onClose={() => setIsModalVisible(false)}
+        onClose={() => !isProcessing && setIsModalVisible(false)}
         tempAmount={tempAmount}
         setTempAmount={setTempAmount}
         onConfirm={handleSetAmount}
+        isProcessing={isProcessing}
       />
     </SafeAreaView>
   );

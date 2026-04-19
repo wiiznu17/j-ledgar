@@ -20,6 +20,7 @@ export interface EditSheetModalProps {
   onClose: () => void;
   onSave: () => void;
   setFormData: (data: any) => void;
+  isSaving?: boolean;
 }
 
 export function EditSheetModal({
@@ -29,6 +30,7 @@ export function EditSheetModal({
   onClose,
   onSave,
   setFormData,
+  isSaving,
 }: EditSheetModalProps) {
   return (
     <Modal visible={visible} transparent animationType="fade">
@@ -38,7 +40,11 @@ export function EditSheetModal({
       >
         {/* Backdrop */}
         <View className="absolute inset-0 bg-black/40" />
-        <TouchableOpacity activeOpacity={1} onPress={onClose} className="absolute inset-0" />
+        <TouchableOpacity
+          activeOpacity={1}
+          onPress={() => !isSaving && onClose()}
+          className="absolute inset-0"
+        />
 
         {/* Sheet */}
         <MotiView
@@ -64,7 +70,7 @@ export function EditSheetModal({
               </Text>
             </View>
             <TouchableOpacity
-              onPress={onClose}
+              onPress={() => !isSaving && onClose()}
               className="w-10 h-10 bg-gray-100 rounded-full items-center justify-center"
             >
               <X size={20} color="#9ca3af" />
@@ -272,10 +278,18 @@ export function EditSheetModal({
 
             <TouchableOpacity
               onPress={onSave}
-              className="w-full h-14 mt-8 rounded-2xl bg-[#f48fb1] flex-row items-center justify-center gap-2 shadow-lg shadow-pink-200 active:scale-95"
+              disabled={isSaving}
+              className={`w-full h-14 mt-8 rounded-2xl flex-row items-center justify-center gap-2 shadow-lg active:scale-95 transition-all
+                ${isSaving ? 'bg-pink-300 shadow-none' : 'bg-[#f48fb1] shadow-pink-200'}`}
             >
-              <Check size={20} color="white" />
-              <Text className="text-white font-black text-sm">Save Changes</Text>
+              {isSaving ? (
+                <Text className="text-white font-black text-sm">Saving Changes...</Text>
+              ) : (
+                <>
+                  <Check size={20} color="white" />
+                  <Text className="text-white font-black text-sm">Save Changes</Text>
+                </>
+              )}
             </TouchableOpacity>
           </ScrollView>
         </MotiView>

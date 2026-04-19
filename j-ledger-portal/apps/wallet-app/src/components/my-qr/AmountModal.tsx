@@ -17,6 +17,7 @@ interface AmountModalProps {
   tempAmount: string;
   setTempAmount: (amount: string) => void;
   onConfirm: () => void;
+  isProcessing?: boolean;
 }
 
 export function AmountModal({
@@ -25,6 +26,7 @@ export function AmountModal({
   tempAmount,
   setTempAmount,
   onConfirm,
+  isProcessing,
 }: AmountModalProps) {
   return (
     <Modal visible={isVisible} transparent animationType="fade">
@@ -99,11 +101,19 @@ export function AmountModal({
           </View>
 
           <TouchableOpacity
+            disabled={isProcessing}
             onPress={onConfirm}
-            className="w-full h-16 bg-[#f48fb1] rounded-2xl items-center justify-center flex-row gap-3 shadow-lg shadow-pink-200 active:scale-95"
+            className={`w-full h-16 rounded-2xl items-center justify-center flex-row gap-3 shadow-lg active:scale-95 transition-all
+              ${isProcessing ? 'bg-pink-300 shadow-none' : 'bg-[#f48fb1] shadow-pink-200'}`}
           >
-            <Check size={20} color="white" strokeWidth={3} />
-            <Text className="text-white font-manrope font-black text-base">Generate QR</Text>
+            {isProcessing ? (
+              <Text className="text-white font-manrope font-black text-base">Generating...</Text>
+            ) : (
+              <>
+                <Check size={20} color="white" strokeWidth={3} />
+                <Text className="text-white font-manrope font-black text-base">Generate QR</Text>
+              </>
+            )}
           </TouchableOpacity>
         </MotiView>
       </KeyboardAvoidingView>
