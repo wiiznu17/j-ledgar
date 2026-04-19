@@ -43,7 +43,9 @@ export const PromoBanners = ({ onPromoPress }: PromoBannersProps) => {
           />
           <View className="absolute inset-0 bg-black/30 p-5 justify-center">
             <View className="bg-blue-500 self-start px-2 py-0.5 rounded mb-2">
-              <Text className="text-white text-[8px] font-black tracking-widest uppercase">New</Text>
+              <Text className="text-white text-[8px] font-black tracking-widest uppercase">
+                New
+              </Text>
             </View>
             <Text className="text-white font-manrope font-black text-xl leading-tight">
               Double Points

@@ -63,7 +63,9 @@ export const RecentActivityList = ({
                 {currency}
                 {tx.amount.toLocaleString()}
               </Text>
-              <Text className="font-manrope text-[9px] font-bold text-gray-400 mt-1">{tx.time}</Text>
+              <Text className="font-manrope text-[9px] font-bold text-gray-400 mt-1">
+                {tx.time}
+              </Text>
             </View>
           </TouchableOpacity>
         ))}

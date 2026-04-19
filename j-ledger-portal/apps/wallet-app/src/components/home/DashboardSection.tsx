@@ -56,7 +56,9 @@ export const DashboardSection = ({
 
           <View className="flex-row justify-between items-end gap-2">
             <View className="flex-1 flex-row items-baseline">
-              <Text className="text-2xl font-manrope font-black text-gray-800 mr-1">{currency}</Text>
+              <Text className="text-2xl font-manrope font-black text-gray-800 mr-1">
+                {currency}
+              </Text>
               <Text
                 numberOfLines={1}
                 adjustsFontSizeToFit

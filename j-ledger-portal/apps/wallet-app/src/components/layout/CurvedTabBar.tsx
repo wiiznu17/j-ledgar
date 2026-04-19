@@ -51,7 +51,7 @@ export function CurvedTabBar(props: BottomTabBarProps) {
 
   const navItems = [
     { name: 'Home', icon: Home, route: '/(tabs)' },
-    { name: 'Finance', icon: History, route: '/(tabs)/history' },
+    { name: 'History', icon: History, route: '/(tabs)/history' },
     { name: 'Pay', icon: QrCode, route: '/(tabs)/scan', isCenter: true },
     { name: 'Deals', icon: TicketPercent, route: '/deals' },
     { name: 'Me', icon: User, route: '/(tabs)/profile' },
@@ -73,8 +73,11 @@ export function CurvedTabBar(props: BottomTabBarProps) {
         ]}
       >
         {navItems.map((item, index) => {
+          // ตรวจสอบว่าเป็นหน้าปัจจุบันหรือไม่ (รองรับทั้งแบบมีและไม่มี /(tabs))
           const isActive =
-            pathname === item.route || (item.route === '/(tabs)' && pathname === '/');
+            pathname === item.route ||
+            pathname === item.route.replace('/(tabs)', '') ||
+            (item.route === '/(tabs)' && pathname === '/');
 
           if (item.isCenter) {
             // เว้นที่ว่างหลุมตรงกลางไว้
