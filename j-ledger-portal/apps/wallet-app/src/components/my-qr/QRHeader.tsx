@@ -5,7 +5,7 @@ import { useRouter } from 'expo-router';
 
 export function QRHeader() {
   const router = useRouter();
-  
+
   return (
     <View className="px-5 pt-2 pb-4 flex-row items-center justify-between">
       <TouchableOpacity

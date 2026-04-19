@@ -9,8 +9,8 @@ export function QRInfoBanner() {
         <Info size={20} color="#f48fb1" />
       </View>
       <Text className="text-[10px] font-manrope font-bold text-gray-500 leading-relaxed flex-1">
-        Your unique J-Ledger ID allows instant peer-to-peer asset transfers. Scanning this QR
-        will autofill your details.
+        Your unique J-Ledger ID allows instant peer-to-peer asset transfers. Scanning this QR will
+        autofill your details.
       </Text>
     </View>
   );
