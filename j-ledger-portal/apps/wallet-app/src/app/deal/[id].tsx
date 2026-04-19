@@ -13,8 +13,9 @@ import {
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { ChevronLeft, Zap, Info, CheckCircle2, X } from 'lucide-react-native';
 import { useRouter, useLocalSearchParams } from 'expo-router';
-import { MotiView, AnimatePresence } from 'moti';
-import { MOCK_DEALS } from '../(tabs)/deals'; // ตรวจสอบ Path ให้ตรงกับโปรเจกต์ของคุณ
+import { MOCK_DEALS } from '@/app/(tabs)/deals';
+import { RedemptionConfirmationModal } from '@/components/deal/RedemptionConfirmationModal';
+import { RedemptionSuccessOverlay } from '@/components/deal/RedemptionSuccessOverlay';
 
 const { width } = Dimensions.get('window');
 
@@ -142,113 +143,16 @@ export default function DealDetailScreen() {
         </TouchableOpacity>
       </View>
 
-      {/* --------------------------------------------------- */}
-      {/* 1) Confirmation Modal (Bottom Sheet) */}
-      {/* --------------------------------------------------- */}
-      <Modal visible={showConfirm} transparent animationType="none">
-        <View className="flex-1 justify-end">
-          {/* Backdrop */}
-          <MotiView
-            from={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            className="absolute inset-0 bg-black/40"
-          />
-          <TouchableOpacity
-            activeOpacity={1}
-            onPress={() => !isProcessing && setShowConfirm(false)}
-            className="absolute inset-0"
-          />
+      <RedemptionConfirmationModal
+        isVisible={showConfirm}
+        onClose={() => setShowConfirm(false)}
+        onConfirm={handleRedeem}
+        points={deal.points}
+        dealTitle={deal.title}
+        isProcessing={isProcessing}
+      />
 
-          {/* Sheet */}
-          <MotiView
-            from={{ translateY: 600 }}
-            animate={{ translateY: 0 }}
-            exit={{ translateY: 600 }}
-            transition={{ type: 'spring', damping: 25, stiffness: 250 }}
-            className="bg-white rounded-t-[2.5rem] p-8 shadow-2xl"
-            style={{ paddingBottom: Math.max(insets.bottom, 32) }}
-          >
-            {/* Grabber Pill */}
-            <View className="w-12 h-1.5 bg-gray-200 rounded-full self-center mb-6" />
-
-            <View className="flex-row justify-between items-center mb-6">
-              <Text className="text-2xl font-manrope font-black text-gray-800 tracking-tight">
-                Confirm Redeem
-              </Text>
-              <TouchableOpacity
-                onPress={() => !isProcessing && setShowConfirm(false)}
-                className="w-10 h-10 bg-gray-50 rounded-full items-center justify-center border border-gray-100"
-              >
-                <X size={20} color="#9ca3af" />
-              </TouchableOpacity>
-            </View>
-
-            <View className="bg-pink-50/50 p-6 rounded-[2rem] border border-pink-100 mb-8 items-center">
-              <Text className="text-[10px] font-manrope font-black text-pink-400 uppercase tracking-[0.2em] mb-2">
-                Points to Deduct
-              </Text>
-              <Text className="text-5xl font-manrope font-black text-[#f48fb1] tracking-tighter">
-                {deal.points.toLocaleString()}
-              </Text>
-              <View className="h-px w-full bg-pink-100/50 my-5" />
-              <Text className="text-xs font-manrope font-bold text-gray-500 text-center leading-relaxed">
-                You are about to redeem{' '}
-                <Text className="font-black text-gray-700">{deal.title}</Text>.
-              </Text>
-            </View>
-
-            <View className="flex-row gap-4">
-              <TouchableOpacity
-                onPress={() => setShowConfirm(false)}
-                disabled={isProcessing}
-                className="flex-1 h-16 bg-gray-50 border border-gray-100 rounded-2xl items-center justify-center active:scale-95"
-              >
-                <Text className="font-manrope font-black text-gray-500">Cancel</Text>
-              </TouchableOpacity>
-              <TouchableOpacity
-                onPress={handleRedeem}
-                disabled={isProcessing}
-                className="flex-[2] h-16 bg-[#f48fb1] rounded-2xl items-center justify-center shadow-lg shadow-pink-200 active:scale-95"
-              >
-                {isProcessing ? (
-                  <ActivityIndicator color="white" />
-                ) : (
-                  <Text className="font-manrope font-black text-white text-base">Confirm</Text>
-                )}
-              </TouchableOpacity>
-            </View>
-          </MotiView>
-        </View>
-      </Modal>
-
-      {/* --------------------------------------------------- */}
-      {/* 2) Success Overlay Modal */}
-      {/* --------------------------------------------------- */}
-      <Modal visible={isSuccess} transparent animationType="fade">
-        <View className="flex-1 bg-white/95 items-center justify-center p-10">
-          <MotiView
-            from={{ scale: 0.8, opacity: 0 }}
-            animate={{ scale: 1, opacity: 1 }}
-            transition={{ type: 'spring', damping: 12 }}
-            className="w-28 h-28 bg-green-50 rounded-[2.5rem] items-center justify-center mb-6 shadow-xl shadow-green-100 border border-green-100"
-          >
-            <CheckCircle2 size={48} color="#22c55e" />
-          </MotiView>
-          <MotiView
-            from={{ translateY: 20, opacity: 0 }}
-            animate={{ translateY: 0, opacity: 1 }}
-            transition={{ delay: 200 }}
-          >
-            <Text className="text-3xl font-manrope font-black text-gray-800 tracking-tight text-center">
-              Redeemed!
-            </Text>
-            <Text className="text-base font-manrope font-bold text-gray-400 mt-3 text-center leading-relaxed">
-              Added to your My Deals.{'\n'}Redirecting...
-            </Text>
-          </MotiView>
-        </View>
-      </Modal>
+      <RedemptionSuccessOverlay isVisible={isSuccess} />
     </View>
   );
 }
