@@ -7,7 +7,7 @@ import 'react-native-reanimated';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 
 import { useColorScheme } from '@/hooks/use-color-scheme';
-import { useAuthStore } from '@/src/store/auth';
+import { useAuthStore } from '@/store/auth';
 
 import {
   useFonts,
@@ -20,7 +20,7 @@ import {
 import * as SplashScreen from 'expo-splash-screen';
 
 // Import NativeWind Global CSS
-import '../global.css';
+import '@/styles/global.css';
 
 // Prevent splash screen from auto-hiding
 SplashScreen.preventAutoHideAsync();
@@ -32,7 +32,7 @@ export const unstable_settings = {
   anchor: '(tabs)',
 };
 
-import { BackgroundGradient } from '@/src/components/common/BackgroundGradient';
+import { BackgroundGradient } from '@/components/common/BackgroundGradient';
 
 export default function RootLayout() {
   const colorScheme = useColorScheme();

@@ -16,9 +16,9 @@ import {
 } from 'lucide-react-native';
 import { MotiView } from 'moti';
 import { LinearTransition } from 'react-native-reanimated';
-import { Header } from '@/src/components/common/Header';
-import { AppTextInput } from '@/src/components/common/AppTextInput';
-import { GlassPanel } from '@/src/components/common/GlassPanel';
+import { Header } from '@/components/common/Header';
+import { AppTextInput } from '@/components/common/AppTextInput';
+import { GlassPanel } from '@/components/common/GlassPanel';
 
 const { width } = Dimensions.get('window');
 

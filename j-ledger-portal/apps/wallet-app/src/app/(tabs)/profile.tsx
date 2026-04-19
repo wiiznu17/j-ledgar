@@ -18,9 +18,9 @@ import {
 } from 'lucide-react-native';
 import { useRouter } from 'expo-router';
 import { MotiView } from 'moti';
-import { Header } from '@/src/components/common/Header';
-import { GlassPanel } from '@/src/components/common/GlassPanel';
-import { useAuthStore } from '@/src/store/auth';
+import { Header } from '@/components/common/Header';
+import { GlassPanel } from '@/components/common/GlassPanel';
+import { useAuthStore } from '@/store/auth';
 
 const { width } = Dimensions.get('window');
 
@@ -28,7 +28,7 @@ const MOCK_USER = {
   name: "SOMCHAI DEEJA",
   email: "somchai.d@jledger.com",
   phone: "081-234-5678",
-  avatar: require('../../assets/images/mock_user_avatar.png'),
+  avatar: require('../../../assets/images/mock_user_avatar.png'),
   kycStatus: 'Verified'
 };
 

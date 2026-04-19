@@ -4,7 +4,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { ChevronLeft, TicketPercent, Star, ArrowRight, Zap, Gift } from 'lucide-react-native';
 import { useRouter } from 'expo-router';
 import { MotiView } from 'moti';
-import { GlassPanel } from '@/src/components/common/GlassPanel';
+import { GlassPanel } from '@/components/common/GlassPanel';
 
 const { width } = Dimensions.get('window');
 

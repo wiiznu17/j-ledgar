@@ -4,9 +4,9 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { ChevronLeft, Landmark, CreditCard, ArrowRight, Wallet, CheckCircle2, Zap } from 'lucide-react-native';
 import { useRouter } from 'expo-router';
 import { MotiView } from 'moti';
-import { AppTextInput } from '@/src/components/common/AppTextInput';
-import { AppButton } from '@/src/components/common/AppButton';
-import { GlassPanel } from '@/src/components/common/GlassPanel';
+import { AppTextInput } from '@/components/common/AppTextInput';
+import { AppButton } from '@/components/common/AppButton';
+import { GlassPanel } from '@/components/common/GlassPanel';
 
 const { width } = Dimensions.get('window');
 

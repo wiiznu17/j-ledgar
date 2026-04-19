@@ -1,6 +1,6 @@
 import React from 'react';
 import { Tabs } from 'expo-router';
-import { CurvedTabBar } from '@/src/components/layout/CurvedTabBar';
+import { CurvedTabBar } from '@/components/layout/CurvedTabBar';
 
 /**
  * TabLayout handles the bottom navigation using a custom CurvedTabBar.

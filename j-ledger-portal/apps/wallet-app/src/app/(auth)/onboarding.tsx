@@ -25,10 +25,10 @@ import {
   User,
   Smartphone
 } from 'lucide-react-native';
-import { GlassPanel } from '@/src/components/common/GlassPanel';
-import { AppButton } from '@/src/components/common/AppButton';
-import { AppTextInput } from '@/src/components/common/AppTextInput';
-import { StepWrapper } from '@/src/components/common/StepWrapper';
+import { GlassPanel } from '@/components/common/GlassPanel';
+import { AppButton } from '@/components/common/AppButton';
+import { AppTextInput } from '@/components/common/AppTextInput';
+import { StepWrapper } from '@/components/common/StepWrapper';
 import { MotiView } from 'moti';
 
 const { width, height } = Dimensions.get('window');
@@ -161,7 +161,7 @@ export default function OnboardingScreen() {
                   className="mb-8"
                 >
                   <Image 
-                    source={require('../../assets/images/j_ledger_logo_1776536282920.png')}
+                    source={require('../../../assets/images/j_ledger_logo_1776536282920.png')}
                     className="w-32 h-32"
                     resizeMode="contain"
                   />
@@ -203,7 +203,7 @@ export default function OnboardingScreen() {
                 leftElement={
                   <View className="flex-row items-center border-r border-gray-100 pr-3 mr-1">
                     <Image 
-                      source={require('../../assets/images/thailand_flag_icon_1776536326904.png')} 
+                      source={require('../../../assets/images/thailand_flag_icon_1776536326904.png')} 
                       className="w-6 h-4 rounded-sm"
                     />
                     <Text className="ml-2 font-manrope font-bold text-on-surfaceVariant">+66</Text>
@@ -503,7 +503,7 @@ export default function OnboardingScreen() {
                   className="mb-12"
                 >
                   <Image 
-                    source={require('../../assets/images/onboarding_success_1776536303717.png')}
+                    source={require('../../../assets/images/onboarding_success_1776536303717.png')}
                     className="w-56 h-56"
                     resizeMode="contain"
                   />

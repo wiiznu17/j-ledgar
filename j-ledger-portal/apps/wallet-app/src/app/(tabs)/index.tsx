@@ -31,8 +31,8 @@ import {
 } from 'lucide-react-native';
 import { useRouter } from 'expo-router';
 import { MotiView } from 'moti';
-import { Header } from '@/src/components/common/Header';
-import { GlassPanel } from '@/src/components/common/GlassPanel';
+import { Header } from '@/components/common/Header';
+import { GlassPanel } from '@/components/common/GlassPanel';
 import { LinearTransition } from 'react-native-reanimated';
 
 const { width } = Dimensions.get('window');
@@ -43,7 +43,7 @@ const MOCK_USER = {
   balance: 45000.00,
   currency: "฿",
   points: 1250,
-  avatar: require('../../assets/images/mock_user_avatar.png'),
+  avatar: require('../../../assets/images/mock_user_avatar.png'),
   kycStatus: 'PENDING'
 };
 

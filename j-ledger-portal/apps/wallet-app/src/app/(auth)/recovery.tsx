@@ -3,9 +3,9 @@ import { View, Text, TouchableOpacity, ScrollView } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { ShieldAlert, Mail, Smartphone, ArrowRight, ChevronLeft } from 'lucide-react-native';
 import { useRouter } from 'expo-router';
-import { AppTextInput } from '@/src/components/common/AppTextInput';
-import { AppButton } from '@/src/components/common/AppButton';
-import { GlassPanel } from '@/src/components/common/GlassPanel';
+import { AppTextInput } from '@/components/common/AppTextInput';
+import { AppButton } from '@/components/common/AppButton';
+import { GlassPanel } from '@/components/common/GlassPanel';
 
 export default function RecoveryScreen() {
   const [phone, setPhone] = useState('');

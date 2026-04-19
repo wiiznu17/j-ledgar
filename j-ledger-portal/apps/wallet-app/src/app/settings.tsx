@@ -15,8 +15,8 @@ import {
 } from 'lucide-react-native';
 import { useRouter } from 'expo-router';
 import { MotiView } from 'moti';
-import { Header } from '@/src/components/common/Header';
-import { GlassPanel } from '@/src/components/common/GlassPanel';
+import { Header } from '@/components/common/Header';
+import { GlassPanel } from '@/components/common/GlassPanel';
 
 const { width } = Dimensions.get('window');
 

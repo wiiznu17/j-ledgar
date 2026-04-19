@@ -4,8 +4,8 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { CheckCircle2, Share2, Download, ArrowRight, ShieldCheck, Check } from 'lucide-react-native';
 import { useRouter } from 'expo-router';
 import { MotiView, AnimatePresence } from 'moti';
-import { GlassPanel } from '@/src/components/common/GlassPanel';
-import { AppButton } from '@/src/components/common/AppButton';
+import { GlassPanel } from '@/components/common/GlassPanel';
+import { AppButton } from '@/components/common/AppButton';
 
 const { width } = Dimensions.get('window');
 

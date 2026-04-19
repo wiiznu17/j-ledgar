@@ -4,15 +4,15 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { ChevronLeft, Share2, Download, Copy, Info, Zap, Scan } from 'lucide-react-native';
 import { useRouter } from 'expo-router';
 import { MotiView } from 'moti';
-import { GlassPanel } from '@/src/components/common/GlassPanel';
-import { AppButton } from '@/src/components/common/AppButton';
+import { GlassPanel } from '@/components/common/GlassPanel';
+import { AppButton } from '@/components/common/AppButton';
 
 const { width } = Dimensions.get('window');
 
 const MOCK_USER = {
   name: "SOMCHAI DEEJA",
   walletId: "JLED-9922-0051",
-  avatar: require('../assets/images/mock_user_avatar.png')
+  avatar: require('../../assets/images/mock_user_avatar.png')
 };
 
 export default function MyQrScreen() {

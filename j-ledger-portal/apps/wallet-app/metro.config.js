@@ -16,4 +16,4 @@ config.resolver.extraNodeModules = {
 // Ensure Metro doesn't look outside the local node_modules for svg
 config.resolver.disableHierarchicalLookup = true;
 
-module.exports = withNativeWind(config, { input: "./global.css" });
+module.exports = withNativeWind(config, { input: "./src/styles/global.css" });

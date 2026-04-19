@@ -4,14 +4,14 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { ChevronLeft, Landmark, User, Smartphone, Info, ArrowRight, Scan, Search } from 'lucide-react-native';
 import { useRouter } from 'expo-router';
 import { MotiView } from 'moti';
-import { AppTextInput } from '@/src/components/common/AppTextInput';
-import { AppButton } from '@/src/components/common/AppButton';
-import { GlassPanel } from '@/src/components/common/GlassPanel';
+import { AppTextInput } from '@/components/common/AppTextInput';
+import { AppButton } from '@/components/common/AppButton';
+import { GlassPanel } from '@/components/common/GlassPanel';
 
 const { width } = Dimensions.get('window');
 
 const RECENT_RECIPIENTS = [
-  { id: '1', name: 'SOMCHAI D.', phone: '081-XXX-5678', avatar: require('../../assets/images/mock_user_avatar.png') },
+  { id: '1', name: 'SOMCHAI D.', phone: '081-XXX-5678', avatar: require('../../../assets/images/mock_user_avatar.png') },
   { id: '2', name: 'JANE S.', phone: '089-XXX-1234', avatar: { uri: 'https://randomuser.me/api/portraits/women/44.jpg' } },
   { id: '3', name: 'WICHAI R.', phone: '085-XXX-9988', avatar: { uri: 'https://randomuser.me/api/portraits/men/55.jpg' } },
 ];

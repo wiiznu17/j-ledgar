@@ -21,12 +21,12 @@ import {
   ArrowRight
 } from 'lucide-react-native';
 import { MotiView, AnimatePresence } from 'moti';
-import { PinPad } from '@/src/components/common/PinPad';
-import { AppButton } from '@/src/components/common/AppButton';
-import { AppTextInput } from '@/src/components/common/AppTextInput';
-import { GlassPanel } from '@/src/components/common/GlassPanel';
-import { StepWrapper } from '@/src/components/common/StepWrapper';
-import { useAuthStore } from '@/src/store/auth';
+import { PinPad } from '@/components/common/PinPad';
+import { AppButton } from '@/components/common/AppButton';
+import { AppTextInput } from '@/components/common/AppTextInput';
+import { GlassPanel } from '@/components/common/GlassPanel';
+import { StepWrapper } from '@/components/common/StepWrapper';
+import { useAuthStore } from '@/store/auth';
 
 const { width } = Dimensions.get('window');
 
@@ -36,7 +36,7 @@ type LoginStep = 'CREDENTIALS' | 'OTP_CHALLENGE' | 'PIN' | 'LOCKOUT';
 const MOCK_USER = {
   name: "SOMCHAI DEEJA",
   phone: "0812345678",
-  avatar: require('../../assets/images/mock_user_avatar.png')
+  avatar: require('../../../assets/images/mock_user_avatar.png')
 };
 
 export default function LoginScreen() {
@@ -143,7 +143,7 @@ export default function LoginScreen() {
                 className="mb-6"
               >
                 <Image 
-                   source={require('../../assets/images/j_ledger_logo_1776536282920.png')}
+                   source={require('../../../assets/images/j_ledger_logo_1776536282920.png')}
                    className="w-24 h-24"
                    resizeMode="contain"
                 />
