@@ -9,30 +9,30 @@ import {
   Platform,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { ChevronLeft, ArrowRight, ShieldCheck, Wallet, UserCircle } from 'lucide-react-native';
+import { ChevronLeft, ArrowRight, ShieldCheck, Wallet, Landmark } from 'lucide-react-native';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import { MotiView, AnimatePresence } from 'moti';
 
 const { width } = Dimensions.get('window');
 
-export default function ReviewTransferScreen() {
+export default function TopupReviewScreen() {
   const router = useRouter();
-  const { recipient, amount, note } = useLocalSearchParams();
+  const { amount } = useLocalSearchParams();
   const [isProcessing, setIsProcessing] = useState(false);
 
-  const transferAmount = parseFloat(amount as string) || 0;
+  const topupAmount = parseFloat(amount as string) || 0;
   const fee = 0;
-  const totalAmount = transferAmount + fee;
+  const totalAmount = topupAmount + fee;
 
   const handleConfirm = () => {
     if (isProcessing) return; // Guard กันการกดซ้ำรัวๆ
     setIsProcessing(true);
-    // Mock Gateway Delay
+    // Mock Gateway Connection
     setTimeout(() => {
       setIsProcessing(false);
       router.push({
-        pathname: '/transfer/success',
-        params: { recipient, amount, note },
+        pathname: '/topup/success',
+        params: { amount },
       } as any);
     }, 1500);
   };
@@ -48,12 +48,11 @@ export default function ReviewTransferScreen() {
           <ChevronLeft size={24} color="#1a1a1a" />
         </TouchableOpacity>
         <Text className="text-lg font-manrope font-black text-gray-800 tracking-tight">
-          Review Transfer
+          Review Top Up
         </Text>
         <View className="w-10" />
       </View>
 
-      {/* เพิ่ม paddingBottom เผื่อพื้นที่ให้ Action Area ลอยอยู่ด้านล่าง */}
       <ScrollView
         className="flex-1"
         contentContainerStyle={{ paddingHorizontal: 20, paddingBottom: 120 }}
@@ -70,7 +69,7 @@ export default function ReviewTransferScreen() {
 
             <View className="items-center mb-8 pt-4">
               <Text className="text-[10px] font-manrope font-black text-gray-400 uppercase tracking-widest mb-3">
-                Transfer Amount
+                Top Up Amount
               </Text>
               <View className="flex-row items-baseline w-full justify-center">
                 <Text className="text-2xl font-manrope font-black text-gray-400 mr-2">฿</Text>
@@ -80,7 +79,7 @@ export default function ReviewTransferScreen() {
                   minimumFontScale={0.5}
                   className="text-5xl font-manrope font-black text-gray-800 tracking-tighter"
                 >
-                  {transferAmount.toLocaleString(undefined, {
+                  {topupAmount.toLocaleString(undefined, {
                     minimumFractionDigits: 2,
                     maximumFractionDigits: 2,
                   })}
@@ -90,33 +89,39 @@ export default function ReviewTransferScreen() {
 
             {/* Transfer Direction Container */}
             <View className="bg-gray-50/80 rounded-[2rem] p-5 border border-gray-100/50 mb-8 relative">
-              {/* Connector Line (ใช้วิธี Absolute เพื่อไม่ให้รบกวน Layout อื่น) */}
+              {/* Connector Line */}
               <View className="absolute left-10 top-12 bottom-12 w-[2px] bg-gray-200 border-dashed border-l-[2px] border-gray-200 z-0" />
 
-              {/* From User */}
+              {/* From Linked Bank */}
               <View className="flex-row items-center relative z-10 mb-6">
-                <View className="w-10 h-10 bg-white rounded-xl items-center justify-center shadow-sm border border-gray-100">
-                  <Wallet size={20} color="#9ca3af" />
+                <View className="w-10 h-10 bg-purple-50 rounded-xl items-center justify-center shadow-sm border border-purple-100">
+                  <Landmark size={20} color="#a855f7" />
                 </View>
                 <View className="ml-4 flex-1">
                   <Text className="text-[10px] font-manrope font-black text-gray-400 uppercase tracking-widest mb-0.5">
-                    From
+                    Funding Source
                   </Text>
-                  <Text className="text-sm font-manrope font-black text-gray-800">My E-Wallet</Text>
+                  <Text className="text-sm font-manrope font-black text-gray-800">
+                    SCB Savings Account
+                  </Text>
+                  <Text className="text-[10px] font-manrope font-bold text-gray-400 mt-0.5">
+                    *** *** 4567
+                  </Text>
                 </View>
               </View>
 
-              {/* To User */}
+              {/* To Wallet */}
               <View className="flex-row items-center relative z-10">
                 <View className="w-10 h-10 bg-pink-50 rounded-xl items-center justify-center border border-pink-100 shadow-sm">
-                  <UserCircle size={20} color="#f48fb1" />
+                  <Wallet size={20} color="#f48fb1" />
                 </View>
                 <View className="ml-4 flex-1">
                   <Text className="text-[10px] font-manrope font-black text-gray-400 uppercase tracking-widest mb-0.5">
-                    To Recipient
+                    To
                   </Text>
-                  <Text className="text-sm font-manrope font-black text-gray-800" numberOfLines={1}>
-                    {recipient}
+                  <Text className="text-sm font-manrope font-black text-gray-800">My E-Wallet</Text>
+                  <Text className="text-[10px] font-manrope font-bold text-gray-400 mt-0.5">
+                    J-Ledger Account
                   </Text>
                 </View>
               </View>
@@ -124,13 +129,12 @@ export default function ReviewTransferScreen() {
 
             {/* Summary Board */}
             <View className="space-y-4">
-              <SummaryRow label="Transaction Type" value="Peer-to-Peer" />
-              <SummaryRow label="Transfer Fee" value="FREE" isHighlight />
-              {note ? <SummaryRow label="Note" value={note as string} /> : null}
+              <SummaryRow label="Transaction Type" value="Wallet Top Up" />
+              <SummaryRow label="Bank Fee" value="FREE" isHighlight />
 
               <View className="mt-2 pt-5 border-t border-gray-100 flex-row justify-between items-center">
                 <Text className="text-[10px] font-manrope font-black text-gray-400 uppercase tracking-widest">
-                  Total Payment
+                  Total Deduction
                 </Text>
                 <Text className="text-xl font-manrope font-black text-[#f48fb1]">
                   ฿{totalAmount.toLocaleString(undefined, { minimumFractionDigits: 2 })}
@@ -145,7 +149,7 @@ export default function ReviewTransferScreen() {
               <ShieldCheck size={20} color="#22c55e" />
             </View>
             <Text className="text-[10px] font-manrope font-bold text-green-700/80 uppercase tracking-widest flex-1 leading-relaxed">
-              Guaranteed by J-Ledger Security Standard
+              Secured by Direct Bank Integration
             </Text>
           </View>
         </MotiView>
@@ -154,7 +158,7 @@ export default function ReviewTransferScreen() {
       {/* Floating Action Area */}
       <View
         className="absolute bottom-0 left-0 right-0 px-5 pt-4 pb-8 bg-white/90 border-t border-gray-50"
-        style={{ paddingBottom: Platform.OS === 'ios' ? 34 : 24 }} // จัดการ Safe Area ของ iPhone
+        style={{ paddingBottom: Platform.OS === 'ios' ? 34 : 24 }}
       >
         <TouchableOpacity
           disabled={isProcessing}
@@ -167,7 +171,7 @@ export default function ReviewTransferScreen() {
             <ActivityIndicator color="white" />
           ) : (
             <>
-              <Text className="font-manrope font-black text-white text-base">Confirm Transfer</Text>
+              <Text className="font-manrope font-black text-white text-base">Confirm Payment</Text>
               <ArrowRight size={20} color="white" />
             </>
           )}
@@ -191,10 +195,10 @@ export default function ReviewTransferScreen() {
               <ActivityIndicator size="large" color="#f48fb1" />
             </MotiView>
             <Text className="text-2xl font-manrope font-black text-gray-800 tracking-tight text-center">
-              Encrypting Transaction
+              Processing Payment
             </Text>
             <Text className="text-sm font-manrope font-bold text-gray-400 mt-3 text-center leading-relaxed">
-              We're verifying your identities and securing the ledger connection...
+              Connecting to your linked bank account...
             </Text>
           </MotiView>
         )}

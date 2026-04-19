@@ -44,6 +44,8 @@ export default function TransferScreen() {
   const [note, setNote] = useState('');
   const router = useRouter();
 
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
   const handleRecipientChange = (text: string) => {
     const cleaned = text.replace(/\D/g, '');
     let formatted = cleaned;
@@ -53,6 +55,15 @@ export default function TransferScreen() {
       formatted = `${cleaned.slice(0, 3)}-${cleaned.slice(3, 6)}-${cleaned.slice(6, 10)}`;
     }
     setRecipient(formatted);
+  };
+
+  const handleNext = () => {
+    if (isSubmitting) return;
+    setIsSubmitting(true);
+    router.push({
+      pathname: '/transfer/review',
+      params: { recipient, amount, note },
+    } as any);
   };
 
   const handleQuickAmount = (val: string) => {
@@ -232,26 +243,23 @@ export default function TransferScreen() {
             {/* Submit Button */}
             <MotiView from={{ opacity: 0, translateY: 10 }} animate={{ opacity: 1, translateY: 0 }}>
               <TouchableOpacity
-                disabled={!recipient || !amount || parseFloat(amount) <= 0}
-                onPress={() =>
-                  router.push({
-                    pathname: '/transfer/review',
-                    params: { recipient, amount, note },
-                  } as any)
-                }
-                className={`w-full h-14 rounded-2xl flex-row items-center justify-center gap-2 shadow-lg active:scale-95 transition-all
+                disabled={isSubmitting || !recipient || !amount || parseFloat(amount) <= 0}
+                onPress={handleNext}
+                className={`w-full h-14 rounded-2xl flex-row items-center justify-center gap-2 shadow-lg transition-all
                   ${
-                    !recipient || !amount || parseFloat(amount) <= 0
+                    isSubmitting || !recipient || !amount || parseFloat(amount) <= 0
                       ? 'bg-gray-200 shadow-none'
-                      : 'bg-[#f48fb1] shadow-pink-200'
+                      : 'bg-[#f48fb1] shadow-pink-200 active:scale-95'
                   }`}
               >
                 <Text
-                  className={`font-manrope font-black text-sm ${!recipient || !amount ? 'text-gray-400' : 'text-white'}`}
+                  className={`font-manrope font-black text-sm ${!recipient || !amount || isSubmitting ? 'text-gray-400' : 'text-white'}`}
                 >
-                  Next Step
+                  {isSubmitting ? 'Processing...' : 'Next Step'}
                 </Text>
-                <ArrowRight size={18} color={!recipient || !amount ? '#9ca3af' : 'white'} />
+                {!isSubmitting && (
+                  <ArrowRight size={18} color={!recipient || !amount ? '#9ca3af' : 'white'} />
+                )}
               </TouchableOpacity>
             </MotiView>
           </ScrollView>
