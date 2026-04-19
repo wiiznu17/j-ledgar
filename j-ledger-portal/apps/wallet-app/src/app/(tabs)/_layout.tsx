@@ -42,6 +42,13 @@ export default function TabLayout() {
           headerShown: false,
         }}
       />
+      <Tabs.Screen
+        name="deals"
+        options={{
+          title: 'Deals',
+          headerShown: false,
+        }}
+      />
     </Tabs>
   );
 }

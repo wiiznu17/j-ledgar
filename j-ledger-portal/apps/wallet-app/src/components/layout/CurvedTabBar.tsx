@@ -53,7 +53,7 @@ export function CurvedTabBar(props: BottomTabBarProps) {
     { name: 'Home', icon: Home, route: '/(tabs)' },
     { name: 'History', icon: History, route: '/(tabs)/history' },
     { name: 'Pay', icon: QrCode, route: '/(tabs)/scan', isCenter: true },
-    { name: 'Deals', icon: TicketPercent, route: '/deals' },
+    { name: 'Deals', icon: TicketPercent, route: '/(tabs)/deals' },
     { name: 'Me', icon: User, route: '/(tabs)/profile' },
   ];
 
