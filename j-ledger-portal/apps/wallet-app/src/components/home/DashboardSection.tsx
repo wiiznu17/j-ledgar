@@ -63,7 +63,10 @@ export const DashboardSection = ({
                 numberOfLines={1}
                 adjustsFontSizeToFit
                 minimumFontScale={0.6}
-                className="text-5xl font-manrope font-black text-gray-800 tracking-tighter"
+                className="text-5xl font-manrope font-black text-gray-800 tracking-tighter leading-[60px] pt-1"
+                style={{
+                  includeFontPadding: false, // ปรับแต่งพิเศษสำหรับ Android
+                }}
               >
                 {balance.toLocaleString()}
               </Text>
