@@ -1,151 +1,212 @@
-import React from 'react';
-import { View, Text, TouchableOpacity, Image, Dimensions } from 'react-native';
+import React, { useEffect, useRef } from 'react';
+import { View, Text, TouchableOpacity, ScrollView, Dimensions, Share, Image } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import {
-  CheckCircle2,
-  Share2,
-  Download,
-  ArrowRight,
-  ShieldCheck,
-  Check,
-} from 'lucide-react-native';
-import { useRouter } from 'expo-router';
-import { MotiView, AnimatePresence } from 'moti';
-import { GlassPanel } from '@/components/common/GlassPanel';
-import { AppButton } from '@/components/common/AppButton';
+import { CheckCircle2, Share2, Home, Download, ArrowDown } from 'lucide-react-native';
+import { useRouter, useLocalSearchParams } from 'expo-router';
+import { MotiView } from 'moti';
+import * as Haptics from 'expo-haptics';
 
 const { width } = Dimensions.get('window');
 
+// Mock Data สำหรับโชว์ในสลิป
+const MOCK_MY_USER = {
+  name: 'Alex Johnson',
+  phone: '081-234-5678',
+  avatar: require('../../../assets/images/mock_user_avatar.png'), // ใช้รูป Profile ตัวเอง
+};
+
+const MOCK_RECIPIENT_AVATAR = { uri: 'https://randomuser.me/api/portraits/men/55.jpg' };
+
 export default function TransferSuccessScreen() {
   const router = useRouter();
+  const { recipient, amount, note } = useLocalSearchParams();
+  const slipRef = useRef<View>(null); // สำหรับการ Save Image (ถ้าใช้ไลบรารีอย่าง react-native-view-shot ในอนาคต)
+
+  // สร้างข้อมูลจำลอง
+  const refId = `JLED${Math.random().toString(36).substring(2, 12).toUpperCase()}`;
+  const now = new Date();
+  const dateStr = now.toLocaleDateString('en-GB', {
+    day: '2-digit',
+    month: 'short',
+    year: 'numeric',
+  });
+  const timeStr = now.toLocaleTimeString('en-US', {
+    hour: '2-digit',
+    minute: '2-digit',
+    hour12: false,
+  });
+
+  // แปลง amount ให้มีคอมม่า
+  const formattedAmount = amount
+    ? parseFloat(amount as string).toLocaleString(undefined, {
+        minimumFractionDigits: 2,
+        maximumFractionDigits: 2,
+      })
+    : '0.00';
+
+  useEffect(() => {
+    Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+  }, []);
+
+  const onShare = async () => {
+    try {
+      await Share.share({
+        message: `J-Ledger Transfer Successful!\nAmount: ฿${formattedAmount}\nTo: ${recipient}\nDate: ${dateStr} ${timeStr}\nRef: ${refId}`,
+      });
+    } catch (error) {
+      console.log(error);
+    }
+  };
 
   return (
-    <SafeAreaView className="flex-1 bg-[#f5f6fc]">
-      <View className="flex-1 px-8 items-center justify-center">
-        {/* Decorative Background Elements */}
-        <View className="absolute inset-0 pointer-events-none">
+    <SafeAreaView className="flex-1 bg-[#f48fb1]" edges={['top']}>
+      <ScrollView contentContainerStyle={{ flexGrow: 1 }} showsVerticalScrollIndicator={false}>
+        {/* Success Header Area */}
+        <View className="items-center justify-center pt-8 pb-4">
           <MotiView
-            from={{ opacity: 0, scale: 0 }}
-            animate={{ opacity: 0.1, scale: 1 }}
-            className="absolute top-[-50] left-[-50] w-[300] h-[300] bg-green-400 rounded-full"
-            style={{ filter: [{ blur: 80 }] }}
-          />
-        </View>
-
-        {/* Animated Check Icon Section */}
-        <View className="items-center mb-10">
-          <MotiView
-            from={{ scale: 0.5, opacity: 0, rotate: '-45deg' }}
-            animate={{ scale: 1, opacity: 1, rotate: '0deg' }}
-            transition={{ type: 'spring', damping: 10 }}
-            className="w-24 h-24 rounded-[35] bg-green-500 items-center justify-center shadow-2xl shadow-green-500/40 mb-8"
+            from={{ scale: 0, opacity: 0 }}
+            animate={{ scale: 1, opacity: 1 }}
+            transition={{ type: 'spring', damping: 15 }}
+            className="w-16 h-16 bg-white rounded-full items-center justify-center mb-4 shadow-lg shadow-black/10"
           >
-            <Check size={48} color="white" strokeWidth={4} />
+            <CheckCircle2 size={36} color="#22c55e" />
           </MotiView>
-
-          <MotiView
-            from={{ opacity: 0, translateY: 10 }}
-            animate={{ opacity: 1, translateY: 0 }}
-            transition={{ delay: 200 }}
-          >
-            <Text className="text-3xl font-manrope font-black text-on-surface text-center mb-1 tracking-tight">
-              Transfer Sent!
-            </Text>
-            <Text className="text-sm font-manrope font-bold text-on-surfaceVariant/60 text-center">
-              Processing completed successfully.
-            </Text>
-          </MotiView>
-        </View>
-
-        {/* Transaction Details Glass Card */}
-        <MotiView
-          from={{ opacity: 0, scale: 0.95 }}
-          animate={{ opacity: 1, scale: 1 }}
-          transition={{ delay: 400 }}
-          className="w-full"
-        >
-          <GlassPanel
-            intensity={30}
-            className="w-full p-8 mb-10 border-white/40 shadow-2xl shadow-green-900/5"
-          >
-            <View className="items-center mb-8 pb-8 border-b border-outline-variant/10">
-              <Text className="text-[10px] font-manrope font-black text-secondary uppercase tracking-[0.3em] mb-4">
-                Amount Sent
-              </Text>
-              <Text className="text-5xl font-manrope font-black text-on-surface tracking-tighter">
-                <Text className="text-2xl text-secondary">฿</Text>1,000.00
-              </Text>
-            </View>
-
-            <View className="space-y-5">
-              <View className="flex-row justify-between items-center">
-                <Text className="text-[10px] font-manrope font-black text-on-surfaceVariant/40 uppercase tracking-widest">
-                  Recipient
-                </Text>
-                <Text className="text-sm font-manrope font-black text-on-surface">
-                  SOMCHAI DEEJA
-                </Text>
-              </View>
-              <View className="flex-row justify-between items-center">
-                <Text className="text-[10px] font-manrope font-black text-on-surfaceVariant/40 uppercase tracking-widest">
-                  Ref. Code
-                </Text>
-                <View className="flex-row items-center gap-2">
-                  <Text className="text-sm font-manrope font-black text-on-surface">
-                    TXN-88220015
-                  </Text>
-                  <ShieldCheck size={12} color="#16a34a" />
-                </View>
-              </View>
-              <View className="flex-row justify-between items-center">
-                <Text className="text-[10px] font-manrope font-black text-on-surfaceVariant/40 uppercase tracking-widest">
-                  Status
-                </Text>
-                <View className="bg-green-100 px-3 py-1 rounded-lg">
-                  <Text className="text-[10px] font-manrope font-black text-green-700 uppercase">
-                    Settled
-                  </Text>
-                </View>
-              </View>
-            </View>
-          </GlassPanel>
-        </MotiView>
-
-        {/* Action Buttons */}
-        <View className="flex-row gap-5 w-full mb-8">
-          <TouchableOpacity className="flex-1 h-16 rounded-[24] bg-white/60 border border-outline-variant/10 items-center justify-center flex-row gap-3 shadow-sm active:scale-95">
-            <Share2 size={20} color="#4855a5" />
-            <Text className="text-xs font-manrope font-black text-[#4855a5] uppercase tracking-tight">
-              Share
-            </Text>
-          </TouchableOpacity>
-          <TouchableOpacity className="flex-1 h-16 rounded-[24] bg-white/60 border border-outline-variant/10 items-center justify-center flex-row gap-3 shadow-sm active:scale-95">
-            <Download size={20} color="#4855a5" />
-            <Text className="text-xs font-manrope font-black text-[#4855a5] uppercase tracking-tight">
-              E-Slip
-            </Text>
-          </TouchableOpacity>
-        </View>
-
-        <MotiView
-          from={{ opacity: 0, translateY: 20 }}
-          animate={{ opacity: 1, translateY: 0 }}
-          transition={{ delay: 600 }}
-          className="w-full"
-        >
-          <AppButton
-            title="Back to Desktop"
-            onPress={() => router.replace('/(tabs)')}
-            className="h-16 rounded-[25]"
-          />
-        </MotiView>
-
-        <View className="py-10">
-          <Text className="text-[10px] font-manrope font-black uppercase tracking-[0.4em] text-on-surfaceVariant/20">
-            Digital Receipt Verified
+          <Text className="text-2xl font-manrope font-black text-white tracking-tight">
+            Transfer Successful
           </Text>
         </View>
-      </View>
+
+        {/* e-Slip Container */}
+        <MotiView
+          from={{ translateY: 100, opacity: 0 }}
+          animate={{ translateY: 0, opacity: 1 }}
+          transition={{ delay: 100, type: 'timing', duration: 400 }}
+          className="flex-1 bg-[#f8f9fe] rounded-t-[2.5rem] px-5 pt-8 pb-10"
+        >
+          {/* Slip Card (ตัวบิลที่จะถูกเซฟหรือแชร์) */}
+          <View
+            ref={slipRef}
+            className="bg-white rounded-[2rem] shadow-sm border border-gray-100 overflow-hidden"
+          >
+            {/* Slip Header (Date & Ref) */}
+            <View className="bg-gray-50/80 px-5 py-4 border-b border-gray-100 flex-row justify-between items-start">
+              <View>
+                <Text className="text-[10px] font-manrope font-bold text-gray-500 uppercase tracking-widest mb-1">
+                  Transaction Successful
+                </Text>
+                <Text className="text-xs font-manrope font-black text-gray-800">
+                  {dateStr} • {timeStr}
+                </Text>
+                <Text className="text-[10px] font-manrope font-bold text-gray-400 mt-0.5">
+                  Ref: {refId}
+                </Text>
+              </View>
+              {/* App Logo/Watermark */}
+              <View className="w-8 h-8 bg-pink-100 rounded-xl items-center justify-center">
+                <Text className="text-[#f48fb1] font-black text-xs">J</Text>
+              </View>
+            </View>
+
+            {/* Sender & Receiver Info */}
+            <View className="p-5 relative">
+              {/* เส้นเชื่อมระหว่าง From -> To (Absolute) */}
+              <View className="absolute left-11 top-[4.5rem] bottom-16 w-0.5 bg-gray-200 z-0" />
+              <View className="absolute left-[38px] top-[50%] bg-white p-1 rounded-full border border-gray-100 shadow-sm z-10 -translate-y-4">
+                <ArrowDown size={14} color="#9ca3af" />
+              </View>
+
+              {/* From (Sender) */}
+              <View className="flex-row items-center mb-6 relative z-10">
+                <View className="p-1 border border-gray-100 rounded-[1.2rem] bg-white">
+                  <Image source={MOCK_MY_USER.avatar} className="w-12 h-12 rounded-xl" />
+                </View>
+                <View className="ml-4 flex-1">
+                  <Text className="text-[10px] font-manrope font-black text-gray-400 uppercase tracking-widest mb-0.5">
+                    From
+                  </Text>
+                  <Text className="text-sm font-manrope font-black text-gray-800">
+                    {MOCK_MY_USER.name}
+                  </Text>
+                  <Text className="text-[10px] font-manrope font-bold text-gray-400 mt-0.5">
+                    J-Ledger Wallet
+                  </Text>
+                </View>
+              </View>
+
+              {/* To (Receiver) */}
+              <View className="flex-row items-center relative z-10">
+                <View className="p-1 border border-gray-100 rounded-[1.2rem] bg-white">
+                  <Image source={MOCK_RECIPIENT_AVATAR} className="w-12 h-12 rounded-xl" />
+                </View>
+                <View className="ml-4 flex-1">
+                  <Text className="text-[10px] font-manrope font-black text-gray-400 uppercase tracking-widest mb-0.5">
+                    To
+                  </Text>
+                  <Text className="text-sm font-manrope font-black text-gray-800" numberOfLines={1}>
+                    {recipient}
+                  </Text>
+                  <Text className="text-[10px] font-manrope font-bold text-gray-400 mt-0.5">
+                    PromptPay / J-Ledger
+                  </Text>
+                </View>
+              </View>
+            </View>
+
+            {/* Amount Section */}
+            <View className="items-center px-5 py-6 bg-pink-50/30 border-y border-dashed border-gray-200">
+              <Text className="text-[10px] font-manrope font-black text-gray-400 uppercase tracking-widest mb-2">
+                Amount
+              </Text>
+              <View className="flex-row items-baseline">
+                <Text className="text-2xl font-manrope font-black text-[#f48fb1] mr-1">฿</Text>
+                <Text className="text-4xl font-manrope font-black text-[#f48fb1] tracking-tighter">
+                  {formattedAmount}
+                </Text>
+              </View>
+            </View>
+
+            {/* Note Section (If any) */}
+            {note ? (
+              <View className="px-5 py-4 bg-white">
+                <Text className="text-[10px] font-manrope font-black text-gray-400 uppercase tracking-widest mb-1">
+                  Memo
+                </Text>
+                <Text className="text-xs font-manrope font-bold text-gray-800">{note}</Text>
+              </View>
+            ) : (
+              <View className="h-4" /> // Spacer
+            )}
+          </View>
+
+          {/* Action Buttons */}
+          <View className="flex-row gap-4 mt-6">
+            <TouchableOpacity
+              onPress={onShare}
+              className="flex-1 h-14 bg-white rounded-2xl border border-gray-100 items-center justify-center flex-row gap-2 shadow-sm active:scale-95"
+            >
+              <Share2 size={18} color="#1a1a1a" />
+              <Text className="text-xs font-manrope font-black text-gray-800 uppercase tracking-widest">
+                Share
+              </Text>
+            </TouchableOpacity>
+            <TouchableOpacity className="flex-1 h-14 bg-white rounded-2xl border border-gray-100 items-center justify-center flex-row gap-2 shadow-sm active:scale-95">
+              <Download size={18} color="#1a1a1a" />
+              <Text className="text-xs font-manrope font-black text-gray-800 uppercase tracking-widest">
+                Save
+              </Text>
+            </TouchableOpacity>
+          </View>
+
+          {/* Back to Home Button */}
+          <TouchableOpacity
+            onPress={() => router.push('/(tabs)' as any)}
+            className="w-full h-16 bg-[#f48fb1] rounded-2xl flex-row items-center justify-center gap-2 shadow-lg shadow-pink-200 mt-6 active:scale-95"
+          >
+            <Home size={20} color="white" />
+            <Text className="text-sm font-manrope font-black text-white">Back to Home</Text>
+          </TouchableOpacity>
+        </MotiView>
+      </ScrollView>
     </SafeAreaView>
   );
 }
