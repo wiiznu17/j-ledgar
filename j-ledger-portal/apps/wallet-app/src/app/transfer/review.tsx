@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   View,
   Text,
@@ -12,29 +12,173 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { ChevronLeft, ArrowRight, ShieldCheck, Wallet, UserCircle } from 'lucide-react-native';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import { MotiView, AnimatePresence } from 'moti';
+import { useAuthStore } from '../../store/auth';
+import { BiometricAuth } from '../../components/auth/BiometricAuth';
+import { PINVerification } from '../../components/auth/PINVerification';
+import { ErrorRecovery } from '../../components/error/ErrorRecovery';
+import { isBiometricAvailable, isBiometricEnrolled } from '../../lib/biometric-auth';
+import {
+  TransferError,
+  logTransaction,
+  parseBackendError,
+  getRecoveryPath,
+} from '../../lib/error-handling';
 
 const { width } = Dimensions.get('window');
 
 export default function ReviewTransferScreen() {
   const router = useRouter();
-  const { recipient, amount, note } = useLocalSearchParams();
+  const { recipient, amount, note, merchantName } = useLocalSearchParams();
   const [isProcessing, setIsProcessing] = useState(false);
+  const [isConfirming, setIsConfirming] = useState(false);
+
+  // Error handling
+  const [error, setError] = useState<TransferError | null>(null);
+
+  // Authentication states
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [showBiometric, setShowBiometric] = useState(false);
+  const [showPIN, setShowPIN] = useState(false);
+  const [biometricAvailable, setBiometricAvailable] = useState(false);
+  const biometricEnabled = useAuthStore((state) => state.biometricEnabled);
 
   const transferAmount = parseFloat(amount as string) || 0;
   const fee = 0;
   const totalAmount = transferAmount + fee;
 
-  const handleConfirm = () => {
-    if (isProcessing) return; // Guard กันการกดซ้ำรัวๆ
+  // Check biometric availability on mount
+  useEffect(() => {
+    const checkBiometric = async () => {
+      const available = await isBiometricAvailable();
+      const enrolled = await isBiometricEnrolled();
+      setBiometricAvailable(available && enrolled);
+    };
+    checkBiometric();
+  }, []);
+
+  const handleConfirm = async () => {
+    if (isProcessing || isConfirming) return;
+
+    // Check if authentication is required
+    if (biometricEnabled || (biometricAvailable && biometricEnabled)) {
+      // Show biometric first
+      setIsConfirming(true);
+      setShowBiometric(true);
+      return;
+    }
+
+    // If no biometric, show PIN (or allow direct transfer if PIN not set)
+    if (!isAuthenticated) {
+      setIsConfirming(true);
+      setShowPIN(true);
+      return;
+    }
+
+    // Proceed with transfer
+    performTransfer();
+  };
+
+  const handleBiometricSuccess = () => {
+    setShowBiometric(false);
+    setIsAuthenticated(true);
+    setIsConfirming(false);
+    performTransfer();
+  };
+
+  const handleBiometricFailure = (error: string) => {
+    // Fallback to PIN
+    setShowBiometric(false);
+    setShowPIN(true);
+  };
+
+  const handlePINSuccess = () => {
+    setShowPIN(false);
+    setIsAuthenticated(true);
+    setIsConfirming(false);
+    performTransfer();
+  };
+
+  const handlePINFailure = (error: string) => {
+    setShowPIN(false);
+    setIsConfirming(false);
+  };
+
+  const handleAuthCancel = () => {
+    setShowBiometric(false);
+    setShowPIN(false);
+    setIsConfirming(false);
+  };
+
+  const performTransfer = async () => {
     setIsProcessing(true);
-    // Mock Gateway Delay
-    setTimeout(() => {
+    setError(null);
+
+    try {
+      // Log transfer initiation
+      logTransaction({
+        id: '',
+        timestamp: Date.now(),
+        type: 'TRANSFER',
+        status: 'SUCCESS',
+        recipient: recipient as string,
+        amount: amount as string,
+        details: { merchantName, note },
+      });
+
+      // Mock transfer API call (replace with actual API in production)
+      await new Promise((resolve) => setTimeout(resolve, 1500));
+
+      // Simulate random network error for testing
+      // Remove this in production
+      // if (Math.random() < 0.1) {
+      //   throw { message: 'Network Error', code: 'ECONNABORTED' };
+      // }
+
       setIsProcessing(false);
       router.push({
         pathname: '/transfer/success',
-        params: { recipient, amount, note },
+        params: { recipient, amount, note, merchantName },
       } as any);
-    }, 1500);
+    } catch (err: any) {
+      console.error('[Transfer] Error:', err);
+
+      setIsProcessing(false);
+
+      // Parse error response
+      const transferError = parseBackendError(err);
+      transferError.recoveryAction = 'RETRY';
+
+      // Log failed transfer
+      logTransaction({
+        id: '',
+        timestamp: Date.now(),
+        type: 'TRANSFER',
+        status: 'FAILURE',
+        recipient: recipient as string,
+        amount: amount as string,
+        error: transferError,
+        details: { merchantName, note, errorDetails: err },
+      });
+
+      setError(transferError);
+    }
+  };
+
+  const isButtonDisabled = isProcessing || isConfirming || (biometricEnabled && !isAuthenticated);
+
+  const handleErrorRetry = () => {
+    setError(null);
+    performTransfer();
+  };
+
+  const handleErrorEdit = () => {
+    setError(null);
+    router.back();
+  };
+
+  const handleErrorBack = () => {
+    setError(null);
+    router.push('/transfer/index' as any);
   };
 
   return (
@@ -148,6 +292,41 @@ export default function ReviewTransferScreen() {
               Guaranteed by J-Ledger Security Standard
             </Text>
           </View>
+
+          {/* Error Display */}
+          {error && (
+            <ErrorRecovery
+              error={error}
+              onRetry={handleErrorRetry}
+              onEdit={handleErrorEdit}
+              onBack={handleErrorBack}
+              onDismiss={() => setError(null)}
+            />
+          )}
+
+          {/* Authentication Section */}
+          {isConfirming && !error && (
+            <>
+              {showBiometric && biometricAvailable && biometricEnabled && (
+                <BiometricAuth
+                  onSuccess={handleBiometricSuccess}
+                  onFailure={handleBiometricFailure}
+                  onUsePIN={() => {
+                    setShowBiometric(false);
+                    setShowPIN(true);
+                  }}
+                />
+              )}
+
+              {showPIN && (
+                <PINVerification
+                  onSuccess={handlePINSuccess}
+                  onFailure={handlePINFailure}
+                  onCancel={handleAuthCancel}
+                />
+              )}
+            </>
+          )}
         </MotiView>
       </ScrollView>
 
@@ -157,18 +336,22 @@ export default function ReviewTransferScreen() {
         style={{ paddingBottom: Platform.OS === 'ios' ? 34 : 24 }} // จัดการ Safe Area ของ iPhone
       >
         <TouchableOpacity
-          disabled={isProcessing}
+          disabled={isButtonDisabled}
           onPress={handleConfirm}
           className={`w-full h-16 rounded-2xl flex-row items-center justify-center gap-3 transition-all ${
-            isProcessing ? 'bg-pink-300' : 'bg-[#f48fb1] shadow-lg shadow-pink-200 active:scale-95'
+            isButtonDisabled
+              ? 'bg-pink-300'
+              : 'bg-[#f48fb1] shadow-lg shadow-pink-200 active:scale-95'
           }`}
         >
           {isProcessing ? (
             <ActivityIndicator color="white" />
           ) : (
             <>
-              <Text className="font-manrope font-black text-white text-base">Confirm Transfer</Text>
-              <ArrowRight size={20} color="white" />
+              <Text className="font-manrope font-black text-white text-base">
+                {isConfirming ? 'Authenticating...' : 'Confirm Transfer'}
+              </Text>
+              {!isConfirming && <ArrowRight size={20} color="white" />}
             </>
           )}
         </TouchableOpacity>

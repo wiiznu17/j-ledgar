@@ -1,7 +1,7 @@
 import React, { useEffect, useRef } from 'react';
 import { View, Text, TouchableOpacity, ScrollView, Dimensions, Share, Image } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { CheckCircle2, Share2, Home, Download, ArrowDown } from 'lucide-react-native';
+import { CheckCircle2, Share2, Home, Download, ArrowDown, QrCode } from 'lucide-react-native';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import { MotiView } from 'moti';
 import * as Haptics from 'expo-haptics';
@@ -19,8 +19,11 @@ const MOCK_RECIPIENT_AVATAR = { uri: 'https://randomuser.me/api/portraits/men/55
 
 export default function TransferSuccessScreen() {
   const router = useRouter();
-  const { recipient, amount, note } = useLocalSearchParams();
-  const slipRef = useRef<View>(null); // สำหรับการ Save Image (ถ้าใช้ไลบรารีอย่าง react-native-view-shot ในอนาคต)
+  const { recipient, amount, note, merchantName } = useLocalSearchParams();
+  const slipRef = useRef<View>(null);
+
+  const isMerchant = !!merchantName;
+  const displayRecipient = (merchantName as string) || (recipient as string);
 
   // สร้างข้อมูลจำลอง
   const refId = `JLED${Math.random().toString(36).substring(2, 12).toUpperCase()}`;
@@ -47,11 +50,10 @@ export default function TransferSuccessScreen() {
   useEffect(() => {
     Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
   }, []);
-
   const onShare = async () => {
     try {
       await Share.share({
-        message: `J-Ledger Transfer Successful!\nAmount: ฿${formattedAmount}\nTo: ${recipient}\nDate: ${dateStr} ${timeStr}\nRef: ${refId}`,
+        message: `J-Ledger Transfer Successful!\nAmount: ฿${formattedAmount}\nTo: ${displayRecipient}\nDate: ${dateStr} ${timeStr}\nRef: ${refId}`,
       });
     } catch (error) {
       console.log(error);
@@ -72,7 +74,7 @@ export default function TransferSuccessScreen() {
             <CheckCircle2 size={36} color="#22c55e" />
           </MotiView>
           <Text className="text-2xl font-manrope font-black text-white tracking-tight">
-            Transfer Successful
+            {isMerchant ? 'Payment Successful' : 'Transfer Successful'}
           </Text>
         </View>
 
@@ -83,16 +85,16 @@ export default function TransferSuccessScreen() {
           transition={{ delay: 100, type: 'timing', duration: 400 }}
           className="flex-1 bg-[#f8f9fe] rounded-t-[2.5rem] px-5 pt-8 pb-10"
         >
-          {/* Slip Card (ตัวบิลที่จะถูกเซฟหรือแชร์) */}
+          {/* Slip Card */}
           <View
             ref={slipRef}
             className="bg-white rounded-[2rem] shadow-sm border border-gray-100 overflow-hidden"
           >
-            {/* Slip Header (Date & Ref) */}
+            {/* Slip Header */}
             <View className="bg-gray-50/80 px-5 py-4 border-b border-gray-100 flex-row justify-between items-start">
               <View>
                 <Text className="text-[10px] font-manrope font-bold text-gray-500 uppercase tracking-widest mb-1">
-                  Transaction Successful
+                  {isMerchant ? 'Merchant Payment' : 'Transaction Successful'}
                 </Text>
                 <Text className="text-xs font-manrope font-black text-gray-800">
                   {dateStr} • {timeStr}
@@ -101,7 +103,6 @@ export default function TransferSuccessScreen() {
                   Ref: {refId}
                 </Text>
               </View>
-              {/* App Logo/Watermark */}
               <View className="w-8 h-8 bg-pink-100 rounded-xl items-center justify-center">
                 <Text className="text-[#f48fb1] font-black text-xs">J</Text>
               </View>
@@ -109,7 +110,6 @@ export default function TransferSuccessScreen() {
 
             {/* Sender & Receiver Info */}
             <View className="p-5 relative">
-              {/* เส้นเชื่อมระหว่าง From -> To (Absolute) */}
               <View className="absolute left-11 top-[4.5rem] bottom-16 w-0.5 bg-gray-200 z-0" />
               <View className="absolute left-[38px] top-[50%] bg-white p-1 rounded-full border border-gray-100 shadow-sm z-10 -translate-y-4">
                 <ArrowDown size={14} color="#9ca3af" />
@@ -136,17 +136,23 @@ export default function TransferSuccessScreen() {
               {/* To (Receiver) */}
               <View className="flex-row items-center relative z-10">
                 <View className="p-1 border border-gray-100 rounded-[1.2rem] bg-white">
-                  <Image source={MOCK_RECIPIENT_AVATAR} className="w-12 h-12 rounded-xl" />
+                  {isMerchant ? (
+                    <View className="w-12 h-12 rounded-xl bg-pink-50 items-center justify-center border border-pink-100">
+                      <QrCode size={24} color="#f48fb1" />
+                    </View>
+                  ) : (
+                    <Image source={MOCK_RECIPIENT_AVATAR} className="w-12 h-12 rounded-xl" />
+                  )}
                 </View>
                 <View className="ml-4 flex-1">
                   <Text className="text-[10px] font-manrope font-black text-gray-400 uppercase tracking-widest mb-0.5">
-                    To
+                    To {isMerchant ? 'Merchant' : 'Recipient'}
                   </Text>
                   <Text className="text-sm font-manrope font-black text-gray-800" numberOfLines={1}>
-                    {recipient}
+                    {displayRecipient}
                   </Text>
                   <Text className="text-[10px] font-manrope font-bold text-gray-400 mt-0.5">
-                    PromptPay / J-Ledger
+                    {isMerchant ? 'PromptPay Merchant' : 'PromptPay / J-Ledger'}
                   </Text>
                 </View>
               </View>

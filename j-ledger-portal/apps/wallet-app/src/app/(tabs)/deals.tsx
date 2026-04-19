@@ -6,7 +6,6 @@ import { DealHeader } from '@/components/deal/DealHeader';
 import { PointsBalanceCard } from '@/components/deal/PointsBalanceCard';
 import { DealCard } from '@/components/deal/DealCard';
 
-
 export const MOCK_DEALS = [
   {
     id: '1',
@@ -52,7 +51,10 @@ export default function DealsScreen() {
         contentContainerStyle={{ paddingHorizontal: 20, paddingBottom: 140 }}
         showsVerticalScrollIndicator={false}
       >
-        <PointsBalanceCard points={1250} onMyDealsPress={() => router.push('/deal/my-deals' as any)} />
+        <PointsBalanceCard
+          points={1250}
+          onMyDealsPress={() => router.push('/deal/my-deals' as any)}
+        />
 
         <Text className="text-[11px] font-manrope font-black text-[#f48fb1] uppercase tracking-widest mb-6 px-1">
           Exclusive Rewards

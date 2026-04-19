@@ -37,13 +37,13 @@ export const RedemptionConfirmationModal = ({
             />
           )}
         </AnimatePresence>
-        
-        <TouchableOpacity 
-          activeOpacity={1} 
-          onPress={() => !isProcessing && onClose()} 
-          className="absolute inset-0" 
+
+        <TouchableOpacity
+          activeOpacity={1}
+          onPress={() => !isProcessing && onClose()}
+          className="absolute inset-0"
         />
-        
+
         {/* Sheet */}
         <MotiView
           from={{ translateY: 600 }}
@@ -57,8 +57,10 @@ export const RedemptionConfirmationModal = ({
           <View className="w-12 h-1.5 bg-gray-200 rounded-full self-center mb-6" />
 
           <View className="flex-row justify-between items-center mb-6">
-            <Text className="text-2xl font-manrope font-black text-gray-800 tracking-tight">Confirm Redeem</Text>
-            <TouchableOpacity 
+            <Text className="text-2xl font-manrope font-black text-gray-800 tracking-tight">
+              Confirm Redeem
+            </Text>
+            <TouchableOpacity
               onPress={() => !isProcessing && onClose()}
               className="w-10 h-10 bg-gray-50 rounded-full items-center justify-center border border-gray-100"
             >

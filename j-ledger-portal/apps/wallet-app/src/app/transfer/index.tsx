@@ -9,15 +9,18 @@ import {
   TextInput,
   Platform,
   KeyboardAvoidingView,
+  Alert,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { ChevronLeft, User, Info, ArrowRight, Scan, Search, X } from 'lucide-react-native';
-import { useRouter } from 'expo-router';
+import { useRouter, useLocalSearchParams } from 'expo-router';
 import { MotiView } from 'moti';
+import { TransferParamsSchema } from '../../types/transfer';
 
 const { width } = Dimensions.get('window');
 
 const RECENT_RECIPIENTS = [
+  // ... (unchanged)
   {
     id: '1',
     name: 'Somchai D.',
@@ -39,16 +42,31 @@ const RECENT_RECIPIENTS = [
 ];
 
 export default function TransferScreen() {
-  const [recipient, setRecipient] = useState('');
-  const [amount, setAmount] = useState('');
-  const [note, setNote] = useState('');
   const router = useRouter();
+  const params = useLocalSearchParams();
 
-  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [recipient, setRecipient] = React.useState('');
+  const [amount, setAmount] = React.useState('');
+  const [note, setNote] = React.useState((params.merchantName as string) || '');
+  const [isSubmitting, setIsSubmitting] = React.useState(false);
+
+  React.useEffect(() => {
+    // Handle params from QR scan (validated by qr-validation)
+    if (params.recipient) {
+      setRecipient(params.recipient as string);
+    }
+    if (params.amount) {
+      setAmount(params.amount as string);
+    }
+    if (params.merchantName) {
+      setNote(params.merchantName as string);
+    }
+  }, [params]);
 
   const handleRecipientChange = (text: string) => {
     const cleaned = text.replace(/\D/g, '');
     let formatted = cleaned;
+    // ... (logic follows)
     if (cleaned.length > 3 && cleaned.length <= 6) {
       formatted = `${cleaned.slice(0, 3)}-${cleaned.slice(3)}`;
     } else if (cleaned.length > 6) {
@@ -59,11 +77,33 @@ export default function TransferScreen() {
 
   const handleNext = () => {
     if (isSubmitting) return;
+
+    // Validate transfer params using Zod schema
+    const validation = TransferParamsSchema.safeParse({
+      recipient: recipient.replace(/\D/g, ''),
+      amount: amount,
+    });
+
+    if (!validation.success) {
+      const firstError = validation.error.issues?.[0];
+      let errorMessage = firstError?.message || 'Validation error';
+
+      if (firstError?.path?.[0] === 'recipient') {
+        errorMessage = 'Please enter a valid recipient phone number';
+      } else if (firstError?.path?.[0] === 'amount') {
+        errorMessage = 'Please enter a valid amount greater than 0';
+      }
+
+      Alert.alert('Validation Error', errorMessage);
+      return;
+    }
+
     setIsSubmitting(true);
     router.push({
       pathname: '/transfer/review',
       params: { recipient, amount, note },
     } as any);
+    setIsSubmitting(false);
   };
 
   const handleQuickAmount = (val: string) => {
