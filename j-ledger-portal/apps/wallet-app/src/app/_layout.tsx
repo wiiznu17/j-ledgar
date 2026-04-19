@@ -81,6 +81,7 @@ export default function RootLayout() {
                 name="settings"
                 options={{ presentation: 'modal', title: 'Settings' }}
               />
+              <Stack.Screen name="profile/information" options={{ headerShown: false }} />
             </Stack>
           </BackgroundGradient>
           <StatusBar style="auto" />

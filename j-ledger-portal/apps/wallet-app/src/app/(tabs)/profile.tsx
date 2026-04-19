@@ -1,189 +1,223 @@
-import React from 'react';
-import { View, Text, ScrollView, TouchableOpacity, Image, Dimensions } from 'react-native';
+import React, { useState } from 'react';
+import { View, Text, ScrollView, Image, TouchableOpacity, Switch, Platform } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import {
   User,
-  Settings,
-  ShieldCheck,
-  CreditCard,
-  ChevronRight,
-  LogOut,
+  Shield,
   Bell,
-  HelpCircle,
+  LogOut,
+  ChevronRight,
+  Fingerprint,
   Smartphone,
-  Info,
-  BadgeCheck,
-  Zap,
-  ChevronLeft,
+  CreditCard,
+  Edit2,
 } from 'lucide-react-native';
-import { useRouter } from 'expo-router';
 import { MotiView } from 'moti';
-import { Header } from '@/components/common/Header';
-import { GlassPanel } from '@/components/common/GlassPanel';
-import { useAuthStore } from '@/store/auth';
+import { useRouter } from 'expo-router';
 
-const { width } = Dimensions.get('window');
-
+// Mock User Data
 const MOCK_USER = {
-  name: 'SOMCHAI DEEJA',
-  email: 'somchai.d@jledger.com',
-  phone: '081-234-5678',
+  name: 'Alex Johnson',
+  phone: '+66 81 234 5678',
   avatar: require('../../../assets/images/mock_user_avatar.png'),
-  kycStatus: 'Verified',
 };
 
-export default function ProfileScreen() {
+export default function SettingsScreen() {
   const router = useRouter();
-  const logout = useAuthStore((state) => state.logout);
 
-  const renderMenuItem = (
-    icon: any,
-    title: string,
-    subtitle?: string,
-    route?: string,
-    color: string = '#4855a5',
-  ) => (
-    <TouchableOpacity
-      onPress={() => route && router.push(route as any)}
-      className="flex-row items-center justify-between py-5 border-b border-outline-variant/10 group active:opacity-60"
-    >
-      <View className="flex-row items-center gap-5">
-        <View className="w-12 h-12 rounded-2xl bg-[#eff0f7] items-center justify-center border border-outline-variant/5">
-          {React.cloneElement(icon, { size: 22, color })}
-        </View>
-        <View>
-          <Text className="text-base font-manrope font-black text-on-surface">{title}</Text>
-          {subtitle && (
-            <Text className="text-[10px] font-manrope font-bold text-on-surfaceVariant/60 uppercase tracking-widest mt-1">
-              {subtitle}
-            </Text>
-          )}
-        </View>
-      </View>
-      <ChevronRight size={18} color="#4855a550" />
-    </TouchableOpacity>
-  );
+  // States
+  const [isAccountFrozen, setIsAccountFrozen] = useState(false);
+  const [biometrics, setBiometrics] = useState(true);
+  const [pushNotifs, setPushNotifs] = useState(true);
+
+  const handleLogout = () => {
+    // ใส่ Logic Logout ตรงนี้
+    router.replace('/(auth)/login' as any);
+  };
 
   return (
-    <SafeAreaView className="flex-1 bg-[#f5f6fc]">
-      <Header title="My Account" showSearch={false} />
+    <SafeAreaView className="flex-1 bg-[#f8f9fe]" edges={['top']}>
+      {/* Header */}
+      <View className="px-5 pt-2 pb-4 items-center justify-center">
+        <Text className="text-lg font-black text-gray-800 font-manrope">Me</Text>
+      </View>
 
       <ScrollView
-        contentContainerStyle={{ paddingHorizontal: 24, paddingBottom: 140 }}
+        contentContainerStyle={{ paddingHorizontal: 20, paddingBottom: 140 }}
         showsVerticalScrollIndicator={false}
       >
-        {/* Profile Card */}
-        <GlassPanel
-          intensity={40}
-          className="mb-12 p-8 relative overflow-hidden shadow-2xl shadow-primary/5"
-        >
-          <View
-            className="absolute top-[-50] right-[-50] w-[180] h-[180] bg-primary/10 rounded-full"
-            style={{ filter: [{ blur: 60 }] }}
-          />
-
-          <View className="items-center">
-            <View className="relative">
-              <Image
-                source={MOCK_USER.avatar}
-                className="w-28 h-28 rounded-[40] border-4 border-white shadow-2xl mb-4"
-              />
-              <View className="absolute bottom-6 right-0 w-10 h-10 bg-secondary rounded-full items-center justify-center border-4 border-white shadow-lg">
-                <ShieldCheck size={18} color="white" />
+        {/* Profile Card Section */}
+        <View className="items-center py-6 mb-4">
+          <MotiView
+            from={{ opacity: 0, scale: 0.9 }}
+            animate={{ opacity: 1, scale: 1 }}
+            className="relative"
+          >
+            <TouchableOpacity
+              activeOpacity={0.8}
+              onPress={() => router.push('/edit-profile' as any)} // เปลี่ยน Path ไปหน้า Profile ที่ทำก่อนหน้านี้
+            >
+              <View className="p-1 border-[3px] border-white rounded-[2.5rem] shadow-sm bg-white">
+                <Image source={MOCK_USER.avatar} className="w-28 h-28 rounded-[2.2rem]" />
               </View>
-            </View>
+              {/* Edit Badge */}
+              <View className="absolute -bottom-2 -right-2 w-10 h-10 bg-[#f48fb1] rounded-full items-center justify-center border-4 border-[#f8f9fe] shadow-sm">
+                <User size={18} color="white" />
+              </View>
+            </TouchableOpacity>
+          </MotiView>
 
-            <Text className="text-2xl font-manrope font-black text-on-surface mb-1">
+          <View className="items-center mt-5">
+            <Text className="text-2xl font-manrope font-black text-gray-800 tracking-tight">
               {MOCK_USER.name}
             </Text>
-            <Text className="text-sm font-manrope font-bold text-on-surfaceVariant/60 mb-4">
-              {MOCK_USER.email}
-            </Text>
-
-            <View className="flex-row gap-3">
-              <View className="bg-primary/10 px-4 py-2 rounded-xl flex-row items-center gap-2 border border-primary/10">
-                <Zap size={14} color="#f48fb1" fill="#f48fb1" />
-                <Text className="text-[10px] font-manrope font-black text-primary uppercase tracking-widest">
-                  Premium Member
-                </Text>
-              </View>
+            <Text className="text-sm font-bold text-gray-400 mt-1">{MOCK_USER.phone}</Text>
+            <View className="bg-pink-50 px-3 py-1.5 rounded-full mt-3 border border-pink-100">
+              <Text className="text-[10px] font-black text-[#f48fb1] uppercase tracking-widest">
+                Premium Member
+              </Text>
             </View>
           </View>
-        </GlassPanel>
-
-        {/* Section 1: Account */}
-        <View className="mb-10">
-          <Text className="text-[10px] font-manrope font-black text-secondary uppercase tracking-[0.3em] mb-4 px-1">
-            Account & Security
-          </Text>
-          <GlassPanel intensity={20} className="p-1 px-5 rounded-[35]">
-            {renderMenuItem(<User />, 'Personal Details', 'Identity, Address, Status')}
-            {renderMenuItem(<ShieldCheck />, 'Login & Security', 'Password, PIN, Biometrics')}
-            {renderMenuItem(<CreditCard />, 'Wallet Management', 'Linked Banks, Cards')}
-            <View className="border-0">
-              {renderMenuItem(<Smartphone />, 'Active Devices', 'Manage Your Sessions')}
-            </View>
-          </GlassPanel>
         </View>
 
-        {/* Section 2: Preferences */}
-        <View className="mb-10">
-          <Text className="text-[10px] font-manrope font-black text-secondary uppercase tracking-[0.3em] mb-4 px-1">
+        {/* Account Settings */}
+        <View className="mb-6">
+          <Text className="text-[10px] font-black text-gray-400 uppercase tracking-widest px-2 mb-3">
+            Account Settings
+          </Text>
+          <View className="bg-white rounded-[2rem] border border-gray-50 shadow-sm overflow-hidden">
+            <SettingItem
+              icon={<User size={20} color="#3b82f6" />} // Blue
+              iconBg="bg-blue-50"
+              label="My Information Profile"
+              onPress={() => router.push('/profile/information' as any)}
+            />
+          </View>
+        </View>
+
+        {/* Security & Privacy */}
+        <View className="mb-6">
+          <Text className="text-[10px] font-black text-gray-400 uppercase tracking-widest px-2 mb-3">
+            Security & Privacy
+          </Text>
+          <View className="bg-white rounded-[2rem] border border-gray-50 shadow-sm overflow-hidden">
+            <ToggleSetting
+              icon={<Shield size={20} color="#ef4444" />} // Red
+              iconBg="bg-red-50"
+              label="Freeze Account"
+              active={isAccountFrozen}
+              onToggle={() => setIsAccountFrozen(!isAccountFrozen)}
+            />
+            <Divider />
+            <SettingItem
+              icon={<Shield size={20} color="#3b82f6" />} // Blue
+              iconBg="bg-blue-50"
+              label="Change Security PIN"
+              onPress={() => {}}
+            />
+            <Divider />
+            <ToggleSetting
+              icon={<Fingerprint size={20} color="#a855f7" />} // Purple
+              iconBg="bg-purple-50"
+              label="Biometric ID"
+              active={biometrics}
+              onToggle={() => setBiometrics(!biometrics)}
+            />
+            <Divider />
+            <SettingItem
+              icon={<Smartphone size={20} color="#64748b" />} // Slate
+              iconBg="bg-slate-50"
+              label="Manage Devices"
+              onPress={() => {}}
+            />
+          </View>
+        </View>
+
+        {/* Preferences */}
+        <View className="mb-8">
+          <Text className="text-[10px] font-black text-gray-400 uppercase tracking-widest px-2 mb-3">
             Preferences
           </Text>
-          <GlassPanel intensity={20} className="p-1 px-5 rounded-[35]">
-            {renderMenuItem(
-              <Bell />,
-              'Notification Center',
-              'Alert Settings, History',
-              '/notifications',
-            )}
-            <View className="border-0">
-              {renderMenuItem(
-                <Settings />,
-                'App Preferences',
-                'Display, Language, Clear Cache',
-                '/settings',
-              )}
-            </View>
-          </GlassPanel>
+          <View className="bg-white rounded-[2rem] border border-gray-50 shadow-sm overflow-hidden">
+            <ToggleSetting
+              icon={<Bell size={20} color="#f97316" />} // Orange
+              iconBg="bg-orange-50"
+              label="Push Notifications"
+              active={pushNotifs}
+              onToggle={() => setPushNotifs(!pushNotifs)}
+            />
+            <Divider />
+            <SettingItem
+              icon={<CreditCard size={20} color="#14b8a6" />} // Teal
+              iconBg="bg-teal-50"
+              label="Linked Cards"
+              onPress={() => {}}
+            />
+          </View>
         </View>
 
-        {/* Section 3: Legal */}
-        <View className="mb-12">
-          <Text className="text-[10px] font-manrope font-black text-secondary uppercase tracking-[0.3em] mb-4 px-1">
-            Support & Legal
+        {/* Sign Out Button */}
+        <TouchableOpacity
+          onPress={handleLogout}
+          className="w-full bg-white border border-gray-100 py-4 rounded-[1.5rem] flex-row items-center justify-center gap-3 shadow-sm active:scale-95 mb-6"
+        >
+          <LogOut size={20} color="#f48fb1" />
+          <Text className="font-manrope font-black text-[#f48fb1] text-base">Sign Out</Text>
+        </TouchableOpacity>
+
+        {/* Footer Versioning */}
+        <View className="items-center space-y-1 py-4 opacity-60">
+          <Text className="text-[10px] font-bold text-gray-400 uppercase tracking-widest italic">
+            J-Ledger Version 2.0.4-beta
           </Text>
-          <GlassPanel intensity={20} className="p-1 px-5 rounded-[35]">
-            {renderMenuItem(<HelpCircle />, 'Help & Support', 'FAQ, Live Chat, Email')}
-            <View className="border-0">
-              {renderMenuItem(<Info />, 'About J-Ledger', 'V 4.2.0 (Stable Build 2026)')}
-            </View>
-          </GlassPanel>
-        </View>
-
-        {/* Logout Button */}
-        <MotiView from={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }}>
-          <TouchableOpacity
-            onPress={() => {
-              logout();
-              router.replace('/login');
-            }}
-            className="bg-red-500 h-16 rounded-[25] flex-row items-center justify-center gap-3 mb-12 shadow-xl shadow-red-200"
-          >
-            <LogOut size={22} color="white" />
-            <Text className="text-white font-manrope font-black text-lg uppercase tracking-tight">
-              Sign Out
-            </Text>
-          </TouchableOpacity>
-        </MotiView>
-
-        <View className="items-center pb-10">
-          <Text className="text-[10px] font-manrope font-black uppercase tracking-[0.6em] text-on-surfaceVariant/20 mr-[-0.6em]">
-            J-LEDGER FINANCIAL GROUP
+          <Text className="text-[8px] font-medium text-gray-300 uppercase tracking-[0.2em] mt-1">
+            Built for World Class Experience
           </Text>
         </View>
       </ScrollView>
     </SafeAreaView>
   );
+}
+
+// --- Reusable Components ---
+
+function SettingItem({ icon, iconBg, label, onPress }: any) {
+  return (
+    <TouchableOpacity
+      onPress={onPress}
+      activeOpacity={0.7}
+      className="w-full px-5 py-4 flex-row items-center justify-between bg-white"
+    >
+      <View className="flex-row items-center gap-4">
+        <View className={`w-10 h-10 rounded-2xl items-center justify-center ${iconBg}`}>
+          {icon}
+        </View>
+        <Text className="font-manrope font-black text-sm text-gray-800">{label}</Text>
+      </View>
+      <ChevronRight size={18} color="#d1d5db" />
+    </TouchableOpacity>
+  );
+}
+
+function ToggleSetting({ icon, iconBg, label, active, onToggle }: any) {
+  return (
+    <View className="w-full px-5 py-4 flex-row items-center justify-between bg-white">
+      <View className="flex-row items-center gap-4">
+        <View className={`w-10 h-10 rounded-2xl items-center justify-center ${iconBg}`}>
+          {icon}
+        </View>
+        <Text className="font-manrope font-black text-sm text-gray-800">{label}</Text>
+      </View>
+      <Switch
+        value={active}
+        onValueChange={onToggle}
+        trackColor={{ false: '#f3f4f6', true: '#f48fb1' }}
+        thumbColor={Platform.OS === 'ios' ? undefined : '#ffffff'}
+      />
+    </View>
+  );
+}
+
+function Divider() {
+  return <View className="h-[1px] bg-gray-50 mx-5" />;
 }

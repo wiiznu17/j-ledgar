@@ -89,7 +89,7 @@ export default function DealsScreen() {
               animate={{ opacity: 1, scale: 1 }}
               transition={{ delay: idx * 100 }}
             >
-            <TouchableOpacity className="rounded-[2.5rem] overflow-hidden bg-white border border-gray-50 shadow-sm active:scale-[0.98]">
+              <TouchableOpacity className="rounded-[2.5rem] overflow-hidden bg-white border border-gray-50 shadow-sm active:scale-[0.98]">
                 <Image
                   source={typeof deal.image === 'string' ? { uri: deal.image } : deal.image}
                   className="w-full h-48"
