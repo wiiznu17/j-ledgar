@@ -106,9 +106,11 @@ export default function HomeScreen() {
            <MotiView
              from={{ opacity: 0, translateY: 10 }}
              animate={{ opacity: 1, translateY: 0 }}
-             className="relative rounded-[2.5rem] glass-card overflow-hidden p-6 shadow-2xl shadow-primary/10"
+             className="relative rounded-[2rem] glass-card overflow-hidden p-6 shadow-xl shadow-primary/10"
            >
-              <View className="absolute top-[-30] right-[-30] w-[180] h-[180] bg-primary/15 rounded-full" style={{ filter: [{ blur: 50 }] }} />
+              {/* Background Glow - Exact parity with reference proportions */}
+              <View className="absolute -top-10 -right-10 w-44 h-44 bg-primary/10 rounded-full" />
+
               
               <View className="space-y-6">
                 <View className="flex-row justify-between items-center px-2">
@@ -122,25 +124,30 @@ export default function HomeScreen() {
                   </TouchableOpacity>
                 </View>
 
-                <View className="flex-row justify-between items-end gap-2 px-2">
-                   <View className="flex-1">
-                      <Text 
-                        numberOfLines={1}
-                        adjustsFontSizeToFit
-                        minimumFontScale={0.5}
-                        className="text-5xl font-manrope font-black text-on-surface tracking-tighter"
-                      >
-                        <Text className="text-3xl text-on-surface">฿</Text>45,000<Text className="text-2xl text-on-surfaceVariant">.00</Text>
-                      </Text>
-                   </View>
-                   <TouchableOpacity 
-                     onPress={() => router.push('/transfer' as any)}
-                     className="bg-primary px-5 py-3 rounded-xl flex-row items-center gap-2 shadow-lg shadow-primary/30 active:scale-95 transition-transform"
-                   >
-                     <ArrowLeftRight size={14} color="white" strokeWidth={3} />
-                     <Text className="text-white font-manrope font-bold text-xs font-black">Transfer</Text>
-                   </TouchableOpacity>
-                </View>
+               <View className="flex-row justify-between items-end gap-2 px-2">
+               <View className="flex-1 flex-row items-baseline"> 
+                  {/* ใช้ items-baseline เพื่อให้ตัวเลขและสกุลเงินวางอยู่บนเส้นฐานเดียวกัน */}
+                  <Text className="text-2xl font-manrope font-black text-on-surface">฿</Text>
+                  <Text 
+                     numberOfLines={1}
+                     adjustsFontSizeToFit
+                     minimumFontScale={0.7}
+                     className="text-4xl font-manrope font-black text-on-surface tracking-tighter"
+                  >
+                     45,000
+                  </Text>
+                  <Text className="text-xl font-manrope font-black text-on-surfaceVariant">.00</Text>
+               </View>
+
+               <TouchableOpacity 
+                  onPress={() => router.push('/transfer' as any)}
+                  style={{ flexShrink: 0 }} // ป้องกันไม่ให้ปุ่มโดนเบียดหรือไปเบียดคนอื่นจนเพี้ยน
+                  className="bg-primary px-5 py-2.5 rounded-xl flex-row items-center gap-2 shadow-lg shadow-primary/30 active:scale-95"
+               >
+                  <ArrowLeftRight size={14} color="white" strokeWidth={3} />
+                  <Text className="text-white font-manrope font-bold text-xs">Transfer</Text>
+               </TouchableOpacity>
+               </View>
 
                 <View className="flex-row gap-3 pt-2">
                   <TouchableOpacity 
@@ -184,7 +191,7 @@ export default function HomeScreen() {
         </View>
 
         {/* Services Section */}
-        <View className="bg-white/30 rounded-[2.5rem] p-6 border border-white/20 mb-8">
+        <View className="bg-white/30 rounded-[2rem] p-6 border border-white/20 mb-8">
            <View className="flex-row flex-wrap -mx-2">
               {renderServiceItem(<Smartphone />, "Top-up", "#3b82f6", "/topup")}
               {renderServiceItem(<ReceiptText />, "Bills", "#f97316", undefined, true)}
