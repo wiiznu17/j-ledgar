@@ -1,36 +1,48 @@
-import { Tabs } from 'expo-router';
 import React from 'react';
+import { Tabs } from 'expo-router';
+import { CurvedTabBar } from '@/src/components/layout/CurvedTabBar';
 
-import { HapticTab } from '@/components/haptic-tab';
-import { IconSymbol } from '@/components/ui/icon-symbol';
-import { Colors } from '@/constants/theme';
-import { useColorScheme } from '@/hooks/use-color-scheme';
-
+/**
+ * TabLayout handles the bottom navigation using a custom CurvedTabBar.
+ */
 export default function TabLayout() {
-  const colorScheme = useColorScheme();
-
   return (
     <Tabs
+      tabBar={(props) => <CurvedTabBar {...props} />}
       screenOptions={{
-        tabBarActiveTintColor: Colors[colorScheme ?? 'light'].tint,
         headerShown: false,
-        tabBarButton: HapticTab,
+        tabBarShowLabel: false,
       }}
     >
-      <Tabs.Screen
-        name="index"
-        options={{
+      <Tabs.Screen 
+        name="index" 
+        options={{ 
           title: 'Home',
-          tabBarIcon: ({ color }) => <IconSymbol size={28} name="house.fill" color={color} />,
-        }}
+          headerShown: false 
+        }} 
       />
-      <Tabs.Screen
-        name="explore"
-        options={{
-          title: 'Explore',
-          tabBarIcon: ({ color }) => <IconSymbol size={28} name="paperplane.fill" color={color} />,
-        }}
+      <Tabs.Screen 
+        name="history" 
+        options={{ 
+          title: 'History',
+          headerShown: false 
+        }} 
+      />
+      <Tabs.Screen 
+        name="scan" 
+        options={{ 
+          title: 'Scan',
+          headerShown: false 
+        }} 
+      />
+      <Tabs.Screen 
+        name="profile" 
+        options={{ 
+          title: 'Profile',
+          headerShown: false 
+        }} 
       />
     </Tabs>
   );
 }
+
