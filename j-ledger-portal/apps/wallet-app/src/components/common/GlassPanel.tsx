@@ -15,26 +15,22 @@ interface GlassPanelProps extends ViewProps {
   tint?: 'light' | 'dark' | 'default';
 }
 
-export function GlassPanel({ 
-  children, 
-  className, 
-  intensity = 40, 
+export function GlassPanel({
+  children,
+  className,
+  intensity = 40,
   tint = 'light',
-  ...props 
+  ...props
 }: GlassPanelProps) {
   return (
-    <View 
+    <View
       className={cn(
-        "overflow-hidden rounded-3xl border border-outline-variant bg-white/40",
-        className
+        'overflow-hidden rounded-3xl border border-outline-variant bg-white/40',
+        className,
       )}
       {...props}
     >
-      <BlurView 
-        intensity={intensity} 
-        tint={tint} 
-        className="w-full h-full p-6"
-      >
+      <BlurView intensity={intensity} tint={tint} className="w-full h-full p-6">
         {children}
       </BlurView>
     </View>

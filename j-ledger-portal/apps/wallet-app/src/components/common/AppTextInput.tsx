@@ -23,33 +23,28 @@ export function AppTextInput({
   ...props
 }: AppTextInputProps) {
   return (
-    <View className={cn("space-y-2", containerClassName)}>
+    <View className={cn('space-y-2', containerClassName)}>
       {label && (
         <Text className="text-[10px] font-manrope font-extrabold uppercase tracking-widest text-on-surfaceVariant px-1 mb-1">
           {label}
         </Text>
       )}
-      <View 
+      <View
         className={cn(
-          "flex-row items-center bg-white/60 border border-outline-variant rounded-2xl h-16 px-4 shadow-sm",
-          error && "border-red-500",
-          props.multiline && "h-auto py-4 min-h-[100px]"
+          'flex-row items-center bg-white/60 border border-outline-variant rounded-2xl h-16 px-4 shadow-sm',
+          error && 'border-red-500',
+          props.multiline && 'h-auto py-4 min-h-[100px]',
         )}
       >
         {leftElement && <View className="mr-3">{leftElement}</View>}
         <TextInput
-          className={cn(
-            "flex-1 font-manrope font-extrabold text-lg text-on-surface",
-            className
-          )}
+          className={cn('flex-1 font-manrope font-extrabold text-lg text-on-surface', className)}
           placeholderTextColor="#595b6180"
           {...props}
         />
       </View>
       {error && (
-        <Text className="text-red-500 text-xs font-manrope font-bold px-1 mt-1">
-          {error}
-        </Text>
+        <Text className="text-red-500 text-xs font-manrope font-bold px-1 mt-1">{error}</Text>
       )}
     </View>
   );

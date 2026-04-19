@@ -14,35 +14,34 @@ export default function TabLayout() {
         tabBarShowLabel: false,
       }}
     >
-      <Tabs.Screen 
-        name="index" 
-        options={{ 
+      <Tabs.Screen
+        name="index"
+        options={{
           title: 'Home',
-          headerShown: false 
-        }} 
+          headerShown: false,
+        }}
       />
-      <Tabs.Screen 
-        name="history" 
-        options={{ 
+      <Tabs.Screen
+        name="history"
+        options={{
           title: 'History',
-          headerShown: false 
-        }} 
+          headerShown: false,
+        }}
       />
-      <Tabs.Screen 
-        name="scan" 
-        options={{ 
+      <Tabs.Screen
+        name="scan"
+        options={{
           title: 'Scan',
-          headerShown: false 
-        }} 
+          headerShown: false,
+        }}
       />
-      <Tabs.Screen 
-        name="profile" 
-        options={{ 
+      <Tabs.Screen
+        name="profile"
+        options={{
           title: 'Profile',
-          headerShown: false 
-        }} 
+          headerShown: false,
+        }}
       />
     </Tabs>
   );
 }
-

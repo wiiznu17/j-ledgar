@@ -72,9 +72,15 @@ export default function RootLayout() {
               <Stack.Screen name="transfer/success" options={{ headerShown: false }} />
               <Stack.Screen name="topup" options={{ headerShown: false }} />
               <Stack.Screen name="my-qr" options={{ headerShown: false }} />
-              <Stack.Screen name="deals" options={{ headerShown: false, title: "Special Deals" }} />
-              <Stack.Screen name="notifications" options={{ presentation: 'modal', title: 'Notifications' }} />
-              <Stack.Screen name="settings" options={{ presentation: 'modal', title: 'Settings' }} />
+              <Stack.Screen name="deals" options={{ headerShown: false, title: 'Special Deals' }} />
+              <Stack.Screen
+                name="notifications"
+                options={{ presentation: 'modal', title: 'Notifications' }}
+              />
+              <Stack.Screen
+                name="settings"
+                options={{ presentation: 'modal', title: 'Settings' }}
+              />
             </Stack>
           </BackgroundGradient>
           <StatusBar style="auto" />

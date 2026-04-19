@@ -14,11 +14,17 @@ export function BackgroundGradient({ children }: { children: React.ReactNode }) 
         style={StyleSheet.absoluteFill}
       />
       {/* Blurred Blobs - Static as requested */}
-      <View 
-        style={[styles.blob, { top: -100, left: -100, backgroundColor: 'rgba(244, 143, 177, 0.15)' }]} 
+      <View
+        style={[
+          styles.blob,
+          { top: -100, left: -100, backgroundColor: 'rgba(244, 143, 177, 0.15)' },
+        ]}
       />
-      <View 
-        style={[styles.blob, { bottom: -100, right: -100, backgroundColor: 'rgba(72, 85, 165, 0.1)' }]} 
+      <View
+        style={[
+          styles.blob,
+          { bottom: -100, right: -100, backgroundColor: 'rgba(72, 85, 165, 0.1)' },
+        ]}
       />
       {children}
     </View>
@@ -37,5 +43,5 @@ const styles = StyleSheet.create({
     opacity: 0.6,
     // Note: Blur is handled by the overall aesthetics/glass elements
     // but we can use a very large blur for the blobs themselves if needed
-  }
+  },
 });

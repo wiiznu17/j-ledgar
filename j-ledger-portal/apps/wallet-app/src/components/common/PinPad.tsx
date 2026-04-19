@@ -31,9 +31,9 @@ export function PinPad({ pin, setPin, length = 6, onComplete }: PinPadProps) {
       <MotiView
         key={index}
         from={{ scale: 0.8 }}
-        animate={{ 
+        animate={{
           scale: active ? 1.2 : 1,
-          backgroundColor: active ? '#f48fb1' : '#E6E8EF'
+          backgroundColor: active ? '#f48fb1' : '#E6E8EF',
         }}
         className="w-4 h-4 rounded-full mx-2"
         style={{ backgroundColor: active ? '#f48fb1' : '#E6E8EF' }}
@@ -44,7 +44,7 @@ export function PinPad({ pin, setPin, length = 6, onComplete }: PinPadProps) {
   const renderKey = (val: string | 'back') => (
     <TouchableOpacity
       key={val}
-      onPress={() => val === 'back' ? handleBackspace() : handlePress(val)}
+      onPress={() => (val === 'back' ? handleBackspace() : handlePress(val))}
       activeOpacity={0.7}
       className={`w-[28%] aspect-[1.2] items-center justify-center rounded-3xl m-[2.5%] ${val === 'back' ? 'bg-transparent' : 'bg-white/40 border border-outline-variant shadow-sm'}`}
     >
@@ -65,7 +65,7 @@ export function PinPad({ pin, setPin, length = 6, onComplete }: PinPadProps) {
 
       {/* Keyboard Grid */}
       <View className="flex-row flex-wrap justify-center w-full">
-        {['1', '2', '3', '4', '5', '6', '7', '8', '9'].map(num => renderKey(num))}
+        {['1', '2', '3', '4', '5', '6', '7', '8', '9'].map((num) => renderKey(num))}
         <TouchableOpacity className="w-[28%] aspect-[1.2] m-[2.5%]" disabled />
         {renderKey('0')}
         {renderKey('back')}

@@ -12,20 +12,20 @@ export function StepWrapper({ children, visible, direction = 'horizontal' }: Ste
     <AnimatePresence>
       {visible && (
         <MotiView
-          from={{ 
-            opacity: 0, 
+          from={{
+            opacity: 0,
             translateX: direction === 'horizontal' ? 20 : 0,
-            translateY: direction === 'vertical' ? 20 : 0
+            translateY: direction === 'vertical' ? 20 : 0,
           }}
-          animate={{ 
-            opacity: 1, 
+          animate={{
+            opacity: 1,
             translateX: 0,
-            translateY: 0
+            translateY: 0,
           }}
-          exit={{ 
-            opacity: 0, 
+          exit={{
+            opacity: 0,
             translateX: direction === 'horizontal' ? -20 : 0,
-            translateY: direction === 'vertical' ? -20 : 0
+            translateY: direction === 'vertical' ? -20 : 0,
           }}
           transition={{
             type: 'timing',

@@ -32,16 +32,16 @@ export function AppButton({
   icon,
   iconPosition = 'right',
 }: AppButtonProps) {
-  const baseStyles = "h-16 rounded-2xl flex-row items-center justify-center px-6 transition-all";
+  const baseStyles = 'h-16 rounded-2xl flex-row items-center justify-center px-6 transition-all';
   const variantStyles = {
-    primary: "bg-primary shadow-xl shadow-primary/20",
-    outline: "bg-white border border-primary/20 shadow-sm",
-    ghost: "bg-transparent",
+    primary: 'bg-primary shadow-xl shadow-primary/20',
+    outline: 'bg-white border border-primary/20 shadow-sm',
+    ghost: 'bg-transparent',
   };
   const textStyles = {
-    primary: "text-on-primary font-manrope font-extrabold text-lg",
-    outline: "text-primary font-manrope font-extrabold text-lg",
-    ghost: "text-on-surface-variant font-manrope font-bold text-sm",
+    primary: 'text-on-primary font-manrope font-extrabold text-lg',
+    outline: 'text-primary font-manrope font-extrabold text-lg',
+    ghost: 'text-on-surface-variant font-manrope font-bold text-sm',
   };
 
   const handlePress = () => {
@@ -56,7 +56,14 @@ export function AppButton({
       onPress={handlePress}
       disabled={disabled || loading}
       activeOpacity={0.8}
-      className={cn(baseStyles, variantStyles[variant], (disabled || loading) && "opacity-50", "active:scale-95", className, containerClassName)}
+      className={cn(
+        baseStyles,
+        variantStyles[variant],
+        (disabled || loading) && 'opacity-50',
+        'active:scale-95',
+        className,
+        containerClassName,
+      )}
     >
       {loading ? (
         <ActivityIndicator color={variant === 'primary' ? 'white' : '#f48fb1'} />
@@ -70,4 +77,3 @@ export function AppButton({
     </TouchableOpacity>
   );
 }
-

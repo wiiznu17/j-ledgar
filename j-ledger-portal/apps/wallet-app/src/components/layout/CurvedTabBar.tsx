@@ -51,18 +51,14 @@ export function CurvedTabBar(props: BottomTabBarProps) {
   return (
     <View style={styles.container}>
       <Svg width={width} height={120} style={styles.svg}>
-        <Path
-          d={getPath()}
-          fill="white"
-          stroke="rgba(0,0,0,0.05)"
-          strokeWidth={1}
-        />
+        <Path d={getPath()} fill="white" stroke="rgba(0,0,0,0.05)" strokeWidth={1} />
       </Svg>
 
       <View className="flex-row items-center justify-around w-full px-2 absolute bottom-6 h-16">
         {navItems.map((item, index) => {
-          const isActive = pathname === item.route || (item.route === '/(tabs)' && pathname === '/');
-          
+          const isActive =
+            pathname === item.route || (item.route === '/(tabs)' && pathname === '/');
+
           if (item.isCenter) {
             return (
               <View key={index} className="items-center">
@@ -74,7 +70,9 @@ export function CurvedTabBar(props: BottomTabBarProps) {
                 >
                   <item.icon size={32} color="white" strokeWidth={3} />
                 </TouchableOpacity>
-                <Text className="font-manrope text-[10px] font-black text-on-surface uppercase tracking-widest mt-1">PAY</Text>
+                <Text className="font-manrope text-[10px] font-black text-on-surface uppercase tracking-widest mt-1">
+                  PAY
+                </Text>
               </View>
             );
           }
@@ -86,14 +84,18 @@ export function CurvedTabBar(props: BottomTabBarProps) {
               className="items-center justify-center px-4"
             >
               <MotiView
-                animate={{ 
-                   scale: isActive ? 1.1 : 1,
-                   opacity: isActive ? 1 : 0.4
+                animate={{
+                  scale: isActive ? 1.1 : 1,
+                  opacity: isActive ? 1 : 0.4,
                 }}
                 className="items-center"
               >
-                <item.icon size={24} color={isActive ? "#f48fb1" : "#595b61"} strokeWidth={isActive ? 2.5 : 2} />
-                <Text 
+                <item.icon
+                  size={24}
+                  color={isActive ? '#f48fb1' : '#595b61'}
+                  strokeWidth={isActive ? 2.5 : 2}
+                />
+                <Text
                   className={`font-manrope text-[10px] font-bold mt-1 ${isActive ? 'text-primary' : 'text-on-surface-variant'}`}
                 >
                   {item.name}
@@ -119,7 +121,7 @@ const styles = StyleSheet.create({
   svg: {
     position: 'absolute',
     bottom: 0,
-    shadowColor: "#000",
+    shadowColor: '#000',
     shadowOffset: {
       width: 0,
       height: -10,
@@ -133,5 +135,5 @@ const styles = StyleSheet.create({
     height: 70,
     borderRadius: 35,
     zIndex: 101,
-  }
+  },
 });

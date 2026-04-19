@@ -11,12 +11,12 @@ interface HeaderProps {
   showNoti?: boolean;
 }
 
-export function Header({ 
-  title, 
-  showBack, 
-  onBack, 
-  showSearch = true, 
-  showNoti = true 
+export function Header({
+  title,
+  showBack,
+  onBack,
+  showSearch = true,
+  showNoti = true,
 }: HeaderProps) {
   const router = useRouter();
 
@@ -25,10 +25,7 @@ export function Header({
       {/* Back Button / Logo Section */}
       <View className="flex-row items-center shrink-0">
         {showBack ? (
-          <TouchableOpacity
-            onPress={onBack || (() => router.back())}
-            className="p-2 -ml-2"
-          >
+          <TouchableOpacity onPress={onBack || (() => router.back())} className="p-2 -ml-2">
             <ChevronLeft size={24} color="#595b61" />
           </TouchableOpacity>
         ) : (
@@ -37,7 +34,7 @@ export function Header({
           </View>
         )}
         {title && (
-           <Text className="ml-3 font-manrope font-bold text-base text-on-surface">{title}</Text>
+          <Text className="ml-3 font-manrope font-bold text-base text-on-surface">{title}</Text>
         )}
       </View>
 
@@ -45,8 +42,8 @@ export function Header({
       {showSearch && (
         <View className="flex-1 mx-3 bg-[#f5f6fc] rounded-full h-11 px-4 flex-row items-center gap-2 border border-outline-variant/5">
           <Search size={16} color="#abb1b2" />
-          <TextInput 
-            placeholder="Search" 
+          <TextInput
+            placeholder="Search"
             placeholderTextColor="#abb1b2"
             className="flex-1 font-manrope text-sm text-on-surface p-0"
           />
@@ -54,11 +51,11 @@ export function Header({
       )}
 
       {!showSearch && <View className="flex-1" />}
-      
+
       {/* Action Icons */}
       {showNoti && (
         <View className="flex-row items-center shrink-0">
-          <TouchableOpacity 
+          <TouchableOpacity
             onPress={() => router.push('/notifications' as any)}
             className="p-2 relative"
           >
