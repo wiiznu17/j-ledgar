@@ -96,7 +96,9 @@ export default function HistoryScreen() {
 
       <HistoryTransactionList
         transactions={filteredTransactions}
-        onTransactionPress={(tx) => console.log('Transaction pressed:', tx.id)}
+        onTransactionPress={(tx) => {
+          router.push(`/transaction/${tx.id}` as any);
+        }}
       />
     </SafeAreaView>
   );

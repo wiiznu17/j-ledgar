@@ -70,6 +70,7 @@ export default function RootLayout() {
               <Stack.Screen name="(auth)" options={{ headerShown: false }} />
               <Stack.Screen name="transfer" options={{ headerShown: false }} />
               <Stack.Screen name="topup" options={{ headerShown: false }} />
+              <Stack.Screen name="transaction" options={{ headerShown: false }} />
               <Stack.Screen name="my-qr" options={{ headerShown: false }} />
               <Stack.Screen
                 name="notifications"
