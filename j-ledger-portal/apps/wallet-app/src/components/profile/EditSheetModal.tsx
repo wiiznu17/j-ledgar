@@ -55,10 +55,9 @@ export function EditSheetModal({
           <View className="flex-row justify-between items-center mb-6">
             <View>
               <Text className="text-2xl font-manrope font-black text-gray-800">
-                {activeModal === 'GENERAL' && 'General Info'}
-                {activeModal === 'ADDRESS' && 'Address'}
-                {activeModal === 'CONTACT' && 'Contact'}
-                {activeModal === 'WORK_STUDY' && 'Work & Study'}
+                {activeModal === 'ADDRESS' && 'Current Address'}
+                {activeModal === 'CONTACT' && 'Contact Details'}
+                {activeModal === 'EMPLOYMENT' && 'Work & Income'}
               </Text>
               <Text className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mt-1">
                 Edit Section
@@ -74,23 +73,14 @@ export function EditSheetModal({
 
           <ScrollView showsVerticalScrollIndicator={false} className="max-h-[60vh]">
             <View className="gap-y-5">
-              {activeModal === 'GENERAL' && (
-                <EditField
-                  label="Full Name"
-                  icon={<User size={18} color="#9ca3af" />}
-                  value={formData.name}
-                  onChange={(v: string) => setFormData({ ...formData, name: v })}
-                />
-              )}
-
               {activeModal === 'ADDRESS' && (
                 <View className="gap-y-5">
                   <EditField
                     label="Street / House No."
                     icon={<MapPin size={18} color="#9ca3af" />}
-                    value={formData.address.street}
+                    value={formData.currentAddress.street}
                     onChange={(v: string) =>
-                      setFormData({ ...formData, address: { ...formData.address, street: v } })
+                      setFormData({ ...formData, currentAddress: { ...formData.currentAddress, street: v } })
                     }
                   />
                   <View className="flex-row gap-x-4">
@@ -98,11 +88,11 @@ export function EditSheetModal({
                       <EditField
                         label="Sub-district"
                         icon={<MapPin size={18} color="#9ca3af" />}
-                        value={formData.address.subdistrict}
+                        value={formData.currentAddress.subdistrict}
                         onChange={(v: string) =>
                           setFormData({
                             ...formData,
-                            address: { ...formData.address, subdistrict: v },
+                            currentAddress: { ...formData.currentAddress, subdistrict: v },
                           })
                         }
                       />
@@ -111,12 +101,9 @@ export function EditSheetModal({
                       <EditField
                         label="District"
                         icon={<MapPin size={18} color="#9ca3af" />}
-                        value={formData.address.district}
+                        value={formData.currentAddress.district}
                         onChange={(v: string) =>
-                          setFormData({
-                            ...formData,
-                            address: { ...formData.address, district: v },
-                          })
+                          setFormData({ ...formData, currentAddress: { ...formData.currentAddress, district: v } })
                         }
                       />
                     </View>
@@ -126,12 +113,9 @@ export function EditSheetModal({
                       <EditField
                         label="Province"
                         icon={<MapPin size={18} color="#9ca3af" />}
-                        value={formData.address.province}
+                        value={formData.currentAddress.province}
                         onChange={(v: string) =>
-                          setFormData({
-                            ...formData,
-                            address: { ...formData.address, province: v },
-                          })
+                          setFormData({ ...formData, currentAddress: { ...formData.currentAddress, province: v } })
                         }
                       />
                     </View>
@@ -139,11 +123,11 @@ export function EditSheetModal({
                       <EditField
                         label="Postal Code"
                         icon={<MapPin size={18} color="#9ca3af" />}
-                        value={formData.address.postalCode}
+                        value={formData.currentAddress.postalCode}
                         onChange={(v: string) =>
                           setFormData({
                             ...formData,
-                            address: { ...formData.address, postalCode: v },
+                            currentAddress: { ...formData.currentAddress, postalCode: v },
                           })
                         }
                       />
@@ -167,13 +151,13 @@ export function EditSheetModal({
                     onChange={() => {}}
                     disabled
                   />
-                  <Text className="text-[10px] font-medium text-gray-400 italic ml-1">
-                    Note: Phone number is tied to device binding and cannot be changed here.
+                  <Text className="text-[10px] font-medium text-gray-400 italic ml-1 leading-tight">
+                    Note: Phone number is tied to device binding and KYC verification and cannot be changed here.
                   </Text>
                 </View>
               )}
 
-              {activeModal === 'WORK_STUDY' && (
+              {activeModal === 'EMPLOYMENT' && (
                 <View className="gap-y-5">
                   <EditSelect
                     label="Occupation"
@@ -185,16 +169,84 @@ export function EditSheetModal({
                     icon={<Coins size={18} color="#9ca3af" />}
                     value={formData.income}
                   />
-                  <EditSelect
-                    label="Income Source"
+                  <EditField
+                    label="Source of Income"
                     icon={<Coins size={18} color="#9ca3af" />}
                     value={formData.sourceOfIncome}
+                    onChange={(v: string) => setFormData({ ...formData, sourceOfIncome: v })}
                   />
                   <EditSelect
                     label="Usage Purpose"
                     icon={<Target size={18} color="#9ca3af" />}
                     value={formData.purpose}
                   />
+
+                  {/* Work Address Fields */}
+                  <View className="mt-4 pt-4 border-t border-gray-100">
+                    <Text className="text-[10px] font-black uppercase tracking-widest text-gray-400 mb-4 ml-1">
+                      Work / Study Address
+                    </Text>
+                    <View className="gap-y-5">
+                      <EditField
+                        label="Work Street / House No."
+                        icon={<MapPin size={18} color="#9ca3af" />}
+                        value={formData.workAddress.street}
+                        onChange={(v: string) =>
+                          setFormData({ ...formData, workAddress: { ...formData.workAddress, street: v } })
+                        }
+                      />
+                      <View className="flex-row gap-x-4">
+                        <View className="flex-1">
+                          <EditField
+                            label="Sub-district"
+                            icon={<MapPin size={18} color="#9ca3af" />}
+                            value={formData.workAddress.subdistrict}
+                            onChange={(v: string) =>
+                              setFormData({
+                                ...formData,
+                                workAddress: { ...formData.workAddress, subdistrict: v },
+                              })
+                            }
+                          />
+                        </View>
+                        <View className="flex-1">
+                          <EditField
+                            label="District"
+                            icon={<MapPin size={18} color="#9ca3af" />}
+                            value={formData.workAddress.district}
+                            onChange={(v: string) =>
+                              setFormData({ ...formData, workAddress: { ...formData.workAddress, district: v } })
+                            }
+                          />
+                        </View>
+                      </View>
+                      <View className="flex-row gap-x-4">
+                        <View className="flex-1">
+                          <EditField
+                            label="Province"
+                            icon={<MapPin size={18} color="#9ca3af" />}
+                            value={formData.workAddress.province}
+                            onChange={(v: string) =>
+                              setFormData({ ...formData, workAddress: { ...formData.workAddress, province: v } })
+                            }
+                          />
+                        </View>
+                        <View className="flex-1">
+                          <EditField
+                            label="Postal Code"
+                            icon={<MapPin size={18} color="#9ca3af" />}
+                            value={formData.workAddress.postalCode}
+                            onChange={(v: string) =>
+                              setFormData({
+                                ...formData,
+                                workAddress: { ...formData.workAddress, postalCode: v },
+                              })
+                            }
+                          />
+                        </View>
+                      </View>
+                    </View>
+                  </View>
                 </View>
               )}
             </View>
