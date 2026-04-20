@@ -6,7 +6,7 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 
 import java.math.BigDecimal;
-import java.time.OffsetDateTime;
+import java.time.ZonedDateTime;
 import java.util.List;
 import java.util.UUID;
 
@@ -32,8 +32,8 @@ public class TransferResponse {
     private String currency;
     private String status; // SUCCESS, PENDING, FAILED
     private List<LedgerEntryDto> ledgerEntries;
-    private OffsetDateTime createdAt;
-    private OffsetDateTime updatedAt;
+    private ZonedDateTime createdAt;
+    private ZonedDateTime updatedAt;
 
     /**
      * Create response from Transaction domain model
@@ -69,16 +69,17 @@ public class TransferResponse {
         private UUID accountId;
         private String type; // DEBIT or CREDIT
         private BigDecimal amount;
-        private OffsetDateTime createdAt;
+        private ZonedDateTime createdAt;
 
         public static LedgerEntryDto fromDomain(LedgerEntry entry) {
             LedgerEntryDto dto = new LedgerEntryDto();
             dto.id = entry.getId();
-            dto.accountId = entry.getAccountId();
-            dto.type = entry.getType();
+            dto.accountId = entry.getAccount() != null ? entry.getAccount().getId() : null;
+            dto.type = entry.getEntryType();
             dto.amount = entry.getAmount();
             dto.createdAt = entry.getCreatedAt();
             return dto;
         }
     }
 }
+

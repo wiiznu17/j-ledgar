@@ -5,26 +5,29 @@
 // Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
 
 generator client {
-  provider      = "prisma-client-js"
-  output        = "../node_modules/@prisma/client-admin"
-  binaryTargets = ["native", "linux-musl", "linux-musl-arm64-openssl-3.0.x"]
+  provider        = "prisma-client-js"
+  output          = "../node_modules/@prisma/client-admin"
+  binaryTargets   = ["native", "linux-musl", "linux-musl-arm64-openssl-3.0.x"]
+  previewFeatures = ["multiSchema"]
 }
 
 datasource db {
   provider = "postgresql"
   url      = env("DATABASE_URL")
+  schemas  = ["admin_schema", "public"]
 }
 
 model AdminUser {
-  id           String   @id @default(uuid())
-  email        String   @unique
+  id               String   @id @default(uuid())
+  email            String   @unique
   passwordHash     String
   refreshTokenHash String?
   role             String   @default("SUPPORT_STAFF")
-  createdAt    DateTime @default(now())
-  updatedAt    DateTime @updatedAt
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
 
   @@map("admin_users")
+  @@schema("admin_schema")
 }
 
 model User {
@@ -35,4 +38,6 @@ model User {
   updatedAt DateTime @updatedAt
 
   @@map("users")
+  @@schema("admin_schema")
 }
+

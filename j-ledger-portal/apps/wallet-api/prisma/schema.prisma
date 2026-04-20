@@ -5,15 +5,18 @@
 // Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
 
 generator client {
-  provider      = "prisma-client-js"
-  output        = "../node_modules/@prisma/client-wallet"
-  binaryTargets = ["native", "linux-musl", "linux-musl-arm64-openssl-3.0.x"]
+  provider        = "prisma-client-js"
+  output          = "../node_modules/@prisma/client-wallet"
+  binaryTargets   = ["native", "linux-musl", "linux-musl-arm64-openssl-3.0.x"]
+  previewFeatures = ["multiSchema"]
 }
 
 datasource db {
   provider = "postgresql"
   url      = env("DATABASE_URL")
+  schemas  = ["wallet_schema", "public"]
 }
+
 
 enum UserStatus {
   PENDING
@@ -21,7 +24,10 @@ enum UserStatus {
   LOCKED
   FROZEN
   CLOSED
+
+  @@schema("wallet_schema")
 }
+
 
 enum RegistrationState {
   PENDING_OTP
@@ -31,58 +37,85 @@ enum RegistrationState {
   PROFILE_COMPLETED
   CREDENTIALS_SET
   COMPLETED
+
+  @@schema("wallet_schema")
 }
+
 
 enum DeviceTrustLevel {
   TRUSTED
   UNTRUSTED
   REVOKED
+
+  @@schema("wallet_schema")
 }
+
 
 enum SessionStatus {
   ACTIVE
   ROTATED
   REVOKED
   EXPIRED
+
+  @@schema("wallet_schema")
 }
+
 
 enum OtpPurpose {
   REGISTRATION
   DEVICE_TRUST
+
+  @@schema("wallet_schema")
 }
+
 
 enum OtpStatus {
   PENDING
   VERIFIED
   EXPIRED
   LOCKED
+
+  @@schema("wallet_schema")
 }
+
 
 enum KycVerificationStatus {
   PENDING
   APPROVED
   REJECTED
   MANUAL_REVIEW
+
+  @@schema("wallet_schema")
 }
+
 
 enum TransferStatus {
   PENDING
   COMPLETED
   FAILED
   REJECTED
+
+  @@schema("wallet_schema")
 }
+
 
 enum ApprovalStatus {
   PENDING
   APPROVED
   REJECTED
+
+  @@schema("wallet_schema")
 }
+
 
 enum ApprovalType {
   P2P_TRANSFER
   KYC_VERIFICATION
   BALANCE_ADJUSTMENT
+
+  @@schema("wallet_schema")
 }
+
 
 model User {
   id                     String            @id @default(uuid())
@@ -109,12 +142,15 @@ model User {
   transfersFrom          Transfer[]        @relation("TransferFrom")
   transfersTo            Transfer[]        @relation("TransferTo")
   approvals              Approval[]
+  notifications          NotificationHistory[]
   errorLogs              ErrorLog[]
   createdAt              DateTime          @default(now())
   updatedAt              DateTime          @updatedAt
 
   @@map("users")
+  @@schema("wallet_schema")
 }
+
 
 model UserProfile {
   id          String   @id @default(uuid())
@@ -132,7 +168,9 @@ model UserProfile {
   updatedAt   DateTime @updatedAt
 
   @@map("user_profiles")
+  @@schema("wallet_schema")
 }
+
 
 model UserDevice {
   id               String           @id @default(uuid())
@@ -151,7 +189,9 @@ model UserDevice {
   @@unique([userId, deviceIdentifier])
   @@index([deviceIdentifier])
   @@map("user_devices")
+  @@schema("wallet_schema")
 }
+
 
 model RefreshSession {
   id               String        @id @default(uuid())
@@ -171,7 +211,9 @@ model RefreshSession {
   @@index([userId, status])
   @@index([deviceId, status])
   @@map("refresh_sessions")
+  @@schema("wallet_schema")
 }
+
 
 model OtpChallenge {
   id           String     @id @default(uuid())
@@ -190,7 +232,9 @@ model OtpChallenge {
   @@index([userId, purpose, status])
   @@index([phoneNumber, purpose, status])
   @@map("otp_challenges")
+  @@schema("wallet_schema")
 }
+
 
 model KycData {
   id                    String                @id @default(uuid())
@@ -210,7 +254,9 @@ model KycData {
   updatedAt             DateTime              @updatedAt
 
   @@map("kyc_data")
+  @@schema("wallet_schema")
 }
+
 
 model SecurityLog {
   id        String   @id @default(uuid())
@@ -225,7 +271,9 @@ model SecurityLog {
 
   @@index([userId, eventType, createdAt])
   @@map("security_logs")
+  @@schema("wallet_schema")
 }
+
 
 model LedgerOutbox {
   id          String   @id @default(uuid())
@@ -242,7 +290,9 @@ model LedgerOutbox {
 
   @@index([status, nextRetryAt])
   @@map("ledger_outbox")
+  @@schema("wallet_schema")
 }
+
 
 model RevokedAccessToken {
   id        String   @id @default(uuid())
@@ -252,7 +302,9 @@ model RevokedAccessToken {
 
   @@index([expiresAt])
   @@map("revoked_access_tokens")
+  @@schema("wallet_schema")
 }
+
 
 model MerchantProfile {
   id                String   @id @default(uuid())
@@ -265,7 +317,9 @@ model MerchantProfile {
   updatedAt         DateTime @updatedAt
 
   @@map("merchant_profiles")
+  @@schema("wallet_schema")
 }
+
 
 // PIN Attempt Tracking - PDPA Compliance
 model PinAttempt {
@@ -279,7 +333,9 @@ model PinAttempt {
 
   @@index([userId, createdAt])
   @@map("pin_attempts")
+  @@schema("wallet_schema")
 }
+
 
 // Transfer Model - P2P Transfers with Idempotency
 model Transfer {
@@ -303,7 +359,9 @@ model Transfer {
   @@index([toUserId, createdAt])
   @@index([status])
   @@map("transfers")
+  @@schema("wallet_schema")
 }
+
 
 // Maker-Checker Approval Workflow
 model Approval {
@@ -326,7 +384,9 @@ model Approval {
   @@index([approvalType, status])
   @@index([checkerId])
   @@map("approvals")
+  @@schema("wallet_schema")
 }
+
 
 model ErrorLog {
   id        String   @id @default(uuid())
@@ -339,4 +399,49 @@ model ErrorLog {
   @@index([errorCode, createdAt])
   @@index([userId])
   @@map("error_logs")
+  @@schema("wallet_schema")
 }
+
+model NotificationHistory {
+  id               String   @id @default(uuid())
+  userId           String
+  user             User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  notificationType String   @db.VarChar(50)
+  title            String   @db.VarChar(255)
+  message          String   @db.Text
+  data             Json?
+  sentAt           DateTime @default(now())
+  readAt           DateTime?
+  createdAt        DateTime @default(now())
+
+  @@index([userId, createdAt])
+  @@map("notification_history")
+  @@schema("wallet_schema")
+}
+
+model ErrorCode {
+  id              String         @id @default(uuid())
+  code            String         @unique @db.VarChar(50)
+  severity        String         @db.VarChar(20)
+  internalMessage String         @db.Text
+  messages        ErrorMessage[]
+  createdAt       DateTime       @default(now())
+
+  @@map("error_codes")
+  @@schema("wallet_schema")
+}
+
+model ErrorMessage {
+  id             String    @id @default(uuid())
+  errorCodeId    String
+  errorCode      ErrorCode @relation(fields: [errorCodeId], references: [id], onDelete: Cascade)
+  language       String    @db.VarChar(5)
+  userMessage    String    @db.Text
+  recoveryAction String?   @db.Text
+  createdAt      DateTime  @default(now())
+
+  @@unique([errorCodeId, language])
+  @@map("error_messages")
+  @@schema("wallet_schema")
+}
+

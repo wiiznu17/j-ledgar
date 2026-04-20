@@ -9,7 +9,9 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
-import javax.validation.Valid;
+import jakarta.validation.Valid;
+import com.jledger.core.dto.P2pTransferRequest;
+import com.jledger.core.dto.TransferResponse;
 import java.util.UUID;
 
 /**
@@ -87,8 +89,8 @@ public class P2pTransferController {
             Transaction transaction = transferService.executeTransfer(
                     request.getIdempotencyKey(),
                     new TransferRequest(
-                            request.getFromAccountId(),
-                            request.getToAccountId(),
+                            UUID.fromString(request.getFromAccountId()),
+                            UUID.fromString(request.getToAccountId()),
                             request.getAmount(),
                             request.getCurrency()
                     )
