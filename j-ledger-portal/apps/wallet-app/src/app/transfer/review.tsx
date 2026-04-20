@@ -23,6 +23,7 @@ import {
   parseBackendError,
   getRecoveryPath,
 } from '../../lib/error-handling';
+import { NotificationService } from '../../lib/notification-service';
 
 const { width } = Dimensions.get('window');
 
@@ -59,23 +60,18 @@ export default function ReviewTransferScreen() {
   const handleConfirm = async () => {
     if (isProcessing || isConfirming) return;
 
+    // For security, always require authentication
     // Check if authentication is required
-    if (biometricEnabled || (biometricAvailable && biometricEnabled)) {
+    if (biometricAvailable && biometricEnabled) {
       // Show biometric first
       setIsConfirming(true);
       setShowBiometric(true);
       return;
     }
 
-    // If no biometric, show PIN (or allow direct transfer if PIN not set)
-    if (!isAuthenticated) {
-      setIsConfirming(true);
-      setShowPIN(true);
-      return;
-    }
-
-    // Proceed with transfer
-    performTransfer();
+    // Always require PIN for security
+    setIsConfirming(true);
+    setShowPIN(true);
   };
 
   const handleBiometricSuccess = () => {
@@ -86,7 +82,7 @@ export default function ReviewTransferScreen() {
   };
 
   const handleBiometricFailure = (error: string) => {
-    // Fallback to PIN
+    // Fallback to PIN after 3 failed biometric attempts
     setShowBiometric(false);
     setShowPIN(true);
   };
@@ -99,6 +95,7 @@ export default function ReviewTransferScreen() {
   };
 
   const handlePINFailure = (error: string) => {
+    // Close authentication modal on PIN failure
     setShowPIN(false);
     setIsConfirming(false);
   };
@@ -135,6 +132,12 @@ export default function ReviewTransferScreen() {
       // }
 
       setIsProcessing(false);
+
+      // Send success notification
+      const recipientDisplay =
+        (Array.isArray(recipient) ? recipient[0] : recipient)?.replace(/-/g, '') || 'Recipient';
+      NotificationService.transferSuccess(recipientDisplay, amount as string);
+
       router.push({
         pathname: '/transfer/success',
         params: { recipient, amount, note, merchantName },
@@ -147,6 +150,9 @@ export default function ReviewTransferScreen() {
       // Parse error response
       const transferError = parseBackendError(err);
       transferError.recoveryAction = 'RETRY';
+
+      // Send error notification
+      NotificationService.transferFailed(err.message || 'Unknown error occurred');
 
       // Log failed transfer
       logTransaction({
@@ -164,7 +170,7 @@ export default function ReviewTransferScreen() {
     }
   };
 
-  const isButtonDisabled = isProcessing || isConfirming || (biometricEnabled && !isAuthenticated);
+  const isButtonDisabled = isProcessing || isConfirming;
 
   const handleErrorRetry = () => {
     setError(null);
@@ -303,32 +309,48 @@ export default function ReviewTransferScreen() {
               onDismiss={() => setError(null)}
             />
           )}
-
-          {/* Authentication Section */}
-          {isConfirming && !error && (
-            <>
-              {showBiometric && biometricAvailable && biometricEnabled && (
-                <BiometricAuth
-                  onSuccess={handleBiometricSuccess}
-                  onFailure={handleBiometricFailure}
-                  onUsePIN={() => {
-                    setShowBiometric(false);
-                    setShowPIN(true);
-                  }}
-                />
-              )}
-
-              {showPIN && (
-                <PINVerification
-                  onSuccess={handlePINSuccess}
-                  onFailure={handlePINFailure}
-                  onCancel={handleAuthCancel}
-                />
-              )}
-            </>
-          )}
         </MotiView>
       </ScrollView>
+
+      {/* Authentication Modal - Outside ScrollView */}
+      <AnimatePresence>
+        {isConfirming && !error && (
+          <MotiView
+            from={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="absolute inset-0 bg-black/40 items-end justify-end z-40"
+          >
+            <MotiView
+              from={{ translateY: 200 }}
+              animate={{ translateY: 0 }}
+              exit={{ translateY: 200 }}
+              className="w-full bg-white rounded-t-[2.5rem] p-6 pt-8 max-h-[80%]"
+            >
+              <ScrollView showsVerticalScrollIndicator={false}>
+                {showBiometric && biometricAvailable && biometricEnabled && (
+                  <BiometricAuth
+                    onSuccess={handleBiometricSuccess}
+                    onFailure={handleBiometricFailure}
+                    onUsePIN={() => {
+                      setShowBiometric(false);
+                      setShowPIN(true);
+                    }}
+                  />
+                )}
+
+                {showPIN && (
+                  <PINVerification
+                    onSuccess={handlePINSuccess}
+                    onFailure={handlePINFailure}
+                    onCancel={handleAuthCancel}
+                  />
+                )}
+              </ScrollView>
+            </MotiView>
+          </MotiView>
+        )}
+      </AnimatePresence>
 
       {/* Floating Action Area */}
       <View

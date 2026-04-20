@@ -73,10 +73,7 @@ export default function RootLayout() {
               <Stack.Screen name="transaction" options={{ headerShown: false }} />
               <Stack.Screen name="deal" options={{ headerShown: false }} />
               <Stack.Screen name="my-qr" options={{ headerShown: false }} />
-              <Stack.Screen
-                name="notifications"
-                options={{ presentation: 'modal', title: 'Notifications' }}
-              />
+              <Stack.Screen name="notifications" options={{ headerShown: false }} />
               <Stack.Screen
                 name="settings"
                 options={{ presentation: 'modal', title: 'Settings' }}

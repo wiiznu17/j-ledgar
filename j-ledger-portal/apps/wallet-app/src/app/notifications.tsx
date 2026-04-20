@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { View, Text, ScrollView, TouchableOpacity, Dimensions } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import {
@@ -9,47 +9,24 @@ import {
   Zap,
   Star,
   ArrowRight,
+  X,
+  Gift,
+  AlertCircle,
 } from 'lucide-react-native';
 import { useRouter } from 'expo-router';
 import { MotiView } from 'moti';
 import { Header } from '@/components/common/Header';
 import { GlassPanel } from '@/components/common/GlassPanel';
+import { useNotificationStore, Notification } from '@/store/notifications';
 
 const { width } = Dimensions.get('window');
 
-const MOCK_NOTIFICATIONS = [
-  {
-    id: '1',
-    title: 'Payment Received',
-    body: 'You have received ฿1,000.00 from Jane S.',
-    time: '2 mins ago',
-    type: 'payment',
-  },
-  {
-    id: '2',
-    title: 'Security Alert',
-    body: 'New device login detected from "iPhone 15 Pro".',
-    time: '1 hour ago',
-    type: 'security',
-  },
-  {
-    id: '3',
-    title: 'Reward Points',
-    body: 'You earned 50 pts from your transaction at Starbucks.',
-    time: 'Yesterday',
-    type: 'points',
-  },
-  {
-    id: '4',
-    title: 'Maintenance Notice',
-    body: 'System maintenance scheduled for tomorrow 2 AM.',
-    time: 'Yesterday',
-    type: 'info',
-  },
-];
-
 export default function NotificationsScreen() {
   const router = useRouter();
+  const notifications = useNotificationStore((state) => state.notifications);
+  const removeNotification = useNotificationStore((state) => state.removeNotification);
+  const markAsRead = useNotificationStore((state) => state.markAsRead);
+  const markAllAsRead = useNotificationStore((state) => state.markAllAsRead);
 
   const getIcon = (type: string) => {
     switch (type) {
@@ -59,6 +36,10 @@ export default function NotificationsScreen() {
         return <ShieldCheck size={22} color="#ef4444" />;
       case 'points':
         return <Star size={22} color="#f48fb1" />;
+      case 'transfer':
+        return <ArrowRight size={22} color="#4855a5" />;
+      case 'error':
+        return <AlertCircle size={22} color="#ef4444" />;
       default:
         return <Bell size={22} color="#4855a5" />;
     }
@@ -67,11 +48,39 @@ export default function NotificationsScreen() {
   const getIconBg = (type: string) => {
     switch (type) {
       case 'security':
+      case 'error':
         return 'bg-red-50';
       case 'points':
         return 'bg-primary/10';
+      case 'transfer':
+      case 'payment':
+        return 'bg-blue-50';
       default:
         return 'bg-[#eff0f7]';
+    }
+  };
+
+  const formatTime = (timestamp: number) => {
+    const now = Date.now();
+    const diff = now - timestamp;
+    const minutes = Math.floor(diff / 60000);
+    const hours = Math.floor(diff / 3600000);
+    const days = Math.floor(diff / 86400000);
+
+    if (minutes < 1) return 'Just now';
+    if (minutes < 60) return `${minutes}m ago`;
+    if (hours < 24) return `${hours}h ago`;
+    if (days < 7) return `${days}d ago`;
+    return new Date(timestamp).toLocaleDateString();
+  };
+
+  const handleNotificationPress = (notification: Notification) => {
+    if (!notification.read) {
+      markAsRead(notification.id);
+    }
+    // Handle notification action based on type
+    if (notification.data?.action === 'transfer') {
+      router.push('/transfer');
     }
   };
 
@@ -101,15 +110,43 @@ export default function NotificationsScreen() {
           style={{ filter: [{ blur: 80 }] }}
         />
 
+        {/* Unread count and Mark all as read */}
+        {notifications.length > 0 && (
+          <View className="flex-row justify-between items-center mb-6">
+            <View>
+              <Text className="text-sm font-manrope font-bold text-on-surfaceVariant">
+                {notifications.filter((n) => !n.read).length} unread
+              </Text>
+            </View>
+            {notifications.some((n) => !n.read) && (
+              <TouchableOpacity
+                onPress={markAllAsRead}
+                className="px-3 py-1.5 bg-primary/10 rounded-full active:opacity-70"
+              >
+                <Text className="text-xs font-manrope font-black text-primary uppercase tracking-widest">
+                  Mark all as read
+                </Text>
+              </TouchableOpacity>
+            )}
+          </View>
+        )}
+
         <View className="space-y-4">
-          {MOCK_NOTIFICATIONS.map((item, idx) => (
+          {notifications.map((item, idx) => (
             <MotiView
               key={item.id}
               from={{ opacity: 0, translateX: -20 }}
               animate={{ opacity: 1, translateX: 0 }}
               transition={{ delay: idx * 100 }}
             >
-              <TouchableOpacity className="bg-white/40 border border-outline-variant/5 rounded-[30] p-5 flex-row gap-5 shadow-sm active:opacity-70">
+              <TouchableOpacity
+                onPress={() => handleNotificationPress(item)}
+                className={`border rounded-[30] p-5 flex-row gap-5 shadow-sm active:opacity-70 ${
+                  item.read
+                    ? 'bg-white/40 border-outline-variant/5'
+                    : 'bg-blue-50/40 border-primary/20'
+                }`}
+              >
                 <View
                   className={`w-14 h-14 rounded-2xl ${getIconBg(item.type)} items-center justify-center border border-outline-variant/5`}
                 >
@@ -117,23 +154,33 @@ export default function NotificationsScreen() {
                 </View>
                 <View className="flex-1">
                   <View className="flex-row justify-between items-center mb-1">
-                    <Text className="text-base font-manrope font-black text-on-surface tracking-tight">
+                    <Text
+                      className={`text-base font-manrope tracking-tight ${
+                        item.read ? 'font-bold text-on-surface' : 'font-black text-primary'
+                      }`}
+                    >
                       {item.title}
                     </Text>
                     <Text className="text-[10px] font-manrope font-black text-on-surfaceVariant/40 uppercase tracking-tighter">
-                      {item.time}
+                      {formatTime(item.timestamp)}
                     </Text>
                   </View>
                   <Text className="text-[12px] font-manrope font-medium text-on-surfaceVariant leading-relaxed">
                     {item.body}
                   </Text>
                 </View>
+                <TouchableOpacity
+                  onPress={() => removeNotification(item.id)}
+                  className="w-6 h-6 rounded-full items-center justify-center active:bg-black/5"
+                >
+                  <X size={18} color="#4855a5" />
+                </TouchableOpacity>
               </TouchableOpacity>
             </MotiView>
           ))}
         </View>
 
-        {MOCK_NOTIFICATIONS.length === 0 && (
+        {notifications.length === 0 && (
           <View className="items-center justify-center py-40">
             <View className="w-20 h-20 bg-white/20 rounded-full items-center justify-center mb-6">
               <Bell size={32} color="#4855a540" />
@@ -143,14 +190,6 @@ export default function NotificationsScreen() {
             </Text>
           </View>
         )}
-
-        <View className="mt-12 items-center">
-          <TouchableOpacity className="flex-row items-center gap-2">
-            <Text className="text-xs font-manrope font-black text-secondary uppercase tracking-widest">
-              Mark all as read
-            </Text>
-          </TouchableOpacity>
-        </View>
       </ScrollView>
     </SafeAreaView>
   );

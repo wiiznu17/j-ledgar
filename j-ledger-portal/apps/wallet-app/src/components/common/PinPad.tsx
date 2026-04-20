@@ -28,15 +28,9 @@ export function PinPad({ pin, setPin, length = 6, onComplete }: PinPadProps) {
   const renderDot = (index: number) => {
     const active = pin.length > index;
     return (
-      <MotiView
+      <View
         key={index}
-        from={{ scale: 0.8 }}
-        animate={{
-          scale: active ? 1.2 : 1,
-          backgroundColor: active ? '#f48fb1' : '#E6E8EF',
-        }}
-        className="w-4 h-4 rounded-full mx-2"
-        style={{ backgroundColor: active ? '#f48fb1' : '#E6E8EF' }}
+        className={`w-4 h-4 rounded-full mx-2 ${active ? 'bg-[#f48fb1]' : 'bg-[#E6E8EF]'}`}
       />
     );
   };

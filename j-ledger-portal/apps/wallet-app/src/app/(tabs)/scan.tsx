@@ -17,6 +17,7 @@ import { CameraView, useCameraPermissions } from 'expo-camera';
 import * as ImagePicker from 'expo-image-picker';
 import * as Haptics from 'expo-haptics';
 import { validateAndParseQR, logQRScan, getErrorMessage } from '../../lib/qr-validation';
+import { NotificationService } from '../../lib/notification-service';
 import { ParsedQR } from '../../lib/qr-parser';
 
 const { width } = Dimensions.get('window');
@@ -26,8 +27,8 @@ const SCAN_FRAME_SIZE = width * 0.72;
 // Mock QR codes for testing on simulator
 // Note: INTERNAL format only for now, PromptPay requires more complex EMVCo parsing
 const MOCK_QR_CODES = [
-  'JLEDGER:0812345678',  // INTERNAL format: recipient phone
-  'JLEDGER:0987654321',  // INTERNAL format: another test recipient
+  'JLEDGER:0812345678', // INTERNAL format: recipient phone
+  'JLEDGER:0987654321', // INTERNAL format: another test recipient
 ];
 
 export default function ScanScreen() {
@@ -109,6 +110,9 @@ export default function ScanScreen() {
         setIsProcessing(false);
         const errorMessage = getErrorMessage(validationResult);
 
+        // Send error notification
+        NotificationService.qrInvalid(errorMessage);
+
         Alert.alert('Invalid QR Code', errorMessage, [
           {
             text: 'Try Again',
@@ -126,6 +130,10 @@ export default function ScanScreen() {
       });
 
       setIsProcessing(false);
+
+      // Send error notification
+      NotificationService.info('Scan Error', 'An unexpected error occurred during scanning');
+
       Alert.alert('Error', 'An unexpected error occurred. Please try again.', [
         {
           text: 'Try Again',

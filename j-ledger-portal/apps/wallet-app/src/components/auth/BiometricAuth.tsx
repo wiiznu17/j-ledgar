@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { View, Text, TouchableOpacity, ActivityIndicator, Alert } from 'react-native';
-import { MotiView } from 'moti';
+// import { MotiView } from 'moti';
 import { Shield } from 'lucide-react-native';
 import {
   authenticateWithBiometric,
@@ -82,9 +82,9 @@ export const BiometricAuth: React.FC<BiometricAuthProps> = ({ onSuccess, onFailu
 
   return (
     <View className="px-6 py-6 bg-white/50 rounded-3xl border border-gray-100 mb-6">
-      <MotiView
-        from={{ scale: 0.8, opacity: 0 }}
-        animate={{ scale: 1, opacity: 1 }}
+      <View
+        // from={{ scale: 0.8, opacity: 0 }}
+        // animate={{ scale: 1, opacity: 1 }}
         className="items-center"
       >
         {/* Biometric Icon */}
@@ -137,7 +137,7 @@ export const BiometricAuth: React.FC<BiometricAuthProps> = ({ onSuccess, onFailu
             <Text className="text-[#f48fb1] font-manrope font-bold text-xs">Use PIN instead</Text>
           </TouchableOpacity>
         )}
-      </MotiView>
+      </View>
     </View>
   );
 };
