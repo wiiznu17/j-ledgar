@@ -12,8 +12,8 @@ export class PrismaService extends PrismaClient implements OnModuleInit, OnModul
     try {
       await this.$executeRawUnsafe(`
         CREATE UNIQUE INDEX IF NOT EXISTS ux_user_one_trusted_device 
-        ON wallet_schema.user_devices (user_id) 
-        WHERE trust_level = 'TRUSTED';
+        ON wallet_schema.user_devices ("userId") 
+        WHERE "trustLevel" = 'TRUSTED';
       `);
       this.logger.log('Partial unique index ux_user_one_trusted_device verified.');
     } catch (error) {

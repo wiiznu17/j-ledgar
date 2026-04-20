@@ -11,10 +11,14 @@ describe('Onboarding Flow (e2e)', () => {
     process.env.JWT_REFRESH_SECRET = 'test-refresh-secret';
     process.env.JWT_REGISTRATION_SECRET = 'test-registration-secret';
     process.env.JLEDGER_INTERNAL_SECRET = 'test-internal-secret';
-    process.env.JLEDGER_REDIS_ADDRESS = 'redis://localhost:6379'; // Assumes local redis for E2E
-    process.env.API_GATEWAY_URL = 'http://localhost:8080';
-    process.env.KYC_ENCRYPTION_KEY = '00112233445566778899aabbccddeeff00112233445566778899aabbccddeeff';
-    process.env.NODE_ENV = 'development'; // to unhide debugOtp
+    process.env.JLEDGER_REDIS_ADDRESS = 'redis://localhost:6379';
+    process.env.JLEDGER_REDIS_PASSWORD = 'redis_password';
+    process.env.SMS_PROVIDER_TYPE = 'mock';
+    process.env.KYC_OCR_PROVIDER_TYPE = 'mock';
+    process.env.KYC_FACE_PROVIDER_TYPE = 'mock';
+    process.env.STORAGE_PROVIDER_TYPE = 'mock';
+    process.env.KYC_ENCRYPTION_KEY = '0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef';
+    process.env.NODE_ENV = 'development';
 
     const moduleFixture: TestingModule = await Test.createTestingModule({
       imports: [AppModule],
@@ -69,13 +73,25 @@ describe('Onboarding Flow (e2e)', () => {
     regToken = res.body.regToken;
   });
 
-  it('/kyc/submit (POST)', async () => {
+  it('/kyc/id-card (POST)', async () => {
     const res = await request(app.getHttpServer())
-      .post('/kyc/submit')
+      .post('/kyc/id-card')
       .set('Authorization', `Bearer ${regToken}`)
       .attach('idCardImage', Buffer.from('mockID'), 'id.png')
+      .expect(201);
+
+    expect(res.body.regToken).toBeDefined();
+    expect(res.body.nextState).toEqual('ID_CARD_UPLOADED');
+    expect(res.body.livenessSessionId).toBeDefined();
+    regToken = res.body.regToken;
+  });
+
+  it('/kyc/selfie (POST)', async () => {
+    const res = await request(app.getHttpServer())
+      .post('/kyc/selfie')
+      .set('Authorization', `Bearer ${regToken}`)
       .attach('selfieImage', Buffer.from('mockSelfie'), 'selfie.png')
-      .expect(201); // 201 Created by default for POST in NestJS if HttpCode is not specified
+      .expect(201);
 
     expect(res.body.regToken).toBeDefined();
     expect(res.body.nextState).toEqual('KYC_VERIFIED');

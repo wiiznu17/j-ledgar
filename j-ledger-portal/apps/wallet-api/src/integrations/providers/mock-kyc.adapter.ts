@@ -27,4 +27,17 @@ export class MockKycAdapter implements IKycProvider {
       score: 0.98,
     };
   }
+
+  async createLivenessSession(): Promise<string> {
+    this.logger.log('[MOCK KYC] Creating liveness session');
+    return 'mock-liveness-session-id-' + Math.random().toString(36).substring(7);
+  }
+
+  async getLivenessResult(sessionId: string): Promise<{ isLive: boolean; confidence: number }> {
+    this.logger.log(`[MOCK KYC] Getting liveness result for session: ${sessionId}`);
+    return {
+      isLive: true,
+      confidence: 0.99,
+    };
+  }
 }
