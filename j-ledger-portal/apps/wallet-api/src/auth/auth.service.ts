@@ -300,11 +300,20 @@ export class AuthService {
       RegistrationState.CREDENTIALS_SET,
     );
 
-    const kyc = await this.prisma.kycData.findUnique({
-      where: { userId: claims.sub },
+    const user = await this.prisma.user.findUnique({
+      where: { id: claims.sub },
+      include: {
+        devices: true,
+        kycData: true,
+        profile: true,
+      },
     });
 
-    const isKycApproved = kyc?.verificationStatus === KycVerificationStatus.APPROVED;
+    if (!user) {
+      throw new UnauthorizedException('User not found');
+    }
+
+    const isKycApproved = user.kycData?.verificationStatus === KycVerificationStatus.APPROVED;
 
     await this.prisma.$transaction(async (tx) => {
       await tx.user.update({
@@ -326,24 +335,17 @@ export class AuthService {
           dedupeKey: `create-ledger-account:${claims.sub}`,
           payload: {
             userId: claims.sub,
+            firstName: user.profile?.firstName,
+            lastName: user.profile?.lastName,
+            email: user.email,
+            phoneNumber: user.phoneNumber,
+            dateOfBirth: user.profile?.dateOfBirth?.toISOString(),
             requestedAt: new Date().toISOString(),
           },
           status: 'PENDING',
         },
       });
     });
-
-    const user = await this.prisma.user.findUnique({
-      where: { id: claims.sub },
-      include: {
-        devices: true,
-        kycData: true,
-      },
-    });
-
-    if (!user) {
-      throw new UnauthorizedException('User not found');
-    }
 
     if (user.kycData?.verificationStatus !== KycVerificationStatus.APPROVED) {
       return {

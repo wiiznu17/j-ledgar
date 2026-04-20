@@ -13,6 +13,10 @@ import { MockStorageAdapter } from './providers/mock-storage.adapter';
 import { TwilioSmsAdapter } from './providers/real/twilio-sms.adapter';
 import { AwsKycAdapter } from './providers/real/aws-kyc.adapter';
 import { S3StorageAdapter } from './providers/real/s3-storage.adapter';
+import { GoogleKycAdapter } from './providers/real/google-kyc.adapter';
+import { FirebaseAuthAdapter } from './providers/real/firebase-auth.adapter';
+
+import { IGoogleKycProvider, IAwsKycProvider } from './interfaces/kyc-provider.interface';
 
 @Global()
 @Module({
@@ -21,6 +25,10 @@ import { S3StorageAdapter } from './providers/real/s3-storage.adapter';
       provide: ISmsProvider,
       useFactory: (config: ConfigService) => {
         const type = config.get<string>('SMS_PROVIDER_TYPE') || 'mock';
+        if (type === 'firebase') {
+          validateConfig(config, ['FIREBASE_PROJECT_ID', 'FIREBASE_CLIENT_EMAIL', 'FIREBASE_PRIVATE_KEY']);
+          return new FirebaseAuthAdapter(config);
+        }
         if (type === 'twilio') {
           validateConfig(config, ['TWILIO_ACCOUNT_SID', 'TWILIO_AUTH_TOKEN', 'TWILIO_SENDER_ID']);
           return new TwilioSmsAdapter(config);
@@ -30,9 +38,20 @@ import { S3StorageAdapter } from './providers/real/s3-storage.adapter';
       inject: [ConfigService],
     },
     {
-      provide: IKycProvider,
+      provide: IGoogleKycProvider,
       useFactory: (config: ConfigService) => {
-        const type = config.get<string>('KYC_PROVIDER_TYPE') || 'mock';
+        const type = config.get<string>('KYC_OCR_PROVIDER_TYPE') || 'mock';
+        if (type === 'google') {
+          return new GoogleKycAdapter(config);
+        }
+        return new MockKycAdapter();
+      },
+      inject: [ConfigService],
+    },
+    {
+      provide: IAwsKycProvider,
+      useFactory: (config: ConfigService) => {
+        const type = config.get<string>('KYC_FACE_PROVIDER_TYPE') || 'mock';
         if (type === 'aws') {
           validateConfig(config, ['AWS_REGION', 'AWS_ACCESS_KEY_ID', 'AWS_SECRET_ACCESS_KEY']);
           return new AwsKycAdapter(config);
@@ -40,6 +59,10 @@ import { S3StorageAdapter } from './providers/real/s3-storage.adapter';
         return new MockKycAdapter();
       },
       inject: [ConfigService],
+    },
+    {
+      provide: IKycProvider, // Backward compatibility or default
+      useExisting: IGoogleKycProvider,
     },
     {
       provide: IStorageProvider,
@@ -54,7 +77,7 @@ import { S3StorageAdapter } from './providers/real/s3-storage.adapter';
       inject: [ConfigService],
     },
   ],
-  exports: [ISmsProvider, IKycProvider, IStorageProvider],
+  exports: [ISmsProvider, IKycProvider, IGoogleKycProvider, IAwsKycProvider, IStorageProvider],
 })
 export class IntegrationsModule {}
 

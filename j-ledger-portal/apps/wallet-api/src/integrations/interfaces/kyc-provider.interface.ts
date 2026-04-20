@@ -25,6 +25,19 @@ export interface IKycProvider {
    * @param idCard Image buffer of the ID card.
    */
   compareFaces(selfie: Buffer, idCard: Buffer): Promise<KycCompareResult>;
+
+  /**
+   * Creates a session for Face Liveness detection.
+   */
+  createLivenessSession?(): Promise<string>;
+
+  /**
+   * Verified the result of a Face Liveness session.
+   * @param sessionId The session ID to verify.
+   */
+  getLivenessResult?(sessionId: string): Promise<{ isLive: boolean; confidence: number }>;
 }
 
 export const IKycProvider = Symbol('IKycProvider');
+export const IGoogleKycProvider = Symbol('IGoogleKycProvider');
+export const IAwsKycProvider = Symbol('IAwsKycProvider');

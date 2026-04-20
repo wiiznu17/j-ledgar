@@ -5,7 +5,9 @@ export interface IStorageProvider {
    * @param file Buffer of the file content.
    * @param contentType MIME type of the file.
    */
-  uploadFile(key: string, file: Buffer, contentType: string): Promise<string>;
+  uploadFile(key: string, buffer: Buffer, mimetype: string): Promise<string>;
+  downloadFile(key: string): Promise<Buffer>;
+  deleteFile(key: string): Promise<void>;
 
   /**
    * Generates a signed URL for temporary access to a file.

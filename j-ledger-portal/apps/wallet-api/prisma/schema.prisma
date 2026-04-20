@@ -14,7 +14,7 @@ generator client {
 datasource db {
   provider = "postgresql"
   url      = env("DATABASE_URL")
-  schemas  = ["wallet_schema", "public"]
+  schemas  = ["wallet_schema"]
 }
 
 
@@ -33,6 +33,7 @@ enum RegistrationState {
   PENDING_OTP
   OTP_VERIFIED
   TC_ACCEPTED
+  ID_CARD_UPLOADED
   KYC_VERIFIED
   PROFILE_COMPLETED
   CREDENTIALS_SET
@@ -242,12 +243,17 @@ model KycData {
   user                  User                  @relation(fields: [userId], references: [id], onDelete: Cascade)
   verificationStatus    KycVerificationStatus @default(PENDING)
   idCardNumberEncrypted String?               @db.Text
+  idCardName            String?               @db.Text
   idCardToken           String?               @unique @db.VarChar(128)
   idCardImageUrl        String?
   selfieImageUrl        String?
   idCardImageSha256     String?               @db.Char(64)
   selfieImageSha256     String?               @db.Char(64)
   faceMatchScore        Float?
+  ocrConfidence         Float?
+  livenessSessionId     String?               @db.VarChar(255)
+  reviewNote            String?               @db.Text
+  attemptCount          Int                   @default(0)
   providerReference     String?               @db.VarChar(255)
   verifiedAt            DateTime?
   createdAt             DateTime              @default(now())

@@ -5,6 +5,9 @@ import {
   PutObjectCommand, 
   CreateBucketCommand,
   HeadBucketCommand,
+  GetObjectCommand,
+  DeleteObjectCommand,
+  GetObjectCommandOutput,
 } from '@aws-sdk/client-s3';
 import { getSignedUrl } from '@aws-sdk/s3-request-presigner';
 import { IStorageProvider } from '../../interfaces/storage-provider.interface';
@@ -14,9 +17,10 @@ export class S3StorageAdapter implements IStorageProvider, OnModuleInit {
   private readonly logger = new Logger(S3StorageAdapter.name);
   private readonly s3: S3Client;
   private readonly bucket: string;
+  private readonly region: string;
 
   constructor(private readonly configService: ConfigService) {
-    const region = this.configService.get<string>('AWS_REGION') || 'us-east-1';
+    this.region = this.configService.get<string>('AWS_REGION') || 'us-east-1';
     const accessKeyId = this.configService.get<string>('S3_ACCESS_KEY');
     const secretAccessKey = this.configService.get<string>('S3_SECRET_KEY');
     const endpoint = this.configService.get<string>('S3_ENDPOINT');
@@ -27,7 +31,7 @@ export class S3StorageAdapter implements IStorageProvider, OnModuleInit {
     }
 
     this.s3 = new S3Client({
-      region,
+      region: this.region,
       credentials: { accessKeyId, secretAccessKey },
       endpoint, // Used for MinIO or custom S3 providers
       forcePathStyle: !!endpoint, // Required for MinIO
@@ -65,11 +69,50 @@ export class S3StorageAdapter implements IStorageProvider, OnModuleInit {
         ContentType: contentType,
       }));
 
-      return `s3://${this.bucket}/${key}`;
+      return `https://${this.bucket}.s3.${this.region}.amazonaws.com/${key}`;
     } catch (error: any) {
       this.logger.error(`S3 Upload Error: ${error.message}`);
-      throw new InternalServerErrorException('Asset storage failed');
+      throw new InternalServerErrorException('Failed to upload file to storage');
     }
+  }
+
+  async downloadFile(key: string): Promise<Buffer> {
+    this.logger.log(`Downloading file from S3: ${key}`);
+    try {
+      const command = new GetObjectCommand({
+        Bucket: this.bucket,
+        Key: this.extractKey(key),
+      });
+      const response = await this.s3.send(command) as GetObjectCommandOutput;
+      const str = await response.Body?.transformToByteArray();
+      return Buffer.from(str!);
+    } catch (error: any) {
+      this.logger.error(`S3 Download Error: ${error.message}`);
+      throw new InternalServerErrorException('Failed to download file from storage');
+    }
+  }
+
+  async deleteFile(key: string): Promise<void> {
+    this.logger.log(`Deleting file from S3: ${key}`);
+    try {
+      const command = new DeleteObjectCommand({
+        Bucket: this.bucket,
+        Key: this.extractKey(key),
+      });
+      await this.s3.send(command);
+    } catch (error: any) {
+      this.logger.error(`S3 Delete Error: ${error.message}`);
+      throw new InternalServerErrorException('Failed to delete file from storage');
+    }
+  }
+
+  private extractKey(urlOrKey: string): string {
+    // If it's a full URL, extract the path after the bucket
+    if (urlOrKey.startsWith('http')) {
+      const url = new URL(urlOrKey);
+      return url.pathname.substring(1); // Remove leading slash
+    }
+    return urlOrKey;
   }
 
   async getSignedUrl(key: string, expires: number = 3600): Promise<string> {

@@ -9,6 +9,8 @@ import {
 import {
   RekognitionClient,
   CompareFacesCommand,
+  CreateFaceLivenessSessionCommand,
+  GetFaceLivenessSessionResultsCommand,
 } from '@aws-sdk/client-rekognition';
 import {
   IKycProvider,
@@ -115,6 +117,36 @@ export class AwsKycAdapter implements IKycProvider {
     } catch (error: any) {
       this.logger.error(`AWS Rekognition Error: ${error.message}`);
       throw new InternalServerErrorException('Face comparison verification failed');
+    }
+  }
+
+  async createLivenessSession(): Promise<string> {
+    this.logger.log('Creating AWS Rekognition Face Liveness Session...');
+    try {
+      const command = new CreateFaceLivenessSessionCommand({});
+      const response = await this.rekognition.send(command);
+      return response.SessionId!;
+    } catch (error: any) {
+      this.logger.error(`AWS Liveness Error (Create): ${error.message}`);
+      throw new InternalServerErrorException('Failed to start identity verification session');
+    }
+  }
+
+  async getLivenessResult(sessionId: string): Promise<{ isLive: boolean; confidence: number }> {
+    this.logger.log(`Retrieving AWS Liveness result for Session: ${sessionId}`);
+    try {
+      const command = new GetFaceLivenessSessionResultsCommand({ SessionId: sessionId });
+      const response = await this.rekognition.send(command);
+      
+      const isLive = response.Status === 'EXPIRED' ? false : (response.Confidence || 0) >= 90;
+      
+      return {
+        isLive,
+        confidence: response.Confidence || 0,
+      };
+    } catch (error: any) {
+      this.logger.error(`AWS Liveness Error (GetResult): ${error.message}`);
+      throw new InternalServerErrorException('Failed to verify identity session result');
     }
   }
 }

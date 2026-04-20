@@ -11,6 +11,15 @@ export class MockStorageAdapter implements IStorageProvider {
     return `mock-storage://${key}`;
   }
 
+  async downloadFile(key: string): Promise<Buffer> {
+    this.logger.log(`[MOCK STORAGE] Downloading ${key}`);
+    return Buffer.from('mock-file-content');
+  }
+
+  async deleteFile(key: string): Promise<void> {
+    this.logger.log(`[MOCK STORAGE] Deleting ${key}`);
+  }
+
   async getSignedUrl(key: string, expires: number = 3600): Promise<string> {
     this.logger.log(`[MOCK STORAGE] Generating signed URL for ${key} (expires: ${expires}s)`);
     return `https://mock-storage.local/${key}?token=mock-token`;
