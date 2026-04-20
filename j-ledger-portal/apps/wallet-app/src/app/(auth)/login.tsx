@@ -98,8 +98,10 @@ export default function LoginScreen() {
     }
   };
 
-  const handlePinComplete = (completedPin: string) => {
-    if (completedPin === '111111') {
+  const handlePinComplete = async (completedPin: string) => {
+    const isValid = await useAuthStore.getState().verifyPin(completedPin);
+
+    if (isValid) {
       setToken('mock_token');
       router.replace('/(tabs)' as any);
     } else {

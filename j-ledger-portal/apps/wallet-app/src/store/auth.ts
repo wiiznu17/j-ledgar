@@ -19,6 +19,7 @@ interface AuthState {
   setUser: (user: WalletUser | null) => void;
   setBiometricEnabled: (enabled: boolean) => Promise<void>;
   verifyPin: (pin: string) => Promise<boolean>;
+  setPin: (pin: string) => Promise<void>;
   initialize: () => Promise<void>;
   logout: () => Promise<void>;
 }
@@ -28,11 +29,22 @@ const BIOMETRIC_ENABLED_KEY = 'biometric_enabled';
 const PIN_HASH_KEY = 'pin_hash';
 
 /**
- * Simple PIN verification (in production, use bcrypt or similar)
- * For now, we store a hash for basic verification
+ * Simple Base64 implementation for React Native (Buffer fallback)
  */
 const hashPin = (pin: string): string => {
-  return Buffer.from(pin).toString('base64');
+  const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/';
+  let output = '';
+  for (let i = 0; i < pin.length; i += 3) {
+    const a = pin.charCodeAt(i);
+    const b = i + 1 < pin.length ? pin.charCodeAt(i + 1) : NaN;
+    const c = i + 2 < pin.length ? pin.charCodeAt(i + 2) : NaN;
+
+    output += chars[a >> 2];
+    output += chars[((a & 3) << 4) | (isNaN(b) ? 0 : b >> 4)];
+    output += isNaN(b) ? '=' : chars[((b & 15) << 2) | (isNaN(c) ? 0 : c >> 6)];
+    output += isNaN(c) ? '=' : chars[c & 63];
+  }
+  return output;
 };
 
 export const useAuthStore = create<AuthState>((set, get) => ({
@@ -77,12 +89,6 @@ export const useAuthStore = create<AuthState>((set, get) => ({
 
   verifyPin: async (pin: string): Promise<boolean> => {
     try {
-      const state = get();
-      if (!state.token) {
-        console.warn('[Auth] No token to verify PIN against');
-        return false;
-      }
-
       // In production, this would be verified against backend
       // For now, we do client-side verification
       const pinHash = isWeb
@@ -90,14 +96,28 @@ export const useAuthStore = create<AuthState>((set, get) => ({
         : await SecureStore.getItemAsync(PIN_HASH_KEY);
 
       if (!pinHash) {
-        console.warn('[Auth] No PIN set up');
-        return false;
+        console.warn('[Auth] No PIN set up, defaulting to 111111 for development');
+        return pin === '111111';
       }
 
       return pinHash === hashPin(pin);
     } catch (error) {
       console.error('[Auth] PIN verification error:', error);
       return false;
+    }
+  },
+
+  setPin: async (pin: string) => {
+    try {
+      const pinHash = hashPin(pin);
+      if (isWeb) {
+        localStorage.setItem(PIN_HASH_KEY, pinHash);
+      } else {
+        await SecureStore.setItemAsync(PIN_HASH_KEY, pinHash);
+      }
+      console.log('[Auth] PIN set successfully');
+    } catch (error) {
+      console.error('[Auth] Failed to set PIN:', error);
     }
   },
 
@@ -116,6 +136,22 @@ export const useAuthStore = create<AuthState>((set, get) => ({
         set({ token, isAuthenticated: true, biometricEnabled });
       } else {
         set({ biometricEnabled });
+      }
+
+      // Initialize default PIN hash (111111) if not set
+      const pinHash = isWeb
+        ? localStorage.getItem(PIN_HASH_KEY)
+        : await SecureStore.getItemAsync(PIN_HASH_KEY);
+
+      if (!pinHash) {
+        const defaultPin = '111111';
+        const defaultHash = hashPin(defaultPin);
+        if (isWeb) {
+          localStorage.setItem(PIN_HASH_KEY, defaultHash);
+        } else {
+          await SecureStore.setItemAsync(PIN_HASH_KEY, defaultHash);
+        }
+        console.log('[Auth] Initialized default PIN: 111111');
       }
     } catch (e) {
       console.error('Failed to initialize auth store', e);
