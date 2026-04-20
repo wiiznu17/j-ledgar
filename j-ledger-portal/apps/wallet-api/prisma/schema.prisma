@@ -65,6 +65,25 @@ enum KycVerificationStatus {
   MANUAL_REVIEW
 }
 
+enum TransferStatus {
+  PENDING
+  COMPLETED
+  FAILED
+  REJECTED
+}
+
+enum ApprovalStatus {
+  PENDING
+  APPROVED
+  REJECTED
+}
+
+enum ApprovalType {
+  P2P_TRANSFER
+  KYC_VERIFICATION
+  BALANCE_ADJUSTMENT
+}
+
 model User {
   id                     String            @id @default(uuid())
   phoneNumber            String?           @unique @db.VarChar(20)
@@ -86,6 +105,11 @@ model User {
   sessions               RefreshSession[]
   otpChallenges          OtpChallenge[]
   securityLogs           SecurityLog[]
+  pinAttemptLogs         PinAttempt[]      @relation("PinAttempts")
+  transfersFrom          Transfer[]        @relation("TransferFrom")
+  transfersTo            Transfer[]        @relation("TransferTo")
+  approvals              Approval[]
+  errorLogs              ErrorLog[]
   createdAt              DateTime          @default(now())
   updatedAt              DateTime          @updatedAt
 
@@ -241,4 +265,78 @@ model MerchantProfile {
   updatedAt         DateTime @updatedAt
 
   @@map("merchant_profiles")
+}
+
+// PIN Attempt Tracking - PDPA Compliance
+model PinAttempt {
+  id           String   @id @default(uuid())
+  userId       String
+  user         User     @relation("PinAttempts", fields: [userId], references: [id], onDelete: Cascade)
+  attemptNumber Int
+  success      Boolean
+  lockedUntil  DateTime?
+  createdAt    DateTime @default(now())
+
+  @@index([userId, createdAt])
+  @@map("pin_attempts")
+}
+
+// Transfer Model - P2P Transfers with Idempotency
+model Transfer {
+  id             String         @id @default(uuid())
+  idempotencyKey String         @unique @db.VarChar(128) // Prevent duplicate transfers on retry
+  fromUserId     String
+  toUserId       String
+  fromUser       User           @relation("TransferFrom", fields: [fromUserId], references: [id])
+  toUser         User           @relation("TransferTo", fields: [toUserId], references: [id])
+  amount         Int            // In smallest units (satoshi equivalent for THB)
+  currency       String         @default("THB") @db.VarChar(3)
+  status         TransferStatus @default(PENDING)
+  approvalId     String?
+  approval       Approval?      @relation(fields: [approvalId], references: [id])
+  ledgerTxnId    String?        // Reference to j-ledger-core transaction ID
+  failureReason  String?
+  createdAt      DateTime       @default(now())
+  updatedAt      DateTime       @updatedAt
+
+  @@index([fromUserId, createdAt])
+  @@index([toUserId, createdAt])
+  @@index([status])
+  @@map("transfers")
+}
+
+// Maker-Checker Approval Workflow
+model Approval {
+  id             String         @id @default(uuid())
+  userId         String
+  user           User           @relation(fields: [userId], references: [id], onDelete: Cascade)
+  approvalType   ApprovalType
+  makerId        String         // Who initiated the request
+  checkerId      String?        // Who approved (null if pending)
+  status         ApprovalStatus @default(PENDING)
+  data           Json           // Operation details (serialized Transfer or KYC data)
+  rejectionReason String?
+  transfers      Transfer[]
+  submittedAt    DateTime       @default(now())
+  approvedAt     DateTime?
+  createdAt      DateTime       @default(now())
+  updatedAt      DateTime       @updatedAt
+
+  @@index([userId, status])
+  @@index([approvalType, status])
+  @@index([checkerId])
+  @@map("approvals")
+}
+
+model ErrorLog {
+  id        String   @id @default(uuid())
+  userId    String?
+  user      User?    @relation(fields: [userId], references: [id], onDelete: SetNull)
+  errorCode String   @db.VarChar(64)
+  context   Json?
+  createdAt DateTime @default(now())
+
+  @@index([errorCode, createdAt])
+  @@index([userId])
+  @@map("error_logs")
 }
