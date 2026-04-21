@@ -38,7 +38,7 @@ function generateDeviceFingerprint(): string {
     String(Platform.Version),
     String(Dimensions.get('window').width),
     String(Dimensions.get('window').height),
-    Localization.locale || 'unknown',
+    Localization.getLocales()[0]?.languageCode || 'unknown',
     Device.modelName || 'unknown',
     Device.manufacturer || 'unknown',
     Device.osName || 'unknown',
@@ -104,7 +104,7 @@ export function getDeviceFingerprint(): string {
 export async function getPlatformDeviceId(): Promise<string | null> {
   try {
     if (Platform.OS === 'android') {
-      return Application.androidId;
+      return Application.getAndroidId();
     }
     if (Platform.OS === 'ios') {
       // iOS doesn't expose identifierForVendor in expo-application
