@@ -41,6 +41,7 @@ public class TransferExecutionService {
     private final LedgerEntryRepository ledgerEntryRepository;
     private final IntegrationOutboxRepository integrationOutboxRepository;
     private final ObjectMapper objectMapper;
+    private final AmlMonitoringService amlMonitoringService;
 
     @Transactional
     public Transaction performTransferInDb(
@@ -87,6 +88,14 @@ public class TransferExecutionService {
 
     private Transaction processTransfer(Transaction transaction, Account sender, Account receiver, BigDecimal normalizedAmount) {
         validateTransfer(sender, receiver, normalizedAmount);
+
+        // AML Monitoring Check
+        amlMonitoringService.checkTransactionForSuspiciousActivity(
+            sender.getId(),
+            normalizedAmount,
+            transaction.getId(),
+            receiver.getId()
+        );
 
         sender.withdraw(normalizedAmount);
         receiver.deposit(normalizedAmount);
