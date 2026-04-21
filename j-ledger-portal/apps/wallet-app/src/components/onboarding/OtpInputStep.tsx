@@ -1,15 +1,18 @@
-import React, { useRef } from 'react';
-import { View, TextInput } from 'react-native';
+import React from 'react';
+import { View, Text, TouchableOpacity } from 'react-native';
 import { AppButton } from '@/components/common/AppButton';
 import { StepWrapper } from '@/components/common/StepWrapper';
 import { StepHeader } from './StepHeader';
+import { OtpInputFields } from '../common/OtpInputFields';
 
 interface OtpInputStepProps {
   visible: boolean;
   otp: string[];
   phone: string;
   isLoading: boolean;
+  resendTimer: number;
   onOtpChange: (index: number, value: string) => void;
+  onResend: () => void;
   onSubmit: () => void;
   onBack: () => void;
 }
@@ -19,12 +22,12 @@ export const OtpInputStep: React.FC<OtpInputStepProps> = ({
   otp,
   phone,
   isLoading,
+  resendTimer,
   onOtpChange,
+  onResend,
   onSubmit,
   onBack,
 }) => {
-  const otpRefs = useRef<Array<TextInput | null>>([]);
-
   const formatPhone = (val: string) => {
     const cleaned = val.replace(/\D/g, '');
     if (cleaned.length <= 3) return cleaned;
@@ -35,36 +38,8 @@ export const OtpInputStep: React.FC<OtpInputStepProps> = ({
   return (
     <StepWrapper visible={visible}>
       <StepHeader title="Verification" subtitle={`Sent to ${formatPhone(phone)}`} onBack={onBack} />
-      <View className="flex-row justify-between mb-10">
-        {otp.map((digit, i) => (
-          <View
-            key={i}
-            className="w-[14%] aspect-[0.75] bg-white/40 border border-outline-variant/20 rounded-2xl items-center justify-center shadow-inner"
-          >
-            <TextInput
-              ref={(el) => {
-                otpRefs.current[i] = el;
-              }}
-              className="text-center w-full h-full p-0 text-2xl font-manrope font-black text-on-surface"
-              maxLength={1}
-              keyboardType="number-pad"
-              autoFocus={i === 0}
-              value={digit}
-              onChangeText={(val) => {
-                const char = val.slice(-1);
-                onOtpChange(i, char);
-                if (val && i < 5) {
-                  otpRefs.current[i + 1]?.focus();
-                }
-              }}
-              onKeyPress={({ nativeEvent }) => {
-                if (nativeEvent.key === 'Backspace' && !otp[i] && i > 0) {
-                  otpRefs.current[i - 1]?.focus();
-                }
-              }}
-            />
-          </View>
-        ))}
+      <View className="mb-10">
+        <OtpInputFields otp={otp} onOtpChange={onOtpChange} isLoading={isLoading} />
       </View>
       <AppButton
         title="Verify"
@@ -72,6 +47,20 @@ export const OtpInputStep: React.FC<OtpInputStepProps> = ({
         disabled={otp.some((d) => !d)}
         onPress={onSubmit}
       />
+
+      <View className="mt-8 items-center">
+        {resendTimer > 0 ? (
+          <Text className="text-gray-400 font-manrope font-medium text-sm">
+            Resend code in <Text className="text-[#f48fb1] font-black">{resendTimer}s</Text>
+          </Text>
+        ) : (
+          <TouchableOpacity onPress={onResend} disabled={isLoading}>
+            <Text className="text-[#f48fb1] font-manrope font-black text-sm underline">
+              {isLoading ? 'Requesting...' : 'Resend Code'}
+            </Text>
+          </TouchableOpacity>
+        )}
+      </View>
     </StepWrapper>
   );
 };

@@ -89,21 +89,19 @@ export const useAuthStore = create<AuthState>((set, get) => ({
   },
 
   verifyPin: async (pin: string): Promise<boolean> => {
-    try {
-      // In production, this would be verified against backend
-      // For now, we do client-side verification
-      const pinHash = isWeb
-        ? localStorage.getItem(PIN_HASH_KEY)
-        : await SecureStore.getItemAsync(PIN_HASH_KEY);
-      console.log('[Auth] PIN hash:', pinHash);
-      if (!pinHash) {
-        console.error('[Auth] No PIN found in secure storage');
-        return false;
-      }
+    const { token } = get();
+    if (!token) return false;
 
-      return pinHash === hashPin(pin);
-    } catch (error) {
-      console.error('[Auth] PIN verification error:', error);
+    try {
+      const API_URL = process.env.EXPO_PUBLIC_API_URL || 'http://localhost:3002';
+      await require('axios').post(
+        `${API_URL}/auth/pin/verify`,
+        { pin },
+        { headers: { Authorization: `Bearer ${token}` } },
+      );
+      return true;
+    } catch (error: any) {
+      console.error('[Auth] PIN verification failed:', error.response?.data || error.message);
       return false;
     }
   },

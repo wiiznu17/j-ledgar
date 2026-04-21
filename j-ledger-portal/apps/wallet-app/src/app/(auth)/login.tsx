@@ -26,12 +26,14 @@ import { PINVerification } from '@/components/auth/PINVerification';
 import { AppTextInput } from '@/components/common/AppTextInput';
 import { StepWrapper } from '@/components/common/StepWrapper';
 import { useAuthStore } from '@/store/auth';
+import { OtpInputFields } from '@/components/common/OtpInputFields';
+
+import axios from 'axios';
 
 // จำลองฟังก์ชันและ API
 const getStableDeviceId = async () => 'mock-device-id';
 const getDeviceName = () => 'iPhone 15 Pro';
-const API_URL = 'http://localhost:3000';
-import axios from 'axios';
+const API_URL = process.env.EXPO_PUBLIC_API_URL || 'http://localhost:3002';
 
 const { width } = Dimensions.get('window');
 
@@ -91,34 +93,62 @@ export default function LoginScreen() {
     setIsLoading(true);
     setError('');
 
-    // จำลองการข้าม API เพื่อความรวดเร็วในการเทส UI
-    setTimeout(async () => {
-      setIsLoading(false);
+    try {
+      const deviceId = await getStableDeviceId();
+      const deviceName = getDeviceName();
 
-      // จำลองสถานการณ์: ถ้าพิมพ์รหัส 1234 ให้ติด OTP
-      if (password === '1234') {
+      const res = await axios.post(`${API_URL}/auth/login`, {
+        phoneNumber: phone,
+        password,
+        deviceId,
+        deviceName,
+      });
+
+      // If successful (no OTP required)
+      await setToken(res.data.accessToken);
+      setUser({ id: res.data.userId || 'current', phoneNumber: phone });
+      setStep('PIN');
+    } catch (err: any) {
+      const errorData = err.response?.data;
+      
+      if (errorData?.errorCode === 'NEW_DEVICE_OTP_REQUIRED') {
+        setChallengeId(errorData.challengeId);
         setStep('OTP_CHALLENGE');
         setTimer(60);
-        return;
+      } else {
+        setError(errorData?.message || 'Invalid credentials');
       }
-
-      // จำลองสถานการณ์ปกติ: ข้ามไปหน้า PIN
-      await setToken('mock_token_xyz');
-      setUser({ id: 'current', phoneNumber: phone });
-      setStep('PIN');
-    }, 1000);
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   const handleDeviceVerify = async () => {
     setIsLoading(true);
     setError('');
 
-    setTimeout(async () => {
-      setIsLoading(false);
-      await setToken('mock_token_xyz');
-      setUser({ id: 'current', phoneNumber: phone });
+    try {
+      const otpString = otp.join('').trim();
+      const deviceId = await getStableDeviceId();
+      const deviceName = getDeviceName();
+
+      const res = await axios.post(`${API_URL}/auth/device/verify`, {
+        phoneNumber: phone,
+        challengeId,
+        otp: otpString,
+        deviceId,
+        deviceName,
+      });
+
+      await setToken(res.data.accessToken);
+      setUser({ id: res.data.userId || 'current', phoneNumber: phone });
       setStep('PIN');
-    }, 1000);
+    } catch (err: any) {
+      setError(err.response?.data?.message || 'Verification failed');
+      setOtp(['', '', '', '', '', '']);
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   const handlePinSuccess = () => {
@@ -284,28 +314,16 @@ export default function LoginScreen() {
               </View>
 
               {/* OTP Inputs Layout */}
-              <View className="flex-row justify-between mb-8">
-                {otp.map((digit, i) => (
-                  <View
-                    key={i}
-                    className={`w-[14%] aspect-[0.8] rounded-xl items-center justify-center border transition-colors ${
-                      digit ? 'bg-pink-50 border-[#f48fb1]' : 'bg-gray-50 border-gray-100'
-                    }`}
-                  >
-                    <AppTextInput
-                      className="text-center w-full h-full p-0 text-xl font-manrope font-black text-gray-800"
-                      maxLength={1}
-                      keyboardType="number-pad"
-                      value={digit}
-                      containerClassName="border-0 bg-transparent h-full w-full"
-                      onChangeText={(val) => {
-                        const newOtp = [...otp];
-                        newOtp[i] = val.slice(-1);
-                        setOtp(newOtp);
-                      }}
-                    />
-                  </View>
-                ))}
+              <View className="mb-8">
+                <OtpInputFields
+                  otp={otp}
+                  onOtpChange={(i, v) => {
+                    const newOtp = [...otp];
+                    newOtp[i] = v;
+                    setOtp(newOtp);
+                  }}
+                  isLoading={isLoading}
+                />
               </View>
 
               {error ? (

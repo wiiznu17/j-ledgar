@@ -23,7 +23,7 @@ import { useRegistrationStore, RegistrationState } from '@/store/registration';
 import { getStableDeviceId, getDeviceName } from '@/lib/device.utils';
 
 const { width, height } = Dimensions.get('window');
-const API_URL = process.env.EXPO_PUBLIC_API_URL || 'http://localhost:3000';
+const API_URL = process.env.EXPO_PUBLIC_API_URL || 'http://localhost:3002';
 
 type OnboardingStepUI =
   | 'WELCOME'
@@ -511,6 +511,7 @@ export default function OnboardingScreen() {
               otp={otp}
               phone={phone}
               isLoading={isLoading}
+              resendTimer={timer}
               onOtpChange={(i, v) => {
                 setOtp((prev) => {
                   const next = [...prev];
@@ -518,6 +519,7 @@ export default function OnboardingScreen() {
                   return next;
                 });
               }}
+              onResend={handlePhoneSubmit}
               onSubmit={handleOtpVerify}
               onBack={() => setStep('PHONE_INPUT')}
             />

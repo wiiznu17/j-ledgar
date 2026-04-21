@@ -5,6 +5,7 @@ import {
   UnauthorizedException,
   Inject,
   BadRequestException,
+  Logger,
 } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import { ConfigService } from '@nestjs/config';
@@ -927,6 +928,7 @@ export class AuthService {
     });
 
     // Send the OTP via the configured provider
+    this.logger.debug(`[OTP-DEBUG] Created Challenge: ${challenge.id} for ${phoneNumber}. OTP: ${plainOtp}`);
     await this.smsProvider.sendMessage(
       phoneNumber,
       `Your J-Ledger verification code is: ${plainOtp}. Valid for 3 minutes.`,

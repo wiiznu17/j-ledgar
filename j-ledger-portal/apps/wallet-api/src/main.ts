@@ -15,6 +15,10 @@ async function bootstrap() {
   ]);
 
   const app = await NestFactory.create(AppModule);
+  
+  // Trust proxy is important for Rate Limiting to see the real client IP
+  (app as any).set('trust proxy', true);
+
   app.use(helmet());
   app.enableCors({
     origin: true,

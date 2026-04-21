@@ -46,7 +46,7 @@ export class AuthController {
 
   @Post('register/init')
   @HttpCode(HttpStatus.OK)
-  @Throttle({ default: { limit: 3, ttl: 300_000 } })
+  @Throttle({ default: {}, regInit: {} })
   async registerInit(@Body() body: RegisterInitDto, @Req() req: Request) {
     return this.authService.registerInit(body, {
       ip: req.ip,
@@ -56,7 +56,7 @@ export class AuthController {
 
   @Post('register/verify-otp')
   @HttpCode(HttpStatus.OK)
-  @Throttle({ default: { limit: 5, ttl: 180_000 } })
+  @Throttle({ default: {}, regVerify: {} })
   async registerVerifyOtp(@Body() body: RegisterVerifyOtpDto, @Req() req: Request) {
     return this.authService.registerVerifyOtp(body, {
       ip: req.ip,
@@ -138,7 +138,7 @@ export class AuthController {
 
   @Post('login')
   @HttpCode(HttpStatus.OK)
-  @Throttle({ default: { limit: 5, ttl: 900_000 } })
+  @Throttle({ default: {}, login: {} })
   async login(@Body() body: LoginDto, @Req() req: Request) {
     return this.authService.login(body, {
       ip: req.ip,
