@@ -1,6 +1,7 @@
 import { create } from 'zustand';
 import * as SecureStore from 'expo-secure-store';
 import { Platform } from 'react-native';
+import { verifySecureStorage } from '@/lib/device.utils';
 
 interface WalletUser {
   id: string;
@@ -99,6 +100,16 @@ export const useAuthStore = create<AuthState>((set, get) => ({
   initialize: async () => {
     set({ isLoading: true });
     try {
+      // Verify secure storage is available (mobile only)
+      if (!isWeb) {
+        const storageSecure = await verifySecureStorage();
+        if (!storageSecure) {
+          console.warn(
+            '[Auth] Secure storage verification failed - sensitive data may not be protected',
+          );
+        }
+      }
+
       const token = isWeb
         ? localStorage.getItem('auth_token')
         : await SecureStore.getItemAsync('auth_token');
