@@ -27,12 +27,10 @@ import { AppTextInput } from '@/components/common/AppTextInput';
 import { StepWrapper } from '@/components/common/StepWrapper';
 import { useAuthStore } from '@/store/auth';
 import { OtpInputFields } from '@/components/common/OtpInputFields';
+import { getStableDeviceId, getDeviceName } from '@/lib/device.utils';
 
 import axios from 'axios';
 
-// จำลองฟังก์ชันและ API
-const getStableDeviceId = async () => 'mock-device-id';
-const getDeviceName = () => 'iPhone 15 Pro';
 const API_URL = process.env.EXPO_PUBLIC_API_URL || 'http://localhost:3002';
 
 const { width } = Dimensions.get('window');
@@ -105,12 +103,12 @@ export default function LoginScreen() {
       });
 
       // If successful (no OTP required)
-      await setToken(res.data.accessToken);
+      await setToken(res.data.accessToken, res.data.refreshToken);
       setUser({ id: res.data.userId || 'current', phoneNumber: phone });
       setStep('PIN');
     } catch (err: any) {
       const errorData = err.response?.data;
-      
+
       if (errorData?.errorCode === 'NEW_DEVICE_OTP_REQUIRED') {
         setChallengeId(errorData.challengeId);
         setStep('OTP_CHALLENGE');
@@ -140,7 +138,7 @@ export default function LoginScreen() {
         deviceName,
       });
 
-      await setToken(res.data.accessToken);
+      await setToken(res.data.accessToken, res.data.refreshToken);
       setUser({ id: res.data.userId || 'current', phoneNumber: phone });
       setStep('PIN');
     } catch (err: any) {

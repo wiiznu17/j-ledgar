@@ -124,11 +124,13 @@ export class AuthService {
     return {
       challengeId: challenge.id,
       expiresInSeconds: OTP_TTL_SECONDS,
-      ...(this.isNonProduction() ? { debugOtp: challenge.plainOtp } : {}),
     };
   }
 
-  async registerVerifyOtp(dto: RegisterVerifyOtpDto, context?: { ip?: string; userAgent?: string }) {
+  async registerVerifyOtp(
+    dto: RegisterVerifyOtpDto,
+    context?: { ip?: string; userAgent?: string },
+  ) {
     const phoneNumber = this.normalizePhone(dto.phoneNumber);
     const user = await this.verifyOtpChallenge(
       dto.challengeId,
@@ -158,7 +160,10 @@ export class AuthService {
     dto: AcceptTermsDto,
     context?: { ip?: string; userAgent?: string },
   ) {
-    const claims = await this.verifyRegistrationToken(authorization, RegistrationState.OTP_VERIFIED);
+    const claims = await this.verifyRegistrationToken(
+      authorization,
+      RegistrationState.OTP_VERIFIED,
+    );
 
     await this.prisma.user.update({
       where: { id: claims.sub },
@@ -226,11 +231,11 @@ export class AuthService {
       userAgent: context?.userAgent,
     });
 
-      return {
-        regToken: await this.signRegistrationToken(claims.sub, RegistrationState.PROFILE_COMPLETED),
-        nextState: RegistrationState.PROFILE_COMPLETED,
-      };
-    }
+    return {
+      regToken: await this.signRegistrationToken(claims.sub, RegistrationState.PROFILE_COMPLETED),
+      nextState: RegistrationState.PROFILE_COMPLETED,
+    };
+  }
 
   async getRegistrationStatus(authorization: string | undefined) {
     const token = this.extractBearerToken(authorization);
@@ -253,24 +258,28 @@ export class AuthService {
     if (!user) throw new UnauthorizedException('User not found');
 
     // Pre-fill data for mobile app
-    const ocrData = user.kycData ? {
-      firstName: user.kycData.idCardName?.split(' ')[0] || '',
-      lastName: user.kycData.idCardName?.split(' ').slice(1).join(' ') || '',
-    } : null;
+    const ocrData = user.kycData
+      ? {
+          firstName: user.kycData.idCardName?.split(' ')[0] || '',
+          lastName: user.kycData.idCardName?.split(' ').slice(1).join(' ') || '',
+        }
+      : null;
 
     return {
       state: user.registrationState,
       phoneNumber: user.phoneNumber,
       ocrData,
-      profile: user.profile ? {
-        firstName: user.profile.firstName,
-        lastName: user.profile.lastName,
-        address: user.profile.address,
-        occupation: user.profile.occupation,
-        incomeRange: user.profile.incomeRange,
-        sourceOfFunds: user.profile.sourceOfFunds,
-        purposeOfAccount: user.profile.purposeOfAccount,
-      } : null,
+      profile: user.profile
+        ? {
+            firstName: user.profile.firstName,
+            lastName: user.profile.lastName,
+            address: user.profile.address,
+            occupation: user.profile.occupation,
+            incomeRange: user.profile.incomeRange,
+            sourceOfFunds: user.profile.sourceOfFunds,
+            purposeOfAccount: user.profile.purposeOfAccount,
+          }
+        : null,
     };
   }
 
@@ -443,7 +452,8 @@ export class AuthService {
     if (user.kycData.verificationStatus !== KycVerificationStatus.APPROVED) {
       return {
         registrationStatus: 'PENDING_APPROVAL',
-        message: 'Your registration is under review. You should get approval within 24 hour via SMS.',
+        message:
+          'Your registration is under review. You should get approval within 24 hour via SMS.',
       };
     }
 
@@ -585,7 +595,6 @@ export class AuthService {
       throw new ForbiddenException({
         errorCode: 'NEW_DEVICE_OTP_REQUIRED',
         challengeId: challenge.id,
-        ...(this.isNonProduction() ? { debugOtp: challenge.plainOtp } : {}),
       });
     }
 
@@ -593,6 +602,28 @@ export class AuthService {
       where: { id: existingDevice.id },
       data: { lastLoginAt: new Date() },
     });
+
+    // Revoke all other sessions from different devices to enforce single-device session
+    const revokedSessions = await this.prisma.refreshSession.updateMany({
+      where: {
+        userId: user.id,
+        deviceId: { not: existingDevice.id },
+        status: SessionStatus.ACTIVE,
+      },
+      data: {
+        status: SessionStatus.REVOKED,
+        revokedAt: new Date(),
+      },
+    });
+
+    if (revokedSessions.count > 0) {
+      await this.logSecurityEvent(user.id, 'LOGIN_SESSIONS_REVOKED', {
+        ipAddress: context?.ip,
+        userAgent: context?.userAgent,
+        deviceId: dto.deviceId,
+        metadata: { revokedCount: revokedSessions.count },
+      });
+    }
 
     await this.logSecurityEvent(user.id, 'LOGIN_SUCCESS', {
       ipAddress: context?.ip,
@@ -765,7 +796,7 @@ export class AuthService {
           `denylist:jti:${accessClaims.jti}`,
           'revoked',
           'EXAT',
-          accessClaims.exp
+          accessClaims.exp,
         );
       }
     });
@@ -775,12 +806,7 @@ export class AuthService {
     await this.revokeAllSessions(userId);
 
     if (accessClaims?.jti && accessClaims.exp) {
-      await this.redis.set(
-        `denylist:jti:${accessClaims.jti}`,
-        'revoked',
-        'EXAT',
-        accessClaims.exp
-      );
+      await this.redis.set(`denylist:jti:${accessClaims.jti}`, 'revoked', 'EXAT', accessClaims.exp);
     }
   }
 
@@ -928,7 +954,9 @@ export class AuthService {
     });
 
     // Send the OTP via the configured provider
-    this.logger.debug(`[OTP-DEBUG] Created Challenge: ${challenge.id} for ${phoneNumber}. OTP: ${plainOtp}`);
+    this.logger.debug(
+      `[OTP-DEBUG] Created Challenge: ${challenge.id} for ${phoneNumber}. OTP: ${plainOtp}`,
+    );
     await this.smsProvider.sendMessage(
       phoneNumber,
       `Your J-Ledger verification code is: ${plainOtp}. Valid for 3 minutes.`,
@@ -972,7 +1000,9 @@ export class AuthService {
       throw new UnauthorizedException('OTP_RATE_LIMITED');
     }
 
-    console.log(`[AuthDebug] Verifying OTP for challenge ${challengeId}. Received: "${otp}", Expected Hash: ${challenge.otpHash}`);
+    console.log(
+      `[AuthDebug] Verifying OTP for challenge ${challengeId}. Received: "${otp}", Expected Hash: ${challenge.otpHash}`,
+    );
     const valid = await bcrypt.compare(otp.trim(), challenge.otpHash);
     console.log(`[AuthDebug] Bcrypt compare result: ${valid}`);
     if (!valid) {
@@ -1119,9 +1149,5 @@ export class AuthService {
       throw new Error(`Missing required environment variable: ${key}`);
     }
     return value;
-  }
-
-  private isNonProduction() {
-    return this.configService.get<string>('NODE_ENV') !== 'production';
   }
 }

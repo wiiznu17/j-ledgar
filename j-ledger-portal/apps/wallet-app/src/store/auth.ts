@@ -11,65 +11,55 @@ interface WalletUser {
 
 interface AuthState {
   token: string | null;
+  refreshToken: string | null;
   isAuthenticated: boolean;
   isLoading: boolean;
   user: WalletUser | null;
   biometricEnabled: boolean;
-  setToken: (token: string | null) => Promise<void>;
+  setToken: (token: string | null, refreshToken?: string | null) => Promise<void>;
   setUser: (user: WalletUser | null) => void;
   setBiometricEnabled: (enabled: boolean) => Promise<void>;
   verifyPin: (pin: string) => Promise<boolean>;
-  setPin: (pin: string) => Promise<void>;
   initialize: () => Promise<void>;
   logout: () => Promise<void>;
 }
 
 const isWeb = Platform.OS === 'web';
 const BIOMETRIC_ENABLED_KEY = 'biometric_enabled';
-const PIN_HASH_KEY = 'pin_hash';
-
-/**
- * Simple Base64 implementation for React Native (Buffer fallback)
- */
-const hashPin = (pin: string): string => {
-  const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/';
-  let output = '';
-  for (let i = 0; i < pin.length; i += 3) {
-    const a = pin.charCodeAt(i);
-    const b = i + 1 < pin.length ? pin.charCodeAt(i + 1) : NaN;
-    const c = i + 2 < pin.length ? pin.charCodeAt(i + 2) : NaN;
-
-    output += chars[a >> 2];
-    output += chars[((a & 3) << 4) | (isNaN(b) ? 0 : b >> 4)];
-    output += isNaN(b) ? '=' : chars[((b & 15) << 2) | (isNaN(c) ? 0 : c >> 6)];
-    output += isNaN(c) ? '=' : chars[c & 63];
-  }
-  return output;
-};
+const REFRESH_TOKEN_KEY = 'refresh_token';
 
 export const useAuthStore = create<AuthState>((set, get) => ({
   token: null,
+  refreshToken: null,
   isAuthenticated: false,
   isLoading: true,
   user: null,
   biometricEnabled: false,
 
-  setToken: async (token: string | null) => {
+  setToken: async (token: string | null, refreshToken?: string | null) => {
     if (token) {
       if (isWeb) {
         localStorage.setItem('auth_token', token);
+        if (refreshToken) {
+          localStorage.setItem(REFRESH_TOKEN_KEY, refreshToken);
+        }
       } else {
         await SecureStore.setItemAsync('auth_token', token);
+        if (refreshToken) {
+          await SecureStore.setItemAsync(REFRESH_TOKEN_KEY, refreshToken);
+        }
       }
-      set({ token, isAuthenticated: true });
+      set({ token, refreshToken: refreshToken || null, isAuthenticated: true });
     } else {
       if (isWeb) {
         localStorage.removeItem('auth_token');
+        localStorage.removeItem(REFRESH_TOKEN_KEY);
       } else {
         await SecureStore.deleteItemAsync('auth_token');
+        await SecureStore.deleteItemAsync(REFRESH_TOKEN_KEY);
       }
       console.log('[Auth] Token cleared (Logged out)');
-      set({ token: null, isAuthenticated: false });
+      set({ token: null, refreshToken: null, isAuthenticated: false });
     }
   },
 
@@ -106,20 +96,6 @@ export const useAuthStore = create<AuthState>((set, get) => ({
     }
   },
 
-  setPin: async (pin: string) => {
-    try {
-      const pinHash = hashPin(pin);
-      if (isWeb) {
-        localStorage.setItem(PIN_HASH_KEY, pinHash);
-      } else {
-        await SecureStore.setItemAsync(PIN_HASH_KEY, pinHash);
-      }
-      console.log('[Auth] PIN set successfully');
-    } catch (error) {
-      console.error('[Auth] Failed to set PIN:', error);
-    }
-  },
-
   initialize: async () => {
     set({ isLoading: true });
     try {
@@ -127,13 +103,17 @@ export const useAuthStore = create<AuthState>((set, get) => ({
         ? localStorage.getItem('auth_token')
         : await SecureStore.getItemAsync('auth_token');
 
+      const refreshToken = isWeb
+        ? localStorage.getItem(REFRESH_TOKEN_KEY)
+        : await SecureStore.getItemAsync(REFRESH_TOKEN_KEY);
+
       const biometricEnabled = isWeb
         ? localStorage.getItem(BIOMETRIC_ENABLED_KEY) === 'true'
         : (await SecureStore.getItemAsync(BIOMETRIC_ENABLED_KEY)) === 'true';
 
       if (token) {
         console.log('[Auth] Restored session from storage');
-        set({ token, isAuthenticated: true, biometricEnabled });
+        set({ token, refreshToken, isAuthenticated: true, biometricEnabled });
       } else {
         console.log('[Auth] No existing session found');
         set({ biometricEnabled });
@@ -158,9 +138,11 @@ export const useAuthStore = create<AuthState>((set, get) => ({
 
     if (isWeb) {
       localStorage.removeItem('auth_token');
+      localStorage.removeItem(REFRESH_TOKEN_KEY);
     } else {
       await SecureStore.deleteItemAsync('auth_token');
+      await SecureStore.deleteItemAsync(REFRESH_TOKEN_KEY);
     }
-    set({ token: null, isAuthenticated: false, user: null });
+    set({ token: null, refreshToken: null, isAuthenticated: false, user: null });
   },
 }));
