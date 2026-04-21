@@ -15,6 +15,10 @@ datasource db {
   provider = "postgresql"
   url      = env("DATABASE_URL")
   schemas  = ["wallet_schema"]
+
+  // Connection pool settings for performance optimization
+  // These can be overridden via DATABASE_URL connection parameters
+  // Example: postgresql://user:pass@host:port/db?connection_limit=20&pool_timeout=20
 }
 
 

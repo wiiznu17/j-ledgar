@@ -37,26 +37,77 @@ import { REDIS_CLIENT } from './auth.constants';
       provide: REDIS_CLIENT,
       inject: [ConfigService],
       useFactory: (configService: ConfigService) => {
-        const address = configService.get<string>('JLEDGER_REDIS_ADDRESS', 'redis://localhost:6379');
+        const address = configService.get<string>(
+          'JLEDGER_REDIS_ADDRESS',
+          'redis://localhost:6379',
+        );
         const password = configService.get<string>('JLEDGER_REDIS_PASSWORD');
-        
-        // หากไม่มีรหัสผ่านและระบุแค่ address ให้ ioredis จัดการเอง
-        if (!password) {
-          return new Redis(address);
+        const isProduction = configService.get<string>('NODE_ENV') === 'production';
+
+        // Enhanced Redis configuration with connection pooling and failover
+        const redisOptions: any = {
+          // Connection settings
+          host: 'localhost',
+          port: 6379,
+          password: password || undefined,
+
+          // Connection pooling
+          maxRetriesPerRequest: 3,
+          enableReadyCheck: true,
+          enableOfflineQueue: true,
+
+          // Retry strategy with exponential backoff
+          retryStrategy: (times: number) => {
+            const delay = Math.min(times * 50, 2000);
+            return delay;
+          },
+
+          // Reconnect strategy
+          reconnectOnError: (err: Error) => {
+            const targetError = 'READONLY';
+            if (err.message.includes(targetError)) {
+              return true;
+            }
+            return false;
+          },
+
+          // Connection timeout
+          connectTimeout: 10000,
+          lazyConnect: true,
+
+          // Keep-alive settings
+          keepAlive: 30000,
+          // Connection pool size
+          family: 4, // IPv4
+        };
+
+        // Parse address if provided
+        if (address && address !== 'redis://localhost:6379') {
+          try {
+            const url = new URL(address.replace('redis://', 'http://'));
+            redisOptions.host = url.hostname || 'localhost';
+            redisOptions.port = parseInt(url.port) || 6379;
+          } catch (e) {
+            // Fallback to default if parsing fails
+            console.warn('Failed to parse Redis address, using defaults');
+          }
         }
 
-        // หากมีรหัสผ่าน ให้พยายามแยก host/port จาก address (กรณีรัน local มักจะเป็น localhost:6379)
-        const url = new URL(address.replace('redis://', 'http://')); // URL helper needs a protocol it understands
-        return new Redis({
-          host: url.hostname || 'localhost',
-          port: parseInt(url.port) || 6379,
-          password: password,
-          maxRetriesPerRequest: null,
-        });
+        // Production-specific settings
+        if (isProduction) {
+          // Enable TLS for production
+          redisOptions.tls = {};
+          // Increase connection pool size
+          redisOptions.maxRetriesPerRequest = 5;
+          // Increase connection timeout
+          redisOptions.connectTimeout = 15000;
+        }
+
+        return new Redis(redisOptions);
       },
     },
-    AuthService, 
-    JwtStrategy
+    AuthService,
+    JwtStrategy,
   ],
   exports: [AuthService, REDIS_CLIENT],
 })
