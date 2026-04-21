@@ -1,6 +1,7 @@
 import axios from 'axios';
 import { Platform } from 'react-native';
 import * as SecureStore from 'expo-secure-store';
+import { validateConnectionSecurity } from './certificate-validation';
 
 const getBaseUrl = () => {
   if (__DEV__) {
@@ -23,9 +24,18 @@ export const api = axios.create({
 let isRefreshing = false;
 let refreshSubscribers: ((token: string) => void)[] = [];
 
-// Request Interceptor: Attach JWT Token
+// Request Interceptor: Attach JWT Token and validate connection security
 api.interceptors.request.use(
   async (config) => {
+    // Validate connection security before making request
+    if (config.baseURL) {
+      const securityCheck = validateConnectionSecurity(config.baseURL);
+      if (!securityCheck.isValid) {
+        console.error('[Security] Connection validation failed:', securityCheck.error);
+        return Promise.reject(new Error(`Security validation failed: ${securityCheck.error}`));
+      }
+    }
+
     const token = await readToken();
     if (token) {
       config.headers.Authorization = `Bearer ${token}`;
