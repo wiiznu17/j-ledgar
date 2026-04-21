@@ -12,6 +12,7 @@ interface AppTextInputProps extends TextInputProps {
   error?: string;
   containerClassName?: string;
   leftElement?: React.ReactNode;
+  rightElement?: React.ReactNode;
 }
 
 export function AppTextInput({
@@ -19,6 +20,7 @@ export function AppTextInput({
   error,
   containerClassName,
   leftElement,
+  rightElement,
   className,
   ...props
 }: AppTextInputProps) {
@@ -42,6 +44,7 @@ export function AppTextInput({
           placeholderTextColor="#595b6180"
           {...props}
         />
+        {rightElement && <View className="ml-3">{rightElement}</View>}
       </View>
       {error && (
         <Text className="text-red-500 text-xs font-manrope font-bold px-1 mt-1">{error}</Text>

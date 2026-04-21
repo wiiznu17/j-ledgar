@@ -34,13 +34,22 @@ export function AppButton({
 }: AppButtonProps) {
   const baseStyles = 'h-16 rounded-2xl flex-row items-center justify-center px-6 transition-all';
   const variantStyles = {
-    primary: 'bg-primary shadow-xl shadow-primary/20',
+    primary: cn(
+      'bg-primary shadow-xl shadow-primary/20',
+      (disabled || loading) && 'bg-surface-container-highest shadow-none',
+    ),
     outline: 'bg-white border border-primary/20 shadow-sm',
     ghost: 'bg-transparent',
   };
   const textStyles = {
-    primary: 'text-on-primary font-manrope font-extrabold text-lg',
-    outline: 'text-primary font-manrope font-extrabold text-lg',
+    primary: cn(
+      'text-on-primary font-manrope font-extrabold text-lg',
+      (disabled || loading) && 'text-on-surface-variant/30',
+    ),
+    outline: cn(
+      'text-primary font-manrope font-extrabold text-lg',
+      (disabled || loading) && 'text-primary/30',
+    ),
     ghost: 'text-on-surface-variant font-manrope font-bold text-sm',
   };
 
@@ -59,7 +68,6 @@ export function AppButton({
       className={cn(
         baseStyles,
         variantStyles[variant],
-        (disabled || loading) && 'opacity-50',
         'active:scale-95',
         className,
         containerClassName,

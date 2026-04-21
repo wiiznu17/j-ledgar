@@ -28,9 +28,14 @@ export function PinPad({ pin, setPin, length = 6, onComplete }: PinPadProps) {
   const renderDot = (index: number) => {
     const active = pin.length > index;
     return (
-      <View
+      <MotiView
         key={index}
-        className={`w-4 h-4 rounded-full mx-2 ${active ? 'bg-[#f48fb1]' : 'bg-[#E6E8EF]'}`}
+        from={{ scale: 1 }}
+        animate={{ scale: active ? 1.2 : 1 }}
+        transition={{ type: 'spring', damping: 15 }}
+        className={`w-5 h-5 rounded-full mx-3 border-2 ${
+          active ? 'bg-[#f48fb1] border-[#f48fb1]' : 'bg-transparent border-[#E6E8EF]'
+        }`}
       />
     );
   };
@@ -40,12 +45,14 @@ export function PinPad({ pin, setPin, length = 6, onComplete }: PinPadProps) {
       key={val}
       onPress={() => (val === 'back' ? handleBackspace() : handlePress(val))}
       activeOpacity={0.7}
-      className={`w-[28%] aspect-[1.2] items-center justify-center rounded-3xl m-[2.5%] ${val === 'back' ? 'bg-transparent' : 'bg-white/40 border border-outline-variant shadow-sm'}`}
+      className={`w-[26%] aspect-[1.1] items-center justify-center rounded-[2rem] m-[3%] ${
+        val === 'back' ? 'bg-transparent' : 'bg-white/50 border border-outline-variant shadow-sm'
+      }`}
     >
       {val === 'back' ? (
-        <Delete size={24} color="#595b61" />
+        <Delete size={26} color="#595b61" />
       ) : (
-        <Text className="text-2xl font-manrope font-extrabold text-on-surface">{val}</Text>
+        <Text className="text-3xl font-manrope font-black text-on-surface">{val}</Text>
       )}
     </TouchableOpacity>
   );
@@ -58,9 +65,9 @@ export function PinPad({ pin, setPin, length = 6, onComplete }: PinPadProps) {
       </View>
 
       {/* Keyboard Grid */}
-      <View className="flex-row flex-wrap justify-center w-full">
+      <View className="flex-row flex-wrap justify-center w-[90%]">
         {['1', '2', '3', '4', '5', '6', '7', '8', '9'].map((num) => renderKey(num))}
-        <TouchableOpacity className="w-[28%] aspect-[1.2] m-[2.5%]" disabled />
+        <View className="w-[26%] aspect-[1.1] m-[3%]" />
         {renderKey('0')}
         {renderKey('back')}
       </View>

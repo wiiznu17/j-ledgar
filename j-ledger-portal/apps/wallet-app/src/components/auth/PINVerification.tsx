@@ -175,40 +175,22 @@ export const PINVerification: React.FC<PINVerificationProps> = ({
     <View className="w-full">
       {/* Header */}
       <View className="items-center mb-8">
-        <View className="w-16 h-16 bg-gradient-to-br from-pink-100 to-pink-50 rounded-full items-center justify-center mb-4 shadow-lg shadow-pink-200/50 border-2 border-pink-200">
+        <View className="w-16 h-16 bg-pink-50 rounded-[1.5rem] items-center justify-center mb-4 border border-pink-100 shadow-sm">
           <Lock size={32} color="#f48fb1" />
         </View>
 
         <Text className="text-2xl font-manrope font-black text-gray-800 mb-2">Confirm PIN</Text>
-        <Text className="text-xs font-manrope font-bold text-gray-500 text-center">
-          Enter your 6-digit PIN to complete this transfer
+        <Text className="text-xs font-manrope font-bold text-gray-500 text-center px-6">
+          Enter your 6-digit PIN to secure this transaction
         </Text>
       </View>
 
-      {/* PIN Display Dots */}
-      <View className="flex-row justify-center gap-4 mb-10">
-        {Array.from({ length: 6 }).map((_, i) => (
-          <View
-            key={i}
-            // from={{ scale: 0.8 }}
-            // animate={{ scale: pin.length > i ? 1 : 0.8 }}
-            className={`w-12 h-12 rounded-full border-2 items-center justify-center ${
-              pin.length > i
-                ? 'bg-gradient-to-br from-pink-100 to-pink-50 border-pink-300 scale-100'
-                : 'bg-gray-50 border-gray-200 scale-90'
-            }`}
-          >
-            {pin.length > i && <View className="w-3 h-3 bg-pink-500 rounded-full" />}
-          </View>
-        ))}
-      </View>
-
-      {/* PIN Pad */}
+      {/* PIN Pad (Now includes Dots internally) */}
       {isVerifying ? (
-        <View className="w-full items-center py-8">
+        <View className="w-full items-center py-16">
           <ActivityIndicator size="large" color="#f48fb1" />
-          <Text className="text-xs font-manrope font-bold text-gray-500 mt-3">
-            Verifying PIN...
+          <Text className="text-xs font-manrope font-bold text-gray-500 mt-4">
+            Securing Connection...
           </Text>
         </View>
       ) : (

@@ -68,6 +68,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
       } else {
         await SecureStore.deleteItemAsync('auth_token');
       }
+      console.log('[Auth] Token cleared (Logged out)');
       set({ token: null, isAuthenticated: false });
     }
   },
@@ -94,10 +95,10 @@ export const useAuthStore = create<AuthState>((set, get) => ({
       const pinHash = isWeb
         ? localStorage.getItem(PIN_HASH_KEY)
         : await SecureStore.getItemAsync(PIN_HASH_KEY);
-
+      console.log('[Auth] PIN hash:', pinHash);
       if (!pinHash) {
-        console.warn('[Auth] No PIN set up, defaulting to 111111 for development');
-        return pin === '111111';
+        console.error('[Auth] No PIN found in secure storage');
+        return false;
       }
 
       return pinHash === hashPin(pin);
@@ -133,26 +134,14 @@ export const useAuthStore = create<AuthState>((set, get) => ({
         : (await SecureStore.getItemAsync(BIOMETRIC_ENABLED_KEY)) === 'true';
 
       if (token) {
+        console.log('[Auth] Restored session from storage');
         set({ token, isAuthenticated: true, biometricEnabled });
       } else {
+        console.log('[Auth] No existing session found');
         set({ biometricEnabled });
       }
 
-      // Initialize default PIN hash (111111) if not set
-      const pinHash = isWeb
-        ? localStorage.getItem(PIN_HASH_KEY)
-        : await SecureStore.getItemAsync(PIN_HASH_KEY);
-
-      if (!pinHash) {
-        const defaultPin = '111111';
-        const defaultHash = hashPin(defaultPin);
-        if (isWeb) {
-          localStorage.setItem(PIN_HASH_KEY, defaultHash);
-        } else {
-          await SecureStore.setItemAsync(PIN_HASH_KEY, defaultHash);
-        }
-        console.log('[Auth] Initialized default PIN: 111111');
-      }
+      // PIN will be initialized during onboarding flow
     } catch (e) {
       console.error('Failed to initialize auth store', e);
     } finally {
@@ -161,6 +150,14 @@ export const useAuthStore = create<AuthState>((set, get) => ({
   },
 
   logout: async () => {
+    try {
+      // Import the store dynamically to avoid circular dependencies if any
+      const { useRegistrationStore } = require('./registration');
+      await useRegistrationStore.getState().reset();
+    } catch (err) {
+      console.warn('[Auth] Soft error resetting registration store on logout:', err);
+    }
+
     if (isWeb) {
       localStorage.removeItem('auth_token');
     } else {

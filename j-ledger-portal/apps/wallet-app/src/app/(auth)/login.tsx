@@ -22,7 +22,7 @@ import {
   ArrowRight,
 } from 'lucide-react-native';
 import { MotiView } from 'moti';
-import { PinPad } from '@/components/common/PinPad';
+import { PINVerification } from '@/components/auth/PINVerification';
 import { AppTextInput } from '@/components/common/AppTextInput';
 import { StepWrapper } from '@/components/common/StepWrapper';
 import { useAuthStore } from '@/store/auth';
@@ -45,7 +45,6 @@ export default function LoginScreen() {
   const [challengeId, setChallengeId] = useState('');
   const [otp, setOtp] = useState(['', '', '', '', '', '']);
   const [timer, setTimer] = useState(60);
-  const [pin, setPin] = useState('');
   const [error, setError] = useState('');
   const [lockoutTime, setLockoutTime] = useState(0);
 
@@ -122,19 +121,16 @@ export default function LoginScreen() {
     }, 1000);
   };
 
-  const handlePinComplete = async (completedPin: string) => {
-    setIsLoading(true);
+  const handlePinSuccess = () => {
+    console.log('[Login] Authentication successful, entering app...');
+    setIsLoading(false);
+    router.replace('/(tabs)' as any);
+  };
 
-    // Mock Pin Verification (สมมติว่าใส่ครบก็ให้ผ่าน)
-    setTimeout(() => {
-      setIsLoading(false);
-      if (completedPin === '123456' || completedPin.length === 6) {
-        router.replace('/(tabs)' as any);
-      } else {
-        setError('Incorrect PIN.');
-        setPin('');
-      }
-    }, 500);
+  const handlePinFailure = (errMsg: string) => {
+    console.warn('[Login] Authentication failed:', errMsg);
+    setIsLoading(false);
+    setError(errMsg);
   };
 
   return (
@@ -144,29 +140,37 @@ export default function LoginScreen() {
         className="flex-1"
       >
         <ScrollView
-          contentContainerStyle={{ flexGrow: 1, paddingHorizontal: 24, justifyContent: 'center' }}
+          contentContainerStyle={{
+            flexGrow: 1,
+            paddingHorizontal: 24,
+            justifyContent: 'center',
+            paddingBottom: 60,
+          }}
           showsVerticalScrollIndicator={false}
         >
-          {/* Logo Section */}
-          <View className="items-center mb-10 pt-10">
-            <MotiView
-              from={{ scale: 0.8, opacity: 0 }}
-              animate={{ scale: 1, opacity: 1 }}
-              transition={{ type: 'spring', damping: 15 }}
-              className="mb-6 bg-white p-4 rounded-[2rem] shadow-xl shadow-pink-100/50"
-            >
-              {/* ถ้าหาไฟล์โลโก้ไม่เจอ ให้แสดงไอคอนชั่วคราว */}
-              <View className="w-16 h-16 bg-pink-50 rounded-2xl items-center justify-center border border-pink-100">
-                <ShieldCheck size={32} color="#f48fb1" />
-              </View>
-            </MotiView>
-            <Text className="text-3xl font-manrope font-black tracking-tight text-gray-800 mb-2">
-              J-Ledger
-            </Text>
-            <Text className="text-gray-400 font-manrope font-medium text-sm text-center px-4">
-              Securely manage your digital assets with advanced cryptography
-            </Text>
-          </View>
+          {/* Logo Section - Only shown in CREDENTIALS step */}
+          {step === 'CREDENTIALS' && (
+            <View className="items-center mb-10 mt-6">
+              <MotiView
+                from={{ scale: 0.8, opacity: 0 }}
+                animate={{ scale: 1, opacity: 1 }}
+                transition={{ type: 'spring', damping: 15 }}
+                className="mb-4"
+              >
+                <Image
+                  source={require('../../../assets/images/j_ledger_logo_1776536282920.png')}
+                  className="w-24 h-24"
+                  resizeMode="contain"
+                />
+              </MotiView>
+              <Text className="text-3xl font-manrope font-black tracking-tight text-gray-800 mb-2">
+                J-Ledger
+              </Text>
+              <Text className="text-gray-400 font-manrope font-medium text-sm text-center px-4">
+                Securely manage your digital assets with advanced cryptography
+              </Text>
+            </View>
+          )}
 
           {/* ========================================= */}
           {/* STEP 1: CREDENTIALS */}
@@ -209,34 +213,36 @@ export default function LoginScreen() {
                 </View>
               </View>
 
-              {error ? (
-                <View className="flex-row items-center gap-2 mb-4 bg-red-50 p-3 rounded-xl border border-red-100">
-                  <AlertCircle size={14} color="#ef4444" />
-                  <Text className="text-xs text-red-500 font-manrope font-bold flex-1">
-                    {error}
-                  </Text>
-                </View>
-              ) : null}
-
-              <TouchableOpacity
-                disabled={!phone || !password || isLoading}
-                onPress={handleCredentialsSubmit}
-                className={`w-full h-14 rounded-2xl flex-row items-center justify-center gap-2 mt-4 shadow-sm active:scale-95 transition-all
-                  ${!phone || !password ? 'bg-gray-200' : 'bg-[#f48fb1] shadow-pink-200'}`}
-              >
-                {isLoading ? (
-                  <ActivityIndicator color="white" />
-                ) : (
-                  <>
-                    <Text
-                      className={`font-manrope font-black text-sm ${!phone || !password ? 'text-gray-400' : 'text-white'}`}
-                    >
-                      Sign In
+              <View className="mt-2">
+                {error ? (
+                  <View className="flex-row items-center gap-2 mb-4 bg-red-50 p-3 rounded-xl border border-red-100">
+                    <AlertCircle size={14} color="#ef4444" />
+                    <Text className="text-xs text-red-500 font-manrope font-bold flex-1">
+                      {error}
                     </Text>
-                    <ArrowRight size={18} color={!phone || !password ? '#9ca3af' : 'white'} />
-                  </>
-                )}
-              </TouchableOpacity>
+                  </View>
+                ) : null}
+
+                <TouchableOpacity
+                  disabled={!phone || !password || isLoading}
+                  onPress={handleCredentialsSubmit}
+                  className={`w-full h-14 rounded-2xl flex-row items-center justify-center gap-2 shadow-sm active:scale-95 transition-all
+                    ${!phone || !password ? 'bg-gray-200' : 'bg-[#f48fb1] shadow-pink-200'}`}
+                >
+                  {isLoading ? (
+                    <ActivityIndicator color="white" />
+                  ) : (
+                    <>
+                      <Text
+                        className={`font-manrope font-black text-sm ${!phone || !password ? 'text-gray-400' : 'text-white'}`}
+                      >
+                        Sign In
+                      </Text>
+                      <ArrowRight size={18} color={!phone || !password ? '#9ca3af' : 'white'} />
+                    </>
+                  )}
+                </TouchableOpacity>
+              </View>
             </View>
 
             <TouchableOpacity
@@ -345,44 +351,12 @@ export default function LoginScreen() {
           {/* STEP 3: PIN VERIFICATION */}
           {/* ========================================= */}
           <StepWrapper visible={step === 'PIN'}>
-            <View className="items-center py-6">
-              <MotiView
-                from={{ scale: 0.8, opacity: 0 }}
-                animate={{ scale: 1, opacity: 1 }}
-                className="items-center mb-10"
-              >
-                <View className="w-20 h-20 rounded-[1.5rem] bg-pink-50 border-4 border-white shadow-xl shadow-pink-100 mb-6 items-center justify-center">
-                  <Lock size={32} color="#f48fb1" />
-                </View>
-                <Text className="text-2xl font-manrope font-black text-gray-800 tracking-tight mb-2">
-                  Enter Secure PIN
-                </Text>
-                <Text className="text-sm font-manrope font-medium text-gray-400">
-                  Welcome back to your wallet
-                </Text>
-              </MotiView>
-
-              <PinPad pin={pin} setPin={setPin} length={6} onComplete={handlePinComplete} />
-
-              {isLoading && (
-                <View className="mt-8 bg-white p-4 rounded-full shadow-lg shadow-pink-100">
-                  <ActivityIndicator color="#f48fb1" />
-                </View>
-              )}
-
-              {error ? (
-                <View className="mt-8 bg-red-50 px-4 py-2 rounded-xl border border-red-100">
-                  <Text className="text-center text-xs text-red-500 font-manrope font-bold">
-                    {error}
-                  </Text>
-                </View>
-              ) : null}
-
-              <TouchableOpacity onPress={() => setStep('CREDENTIALS')} className="mt-12 p-2">
-                <Text className="text-xs font-manrope font-bold text-gray-400 uppercase tracking-widest">
-                  Sign Out
-                </Text>
-              </TouchableOpacity>
+            <View className="py-6">
+              <PINVerification
+                onSuccess={handlePinSuccess}
+                onFailure={handlePinFailure}
+                onCancel={() => setStep('CREDENTIALS')}
+              />
             </View>
           </StepWrapper>
 

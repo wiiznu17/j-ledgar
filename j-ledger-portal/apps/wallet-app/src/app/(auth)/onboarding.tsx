@@ -4,32 +4,15 @@ import {
   Text,
   ScrollView,
   Image,
-  TouchableOpacity,
   Dimensions,
   KeyboardAvoidingView,
   Platform,
   Alert,
-  ActivityIndicator,
-  TextInput,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
-import {
-  ArrowRight,
-  ChevronLeft,
-  Timer,
-  Lock,
-  ScanFace,
-  CreditCard,
-  Camera,
-  CheckCircle2,
-  ShieldCheck,
-  User,
-  Smartphone,
-  Eye,
-  EyeOff,
-  AlertCircle,
-} from 'lucide-react-native';
+import * as ImagePicker from 'expo-image-picker';
+import * as Onboarding from '@/components/onboarding';
 import { GlassPanel } from '@/components/common/GlassPanel';
 import { AppButton } from '@/components/common/AppButton';
 import { AppTextInput } from '@/components/common/AppTextInput';
@@ -38,7 +21,6 @@ import { MotiView } from 'moti';
 import axios from 'axios';
 import { useRegistrationStore, RegistrationState } from '@/store/registration';
 import { getStableDeviceId, getDeviceName } from '@/lib/device.utils';
-import * as ImagePicker from 'expo-image-picker';
 
 const { width, height } = Dimensions.get('window');
 const API_URL = process.env.EXPO_PUBLIC_API_URL || 'http://localhost:3000';
@@ -56,6 +38,7 @@ type OnboardingStepUI =
   | 'ADDITIONAL_INFO'
   | 'SET_PASSWORD'
   | 'SET_PIN'
+  | 'CONFIRM_PIN'
   | 'SUCCESS';
 
 export default function OnboardingScreen() {
@@ -63,7 +46,6 @@ export default function OnboardingScreen() {
   const [isLoading, setIsLoading] = useState(false);
   const [phone, setPhone] = useState('');
   const [otp, setOtp] = useState(['', '', '', '', '', '']);
-  const otpRefs = useRef<Array<TextInput | null>>([]);
   const [challengeId, setChallengeId] = useState('');
   const [firstName, setFirstName] = useState('');
   const [lastName, setLastName] = useState('');
@@ -82,6 +64,7 @@ export default function OnboardingScreen() {
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [pin, setPin] = useState('');
+  const [confirmPin, setConfirmPin] = useState('');
   const [timer, setTimer] = useState(60);
 
   const [idCardUri, setIdCardUri] = useState<string | null>(null);
@@ -89,7 +72,7 @@ export default function OnboardingScreen() {
   const [livenessSessionId, setLivenessSessionId] = useState<string | null>(null);
 
   const router = useRouter();
-  const { regToken, setRegToken, syncStatus, prefillData } = useRegistrationStore();
+  const { regToken, setRegToken, syncStatus, prefillData, reset } = useRegistrationStore();
 
   // Initialize & Sync
   useEffect(() => {
@@ -116,6 +99,7 @@ export default function OnboardingScreen() {
   }, [prefillData]);
 
   const mapBackendStateToUI = (state: RegistrationState) => {
+    console.log(`[Onboarding] Mapping backend state: ${state}`);
     switch (state) {
       case 'PENDING_OTP':
         setStep('WELCOME');
@@ -142,12 +126,18 @@ export default function OnboardingScreen() {
         setStep('SUCCESS');
         break;
       case 'COMPLETED':
+        console.log('[Onboarding] Flow already completed, redirecting to app...');
         router.replace('/(tabs)');
         break;
       default:
         setStep('WELCOME');
     }
   };
+
+  // Step transition log
+  useEffect(() => {
+    console.log(`[Onboarding] UI Step -> ${step}`);
+  }, [step]);
 
   // Timer Effect
   useEffect(() => {
@@ -185,7 +175,7 @@ export default function OnboardingScreen() {
     setIsLoading(true);
     const otpString = otp.join('').trim();
     console.log('[Onboarding] Verifying OTP:', otpString, 'for challenge:', challengeId);
-    
+
     try {
       const res = await axios.post(`${API_URL}/auth/register/verify-otp`, {
         phoneNumber: phone,
@@ -198,7 +188,6 @@ export default function OnboardingScreen() {
       console.log('[Onboarding] Verification failed:', err.response?.data || err.message);
       // Clear OTP on error
       setOtp(['', '', '', '', '', '']);
-      otpRefs.current[0]?.focus();
       Alert.alert('Error', err.response?.data?.message || 'Invalid OTP');
     } finally {
       setIsLoading(false);
@@ -262,18 +251,33 @@ export default function OnboardingScreen() {
 
         await setRegToken(res.data.regToken);
         setLivenessSessionId(res.data.livenessSessionId);
-        // Pre-fill from OCR
-        if (res.data.extractedData) {
-          setFirstName(res.data.extractedData.firstName || '');
-          setLastName(res.data.extractedData.lastName || '');
-          setThaiName(res.data.extractedData.thaiName || '');
-          setPrefix(res.data.extractedData.prefix || '');
-          setIdNumber(res.data.extractedData.idCardNumber || '');
-          setDateOfBirth(res.data.extractedData.dateOfBirth || '');
-          setIssueDate(res.data.extractedData.idCardIssueDate || '');
-          setExpiryDate(res.data.extractedData.idCardExpiryDate || '');
-          setReligion(res.data.extractedData.religion || '');
-        }
+        // Pre-fill from OCR (with Mock fallback for testing)
+        const mockData = {
+          firstName: 'JOHN',
+          lastName: 'DOE',
+          thaiName: 'สมชาย ดีใจ',
+          prefix: 'นาย',
+          idCardNumber: '1234567890123',
+          dateOfBirth: '01/01/1990',
+          idCardIssueDate: '10/10/2020',
+          idCardExpiryDate: '10/10/2028',
+          religion: 'พุทธ',
+          address: '99/99 หมู่ 1 ต.ท่าตลาด อ.สามพราน จ.นครปฐม 73110',
+        };
+
+        const extracted = res.data.extractedData || mockData;
+
+        setFirstName(extracted.firstName || mockData.firstName);
+        setLastName(extracted.lastName || mockData.lastName);
+        setThaiName(extracted.thaiName || mockData.thaiName);
+        setPrefix(extracted.prefix || mockData.prefix);
+        setIdNumber(extracted.idCardNumber || mockData.idCardNumber);
+        setDateOfBirth(extracted.dateOfBirth || mockData.dateOfBirth);
+        setIssueDate(extracted.idCardIssueDate || mockData.idCardIssueDate);
+        setExpiryDate(extracted.idCardExpiryDate || mockData.idCardExpiryDate);
+        setReligion(extracted.religion || mockData.religion);
+        setAddress(extracted.address || mockData.address);
+
         setStep('OCR_REVIEW');
       } catch (err: any) {
         Alert.alert('OCR Failed', 'Could not read ID card. Please try again with better lighting.');
@@ -375,7 +379,7 @@ export default function OnboardingScreen() {
     }
   };
 
-  const handlePinSubmit = async () => {
+  const handlePinSubmit = async (finalPin: string) => {
     setIsLoading(true);
     try {
       const deviceId = await getStableDeviceId();
@@ -383,10 +387,10 @@ export default function OnboardingScreen() {
 
       const res = await axios.post(
         `${API_URL}/auth/register/pin`,
-        { pin, deviceId, deviceName },
+        { pin: finalPin, deviceId, deviceName },
         { headers: { Authorization: `Bearer ${regToken}` } },
       );
-      
+
       const newToken = res.data.regToken;
       await setRegToken(newToken);
 
@@ -407,24 +411,60 @@ export default function OnboardingScreen() {
     }
   };
 
-  const renderHeader = (title: string, subtitle: string, onBack?: () => void) => (
-    <View className="mb-10">
-      {onBack && (
-        <TouchableOpacity
-          onPress={onBack}
-          className="w-12 h-12 rounded-2xl bg-white/60 border border-outline-variant flex items-center justify-center mb-6 shadow-sm"
-        >
-          <ChevronLeft size={24} color="#2c2f33" />
-        </TouchableOpacity>
-      )}
-      <Text className="text-3xl font-manrope font-extrabold tracking-tight text-on-surface mb-2 leading-tight">
-        {title}
-      </Text>
-      <Text className="text-on-surfaceVariant text-sm font-manrope font-medium leading-relaxed">
-        {subtitle}
-      </Text>
-    </View>
-  );
+  const updateOcrData = (field: string, value: string) => {
+    switch (field) {
+      case 'idNumber':
+        setIdNumber(value);
+        break;
+      case 'issueDate':
+        setIssueDate(value);
+        break;
+      case 'expiryDate':
+        setExpiryDate(value);
+        break;
+      case 'prefix':
+        setPrefix(value);
+        break;
+      case 'thaiName':
+        setThaiName(value);
+        break;
+      case 'firstName':
+        setFirstName(value);
+        break;
+      case 'lastName':
+        setLastName(value);
+        break;
+      case 'dateOfBirth':
+        setDateOfBirth(value);
+        break;
+      case 'religion':
+        setReligion(value);
+        break;
+      case 'address':
+        setAddress(value);
+        break;
+    }
+  };
+
+  const updateProfileData = (field: string, value: string) => {
+    switch (field) {
+      case 'address':
+        setAddress(value);
+        break;
+      case 'occupation':
+        setOccupation(value);
+        break;
+      case 'incomeRange':
+        setIncomeRange(value);
+        break;
+      case 'sourceOfFunds':
+        setSourceOfFunds(value);
+        break;
+      case 'purpose':
+        setPurpose(value);
+        break;
+    }
+  };
 
   return (
     <SafeAreaView className="flex-1 bg-[#f5f6fc]">
@@ -451,324 +491,122 @@ export default function OnboardingScreen() {
             }}
             showsVerticalScrollIndicator={false}
           >
-            {/* STEP: WELCOME */}
-            <StepWrapper visible={step === 'WELCOME'} direction="vertical">
-              <View className="flex-1 items-center justify-center min-h-[500]">
-                <Image
-                  source={require('../../../assets/images/j_ledger_logo_1776536282920.png')}
-                  className="w-32 h-32 mb-8"
-                  resizeMode="contain"
-                />
-                <Text className="text-4xl font-manrope font-black tracking-tighter text-on-surface text-center mb-4">
-                  Welcome to{'\n'}J-Ledger
-                </Text>
-                <AppButton
-                  title="Get Started"
-                  containerClassName="w-full mt-12"
-                  onPress={() => setStep('PHONE_INPUT')}
-                  icon={<ArrowRight size={20} color="white" />}
-                />
-              </View>
-            </StepWrapper>
+            <Onboarding.WelcomeStep
+              visible={step === 'WELCOME'}
+              onGetStarted={() => setStep('PHONE_INPUT')}
+              onBackToLogin={() => router.replace('/(auth)/login')}
+            />
 
-            {/* STEP: PHONE_INPUT */}
-            <StepWrapper visible={step === 'PHONE_INPUT'}>
-              {renderHeader('Enter Phone', 'We will send a code to verify your identity.', () =>
-                setStep('WELCOME'),
-              )}
-              <AppTextInput
-                label="Mobile Number"
-                placeholder="08X-XXX-XXXX"
-                value={formatPhone(phone)}
-                onChangeText={(val) => setPhone(val.replace(/\D/g, ''))}
-                keyboardType="phone-pad"
-              />
-              <AppButton
-                title="Continue"
-                loading={isLoading}
-                className="mt-8"
-                disabled={phone.length < 9}
-                onPress={handlePhoneSubmit}
-              />
-            </StepWrapper>
+            <Onboarding.PhoneInputStep
+              visible={step === 'PHONE_INPUT'}
+              phone={phone}
+              isLoading={isLoading}
+              onPhoneChange={setPhone}
+              onSubmit={handlePhoneSubmit}
+              onBack={() => setStep('WELCOME')}
+            />
 
-            {/* STEP: OTP */}
-            <StepWrapper visible={step === 'OTP'}>
-              {renderHeader('Verification', `Sent to ${formatPhone(phone)}`, () =>
-                setStep('PHONE_INPUT'),
-              )}
-              <View className="flex-row justify-between mb-10">
-                {otp.map((digit, i) => (
-                  <View
-                    key={i}
-                    className="w-[14%] aspect-[0.75] bg-white/40 border border-outline-variant/20 rounded-2xl items-center justify-center shadow-inner"
-                  >
-                    <TextInput
-                      ref={(el) => {
-                        otpRefs.current[i] = el;
-                      }}
-                      className="text-center w-full h-full p-0 text-2xl font-manrope font-black text-on-surface"
-                      maxLength={1}
-                      keyboardType="number-pad"
-                      autoFocus={i === 0}
-                      value={digit}
-                      onChangeText={(val) => {
-                        const digit = val.slice(-1);
-                        setOtp((prev) => {
-                          const next = [...prev];
-                          next[i] = digit;
-                          return next;
-                        });
-                        
-                        if (val && i < 5) {
-                          otpRefs.current[i + 1]?.focus();
-                        }
-                      }}
-                      onKeyPress={({ nativeEvent }) => {
-                        if (nativeEvent.key === 'Backspace' && !otp[i] && i > 0) {
-                          otpRefs.current[i - 1]?.focus();
-                        }
-                      }}
-                    />
-                  </View>
-                ))}
-              </View>
-              <AppButton
-                title="Verify"
-                loading={isLoading}
-                disabled={otp.some((d) => !d)}
-                onPress={handleOtpVerify}
-              />
-            </StepWrapper>
+            <Onboarding.OtpInputStep
+              visible={step === 'OTP'}
+              otp={otp}
+              phone={phone}
+              isLoading={isLoading}
+              onOtpChange={(i, v) => {
+                setOtp((prev) => {
+                  const next = [...prev];
+                  next[i] = v;
+                  return next;
+                });
+              }}
+              onSubmit={handleOtpVerify}
+              onBack={() => setStep('PHONE_INPUT')}
+            />
 
-            {/* STEP: TERMS */}
-            <StepWrapper visible={step === 'TERMS'}>
-              {renderHeader('Terms of Service', 'Please accept our terms to continue.')}
-              <GlassPanel className="h-[300] mb-8" intensity={10}>
-                <ScrollView>
-                  <Text className="text-xs font-manrope font-medium leading-relaxed p-4">
-                    Lorem ipsum legal text here...
-                  </Text>
-                </ScrollView>
-              </GlassPanel>
-              <AppButton
-                title="Accept and Continue"
-                loading={isLoading}
-                onPress={handleAcceptTerms}
-              />
-            </StepWrapper>
+            <Onboarding.TermsStep
+              visible={step === 'TERMS'}
+              isLoading={isLoading}
+              onAccept={handleAcceptTerms}
+            />
 
-            {/* STEP: OCR_GUIDE */}
-            <StepWrapper visible={step === 'OCR_GUIDE'} direction="vertical">
-              <View className="items-center">
-                <View className="px-6 py-4 bg-yellow-50 rounded-2xl border border-yellow-200 mb-8 flex-row items-center gap-3">
-                  <AlertCircle size={20} color="#eab308" />
-                  <Text className="text-xs font-manrope font-bold text-yellow-800">
-                    Ensure good lighting without glare
-                  </Text>
-                </View>
-                {renderHeader('ID Capture', 'We need to scan the front of your National ID Card.')}
-                <AppButton
-                  title="Scan National ID"
-                  className="w-full mt-8"
-                  onPress={handleIdCapture}
-                />
-              </View>
-            </StepWrapper>
+            <Onboarding.OcrGuideStep visible={step === 'OCR_GUIDE'} onScan={handleIdCapture} />
 
-            {/* STEP: OCR_REVIEW */}
-            <StepWrapper visible={step === 'OCR_REVIEW'}>
-              {renderHeader('Verify Details', 'Check if your information is correct.')}
-              <View className="w-full aspect-[1.58] bg-white rounded-3xl mb-8 overflow-hidden">
-                {idCardUri && <Image source={{ uri: idCardUri }} className="w-full h-full" />}
-              </View>
-              <ScrollView className="space-y-6" showsVerticalScrollIndicator={false}>
-                <View className="mb-4">
-                  <Text className="text-xs font-manrope font-extrabold text-primary mb-3">IDENTITY & DATES</Text>
-                  <AppTextInput 
-                    label="ID NUMBER" 
-                    value={idNumber} 
-                    onChangeText={setIdNumber}
-                    keyboardType="number-pad"
-                    maxLength={13}
-                  />
-                  <View className="flex-row gap-4 mt-4">
-                    <View className="flex-1">
-                      <AppTextInput label="ISSUE DATE" value={issueDate} onChangeText={setIssueDate} placeholder="DD/MM/YYYY" />
-                    </View>
-                    <View className="flex-1">
-                      <AppTextInput label="EXPIRY DATE" value={expiryDate} onChangeText={setExpiryDate} placeholder="DD/MM/YYYY" />
-                    </View>
-                  </View>
-                </View>
+            <Onboarding.OcrReviewStep
+              visible={step === 'OCR_REVIEW'}
+              idCardUri={idCardUri}
+              data={{
+                idNumber,
+                issueDate,
+                expiryDate,
+                prefix,
+                thaiName,
+                firstName,
+                lastName,
+                dateOfBirth,
+                religion,
+                address,
+              }}
+              setData={updateOcrData}
+              isLoading={isLoading}
+              onConfirm={() => setStep('FACE_GUIDE')}
+              onRescan={() => setStep('OCR_GUIDE')}
+            />
 
-                <View className="mb-4">
-                  <Text className="text-xs font-manrope font-extrabold text-primary mb-3">THAI INFORMATION</Text>
-                  <View className="flex-row gap-4">
-                    <View className="w-24">
-                      <AppTextInput label="PREFIX" value={prefix} onChangeText={setPrefix} />
-                    </View>
-                    <View className="flex-1">
-                      <AppTextInput label="FULL NAME (THAI)" value={thaiName} onChangeText={setThaiName} />
-                    </View>
-                  </View>
-                </View>
+            <Onboarding.FaceGuideStep
+              visible={step === 'FACE_GUIDE'}
+              onScan={handleSelfieCapture}
+            />
 
-                <View className="mb-4">
-                  <Text className="text-xs font-manrope font-extrabold text-primary mb-3">ENGLISH INFORMATION</Text>
-                  <AppTextInput label="FIRST NAME" value={firstName} onChangeText={setFirstName} />
-                  <View className="mt-4">
-                    <AppTextInput label="LAST NAME" value={lastName} onChangeText={setLastName} />
-                  </View>
-                </View>
+            <Onboarding.AdditionalInfoStep
+              visible={step === 'ADDITIONAL_INFO'}
+              data={{ address, occupation, incomeRange, sourceOfFunds, purpose }}
+              setData={updateProfileData}
+              isLoading={isLoading}
+              onSubmit={handleProfileSubmit}
+            />
 
-                <View className="mb-4">
-                  <Text className="text-xs font-manrope font-extrabold text-primary mb-3">ADDITIONAL INFO</Text>
-                  <AppTextInput label="DATE OF BIRTH" placeholder="DD/MM/YYYY" value={dateOfBirth} onChangeText={setDateOfBirth} />
-                  <View className="mt-4">
-                    <AppTextInput label="RELIGION" value={religion} onChangeText={setReligion} />
-                  </View>
-                  <View className="mt-4">
-                    <AppTextInput label="ADDRESS" value={address} onChangeText={setAddress} multiline />
-                  </View>
-                </View>
-                
-                <View className="pt-6 space-y-4 mb-10">
-                  <AppButton
-                    title="Confirm Data"
-                    loading={isLoading}
-                    onPress={() => setStep('FACE_GUIDE')}
-                  />
-                  <AppButton title="Rescan" variant="outline" onPress={() => setStep('OCR_GUIDE')} />
-                </View>
-              </ScrollView>
-            </StepWrapper>
+            <Onboarding.SetPasswordStep
+              visible={step === 'SET_PASSWORD'}
+              password={password}
+              confirmPassword={confirmPassword}
+              onPasswordChange={setPassword}
+              onConfirmPasswordChange={setConfirmPassword}
+              isLoading={isLoading}
+              onSubmit={handlePasswordSubmit}
+            />
 
-            {/* STEP: FACE_GUIDE */}
-            <StepWrapper visible={step === 'FACE_GUIDE'} direction="vertical">
-              <View className="items-center">
-                <View className="px-6 py-4 bg-primary/5 rounded-2xl border border-primary/10 mb-8 flex-row items-center gap-3">
-                  <ScanFace size={20} color="#f48fb1" />
-                  <Text className="text-xs font-manrope font-bold text-primary">
-                    Biometric data is securely encrypted
-                  </Text>
-                </View>
-                {renderHeader(
-                  'Live Selfie',
-                  'Position your face clearly in the frame for a liveness check.',
-                )}
-                <AppButton
-                  title="Start Face Scan"
-                  className="w-full mt-8"
-                  onPress={handleSelfieCapture}
-                />
-              </View>
-            </StepWrapper>
+            <Onboarding.SetPinStep
+              visible={step === 'SET_PIN'}
+              pin={pin}
+              onPinChange={setPin}
+              onComplete={() => setStep('CONFIRM_PIN')}
+            />
 
-            {/* STEP: ADDITIONAL_INFO */}
-            <StepWrapper visible={step === 'ADDITIONAL_INFO'}>
-              {renderHeader('More Details', 'Tell us a bit more about yourself.')}
-              <View className="space-y-4">
-                <AppTextInput label="Address" value={address} onChangeText={setAddress} multiline />
-                <View className="flex-row gap-4">
-                  <AppTextInput
-                    label="Occupation"
-                    value={occupation}
-                    onChangeText={setOccupation}
-                    containerClassName="flex-1"
-                  />
-                  <AppTextInput
-                    label="Monthly Income"
-                    value={incomeRange}
-                    onChangeText={setIncomeRange}
-                    containerClassName="flex-1"
-                  />
-                </View>
-                <AppTextInput
-                  label="Source of funds"
-                  value={sourceOfFunds}
-                  onChangeText={setSourceOfFunds}
-                />
-                <AppTextInput
-                  label="Purpose of Account"
-                  value={purpose}
-                  onChangeText={setPurpose}
-                />
-                <AppButton title="Next Step" loading={isLoading} onPress={handleProfileSubmit} />
-              </View>
-            </StepWrapper>
+            <Onboarding.SetPinStep2
+              visible={step === 'CONFIRM_PIN'}
+              pin={confirmPin}
+              onPinChange={setConfirmPin}
+              onComplete={(completedPin) => {
+                if (completedPin === pin) {
+                  handlePinSubmit(completedPin);
+                } else {
+                  Alert.alert('PIN Mismatch', 'Codes do not match. Please try again.');
+                  setConfirmPin('');
+                }
+              }}
+              onBack={() => {
+                setPin('');
+                setConfirmPin('');
+                setStep('SET_PIN');
+              }}
+            />
 
-            {/* STEP: SET_PASSWORD */}
-            <StepWrapper visible={step === 'SET_PASSWORD'}>
-              {renderHeader('Account Password', 'Create a password to secure your login.')}
-              <View className="space-y-4">
-                <AppTextInput
-                  label="Password"
-                  secureTextEntry
-                  value={password}
-                  onChangeText={setPassword}
-                />
-                <AppTextInput
-                  label="Confirm Password"
-                  secureTextEntry
-                  value={confirmPassword}
-                  onChangeText={setConfirmPassword}
-                  error={
-                    password && confirmPassword && password !== confirmPassword
-                      ? 'Passwords do not match'
-                      : ''
-                  }
-                />
-                <AppButton
-                  title="Continue"
-                  loading={isLoading}
-                  disabled={password.length < 8 || password !== confirmPassword}
-                  onPress={handlePasswordSubmit}
-                />
-              </View>
-            </StepWrapper>
-
-            {/* STEP: SET_PIN */}
-            <StepWrapper visible={step === 'SET_PIN'}>
-              {renderHeader('Security PIN', 'Set a 6-digit PIN for transactions.')}
-              <AppTextInput
-                label="Transaction PIN"
-                maxLength={6}
-                keyboardType="number-pad"
-                secureTextEntry
-                value={pin}
-                onChangeText={setPin}
-                placeholder="6 digits"
-              />
-              <AppButton
-                title="Finish & Bind Device"
-                className="mt-8"
-                loading={isLoading}
-                disabled={pin.length !== 6}
-                onPress={handlePinSubmit}
-              />
-            </StepWrapper>
-
-            {/* STEP: SUCCESS */}
-            <StepWrapper visible={step === 'SUCCESS'}>
-              <View className="flex-1 items-center justify-center min-h-[500]">
-                <Image
-                  source={require('../../../assets/images/onboarding_success_1776536303717.png')}
-                  className="w-56 h-56 mb-8"
-                />
-                <Text className="text-3xl font-manrope font-black text-center mb-4">
-                  Registration Validated!
-                </Text>
-                <Text className="text-on-surfaceVariant text-center mb-12">
-                  Your account is active and device is securely bound.
-                </Text>
-                <AppButton
-                  title="Enter Wallet"
-                  className="w-full"
-                  onPress={() => router.replace('/(tabs)')}
-                />
-              </View>
-            </StepWrapper>
+            <Onboarding.SuccessStep
+              visible={step === 'SUCCESS'}
+              onEnterWallet={async () => {
+                await reset(); // ล้าง registration_token และสถานะเดิมทั้งหมด
+                router.replace('/login'); // ย้อนกลับไปหน้า Login เพื่อเริ่มใหม่
+              }}
+            />
           </ScrollView>
 
           {/* Site Branding */}

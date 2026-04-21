@@ -65,6 +65,7 @@ export const useRegistrationStore = create<RegistrationStore>((set, get) => ({
       );
 
       const { state, phoneNumber, ocrData, profile } = response.data;
+      console.log(`[Registration] Status synced: ${state} (${phoneNumber || 'No phone'})`);
 
       set({
         currentState: state,

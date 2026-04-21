@@ -14,6 +14,7 @@ import {
 } from 'lucide-react-native';
 import { MotiView } from 'moti';
 import { useRouter } from 'expo-router';
+import { useAuthStore } from '@/store/auth';
 
 // Mock User Data
 const MOCK_USER = {
@@ -23,6 +24,7 @@ const MOCK_USER = {
 };
 
 export default function SettingsScreen() {
+  const { logout } = useAuthStore();
   const router = useRouter();
 
   // States
@@ -30,9 +32,15 @@ export default function SettingsScreen() {
   const [biometrics, setBiometrics] = useState(true);
   const [pushNotifs, setPushNotifs] = useState(true);
 
-  const handleLogout = () => {
-    // ใส่ Logic Logout ตรงนี้
-    router.replace('/(auth)/login' as any);
+  const handleLogout = async () => {
+    try {
+      await logout();
+      router.replace('/(auth)/login' as any);
+    } catch (err) {
+      console.error('[Profile] Logout failed:', err);
+      // Fallback redirect
+      router.replace('/(auth)/login' as any);
+    }
   };
 
   return (
