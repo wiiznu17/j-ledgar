@@ -30,7 +30,7 @@ This is the recommended workflow for active development. It uses Docker for infr
 
 ### 1. Start Infrastructure
 ```bash
-docker compose -f docker-compose.yml -f docker-compose.dev.yml up -d postgres redis kafka minio zookeeper
+docker compose -f docker-compose.yml -f docker-compose.dev.yml up -d postgres redis kafka zookeeper
 ```
 
 ### 2. Initialize Databases (First Time Only)
