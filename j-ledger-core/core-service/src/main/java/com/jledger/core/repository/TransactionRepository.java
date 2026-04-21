@@ -62,4 +62,13 @@ public interface TransactionRepository extends JpaRepository<Transaction, UUID> 
 
     @Query("SELECT DISTINCT t.toAccountId FROM Transaction t WHERE t.fromAccountId = :userId AND t.createdAt >= :since")
     List<UUID> findDistinctToAccountIdsByFromAccountIdAndCreatedAtAfter(@Param("userId") UUID userId, @Param("since") ZonedDateTime since);
+
+    @Query("SELECT t FROM Transaction t WHERE t.fromAccountId = :accountId AND t.createdAt >= :since")
+    List<Transaction> findByFromAccountIdAndCreatedAtAfter(@Param("accountId") UUID accountId, @Param("since") ZonedDateTime since);
+
+    // Data retention methods
+    long countByCreatedAtBefore(ZonedDateTime cutoffDate);
+
+    @Modifying(flushAutomatically = true, clearAutomatically = true)
+    int deleteByCreatedAtBefore(ZonedDateTime cutoffDate);
 }

@@ -60,6 +60,8 @@ interface AccessTokenPayload {
   jti: string;
   scope?: 'wallet';
   exp?: number;
+  ip?: string;
+  ua?: string;
 }
 
 interface RefreshTokenPayload {
@@ -69,6 +71,8 @@ interface RefreshTokenPayload {
   typ: 'refresh';
   jti: string;
   exp?: number;
+  ip?: string;
+  ua?: string;
 }
 
 interface RegistrationTokenPayload {
@@ -771,6 +775,7 @@ export class AuthService {
           userId: user.id,
           deviceId: device.id,
         },
+        undefined,
         tx,
       );
       return pair.response;
@@ -829,6 +834,7 @@ export class AuthService {
           userId: session.userId,
           deviceId: session.deviceId,
         },
+        undefined,
         tx,
       );
 
@@ -991,6 +997,7 @@ export class AuthService {
 
   private async issueTokenPair(
     input: { userId: string; deviceId: string },
+    context?: { ip?: string; userAgent?: string },
     tx?: Prisma.TransactionClient,
   ) {
     const prisma = tx ?? this.prisma;
@@ -1006,6 +1013,8 @@ export class AuthService {
       typ: 'access',
       jti: accessJti,
       scope: 'wallet',
+      ip: context?.ip,
+      ua: context?.userAgent,
     };
     const refreshPayload: RefreshTokenPayload = {
       sub: input.userId,
@@ -1013,6 +1022,8 @@ export class AuthService {
       did: input.deviceId,
       typ: 'refresh',
       jti: refreshJti,
+      ip: context?.ip,
+      ua: context?.userAgent,
     };
 
     const [accessToken, refreshToken] = await Promise.all([
@@ -1036,6 +1047,8 @@ export class AuthService {
         refreshTokenHash,
         status: SessionStatus.ACTIVE,
         expiresAt: new Date(Date.now() + REFRESH_TOKEN_TTL_SECONDS * 1000),
+        ipAddress: context?.ip,
+        userAgent: context?.userAgent,
       },
     });
 

@@ -7,6 +7,7 @@ import java.util.List;
 import java.util.UUID;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.repository.query.Param;
 
 public interface SuspiciousActivityRepository extends JpaRepository<SuspiciousActivity, UUID> {
@@ -22,4 +23,10 @@ public interface SuspiciousActivityRepository extends JpaRepository<SuspiciousAc
         @Param("userId") UUID userId,
         @Param("since") ZonedDateTime since
     );
+
+    // Data retention methods
+    long countByCreatedAtBefore(ZonedDateTime cutoffDate);
+
+    @Modifying(flushAutomatically = true, clearAutomatically = true)
+    int deleteByCreatedAtBefore(ZonedDateTime cutoffDate);
 }

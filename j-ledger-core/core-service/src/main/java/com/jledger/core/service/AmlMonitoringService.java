@@ -170,6 +170,49 @@ public class AmlMonitoringService {
         return suspiciousActivityRepository.findByUserIdOrderByCreatedAtDesc(userId);
     }
 
+    /**
+     * Records suspicious activity for account takeover detection.
+     *
+     * @param userId the user ID
+     * @param activityType the activity type
+     * @param description the description
+     * @param transferId the transfer ID (if applicable)
+     */
+    public void recordSuspiciousActivity(
+            UUID userId,
+            String activityType,
+            String description,
+            UUID transferId
+    ) {
+        SuspiciousActivity activity = SuspiciousActivity.builder()
+                .userId(userId)
+                .transferId(transferId)
+                .activityType(SuspiciousActivityType.valueOf(activityType))
+                .status(SuspiciousActivityStatus.FLAGGED)
+                .description(description)
+                .riskScore(50) // Default risk score for account takeover patterns
+                .metadata(buildMetadataForAccountTakeover(activityType, description, transferId))
+                .build();
+
+        suspiciousActivityRepository.save(activity);
+        log.warn("Suspicious activity recorded for account takeover detection: userId={}, type={}", userId, activityType);
+    }
+
+    private String buildMetadataForAccountTakeover(String activityType, String description, UUID transferId) {
+        try {
+            Map<String, Object> metadata = new HashMap<>();
+            metadata.put("activityType", activityType);
+            metadata.put("description", description);
+            metadata.put("transferId", transferId != null ? transferId.toString() : null);
+            metadata.put("detectedAt", ZonedDateTime.now().toString());
+            metadata.put("detectionSource", "ACCOUNT_TAKEOVER_DETECTION");
+            return objectMapper.writeValueAsString(metadata);
+        } catch (Exception e) {
+            log.error("Failed to build metadata for account takeover detection", e);
+            return "{}";
+        }
+    }
+
     private static class SuspiciousActivityDetection {
         SuspiciousActivityType type;
         String description;
