@@ -28,8 +28,7 @@ export const adminApi = {
   transactions: {
     findAll: (query: TransactionQuery) =>
       apiClient.get<PaginatedResponse<any>>('/admin/transactions', { params: query as any }),
-    findOne: (id: string) =>
-      apiClient.get<any>(`/admin/transactions/${id}`),
+    findOne: (id: string) => apiClient.get<any>(`/admin/transactions/${id}`),
     findLedgerEntries: (transactionId: string) =>
       apiClient.get<any>(`/admin/transactions/${transactionId}/ledger-entries`),
     getAccountTransactions: (accountId: string, query: TransactionQuery) =>
@@ -40,8 +39,7 @@ export const adminApi = {
   aml: {
     findAll: (query: any) =>
       apiClient.get<PaginatedResponse<any>>('/admin/aml/suspicious-activities', { params: query }),
-    findOne: (id: string) =>
-      apiClient.get<any>(`/admin/aml/suspicious-activities/${id}`),
+    findOne: (id: string) => apiClient.get<any>(`/admin/aml/suspicious-activities/${id}`),
     updateStatus: (id: string, data: { status: string; notes?: string }) =>
       apiClient.put<any>(`/admin/aml/suspicious-activities/${id}/status`, data),
     reportToAMLO: (id: string, data: { reportDetails: string }) =>
@@ -52,8 +50,7 @@ export const adminApi = {
   accounts: {
     findAll: (query: any) =>
       apiClient.get<PaginatedResponse<any>>('/admin/accounts', { params: query }),
-    findOne: (id: string) =>
-      apiClient.get<any>(`/admin/accounts/${id}`),
+    findOne: (id: string) => apiClient.get<any>(`/admin/accounts/${id}`),
     updateStatus: (id: string, data: { status: string; reason?: string }) =>
       apiClient.put<any>(`/admin/accounts/${id}/status`, data),
     getAccountTransactions: (accountId: string, query: any) =>
@@ -66,24 +63,18 @@ export const adminApi = {
   reconciliation: {
     findAll: (query: any) =>
       apiClient.get<PaginatedResponse<any>>('/admin/reconciliation/reports', { params: query }),
-    findOne: (id: string) =>
-      apiClient.get<any>(`/admin/reconciliation/reports/${id}`),
-    runReconciliation: () =>
-      apiClient.post<any>('/admin/reconciliation/run'),
+    findOne: (id: string) => apiClient.get<any>(`/admin/reconciliation/reports/${id}`),
+    runReconciliation: () => apiClient.post<any>('/admin/reconciliation/run'),
   },
 
   // Users
   users: {
-    findAllWallet: () =>
-      apiClient.get<any[]>('/users/wallet'),
-    findAll: () =>
-      apiClient.get<any[]>('/users'),
+    findAllWallet: () => apiClient.get<any[]>('/users/wallet'),
+    findAll: () => apiClient.get<any[]>('/users'),
     create: (data: { email: string; password: string; role: string }) =>
       apiClient.post<any>('/users', data),
-    remove: (id: string) =>
-      apiClient.delete<any>(`/users/${id}`),
-    freeze: (id: string) =>
-      apiClient.post<any>(`/users/${id}/freeze`),
+    remove: (id: string) => apiClient.delete<any>(`/users/${id}`),
+    freeze: (id: string) => apiClient.post<any>(`/users/${id}/freeze`),
   },
 
   // Audit
