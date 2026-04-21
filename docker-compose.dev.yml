@@ -6,3 +6,16 @@ services:
   redis:
     ports:
       - "6379:6379"
+
+  pgadmin:
+    image: dpage/pgadmin4
+    container_name: jledger-pgadmin
+    environment:
+      PGADMIN_DEFAULT_EMAIL: admin@jledger.com
+      PGADMIN_DEFAULT_PASSWORD: admin_password
+    ports:
+      - "5050:80"
+    networks:
+      - jledger-network
+    depends_on:
+      - postgres

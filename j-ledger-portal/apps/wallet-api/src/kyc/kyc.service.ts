@@ -69,13 +69,12 @@ export class KycService {
     const encryptedName = extraction.firstName && extraction.lastName 
       ? this.encryptPii(`${extraction.firstName} ${extraction.lastName}`) 
       : null;
+    const encryptedThaiName = extraction.thaiName ? this.encryptPii(extraction.thaiName) : null;
 
     // 5. AWS Liveness Session Initialization
     const livenessSessionId = await this.faceProvider.createLivenessSession!();
 
     // 6. Threshold Branching (Manual Review)
-    // In Google Vision, detections[0].confidence is available if using specific models, 
-    // for this refined logic we'll check number extraction success as a proxy or use raw OCR score if available.
     const isLowConfidence = !idCardNumber || idCardNumber.length < 13; 
     const reviewNote = isLowConfidence ? 'OCR failed to extract complete ID number' : null;
 
@@ -86,22 +85,32 @@ export class KycService {
         update: {
           idCardNumberEncrypted: encryptedId,
           idCardName: encryptedName,
+          thaiNameEncrypted: encryptedThaiName,
+          prefix: extraction.prefix,
           idCardToken: idCardToken,
           idCardImageUrl: idCardUrl,
           idCardImageSha256: idCardHash,
           livenessSessionId,
+          idCardIssueDate: extraction.idCardIssueDate ? this.parseDate(extraction.idCardIssueDate) : null,
+          idCardExpiryDate: extraction.idCardExpiryDate ? this.parseDate(extraction.idCardExpiryDate) : null,
+          religion: extraction.religion,
           reviewNote,
-          ocrConfidence: isLowConfidence ? 0.5 : 0.95, // Simplified score
+          ocrConfidence: isLowConfidence ? 0.5 : 0.95,
         },
         create: {
           userId: claims.sub,
           verificationStatus: KycVerificationStatus.PENDING,
           idCardNumberEncrypted: encryptedId,
           idCardName: encryptedName,
+          thaiNameEncrypted: encryptedThaiName,
+          prefix: extraction.prefix,
           idCardToken: idCardToken,
           idCardImageUrl: idCardUrl,
           idCardImageSha256: idCardHash,
           livenessSessionId,
+          idCardIssueDate: extraction.idCardIssueDate ? this.parseDate(extraction.idCardIssueDate) : null,
+          idCardExpiryDate: extraction.idCardExpiryDate ? this.parseDate(extraction.idCardExpiryDate) : null,
+          religion: extraction.religion,
           reviewNote,
           ocrConfidence: isLowConfidence ? 0.5 : 0.95,
         },
@@ -122,13 +131,39 @@ export class KycService {
       regToken,
       nextState: RegistrationState.ID_CARD_UPLOADED,
       extractedData: {
-        idCardNumber: this.maskIdCard(idCardNumber),
+        idCardNumber: idCardNumber,
         firstName: extraction.firstName,
         lastName: extraction.lastName,
+        thaiName: extraction.thaiName,
+        prefix: extraction.prefix,
         dateOfBirth: extraction.dateOfBirth,
+        idCardIssueDate: extraction.idCardIssueDate,
+        idCardExpiryDate: extraction.idCardExpiryDate,
+        religion: extraction.religion,
       },
       livenessSessionId,
     };
+  }
+
+  private parseDate(dateStr: string): Date | null {
+    // Expected format: DD/MM/YYYY
+    const parts = dateStr.split('/');
+    if (parts.length !== 3) return null;
+    const day = parts[0]!;
+    const month = parts[1]!;
+    const year = parts[2]!;
+    const d = new Date(parseInt(year), this.mapMonth(month), parseInt(day));
+    return isNaN(d.getTime()) ? null : d;
+  }
+
+  private mapMonth(monthStr: string): number {
+    const thaiMonths = ['ม.ค.', 'ก.พ.', 'มี.ค.', 'เม.ย.', 'พ.ค.', 'มิ.ย.', 'ก.ค.', 'ส.ค.', 'ก.ย.', 'ต.ค.', 'พ.ย.', 'ธ.ค.'];
+    const engMonths = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+    
+    let idx = thaiMonths.findIndex(m => monthStr.includes(m));
+    if (idx === -1) idx = engMonths.findIndex(m => monthStr.toLowerCase().startsWith(m.toLowerCase()));
+    
+    return idx === -1 ? 0 : idx;
   }
 
   /**

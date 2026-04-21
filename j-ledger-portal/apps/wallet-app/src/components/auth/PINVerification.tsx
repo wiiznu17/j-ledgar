@@ -203,7 +203,7 @@ export const PINVerification: React.FC<PINVerificationProps> = ({
         ))}
       </View>
 
-        {/* PIN Pad */}
+      {/* PIN Pad */}
       {isVerifying ? (
         <View className="w-full items-center py-8">
           <ActivityIndicator size="large" color="#f48fb1" />
@@ -224,8 +224,7 @@ export const PINVerification: React.FC<PINVerificationProps> = ({
         >
           <View className="bg-orange-50 px-6 py-3 rounded-full border border-orange-100">
             <Text className="text-xs font-manrope font-bold text-orange-600">
-              {MAX_ATTEMPTS - attempts} attempt{MAX_ATTEMPTS - attempts !== 1 ? 's' : ''}{' '}
-              remaining
+              {MAX_ATTEMPTS - attempts} attempt{MAX_ATTEMPTS - attempts !== 1 ? 's' : ''} remaining
             </Text>
           </View>
         </View>

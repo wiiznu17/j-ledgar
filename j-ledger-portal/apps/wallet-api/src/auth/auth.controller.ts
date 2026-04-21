@@ -21,6 +21,8 @@ import {
   RefreshTokenDto,
   RegisterCredentialsDto,
   RegisterInitDto,
+  RegisterPasswordDto,
+  RegisterPinDto,
   RegisterProfileDto,
   RegisterVerifyOtpDto,
 } from './dto/auth.dto';
@@ -88,17 +90,38 @@ export class AuthController {
     });
   }
 
-  @Post('register/credentials')
+  @Post('register/password')
   @HttpCode(HttpStatus.OK)
-  async registerCredentials(
+  async registerPassword(
     @Headers('authorization') authorization: string | undefined,
-    @Body() body: RegisterCredentialsDto,
+    @Body() body: RegisterPasswordDto,
     @Req() req: Request,
   ) {
-    return this.authService.registerCredentials(authorization, body, {
+    return this.authService.registerPassword(authorization, body, {
       ip: req.ip,
       userAgent: this.singleHeader(req.headers['user-agent']),
     });
+  }
+
+  @Post('register/pin')
+  @HttpCode(HttpStatus.OK)
+  async registerPin(
+    @Headers('authorization') authorization: string | undefined,
+    @Body() body: RegisterPinDto,
+    @Req() req: Request,
+  ) {
+    return this.authService.registerPin(authorization, body, {
+      ip: req.ip,
+      userAgent: this.singleHeader(req.headers['user-agent']),
+    });
+  }
+
+  @Post('register/status')
+  @HttpCode(HttpStatus.OK)
+  async getRegisterStatus(
+    @Headers('authorization') authorization: string | undefined,
+  ) {
+    return this.authService.getRegistrationStatus(authorization);
   }
 
   @Post('register/complete')

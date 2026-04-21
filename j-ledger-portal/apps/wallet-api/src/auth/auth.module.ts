@@ -39,11 +39,20 @@ import { REDIS_CLIENT } from './auth.constants';
       useFactory: (configService: ConfigService) => {
         const address = configService.get<string>('JLEDGER_REDIS_ADDRESS', 'redis://localhost:6379');
         const password = configService.get<string>('JLEDGER_REDIS_PASSWORD');
-        const redisOptions: any = {};
-        if (password) {
-          redisOptions.password = password;
+        
+        // หากไม่มีรหัสผ่านและระบุแค่ address ให้ ioredis จัดการเอง
+        if (!password) {
+          return new Redis(address);
         }
-        return new Redis(address, redisOptions);
+
+        // หากมีรหัสผ่าน ให้พยายามแยก host/port จาก address (กรณีรัน local มักจะเป็น localhost:6379)
+        const url = new URL(address.replace('redis://', 'http://')); // URL helper needs a protocol it understands
+        return new Redis({
+          host: url.hostname || 'localhost',
+          port: parseInt(url.port) || 6379,
+          password: password,
+          maxRetriesPerRequest: null,
+        });
       },
     },
     AuthService, 

@@ -29,6 +29,27 @@ export class RegisterVerifyOtpDto {
   otp!: string;
 }
 
+export class RegisterPasswordDto {
+  @IsString()
+  @IsNotEmpty()
+  @MinLength(8)
+  password!: string;
+}
+
+export class RegisterPinDto {
+  @IsString()
+  @Matches(/^\d{6}$/)
+  pin!: string;
+
+  @IsString()
+  @IsNotEmpty()
+  deviceId!: string;
+
+  @IsString()
+  @IsOptional()
+  deviceName?: string;
+}
+
 export class AcceptTermsDto {
   @IsString()
   @IsNotEmpty()

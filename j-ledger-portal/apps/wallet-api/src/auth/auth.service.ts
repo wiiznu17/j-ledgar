@@ -4,6 +4,7 @@ import {
   Injectable,
   UnauthorizedException,
   Inject,
+  BadRequestException,
 } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import { ConfigService } from '@nestjs/config';
@@ -18,6 +19,7 @@ import {
   RegistrationState,
   SessionStatus,
   UserStatus,
+  UserDevice,
 } from '@prisma/client-wallet';
 import * as bcrypt from 'bcrypt';
 import { randomUUID } from 'crypto';
@@ -33,6 +35,8 @@ import {
   RefreshTokenDto,
   RegisterCredentialsDto,
   RegisterInitDto,
+  RegisterPasswordDto,
+  RegisterPinDto,
   RegisterProfileDto,
   RegisterVerifyOtpDto,
 } from './dto/auth.dto';
@@ -219,15 +223,57 @@ export class AuthService {
       userAgent: context?.userAgent,
     });
 
+      return {
+        regToken: await this.signRegistrationToken(claims.sub, RegistrationState.PROFILE_COMPLETED),
+        nextState: RegistrationState.PROFILE_COMPLETED,
+      };
+    }
+
+  async getRegistrationStatus(authorization: string | undefined) {
+    const token = this.extractBearerToken(authorization);
+    if (!token) throw new UnauthorizedException('Registration token is required');
+
+    let payload: RegistrationTokenPayload;
+    try {
+      payload = await this.jwtService.verifyAsync<RegistrationTokenPayload>(token, {
+        secret: this.registrationSecret,
+      });
+    } catch {
+      throw new UnauthorizedException('Invalid registration token');
+    }
+
+    const user = await this.prisma.user.findUnique({
+      where: { id: payload.sub },
+      include: { profile: true, kycData: true },
+    });
+
+    if (!user) throw new UnauthorizedException('User not found');
+
+    // Pre-fill data for mobile app
+    const ocrData = user.kycData ? {
+      firstName: user.kycData.idCardName?.split(' ')[0] || '',
+      lastName: user.kycData.idCardName?.split(' ').slice(1).join(' ') || '',
+    } : null;
+
     return {
-      regToken: await this.signRegistrationToken(claims.sub, RegistrationState.PROFILE_COMPLETED),
-      nextState: RegistrationState.PROFILE_COMPLETED,
+      state: user.registrationState,
+      phoneNumber: user.phoneNumber,
+      ocrData,
+      profile: user.profile ? {
+        firstName: user.profile.firstName,
+        lastName: user.profile.lastName,
+        address: user.profile.address,
+        occupation: user.profile.occupation,
+        incomeRange: user.profile.incomeRange,
+        sourceOfFunds: user.profile.sourceOfFunds,
+        purposeOfAccount: user.profile.purposeOfAccount,
+      } : null,
     };
   }
 
-  async registerCredentials(
+  async registerPassword(
     authorization: string | undefined,
-    dto: RegisterCredentialsDto,
+    dto: RegisterPasswordDto,
     context?: { ip?: string; userAgent?: string },
   ) {
     const claims = await this.verifyRegistrationToken(
@@ -235,6 +281,35 @@ export class AuthService {
       RegistrationState.PROFILE_COMPLETED,
     );
     const passwordHash = await bcrypt.hash(dto.password, 10);
+
+    await this.prisma.user.update({
+      where: { id: claims.sub },
+      data: {
+        passwordHash,
+        registrationState: RegistrationState.PASSWORD_SET,
+      },
+    });
+
+    await this.logSecurityEvent(claims.sub, 'REGISTER_PASSWORD_SET', {
+      ipAddress: context?.ip,
+      userAgent: context?.userAgent,
+    });
+
+    return {
+      regToken: await this.signRegistrationToken(claims.sub, RegistrationState.PASSWORD_SET),
+      nextState: RegistrationState.PASSWORD_SET,
+    };
+  }
+
+  async registerPin(
+    authorization: string | undefined,
+    dto: RegisterPinDto,
+    context?: { ip?: string; userAgent?: string },
+  ) {
+    const claims = await this.verifyRegistrationToken(
+      authorization,
+      RegistrationState.PASSWORD_SET,
+    );
     const pinHash = await bcrypt.hash(dto.pin, 10);
 
     await this.prisma.$transaction(async (tx) => {
@@ -259,6 +334,7 @@ export class AuthService {
         },
       });
 
+      // Ensure only this device is trusted for now
       await tx.userDevice.updateMany({
         where: {
           userId: claims.sub,
@@ -271,7 +347,6 @@ export class AuthService {
       await tx.user.update({
         where: { id: claims.sub },
         data: {
-          passwordHash,
           pinHash,
           currentTrustedDeviceId: device.id,
           registrationState: RegistrationState.CREDENTIALS_SET,
@@ -279,7 +354,7 @@ export class AuthService {
       });
     });
 
-    await this.logSecurityEvent(claims.sub, 'REGISTER_CREDENTIALS_SET', {
+    await this.logSecurityEvent(claims.sub, 'REGISTER_PIN_SET', {
       ipAddress: context?.ip,
       userAgent: context?.userAgent,
       deviceId: dto.deviceId,
@@ -303,9 +378,9 @@ export class AuthService {
     const user = await this.prisma.user.findUnique({
       where: { id: claims.sub },
       include: {
-        devices: true,
         kycData: true,
         profile: true,
+        devices: true,
       },
     });
 
@@ -313,7 +388,22 @@ export class AuthService {
       throw new UnauthorizedException('User not found');
     }
 
-    const isKycApproved = user.kycData?.verificationStatus === KycVerificationStatus.APPROVED;
+    // DEEP VALIDATION (Requirement 1)
+    if (!user.profile || !user.kycData || !user.passwordHash || !user.pinHash) {
+      throw new BadRequestException('Incomplete registration data');
+    }
+
+    // MEDIA AVAILABILITY CHECK (Requirement 3)
+    if (!user.kycData.idCardImageUrl || !user.kycData.selfieImageUrl) {
+      // Rollback status to allow re-scanning if images are lost
+      await this.prisma.user.update({
+        where: { id: claims.sub },
+        data: { registrationState: RegistrationState.OTP_VERIFIED },
+      });
+      throw new BadRequestException('KYC images missing. Please re-scan.');
+    }
+
+    const isKycApproved = user.kycData.verificationStatus === KycVerificationStatus.APPROVED;
 
     await this.prisma.$transaction(async (tx) => {
       await tx.user.update({
@@ -347,7 +437,7 @@ export class AuthService {
       });
     });
 
-    if (user.kycData?.verificationStatus !== KycVerificationStatus.APPROVED) {
+    if (user.kycData.verificationStatus !== KycVerificationStatus.APPROVED) {
       return {
         registrationStatus: 'PENDING_APPROVAL',
         message: 'Your registration is under review. You should get approval within 24 hour via SMS.',
@@ -355,7 +445,7 @@ export class AuthService {
     }
 
     const trustedDevice =
-      user.devices.find((device) => device.trustLevel === DeviceTrustLevel.TRUSTED) ??
+      user.devices.find((device: UserDevice) => device.trustLevel === DeviceTrustLevel.TRUSTED) ??
       user.devices[0];
     if (!trustedDevice) {
       throw new ConflictException('No device found for completed registration');
@@ -877,7 +967,9 @@ export class AuthService {
       throw new UnauthorizedException('OTP_RATE_LIMITED');
     }
 
-    const valid = await bcrypt.compare(otp, challenge.otpHash);
+    console.log(`[AuthDebug] Verifying OTP for challenge ${challengeId}. Received: "${otp}", Expected Hash: ${challenge.otpHash}`);
+    const valid = await bcrypt.compare(otp.trim(), challenge.otpHash);
+    console.log(`[AuthDebug] Bcrypt compare result: ${valid}`);
     if (!valid) {
       const attempts = challenge.attempts + 1;
       await this.prisma.otpChallenge.update({

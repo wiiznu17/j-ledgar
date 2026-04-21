@@ -2,7 +2,7 @@
 CREATE TYPE "UserStatus" AS ENUM ('PENDING', 'ACTIVE', 'LOCKED', 'FROZEN', 'CLOSED');
 
 -- CreateEnum
-CREATE TYPE "RegistrationState" AS ENUM ('PENDING_OTP', 'OTP_VERIFIED', 'TC_ACCEPTED', 'KYC_VERIFIED', 'PROFILE_COMPLETED', 'CREDENTIALS_SET', 'COMPLETED');
+CREATE TYPE "RegistrationState" AS ENUM ('PENDING_OTP', 'OTP_VERIFIED', 'TC_ACCEPTED', 'ID_CARD_UPLOADED', 'KYC_VERIFIED', 'PROFILE_COMPLETED', 'PASSWORD_SET', 'CREDENTIALS_SET', 'COMPLETED');
 
 -- CreateEnum
 CREATE TYPE "DeviceTrustLevel" AS ENUM ('TRUSTED', 'UNTRUSTED', 'REVOKED');
@@ -122,6 +122,9 @@ CREATE TABLE "kyc_data" (
     "id" TEXT NOT NULL,
     "userId" TEXT NOT NULL,
     "verificationStatus" "KycVerificationStatus" NOT NULL DEFAULT 'PENDING',
+    "idCardName" TEXT,
+    "thaiNameEncrypted" TEXT,
+    "prefix" VARCHAR(32),
     "idCardNumberEncrypted" TEXT,
     "idCardToken" VARCHAR(128),
     "idCardImageUrl" TEXT,
@@ -129,6 +132,13 @@ CREATE TABLE "kyc_data" (
     "idCardImageSha256" CHAR(64),
     "selfieImageSha256" CHAR(64),
     "faceMatchScore" DOUBLE PRECISION,
+    "ocrConfidence" DOUBLE PRECISION,
+    "livenessSessionId" VARCHAR(255),
+    "idCardIssueDate" TIMESTAMP(3),
+    "idCardExpiryDate" TIMESTAMP(3),
+    "religion" VARCHAR(64),
+    "reviewNote" TEXT,
+    "attemptCount" INTEGER NOT NULL DEFAULT 0,
     "providerReference" VARCHAR(255),
     "verifiedAt" TIMESTAMP(3),
     "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,

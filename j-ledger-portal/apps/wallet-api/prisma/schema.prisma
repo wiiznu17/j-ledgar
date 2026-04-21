@@ -36,6 +36,7 @@ enum RegistrationState {
   ID_CARD_UPLOADED
   KYC_VERIFIED
   PROFILE_COMPLETED
+  PASSWORD_SET
   CREDENTIALS_SET
   COMPLETED
 
@@ -242,8 +243,10 @@ model KycData {
   userId                String                @unique
   user                  User                  @relation(fields: [userId], references: [id], onDelete: Cascade)
   verificationStatus    KycVerificationStatus @default(PENDING)
-  idCardNumberEncrypted String?               @db.Text
   idCardName            String?               @db.Text
+  thaiNameEncrypted     String?               @db.Text
+  prefix                String?               @db.VarChar(32)
+  idCardNumberEncrypted String?               @db.Text
   idCardToken           String?               @unique @db.VarChar(128)
   idCardImageUrl        String?
   selfieImageUrl        String?
@@ -252,6 +255,9 @@ model KycData {
   faceMatchScore        Float?
   ocrConfidence         Float?
   livenessSessionId     String?               @db.VarChar(255)
+  idCardIssueDate       DateTime?
+  idCardExpiryDate      DateTime?
+  religion              String?               @db.VarChar(64)
   reviewNote            String?               @db.Text
   attemptCount          Int                   @default(0)
   providerReference     String?               @db.VarChar(255)

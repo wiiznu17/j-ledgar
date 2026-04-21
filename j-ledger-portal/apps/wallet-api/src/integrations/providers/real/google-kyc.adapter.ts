@@ -31,18 +31,29 @@ export class GoogleKycAdapter implements IKycProvider {
       const fullText = detections[0].description || '';
       this.logger.debug(`Extracted Full Text: ${fullText.replace(/\n/g, ' ')}`);
 
-      // 1. Extract 13-digit ID Number (Pattern: x xxxx xxxxx xx x or xxxxxxxxxxxxx)
+      // 1. Extract 13-digit ID Number
       const idMatch = fullText.match(/\d\s?\d{4}\s?\d{5}\s?\d{2}\s?\d/);
       const idCardNumber = idMatch ? idMatch[0].replace(/\s/g, '') : '';
 
-      // 2. Extract Names (This is heuristic-based for Thai IDs which usually have "Name" "Last name" in Eng)
-      // Heuristic: Look for Name/Last Name labels or capitalized words
+      // 2. Extract Names and Prefixes
       const lines = fullText.split('\n');
       let firstName = '';
       let lastName = '';
+      let thaiName = '';
+      let prefix = '';
 
       for (const line of lines) {
-        // Look for common patterns in English on Thai IDs
+        // Thai Name Extraction (Heuristic: Look for Thai characters after label)
+        if (line.includes('ชื่อตัวและชื่อสกุล') || line.match(/[ก-ู] [ก-ู]/)) {
+           const cleaned = line.replace(/ชื่อตัวและชื่อสกุล|[:.-]/gi, '').trim();
+           if (cleaned.match(/^[ก-๙\s]+$/)) {
+             thaiName = cleaned;
+             const prefixMatch = thaiName.match(/^(นาย|นาง|นางสาว|เด็กชาย|เด็กหญิง)/);
+             if (prefixMatch) prefix = prefixMatch[0];
+           }
+        }
+
+        // English Name Extraction
         if (line.includes('Name')) {
           firstName = line.replace(/Name|[:.-]/gi, '').trim();
         }
@@ -51,18 +62,23 @@ export class GoogleKycAdapter implements IKycProvider {
         }
       }
 
-      // 3. Date of Birth
-      // Heuristic: Look for dates in format DD Month YYYY or DD.MM.YYYY
-      const dobMatch = fullText.match(/\d{1,2}\s[A-Za-z]{3,9}\s\d{4}/);
-      const dateOfBirth = dobMatch ? dobMatch[0] : '';
-      
+      // 3. Religion
+      const religionMatch = fullText.match(/ศาสนา\s?([ก-๙]+)/);
+      const religion = religionMatch ? religionMatch[1] : '';
+
+      // 4. Dates (DOB, Issue, Expiry) - Support both Eng and Thai/B.E.
       const extraction: KycExtractionResult = {
         idCardNumber,
         firstName,
         lastName,
-        dateOfBirth,
+        thaiName,
+        prefix,
+        dateOfBirth: this.extractDate(fullText, 'เกิด'),
+        idCardIssueDate: this.extractDate(fullText, 'ออกบัตร'),
+        idCardExpiryDate: this.extractDate(fullText, 'หมดอายุ'),
+        religion,
         address: this.extractAddress(fullText),
-        rawResponse: fullText, // Store raw text for audit/refinement
+        rawResponse: fullText,
       };
 
       if (!extraction.idCardNumber) {
@@ -74,6 +90,25 @@ export class GoogleKycAdapter implements IKycProvider {
       this.logger.error(`Google Vision Error: ${error.message}`);
       throw new InternalServerErrorException('Identity document OCR failed via Google Cloud');
     }
+  }
+
+  private extractDate(text: string, label: string): string {
+    // Look for patterns like 12 ม.ค. 2567 or 12 Jan. 2024
+    const regex = new RegExp(`${label}.*?(\\d{1,2})\\s?([ก-๙A-Za-z.]+)\\s?(\\d{4})`, 'i');
+    const match = text.match(regex);
+    if (!match) return '';
+
+    const day = match[1]!;
+    const month = match[2]!;
+    const yearStr = match[3]!;
+    let year = parseInt(yearStr);
+
+    // Convert B.E. to A.D.
+    if (year > 2400) {
+      year -= 543;
+    }
+
+    return `${day}/${month}/${year}`;
   }
 
   // Placeholder for Face Comparison as Google Vision doesn't do this (Rekognition used instead)

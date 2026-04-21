@@ -2,7 +2,12 @@ export interface KycExtractionResult {
   idCardNumber: string;
   firstName: string;
   lastName: string;
+  thaiName?: string;
+  prefix?: string;
   dateOfBirth: string;
+  idCardIssueDate?: string;
+  idCardExpiryDate?: string;
+  religion?: string;
   address?: string;
   rawResponse?: any;
 }

@@ -1,6 +1,6 @@
 import { useEffect } from 'react';
 import { DarkTheme, DefaultTheme, ThemeProvider } from '@react-navigation/native';
-import { Stack } from 'expo-router';
+import { useRouter, Stack, SplashScreen } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import 'react-native-reanimated';
@@ -17,7 +17,6 @@ import {
   Manrope_700Bold,
   Manrope_800ExtraBold,
 } from '@expo-google-fonts/manrope';
-import * as SplashScreen from 'expo-splash-screen';
 
 // Import NativeWind Global CSS
 import '@/styles/global.css';
@@ -36,7 +35,9 @@ import { BackgroundGradient } from '@/components/common/BackgroundGradient';
 
 export default function RootLayout() {
   const colorScheme = useColorScheme();
-  const initializeAuth = useAuthStore((state) => state.initialize);
+  const router = useRouter();
+
+  const { initialize: initializeAuth, isAuthenticated, isLoading: isAuthLoading } = useAuthStore();
 
   const [fontsLoaded, fontError] = useFonts({
     Manrope_400Regular,
@@ -56,7 +57,16 @@ export default function RootLayout() {
     }
   }, [fontsLoaded, fontError]);
 
-  if (!fontsLoaded && !fontError) {
+  // Auth Protection Logic
+  useEffect(() => {
+    if (!fontsLoaded || isAuthLoading) return;
+
+    if (!isAuthenticated) {
+      router.replace('/(auth)/login');
+    }
+  }, [isAuthenticated, isAuthLoading, fontsLoaded]);
+
+  if ((!fontsLoaded && !fontError) || isAuthLoading) {
     return null;
   }
 
