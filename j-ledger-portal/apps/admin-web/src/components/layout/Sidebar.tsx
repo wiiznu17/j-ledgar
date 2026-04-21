@@ -2,6 +2,7 @@
 
 import {
   Activity,
+  AlertTriangle,
   CreditCard,
   LayoutDashboard,
   LogOut,
@@ -30,6 +31,12 @@ interface SidebarProps {
 const navigation: NavigationItem[] = [
   { name: 'Dashboard', href: '/dashboard', icon: LayoutDashboard },
   { name: 'Transactions', href: '/transactions', icon: Activity },
+  {
+    name: 'AML Monitor',
+    href: '/aml',
+    icon: AlertTriangle,
+    roles: ['SUPER_ADMIN', 'COMPLIANCE_OFFICER'],
+  },
   {
     name: 'Accounts',
     href: '/accounts',
