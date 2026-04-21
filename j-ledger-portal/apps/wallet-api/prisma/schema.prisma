@@ -92,6 +92,31 @@ enum KycReviewStatus {
 }
 
 
+enum SuspiciousActivityType {
+  LARGE_TRANSACTION
+  HIGH_FREQUENCY
+  ROUND_NUMBER
+  RAPID_MOVEMENT
+  HIGH_RISK_JURISDICTION
+  MULTIPLE_RECIPIENTS
+  STRUCTURING
+  UNUSUAL_PATTERN
+
+  @@schema("wallet_schema")
+}
+
+
+enum SuspiciousActivityStatus {
+  FLAGGED
+  UNDER_REVIEW
+  CONFIRMED_SUSPICIOUS
+  CONFIRMED_LEGITIMATE
+  REPORTED_TO_AMLO
+
+  @@schema("wallet_schema")
+}
+
+
 enum SessionStatus {
   ACTIVE
   ROTATED
@@ -178,6 +203,7 @@ model User {
   devices                UserDevice[]
   consents               UserConsent[]
   kycReviews             KycReview[]
+  suspiciousActivities   SuspiciousActivity[]
   sessions               RefreshSession[]
   otpChallenges          OtpChallenge[]
   securityLogs           SecurityLog[]
@@ -257,6 +283,33 @@ model KycReview {
   @@index([reviewStatus])
   @@index([nextReviewDate])
   @@map("kyc_reviews")
+  @@schema("wallet_schema")
+}
+
+
+model SuspiciousActivity {
+  id              String                    @id @default(uuid())
+  userId          String
+  user            User                      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  transferId      String?
+  activityType    SuspiciousActivityType
+  status          SuspiciousActivityStatus  @default(FLAGGED)
+  amount          Float?
+  description     String                    @db.Text
+  riskScore       Int                       @default(50)
+  reviewedAt      DateTime?
+  reviewedBy      String?
+  reportedToAmloAt DateTime?
+  amloReference   String?
+  metadata        Json?
+  createdAt       DateTime                  @default(now())
+  updatedAt       DateTime                  @updatedAt
+
+  @@index([userId])
+  @@index([transferId])
+  @@index([status])
+  @@index([createdAt])
+  @@map("suspicious_activities")
   @@schema("wallet_schema")
 }
 

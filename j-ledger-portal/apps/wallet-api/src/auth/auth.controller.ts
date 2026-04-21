@@ -262,6 +262,28 @@ export class AuthController {
     });
   }
 
+  @UseGuards(JwtAuthGuard)
+  @Get('aml/suspicious-activities')
+  async getSuspiciousActivities(@Req() req: AuthenticatedRequest) {
+    if (!req.user?.sub) {
+      throw new UnauthorizedException('User is not authenticated');
+    }
+    return this.authService.getSuspiciousActivities(req.user.sub);
+  }
+
+  @UseGuards(JwtAuthGuard)
+  @Post('aml/report-to-amlo')
+  @HttpCode(HttpStatus.OK)
+  async reportSuspiciousActivityToAmlo(
+    @Body() body: { activityId: string },
+    @Req() req: AuthenticatedRequest,
+  ) {
+    if (!req.user?.sub) {
+      throw new UnauthorizedException('User is not authenticated');
+    }
+    return this.authService.reportSuspiciousActivityToAmlo(body.activityId, req.user.sub);
+  }
+
   private singleHeader(value: string | string[] | undefined) {
     if (Array.isArray(value)) {
       return value[0];

@@ -1362,6 +1362,158 @@ export class AuthService {
     };
   }
 
+  async checkTransactionForSuspiciousActivity(
+    userId: string,
+    amount: number,
+    recipientId?: string,
+  ) {
+    const suspiciousActivities: Array<{
+      type: string;
+      description: string;
+      riskScore: number;
+    }> = [];
+
+    // Rule 1: Large transaction alert (> 100,000 THB)
+    if (amount > 100000) {
+      suspiciousActivities.push({
+        type: 'LARGE_TRANSACTION',
+        description: `Transaction amount ${amount} THB exceeds 100,000 THB threshold`,
+        riskScore: 60,
+      });
+    }
+
+    // Rule 2: High-frequency check (> 10 transactions in 1 hour)
+    const oneHourAgo = new Date(Date.now() - 60 * 60 * 1000);
+    const recentTransfers = await this.prisma.transfer.count({
+      where: {
+        fromUserId: userId,
+        createdAt: { gte: oneHourAgo },
+      },
+    });
+
+    if (recentTransfers > 10) {
+      suspiciousActivities.push({
+        type: 'HIGH_FREQUENCY',
+        description: `${recentTransfers} transactions in the last hour (potential smurfing)`,
+        riskScore: 70,
+      });
+    }
+
+    // Rule 3: Round number check (e.g., 50,000, 100,000)
+    if (amount % 10000 === 0 && amount >= 50000) {
+      suspiciousActivities.push({
+        type: 'ROUND_NUMBER',
+        description: `Round number transaction ${amount} THB (potential structuring)`,
+        riskScore: 40,
+      });
+    }
+
+    // Rule 4: Multiple recipients check (> 5 different recipients in 1 day)
+    const oneDayAgo = new Date(Date.now() - 24 * 60 * 60 * 1000);
+    const uniqueRecipients = await this.prisma.transfer.findMany({
+      where: {
+        fromUserId: userId,
+        createdAt: { gte: oneDayAgo },
+      },
+      select: { toUserId: true },
+      distinct: ['toUserId'],
+    });
+
+    if (uniqueRecipients.length > 5) {
+      suspiciousActivities.push({
+        type: 'MULTIPLE_RECIPIENTS',
+        description: `${uniqueRecipients.length} different recipients in the last day`,
+        riskScore: 50,
+      });
+    }
+
+    // Create suspicious activity records if any detected
+    if (suspiciousActivities.length > 0) {
+      for (const activity of suspiciousActivities) {
+        await this.prisma.suspiciousActivity.create({
+          data: {
+            userId,
+            activityType: activity.type as any,
+            amount,
+            description: activity.description,
+            riskScore: activity.riskScore,
+            metadata: {
+              recipientId,
+              detectedAt: new Date().toISOString(),
+            },
+          },
+        });
+      }
+
+      await this.logSecurityEvent(userId, 'SUSPICIOUS_ACTIVITY_DETECTED', {
+        metadata: {
+          amount,
+          activities: suspiciousActivities.map((a) => a.type),
+        },
+      });
+    }
+
+    return {
+      suspicious: suspiciousActivities.length > 0,
+      activities: suspiciousActivities,
+      requiresReview: suspiciousActivities.some((a) => a.riskScore >= 60),
+    };
+  }
+
+  async getSuspiciousActivities(userId: string) {
+    const activities = await this.prisma.suspiciousActivity.findMany({
+      where: { userId },
+      orderBy: { createdAt: 'desc' },
+      take: 50,
+    });
+
+    return activities.map((activity) => ({
+      id: activity.id,
+      type: activity.activityType,
+      status: activity.status,
+      amount: activity.amount,
+      description: activity.description,
+      riskScore: activity.riskScore,
+      createdAt: activity.createdAt.toISOString(),
+      reviewedAt: activity.reviewedAt?.toISOString(),
+      amloReference: activity.amloReference,
+    }));
+  }
+
+  async reportSuspiciousActivityToAmlo(activityId: string, reviewedBy: string) {
+    const activity = await this.prisma.suspiciousActivity.findUnique({
+      where: { id: activityId },
+    });
+
+    if (!activity) {
+      throw new NotFoundException('Suspicious activity not found');
+    }
+
+    // In a full implementation, this would:
+    // 1. Generate STR (Suspicious Transaction Report)
+    // 2. Submit to AMLO API
+    // 3. Get AMLO reference number
+    // 4. Update activity status
+
+    const amloReference = `STR-${Date.now()}-${activity.userId.substring(0, 8)}`;
+
+    await this.prisma.suspiciousActivity.update({
+      where: { id: activityId },
+      data: {
+        status: 'REPORTED_TO_AMLO',
+        reviewedAt: new Date(),
+        reviewedBy,
+        reportedToAmloAt: new Date(),
+        amloReference,
+      },
+    });
+
+    return {
+      success: true,
+      amloReference,
+    };
+  }
+
   public async signRegistrationToken(userId: string, state: RegistrationState): Promise<string> {
     const payload: RegistrationTokenPayload = {
       sub: userId,
