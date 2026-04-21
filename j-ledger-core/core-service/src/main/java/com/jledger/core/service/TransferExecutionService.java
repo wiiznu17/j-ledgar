@@ -44,6 +44,8 @@ public class TransferExecutionService {
     private final AmlMonitoringService amlMonitoringService;
     private final TransactionLimitService transactionLimitService;
     private final KycComplianceService kycComplianceService;
+    private final TransactionRateLimitService transactionRateLimitService;
+    private final TransactionMonitoringHooks transactionMonitoringHooks;
 
     @Transactional
     public Transaction performTransferInDb(
@@ -89,7 +91,13 @@ public class TransferExecutionService {
     }
 
     private Transaction processTransfer(Transaction transaction, Account sender, Account receiver, BigDecimal normalizedAmount) {
+        // Invoke pre-transaction monitoring hooks
+        transactionMonitoringHooks.invokePreTransactionHooks(transaction);
+
         validateTransfer(sender, receiver, normalizedAmount);
+
+        // Transaction Rate Limit Check
+        transactionRateLimitService.checkRateLimit(sender.getId());
 
         // KYC Compliance Check
         kycComplianceService.checkKycCompliance(sender.getId());
@@ -144,6 +152,9 @@ public class TransferExecutionService {
 
         // Record transaction amount for limits
         transactionLimitService.recordTransaction(sender.getId(), normalizedAmount);
+
+        // Invoke post-transaction monitoring hooks
+        transactionMonitoringHooks.invokePostTransactionHooks(transaction);
 
         return transaction;
     }
