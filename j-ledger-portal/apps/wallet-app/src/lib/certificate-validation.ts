@@ -2,8 +2,21 @@ import { Platform } from 'react-native';
 
 /**
  * Certificate validation utilities for enhanced security.
- * Note: True certificate pinning requires native code modifications (EAS Build).
- * This provides runtime validation as an additional security layer.
+ *
+ * IMPORTANT: True certificate pinning requires native code modifications via EAS Build.
+ * To implement full certificate pinning:
+ * 1. Install: npm install react-native-ssl-pinning-fast
+ * 2. Configure in app.config.js or app.json with EAS Build
+ * 3. Add actual certificate fingerprints from the production server
+ * 4. Test thoroughly as certificate rotation can break the app
+ *
+ * Current implementation provides:
+ * - HTTPS enforcement
+ * - Domain validation in production
+ * - Runtime security checks
+ *
+ * For production deployment, consider implementing true certificate pinning
+ * if the security requirements demand it.
  */
 
 interface CertificateValidationResult {
@@ -47,8 +60,16 @@ export function validateHttpsUrl(url: string): CertificateValidationResult {
 
 /**
  * Gets the expected certificate fingerprint for the API.
- * In a real implementation, this would contain the actual certificate hashes.
- * For now, this is a placeholder that demonstrates the structure.
+ *
+ * TO IMPLEMENT TRUE CERTIFICATE PINNING:
+ * 1. Get the production server's certificate fingerprint:
+ *    openssl s_client -connect api.jledger.io:443 -servername api.jledger.io </dev/null | openssl x509 -noout -fingerprint -sha256
+ * 2. Add the fingerprint(s) to the production array below
+ * 3. Install react-native-ssl-pinning-fast
+ * 4. Use the pinnedCertificate configuration in axios
+ *
+ * For now, this returns empty array (no pinning) to avoid breaking
+ * during development and when certificates rotate.
  */
 export function getExpectedCertificateFingerprints(): string[] {
   if (__DEV__) {
@@ -57,11 +78,17 @@ export function getExpectedCertificateFingerprints(): string[] {
   }
 
   // Production: Add actual certificate fingerprints here
-  // These should be obtained from the server's SSL certificate
+  // Example fingerprints (replace with real ones):
+  // - Get from: openssl s_client -connect api.jledger.io:443 | openssl x509 -noout -fingerprint -sha256
   return [
-    // Example: 'sha256/AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=',
-    // Example: 'sha256/BBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBB=',
+    // 'sha256/AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=',
+    // 'sha256/BBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBB=',
   ];
+
+  // IMPORTANT: When implementing, consider:
+  // - Certificate rotation strategy (multiple fingerprints)
+  // - Backup plan for when certificates change
+  // - App update mechanism to update fingerprints
 }
 
 /**
@@ -94,4 +121,6 @@ export const SECURITY_CONFIG = {
   enforceHttps: true,
   allowDevCertificates: __DEV__,
   expectedHostnames: ['api.jledger.io', 'localhost', '10.0.2.2'],
+  // Set to true when implementing true certificate pinning
+  enableCertificatePinning: false,
 };

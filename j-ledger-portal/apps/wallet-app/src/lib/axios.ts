@@ -4,6 +4,70 @@ import * as SecureStore from 'expo-secure-store';
 import { validateConnectionSecurity } from './certificate-validation';
 import { useAuthStore } from '@/store/auth';
 
+/**
+ * Network timeout configuration for different request types.
+ * Different operations require different timeout values for optimal user experience.
+ */
+export const NETWORK_TIMEOUTS = {
+  // Quick operations (auth checks, balance queries)
+  QUICK: 5000, // 5 seconds
+
+  // Standard operations (API calls, data fetching)
+  DEFAULT: 10000, // 10 seconds
+
+  // Slow operations (file uploads, complex queries)
+  SLOW: 30000, // 30 seconds
+
+  // Very slow operations (KYC uploads, large file transfers)
+  VERY_SLOW: 60000, // 60 seconds
+} as const;
+
+/**
+ * Timeout configuration per request type.
+ * Maps specific API endpoints to appropriate timeout values.
+ */
+export const REQUEST_TIMEOUTS = {
+  // Authentication endpoints - should be quick
+  '/auth/login': NETWORK_TIMEOUTS.QUICK,
+  '/auth/register': NETWORK_TIMEOUTS.QUICK,
+  '/auth/refresh': NETWORK_TIMEOUTS.QUICK,
+  '/auth/logout': NETWORK_TIMEOUTS.QUICK,
+  '/auth/pin': NETWORK_TIMEOUTS.QUICK,
+  '/auth/biometric': NETWORK_TIMEOUTS.QUICK,
+
+  // Balance and account queries - should be quick
+  '/account/balance': NETWORK_TIMEOUTS.QUICK,
+  '/account/details': NETWORK_TIMEOUTS.DEFAULT,
+
+  // Transaction operations - standard timeout
+  '/transaction': NETWORK_TIMEOUTS.DEFAULT,
+  '/transfer': NETWORK_TIMEOUTS.DEFAULT,
+  '/payment': NETWORK_TIMEOUTS.DEFAULT,
+
+  // KYC operations - can be slow (file uploads)
+  '/kyc': NETWORK_TIMEOUTS.SLOW,
+  '/upload': NETWORK_TIMEOUTS.VERY_SLOW,
+
+  // Default for unknown endpoints
+  DEFAULT: NETWORK_TIMEOUTS.DEFAULT,
+} as const;
+
+/**
+ * Gets the appropriate timeout for a given URL or request type.
+ */
+export function getTimeoutForRequest(url?: string): number {
+  if (!url) return REQUEST_TIMEOUTS.DEFAULT;
+
+  // Find matching endpoint
+  for (const [endpoint, timeout] of Object.entries(REQUEST_TIMEOUTS)) {
+    if (endpoint !== 'DEFAULT' && url.includes(endpoint)) {
+      return timeout;
+    }
+  }
+
+  return REQUEST_TIMEOUTS.DEFAULT;
+}
+
 const getBaseUrl = () => {
   if (__DEV__) {
     if (Platform.OS === 'android') {
@@ -16,7 +80,7 @@ const getBaseUrl = () => {
 
 export const api = axios.create({
   baseURL: getBaseUrl(),
-  timeout: 10000, // 10 second timeout for all requests to prevent hanging
+  timeout: NETWORK_TIMEOUTS.DEFAULT,
   headers: {
     'Content-Type': 'application/json',
     'X-Requested-With': 'XMLHttpRequest', // CSRF protection header

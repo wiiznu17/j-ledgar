@@ -6,6 +6,7 @@ import {
   IsString,
   Length,
   Matches,
+  MaxLength,
   MinLength,
 } from 'class-validator';
 
@@ -34,13 +35,32 @@ export class RegisterVerifyOtpDto {
 export class RegisterPasswordDto {
   @IsString()
   @IsNotEmpty()
-  @MinLength(8)
+  @MinLength(12, { message: 'Password must be at least 12 characters long' })
+  @MaxLength(128, { message: 'Password must not exceed 128 characters' })
   @Matches(/[a-z]/, { message: 'Password must contain at least one lowercase letter' })
   @Matches(/[A-Z]/, { message: 'Password must contain at least one uppercase letter' })
   @Matches(/\d/, { message: 'Password must contain at least one number' })
   @Matches(/[!@#$%^&*(),.?":{}|<>]/, {
     message: 'Password must contain at least one special character',
   })
+  @Matches(
+    /^(?!.*(123|234|345|456|567|678|789|890|098|987|876|765|654|543|432|321|210|012|abc|bcd|cde|def|efg|fgh|ghi|hij|ijk|jkl|klm|lmn|mno|nop|opq|pqr|qrs|rst|stu|tuv|uvw|vwx|wxy|xyz|qwe|wer|ert|rty|tyu|yui|uio|iop|pas|asd|sdf|dfg|fgh|ghj|hjk|jkl))/,
+    {
+      message: 'Password must not contain sequential characters',
+    },
+  )
+  @Matches(
+    /^(?!.*(aaa|bbb|ccc|ddd|eee|fff|ggg|hhh|iii|jjj|kkk|lll|mmm|nnn|ooo|ppp|qqq|rrr|sss|ttt|uuu|vvv|www|xxx|yyy|zzz|111|222|333|444|555|666|777|888|999|000))/,
+    {
+      message: 'Password must not contain repeating characters',
+    },
+  )
+  @Matches(
+    /^(?!.*(password|admin|user|test|guest|root|login|welcome|hello|monkey|dragon|football|baseball|letmein|master|shadow|sunshine|princess|qwerty))/i,
+    {
+      message: 'Password must not contain common words',
+    },
+  )
   password!: string;
 }
 
@@ -111,7 +131,8 @@ export class RegisterProfileDto {
 export class RegisterCredentialsDto {
   @IsString()
   @IsNotEmpty()
-  @MinLength(8)
+  @MinLength(12, { message: 'Password must be at least 12 characters long' })
+  @MaxLength(128, { message: 'Password must not exceed 128 characters' })
   @Matches(/[a-z]/, { message: 'Password must contain at least one lowercase letter' })
   @Matches(/[A-Z]/, { message: 'Password must contain at least one uppercase letter' })
   @Matches(/\d/, { message: 'Password must contain at least one number' })
@@ -140,7 +161,14 @@ export class LoginDto {
 
   @IsString()
   @IsNotEmpty()
-  @MinLength(8)
+  @MinLength(12, { message: 'Password must be at least 12 characters long' })
+  @MaxLength(128, { message: 'Password must not exceed 128 characters' })
+  @Matches(/[a-z]/, { message: 'Password must contain at least one lowercase letter' })
+  @Matches(/[A-Z]/, { message: 'Password must contain at least one uppercase letter' })
+  @Matches(/\d/, { message: 'Password must contain at least one number' })
+  @Matches(/[!@#$%^&*(),.?":{}|<>]/, {
+    message: 'Password must contain at least one special character',
+  })
   password!: string;
 
   @IsString()
@@ -242,4 +270,14 @@ export class DataDeletionRequestDto {
   @IsNotEmpty()
   @IsEnum(['REQUESTED', 'CONFIRMED', 'CANCELLED'])
   action!: 'REQUESTED' | 'CONFIRMED' | 'CANCELLED';
+}
+
+export class BiometricVerifyDto {
+  @IsString()
+  @IsNotEmpty()
+  challenge!: string;
+
+  @IsString()
+  @IsOptional()
+  biometricType?: 'FINGERPRINT' | 'FACE_ID' | 'IRIS' | 'BIOMETRIC';
 }

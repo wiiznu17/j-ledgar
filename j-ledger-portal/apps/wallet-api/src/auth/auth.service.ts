@@ -31,6 +31,7 @@ import Redis from 'ioredis';
 import { ISmsProvider } from '../integrations/interfaces/sms-provider.interface';
 import {
   AcceptTermsDto,
+  BiometricVerifyDto,
   DeviceVerifyDto,
   LoginDto,
   PinSetupDto,
@@ -920,6 +921,64 @@ export class AuthService {
     return bcrypt.compare(pin, user.pinHash);
   }
 
+  async verifyBiometric(
+    userId: string,
+    dto: BiometricVerifyDto,
+    context?: { ip?: string; userAgent?: string },
+  ) {
+    // Verify user exists and has PIN set (biometric is a shortcut for PIN)
+    const user = await this.prisma.user.findUnique({
+      where: { id: userId },
+    });
+    if (!user || !user.pinHash) {
+      throw new UnauthorizedException('PIN_NOT_SET');
+    }
+
+    if (user.pinLockedUntil && user.pinLockedUntil > new Date()) {
+      throw new ForbiddenException('ACCOUNT_LOCKED');
+    }
+
+    // Generate and store a biometric challenge in Redis
+    const challengeKey = `biometric_challenge:${userId}:${dto.challenge}`;
+    const storedChallenge = await this.redis.get(challengeKey);
+
+    if (!storedChallenge) {
+      throw new BadRequestException('Invalid or expired biometric challenge');
+    }
+
+    // Verify the challenge hasn't been used already (one-time use)
+    await this.redis.del(challengeKey);
+
+    // Log successful biometric authentication
+    await this.logSecurityEvent(userId, 'BIOMETRIC_AUTH_SUCCESS', {
+      ipAddress: context?.ip,
+      userAgent: context?.userAgent,
+      deviceId: dto.biometricType || 'BIOMETRIC',
+    });
+
+    // Reset PIN attempts on successful biometric auth
+    if (user.pinAttempts > 0 || user.pinLockedUntil) {
+      await this.userService.resetPinAttempts(userId);
+    }
+
+    return { success: true, message: 'Biometric verification successful' };
+  }
+
+  async generateBiometricChallenge(
+    userId: string,
+  ): Promise<{ challenge: string; expiresAt: number }> {
+    const challenge = randomUUID();
+    const challengeKey = `biometric_challenge:${userId}:${challenge}`;
+    const expiresInSeconds = 300; // 5 minutes
+
+    await this.redis.setex(challengeKey, expiresInSeconds, 'pending');
+
+    return {
+      challenge,
+      expiresAt: Math.floor(Date.now() / 1000) + expiresInSeconds,
+    };
+  }
+
   async verifyAccessToken(token: string): Promise<AccessTokenPayload> {
     const payload = await this.jwtService.verifyAsync<AccessTokenPayload>(token, {
       secret: this.accessSecret,
@@ -1537,7 +1596,22 @@ export class AuthService {
       payload = await this.jwtService.verifyAsync<RegistrationTokenPayload>(token, {
         secret: this.registrationSecret,
       });
-    } catch {
+    } catch (error: unknown) {
+      // Handle expired tokens specifically for better UX
+      if (error && typeof error === 'object' && 'name' in error) {
+        if (error.name === 'TokenExpiredError') {
+          this.logger.warn(
+            `[Registration] Expired token used for user: ${(error as any).payload?.sub || 'unknown'}`,
+          );
+          throw new UnauthorizedException(
+            'Registration token has expired. Please restart the registration process.',
+          );
+        }
+        if (error.name === 'JsonWebTokenError') {
+          this.logger.warn(`[Registration] Invalid token: ${(error as any).message}`);
+          throw new UnauthorizedException('Invalid registration token');
+        }
+      }
       throw new UnauthorizedException('Invalid registration token');
     }
 
@@ -1548,6 +1622,12 @@ export class AuthService {
     const acceptedStates = Array.isArray(expectedState) ? expectedState : [expectedState];
     if (!acceptedStates.includes(payload.state)) {
       throw new ForbiddenException('REGISTRATION_STATE_INVALID');
+    }
+
+    // Additional explicit expiration check (defense-in-depth)
+    if (payload.exp && payload.exp < Math.floor(Date.now() / 1000)) {
+      this.logger.warn(`[Registration] Token with expired exp claim: ${payload.sub}`);
+      throw new UnauthorizedException('Registration token has expired');
     }
 
     return payload;

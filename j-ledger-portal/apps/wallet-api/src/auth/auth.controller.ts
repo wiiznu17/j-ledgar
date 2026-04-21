@@ -15,6 +15,7 @@ import { AuthService } from './auth.service';
 import { JwtAuthGuard } from '../common/guards/jwt-auth.guard';
 import {
   AcceptTermsDto,
+  BiometricVerifyDto,
   DataDeletionRequestDto,
   DeviceVerifyDto,
   LoginDto,
@@ -158,6 +159,7 @@ export class AuthController {
 
   @Post('refresh')
   @HttpCode(HttpStatus.OK)
+  @Throttle({ default: {}, refreshToken: {} })
   async refresh(@Body() body: RefreshTokenDto) {
     return this.authService.refresh(body);
   }
@@ -198,11 +200,37 @@ export class AuthController {
   @UseGuards(JwtAuthGuard)
   @Post('pin/verify')
   @HttpCode(HttpStatus.NO_CONTENT)
+  @Throttle({ default: {}, pinVerify: {} })
   async verifyPin(@Body() body: PinVerifyDto, @Req() req: AuthenticatedRequest) {
     if (!req.user?.sub) {
       throw new UnauthorizedException('User is not authenticated');
     }
     await this.authService.verifyPin(req.user.sub, body);
+  }
+
+  @UseGuards(JwtAuthGuard)
+  @Post('biometric/challenge')
+  @HttpCode(HttpStatus.OK)
+  @Throttle({ default: {}, biometricVerify: {} })
+  async generateBiometricChallenge(@Req() req: AuthenticatedRequest) {
+    if (!req.user?.sub) {
+      throw new UnauthorizedException('User is not authenticated');
+    }
+    return this.authService.generateBiometricChallenge(req.user.sub);
+  }
+
+  @UseGuards(JwtAuthGuard)
+  @Post('biometric/verify')
+  @HttpCode(HttpStatus.OK)
+  @Throttle({ default: {}, biometricVerify: {} })
+  async verifyBiometric(@Body() body: BiometricVerifyDto, @Req() req: AuthenticatedRequest) {
+    if (!req.user?.sub) {
+      throw new UnauthorizedException('User is not authenticated');
+    }
+    return this.authService.verifyBiometric(req.user.sub, body, {
+      ip: req.ip,
+      userAgent: this.singleHeader(req.headers['user-agent']),
+    });
   }
 
   @UseGuards(JwtAuthGuard)
@@ -239,6 +267,7 @@ export class AuthController {
   @UseGuards(JwtAuthGuard)
   @Post('account/delete-request')
   @HttpCode(HttpStatus.OK)
+  @Throttle({ default: {}, accountDeletion: {} })
   async requestAccountDeletion(@Req() req: AuthenticatedRequest) {
     if (!req.user?.sub) {
       throw new UnauthorizedException('User is not authenticated');
@@ -252,6 +281,7 @@ export class AuthController {
   @UseGuards(JwtAuthGuard)
   @Post('account/delete-confirm')
   @HttpCode(HttpStatus.OK)
+  @Throttle({ default: {}, accountDeletion: {} })
   async confirmAccountDeletion(@Req() req: AuthenticatedRequest) {
     if (!req.user?.sub) {
       throw new UnauthorizedException('User is not authenticated');

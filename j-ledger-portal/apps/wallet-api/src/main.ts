@@ -32,17 +32,25 @@ async function bootstrap() {
           objectSrc: ["'none'"],
           mediaSrc: ["'self'"],
           frameSrc: ["'none'"],
+          formAction: ["'self'"],
+          frameAncestors: ["'none'"],
+          baseUri: ["'self'"],
+          manifestSrc: ["'self'"],
+          workerSrc: ["'self'", 'blob:'],
+          childSrc: ["'self'", 'blob:'],
         },
       },
       hsts: {
-        maxAge: 31536000,
+        maxAge: 63072000, // 2 years
         includeSubDomains: true,
         preload: true,
       },
-      referrerPolicy: { policy: 'strict-origin-when-cross-origin' },
+      referrerPolicy: { policy: 'no-referrer' },
       noSniff: true,
       xFrameOptions: { action: 'deny' },
-      xssFilter: true,
+      crossOriginEmbedderPolicy: { policy: 'require-corp' },
+      crossOriginOpenerPolicy: { policy: 'same-origin' },
+      crossOriginResourcePolicy: { policy: 'same-origin' },
     }),
   );
   app.enableCors({

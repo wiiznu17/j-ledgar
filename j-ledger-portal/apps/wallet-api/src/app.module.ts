@@ -57,6 +57,26 @@ import { REDIS_CLIENT } from './auth/auth.constants';
               ttl: config.get<number>('THROTTLE_TTL_LOGIN', 900000),
               limit: config.get<number>('THROTTLE_LIMIT_LOGIN', 10),
             },
+            {
+              name: 'pinVerify',
+              ttl: config.get<number>('THROTTLE_TTL_PIN_VERIFY', 300000),
+              limit: config.get<number>('THROTTLE_LIMIT_PIN_VERIFY', 5),
+            },
+            {
+              name: 'biometricVerify',
+              ttl: config.get<number>('THROTTLE_TTL_BIOMETRIC_VERIFY', 300000),
+              limit: config.get<number>('THROTTLE_LIMIT_BIOMETRIC_VERIFY', 10),
+            },
+            {
+              name: 'refreshToken',
+              ttl: config.get<number>('THROTTLE_TTL_REFRESH_TOKEN', 60000),
+              limit: config.get<number>('THROTTLE_LIMIT_REFRESH_TOKEN', 20),
+            },
+            {
+              name: 'accountDeletion',
+              ttl: config.get<number>('THROTTLE_TTL_ACCOUNT_DELETION', 3600000),
+              limit: config.get<number>('THROTTLE_LIMIT_ACCOUNT_DELETION', 3),
+            },
           ],
           storage: {
             storage: new ThrottlerStorageRedisService(redis),
