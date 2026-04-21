@@ -43,6 +43,7 @@ public class TransferExecutionService {
     private final ObjectMapper objectMapper;
     private final AmlMonitoringService amlMonitoringService;
     private final TransactionLimitService transactionLimitService;
+    private final KycComplianceService kycComplianceService;
 
     @Transactional
     public Transaction performTransferInDb(
@@ -89,6 +90,9 @@ public class TransferExecutionService {
 
     private Transaction processTransfer(Transaction transaction, Account sender, Account receiver, BigDecimal normalizedAmount) {
         validateTransfer(sender, receiver, normalizedAmount);
+
+        // KYC Compliance Check
+        kycComplianceService.checkKycCompliance(sender.getId());
 
         // Transaction Limit Check
         transactionLimitService.checkTransactionLimits(sender.getId(), normalizedAmount);
