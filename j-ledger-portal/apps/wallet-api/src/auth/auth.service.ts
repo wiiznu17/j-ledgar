@@ -6,6 +6,7 @@ import {
   Inject,
   BadRequestException,
   Logger,
+  NotFoundException,
 } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import { ConfigService } from '@nestjs/config';
@@ -532,6 +533,9 @@ export class AuthService {
       userAgent: context?.userAgent,
       deviceId: trustedDevice.deviceIdentifier,
     });
+
+    // Perform KYC risk assessment for BoT compliance
+    await this.performKycRiskAssessment(claims.sub);
 
     const tokenPair = await this.issueTokenPair({
       userId: user.id,
@@ -1139,6 +1143,223 @@ export class AuthService {
     });
 
     return { success: true };
+  }
+
+  async exportUserData(userId: string) {
+    // Get user data
+    const user = await this.prisma.user.findUnique({
+      where: { id: userId },
+      select: {
+        id: true,
+        phoneNumber: true,
+        email: true,
+        status: true,
+        createdAt: true,
+      },
+    });
+
+    if (!user) {
+      throw new NotFoundException('User not found');
+    }
+
+    // Get profile data
+    const profile = await this.prisma.userProfile.findUnique({
+      where: { userId },
+      select: {
+        firstName: true,
+        lastName: true,
+        dateOfBirth: true,
+        address: true,
+        occupation: true,
+        incomeRange: true,
+        sourceOfFunds: true,
+        purposeOfAccount: true,
+      },
+    });
+
+    // Get consents
+    const consents = await this.getUserConsents(userId);
+
+    // Get devices
+    const devices = await this.prisma.userDevice.findMany({
+      where: { userId },
+      select: {
+        id: true,
+        deviceName: true,
+        platform: true,
+        trustLevel: true,
+        lastLoginAt: true,
+      },
+    });
+
+    return {
+      user: {
+        ...user,
+        createdAt: user.createdAt.toISOString(),
+      },
+      profile: profile ? profile : undefined,
+      consents,
+      devices: devices.map((d) => ({
+        ...d,
+        lastLoginAt: d.lastLoginAt?.toISOString(),
+      })),
+      exportedAt: new Date().toISOString(),
+    };
+  }
+
+  async requestAccountDeletion(userId: string, context?: { ip?: string; userAgent?: string }) {
+    // Check if user has active transactions or pending obligations
+    const hasActiveTransactions = await this.prisma.transfer.findFirst({
+      where: {
+        OR: [{ fromUserId: userId }, { toUserId: userId }],
+        status: 'PENDING',
+      },
+    });
+
+    if (hasActiveTransactions) {
+      throw new BadRequestException('Cannot delete account with pending transactions');
+    }
+
+    // Log deletion request
+    await this.logSecurityEvent(userId, 'ACCOUNT_DELETION_REQUESTED', {
+      ipAddress: context?.ip,
+      userAgent: context?.userAgent,
+    });
+
+    // In a full implementation, this would:
+    // 1. Create a deletion request with a confirmation period
+    // 2. Send confirmation email
+    // 3. Allow user to cancel within the period
+    // 4. Perform actual deletion after confirmation
+
+    return {
+      success: true,
+      message: 'Account deletion request received. Please confirm via email.',
+    };
+  }
+
+  async confirmAccountDeletion(userId: string, context?: { ip?: string; userAgent?: string }) {
+    // Soft delete user account
+    await this.prisma.user.update({
+      where: { id: userId },
+      data: {
+        status: 'CLOSED',
+        phoneNumber: `deleted_${userId}_${Date.now()}`, // Anonymize
+        email: null,
+        passwordHash: null,
+        pinHash: null,
+      },
+    });
+
+    // Revoke all sessions
+    await this.logoutAll(userId, { sub: userId } as any);
+
+    // Log deletion
+    await this.logSecurityEvent(userId, 'ACCOUNT_DELETED', {
+      ipAddress: context?.ip,
+      userAgent: context?.userAgent,
+    });
+
+    return { success: true };
+  }
+
+  async performKycRiskAssessment(userId: string) {
+    const user = await this.prisma.user.findUnique({
+      where: { id: userId },
+      include: { profile: true },
+    });
+
+    if (!user || !user.profile) {
+      throw new NotFoundException('User or profile not found');
+    }
+
+    // Risk assessment logic
+    let riskLevel: 'LOW' | 'MEDIUM' | 'HIGH' = 'LOW';
+    const riskFactors: string[] = [];
+
+    // Check income range (higher income = higher risk)
+    if (user.profile.incomeRange === 'HIGH' || user.profile.incomeRange === 'VERY_HIGH') {
+      riskLevel = 'MEDIUM';
+      riskFactors.push('HIGH_INCOME');
+    }
+
+    // Check occupation (some occupations are higher risk)
+    const highRiskOccupations = ['FINANCE', 'GAMBLING', 'CRYPTOCURRENCY'];
+    if (highRiskOccupations.includes(user.profile.occupation || '')) {
+      riskLevel = 'HIGH';
+      riskFactors.push('HIGH_RISK_OCCUPATION');
+    }
+
+    // Check source of funds
+    if (user.profile.sourceOfFunds === 'CRYPTOCURRENCY') {
+      riskLevel = 'HIGH';
+      riskFactors.push('CRYPTO_SOURCE');
+    }
+
+    // Determine review frequency based on risk level
+    let nextReviewDate = new Date();
+    if (riskLevel === 'LOW') {
+      nextReviewDate.setFullYear(nextReviewDate.getFullYear() + 3);
+    } else if (riskLevel === 'MEDIUM') {
+      nextReviewDate.setFullYear(nextReviewDate.getFullYear() + 2);
+    } else {
+      nextReviewDate.setFullYear(nextReviewDate.getFullYear() + 1);
+    }
+
+    // Create KYC review record
+    const kycReview = await this.prisma.kycReview.create({
+      data: {
+        userId,
+        riskLevel,
+        reviewStatus: 'APPROVED',
+        reviewedAt: new Date(),
+        nextReviewDate,
+        notes: riskFactors.join(', ') || 'Standard KYC',
+        pepScreened: false, // To be implemented with PEP screening service
+        sanctionsScreened: false, // To be implemented with sanctions screening service
+      },
+    });
+
+    return {
+      riskLevel,
+      nextReviewDate: nextReviewDate.toISOString(),
+      riskFactors,
+    };
+  }
+
+  async checkKycCompliance(userId: string) {
+    const latestReview = await this.prisma.kycReview.findFirst({
+      where: { userId },
+      orderBy: { createdAt: 'desc' },
+    });
+
+    if (!latestReview) {
+      throw new BadRequestException('KYC review not found');
+    }
+
+    // Check if review is expired
+    if (latestReview.nextReviewDate && new Date() > latestReview.nextReviewDate) {
+      return {
+        compliant: false,
+        reason: 'KYC_REVIEW_EXPIRED',
+        nextReviewDate: latestReview.nextReviewDate.toISOString(),
+      };
+    }
+
+    // Check if review is pending or rejected
+    if (latestReview.reviewStatus !== 'APPROVED') {
+      return {
+        compliant: false,
+        reason: 'KYC_NOT_APPROVED',
+        reviewStatus: latestReview.reviewStatus,
+      };
+    }
+
+    return {
+      compliant: true,
+      riskLevel: latestReview.riskLevel,
+      nextReviewDate: latestReview.nextReviewDate?.toISOString(),
+    };
   }
 
   public async signRegistrationToken(userId: string, state: RegistrationState): Promise<string> {

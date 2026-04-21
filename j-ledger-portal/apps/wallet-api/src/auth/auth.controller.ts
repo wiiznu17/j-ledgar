@@ -15,6 +15,7 @@ import { AuthService } from './auth.service';
 import { JwtAuthGuard } from '../common/guards/jwt-auth.guard';
 import {
   AcceptTermsDto,
+  DataDeletionRequestDto,
   DeviceVerifyDto,
   LoginDto,
   PinSetupDto,
@@ -221,6 +222,41 @@ export class AuthController {
       throw new UnauthorizedException('User is not authenticated');
     }
     return this.authService.withdrawConsent(req.user.sub, body.consentType, {
+      ip: req.ip,
+      userAgent: this.singleHeader(req.headers['user-agent']),
+    });
+  }
+
+  @UseGuards(JwtAuthGuard)
+  @Get('data/export')
+  async exportUserData(@Req() req: AuthenticatedRequest) {
+    if (!req.user?.sub) {
+      throw new UnauthorizedException('User is not authenticated');
+    }
+    return this.authService.exportUserData(req.user.sub);
+  }
+
+  @UseGuards(JwtAuthGuard)
+  @Post('account/delete-request')
+  @HttpCode(HttpStatus.OK)
+  async requestAccountDeletion(@Req() req: AuthenticatedRequest) {
+    if (!req.user?.sub) {
+      throw new UnauthorizedException('User is not authenticated');
+    }
+    return this.authService.requestAccountDeletion(req.user.sub, {
+      ip: req.ip,
+      userAgent: this.singleHeader(req.headers['user-agent']),
+    });
+  }
+
+  @UseGuards(JwtAuthGuard)
+  @Post('account/delete-confirm')
+  @HttpCode(HttpStatus.OK)
+  async confirmAccountDeletion(@Req() req: AuthenticatedRequest) {
+    if (!req.user?.sub) {
+      throw new UnauthorizedException('User is not authenticated');
+    }
+    return this.authService.confirmAccountDeletion(req.user.sub, {
       ip: req.ip,
       userAgent: this.singleHeader(req.headers['user-agent']),
     });

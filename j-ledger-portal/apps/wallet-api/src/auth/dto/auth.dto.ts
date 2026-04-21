@@ -1,4 +1,13 @@
-import { IsNotEmpty, IsOptional, IsString, Length, Matches, MinLength } from 'class-validator';
+import {
+  IsEmail,
+  IsEnum,
+  IsNotEmpty,
+  IsOptional,
+  IsString,
+  Length,
+  Matches,
+  MinLength,
+} from 'class-validator';
 
 export class RegisterInitDto {
   @IsString()
@@ -197,4 +206,40 @@ export class ConsentRecordDto {
   consentVersion!: string;
   consentedAt!: string;
   withdrawnAt?: string;
+}
+
+export class DataExportDto {
+  user!: {
+    id: string;
+    phoneNumber?: string;
+    email?: string;
+    status: string;
+    createdAt: string;
+  };
+  profile?: {
+    firstName: string;
+    lastName: string;
+    dateOfBirth?: string;
+    address?: string;
+    occupation?: string;
+    incomeRange?: string;
+    sourceOfFunds?: string;
+    purposeOfAccount?: string;
+  };
+  consents!: ConsentRecordDto[];
+  devices!: Array<{
+    id: string;
+    deviceName?: string;
+    platform?: string;
+    trustLevel: string;
+    lastLoginAt?: string;
+  }>;
+  exportedAt!: string;
+}
+
+export class DataDeletionRequestDto {
+  @IsString()
+  @IsNotEmpty()
+  @IsEnum(['REQUESTED', 'CONFIRMED', 'CANCELLED'])
+  action!: 'REQUESTED' | 'CONFIRMED' | 'CANCELLED';
 }

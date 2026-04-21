@@ -73,6 +73,25 @@ enum ConsentStatus {
 }
 
 
+enum RiskLevel {
+  LOW
+  MEDIUM
+  HIGH
+
+  @@schema("wallet_schema")
+}
+
+
+enum KycReviewStatus {
+  PENDING
+  APPROVED
+  REJECTED
+  UNDER_REVIEW
+
+  @@schema("wallet_schema")
+}
+
+
 enum SessionStatus {
   ACTIVE
   ROTATED
@@ -158,6 +177,7 @@ model User {
   kycData                KycData?
   devices                UserDevice[]
   consents               UserConsent[]
+  kycReviews             KycReview[]
   sessions               RefreshSession[]
   otpChallenges          OtpChallenge[]
   securityLogs           SecurityLog[]
@@ -212,6 +232,31 @@ model UserConsent {
   @@index([consentType])
   @@index([status])
   @@map("user_consents")
+  @@schema("wallet_schema")
+}
+
+
+model KycReview {
+  id              String           @id @default(uuid())
+  userId          String
+  user            User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+  riskLevel       RiskLevel         @default(LOW)
+  reviewStatus    KycReviewStatus  @default(PENDING)
+  reviewedAt      DateTime?
+  reviewedBy      String?
+  nextReviewDate  DateTime?
+  notes           String?          @db.Text
+  pepScreened     Boolean          @default(false)
+  pepStatus       String?
+  sanctionsScreened Boolean         @default(false)
+  sanctionsStatus String?
+  createdAt       DateTime         @default(now())
+  updatedAt       DateTime         @updatedAt
+
+  @@index([userId])
+  @@index([reviewStatus])
+  @@index([nextReviewDate])
+  @@map("kyc_reviews")
   @@schema("wallet_schema")
 }
 
