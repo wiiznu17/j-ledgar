@@ -21,6 +21,7 @@ import { MotiView } from 'moti';
 import axios from 'axios';
 import { useRegistrationStore, RegistrationState } from '@/store/registration';
 import { getStableDeviceId, getDeviceName } from '@/lib/device.utils';
+import { useScreenCaptureProtection } from '@/hooks/useScreenCaptureProtection';
 
 const { width, height } = Dimensions.get('window');
 const API_URL = process.env.EXPO_PUBLIC_API_URL || 'http://localhost:3002';
@@ -42,6 +43,9 @@ type OnboardingStepUI =
   | 'SUCCESS';
 
 export default function OnboardingScreen() {
+  // Prevent screen capture during onboarding (sensitive data flow)
+  useScreenCaptureProtection();
+
   const [step, setStep] = useState<OnboardingStepUI>('WELCOME');
   const [isLoading, setIsLoading] = useState(false);
   const [phone, setPhone] = useState('');

@@ -28,6 +28,7 @@ import { StepWrapper } from '@/components/common/StepWrapper';
 import { useAuthStore } from '@/store/auth';
 import { OtpInputFields } from '@/components/common/OtpInputFields';
 import { getStableDeviceId, getDeviceName } from '@/lib/device.utils';
+import { useScreenCaptureProtection } from '@/hooks/useScreenCaptureProtection';
 
 import axios from 'axios';
 
@@ -38,6 +39,9 @@ const { width } = Dimensions.get('window');
 type LoginStep = 'CREDENTIALS' | 'OTP_CHALLENGE' | 'PIN' | 'LOCKOUT';
 
 export default function LoginScreen() {
+  // Prevent screen capture on login screen
+  useScreenCaptureProtection();
+
   const [step, setStep] = useState<LoginStep>('CREDENTIALS');
   const [phone, setPhone] = useState('');
   const [password, setPassword] = useState('');

@@ -4,6 +4,7 @@ import { View, Text, TouchableOpacity, ActivityIndicator, Alert } from 'react-na
 import { Lock, AlertTriangle, Clock } from 'lucide-react-native';
 import { PinPad } from '../common/PinPad';
 import { useAuthStore } from '../../store/auth';
+import { useScreenCaptureProtection } from '@/hooks/useScreenCaptureProtection';
 
 interface PINVerificationProps {
   onSuccess: () => void;
@@ -19,6 +20,9 @@ export const PINVerification: React.FC<PINVerificationProps> = ({
   onFailure,
   onCancel,
 }) => {
+  // Prevent screen capture on PIN verification
+  useScreenCaptureProtection();
+
   const [pin, setPin] = useState('');
   const [isVerifying, setIsVerifying] = useState(false);
   const [attempts, setAttempts] = useState(0);

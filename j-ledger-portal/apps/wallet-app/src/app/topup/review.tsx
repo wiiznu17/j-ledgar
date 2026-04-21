@@ -12,10 +12,14 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { ChevronLeft, ArrowRight, ShieldCheck, Wallet, Landmark } from 'lucide-react-native';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import { MotiView, AnimatePresence } from 'moti';
+import { useScreenCaptureProtection } from '@/hooks/useScreenCaptureProtection';
 
 const { width } = Dimensions.get('window');
 
 export default function TopupReviewScreen() {
+  // Prevent screen capture on sensitive topup review
+  useScreenCaptureProtection();
+
   const router = useRouter();
   const { amount } = useLocalSearchParams();
   const [isProcessing, setIsProcessing] = useState(false);

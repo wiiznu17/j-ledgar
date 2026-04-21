@@ -24,10 +24,14 @@ import {
   getRecoveryPath,
 } from '../../lib/error-handling';
 import { NotificationService } from '../../lib/notification-service';
+import { useScreenCaptureProtection } from '@/hooks/useScreenCaptureProtection';
 
 const { width } = Dimensions.get('window');
 
 export default function ReviewTransferScreen() {
+  // Prevent screen capture on sensitive transaction review
+  useScreenCaptureProtection();
+
   const router = useRouter();
   const { recipient, amount, note, merchantName } = useLocalSearchParams();
   const [isProcessing, setIsProcessing] = useState(false);
