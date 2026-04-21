@@ -22,15 +22,13 @@ export class OutboxWorker {
     try {
       // 1. Fetch pending events with row-level lock (Concurrency Safe)
       // Using skip locked to allow multiple workers in the future
-      const events = await this.prisma.$queryRaw<any[]>(
-        Prisma.raw(`
-          SELECT * FROM wallet_schema.ledger_outbox 
-          WHERE status = 'PENDING' AND "nextRetryAt" <= NOW()
-          ORDER BY "createdAt" ASC
-          LIMIT 10
-          FOR UPDATE SKIP LOCKED;
-        `)
-      );
+      const events = await this.prisma.$queryRaw<any[]>`
+        SELECT * FROM "wallet_schema"."ledger_outbox" 
+        WHERE "status" = 'PENDING' AND "nextRetryAt" <= NOW()
+        ORDER BY "createdAt" ASC
+        LIMIT 10
+        FOR UPDATE SKIP LOCKED;
+      `;
 
       if (!events || events.length === 0) {
         this.isProcessing = false;
@@ -70,13 +68,11 @@ export class OutboxWorker {
     });
 
     // Mark as PROCESSED
-    await this.prisma.$executeRaw(
-      Prisma.raw(`
-        UPDATE wallet_schema.ledger_outbox 
-        SET status = 'PROCESSED', "updatedAt" = NOW()
-        WHERE id = '${event.id}'
-      `)
-    );
+    await this.prisma.$executeRaw`
+      UPDATE "wallet_schema"."ledger_outbox" 
+      SET "status" = 'PROCESSED', "updatedAt" = NOW()
+      WHERE "id" = ${event.id}
+    `;
 
     this.logger.log(`[OutboxWorker] Successfully created ledger account for ${data.accountId}`);
   }
@@ -89,18 +85,16 @@ export class OutboxWorker {
     // Exponential backoff: 2^retryCount * 10 seconds
     const backoffSeconds = Math.pow(2, retryCount) * 10;
 
-    await this.prisma.$executeRaw(
-      Prisma.raw(`
-        UPDATE wallet_schema.ledger_outbox 
-        SET 
-          status = '${status}', 
-          "retryCount" = ${retryCount},
-          "lastError" = ${JSON.stringify(errorMessage)},
-          "nextRetryAt" = NOW() + (${backoffSeconds} || ' seconds')::interval,
-          "updatedAt" = NOW()
-        WHERE id = '${event.id}'
-      `)
-    );
+    await this.prisma.$executeRaw`
+      UPDATE "wallet_schema"."ledger_outbox" 
+      SET 
+        "status" = ${status}, 
+        "retryCount" = ${retryCount},
+        "lastError" = ${errorMessage},
+        "nextRetryAt" = NOW() + (${backoffSeconds}::text || ' seconds')::interval,
+        "updatedAt" = NOW()
+      WHERE "id" = ${event.id}
+    `;
 
     if (status === 'DEAD') {
       this.logger.error(`[OutboxWorker] Event ${event.id} marked as DEAD`);

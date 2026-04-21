@@ -77,6 +77,7 @@ interface RegistrationTokenPayload {
 
 @Injectable()
 export class AuthService {
+  private readonly logger = new Logger(AuthService.name);
   private readonly accessSecret: string;
   private readonly refreshSecret: string;
   private readonly registrationSecret: string;
@@ -96,6 +97,7 @@ export class AuthService {
 
   async registerInit(dto: RegisterInitDto, context?: { ip?: string; userAgent?: string }) {
     const phoneNumber = this.normalizePhone(dto.phoneNumber);
+    this.logger.log(`[Register] Initiating registration for ${phoneNumber}`);
     let user = await this.userService.findByPhoneNumber(phoneNumber);
 
     if (!user) {
@@ -468,6 +470,7 @@ export class AuthService {
     const identifier = dto.phoneNumber.trim();
     const user = await this.userService.findByIdentity(identifier);
     if (!user || !user.passwordHash) {
+      this.logger.warn(`[Login] Entry not found or password missing for ${identifier}`);
       throw new UnauthorizedException('INVALID_CREDENTIALS');
     }
 

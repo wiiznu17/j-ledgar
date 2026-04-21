@@ -33,6 +33,7 @@ export class RegisterPasswordDto {
   @IsString()
   @IsNotEmpty()
   @MinLength(8)
+  @Matches(/\d/, { message: 'Password must contain at least one number' })
   password!: string;
 }
 
@@ -94,6 +95,7 @@ export class RegisterCredentialsDto {
   @IsString()
   @IsNotEmpty()
   @MinLength(8)
+  @Matches(/\d/, { message: 'Password must contain at least one number' })
   password!: string;
 
   @IsString()
