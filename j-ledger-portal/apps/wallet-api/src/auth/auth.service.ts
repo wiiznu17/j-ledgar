@@ -1021,15 +1021,14 @@ export class AuthService {
     });
 
     // Send the OTP via the configured provider
-    this.logger.debug(
-      `[OTP-DEBUG] Created Challenge: ${challenge.id} for ${phoneNumber}. OTP: ${plainOtp}`,
-    );
     await this.smsProvider.sendMessage(
       phoneNumber,
       `Your J-Ledger verification code is: ${plainOtp}. Valid for 3 minutes.`,
     );
 
-    return { id: challenge.id, plainOtp };
+    this.logger.log(`[OTP] Created Challenge: ${challenge.id} for ${phoneNumber}`);
+
+    return { id: challenge.id };
   }
 
   private async verifyOtpChallenge(
@@ -1067,11 +1066,7 @@ export class AuthService {
       throw new UnauthorizedException('OTP_RATE_LIMITED');
     }
 
-    console.log(
-      `[AuthDebug] Verifying OTP for challenge ${challengeId}. Received: "${otp}", Expected Hash: ${challenge.otpHash}`,
-    );
     const valid = await bcrypt.compare(otp.trim(), challenge.otpHash);
-    console.log(`[AuthDebug] Bcrypt compare result: ${valid}`);
     if (!valid) {
       const attempts = challenge.attempts + 1;
       await this.prisma.otpChallenge.update({

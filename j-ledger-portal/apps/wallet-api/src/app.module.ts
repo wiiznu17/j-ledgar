@@ -1,4 +1,4 @@
-import { Logger, Module } from '@nestjs/common';
+import { Logger, MiddlewareConsumer, Module, NestModule } from '@nestjs/common';
 import { APP_GUARD, APP_INTERCEPTOR } from '@nestjs/core';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { ScheduleModule } from '@nestjs/schedule';
@@ -9,6 +9,7 @@ import { PrismaModule } from './prisma/prisma.module';
 import { AuthModule } from './auth/auth.module';
 import { LedgerProxyModule } from './ledger-proxy/ledger-proxy.module';
 import { IdempotencyInterceptor } from './common/interceptors/idempotency.interceptor';
+import { CsrfMiddleware } from './common/middleware/csrf.middleware';
 import { UserModule } from './user/user.module';
 import { TransactionModule } from './transaction/transaction.module';
 import { PaymentModule } from './payment/payment.module';
@@ -63,15 +64,29 @@ import { REDIS_CLIENT } from './auth/auth.constants';
               const finalKey = key.startsWith('throttler:') ? key : `throttler:${key}`;
               return await (this as any).storage.getRecord(finalKey);
             },
-            async increment(key: string, ttl: number, limit: number, blockDuration: number, throttlerName: string): Promise<any> {
+            async increment(
+              key: string,
+              ttl: number,
+              limit: number,
+              blockDuration: number,
+              throttlerName: string,
+            ): Promise<any> {
               const currentStorage = (this as any).storage;
               const finalKey = key.startsWith('throttler:') ? key : `throttler:${key}`;
-              const res = await currentStorage.increment(finalKey, ttl, limit, blockDuration, throttlerName);
-              
+              const res = await currentStorage.increment(
+                finalKey,
+                ttl,
+                limit,
+                blockDuration,
+                throttlerName,
+              );
+
               const tLogger = new Logger('ThrottlerStorage');
-              tLogger.debug(`[${throttlerName}] Hits: ${res.totalHits}/${limit} for key: ${finalKey}`);
+              tLogger.debug(
+                `[${throttlerName}] Hits: ${res.totalHits}/${limit} for key: ${finalKey}`,
+              );
               return res;
-            }
+            },
           } as any,
         };
       },
@@ -99,4 +114,8 @@ import { REDIS_CLIENT } from './auth/auth.constants';
     },
   ],
 })
-export class AppModule {}
+export class AppModule implements NestModule {
+  configure(consumer: MiddlewareConsumer) {
+    consumer.apply(CsrfMiddleware).forRoutes('*');
+  }
+}

@@ -255,32 +255,26 @@ export default function OnboardingScreen() {
 
         await setRegToken(res.data.regToken);
         setLivenessSessionId(res.data.livenessSessionId);
-        // Pre-fill from OCR (with Mock fallback for testing)
-        const mockData = {
-          firstName: 'JOHN',
-          lastName: 'DOE',
-          thaiName: 'สมชาย ดีใจ',
-          prefix: 'นาย',
-          idCardNumber: '1234567890123',
-          dateOfBirth: '01/01/1990',
-          idCardIssueDate: '10/10/2020',
-          idCardExpiryDate: '10/10/2028',
-          religion: 'พุทธ',
-          address: '99/99 หมู่ 1 ต.ท่าตลาด อ.สามพราน จ.นครปฐม 73110',
-        };
 
-        const extracted = res.data.extractedData || mockData;
+        const extracted = res.data.extractedData;
+        if (!extracted) {
+          Alert.alert(
+            'OCR Failed',
+            'Could not read ID card data. Please try again with better lighting.',
+          );
+          return;
+        }
 
-        setFirstName(extracted.firstName || mockData.firstName);
-        setLastName(extracted.lastName || mockData.lastName);
-        setThaiName(extracted.thaiName || mockData.thaiName);
-        setPrefix(extracted.prefix || mockData.prefix);
-        setIdNumber(extracted.idCardNumber || mockData.idCardNumber);
-        setDateOfBirth(extracted.dateOfBirth || mockData.dateOfBirth);
-        setIssueDate(extracted.idCardIssueDate || mockData.idCardIssueDate);
-        setExpiryDate(extracted.idCardExpiryDate || mockData.idCardExpiryDate);
-        setReligion(extracted.religion || mockData.religion);
-        setAddress(extracted.address || mockData.address);
+        setFirstName(extracted.firstName || '');
+        setLastName(extracted.lastName || '');
+        setThaiName(extracted.thaiName || '');
+        setPrefix(extracted.prefix || '');
+        setIdNumber(extracted.idCardNumber || '');
+        setDateOfBirth(extracted.dateOfBirth || '');
+        setIssueDate(extracted.idCardIssueDate || '');
+        setExpiryDate(extracted.idCardExpiryDate || '');
+        setReligion(extracted.religion || '');
+        setAddress(extracted.address || '');
 
         setStep('OCR_REVIEW');
       } catch (err: any) {

@@ -5,7 +5,7 @@ import { AppModule } from './../src/app.module';
 
 describe('Onboarding Flow (e2e)', () => {
   let app: INestApplication;
-  
+
   beforeAll(async () => {
     process.env.JWT_ACCESS_SECRET = 'test-access-secret';
     process.env.JWT_REFRESH_SECRET = 'test-refresh-secret';
@@ -17,7 +17,8 @@ describe('Onboarding Flow (e2e)', () => {
     process.env.KYC_OCR_PROVIDER_TYPE = 'mock';
     process.env.KYC_FACE_PROVIDER_TYPE = 'mock';
     process.env.STORAGE_PROVIDER_TYPE = 'mock';
-    process.env.KYC_ENCRYPTION_KEY = '0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef';
+    process.env.KYC_ENCRYPTION_KEY =
+      '0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef';
     process.env.NODE_ENV = 'development';
 
     const moduleFixture: TestingModule = await Test.createTestingModule({
@@ -35,7 +36,6 @@ describe('Onboarding Flow (e2e)', () => {
 
   const testPhone = `08${Math.floor(10000000 + Math.random() * 90000000)}`;
   let challengeId = '';
-  let debugOtp = '';
   let regToken = '';
 
   it('/auth/register/init (POST)', async () => {
@@ -45,15 +45,14 @@ describe('Onboarding Flow (e2e)', () => {
       .expect(200);
 
     expect(res.body.challengeId).toBeDefined();
-    expect(res.body.debugOtp).toBeDefined();
+    expect(res.body.debugOtp).toBeUndefined(); // OTP must not be exposed in response
     challengeId = res.body.challengeId;
-    debugOtp = res.body.debugOtp;
   });
 
   it('/auth/register/verify-otp (POST)', async () => {
     const res = await request(app.getHttpServer())
       .post('/auth/register/verify-otp')
-      .send({ phoneNumber: testPhone, challengeId, otp: debugOtp })
+      .send({ phoneNumber: testPhone, challengeId, otp: '000000' }) // Mock provider accepts any OTP
       .expect(200);
 
     expect(res.body.regToken).toBeDefined();
@@ -102,13 +101,13 @@ describe('Onboarding Flow (e2e)', () => {
     const res = await request(app.getHttpServer())
       .post('/auth/register/profile')
       .set('Authorization', `Bearer ${regToken}`)
-      .send({ 
-        firstName: 'Test', 
-        lastName: 'User', 
+      .send({
+        firstName: 'Test',
+        lastName: 'User',
         dateOfBirth: '1990-01-01',
         incomeRange: '50,000 - 100,000',
         sourceOfFunds: 'Salary',
-        purposeOfAccount: 'Savings'
+        purposeOfAccount: 'Savings',
       })
       .expect(200);
 

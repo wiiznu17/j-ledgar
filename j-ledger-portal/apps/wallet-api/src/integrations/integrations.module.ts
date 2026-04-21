@@ -26,13 +26,18 @@ import { IGoogleKycProvider, IAwsKycProvider } from './interfaces/kyc-provider.i
       useFactory: (config: ConfigService) => {
         const type = config.get<string>('SMS_PROVIDER_TYPE') || 'mock';
         if (type === 'firebase') {
-          validateConfig(config, ['FIREBASE_PROJECT_ID', 'FIREBASE_CLIENT_EMAIL', 'FIREBASE_PRIVATE_KEY']);
+          validateConfig(config, [
+            'FIREBASE_PROJECT_ID',
+            'FIREBASE_CLIENT_EMAIL',
+            'FIREBASE_PRIVATE_KEY',
+          ]);
           return new FirebaseAuthAdapter(config);
         }
         if (type === 'twilio') {
           validateConfig(config, ['TWILIO_ACCOUNT_SID', 'TWILIO_AUTH_TOKEN', 'TWILIO_SENDER_ID']);
           return new TwilioSmsAdapter(config);
         }
+        rejectMockInProduction('SMS', type);
         return new MockSmsAdapter();
       },
       inject: [ConfigService],
@@ -44,6 +49,7 @@ import { IGoogleKycProvider, IAwsKycProvider } from './interfaces/kyc-provider.i
         if (type === 'google') {
           return new GoogleKycAdapter(config);
         }
+        rejectMockInProduction('KYC_OCR', type);
         return new MockKycAdapter();
       },
       inject: [ConfigService],
@@ -56,6 +62,7 @@ import { IGoogleKycProvider, IAwsKycProvider } from './interfaces/kyc-provider.i
           validateConfig(config, ['AWS_REGION', 'AWS_ACCESS_KEY_ID', 'AWS_SECRET_ACCESS_KEY']);
           return new AwsKycAdapter(config);
         }
+        rejectMockInProduction('KYC_FACE', type);
         return new MockKycAdapter();
       },
       inject: [ConfigService],
@@ -72,6 +79,7 @@ import { IGoogleKycProvider, IAwsKycProvider } from './interfaces/kyc-provider.i
           validateConfig(config, ['S3_ACCESS_KEY', 'S3_SECRET_KEY', 'S3_BUCKET']);
           return new S3StorageAdapter(config);
         }
+        rejectMockInProduction('STORAGE', type);
         return new MockStorageAdapter();
       },
       inject: [ConfigService],
@@ -89,8 +97,28 @@ function validateConfig(config: ConfigService, requiredKeys: string[]) {
   const missing = requiredKeys.filter((key) => !config.get(key));
   if (missing.length > 0) {
     const logger = new Logger('IntegrationsModule');
-    logger.error(`Critical configuration error: One or more providers are set to 'real' but missing mandated keys: ${missing.join(', ')}`);
+    logger.error(
+      `Critical configuration error: One or more providers are set to 'real' but missing mandated keys: ${missing.join(', ')}`,
+    );
     // Throw error to trigger fail-fast startup
     throw new Error(`Missing integration keys: ${missing.join(', ')}`);
+  }
+}
+
+/**
+ * Prevents mock providers from being used in production environment.
+ * This is a critical safety check to ensure real providers are configured before deployment.
+ */
+function rejectMockInProduction(providerName: string, type: string) {
+  const nodeEnv = process.env.NODE_ENV;
+  if ((nodeEnv === 'production' || nodeEnv === 'staging') && (type === 'mock' || !type)) {
+    const logger = new Logger('IntegrationsModule');
+    logger.error(
+      `SECURITY: ${providerName} provider is set to 'mock' in ${nodeEnv} environment. This is not allowed.`,
+    );
+    throw new Error(
+      `Mock ${providerName} provider is not allowed in ${nodeEnv} environment. ` +
+        `Configure a real provider via environment variables.`,
+    );
   }
 }

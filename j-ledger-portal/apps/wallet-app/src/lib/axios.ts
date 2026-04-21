@@ -2,6 +2,7 @@ import axios from 'axios';
 import { Platform } from 'react-native';
 import * as SecureStore from 'expo-secure-store';
 import { validateConnectionSecurity } from './certificate-validation';
+import { useAuthStore } from '@/store/auth';
 
 const getBaseUrl = () => {
   if (__DEV__) {
@@ -18,6 +19,7 @@ export const api = axios.create({
   timeout: 10000, // 10 second timeout for all requests to prevent hanging
   headers: {
     'Content-Type': 'application/json',
+    'X-Requested-With': 'XMLHttpRequest', // CSRF protection header
   },
 });
 
@@ -77,13 +79,16 @@ api.interceptors.response.use(
           const response = await axios.post(
             `${getBaseUrl()}/auth/refresh`,
             { refreshToken },
-            { headers: { 'Content-Type': 'application/json' } },
+            {
+              headers: { 'Content-Type': 'application/json', 'X-Requested-With': 'XMLHttpRequest' },
+            },
           );
 
           const { accessToken, refreshToken: newRefreshToken } = response.data;
 
-          // Store new tokens
+          // Store new tokens and update auth store
           await storeTokens(accessToken, newRefreshToken);
+          useAuthStore.getState().setToken(accessToken, newRefreshToken);
 
           // Update Authorization header for original request
           originalRequest.headers.Authorization = `Bearer ${accessToken}`;
