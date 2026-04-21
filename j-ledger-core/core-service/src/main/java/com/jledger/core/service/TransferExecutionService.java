@@ -42,6 +42,7 @@ public class TransferExecutionService {
     private final IntegrationOutboxRepository integrationOutboxRepository;
     private final ObjectMapper objectMapper;
     private final AmlMonitoringService amlMonitoringService;
+    private final TransactionLimitService transactionLimitService;
 
     @Transactional
     public Transaction performTransferInDb(
@@ -89,6 +90,9 @@ public class TransferExecutionService {
     private Transaction processTransfer(Transaction transaction, Account sender, Account receiver, BigDecimal normalizedAmount) {
         validateTransfer(sender, receiver, normalizedAmount);
 
+        // Transaction Limit Check
+        transactionLimitService.checkTransactionLimits(sender.getId(), normalizedAmount);
+
         // AML Monitoring Check
         amlMonitoringService.checkTransactionForSuspiciousActivity(
             sender.getId(),
@@ -133,6 +137,9 @@ public class TransferExecutionService {
                 .payload(buildWalletEventPayload(transaction, receiver.getId(), CREDIT_ENTRY))
                 .status(PENDING_STATUS)
                 .build());
+
+        // Record transaction amount for limits
+        transactionLimitService.recordTransaction(sender.getId(), normalizedAmount);
 
         return transaction;
     }
