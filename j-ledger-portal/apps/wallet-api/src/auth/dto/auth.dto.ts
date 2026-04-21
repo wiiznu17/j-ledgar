@@ -53,6 +53,16 @@ export class AcceptTermsDto {
   @IsString()
   @IsNotEmpty()
   termsVersion!: string;
+
+  @IsString()
+  @IsOptional()
+  privacyPolicyVersion?: string;
+
+  @IsOptional()
+  marketingConsent?: boolean;
+
+  @IsOptional()
+  biometricConsent?: boolean;
 }
 
 export class RegisterProfileDto {
@@ -172,4 +182,19 @@ export class PinVerifyDto {
   @IsString()
   @Matches(/^\d{6}$/)
   pin!: string;
+}
+
+export class WithdrawConsentDto {
+  @IsString()
+  @IsNotEmpty()
+  consentType!: string;
+}
+
+export class ConsentRecordDto {
+  id!: string;
+  consentType!: string;
+  status!: string;
+  consentVersion!: string;
+  consentedAt!: string;
+  withdrawnAt?: string;
 }

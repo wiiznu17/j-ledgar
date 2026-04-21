@@ -12,6 +12,7 @@ import { ConfigService } from '@nestjs/config';
 import { UserService } from '../user/user.service';
 import { PrismaService } from '../prisma/prisma.service';
 import {
+  ConsentType,
   DeviceTrustLevel,
   KycVerificationStatus,
   OtpPurpose,
@@ -165,6 +166,65 @@ export class AuthService {
       RegistrationState.OTP_VERIFIED,
     );
 
+    // Create consent records for PDPA compliance
+    const consentsToCreate = [];
+
+    // Terms and Conditions consent (required)
+    consentsToCreate.push({
+      userId: claims.sub,
+      consentType: ConsentType.TERMS_AND_CONDITIONS,
+      consentVersion: dto.termsVersion,
+      ipAddress: context?.ip,
+      userAgent: context?.userAgent,
+    });
+
+    // Privacy Policy consent (if provided)
+    if (dto.privacyPolicyVersion) {
+      consentsToCreate.push({
+        userId: claims.sub,
+        consentType: ConsentType.PRIVACY_POLICY,
+        consentVersion: dto.privacyPolicyVersion,
+        ipAddress: context?.ip,
+        userAgent: context?.userAgent,
+      });
+    }
+
+    // Marketing consent (optional)
+    if (dto.marketingConsent === true) {
+      consentsToCreate.push({
+        userId: claims.sub,
+        consentType: ConsentType.MARKETING_COMMUNICATIONS,
+        consentVersion: '1.0',
+        ipAddress: context?.ip,
+        userAgent: context?.userAgent,
+      });
+    }
+
+    // Biometric data processing consent (optional)
+    if (dto.biometricConsent === true) {
+      consentsToCreate.push({
+        userId: claims.sub,
+        consentType: ConsentType.BIOMETRIC_DATA_PROCESSING,
+        consentVersion: '1.0',
+        ipAddress: context?.ip,
+        userAgent: context?.userAgent,
+      });
+    }
+
+    // Data processing consent (required for KYC)
+    consentsToCreate.push({
+      userId: claims.sub,
+      consentType: ConsentType.DATA_PROCESSING,
+      consentVersion: '1.0',
+      ipAddress: context?.ip,
+      userAgent: context?.userAgent,
+    });
+
+    // Create all consent records
+    await this.prisma.userConsent.createMany({
+      data: consentsToCreate,
+    });
+
     await this.prisma.user.update({
       where: { id: claims.sub },
       data: {
@@ -175,7 +235,10 @@ export class AuthService {
     await this.logSecurityEvent(claims.sub, 'REGISTER_TERMS_ACCEPTED', {
       ipAddress: context?.ip,
       userAgent: context?.userAgent,
-      metadata: { termsVersion: dto.termsVersion },
+      metadata: {
+        termsVersion: dto.termsVersion,
+        consents: consentsToCreate.map((c) => c.consentType),
+      },
     });
 
     return {
@@ -1026,6 +1089,56 @@ export class AuthService {
     });
 
     return challenge.user;
+  }
+
+  async getUserConsents(userId: string) {
+    const consents = await this.prisma.userConsent.findMany({
+      where: { userId },
+      orderBy: { consentedAt: 'desc' },
+    });
+
+    return consents.map((consent) => ({
+      id: consent.id,
+      consentType: consent.consentType,
+      status: consent.status,
+      consentVersion: consent.consentVersion,
+      consentedAt: consent.consentedAt.toISOString(),
+      withdrawnAt: consent.withdrawnAt?.toISOString(),
+    }));
+  }
+
+  async withdrawConsent(
+    userId: string,
+    consentType: string,
+    context?: { ip?: string; userAgent?: string },
+  ) {
+    // Validate consent type
+    const validConsentTypes = ['MARKETING_COMMUNICATIONS', 'BIOMETRIC_DATA_PROCESSING'];
+
+    if (!validConsentTypes.includes(consentType)) {
+      throw new BadRequestException('This consent type cannot be withdrawn');
+    }
+
+    // Update consent status
+    const consent = await this.prisma.userConsent.updateMany({
+      where: {
+        userId,
+        consentType: consentType as any,
+        status: 'ACTIVE',
+      },
+      data: {
+        status: 'WITHDRAWN',
+        withdrawnAt: new Date(),
+      },
+    });
+
+    await this.logSecurityEvent(userId, 'CONSENT_WITHDRAWN', {
+      ipAddress: context?.ip,
+      userAgent: context?.userAgent,
+      metadata: { consentType },
+    });
+
+    return { success: true };
   }
 
   public async signRegistrationToken(userId: string, state: RegistrationState): Promise<string> {

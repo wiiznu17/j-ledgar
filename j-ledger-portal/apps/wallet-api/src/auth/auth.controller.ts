@@ -1,6 +1,7 @@
 import {
   Body,
   Controller,
+  Get,
   Headers,
   HttpCode,
   HttpStatus,
@@ -25,6 +26,7 @@ import {
   RegisterPinDto,
   RegisterProfileDto,
   RegisterVerifyOtpDto,
+  WithdrawConsentDto,
 } from './dto/auth.dto';
 import type { Request } from 'express';
 
@@ -118,9 +120,7 @@ export class AuthController {
 
   @Post('register/status')
   @HttpCode(HttpStatus.OK)
-  async getRegisterStatus(
-    @Headers('authorization') authorization: string | undefined,
-  ) {
+  async getRegisterStatus(@Headers('authorization') authorization: string | undefined) {
     return this.authService.getRegistrationStatus(authorization);
   }
 
@@ -202,6 +202,28 @@ export class AuthController {
       throw new UnauthorizedException('User is not authenticated');
     }
     await this.authService.verifyPin(req.user.sub, body);
+  }
+
+  @UseGuards(JwtAuthGuard)
+  @Get('consents')
+  async getUserConsents(@Req() req: AuthenticatedRequest) {
+    if (!req.user?.sub) {
+      throw new UnauthorizedException('User is not authenticated');
+    }
+    return this.authService.getUserConsents(req.user.sub);
+  }
+
+  @UseGuards(JwtAuthGuard)
+  @Post('consents/withdraw')
+  @HttpCode(HttpStatus.OK)
+  async withdrawConsent(@Body() body: WithdrawConsentDto, @Req() req: AuthenticatedRequest) {
+    if (!req.user?.sub) {
+      throw new UnauthorizedException('User is not authenticated');
+    }
+    return this.authService.withdrawConsent(req.user.sub, body.consentType, {
+      ip: req.ip,
+      userAgent: this.singleHeader(req.headers['user-agent']),
+    });
   }
 
   private singleHeader(value: string | string[] | undefined) {

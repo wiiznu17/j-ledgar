@@ -53,6 +53,26 @@ enum DeviceTrustLevel {
 }
 
 
+enum ConsentType {
+  TERMS_AND_CONDITIONS
+  PRIVACY_POLICY
+  MARKETING_COMMUNICATIONS
+  DATA_PROCESSING
+  BIOMETRIC_DATA_PROCESSING
+
+  @@schema("wallet_schema")
+}
+
+
+enum ConsentStatus {
+  ACTIVE
+  WITHDRAWN
+  EXPIRED
+
+  @@schema("wallet_schema")
+}
+
+
 enum SessionStatus {
   ACTIVE
   ROTATED
@@ -137,6 +157,7 @@ model User {
   profile                UserProfile?
   kycData                KycData?
   devices                UserDevice[]
+  consents               UserConsent[]
   sessions               RefreshSession[]
   otpChallenges          OtpChallenge[]
   securityLogs           SecurityLog[]
@@ -170,6 +191,27 @@ model UserProfile {
   updatedAt   DateTime @updatedAt
 
   @@map("user_profiles")
+  @@schema("wallet_schema")
+}
+
+
+model UserConsent {
+  id              String        @id @default(uuid())
+  userId          String
+  user            User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  consentType     ConsentType
+  status          ConsentStatus @default(ACTIVE)
+  consentVersion  String        @db.VarChar(20)
+  consentedAt     DateTime      @default(now())
+  withdrawnAt     DateTime?
+  ipAddress       String?       @db.VarChar(45)
+  userAgent       String?       @db.Text
+
+  @@unique([userId, consentType, consentVersion])
+  @@index([userId])
+  @@index([consentType])
+  @@index([status])
+  @@map("user_consents")
   @@schema("wallet_schema")
 }
 
