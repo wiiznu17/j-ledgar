@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/button';
 import { useRouter } from 'next/navigation';
 import { toast } from 'sonner';
 import { Loader2, Play } from 'lucide-react';
-import { reconcileRequester } from '@/lib/requesters/reconcileRequester';
+import { adminApi } from '@/lib/admin-api';
 
 export function TriggerAuditButton() {
   const [isPending, startTransition] = useTransition();
@@ -15,11 +15,10 @@ export function TriggerAuditButton() {
   const handleTrigger = async () => {
     setIsApiLoading(true);
     try {
-      // Direct call to domain requester
-      await reconcileRequester.triggerManualAudit();
+      await adminApi.reconciliation.runReconciliation();
 
       toast.success('Manual audit triggered successfully');
-      
+
       // Refresh the server-rendered data (the reports list)
       startTransition(() => {
         router.refresh();
@@ -35,8 +34,8 @@ export function TriggerAuditButton() {
   const isLoading = isApiLoading || isPending;
 
   return (
-    <Button 
-      onClick={handleTrigger} 
+    <Button
+      onClick={handleTrigger}
       disabled={isLoading}
       className="bg-primary hover:bg-primary/90 text-primary-foreground font-semibold shadow-md active:scale-95 transition-all flex gap-2"
     >
