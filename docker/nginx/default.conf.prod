@@ -1,3 +1,4 @@
+# HTTP to HTTPS redirect
 server {
     listen 80;
     server_name potayyr.site www.potayyr.site;
@@ -35,7 +36,6 @@ server {
         proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
         proxy_set_header X-Forwarded-Proto $scheme;
     }
-
 
     # Next.js Admin Web
     location / {

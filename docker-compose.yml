@@ -12,7 +12,11 @@ services:
     volumes:
       - pgdata:/var/lib/postgresql/data
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-ledger_admin} -d ${POSTGRES_DB:-jledger_db}"]
+      test:
+        [
+          "CMD-SHELL",
+          "pg_isready -U ${POSTGRES_USER:-ledger_admin} -d ${POSTGRES_DB:-jledger_db}",
+        ]
       interval: 10s
       timeout: 10s
       retries: 10
@@ -86,7 +90,15 @@ services:
     image: j-ledger/eureka-server:latest
     container_name: jledger-eureka
     healthcheck:
-      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:8761/"]
+      test:
+        [
+          "CMD",
+          "wget",
+          "--no-verbose",
+          "--tries=1",
+          "--spider",
+          "http://localhost:8761/",
+        ]
       interval: 10s
       timeout: 10s
       retries: 15
@@ -245,7 +257,15 @@ services:
     expose:
       - "3001"
     healthcheck:
-      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:3001/api/admin/health"]
+      test:
+        [
+          "CMD",
+          "wget",
+          "--no-verbose",
+          "--tries=1",
+          "--spider",
+          "http://localhost:3001/api/admin/health",
+        ]
       interval: 10s
       timeout: 5s
       retries: 5
@@ -331,11 +351,18 @@ services:
     expose:
       - "3002"
     healthcheck:
-      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:3002/health"]
+      test:
+        [
+          "CMD",
+          "wget",
+          "--no-verbose",
+          "--tries=1",
+          "--spider",
+          "http://localhost:3002/health",
+        ]
       interval: 10s
       timeout: 5s
       retries: 5
-
 
   # ----------------------------------------------------
   # 14. Nginx - Unified Entry Point (Reverse Proxy)
@@ -347,7 +374,7 @@ services:
       - "80:80"
       - "443:443"
     volumes:
-      - ./docker/nginx/default.conf:/etc/nginx/conf.d/default.conf:ro
+      - ./docker/nginx/default.conf.prod:/etc/nginx/conf.d/default.conf:ro
       - /etc/letsencrypt:/etc/letsencrypt:ro
     depends_on:
       api-gateway:
