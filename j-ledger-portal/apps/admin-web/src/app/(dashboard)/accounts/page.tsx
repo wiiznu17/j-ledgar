@@ -5,7 +5,7 @@ import { useEffect, useState } from 'react';
 import { toast } from 'sonner';
 import { AccountTable } from '@/components/tables/AccountTable';
 import { Account, AccountStatus } from '@repo/dto';
-import { accountRequester } from '@/lib/requesters';
+import { adminApi } from '@/lib/admin-api';
 
 export default function AccountsPage() {
   const [data, setData] = useState<Account[]>([]);
@@ -22,8 +22,8 @@ export default function AccountsPage() {
 
   const fetchAccounts = async () => {
     try {
-      const response = await accountRequester.getAccounts(0, 50);
-      setData(response.content);
+      const response = await adminApi.accounts.findAll({ page: 1, limit: 50 });
+      setData(response.data);
     } catch {
       toast.error('Service temporarily unavailable. Please try again.');
     }
@@ -34,10 +34,11 @@ export default function AccountsPage() {
   }, []);
 
   const handleToggleStatus = async (accountId: string, currentStatus: string) => {
-    const newStatus = currentStatus === AccountStatus.ACTIVE ? AccountStatus.FROZEN : AccountStatus.ACTIVE;
+    const newStatus =
+      currentStatus === AccountStatus.ACTIVE ? AccountStatus.FROZEN : AccountStatus.ACTIVE;
     setLoading(true);
     try {
-      await accountRequester.updateStatus(accountId, newStatus);
+      await adminApi.accounts.updateStatus(accountId, { status: newStatus });
       toast.success(`Account status updated to ${newStatus}`);
       fetchAccounts();
     } catch {

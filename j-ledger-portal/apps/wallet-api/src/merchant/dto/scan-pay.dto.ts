@@ -1,7 +1,6 @@
 import { IsNotEmpty, IsNumber, IsString, Min } from 'class-validator';
-import { ScanPayRequest } from '@repo/dto';
 
-export class ScanPayDto implements ScanPayRequest {
+export class ScanPayDto {
   @IsString()
   @IsNotEmpty()
   qrCodeData!: string;

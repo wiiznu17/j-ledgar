@@ -1,0 +1,124 @@
+import { Module, Global, Logger, Provider } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
+import { ISmsProvider } from './interfaces/sms-provider.interface';
+import { IKycProvider } from './interfaces/kyc-provider.interface';
+import { IStorageProvider } from './interfaces/storage-provider.interface';
+
+// Mock Adapters
+import { MockSmsAdapter } from './providers/mock-sms.adapter';
+import { MockKycAdapter } from './providers/mock-kyc.adapter';
+import { MockStorageAdapter } from './providers/mock-storage.adapter';
+
+// Real Adapters
+import { TwilioSmsAdapter } from './providers/real/twilio-sms.adapter';
+import { AwsKycAdapter } from './providers/real/aws-kyc.adapter';
+import { S3StorageAdapter } from './providers/real/s3-storage.adapter';
+import { GoogleKycAdapter } from './providers/real/google-kyc.adapter';
+import { FirebaseAuthAdapter } from './providers/real/firebase-auth.adapter';
+
+import { IGoogleKycProvider, IAwsKycProvider } from './interfaces/kyc-provider.interface';
+
+@Global()
+@Module({
+  providers: [
+    {
+      provide: ISmsProvider,
+      useFactory: (config: ConfigService) => {
+        const type = config.get<string>('SMS_PROVIDER_TYPE') || 'mock';
+        if (type === 'firebase') {
+          validateConfig(config, [
+            'FIREBASE_PROJECT_ID',
+            'FIREBASE_CLIENT_EMAIL',
+            'FIREBASE_PRIVATE_KEY',
+          ]);
+          return new FirebaseAuthAdapter(config);
+        }
+        if (type === 'twilio') {
+          validateConfig(config, ['TWILIO_ACCOUNT_SID', 'TWILIO_AUTH_TOKEN', 'TWILIO_SENDER_ID']);
+          return new TwilioSmsAdapter(config);
+        }
+        rejectMockInProduction('SMS', type);
+        return new MockSmsAdapter();
+      },
+      inject: [ConfigService],
+    },
+    {
+      provide: IGoogleKycProvider,
+      useFactory: (config: ConfigService) => {
+        const type = config.get<string>('KYC_OCR_PROVIDER_TYPE') || 'mock';
+        if (type === 'google') {
+          return new GoogleKycAdapter(config);
+        }
+        rejectMockInProduction('KYC_OCR', type);
+        return new MockKycAdapter();
+      },
+      inject: [ConfigService],
+    },
+    {
+      provide: IAwsKycProvider,
+      useFactory: (config: ConfigService) => {
+        const type = config.get<string>('KYC_FACE_PROVIDER_TYPE') || 'mock';
+        if (type === 'aws') {
+          validateConfig(config, ['AWS_REGION', 'AWS_ACCESS_KEY_ID', 'AWS_SECRET_ACCESS_KEY']);
+          return new AwsKycAdapter(config);
+        }
+        rejectMockInProduction('KYC_FACE', type);
+        return new MockKycAdapter();
+      },
+      inject: [ConfigService],
+    },
+    {
+      provide: IKycProvider, // Backward compatibility or default
+      useExisting: IGoogleKycProvider,
+    },
+    {
+      provide: IStorageProvider,
+      useFactory: (config: ConfigService) => {
+        const type = config.get<string>('STORAGE_PROVIDER_TYPE') || 'mock';
+        if (type === 's3') {
+          validateConfig(config, ['S3_ACCESS_KEY', 'S3_SECRET_KEY', 'S3_BUCKET']);
+          return new S3StorageAdapter(config);
+        }
+        rejectMockInProduction('STORAGE', type);
+        return new MockStorageAdapter();
+      },
+      inject: [ConfigService],
+    },
+  ],
+  exports: [ISmsProvider, IKycProvider, IGoogleKycProvider, IAwsKycProvider, IStorageProvider],
+})
+export class IntegrationsModule {}
+
+/**
+ * Helper to strictly validate environment variables ONLY when a specific provider is active.
+ * Prevents the app from crashing on missing AWS keys if the user is using Mocks.
+ */
+function validateConfig(config: ConfigService, requiredKeys: string[]) {
+  const missing = requiredKeys.filter((key) => !config.get(key));
+  if (missing.length > 0) {
+    const logger = new Logger('IntegrationsModule');
+    logger.error(
+      `Critical configuration error: One or more providers are set to 'real' but missing mandated keys: ${missing.join(', ')}`,
+    );
+    // Throw error to trigger fail-fast startup
+    throw new Error(`Missing integration keys: ${missing.join(', ')}`);
+  }
+}
+
+/**
+ * Prevents mock providers from being used in production environment.
+ * This is a critical safety check to ensure real providers are configured before deployment.
+ */
+function rejectMockInProduction(providerName: string, type: string) {
+  const nodeEnv = process.env.NODE_ENV;
+  if ((nodeEnv === 'production' || nodeEnv === 'staging') && (type === 'mock' || !type)) {
+    const logger = new Logger('IntegrationsModule');
+    logger.error(
+      `SECURITY: ${providerName} provider is set to 'mock' in ${nodeEnv} environment. This is not allowed.`,
+    );
+    throw new Error(
+      `Mock ${providerName} provider is not allowed in ${nodeEnv} environment. ` +
+        `Configure a real provider via environment variables.`,
+    );
+  }
+}

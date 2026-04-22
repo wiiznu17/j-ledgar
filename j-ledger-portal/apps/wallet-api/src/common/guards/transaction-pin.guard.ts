@@ -19,7 +19,7 @@ export class TransactionPinGuard implements CanActivate {
     const request = context.switchToHttp().getRequest();
     const userId = request.user?.sub;
     const pin = request.headers['x-transaction-pin'];
-    const deviceId = request.headers['x-device-id'];
+    const deviceIdentifier = request.headers['x-device-id'];
 
     if (!userId) {
       throw new UnauthorizedException('User not authenticated');
@@ -30,15 +30,18 @@ export class TransactionPinGuard implements CanActivate {
       throw new UnauthorizedException('User not found');
     }
 
-    // 1. Verify Device ID
-    if (!user.deviceId) {
-      throw new ForbiddenException('Device not bound. Please bind your device first.');
+    if (!deviceIdentifier || Array.isArray(deviceIdentifier)) {
+      throw new UnauthorizedException('X-Device-Id header is required');
     }
-    if (user.deviceId !== deviceId) {
+
+    const trustedDeviceId = await this.userService.getTrustedDeviceIdByIdentifier(
+      userId,
+      deviceIdentifier,
+    );
+    if (!trustedDeviceId) {
       throw new ForbiddenException('Invalid device ID');
     }
 
-    // 2. Check Lockout status
     if (user.pinLockedUntil && user.pinLockedUntil > new Date()) {
       const remainingMinutes = Math.ceil(
         (user.pinLockedUntil.getTime() - Date.now()) / (60 * 1000),
@@ -48,21 +51,18 @@ export class TransactionPinGuard implements CanActivate {
       );
     }
 
-    // 3. Verify PIN
-    if (!pin) {
+    if (!pin || Array.isArray(pin)) {
       throw new UnauthorizedException('X-Transaction-PIN header is required');
     }
 
     const isValid = await this.authService.validatePinByUserId(userId, pin);
 
     if (isValid) {
-      // Success: Reset attempts
       if (user.pinAttempts > 0 || user.pinLockedUntil) {
         await this.userService.resetPinAttempts(userId);
       }
       return true;
     } else {
-      // Failure: Atomically increment attempts. handlePinFailure returns the updated user record.
       const updatedUser = await this.userService.handlePinFailure(userId);
       const MAX_ATTEMPTS = 3;
       const remainingAttempts = MAX_ATTEMPTS - updatedUser.pinAttempts;

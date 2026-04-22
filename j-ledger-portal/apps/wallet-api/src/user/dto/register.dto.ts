@@ -1,18 +1,17 @@
-import { IsEmail, IsNotEmpty, IsOptional, IsString, MinLength } from 'class-validator';
-import { RegisterRequest } from '@repo/dto';
+import { IsNotEmpty, IsString, Length, Matches, MinLength } from 'class-validator';
 
-export class RegisterDto implements RegisterRequest {
-  @IsEmail()
+export class RegisterDto {
+  @IsString()
   @IsNotEmpty()
-  email!: string;
+  @Length(8, 20)
+  phoneNumber!: string;
 
   @IsString()
   @IsNotEmpty()
-  @MinLength(6)
+  @MinLength(8)
   password!: string;
 
   @IsString()
-  @IsOptional()
-  @MinLength(6)
-  pin?: string;
+  @Matches(/^\d{6}$/)
+  pin!: string;
 }

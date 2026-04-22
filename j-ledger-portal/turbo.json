@@ -19,6 +19,7 @@
       "outputs": ["node_modules/@prisma/client-*/**"]
     },
     "dev": {
+      "dependsOn": ["^build"],
       "cache": false,
       "persistent": true
     }

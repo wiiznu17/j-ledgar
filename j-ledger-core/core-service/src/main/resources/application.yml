@@ -13,12 +13,26 @@ eureka:
 spring:
   application:
     name: core-service
-  
+
   datasource:
     url: ${JLEDGER_DATASOURCE_URL:jdbc:postgresql://localhost:5432/jledger_db}
     username: ${JLEDGER_DATASOURCE_USERNAME:ledger_admin}
     password: ${JLEDGER_DATASOURCE_PASSWORD:ledger_password}
     driver-class-name: org.postgresql.Driver
+    hikari:
+      # Connection pool size settings
+      maximum-pool-size: ${JLEDGER_DATASOURCE_POOL_SIZE:20}
+      minimum-idle: ${JLEDGER_DATASOURCE_MIN_IDLE:5}
+      # Connection timeout settings
+      connection-timeout: ${JLEDGER_DATASOURCE_CONNECTION_TIMEOUT:30000}
+      idle-timeout: ${JLEDGER_DATASOURCE_IDLE_TIMEOUT:600000}
+      max-lifetime: ${JLEDGER_DATASOURCE_MAX_LIFETIME:1800000}
+      # Performance optimizations
+      connection-test-query: SELECT 1
+      validation-timeout: ${JLEDGER_DATASOURCE_VALIDATION_TIMEOUT:5000}
+      leak-detection-threshold: ${JLEDGER_DATASOURCE_LEAK_DETECTION_THRESHOLD:30000}
+      # Pool name for monitoring
+      pool-name: JLedgerHikariPool
 
   jpa:
     open-in-view: false
@@ -66,7 +80,7 @@ jledger:
     email: ${JLEDGER_ADMIN_EMAIL:admin@jledger.io}
     password: ${JLEDGER_ADMIN_PASSWORD:password123}
   internal:
-    secret: ${JLEDGER_INTERNAL_SECRET:jledger_ecosystem_secret_2024}
+    secret: ${JLEDGER_INTERNAL_SECRET}
 
 logging:
   level:

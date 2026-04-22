@@ -2,5 +2,9 @@
   "name": "@repo/prettier-config",
   "version": "0.0.0",
   "private": true,
-  "main": "index.json"
+  "main": "index.json",
+  "dependencies": {
+    "@types/react": "~19.1.10",
+    "@types/react-dom": "~19.1.10"
+  }
 }

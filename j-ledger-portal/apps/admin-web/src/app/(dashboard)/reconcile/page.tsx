@@ -1,12 +1,12 @@
 import { ReconciliationTable } from '@/components/reconcile/ReconciliationTable';
 import { TriggerAuditButton } from '@/components/reconcile/TriggerAuditButton';
 import { ReconciliationReport, ReconciliationStatus } from '@repo/dto';
-import { reconcileRequester } from '@/lib/requesters/reconcileRequester';
+import { adminApi } from '@/lib/admin-api';
 
 async function getReconciliationReports(): Promise<ReconciliationReport[]> {
   try {
-    // UI layer now only calls the requester, unaware of the underlying fetch/endpoint
-    return await reconcileRequester.getReports();
+    const response = await adminApi.reconciliation.findAll({ page: 1, limit: 50 });
+    return response.data;
   } catch (error) {
     console.error('[RECONCILE] Fetch error:', error);
     return [];
@@ -34,30 +34,31 @@ export default async function ReconcilePage() {
         <div className="bg-card p-6 rounded-xl border-2 border-primary/10 shadow-sm">
           <h3 className="text-xl font-bold mb-4 flex items-center gap-2">
             Historical Audit Logs
-            {reports.some(r => r.status === ReconciliationStatus.DISCREPANCY) && (
+            {reports.some((r) => r.status === ReconciliationStatus.DISCREPANCY) && (
               <span className="flex h-3 w-3 rounded-full bg-destructive animate-pulse" />
             )}
           </h3>
           <ReconciliationTable reports={reports} />
         </div>
-        
+
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           <div className="p-6 bg-green-50 rounded-xl border border-green-200">
             <h4 className="font-bold text-green-800 text-lg mb-2">Mathematical Core Invariant</h4>
             <p className="text-green-700 leading-relaxed text-sm">
-              The system calculates reconciliation as follows: 
+              The system calculates reconciliation as follows:
               <span className="block font-mono mt-2 bg-white/50 p-2 rounded">
                 System Bank Assets - Sum(Total User Liabilities) == 0
               </span>
-              Any value other than zero indicates a double-entry integrity violation that requires immediate investigation.
+              Any value other than zero indicates a double-entry integrity violation that requires
+              immediate investigation.
             </p>
           </div>
           <div className="p-6 bg-slate-50 rounded-xl border border-slate-200">
             <h4 className="font-bold text-slate-800 text-lg mb-2">Nightly Automation</h4>
             <p className="text-slate-700 leading-relaxed text-sm">
-              While manual audits can be triggered at any time, the system automatically performs 
-              this reconciliation nightly at <span className="font-bold">00:00:00 UTC</span>. 
-              The results for the previous day are recorded above.
+              While manual audits can be triggered at any time, the system automatically performs
+              this reconciliation nightly at <span className="font-bold">00:00:00 UTC</span>. The
+              results for the previous day are recorded above.
             </p>
           </div>
         </div>

@@ -7,6 +7,7 @@ import java.util.List;
 import java.math.BigDecimal;
 
 import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.repository.query.Param;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -26,4 +27,12 @@ public interface LedgerEntryRepository extends JpaRepository<LedgerEntry, UUID> 
         countQuery = "SELECT COUNT(le) FROM LedgerEntry le WHERE le.account.id = :accountId"
     )
     Page<LedgerEntry> findHistoryByAccountId(@Param("accountId") UUID accountId, Pageable pageable);
+
+    // Data retention methods
+    @Query("SELECT le FROM LedgerEntry le WHERE le.transaction NOT IN (SELECT t FROM Transaction t)")
+    List<LedgerEntry> findOrphanedEntries();
+
+    @Modifying(flushAutomatically = true, clearAutomatically = true)
+    @Query("DELETE FROM LedgerEntry le WHERE le.transaction NOT IN (SELECT t FROM Transaction t)")
+    int deleteOrphanedEntries();
 }

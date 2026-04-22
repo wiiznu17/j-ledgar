@@ -8,6 +8,7 @@
     "outDir": "./dist",
     "baseUrl": "./",
     "paths": {
+      "@/*": ["src/*"],
       "@prisma/client-wallet": ["./node_modules/@prisma/client-wallet"]
     },
     "incremental": true

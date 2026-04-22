@@ -8,14 +8,11 @@ export class UserController {
 
   @Post('register')
   async register(@Body() body: RegisterDto) {
-    const { email, password, pin } = body;
-    // UserService.create expects pin as a string, but RegisterDto.pin is optional.
-    // We provide a fallback or ensure it's handled. 
-    // Usually registration requires a PIN in this flow.
-    const user = await this.userService.create(email, password, pin || '');
+    const { phoneNumber, password, pin } = body;
+    const user = await this.userService.create(phoneNumber, password, pin);
     return {
       id: user.id,
-      email: user.email,
+      phoneNumber: user.phoneNumber,
     };
   }
 }

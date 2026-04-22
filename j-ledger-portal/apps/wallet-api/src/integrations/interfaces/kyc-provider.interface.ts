@@ -1,0 +1,48 @@
+export interface KycExtractionResult {
+  idCardNumber: string;
+  firstName: string;
+  lastName: string;
+  thaiName?: string;
+  prefix?: string;
+  dateOfBirth: string;
+  idCardIssueDate?: string;
+  idCardExpiryDate?: string;
+  religion?: string;
+  address?: string;
+  rawResponse?: any;
+}
+
+export interface KycCompareResult {
+  isMatch: boolean;
+  score: number;
+}
+
+export interface IKycProvider {
+  /**
+   * Extracts data from an identity document image.
+   * @param idCardImage Buffer or Stream of the ID card image.
+   */
+  extractIdData(idCardImage: Buffer): Promise<KycExtractionResult>;
+
+  /**
+   * Compares a selfie image against the photo on an ID card.
+   * @param selfie Image buffer of the live selfie.
+   * @param idCard Image buffer of the ID card.
+   */
+  compareFaces(selfie: Buffer, idCard: Buffer): Promise<KycCompareResult>;
+
+  /**
+   * Creates a session for Face Liveness detection.
+   */
+  createLivenessSession?(): Promise<string>;
+
+  /**
+   * Verified the result of a Face Liveness session.
+   * @param sessionId The session ID to verify.
+   */
+  getLivenessResult?(sessionId: string): Promise<{ isLive: boolean; confidence: number }>;
+}
+
+export const IKycProvider = Symbol('IKycProvider');
+export const IGoogleKycProvider = Symbol('IGoogleKycProvider');
+export const IAwsKycProvider = Symbol('IAwsKycProvider');
