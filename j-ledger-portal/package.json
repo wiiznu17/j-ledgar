@@ -10,10 +10,11 @@
     "postinstall": "turbo run generate"
   },
   "devDependencies": {
-    "prettier": "^3.7.4",
     "@repo/prettier-config": "*",
+    "prettier": "^3.7.4",
     "react": "19.1.0",
     "react-dom": "19.1.0",
+    "semver": "^7.7.4",
     "turbo": "^2.9.6",
     "typescript": "5.9.2"
   },
@@ -24,11 +25,16 @@
   "overrides": {
     "react": "19.1.0",
     "react-dom": "19.1.0",
-    "@types/react": "19.1.0",
-    "@types/react-dom": "19.1.0"
+    "tslib": "2.6.2",
+    "@types/react": "~19.1.10",
+    "@types/react-dom": "~19.1.10"
   },
   "workspaces": [
     "apps/*",
     "packages/*"
-  ]
+  ],
+  "dependencies": {
+    "@types/react": "~19.1.10",
+    "@types/react-dom": "~19.1.10"
+  }
 }

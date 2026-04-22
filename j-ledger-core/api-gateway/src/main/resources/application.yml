@@ -51,7 +51,7 @@ spring:
               args:
                 name: coreTransferCircuitBreaker
                 fallbackUri: forward:/fallback/core-service
-            - AddRequestHeader=X-Internal-Secret, ${JLEDGER_INTERNAL_SECRET:jledger_ecosystem_secret_2024}
+            - AddRequestHeader=X-Internal-Secret, ${JLEDGER_INTERNAL_SECRET}
         - id: core-service-route
           uri: lb://core-service
           predicates:
@@ -63,7 +63,7 @@ spring:
                 fallbackUri: forward:/fallback/core-service
                 statusCodes:
                   - 500
-            - AddRequestHeader=X-Internal-Secret, ${JLEDGER_INTERNAL_SECRET:jledger_ecosystem_secret_2024}
+            - AddRequestHeader=X-Internal-Secret, ${JLEDGER_INTERNAL_SECRET}
 
 springdoc:
   swagger-ui:

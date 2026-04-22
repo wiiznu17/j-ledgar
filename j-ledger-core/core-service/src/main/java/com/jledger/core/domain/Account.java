@@ -2,6 +2,8 @@ package com.jledger.core.domain;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
@@ -45,6 +47,13 @@ public class Account {
 
     @Column(nullable = false, length = 20)
     private String status;
+
+    @Enumerated(EnumType.STRING)
+    @Column(name = "kyc_status", nullable = false, length = 20)
+    private KycStatus kycStatus = KycStatus.NOT_SUBMITTED;
+
+    @Column(name = "kyc_review_date")
+    private ZonedDateTime kycReviewDate;
 
     @Version
     @Column(nullable = false)

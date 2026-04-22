@@ -2,7 +2,9 @@
 
 import {
   Activity,
+  AlertTriangle,
   CreditCard,
+  FileText,
   LayoutDashboard,
   LogOut,
   Send,
@@ -31,6 +33,12 @@ const navigation: NavigationItem[] = [
   { name: 'Dashboard', href: '/dashboard', icon: LayoutDashboard },
   { name: 'Transactions', href: '/transactions', icon: Activity },
   {
+    name: 'AML Monitor',
+    href: '/aml',
+    icon: AlertTriangle,
+    roles: ['SUPER_ADMIN', 'COMPLIANCE_OFFICER'],
+  },
+  {
     name: 'Accounts',
     href: '/accounts',
     icon: CreditCard,
@@ -38,6 +46,12 @@ const navigation: NavigationItem[] = [
   },
   { name: 'System Outbox', href: '/system/outbox', icon: Send },
   { name: 'Reconcile', href: '/reconcile', icon: ShieldCheck },
+  {
+    name: 'Audit Logs',
+    href: '/audit',
+    icon: FileText,
+    roles: ['SUPER_ADMIN', 'AUDITOR'],
+  },
   { name: 'Users', href: '/users', icon: Users, roles: ['SUPER_ADMIN'] },
   {
     name: 'Admins',

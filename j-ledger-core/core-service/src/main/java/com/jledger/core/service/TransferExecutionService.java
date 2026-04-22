@@ -41,6 +41,11 @@ public class TransferExecutionService {
     private final LedgerEntryRepository ledgerEntryRepository;
     private final IntegrationOutboxRepository integrationOutboxRepository;
     private final ObjectMapper objectMapper;
+    private final AmlMonitoringService amlMonitoringService;
+    private final TransactionLimitService transactionLimitService;
+    private final KycComplianceService kycComplianceService;
+    private final TransactionRateLimitService transactionRateLimitService;
+    private final TransactionMonitoringHooks transactionMonitoringHooks;
 
     @Transactional
     public Transaction performTransferInDb(
@@ -86,7 +91,27 @@ public class TransferExecutionService {
     }
 
     private Transaction processTransfer(Transaction transaction, Account sender, Account receiver, BigDecimal normalizedAmount) {
+        // Invoke pre-transaction monitoring hooks
+        transactionMonitoringHooks.invokePreTransactionHooks(transaction);
+
         validateTransfer(sender, receiver, normalizedAmount);
+
+        // Transaction Rate Limit Check
+        transactionRateLimitService.checkRateLimit(sender.getId());
+
+        // KYC Compliance Check
+        kycComplianceService.checkKycCompliance(sender.getId());
+
+        // Transaction Limit Check
+        transactionLimitService.checkTransactionLimits(sender.getId(), normalizedAmount);
+
+        // AML Monitoring Check
+        amlMonitoringService.checkTransactionForSuspiciousActivity(
+            sender.getId(),
+            normalizedAmount,
+            transaction.getId(),
+            receiver.getId()
+        );
 
         sender.withdraw(normalizedAmount);
         receiver.deposit(normalizedAmount);
@@ -124,6 +149,12 @@ public class TransferExecutionService {
                 .payload(buildWalletEventPayload(transaction, receiver.getId(), CREDIT_ENTRY))
                 .status(PENDING_STATUS)
                 .build());
+
+        // Record transaction amount for limits
+        transactionLimitService.recordTransaction(sender.getId(), normalizedAmount);
+
+        // Invoke post-transaction monitoring hooks
+        transactionMonitoringHooks.invokePostTransactionHooks(transaction);
 
         return transaction;
     }

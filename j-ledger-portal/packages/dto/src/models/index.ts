@@ -1,4 +1,14 @@
-import { TransactionType, TransactionStatus, AccountStatus, LedgerEntryType, ReconciliationStatus } from '../enums';
+import {
+  TransactionType,
+  TransactionStatus,
+  AccountStatus,
+  LedgerEntryType,
+  ReconciliationStatus,
+  AdminRole,
+  AuditAction,
+  ResourceType,
+  SuspiciousActivityStatus,
+} from '../enums';
 
 export interface WalletUser {
   id: string;
@@ -10,7 +20,7 @@ export interface WalletUser {
 export interface AdminUser {
   id: string;
   email: string;
-  role: string;
+  role: AdminRole;
   createdAt: string;
 }
 
@@ -77,4 +87,44 @@ export interface PaginatedResponse<T> {
   totalPages: number;
   size: number;
   number: number;
+}
+
+// Admin-specific types
+export interface AuditLog {
+  id: string;
+  adminUserId: string;
+  action: AuditAction;
+  resourceType: ResourceType;
+  resourceId: string;
+  ipAddress: string;
+  userAgent: string;
+  requestPayload?: Record<string, any>;
+  responseStatus: number;
+  changes?: {
+    before?: Record<string, any>;
+    after?: Record<string, any>;
+  };
+  reason?: string;
+  createdAt: string;
+}
+
+export interface SuspiciousActivity {
+  id: string;
+  userId: string;
+  activityType: string;
+  description: string;
+  riskScore: number;
+  status: SuspiciousActivityStatus;
+  createdAt: string;
+  notes?: string;
+}
+
+export interface AdminPaginatedResponse<T> {
+  data: T[];
+  pagination: {
+    page: number;
+    limit: number;
+    total: number;
+    totalPages: number;
+  };
 }
