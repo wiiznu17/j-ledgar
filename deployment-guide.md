@@ -1,4 +1,5 @@
 # 🚀 คู่มือการ Deploy J-Ledger บน AWS EC2 (Ubuntu 24.04)
+
 **Domain:** `potayyr.site`
 
 คู่มือนี้สำหรับติดตั้งระบบทั้งหมดลงในเครื่องเดียวโดยใช้ Docker Compose และ Nginx เป็น Reverse Proxy
@@ -6,6 +7,7 @@
 ---
 
 ## 🏗️ 1. เตรียม AWS Security Groups
+
 ก่อนเริ่มงาน ให้ไปที่ AWS Console และตั้งค่า **Inbound Rules** (กฎขาเข้า) เพื่อเปิดทางให้ข้อมูลวิ่งเข้าเครื่องได้ดังนี้:
 
 1.  ไปที่หน้า **EC2 Dashboard** > เลือกที่ **Security Groups** ของเครื่องคุณ
@@ -16,6 +18,7 @@
 3.  กด **Save rules**
 
 ## 🔑 1.5 วิธีการ SSH เข้าเครื่อง AWS
+
 การ SSH คือการ "รีโมท" เข้าไปควบคุมเครื่อง Ubuntu ผ่านหน้าจอ Terminal ของคุณ
 
 1.  **เตรียมไฟล์ Key (.pem)**: คุณต้องมีไฟล์คีย์ที่โหลดมาจาก AWS (ในที่นี้คือ `j-ledger-key.pem`)
@@ -27,7 +30,7 @@
     ```bash
     ssh -i "j-ledger-key.pem" ubuntu@<PUBLIC_IP_ของ_AWS>
     ```
-    *ตัวอย่าง: `ssh -i "j-ledger-key.pem" ubuntu@13.250.xx.xx`*
+    _ตัวอย่าง: `ssh -i "j-ledger-key.pem" ubuntu@13.250.xx.xx`_
 4.  พิมพ์ `yes` หากมีการถามยืนยันการเชื่อมต่อครั้งแรก
 
 **เมื่อเห็นคำว่า `ubuntu@ip-xxx:~$` แสดงว่าคุณ "วาร์ป" เข้าไปอยู่ในเครื่อง AWS เรียบร้อยแล้วครับ!**
@@ -35,6 +38,7 @@
 ---
 
 ## 🐧 2. ติดตั้ง Docker บน Ubuntu 24.04
+
 เมื่อคุณอยู่ในเครื่อง AWS แล้ว ให้รันคำสั่งเหล่านี้ทีละชุด:
 
 ```bash
@@ -71,9 +75,11 @@ sudo usermod -aG docker $USER
 ---
 
 ## 📁 3. นำโค้ดขึ้นเครื่อง (ผ่าน Git)
+
 เครื่อง VM ในตอนแรกจะว่างเปล่า เราต้องนำโค้ดจากเครื่องเราเข้าไปตามวิธีนี้ครับ:
 
 ### วิธีที่แนะนำ: ใช้ Git Clone
+
 1.  **สร้างโฟลเดอร์สำหรับเก็บแอป**:
     ```bash
     mkdir -p ~/app && cd ~/app
@@ -87,61 +93,139 @@ sudo usermod -aG docker $USER
 ---
 
 ## ⚙️ 4. ตั้งค่า Environment และเริ่มระบบ
+
 หลังจากได้โค้ดมาแล้ว ให้ตั้งค่าไฟล์สำคัญดังนี้:
 
 1.  **ตั้งค่า .env**:
-   ```bash
-   cd ~/app/j-ledger
-   cp j-ledger-core/.env.prod.example .env
-   nano .env
-   ```
-   **แก้ไขค่าสำคัญใน `.env`:**
-   - `JLEDGER_ALLOWED_ORIGINS=https://potayyr.site`
-   - `INTERNAL_API_URL=http://admin-api:3001` (ทางด่วนสำหรับ Server คุยกันเอง)
-   - `POSTGRES_PASSWORD`, `REDIS_PASSWORD` (เปลี่ยนให้ยากๆ)
-   - `JLEDGER_ADMIN_EMAIL=admin@jledger.com` (อีเมลแอดมินเริ่มต้น)
-   - `JLEDGER_ADMIN_PASSWORD=Admin@123` (รหัสผ่านแอดมินเริ่มต้น)
-   - `JWT_SECRET`, `JWT_REFRESH_SECRET` (ใส่รหัสลับสุ่มที่ปลอดภัยสำหรับ Token)
-   - `JLEDGER_INTERNAL_SECRET` (ใส่รหัสลับสุ่มที่ปลอดภัยสำหรับการคุยภายใน)
+
+```bash
+cd ~/app/j-ledger
+cp .env.example .env
+nano .env
+```
+
+> [!IMPORTANT]
+> **ต้องตั้งค่า Environment Variables ทั้งหมด** - ไม่มีค่า default แล้ว ระบบจะไม่ทำงานถ้าขาดตัวแปรใดตัวแปรหนึ่ง
+
+**แก้ไขค่าสำคัญใน `.env`:**
+
+- `JLEDGER_ALLOWED_ORIGINS=https://potayyr.site`
+- `INTERNAL_API_URL=http://admin-api:3001` (ทางด่วนสำหรับ Server คุยกันเอง)
+- `POSTGRES_USER`, `POSTGRES_PASSWORD`, `POSTGRES_DB` (ตั้งค่า database)
+- `REDIS_PASSWORD` (เปลี่ยนให้ยากๆ)
+- `JLEDGER_ADMIN_EMAIL=admin@jledger.com` (อีเมลแอดมินเริ่มต้น)
+- `JLEDGER_ADMIN_PASSWORD=Admin@123` (รหัสผ่านแอดมินเริ่มต้น)
+- `JWT_SECRET`, `JWT_REFRESH_SECRET`, `JWT_ACCESS_SECRET`, `JWT_REGISTRATION_SECRET` (ใส่รหัสลับสุ่มที่ปลอดภัยสำหรับ Token)
+- `JLEDGER_INTERNAL_SECRET` (ใส่รหัสลับสุ่มที่ปลอดภัยสำหรับการคุยภายใน)
+- `KYC_ENCRYPTION_KEY` (คีย์เข้ารหัสข้อมูล KYC - ต้องมี 32 bytes)
+- `THROTTLE_TTL_DEFAULT`, `THROTTLE_LIMIT_DEFAULT` (ตั้งค่า rate limiting - มี default ใน .env.example)
 
 2.  **เริ่มระบบ (Deployment)**:
-   ```bash
-   docker compose up -d --build
-   ```
-   *ระบบจะทำการรัน Migration อัตโนมัติ (ผ่าน core-migration และ admin-migration) ก่อนจะเริ่มแอปหลักครับ*
-   *ตรวจสอบสถานะด้วย `docker compose ps`*
+
+```bash
+docker compose up -d --build
+```
+
+_ระบบจะทำการรัน Migration อัตโนมัติ (ผ่าน core-migration และ admin-migration) ก่อนจะเริ่มแอปหลักครับ_
+_ตรวจสอบสถานะด้วย `docker compose ps`_
 
 ---
 
-## 🔒 5. ตั้งค่า SSL (HTTPS) ด้วย Certbot (Standalone Mode)
+## �️ การจัดการ Database Migration
+
+### โครงสร้าง Database
+
+โปรเจ็คใช้ **PostgreSQL เดียว** (`jledger_db`) แต่แยก schema กัน:
+
+| Service          | Schema          | Migration Tool |
+| ---------------- | --------------- | -------------- |
+| **core-service** | `public`        | Flyway (SQL)   |
+| **admin-api**    | `admin_schema`  | Prisma (ORM)   |
+| **wallet-api**   | `wallet_schema` | Prisma (ORM)   |
+
+### การรันครั้งแรก (Initial Deployment)
+
+เมื่อรัน `docker compose up -d --build` ครั้งแรก ระบบจะทำ migration อัตโนมัติ:
+
+- `core-migration` container รัน Flyway → apply SQL migrations จาก `j-ledger-core/core-service/src/main/resources/db/migration/`
+- `admin-migration` container รัน Prisma → apply migrations และ seed data สำหรับ `admin_schema`
+- `wallet-migration` container รัน Prisma → apply migrations และ seed data สำหรับ `wallet_schema`
+
+Services หลัก (core-service, admin-api, wallet-api) จะรอให้ migration เสร็จก่อนถึงจะเริ่มทำงาน
+
+### เมื่อมีการแก้ Database
+
+#### 1. Core Service (Flyway)
+
+```bash
+# สร้าง migration file ใหม่
+# ไฟล์: j-ledger-core/core-service/src/main/resources/db/migration/V13__your_change.sql
+
+# Deploy migration
+docker compose up -d core-migration
+```
+
+#### 2. Admin API / Wallet API (Prisma)
+
+```bash
+# แก้ prisma/schema.prisma
+cd j-ledger-portal/apps/admin-api  # หรือ wallet-api
+
+# สร้าง migration
+npx prisma migrate dev --name your_change
+
+# Rebuild image และ deploy
+docker compose build admin-migration  # หรือ wallet-migration
+docker compose up -d admin-migration
+```
+
+### Workflow Summary
+
+**แก้ database → generate migration → รัน migration container → รัน service**
+
+> [!NOTE]
+>
+> - `prisma migrate deploy` ใช้ใน production (ไม่สร้าง migration ใหม่ แต่ apply เฉพาะที่มี)
+> - `prisma migrate dev` ใช้ใน development (สร้าง migration ใหม่และ apply)
+
+---
+
+## �🔒 5. ตั้งค่า SSL (HTTPS) ด้วย Certbot (Standalone Mode)
+
 เพื่อให้ป้องกันปัญหาพอร์ต 80 ชนกันระหว่าง Certbot และ Nginx ใน Docker เราจะใช้โหมด `standalone` ตามขั้นตอนที่ถูกต้องดังนี้ครับ:
 
 1. **ติดตั้ง Certbot:**
+
    ```bash
    sudo apt install certbot -y
    ```
 
 2. **หยุด Nginx ชั่วคราว (เพื่อคืนพอร์ต 80 ให้ Certbot):**
+
    ```bash
    cd ~/app/j-ledgar
    docker compose stop nginx
    ```
 
 3. **ขอใบรับรอง SSL:**
+
    ```bash
    sudo certbot certonly --standalone -d potayyr.site -d www.potayyr.site
    ```
-   *กรอก Email และกดยอมรับเงื่อนไข ไฟล์ใบรับรองจะถูกเก็บไว้ที่ `/etc/letsencrypt/live/potayyr.site/`*
+
+   _กรอก Email และกดยอมรับเงื่อนไข ไฟล์ใบรับรองจะถูกเก็บไว้ที่ `/etc/letsencrypt/live/potayyr.site/`_
 
 4. **เปิดการใช้งาน HTTPS ใน Nginx:**
    ใช้ตัวอย่างคอนฟิกสำหรับ Production และเปิดการใช้งาน SSL:
+
    ```bash
    # คัดลอกเทมเพลตสำหรับ Production
    cp docker/nginx/default.conf.prod docker/nginx/default.conf
-   
+
    # แก้ไขเพื่อตรวจสอบความถูกต้อง (หากต้องการ)
    nano docker/nginx/default.conf
    ```
+
    - (ออปชั่น) หากในไฟล์เทมเพลตยังมีเครื่องหมาย `#` ปิดส่วน SSL ไว้ ให้เอาออกเพื่อให้ใช้งาน HTTPS ได้สมบูรณ์
    - (ออปชั่น) เอาเครื่องหมาย `#` ออกจากส่วน `return 301 https://...` ในพอร์ต 80 เพื่อบังคับใช้ HTTPS
 
@@ -153,6 +237,7 @@ sudo usermod -aG docker $USER
 ---
 
 ## 🔗 6. การเข้าใช้งานหลังติดตั้ง
+
 - **Web Portal:** `https://potayyr.site` (ล้างคุกกี้เบราว์เซอร์ก่อนเข้าครั้งแรกถ้าเคยเข้ามาก่อน)
 - **Login:** `admin@jledger.com` / `Admin@123`
 - **Backend APIs:** ยิงผ่าน `https://potayyr.site/api/...`

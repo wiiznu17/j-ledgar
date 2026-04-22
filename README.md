@@ -46,6 +46,34 @@ cd j-ledger-portal/apps/wallet-api && npx prisma migrate dev --name init_foundat
 cd ../admin-api && npx prisma migrate dev --name init_foundation
 ```
 
+### 2.5 Database Migration (เมื่อมีการแก้ Database)
+
+เมื่อต้องการแก้ database schema ในโหมด Hybrid Development:
+
+**Core Service (Flyway):**
+
+```bash
+# สร้าง SQL migration file ใหม่
+# ไฟล์: j-ledger-core/core-service/src/main/resources/db/migration/V13__your_change.sql
+
+# Run migration
+docker compose -f docker-compose.yml -f docker-compose.dev.yml run --rm core-migration
+```
+
+**Admin API / Wallet API (Prisma):**
+
+```bash
+# แก้ prisma/schema.prisma
+cd j-ledger-portal/apps/admin-api  # หรือ wallet-api
+
+# สร้างและ apply migration
+npx prisma migrate dev --name your_change
+```
+
+> **หมายเหตุ**: Step 2 (Initialize Databases) เป็นการทำครั้งแรกเท่านั้น หลังจากนั้นเมื่อแก้ database ให้ใช้ขั้นตอนใน step 2.5
+
+---
+
 ### 3. Run Services Locally
 
 Run each service in its own terminal:
@@ -75,19 +103,11 @@ Copy `.env.example` to `.env` and fill in the secrets.
 
 ### 2. Launch Everything
 
-**For production with SSL:**
-
-```bash
-docker compose -f docker-compose.yml -f docker-compose.prod.yml up -d --build
-```
-
-**Note:** This requires SSL certificates at `/etc/letsencrypt/live/potayyr.site/` on the host machine.
-
-**For local testing without SSL:**
-
 ```bash
 docker compose up -d --build
 ```
+
+**Note:** This uses the production nginx configuration with SSL. Requires SSL certificates at `/etc/letsencrypt/live/potayyr.site/` on the host machine.
 
 _The system will automatically handle health checks, ensuring the DB and Kafka are ready before starting the APIs._
 

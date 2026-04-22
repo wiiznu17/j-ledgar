@@ -6,17 +6,13 @@ services:
     image: postgres:15-alpine
     container_name: jledger-postgres
     environment:
-      POSTGRES_USER: ${POSTGRES_USER:-ledger_admin}
+      POSTGRES_USER: ${POSTGRES_USER}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
-      POSTGRES_DB: ${POSTGRES_DB:-jledger_db}
+      POSTGRES_DB: ${POSTGRES_DB}
     volumes:
       - pgdata:/var/lib/postgresql/data
     healthcheck:
-      test:
-        [
-          "CMD-SHELL",
-          "pg_isready -U ${POSTGRES_USER:-ledger_admin} -d ${POSTGRES_DB:-jledger_db}",
-        ]
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}"]
       interval: 10s
       timeout: 10s
       retries: 10
@@ -136,7 +132,7 @@ services:
         condition: service_healthy
     volumes:
       - ./j-ledger-core/core-service/src/main/resources/db/migration:/flyway/sql
-    command: -url=jdbc:postgresql://postgres:5432/${POSTGRES_DB:-jledger_db} -user=${POSTGRES_USER:-ledger_admin} -password=${POSTGRES_PASSWORD} -connectRetries=60 migrate
+    command: -url=jdbc:postgresql://postgres:5432/${POSTGRES_DB} -user=${POSTGRES_USER} -password=${POSTGRES_PASSWORD} -connectRetries=60 migrate
     networks:
       - jledger-network
 
@@ -151,7 +147,7 @@ services:
         condition: service_healthy
     command: sh -c "npx prisma migrate deploy && node dist/prisma/seed.js"
     environment:
-      - DATABASE_URL=postgresql://${POSTGRES_USER:-ledger_admin}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB:-jledger_db}?schema=admin_schema
+      - DATABASE_URL=postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB}?schema=admin_schema
     networks:
       - jledger-network
 
@@ -166,7 +162,7 @@ services:
         condition: service_healthy
     command: sh -c "npx prisma migrate deploy && node dist/prisma/seed.js"
     environment:
-      - DATABASE_URL=postgresql://${POSTGRES_USER:-ledger_admin}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB:-jledger_db}?schema=wallet_schema
+      - DATABASE_URL=postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB}?schema=wallet_schema
     networks:
       - jledger-network
 
@@ -191,8 +187,8 @@ services:
         condition: service_completed_successfully
     restart: on-failure
     environment:
-      - JLEDGER_DATASOURCE_URL=jdbc:postgresql://postgres:5432/${POSTGRES_DB:-jledger_db}
-      - JLEDGER_DATASOURCE_USERNAME=${POSTGRES_USER:-ledger_admin}
+      - JLEDGER_DATASOURCE_URL=jdbc:postgresql://postgres:5432/${POSTGRES_DB}
+      - JLEDGER_DATASOURCE_USERNAME=${POSTGRES_USER}
       - JLEDGER_DATASOURCE_PASSWORD=${POSTGRES_PASSWORD}
       - JLEDGER_REDIS_ADDRESS=redis://redis:6379
       - JLEDGER_REDIS_PASSWORD=${REDIS_PASSWORD}
@@ -246,7 +242,7 @@ services:
     environment:
       - PORT=3001
       - API_GATEWAY_URL=http://api-gateway:8080
-      - DATABASE_URL=postgresql://${POSTGRES_USER:-ledger_admin}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB:-jledger_db}?schema=admin_schema
+      - DATABASE_URL=postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB}?schema=admin_schema
       - JWT_SECRET=${JWT_SECRET}
       - JWT_REFRESH_SECRET=${JWT_REFRESH_SECRET}
       - JLEDGER_INTERNAL_SECRET=${JLEDGER_INTERNAL_SECRET}
@@ -312,7 +308,7 @@ services:
     environment:
       - PORT=3002
       - API_GATEWAY_URL=http://api-gateway:8080
-      - DATABASE_URL=postgresql://${POSTGRES_USER:-ledger_admin}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB:-jledger_db}?schema=wallet_schema
+      - DATABASE_URL=postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB}?schema=wallet_schema
       - JWT_ACCESS_SECRET=${JWT_ACCESS_SECRET}
       - JWT_REFRESH_SECRET=${JWT_REFRESH_SECRET}
       - JWT_REGISTRATION_SECRET=${JWT_REGISTRATION_SECRET}
@@ -336,14 +332,14 @@ services:
       - AWS_REGION=${AWS_REGION}
       - AWS_ACCESS_KEY_ID=${AWS_ACCESS_KEY_ID}
       - AWS_SECRET_ACCESS_KEY=${AWS_SECRET_ACCESS_KEY}
-      - THROTTLE_TTL_DEFAULT=${THROTTLE_TTL_DEFAULT:-60000}
-      - THROTTLE_LIMIT_DEFAULT=${THROTTLE_LIMIT_DEFAULT:-100}
-      - THROTTLE_TTL_REG_INIT=${THROTTLE_TTL_REG_INIT:-300000}
-      - THROTTLE_LIMIT_REG_INIT=${THROTTLE_LIMIT_REG_INIT:-10}
-      - THROTTLE_TTL_REG_VERIFY=${THROTTLE_TTL_REG_VERIFY:-180000}
-      - THROTTLE_LIMIT_REG_VERIFY=${THROTTLE_LIMIT_REG_VERIFY:-10}
-      - THROTTLE_TTL_LOGIN=${THROTTLE_TTL_LOGIN:-900000}
-      - THROTTLE_LIMIT_LOGIN=${THROTTLE_LIMIT_LOGIN:-10}
+      - THROTTLE_TTL_DEFAULT=${THROTTLE_TTL_DEFAULT}
+      - THROTTLE_LIMIT_DEFAULT=${THROTTLE_LIMIT_DEFAULT}
+      - THROTTLE_TTL_REG_INIT=${THROTTLE_TTL_REG_INIT}
+      - THROTTLE_LIMIT_REG_INIT=${THROTTLE_LIMIT_REG_INIT}
+      - THROTTLE_TTL_REG_VERIFY=${THROTTLE_TTL_REG_VERIFY}
+      - THROTTLE_LIMIT_REG_VERIFY=${THROTTLE_LIMIT_REG_VERIFY}
+      - THROTTLE_TTL_LOGIN=${THROTTLE_TTL_LOGIN}
+      - THROTTLE_LIMIT_LOGIN=${THROTTLE_LIMIT_LOGIN}
     volumes:
       - ./ewallet-ekyc-project-4083c44873a8.json:/app/secrets/google-key.json:ro
     networks:
