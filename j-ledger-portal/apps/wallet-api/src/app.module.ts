@@ -19,6 +19,9 @@ import { KycModule } from './kyc/kyc.module';
 import { OutboxModule } from './outbox/outbox.module';
 import { IntegrationsModule } from './integrations/integrations.module';
 import { NotificationModule } from './notification/notification.module';
+import { WalletModule } from './wallet/wallet.module';
+import { BillPaymentModule } from './bill-payment/bill-payment.module';
+import { QrModule } from './qr/qr.module';
 import { Redis } from 'ioredis';
 import { ThrottlerStorageRedisService } from 'nestjs-throttler-storage-redis';
 import { REDIS_CLIENT } from './auth/auth.constants';
@@ -122,6 +125,9 @@ import { REDIS_CLIENT } from './auth/auth.constants';
     OutboxModule,
     IntegrationsModule,
     NotificationModule,
+    WalletModule,
+    BillPaymentModule,
+    QrModule,
   ],
   controllers: [AppController],
   providers: [

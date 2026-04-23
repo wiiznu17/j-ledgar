@@ -131,21 +131,21 @@ export class UserService {
   async updateUserStatus(id: string, status: string) {
     return this.prisma.user.update({
       where: { id },
-      data: { status },
+      data: { status: status as any },
     });
   }
 
   async blockUser(id: string, reason?: string) {
     return this.prisma.user.update({
       where: { id },
-      data: { status: 'BLOCKED' },
+      data: { status: 'BLOCKED' as any },
     });
   }
 
   async unblockUser(id: string) {
     return this.prisma.user.update({
       where: { id },
-      data: { status: 'ACTIVE' },
+      data: { status: 'ACTIVE' as any },
     });
   }
 
@@ -153,14 +153,14 @@ export class UserService {
     const user = await this.prisma.user.findUnique({
       where: { id },
       include: {
-        devices: {
+        userDevices: {
           select: {
             deviceIdentifier: true,
             trustLevel: true,
-            lastUsedAt: true,
+            lastSeenAt: true,
             createdAt: true,
           },
-          orderBy: { lastUsedAt: 'desc' },
+          orderBy: { lastSeenAt: 'desc' },
         },
       },
     });
@@ -171,9 +171,9 @@ export class UserService {
 
     return {
       userId: user.id,
-      devices: user.devices,
+      devices: user.userDevices,
       createdAt: user.createdAt,
-      lastLoginAt: user.devices[0]?.lastUsedAt || null,
+      lastLoginAt: user.userDevices[0]?.lastSeenAt || null,
     };
   }
 }

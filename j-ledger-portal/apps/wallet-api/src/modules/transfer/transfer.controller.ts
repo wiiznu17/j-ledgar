@@ -165,4 +165,66 @@ export class TransferController {
 
     return this.transferService.getTransferHistory(req.user.id, limitNum, offsetNum);
   }
+
+  /**
+   * Transfer by Wallet ID
+   *
+   * POST /transfers/wallet-id
+   *
+   * Transfer money using recipient's wallet ID
+   */
+  @Post('wallet-id')
+  @HttpCode(HttpStatus.CREATED)
+  @ApiOperation({
+    summary: 'Transfer by Wallet ID',
+    description: 'Transfer money using recipient wallet ID',
+  })
+  @ApiResponse({
+    status: 201,
+    description: 'Transfer created successfully',
+    type: TransferResponseDto,
+  })
+  async transferByWalletId(
+    @Body() dto: { toWalletId: string; amount: number; pin: string; idempotencyKey: string },
+    @Req() req: any,
+  ): Promise<TransferResponseDto> {
+    if (!dto.pin || dto.pin.length < 4 || dto.pin.length > 6) {
+      throw new BadRequestException('PIN must be 4-6 digits');
+    }
+    if (!dto.idempotencyKey || dto.idempotencyKey.length === 0) {
+      throw new BadRequestException('idempotencyKey is required');
+    }
+    return this.transferService.transferByWalletId(req.user.id, dto);
+  }
+
+  /**
+   * Transfer by QR Code
+   *
+   * POST /transfers/qr
+   *
+   * Transfer money by scanning QR code
+   */
+  @Post('qr')
+  @HttpCode(HttpStatus.CREATED)
+  @ApiOperation({
+    summary: 'Transfer by QR Code',
+    description: 'Transfer money by scanning QR code',
+  })
+  @ApiResponse({
+    status: 201,
+    description: 'Transfer created successfully',
+    type: TransferResponseDto,
+  })
+  async transferByQR(
+    @Body() dto: { qrData: string; amount: number; pin: string; idempotencyKey: string },
+    @Req() req: any,
+  ): Promise<TransferResponseDto> {
+    if (!dto.pin || dto.pin.length < 4 || dto.pin.length > 6) {
+      throw new BadRequestException('PIN must be 4-6 digits');
+    }
+    if (!dto.idempotencyKey || dto.idempotencyKey.length === 0) {
+      throw new BadRequestException('idempotencyKey is required');
+    }
+    return this.transferService.transferByQR(req.user.id, dto);
+  }
 }

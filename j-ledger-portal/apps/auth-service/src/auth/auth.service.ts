@@ -9,22 +9,12 @@ import {
 import { JwtService } from '@nestjs/jwt';
 import { ConfigService } from '@nestjs/config';
 import { PrismaService } from '../prisma/prisma.service';
-import {
-  UserStatus,
-  RegistrationState,
-  DeviceTrustLevel,
-} from '@prisma/client';
 import * as bcrypt from 'bcrypt';
 import { randomUUID } from 'crypto';
 import { REDIS_CLIENT } from './auth.constants';
 import Redis from 'ioredis';
 import { ISmsProvider } from '../integrations/interfaces/sms-provider.interface';
-import {
-  RegisterInitDto,
-  RegisterVerifyOtpDto,
-  LoginDto,
-  RefreshTokenDto,
-} from './dto/auth.dto';
+import { RegisterInitDto, RegisterVerifyOtpDto, LoginDto, RefreshTokenDto } from './dto/auth.dto';
 
 const ACCESS_TOKEN_TTL_SECONDS = 15 * 60;
 const REFRESH_TOKEN_TTL_SECONDS = 30 * 24 * 60 * 60;
@@ -52,7 +42,7 @@ interface RefreshTokenPayload {
 
 interface RegistrationTokenPayload {
   sub: string;
-  state: RegistrationState;
+  state: string;
   typ: 'registration';
   nonce: string;
   exp?: number;
@@ -103,13 +93,13 @@ export class AuthService {
       user = await this.prisma.user.create({
         data: {
           phoneNumber,
-          status: UserStatus.ACTIVE,
-          registrationState: RegistrationState.PENDING,
+          status: 'ACTIVE' as any,
+          registrationState: 'PENDING' as any,
         },
       });
     }
 
-    if (user.registrationState === RegistrationState.COMPLETED) {
+    if (user.registrationState === 'COMPLETED') {
       throw new ConflictException('User already registered');
     }
 
@@ -134,7 +124,7 @@ export class AuthService {
 
     await this.prisma.user.update({
       where: { id: user.id },
-      data: { registrationState: RegistrationState.INITIATED },
+      data: { registrationState: 'INITIATED' as any },
     });
 
     await this.logSecurityEvent(user.id, 'REGISTER_OTP_VERIFIED', {
@@ -143,8 +133,8 @@ export class AuthService {
     });
 
     return {
-      regToken: await this.signRegistrationToken(user.id, RegistrationState.INITIATED),
-      nextState: RegistrationState.INITIATED,
+      regToken: await this.signRegistrationToken(user.id, 'INITIATED'),
+      nextState: 'INITIATED',
     };
   }
 
@@ -162,7 +152,7 @@ export class AuthService {
       throw new UnauthorizedException('Invalid credentials');
     }
 
-    if (user.status !== UserStatus.ACTIVE) {
+    if (user.status !== 'ACTIVE') {
       throw new UnauthorizedException('Account is not active');
     }
 
@@ -184,13 +174,13 @@ export class AuthService {
       },
       update: {
         lastSeenAt: new Date(),
-        trustLevel: DeviceTrustLevel.TRUSTED,
+        trustLevel: 'TRUSTED' as any,
       },
       create: {
         userId: user.id,
         deviceIdentifier: dto.deviceId,
         deviceName: dto.deviceName,
-        trustLevel: DeviceTrustLevel.TRUSTED,
+        trustLevel: 'TRUSTED' as any,
         lastSeenAt: new Date(),
       },
     });
@@ -224,10 +214,9 @@ export class AuthService {
 
   async refresh(dto: RefreshTokenDto) {
     try {
-      const payload = await this.jwtService.verifyAsync<RefreshTokenPayload>(
-        dto.refreshToken,
-        { secret: this.refreshSecret },
-      );
+      const payload = await this.jwtService.verifyAsync<RefreshTokenPayload>(dto.refreshToken, {
+        secret: this.refreshSecret,
+      });
 
       const session = await this.prisma.refreshSession.findFirst({
         where: {
@@ -297,7 +286,11 @@ export class AuthService {
 
   // ==================== Token Signing ====================
 
-  private async signAccessToken(userId: string, sessionId: string, deviceId: string): Promise<string> {
+  private async signAccessToken(
+    userId: string,
+    sessionId: string,
+    deviceId: string,
+  ): Promise<string> {
     const payload: AccessTokenPayload = {
       sub: userId,
       sid: sessionId,
@@ -313,7 +306,11 @@ export class AuthService {
     });
   }
 
-  private async signRefreshToken(userId: string, sessionId: string, deviceId: string): Promise<string> {
+  private async signRefreshToken(
+    userId: string,
+    sessionId: string,
+    deviceId: string,
+  ): Promise<string> {
     const payload: RefreshTokenPayload = {
       sub: userId,
       sid: sessionId,
@@ -328,7 +325,7 @@ export class AuthService {
     });
   }
 
-  private async signRegistrationToken(userId: string, state: RegistrationState): Promise<string> {
+  private async signRegistrationToken(userId: string, state: string): Promise<string> {
     const payload: RegistrationTokenPayload = {
       sub: userId,
       state,
