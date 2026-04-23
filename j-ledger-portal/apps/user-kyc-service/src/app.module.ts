@@ -6,6 +6,7 @@ import { KYCModule } from './kyc/kyc.module';
 import { UserModule } from './user/user.module';
 import { DocumentModule } from './document/document.module';
 import { PIIModule } from './pii/pii.module';
+import { OCRModule } from './ocr/ocr.module';
 
 @Module({
   imports: [
@@ -18,6 +19,7 @@ import { PIIModule } from './pii/pii.module';
     UserModule,
     DocumentModule,
     PIIModule,
+    OCRModule,
   ],
 })
 export class AppModule {}
