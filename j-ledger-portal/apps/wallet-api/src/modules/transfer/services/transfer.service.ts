@@ -258,4 +258,156 @@ export class TransferService {
       updatedAt: transfer.updatedAt,
     };
   }
+
+  /**
+   * Transfer by Wallet ID
+   */
+  async transferByWalletId(
+    userId: string,
+    dto: { toWalletId: string; amount: number; pin: string; idempotencyKey: string },
+  ): Promise<TransferResponseDto> {
+    await this.pinService.validatePin(userId, dto.pin);
+
+    const kyc = await this.prisma.kycData.findUnique({
+      where: { userId },
+    });
+
+    if (!kyc || kyc.verificationStatus !== 'APPROVED') {
+      throw new ForbiddenException(
+        'KYC verification required. Please complete KYC before transferring.',
+      );
+    }
+
+    const existingTransfer = await this.prisma.transfer.findUnique({
+      where: { idempotencyKey: dto.idempotencyKey },
+    });
+
+    if (existingTransfer) {
+      return this.mapTransferToDto(existingTransfer);
+    }
+
+    // Find recipient by wallet ID (using user ID as wallet ID for now)
+    const recipientUser = await this.prisma.user.findUnique({
+      where: { id: dto.toWalletId },
+    });
+
+    if (!recipientUser) {
+      throw new BadRequestException('Recipient wallet not found.');
+    }
+
+    if (recipientUser.id === userId) {
+      throw new BadRequestException('Cannot transfer to your own account.');
+    }
+
+    const transfer = await this.prisma.transfer.create({
+      data: {
+        idempotencyKey: dto.idempotencyKey,
+        fromUserId: userId,
+        toUserId: recipientUser.id,
+        amount: dto.amount,
+        currency: 'THB',
+        status: 'PENDING',
+      },
+    });
+
+    try {
+      const result = await this.executeTransferWithLedger(
+        userId,
+        recipientUser.id,
+        dto.amount,
+        transfer.id,
+        dto.idempotencyKey,
+      );
+
+      return this.mapTransferToDto(result);
+    } catch (err) {
+      const error = err as any;
+      await this.prisma.transfer.update({
+        where: { id: transfer.id },
+        data: {
+          status: 'FAILED',
+          failureReason: error.message,
+        },
+      });
+
+      throw error;
+    }
+  }
+
+  /**
+   * Transfer by QR Code
+   */
+  async transferByQR(
+    userId: string,
+    dto: { qrData: string; amount: number; pin: string; idempotencyKey: string },
+  ): Promise<TransferResponseDto> {
+    await this.pinService.validatePin(userId, dto.pin);
+
+    const kyc = await this.prisma.kycData.findUnique({
+      where: { userId },
+    });
+
+    if (!kyc || kyc.verificationStatus !== 'APPROVED') {
+      throw new ForbiddenException(
+        'KYC verification required. Please complete KYC before transferring.',
+      );
+    }
+
+    const existingTransfer = await this.prisma.transfer.findUnique({
+      where: { idempotencyKey: dto.idempotencyKey },
+    });
+
+    if (existingTransfer) {
+      return this.mapTransferToDto(existingTransfer);
+    }
+
+    // Parse QR data to extract wallet ID (simplified: assume QR contains wallet ID)
+    const toWalletId = dto.qrData;
+
+    const recipientUser = await this.prisma.user.findUnique({
+      where: { id: toWalletId },
+    });
+
+    if (!recipientUser) {
+      throw new BadRequestException('Recipient wallet not found from QR code.');
+    }
+
+    if (recipientUser.id === userId) {
+      throw new BadRequestException('Cannot transfer to your own account.');
+    }
+
+    const transfer = await this.prisma.transfer.create({
+      data: {
+        idempotencyKey: dto.idempotencyKey,
+        fromUserId: userId,
+        toUserId: recipientUser.id,
+        amount: dto.amount,
+        currency: 'THB',
+        status: 'PENDING',
+      },
+    });
+
+    try {
+      const result = await this.executeTransferWithLedger(
+        userId,
+        recipientUser.id,
+        dto.amount,
+        transfer.id,
+        dto.idempotencyKey,
+      );
+
+      return this.mapTransferToDto(result);
+    } catch (err) {
+      const error = err as any;
+      await this.prisma.transfer.update({
+        where: { id: transfer.id },
+        data: {
+          status: 'FAILED',
+          failureReason: error.message,
+        },
+      });
+
+      throw error;
+    }
+  }
 }
