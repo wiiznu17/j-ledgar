@@ -1,5 +1,5 @@
 import { Injectable } from '@nestjs/common';
-import { AuditProxyService } from '../proxies/audit-proxy.service';
+import { PrismaService } from '../prisma/prisma.service';
 
 export enum AuditAction {
   CREATE = 'CREATE',
@@ -38,7 +38,7 @@ export interface AuditLogData {
 
 @Injectable()
 export class AuditService {
-  constructor(private auditProxy: AuditProxyService) {}
+  constructor(private prisma: PrismaService) {}
 
   async log(data: AuditLogData) {
     // Mask sensitive data
@@ -50,10 +50,19 @@ export class AuditService {
         }
       : undefined;
 
-    return this.auditProxy.log({
-      ...data,
-      requestPayload: maskedPayload,
-      changes: maskedChanges,
+    return this.prisma.auditLog.create({
+      data: {
+        adminUserId: data.adminUserId,
+        action: data.action,
+        resourceType: data.resourceType,
+        resourceId: data.resourceId,
+        ipAddress: data.ipAddress,
+        userAgent: data.userAgent,
+        requestPayload: maskedPayload,
+        responseStatus: data.responseStatus,
+        changes: maskedChanges,
+        reason: data.reason,
+      },
     });
   }
 
@@ -82,6 +91,40 @@ export class AuditService {
     startDate?: Date;
     endDate?: Date;
   }) {
-    return this.auditProxy.findAll(query);
+    const page = query.page || 1;
+    const limit = query.limit || 50;
+    const skip = (page - 1) * limit;
+
+    const where: any = {};
+
+    if (query.adminUserId) where.adminUserId = query.adminUserId;
+    if (query.action) where.action = query.action;
+    if (query.resourceType) where.resourceType = query.resourceType;
+    if (query.resourceId) where.resourceId = query.resourceId;
+    if (query.startDate || query.endDate) {
+      where.createdAt = {};
+      if (query.startDate) where.createdAt.gte = query.startDate;
+      if (query.endDate) where.createdAt.lte = query.endDate;
+    }
+
+    const [data, total] = await Promise.all([
+      this.prisma.auditLog.findMany({
+        where,
+        skip,
+        take: limit,
+        orderBy: { createdAt: 'desc' },
+      }),
+      this.prisma.auditLog.count({ where }),
+    ]);
+
+    return {
+      data,
+      pagination: {
+        page,
+        limit,
+        total,
+        totalPages: Math.ceil(total / limit),
+      },
+    };
   }
 }

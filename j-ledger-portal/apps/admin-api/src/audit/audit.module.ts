@@ -3,10 +3,10 @@ import { APP_INTERCEPTOR } from '@nestjs/core';
 import { AuditService } from './audit.service';
 import { AuditController } from './audit.controller';
 import { AuditInterceptor } from './audit.interceptor';
-import { PrismaModule } from '../prisma/prisma.module';
+import { ProxiesModule } from '../proxies/proxies.module';
 
 @Module({
-  imports: [PrismaModule],
+  imports: [ProxiesModule],
   controllers: [AuditController],
   providers: [
     AuditService,
