@@ -8,11 +8,12 @@ services:
     environment:
       POSTGRES_USER: ${POSTGRES_USER}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
-      POSTGRES_DB: ${POSTGRES_DB}
+      POSTGRES_DB: postgres
     volumes:
       - pgdata:/var/lib/postgresql/data
+      - ./docker/init-scripts:/docker-entrypoint-initdb.d
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}"]
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d postgres"]
       interval: 10s
       timeout: 10s
       retries: 10
@@ -361,7 +362,168 @@ services:
       retries: 5
 
   # ----------------------------------------------------
-  # 14. Nginx - Unified Entry Point (Reverse Proxy)
+  # 13. Internal NGINX - Admin Access Control
+  # ----------------------------------------------------
+  internal-nginx:
+    image: nginx:alpine
+    container_name: jledger-internal-nginx
+    ports:
+      - "8081:80"
+      - "8443:443"
+    volumes:
+      - ./docker/nginx/internal.conf:/etc/nginx/conf.d/default.conf:ro
+      - /etc/letsencrypt:/etc/letsencrypt:ro
+    depends_on:
+      admin-web:
+        condition: service_started
+      admin-api:
+        condition: service_healthy
+    networks:
+      - jledger-network
+
+  # ----------------------------------------------------
+  # 14. Admin Auth Service (NestJS)
+  # ----------------------------------------------------
+  admin-auth-service:
+    build:
+      context: ./j-ledger-portal/apps/admin-auth-service
+    image: j-ledger/admin-auth-service:latest
+    container_name: jledger-admin-auth
+    depends_on:
+      postgres:
+        condition: service_healthy
+      admin-auth-migration:
+        condition: service_completed_successfully
+    environment:
+      - PORT=3005
+      - DATABASE_URL=postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB}?schema=admin_auth_schema
+      - JWT_ACCESS_SECRET=${JWT_ACCESS_SECRET}
+    networks:
+      - jledger-network
+    expose:
+      - "3005"
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "wget",
+          "--no-verbose",
+          "--tries=1",
+          "--spider",
+          "http://localhost:3005/auth/profile",
+        ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  admin-auth-migration:
+    build:
+      context: ./j-ledger-portal/apps/admin-auth-service
+    image: j-ledger/admin-auth-service:latest
+    container_name: jledger-admin-auth-migration
+    depends_on:
+      postgres:
+        condition: service_healthy
+    command: sh -c "npx prisma migrate deploy"
+    environment:
+      - DATABASE_URL=postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB}?schema=admin_auth_schema
+    networks:
+      - jledger-network
+
+  # ----------------------------------------------------
+  # 15. User KYC Service (NestJS)
+  # ----------------------------------------------------
+  user-kyc-service:
+    build:
+      context: ./j-ledger-portal/apps/user-kyc-service
+    image: j-ledger/user-kyc-service:latest
+    container_name: jledger-user-kyc
+    depends_on:
+      postgres:
+        condition: service_healthy
+      user-kyc-migration:
+        condition: service_completed_successfully
+    environment:
+      - PORT=3004
+      - DATABASE_URL=postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB}?schema=user_kyc_schema
+      - AWS_REGION=${AWS_REGION}
+      - AWS_ACCESS_KEY_ID=${AWS_ACCESS_KEY_ID}
+      - AWS_SECRET_ACCESS_KEY=${AWS_SECRET_ACCESS_KEY}
+      - AWS_S3_BUCKET=${S3_BUCKET}
+      - PII_ENCRYPTION_KEY=${KYC_ENCRYPTION_KEY}
+    networks:
+      - jledger-network
+    expose:
+      - "3004"
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "wget",
+          "--no-verbose",
+          "--tries=1",
+          "--spider",
+          "http://localhost:3004/kyc/status/test",
+        ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  user-kyc-migration:
+    build:
+      context: ./j-ledger-portal/apps/user-kyc-service
+    image: j-ledger/user-kyc-service:latest
+    container_name: jledger-user-kyc-migration
+    depends_on:
+      postgres:
+        condition: service_healthy
+    command: sh -c "npx prisma migrate deploy"
+    environment:
+      - DATABASE_URL=postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB}?schema=user_kyc_schema
+    networks:
+      - jledger-network
+
+  # ----------------------------------------------------
+  # 16. Wallet Service (Java/Spring Boot)
+  # ----------------------------------------------------
+  wallet-service:
+    build:
+      context: ./j-ledger-core/wallet-service
+    image: j-ledger/wallet-service:latest
+    container_name: jledger-wallet-service
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      eureka-server:
+        condition: service_healthy
+      kafka:
+        condition: service_started
+    environment:
+      - POSTGRES_USER=${POSTGRES_USER}
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
+      - POSTGRES_DB=ledger_db
+    networks:
+      - jledger-network
+    expose:
+      - "8082"
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "wget",
+          "--no-verbose",
+          "--tries=1",
+          "--spider",
+          "http://localhost:8082/wallets/health",
+        ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # ----------------------------------------------------
+  # 17. Nginx - Unified Entry Point (Reverse Proxy)
   # ----------------------------------------------------
   nginx:
     image: nginx:alpine
