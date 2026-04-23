@@ -12,9 +12,9 @@ spring:
     gateway:
       globalcors:
         corsConfigurations:
-          '[/**]':
+          "[/**]":
             allowedOriginPatterns:
-              - ${JLEDGER_ALLOWED_ORIGINS:*} 
+              - ${JLEDGER_ALLOWED_ORIGINS:*}
             allowedMethods:
               - GET
               - POST
@@ -25,6 +25,22 @@ spring:
               - "*"
             allowCredentials: true
       routes:
+        - id: admin-auth-service
+          uri: http://admin-auth-service:3005
+          predicates:
+            - Path=/api/admin-auth/**
+        - id: user-kyc-service
+          uri: http://user-kyc-service:3004
+          predicates:
+            - Path=/api/kyc/**
+        - id: wallet-service
+          uri: http://wallet-service:8082
+          predicates:
+            - Path=/api/wallets/**
+        - id: auth-service
+          uri: http://localhost:3003
+          predicates:
+            - Path=/api/auth/**
         - id: core-api-docs
           uri: lb://core-service
           predicates:
@@ -80,3 +96,7 @@ eureka:
   client:
     serviceUrl:
       defaultZone: ${JLEDGER_EUREKA_ZONE:http://localhost:8761/eureka/}
+
+jwt:
+  access:
+    secret: ${JWT_ACCESS_SECRET}
