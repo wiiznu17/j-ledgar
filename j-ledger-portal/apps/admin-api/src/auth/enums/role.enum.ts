@@ -32,6 +32,8 @@ export enum Permission {
   DELETE_ADMINS = 'DELETE_ADMINS',
   FREEZE_USERS = 'FREEZE_USERS',
   UNFREEZE_USERS = 'UNFREEZE_USERS',
+  BLOCK_USERS = 'BLOCK_USERS',
+  UNBLOCK_USERS = 'UNBLOCK_USERS',
 
   // KYC Management
   VIEW_KYC = 'VIEW_KYC',
@@ -58,6 +60,8 @@ export const ROLE_PERMISSIONS: Record<AdminRole, Permission[]> = {
     Permission.REPORT_TO_AMLO,
     Permission.VIEW_ACCOUNTS,
     Permission.VIEW_USERS,
+    Permission.BLOCK_USERS,
+    Permission.UNBLOCK_USERS,
     Permission.VIEW_DASHBOARD,
     Permission.VIEW_STATISTICS,
   ],

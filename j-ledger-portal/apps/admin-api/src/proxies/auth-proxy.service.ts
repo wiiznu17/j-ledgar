@@ -59,4 +59,26 @@ export class AuthProxyService {
     );
     return response.data;
   }
+
+  async blockUser(id: string, reason?: string) {
+    const response = await firstValueFrom(
+      this.httpService.post(
+        `${this.baseUrl}/admin/users/${id}/block`,
+        { reason },
+        { headers: this.headers },
+      ),
+    );
+    return response.data;
+  }
+
+  async unblockUser(id: string) {
+    const response = await firstValueFrom(
+      this.httpService.post(
+        `${this.baseUrl}/admin/users/${id}/unblock`,
+        {},
+        { headers: this.headers },
+      ),
+    );
+    return response.data;
+  }
 }

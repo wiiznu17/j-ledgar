@@ -1,4 +1,4 @@
-import { Controller, Get, Put, Param, Query, Body, UseGuards } from '@nestjs/common';
+import { Controller, Get, Put, Post, Param, Query, Body, UseGuards } from '@nestjs/common';
 import { UserService } from './user.service';
 import { InternalAuthGuard } from '../common/guards/internal-auth.guard';
 
@@ -30,5 +30,15 @@ export class UserAdminController {
   @Get(':id/activity')
   async getActivity(@Param('id') id: string) {
     return this.userService.getUserActivity(id);
+  }
+
+  @Post(':id/block')
+  async block(@Param('id') id: string, @Body('reason') reason?: string) {
+    return this.userService.blockUser(id, reason);
+  }
+
+  @Post(':id/unblock')
+  async unblock(@Param('id') id: string) {
+    return this.userService.unblockUser(id);
   }
 }

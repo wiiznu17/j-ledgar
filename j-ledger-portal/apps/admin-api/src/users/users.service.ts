@@ -84,4 +84,12 @@ export class UsersService {
   async unfreezeCustomerWallet(id: string) {
     return this.walletProxy.unfreezeWalletUser(id);
   }
+
+  async blockCustomer(id: string, reason?: string) {
+    return this.authProxy.blockUser(id, reason);
+  }
+
+  async unblockCustomer(id: string) {
+    return this.authProxy.unblockUser(id);
+  }
 }
