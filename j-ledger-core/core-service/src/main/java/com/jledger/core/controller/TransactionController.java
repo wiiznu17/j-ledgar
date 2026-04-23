@@ -2,6 +2,7 @@ package com.jledger.core.controller;
 
 import com.jledger.core.domain.Transaction;
 import com.jledger.core.dto.TransferRequest;
+import com.jledger.core.dto.FlagRequest;
 import com.jledger.core.service.TransferService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
@@ -78,7 +79,7 @@ public class TransactionController {
     @Operation(summary = "Get transaction details", description = "Retrieves a transaction and its double-entry ledger entries.")
     @ApiResponses(value = {
             @ApiResponse(responseCode = "200", description = "Transaction found"),
-            @ApiResponse(responseCode = "404", description = "Transaction not found", 
+            @ApiResponse(responseCode = "404", description = "Transaction not found",
                     content = @Content(schema = @Schema(implementation = com.jledger.core.exception.ApiErrorResponse.class)))
     })
     public ResponseEntity<TransactionDetailsDto> getTransactionDetails(
@@ -89,5 +90,50 @@ public class TransactionController {
                         .ledgerEntries(ledgerEntryRepository.findByTransactionId(id))
                         .build()))
                 .orElse(ResponseEntity.notFound().build());
+    }
+
+    @PostMapping("/{id}/flag")
+    @Operation(summary = "Flag transaction as suspicious", description = "Flags a transaction for review by compliance team.")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Transaction flagged successfully"),
+            @ApiResponse(responseCode = "404", description = "Transaction not found",
+                    content = @Content(schema = @Schema(implementation = com.jledger.core.exception.ApiErrorResponse.class)))
+    })
+    public ResponseEntity<Transaction> flagTransaction(
+            @Parameter(description = "The unique ID of the transaction") @PathVariable UUID id,
+            @RequestBody FlagRequest flagRequest) {
+        return transactionRepository.findById(id)
+                .map(transaction -> {
+                    transaction.setFlagged(true);
+                    transaction.setFlagReason(flagRequest.getReason());
+                    transactionRepository.save(transaction);
+                    return ResponseEntity.ok(transaction);
+                })
+                .orElse(ResponseEntity.notFound().build());
+    }
+
+    @GetMapping("/search")
+    @Operation(summary = "Search transactions", description = "Search transactions by various filters.")
+    public ResponseEntity<Page<Transaction>> searchTransactions(
+            @Parameter(description = "Search by account ID") @org.springframework.web.bind.annotation.RequestParam(required = false) UUID accountId,
+            @Parameter(description = "Search by status") @org.springframework.web.bind.annotation.RequestParam(required = false) String status,
+            @Parameter(description = "Search by transaction type") @org.springframework.web.bind.annotation.RequestParam(required = false) String transactionType,
+            @Parameter(description = "Search flagged transactions only") @org.springframework.web.bind.annotation.RequestParam(required = false) Boolean flagged,
+            @PageableDefault(size = 20, sort = "createdAt", direction = Sort.Direction.DESC) Pageable pageable) {
+        
+        if (accountId != null) {
+            return ResponseEntity.ok(transactionRepository.findByFromAccountIdOrToAccountId(accountId, accountId, pageable));
+        }
+        if (status != null) {
+            return ResponseEntity.ok(transactionRepository.findByStatus(status, pageable));
+        }
+        if (transactionType != null) {
+            return ResponseEntity.ok(transactionRepository.findByTransactionType(transactionType, pageable));
+        }
+        if (flagged != null && flagged) {
+            return ResponseEntity.ok(transactionRepository.findByFlaggedTrue(pageable));
+        }
+        
+        return ResponseEntity.ok(transactionRepository.findAll(pageable));
     }
 }
