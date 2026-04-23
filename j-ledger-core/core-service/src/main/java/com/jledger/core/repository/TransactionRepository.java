@@ -6,6 +6,8 @@ import java.time.ZonedDateTime;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
@@ -65,6 +67,12 @@ public interface TransactionRepository extends JpaRepository<Transaction, UUID> 
 
     @Query("SELECT t FROM Transaction t WHERE t.fromAccountId = :accountId AND t.createdAt >= :since")
     List<Transaction> findByFromAccountIdAndCreatedAtAfter(@Param("accountId") UUID accountId, @Param("since") ZonedDateTime since);
+
+    // Search methods
+    Page<Transaction> findByFromAccountIdOrToAccountId(UUID fromAccountId, UUID toAccountId, Pageable pageable);
+    Page<Transaction> findByStatus(String status, Pageable pageable);
+    Page<Transaction> findByTransactionType(String transactionType, Pageable pageable);
+    Page<Transaction> findByFlaggedTrue(Pageable pageable);
 
     // Data retention methods
     long countByCreatedAtBefore(ZonedDateTime cutoffDate);

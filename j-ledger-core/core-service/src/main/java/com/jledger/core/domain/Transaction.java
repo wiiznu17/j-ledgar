@@ -57,6 +57,12 @@ public class Transaction {
     @Column(nullable = false, length = 20)
     private String status;
 
+    @Column(name = "flagged")
+    private Boolean flagged = false;
+
+    @Column(name = "flag_reason", length = 500)
+    private String flagReason;
+
     @CreationTimestamp
     @Column(name = "created_at", updatable = false)
     private ZonedDateTime createdAt;
