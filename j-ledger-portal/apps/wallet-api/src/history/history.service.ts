@@ -34,11 +34,10 @@ export class HistoryService {
   async getTransactionHistory(userId: string, page: number = 0, size: number = 20) {
     const accountId = await this.userService.resolveLedgerAccountId(userId);
 
-    const historyResponse = await this.ledgerProxyService.forwardToGateway<PaginatedResponse<LedgerEntry>>(
-      'get', 
-      `/api/v1/accounts/${accountId}/transactions?page=${page}&size=${size}`
-    );
-    
+    const historyResponse = await this.ledgerProxyService.forwardToGateway<
+      PaginatedResponse<LedgerEntry>
+    >('get', `/api/v1/accounts/${accountId}/transactions?page=${page}&size=${size}`);
+
     const formattedData = historyResponse.content.map((entry: LedgerEntry) => {
       return {
         id: entry.id,
@@ -57,8 +56,17 @@ export class HistoryService {
         currentPage: historyResponse.number,
         totalPages: historyResponse.totalPages,
         totalItems: historyResponse.totalElements,
-      }
+      },
     };
+  }
+
+  async getTransactionDetails(transactionId: string) {
+    const transactionResponse = await this.ledgerProxyService.forwardToGateway<any>(
+      'get',
+      `/api/v1/transactions/${transactionId}`,
+    );
+
+    return transactionResponse;
   }
 
   private generateTransactionTitle(entry: LedgerEntry): string {

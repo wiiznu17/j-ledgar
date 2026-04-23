@@ -1,4 +1,4 @@
-import { Controller, Get, Query, Request, UseGuards } from '@nestjs/common';
+import { Controller, Get, Query, Request, UseGuards, Param } from '@nestjs/common';
 import { HistoryService } from './history.service';
 import { JwtAuthGuard } from '../common/guards/jwt-auth.guard';
 import type { Request as ExpressRequest } from 'express';
@@ -18,5 +18,10 @@ export class HistoryController {
     const sizeNum = size ? parseInt(size, 10) : 20;
 
     return this.historyService.getTransactionHistory(req.user.sub, pageNum, sizeNum);
+  }
+
+  @Get(':id')
+  async getTransactionDetails(@Param('id') id: string) {
+    return this.historyService.getTransactionDetails(id);
   }
 }

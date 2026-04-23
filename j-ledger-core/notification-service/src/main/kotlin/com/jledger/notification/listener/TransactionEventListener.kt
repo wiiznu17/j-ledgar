@@ -2,6 +2,8 @@ package com.jledger.notification.listener
 
 import com.fasterxml.jackson.databind.JsonNode
 import com.fasterxml.jackson.databind.ObjectMapper
+import com.jledger.notification.model.NotificationType
+import com.jledger.notification.service.NotificationService
 import org.slf4j.LoggerFactory
 import org.springframework.kafka.annotation.KafkaListener
 import org.springframework.stereotype.Component
@@ -9,7 +11,10 @@ import org.springframework.stereotype.Component
 import java.text.DecimalFormat
 
 @Component
-class TransactionEventListener(private val objectMapper: ObjectMapper) {
+class TransactionEventListener(
+    private val objectMapper: ObjectMapper,
+    private val notificationService: NotificationService
+) {
 
     private val logger = LoggerFactory.getLogger(TransactionEventListener::class.java)
     private val decimalFormat = DecimalFormat("#,##0.00")
@@ -26,13 +31,21 @@ class TransactionEventListener(private val objectMapper: ObjectMapper) {
             val currencyText = if (currency == "THB") "บาท" else currency
             val formattedAmount = decimalFormat.format(amount)
 
-            val notificationMessage = when (type) {
-                "CREDIT" -> "เงินเข้า! คุณได้รับเงิน $formattedAmount $currencyText"
-                "DEBIT" -> "เงินออก! คุณโอนเงิน $formattedAmount $currencyText"
-                else -> "Transaction updated for account $accountId: $formattedAmount $currencyText"
+            val (title, notificationMessage) = when (type) {
+                "CREDIT" -> Pair("เงินเข้า", "คุณได้รับเงิน $formattedAmount $currencyText")
+                "DEBIT" -> Pair("เงินออก", "คุณโอนเงิน $formattedAmount $currencyText")
+                else -> Pair("Transaction updated", "Transaction updated: $formattedAmount $currencyText")
             }
 
-            logger.info("[MOCK FCM PUSH] User Account: $accountId -> Message: $notificationMessage")
+            // Save notification to database (using accountId as userId for now)
+            notificationService.createNotification(
+                userId = accountId,
+                type = NotificationType.TRANSACTION,
+                title = title,
+                message = notificationMessage
+            )
+
+            logger.info("[NOTIFICATION SAVED] User Account: $accountId -> Message: $notificationMessage")
         } catch (e: Exception) {
             logger.error("Failed to parse transaction event: $message", e)
         }
