@@ -78,3 +78,20 @@ model RolePermission {
   @@unique([roleId, permissionId], name: "roleId_permissionId")
   @@map("role_permissions")
 }
+
+model AuditLog {
+  id             String   @id @default(uuid())
+  adminUserId    String
+  action         String
+  resourceType   String
+  resourceId     String
+  ipAddress      String
+  userAgent      String
+  requestPayload Json?
+  responseStatus Int
+  changes        Json?
+  reason         String?
+  createdAt      DateTime @default(now())
+
+  @@map("audit_logs")
+}
