@@ -18,6 +18,7 @@ import { HistoryModule } from './history/history.module';
 import { KycModule } from './kyc/kyc.module';
 import { OutboxModule } from './outbox/outbox.module';
 import { IntegrationsModule } from './integrations/integrations.module';
+import { NotificationModule } from './notification/notification.module';
 import { Redis } from 'ioredis';
 import { ThrottlerStorageRedisService } from 'nestjs-throttler-storage-redis';
 import { REDIS_CLIENT } from './auth/auth.constants';
@@ -120,6 +121,7 @@ import { REDIS_CLIENT } from './auth/auth.constants';
     KycModule,
     OutboxModule,
     IntegrationsModule,
+    NotificationModule,
   ],
   controllers: [AppController],
   providers: [
