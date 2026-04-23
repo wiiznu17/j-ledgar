@@ -1,0 +1,55 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id        String   @id @default(uuid())
+  userId    String   @unique
+  email     String?
+  phone     String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  kycDocuments KYCDocument[]
+  pii          PII[]
+
+  @@map("users")
+}
+
+model KYCDocument {
+  id          String   @id @default(uuid())
+  userId      String
+  documentType String // ID_CARD, PASSPORT, SELFIE, etc.
+  status      String   // PENDING, APPROVED, REJECTED
+  s3Key       String
+  s3Url       String?
+  metadata    Json?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("kyc_documents")
+}
+
+model PII {
+  id          String   @id @default(uuid())
+  userId      String
+  field       String   // FULL_NAME, ID_NUMBER, ADDRESS, etc.
+  encryptedData String // Encrypted PII data
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, field])
+  @@map("pii")
+}
