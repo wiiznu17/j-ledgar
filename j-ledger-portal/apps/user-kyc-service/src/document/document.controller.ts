@@ -28,4 +28,10 @@ export class DocumentController {
   getDocuments(@Param('userId') userId: string) {
     return this.documentService.getDocuments(userId);
   }
+
+  // Admin endpoint
+  @Get('admin/all')
+  getAllDocuments() {
+    return this.documentService.getAllDocuments();
+  }
 }

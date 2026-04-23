@@ -64,4 +64,18 @@ export class DocumentService {
       orderBy: { createdAt: 'desc' },
     });
   }
+
+  async getAllDocuments() {
+    return this.prisma.kYCDocument.findMany({
+      include: {
+        user: {
+          select: {
+            id: true,
+            email: true,
+          },
+        },
+      },
+      orderBy: { createdAt: 'desc' },
+    });
+  }
 }

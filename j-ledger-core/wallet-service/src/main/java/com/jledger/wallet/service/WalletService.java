@@ -12,6 +12,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.TimeUnit;
@@ -377,5 +378,44 @@ public class WalletService {
         transaction.setMetadata("{\"phoneNumber\":\"" + phoneNumber + "\"}");
 
         return transactionRepository.save(transaction);
+    }
+
+    // Admin methods
+    public List<Wallet> getAllWallets() {
+        return walletRepository.findAll();
+    }
+
+    public List<Wallet> searchWallets(String query) {
+        // Simplified search - in real system would search by userId, phone, etc.
+        return walletRepository.findAll().stream()
+                .filter(w -> w.getUserId().contains(query))
+                .collect(java.util.stream.Collectors.toList());
+    }
+
+    public List<Transaction> getAllTransactions() {
+        return transactionRepository.findAll();
+    }
+
+    @Transactional
+    public Wallet adjustBalance(String userId, BigDecimal amount, String reason) {
+        Wallet wallet = walletRepository.findByUserId(userId)
+                .orElseThrow(() -> new RuntimeException("Wallet not found"));
+
+        wallet.setBalance(wallet.getBalance().add(amount));
+        Wallet updated = walletRepository.save(wallet);
+
+        // Record adjustment transaction
+        Transaction transaction = new Transaction();
+        transaction.setType(amount.compareTo(BigDecimal.ZERO) > 0 ? TransactionType.TOPUP : TransactionType.WITHDRAWAL);
+        transaction.setAmount(amount.abs());
+        transaction.setStatus(TransactionStatus.COMPLETED);
+        transaction.setFromWalletId(null);
+        transaction.setToWalletId(wallet.getId());
+        transaction.setDescription("Admin balance adjustment: " + reason);
+        transaction.setMetadata("{\"reason\":\"" + reason + "\",\"adminAdjustment\":true}");
+
+        transactionRepository.save(transaction);
+
+        return updated;
     }
 }

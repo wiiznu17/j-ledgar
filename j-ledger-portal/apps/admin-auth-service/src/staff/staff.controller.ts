@@ -53,4 +53,9 @@ export class StaffController {
   removeRole(@Param('id') id: string, @Param('roleId') roleId: string) {
     return this.staffService.removeRole(id, roleId);
   }
+
+  @Get('search/:query')
+  search(@Param('query') query: string) {
+    return this.staffService.searchStaff(query);
+  }
 }
