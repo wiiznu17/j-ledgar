@@ -27,4 +27,42 @@ export class UserService {
       data,
     });
   }
+
+  async getUserKYC(userId: string) {
+    const user = await this.prisma.user.findUnique({
+      where: { userId },
+      include: {
+        kycDocuments: {
+          orderBy: { createdAt: 'desc' },
+        },
+      },
+    });
+
+    if (!user) {
+      return null;
+    }
+
+    return {
+      userId: user.userId,
+      kycDocuments: user.kycDocuments,
+    };
+  }
+
+  async getUserPII(userId: string) {
+    const user = await this.prisma.user.findUnique({
+      where: { userId },
+      include: {
+        pii: true,
+      },
+    });
+
+    if (!user || !user.pii) {
+      return null;
+    }
+
+    return {
+      userId: user.userId,
+      pii: user.pii,
+    };
+  }
 }

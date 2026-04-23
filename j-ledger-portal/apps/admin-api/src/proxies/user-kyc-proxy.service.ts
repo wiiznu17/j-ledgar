@@ -5,7 +5,8 @@ import { firstValueFrom } from 'rxjs';
 @Injectable()
 export class UserKYCProxyService {
   private readonly baseUrl = process.env.USER_KYC_SERVICE_URL || 'http://localhost:3002';
-  private readonly internalSecret = process.env.JLEDGER_INTERNAL_SECRET || 'jledger_ecosystem_secret_2024';
+  private readonly internalSecret =
+    process.env.JLEDGER_INTERNAL_SECRET || 'jledger_ecosystem_secret_2024';
 
   constructor(private readonly httpService: HttpService) {}
 
@@ -26,14 +27,22 @@ export class UserKYCProxyService {
 
   async approveDocument(documentId: string, notes?: string) {
     const response = await firstValueFrom(
-      this.httpService.post(`${this.baseUrl}/kyc/approve/${documentId}`, { notes }, { headers: this.headers }),
+      this.httpService.post(
+        `${this.baseUrl}/kyc/approve/${documentId}`,
+        { notes },
+        { headers: this.headers },
+      ),
     );
     return response.data;
   }
 
   async rejectDocument(documentId: string, reason: string) {
     const response = await firstValueFrom(
-      this.httpService.post(`${this.baseUrl}/kyc/reject/${documentId}`, { reason }, { headers: this.headers }),
+      this.httpService.post(
+        `${this.baseUrl}/kyc/reject/${documentId}`,
+        { reason },
+        { headers: this.headers },
+      ),
     );
     return response.data;
   }
@@ -47,7 +56,9 @@ export class UserKYCProxyService {
 
   async getKYCHistory(userId: string) {
     const response = await firstValueFrom(
-      this.httpService.get(`${this.baseUrl}/kyc/admin/history/${userId}`, { headers: this.headers }),
+      this.httpService.get(`${this.baseUrl}/kyc/admin/history/${userId}`, {
+        headers: this.headers,
+      }),
     );
     return response.data;
   }
@@ -62,7 +73,9 @@ export class UserKYCProxyService {
 
   async getUserDocuments(userId: string) {
     const response = await firstValueFrom(
-      this.httpService.get(`${this.baseUrl}/kyc/documents/user/${userId}`, { headers: this.headers }),
+      this.httpService.get(`${this.baseUrl}/kyc/documents/user/${userId}`, {
+        headers: this.headers,
+      }),
     );
     return response.data;
   }
@@ -77,28 +90,38 @@ export class UserKYCProxyService {
 
   async getPII(userId: string, field: string) {
     const response = await firstValueFrom(
-      this.httpService.get(`${this.baseUrl}/kyc/pii/get/${userId}/${field}`, { headers: this.headers }),
+      this.httpService.get(`${this.baseUrl}/kyc/pii/get/${userId}/${field}`, {
+        headers: this.headers,
+      }),
     );
     return response.data;
   }
 
   async updatePII(userId: string, data: any) {
     const response = await firstValueFrom(
-      this.httpService.put(`${this.baseUrl}/kyc/pii/update/${userId}`, data, { headers: this.headers }),
+      this.httpService.put(`${this.baseUrl}/kyc/pii/update/${userId}`, data, {
+        headers: this.headers,
+      }),
     );
     return response.data;
   }
 
   async deletePII(userId: string, field: string) {
     const response = await firstValueFrom(
-      this.httpService.delete(`${this.baseUrl}/kyc/pii/delete/${userId}/${field}`, { headers: this.headers }),
+      this.httpService.delete(`${this.baseUrl}/kyc/pii/delete/${userId}/${field}`, {
+        headers: this.headers,
+      }),
     );
     return response.data;
   }
 
   async storeTaxId(userId: string, taxId: string) {
     const response = await firstValueFrom(
-      this.httpService.post(`${this.baseUrl}/kyc/pii/tax-id/${userId}`, { taxId }, { headers: this.headers }),
+      this.httpService.post(
+        `${this.baseUrl}/kyc/pii/tax-id/${userId}`,
+        { taxId },
+        { headers: this.headers },
+      ),
     );
     return response.data;
   }
@@ -106,6 +129,21 @@ export class UserKYCProxyService {
   async getTaxId(userId: string) {
     const response = await firstValueFrom(
       this.httpService.get(`${this.baseUrl}/kyc/pii/tax-id/${userId}`, { headers: this.headers }),
+    );
+    return response.data;
+  }
+
+  // Admin user management endpoints
+  async getUserKYC(userId: string) {
+    const response = await firstValueFrom(
+      this.httpService.get(`${this.baseUrl}/admin/users/${userId}/kyc`, { headers: this.headers }),
+    );
+    return response.data;
+  }
+
+  async getUserPII(userId: string) {
+    const response = await firstValueFrom(
+      this.httpService.get(`${this.baseUrl}/admin/users/${userId}/pii`, { headers: this.headers }),
     );
     return response.data;
   }

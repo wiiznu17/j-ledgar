@@ -228,24 +228,10 @@ export class WalletProxyService {
   }
 
   async freezeWalletUser(userId: string) {
-    const response = await firstValueFrom(
-      this.httpService.post(
-        `${this.baseUrl}/wallet/admin/${userId}/freeze`,
-        {},
-        { headers: this.headers },
-      ),
-    );
-    return response.data;
+    return this.deactivateWallet(userId);
   }
 
   async unfreezeWalletUser(userId: string) {
-    const response = await firstValueFrom(
-      this.httpService.post(
-        `${this.baseUrl}/wallet/admin/${userId}/unfreeze`,
-        {},
-        { headers: this.headers },
-      ),
-    );
-    return response.data;
+    return this.activateWallet(userId);
   }
 }
