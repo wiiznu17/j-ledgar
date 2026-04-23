@@ -1,8 +1,10 @@
 import { Controller, Get, Post, Put, Delete, Body, Param, UseGuards } from '@nestjs/common';
 import { RoleService } from './role.service';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
+import { CreateRoleDto } from './dto/create-role.dto';
+import { UpdateRoleDto } from './dto/update-role.dto';
 
-@Controller('roles')
+@Controller('admin/roles')
 @UseGuards(JwtAuthGuard)
 export class RoleController {
   constructor(private roleService: RoleService) {}
@@ -18,12 +20,12 @@ export class RoleController {
   }
 
   @Post()
-  create(@Body() data: any) {
+  create(@Body() data: CreateRoleDto) {
     return this.roleService.create(data);
   }
 
   @Put(':id')
-  update(@Param('id') id: string, @Body() data: any) {
+  update(@Param('id') id: string, @Body() data: UpdateRoleDto) {
     return this.roleService.update(id, data);
   }
 

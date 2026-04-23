@@ -91,4 +91,36 @@ export class StaffService {
       where: { id },
     });
   }
+
+  async deactivate(id: string) {
+    return this.prisma.staff.update({
+      where: { id },
+      data: { isActive: false },
+    });
+  }
+
+  async reactivate(id: string) {
+    return this.prisma.staff.update({
+      where: { id },
+      data: { isActive: true },
+    });
+  }
+
+  async assignRole(staffId: string, roleId: string) {
+    return this.prisma.staffRole.create({
+      data: {
+        staffId,
+        roleId,
+      },
+    });
+  }
+
+  async removeRole(staffId: string, roleId: string) {
+    return this.prisma.staffRole.deleteMany({
+      where: {
+        staffId,
+        roleId,
+      },
+    });
+  }
 }
