@@ -14,6 +14,16 @@ export class AuthController {
     return this.authService.login(req.user);
   }
 
+  @Post('refresh')
+  async refresh(@Body() body: { userId: string; refreshToken: string }) {
+    return this.authService.refreshTokens(body.userId, body.refreshToken);
+  }
+
+  @Post('logout')
+  async logout(@Body() body: { userId: string }) {
+    return this.authService.logout(body.userId);
+  }
+
   @UseGuards(JwtAuthGuard)
   @Post('profile')
   getProfile(@Request() req) {

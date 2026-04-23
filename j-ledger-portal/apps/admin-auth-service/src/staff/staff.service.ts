@@ -27,9 +27,9 @@ export class StaffService {
     });
   }
 
-  async findById(id: string) {
+  async findByEmail(email: string) {
     return this.prisma.staff.findUnique({
-      where: { id },
+      where: { email },
       include: {
         staffRoles: {
           include: {
@@ -45,6 +45,27 @@ export class StaffService {
           },
         },
       },
+    });
+  }
+
+  async updateRefreshTokenHash(staffId: string, refreshToken: string) {
+    const hash = await bcrypt.hash(refreshToken, 10);
+    return this.prisma.staff.update({
+      where: { id: staffId },
+      data: { refreshTokenHash: hash } as any,
+    });
+  }
+
+  async clearRefreshToken(staffId: string) {
+    return this.prisma.staff.update({
+      where: { id: staffId },
+      data: { refreshTokenHash: null } as any,
+    });
+  }
+
+  async findById(id: string) {
+    return this.prisma.staff.findUnique({
+      where: { id },
     });
   }
 
