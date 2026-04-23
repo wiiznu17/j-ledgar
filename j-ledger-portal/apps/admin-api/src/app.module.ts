@@ -13,6 +13,7 @@ import { AuditModule } from './audit/audit.module';
 import { ProxiesModule } from './proxies/proxies.module';
 import { KYCModule } from './kyc/kyc.module';
 import { WalletModule } from './wallet/wallet.module';
+import { ReportsModule } from './reports/reports.module';
 
 @Module({
   imports: [
@@ -28,6 +29,7 @@ import { WalletModule } from './wallet/wallet.module';
     AuditModule,
     KYCModule,
     WalletModule,
+    ReportsModule,
   ],
   controllers: [AppController],
   providers: [AppService],
