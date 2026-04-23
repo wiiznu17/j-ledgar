@@ -1,0 +1,155 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id                String              @id @default(uuid())
+  phoneNumber       String              @unique
+  email             String?             @unique
+  passwordHash      String?
+  pinHash           String?
+  status            UserStatus          @default(ACTIVE)
+  registrationState RegistrationState   @default(PENDING)
+  pinAttempts       Int                 @default(0)
+  pinLockedUntil    DateTime?
+  ledgerAccountId   String?
+  createdAt         DateTime            @default(now())
+  updatedAt         DateTime            @updatedAt
+
+  userDevices       UserDevice[]
+  refreshSessions   RefreshSession[]
+  otpChallenges     OtpChallenge[]
+  userConsents      UserConsent[]
+  securityEvents    SecurityEvent[]
+
+  @@map("users")
+}
+
+model UserDevice {
+  id              String            @id @default(uuid())
+  userId          String
+  deviceIdentifier String
+  deviceName      String?
+  deviceType      String?
+  osVersion       String?
+  appVersion      String?
+  trustLevel      DeviceTrustLevel  @default(UNKNOWN)
+  lastSeenAt      DateTime?
+  createdAt       DateTime          @default(now())
+  updatedAt       DateTime          @updatedAt
+
+  user            User              @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, deviceIdentifier])
+  @@map("user_devices")
+}
+
+model RefreshSession {
+  id           String   @id @default(uuid())
+  userId       String
+  deviceId     String?
+  tokenHash    String
+  expiresAt    DateTime
+  revokedAt    DateTime?
+  createdAt    DateTime @default(now())
+
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("refresh_sessions")
+}
+
+model OtpChallenge {
+  id           String   @id @default(uuid())
+  userId       String?
+  phoneNumber  String
+  code         String
+  expiresAt    DateTime
+  verifiedAt   DateTime?
+  attempts     Int      @default(0)
+  createdAt    DateTime @default(now())
+
+  user         User?    @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("otp_challenges")
+}
+
+model UserConsent {
+  id           String       @id @default(uuid())
+  userId       String
+  consentType  ConsentType
+  acceptedAt   DateTime
+  withdrawnAt  DateTime?
+  ipAddress    String?
+  userAgent    String?
+
+  user         User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, consentType])
+  @@map("user_consents")
+}
+
+model SecurityEvent {
+  id           String           @id @default(uuid())
+  userId       String?
+  eventType    SecurityEventType
+  ipAddress    String?
+  userAgent    String?
+  metadata     Json?
+  createdAt    DateTime         @default(now())
+
+  user         User?            @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("security_events")
+}
+
+enum UserStatus {
+  ACTIVE
+  INACTIVE
+  SUSPENDED
+  DELETED
+}
+
+enum RegistrationState {
+  PENDING
+  INITIATED
+  VERIFIED
+  PROFILE_COMPLETED
+  PASSWORD_SET
+  PIN_SET
+  COMPLETED
+}
+
+enum DeviceTrustLevel {
+  UNKNOWN
+  TRUSTED
+  UNTRUSTED
+}
+
+enum ConsentType {
+  TERMS_OF_SERVICE
+  PRIVACY_POLICY
+  MARKETING_CONSENT
+  DATA_PROCESSING
+}
+
+enum SecurityEventType {
+  LOGIN_SUCCESS
+  LOGIN_FAILURE
+  LOGOUT
+  PIN_SETUP
+  PIN_CHANGE
+  PIN_LOCKED
+  BIOMETRIC_ENABLED
+  BIOMETRIC_DISABLED
+  DEVICE_REGISTERED
+  DEVICE_REMOVED
+  ACCOUNT_LOCKED
+  ACCOUNT_UNLOCKED
+  PASSWORD_RESET
+  SUSPICIOUS_ACTIVITY
+}
