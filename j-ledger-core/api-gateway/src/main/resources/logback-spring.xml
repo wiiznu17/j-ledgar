@@ -1,0 +1,60 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<configuration>
+    <springProperty scope="context" name="springAppName" source="spring.application.name"/>
+    <springProperty scope="context" name="logLevel" source="logging.level.root" defaultValue="INFO"/>
+
+    <!-- Console appender with JSON structured logging -->
+    <appender name="console" class="ch.qos.logback.core.ConsoleAppender">
+        <encoder class="net.logstash.logback.encoder.LogstashEncoder">
+            <fieldNames>
+                <timestamp>timestamp</timestamp>
+                <level>level</level>
+                <logger>logger</logger>
+                <message>message</message>
+                <stackTrace>stack_trace</stackTrace>
+            </fieldNames>
+            <customFields>{"service":"${springAppName}"}</customFields>
+        </encoder>
+    </appender>
+
+    <!-- File appender with log rotation -->
+    <appender name="file" class="ch.qos.logback.core.rolling.RollingFileAppender">
+        <file>logs/${springAppName}.log</file>
+        <rollingPolicy class="ch.qos.logback.core.rolling.TimeBasedRollingPolicy">
+            <fileNamePattern>logs/${springAppName}.%d{yyyy-MM-dd}.%i.log</fileNamePattern>
+            <timeBasedFileNamingAndTriggeringPolicy class="ch.qos.logback.core.rolling.SizeAndTimeBasedFNATP">
+                <maxFileSize>100MB</maxFileSize>
+            </timeBasedFileNamingAndTriggeringPolicy>
+            <maxHistory>30</maxHistory>
+            <totalSizeCap>10GB</totalSizeCap>
+        </rollingPolicy>
+        <encoder class="net.logstash.logback.encoder.LogstashEncoder">
+            <fieldNames>
+                <timestamp>timestamp</timestamp>
+                <level>level</level>
+                <logger>logger</logger>
+                <message>message</message>
+                <stackTrace>stack_trace</stackTrace>
+            </fieldNames>
+            <customFields>{"service":"${springAppName}"}</customFields>
+        </encoder>
+    </appender>
+
+    <!-- Async appender for better performance -->
+    <appender name="async" class="ch.qos.logback.classic.AsyncAppender">
+        <appender-ref ref="file"/>
+        <queueSize>512</queueSize>
+        <discardingThreshold>0</discardingThreshold>
+    </appender>
+
+    <!-- Root logger -->
+    <root level="${logLevel}">
+        <appender-ref ref="console"/>
+        <appender-ref ref="async"/>
+    </root>
+
+    <!-- Specific log levels -->
+    <logger name="org.springframework" level="INFO"/>
+    <logger name="org.springframework.cloud.gateway" level="DEBUG"/>
+    <logger name="com.jledger" level="DEBUG"/>
+</configuration>

@@ -35,3 +35,18 @@ eureka:
   client:
     serviceUrl:
       defaultZone: ${JLEDGER_EUREKA_ZONE:http://localhost:8761/eureka/}
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics
+      base-path: /actuator
+  endpoint:
+    health:
+      show-details: when-authorized
+  health:
+    db:
+      enabled: true
+    kafka:
+      enabled: true
