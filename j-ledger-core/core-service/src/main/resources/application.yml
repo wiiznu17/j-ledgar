@@ -86,3 +86,22 @@ logging:
   level:
     org.springframework.orm.jpa: ${JLEDGER_JPA_LOG_LEVEL:INFO}
     org.springframework.transaction: ${JLEDGER_TX_LOG_LEVEL:INFO}
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics
+      base-path: /actuator
+  endpoint:
+    health:
+      show-details: when-authorized
+      probes:
+        enabled: true
+  health:
+    db:
+      enabled: true
+    redis:
+      enabled: true
+    kafka:
+      enabled: true

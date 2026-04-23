@@ -78,7 +78,8 @@ public class JwtValidationFilter implements GatewayFilter {
                path.startsWith("/api/auth/login") ||
                path.startsWith("/api-docs") ||
                path.startsWith("/swagger-ui") ||
-               path.startsWith("/actuator/health");
+               path.startsWith("/actuator/health") ||
+               path.startsWith("/actuator/info");
     }
 
     private Mono<Void> unauthorized(ServerWebExchange exchange, String message) {
