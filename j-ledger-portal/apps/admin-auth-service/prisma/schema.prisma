@@ -62,7 +62,7 @@ model StaffRole {
   staff Staff @relation(fields: [staffId], references: [id], onDelete: Cascade)
   role  Role  @relation(fields: [roleId], references: [id], onDelete: Cascade)
 
-  @@unique([staffId, roleId])
+  @@unique([staffId, roleId], name: "staffId_roleId")
   @@map("staff_roles")
 }
 
@@ -75,6 +75,6 @@ model RolePermission {
   role       Role       @relation(fields: [roleId], references: [id], onDelete: Cascade)
   permission Permission @relation(fields: [permissionId], references: [id], onDelete: Cascade)
 
-  @@unique([roleId, permissionId])
+  @@unique([roleId, permissionId], name: "roleId_permissionId")
   @@map("role_permissions")
 }
