@@ -18,6 +18,7 @@ export enum ResourceType {
   ADMIN_USER = 'ADMIN_USER',
   KYC_DOCUMENT = 'KYC_DOCUMENT',
   PII = 'PII',
+  SYSTEM = 'SYSTEM',
 }
 
 export interface AuditLogData {
