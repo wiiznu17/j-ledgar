@@ -123,4 +123,24 @@ export class StaffService {
       },
     });
   }
+
+  async searchStaff(query: string) {
+    return this.prisma.staff.findMany({
+      where: {
+        OR: [
+          { username: { contains: query, mode: 'insensitive' } },
+          { email: { contains: query, mode: 'insensitive' } },
+          { firstName: { contains: query, mode: 'insensitive' } },
+          { lastName: { contains: query, mode: 'insensitive' } },
+        ],
+      },
+      include: {
+        staffRoles: {
+          include: {
+            role: true,
+          },
+        },
+      },
+    });
+  }
 }

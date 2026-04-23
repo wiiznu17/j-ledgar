@@ -8,6 +8,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.math.BigDecimal;
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 
@@ -186,5 +187,34 @@ public class WalletController {
     @GetMapping("/health")
     public ResponseEntity<String> health() {
         return ResponseEntity.ok("healthy");
+    }
+
+    // Admin endpoints
+    @GetMapping("/admin/wallets")
+    public ResponseEntity<List<Wallet>> getAllWallets() {
+        List<Wallet> wallets = walletService.getAllWallets();
+        return ResponseEntity.ok(wallets);
+    }
+
+    @GetMapping("/admin/wallets/search")
+    public ResponseEntity<List<Wallet>> searchWallets(@RequestParam String query) {
+        List<Wallet> wallets = walletService.searchWallets(query);
+        return ResponseEntity.ok(wallets);
+    }
+
+    @GetMapping("/admin/transactions")
+    public ResponseEntity<List<Transaction>> getAllTransactions() {
+        List<Transaction> transactions = walletService.getAllTransactions();
+        return ResponseEntity.ok(transactions);
+    }
+
+    @PostMapping("/admin/{userId}/adjust")
+    public ResponseEntity<Wallet> adjustBalance(
+            @PathVariable String userId,
+            @RequestBody Map<String, String> request) {
+        BigDecimal amount = new BigDecimal(request.get("amount"));
+        String reason = request.get("reason");
+        Wallet wallet = walletService.adjustBalance(userId, amount, reason);
+        return ResponseEntity.ok(wallet);
     }
 }

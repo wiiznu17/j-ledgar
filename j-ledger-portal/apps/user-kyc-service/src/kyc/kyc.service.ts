@@ -11,9 +11,9 @@ export class KYCService {
       orderBy: { createdAt: 'desc' },
     });
 
-    const approvedCount = documents.filter(d => d.status === 'APPROVED').length;
-    const pendingCount = documents.filter(d => d.status === 'PENDING').length;
-    const rejectedCount = documents.filter(d => d.status === 'REJECTED').length;
+    const approvedCount = documents.filter((d) => d.status === 'APPROVED').length;
+    const pendingCount = documents.filter((d) => d.status === 'PENDING').length;
+    const rejectedCount = documents.filter((d) => d.status === 'REJECTED').length;
 
     return {
       userId,
@@ -37,10 +37,32 @@ export class KYCService {
   async rejectDocument(documentId: string, reason: string) {
     return this.prisma.kYCDocument.update({
       where: { id: documentId },
-      data: { 
+      data: {
         status: 'REJECTED',
         metadata: { reason },
       },
+    });
+  }
+
+  async getPendingKYCList() {
+    return this.prisma.kYCDocument.findMany({
+      where: { status: 'PENDING' },
+      include: {
+        user: {
+          select: {
+            id: true,
+            email: true,
+          },
+        },
+      },
+      orderBy: { createdAt: 'asc' },
+    });
+  }
+
+  async getKYCHistory(userId: string) {
+    return this.prisma.kYCDocument.findMany({
+      where: { userId },
+      orderBy: { createdAt: 'desc' },
     });
   }
 }

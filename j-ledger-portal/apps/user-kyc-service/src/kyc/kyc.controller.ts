@@ -23,4 +23,15 @@ export class KYCController {
   rejectDocument(@Param('documentId') documentId: string, @Body() dto: RejectDocumentDto) {
     return this.kycService.rejectDocument(documentId, dto.reason);
   }
+
+  // Admin endpoints
+  @Get('admin/pending')
+  getPendingKYCList() {
+    return this.kycService.getPendingKYCList();
+  }
+
+  @Get('admin/history/:userId')
+  getKYCHistory(@Param('userId') userId: string) {
+    return this.kycService.getKYCHistory(userId);
+  }
 }
