@@ -10,8 +10,8 @@ export class AuthService {
     private jwtService: JwtService,
   ) {}
 
-  async validateStaff(username: string, password: string): Promise<any> {
-    const staff = await this.staffService.findByUsername(username);
+  async validateStaff(email: string, password: string): Promise<any> {
+    const staff = await this.staffService.findByEmail(email);
     if (!staff || !staff.isActive) {
       return null;
     }
@@ -26,16 +26,69 @@ export class AuthService {
   }
 
   async login(staff: any) {
-    const payload = { sub: staff.id, username: staff.username };
+    const payload = { sub: staff.id, email: staff.email };
+    const [token, refreshToken] = await Promise.all([
+      this.jwtService.signAsync(payload, {
+        expiresIn: '15m',
+        secret: process.env.JWT_SECRET || 'jledger-local-dev-jwt-secret',
+      }),
+      this.jwtService.signAsync(payload, {
+        expiresIn: '7d',
+        secret: process.env.JWT_REFRESH_SECRET || 'jledger-local-dev-refresh-secret',
+      }),
+    ]);
+
+    await this.staffService.updateRefreshTokenHash(staff.id, refreshToken);
+
+    // Get role from staffRoles
+    const role = staff.staffRoles?.[0]?.role?.name || 'SUPPORT_STAFF';
+
     return {
-      access_token: this.jwtService.sign(payload),
-      staff: {
-        id: staff.id,
-        username: staff.username,
+      token,
+      refreshToken,
+      userId: staff.id,
+      user: {
         email: staff.email,
-        firstName: staff.firstName,
-        lastName: staff.lastName,
+        role,
       },
+      role,
     };
+  }
+
+  async refreshTokens(staffId: string, refreshToken: string) {
+    const staff = await this.staffService.findById(staffId);
+
+    if (!staff || !(staff as any).refreshTokenHash) {
+      throw new UnauthorizedException('Access Denied');
+    }
+
+    const refreshTokenMatches = await bcrypt.compare(refreshToken, (staff as any).refreshTokenHash);
+
+    if (!refreshTokenMatches) {
+      throw new UnauthorizedException('Access Denied');
+    }
+
+    const payload = { sub: staff.id, email: staff.email };
+    const [token, newRefreshToken] = await Promise.all([
+      this.jwtService.signAsync(payload, {
+        expiresIn: '15m',
+        secret: process.env.JWT_SECRET || 'jledger-local-dev-jwt-secret',
+      }),
+      this.jwtService.signAsync(payload, {
+        expiresIn: '7d',
+        secret: process.env.JWT_REFRESH_SECRET || 'jledger-local-dev-refresh-secret',
+      }),
+    ]);
+
+    await this.staffService.updateRefreshTokenHash(staff.id, newRefreshToken);
+
+    return {
+      token,
+      refreshToken: newRefreshToken,
+    };
+  }
+
+  async logout(staffId: string) {
+    await this.staffService.clearRefreshToken(staffId);
   }
 }
