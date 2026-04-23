@@ -1,6 +1,7 @@
 import { Controller, Get, Put, Post, Param, Query, Body, UseGuards } from '@nestjs/common';
 import { UserService } from './user.service';
 import { InternalAuthGuard } from '../common/guards/internal-auth.guard';
+import { UserStatus } from '@repo/dto';
 
 @Controller('admin/users')
 @UseGuards(InternalAuthGuard)
@@ -24,7 +25,7 @@ export class UserAdminController {
 
   @Put(':id/status')
   async updateStatus(@Param('id') id: string, @Body('status') status: string) {
-    return this.userService.updateUserStatus(id, status);
+    return this.userService.updateUserStatus(id, status as UserStatus);
   }
 
   @Get(':id/activity')

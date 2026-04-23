@@ -1,5 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
+import { UserStatus } from '@repo/dto';
 
 const MAX_PIN_ATTEMPTS = 3;
 const PIN_LOCK_DURATION_MS = 5 * 60 * 1000;
@@ -128,24 +129,24 @@ export class UserService {
     });
   }
 
-  async updateUserStatus(id: string, status: string) {
+  async updateUserStatus(id: string, status: UserStatus) {
     return this.prisma.user.update({
       where: { id },
-      data: { status: status as any },
+      data: { status },
     });
   }
 
   async blockUser(id: string, reason?: string) {
     return this.prisma.user.update({
       where: { id },
-      data: { status: 'BLOCKED' as any },
+      data: { status: UserStatus.BLOCKED },
     });
   }
 
   async unblockUser(id: string) {
     return this.prisma.user.update({
       where: { id },
-      data: { status: 'ACTIVE' as any },
+      data: { status: UserStatus.ACTIVE },
     });
   }
 

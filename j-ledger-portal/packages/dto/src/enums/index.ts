@@ -101,3 +101,28 @@ export enum SuspiciousActivityStatus {
   REVIEWED = 'REVIEWED',
   REPORTED = 'REPORTED',
 }
+
+// Auth-related enums
+export enum UserStatus {
+  ACTIVE = 'ACTIVE',
+  INACTIVE = 'INACTIVE',
+  SUSPENDED = 'SUSPENDED',
+  BLOCKED = 'BLOCKED',
+  DELETED = 'DELETED',
+}
+
+export enum RegistrationState {
+  PENDING = 'PENDING',
+  INITIATED = 'INITIATED',
+  VERIFIED = 'VERIFIED',
+  PROFILE_COMPLETED = 'PROFILE_COMPLETED',
+  PASSWORD_SET = 'PASSWORD_SET',
+  PIN_SET = 'PIN_SET',
+  COMPLETED = 'COMPLETED',
+}
+
+export enum DeviceTrustLevel {
+  UNKNOWN = 'UNKNOWN',
+  TRUSTED = 'TRUSTED',
+  UNTRUSTED = 'UNTRUSTED',
+}
