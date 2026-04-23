@@ -2,6 +2,8 @@ services:
   postgres:
     ports:
       - "5432:5432"
+    volumes:
+      - ./docker/init-scripts:/docker-entrypoint-initdb.d
 
   redis:
     ports:
@@ -28,6 +30,25 @@ services:
   api-gateway:
     ports:
       - "8080:8080"
+
+  auth-service:
+    build:
+      context: ./j-ledger-portal/apps/auth-service
+      dockerfile: Dockerfile
+    ports:
+      - "3003:3003"
+    environment:
+      DATABASE_URL: postgresql://ledger_admin:ledger_password@postgres:5432/auth_db
+      JWT_ACCESS_SECRET: ${JWT_ACCESS_SECRET}
+      JWT_REFRESH_SECRET: ${JWT_REFRESH_SECRET}
+      JWT_REGISTRATION_SECRET: ${JWT_REGISTRATION_SECRET}
+      JLEDGER_REDIS_ADDRESS: redis://redis:6379
+      PORT: 3003
+    depends_on:
+      - postgres
+      - redis
+    networks:
+      - jledger-network
 
   pgadmin:
     image: dpage/pgadmin4
