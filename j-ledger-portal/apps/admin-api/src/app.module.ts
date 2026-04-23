@@ -14,6 +14,8 @@ import { ProxiesModule } from './proxies/proxies.module';
 import { KYCModule } from './kyc/kyc.module';
 import { WalletModule } from './wallet/wallet.module';
 import { ReportsModule } from './reports/reports.module';
+import { SettingsModule } from './settings/settings.module';
+import { AdminSystemController } from './system/admin-system.controller';
 
 @Module({
   imports: [
@@ -30,8 +32,9 @@ import { ReportsModule } from './reports/reports.module';
     KYCModule,
     WalletModule,
     ReportsModule,
+    SettingsModule,
   ],
-  controllers: [AppController],
+  controllers: [AppController, AdminSystemController],
   providers: [AppService],
 })
 export class AppModule {}
