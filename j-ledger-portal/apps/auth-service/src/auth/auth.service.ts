@@ -9,6 +9,7 @@ import {
 import { JwtService } from '@nestjs/jwt';
 import { ConfigService } from '@nestjs/config';
 import { PrismaService } from '../prisma/prisma.service';
+import { UserStatus, RegistrationState, DeviceTrustLevel } from '@repo/dto';
 import * as bcrypt from 'bcrypt';
 import { randomUUID } from 'crypto';
 import { REDIS_CLIENT } from './auth.constants';
@@ -42,7 +43,7 @@ interface RefreshTokenPayload {
 
 interface RegistrationTokenPayload {
   sub: string;
-  state: string;
+  state: RegistrationState;
   typ: 'registration';
   nonce: string;
   exp?: number;
@@ -93,13 +94,13 @@ export class AuthService {
       user = await this.prisma.user.create({
         data: {
           phoneNumber,
-          status: 'ACTIVE' as any,
-          registrationState: 'PENDING' as any,
+          status: UserStatus.ACTIVE,
+          registrationState: RegistrationState.PENDING,
         },
       });
     }
 
-    if (user.registrationState === 'COMPLETED') {
+    if (user.registrationState === RegistrationState.COMPLETED) {
       throw new ConflictException('User already registered');
     }
 
@@ -124,7 +125,7 @@ export class AuthService {
 
     await this.prisma.user.update({
       where: { id: user.id },
-      data: { registrationState: 'INITIATED' as any },
+      data: { registrationState: RegistrationState.INITIATED },
     });
 
     await this.logSecurityEvent(user.id, 'REGISTER_OTP_VERIFIED', {
@@ -133,8 +134,8 @@ export class AuthService {
     });
 
     return {
-      regToken: await this.signRegistrationToken(user.id, 'INITIATED'),
-      nextState: 'INITIATED',
+      regToken: await this.signRegistrationToken(user.id, RegistrationState.INITIATED),
+      nextState: RegistrationState.INITIATED,
     };
   }
 
@@ -152,7 +153,7 @@ export class AuthService {
       throw new UnauthorizedException('Invalid credentials');
     }
 
-    if (user.status !== 'ACTIVE') {
+    if (user.status !== UserStatus.ACTIVE) {
       throw new UnauthorizedException('Account is not active');
     }
 
@@ -174,13 +175,13 @@ export class AuthService {
       },
       update: {
         lastSeenAt: new Date(),
-        trustLevel: 'TRUSTED' as any,
+        trustLevel: DeviceTrustLevel.TRUSTED,
       },
       create: {
         userId: user.id,
         deviceIdentifier: dto.deviceId,
         deviceName: dto.deviceName,
-        trustLevel: 'TRUSTED' as any,
+        trustLevel: DeviceTrustLevel.TRUSTED,
         lastSeenAt: new Date(),
       },
     });
@@ -325,7 +326,7 @@ export class AuthService {
     });
   }
 
-  private async signRegistrationToken(userId: string, state: string): Promise<string> {
+  private async signRegistrationToken(userId: string, state: RegistrationState): Promise<string> {
     const payload: RegistrationTokenPayload = {
       sub: userId,
       state,

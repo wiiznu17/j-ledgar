@@ -1,5 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
+import { DeviceTrustLevel } from '@repo/dto';
 
 @Injectable()
 export class DeviceService {
@@ -9,14 +10,14 @@ export class DeviceService {
     userId: string,
     deviceIdentifier: string,
     deviceName?: string,
-    trustLevel: string = 'UNKNOWN',
+    trustLevel: DeviceTrustLevel = DeviceTrustLevel.UNKNOWN,
   ) {
     return this.prisma.userDevice.create({
       data: {
         userId,
         deviceIdentifier,
         deviceName,
-        trustLevel: trustLevel as any,
+        trustLevel,
         lastSeenAt: new Date(),
       },
     });
@@ -40,10 +41,10 @@ export class DeviceService {
     });
   }
 
-  async updateDeviceTrustLevel(deviceId: string, trustLevel: string) {
+  async updateDeviceTrustLevel(deviceId: string, trustLevel: DeviceTrustLevel) {
     return this.prisma.userDevice.update({
       where: { id: deviceId },
-      data: { trustLevel: trustLevel as any },
+      data: { trustLevel },
     });
   }
 
@@ -65,9 +66,9 @@ export class DeviceService {
       where: {
         userId,
         id: { not: exceptDeviceId },
-        trustLevel: 'TRUSTED' as any,
+        trustLevel: DeviceTrustLevel.TRUSTED,
       },
-      data: { trustLevel: 'UNTRUSTED' as any },
+      data: { trustLevel: DeviceTrustLevel.UNTRUSTED },
     });
   }
 }
