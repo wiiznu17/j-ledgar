@@ -8,7 +8,10 @@ export class PIIService {
   private algorithm = 'aes-256-gcm';
 
   constructor(private prisma: PrismaService) {
-    this.encryptionKey = Buffer.from(process.env.PII_ENCRYPTION_KEY || 'default-32-char-encryption-key-123456', 'utf8').slice(0, 32);
+    this.encryptionKey = Buffer.from(
+      process.env.PII_ENCRYPTION_KEY || 'default-32-char-encryption-key-123456',
+      'utf8',
+    ).slice(0, 32);
   }
 
   private encrypt(text: string): { encrypted: string; iv: string; authTag: string } {
@@ -21,7 +24,11 @@ export class PIIService {
   }
 
   private decrypt(encrypted: string, iv: string, authTag: string): string {
-    const decipher = crypto.createDecipheriv(this.algorithm, this.encryptionKey, Buffer.from(iv, 'hex'));
+    const decipher = crypto.createDecipheriv(
+      this.algorithm,
+      this.encryptionKey,
+      Buffer.from(iv, 'hex'),
+    );
     decipher.setAuthTag(Buffer.from(authTag, 'hex'));
     let decrypted = decipher.update(encrypted, 'hex', 'utf8');
     decrypted += decipher.final('utf8');
@@ -73,5 +80,28 @@ export class PIIService {
         field,
       },
     });
+  }
+
+  async updatePII(userId: string, field: string, value: string) {
+    const { encrypted, iv, authTag } = this.encrypt(value);
+    const encryptedData = JSON.stringify({ encrypted, iv, authTag });
+
+    return this.prisma.pII.updateMany({
+      where: {
+        userId,
+        field,
+      },
+      data: {
+        encryptedData,
+      },
+    });
+  }
+
+  async storeTaxId(userId: string, taxId: string) {
+    return this.storePII(userId, 'TAX_ID', taxId);
+  }
+
+  async getTaxId(userId: string): Promise<string | null> {
+    return this.getPII(userId, 'TAX_ID');
   }
 }

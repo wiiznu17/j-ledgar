@@ -1,21 +1,27 @@
-import { Controller, Get, Post, Param, UseInterceptors, UploadedFile } from '@nestjs/common';
+import {
+  Controller,
+  Get,
+  Post,
+  Param,
+  UseInterceptors,
+  UploadedFile,
+  Body,
+  UseGuards,
+} from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { DocumentService } from './document.service';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
+import { UploadDocumentDto } from './dto/upload-document.dto';
 
-@Controller('documents')
+@Controller('kyc/documents')
 @UseGuards(JwtAuthGuard)
 export class DocumentController {
   constructor(private documentService: DocumentService) {}
 
-  @Post('upload/:userId/:documentType')
+  @Post('upload')
   @UseInterceptors(FileInterceptor('file'))
-  uploadDocument(
-    @Param('userId') userId: string,
-    @Param('documentType') documentType: string,
-    @UploadedFile() file: Express.Multer.File,
-  ) {
-    return this.documentService.uploadDocument(userId, file, documentType);
+  uploadDocument(@Body() dto: UploadDocumentDto, @UploadedFile() file: Express.Multer.File) {
+    return this.documentService.uploadDocument(dto.userId, file, dto.documentType);
   }
 
   @Get('user/:userId')
