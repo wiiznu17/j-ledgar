@@ -137,4 +137,26 @@ export class UsersController {
   unfreezeCustomerWallet(@Param('id') id: string) {
     return this.usersService.unfreezeCustomerWallet(id);
   }
+
+  @Post('customers/:id/block')
+  @RequirePermissions(Permission.BLOCK_USERS)
+  @AuditLog({
+    action: AuditAction.UPDATE,
+    resourceType: ResourceType.USER,
+    getResourceId: (req) => req.params.id,
+  })
+  blockCustomer(@Param('id') id: string, @Body('reason') reason?: string) {
+    return this.usersService.blockCustomer(id, reason);
+  }
+
+  @Post('customers/:id/unblock')
+  @RequirePermissions(Permission.UNBLOCK_USERS)
+  @AuditLog({
+    action: AuditAction.UPDATE,
+    resourceType: ResourceType.USER,
+    getResourceId: (req) => req.params.id,
+  })
+  unblockCustomer(@Param('id') id: string) {
+    return this.usersService.unblockCustomer(id);
+  }
 }

@@ -135,6 +135,20 @@ export class UserService {
     });
   }
 
+  async blockUser(id: string, reason?: string) {
+    return this.prisma.user.update({
+      where: { id },
+      data: { status: 'BLOCKED' },
+    });
+  }
+
+  async unblockUser(id: string) {
+    return this.prisma.user.update({
+      where: { id },
+      data: { status: 'ACTIVE' },
+    });
+  }
+
   async getUserActivity(id: string) {
     const user = await this.prisma.user.findUnique({
       where: { id },
