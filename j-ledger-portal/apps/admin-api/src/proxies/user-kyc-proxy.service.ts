@@ -147,4 +147,13 @@ export class UserKYCProxyService {
     );
     return response.data;
   }
+
+  async getDocumentById(documentId: string) {
+    const response = await firstValueFrom(
+      this.httpService.get(`${this.baseUrl}/kyc/documents/admin/${documentId}`, {
+        headers: this.headers,
+      }),
+    );
+    return response.data;
+  }
 }
