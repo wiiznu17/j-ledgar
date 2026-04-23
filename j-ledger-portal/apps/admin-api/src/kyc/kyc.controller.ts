@@ -30,10 +30,7 @@ export class KYCController {
     resourceType: ResourceType.KYC_DOCUMENT,
     getResourceId: (req) => req.params.documentId,
   })
-  approveDocument(
-    @Param('documentId') documentId: string,
-    @Body() body: { notes?: string },
-  ) {
+  approveDocument(@Param('documentId') documentId: string, @Body() body: { notes?: string }) {
     return this.kycService.approveDocument(documentId, body.notes);
   }
 
@@ -44,10 +41,7 @@ export class KYCController {
     resourceType: ResourceType.KYC_DOCUMENT,
     getResourceId: (req) => req.params.documentId,
   })
-  rejectDocument(
-    @Param('documentId') documentId: string,
-    @Body() body: { reason: string },
-  ) {
+  rejectDocument(@Param('documentId') documentId: string, @Body() body: { reason: string }) {
     return this.kycService.rejectDocument(documentId, body.reason);
   }
 
@@ -72,5 +66,11 @@ export class KYCController {
   })
   getPII(@Param('userId') userId: string, @Param('field') field: string) {
     return this.kycService.getPII(userId, field);
+  }
+
+  @Get('documents/:id')
+  @RequirePermissions(Permission.VIEW_KYC)
+  getDocumentById(@Param('id') id: string) {
+    return this.kycService.getDocumentById(id);
   }
 }

@@ -11,6 +11,7 @@ import {
 import { FileInterceptor } from '@nestjs/platform-express';
 import { DocumentService } from './document.service';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
+import { InternalAuthGuard } from '../auth/guards/internal-auth.guard';
 import { UploadDocumentDto } from './dto/upload-document.dto';
 
 @Controller('kyc/documents')
@@ -31,7 +32,14 @@ export class DocumentController {
 
   // Admin endpoint
   @Get('admin/all')
+  @UseGuards(InternalAuthGuard)
   getAllDocuments() {
     return this.documentService.getAllDocuments();
+  }
+
+  @Get('admin/:id')
+  @UseGuards(InternalAuthGuard)
+  getDocumentById(@Param('id') id: string) {
+    return this.documentService.getDocumentById(id);
   }
 }

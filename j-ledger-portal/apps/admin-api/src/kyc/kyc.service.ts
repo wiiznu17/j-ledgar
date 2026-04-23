@@ -32,4 +32,8 @@ export class KYCService {
   async getPII(userId: string, field: string) {
     return this.kycProxy.getPII(userId, field);
   }
+
+  async getDocumentById(documentId: string) {
+    return this.kycProxy.getDocumentById(documentId);
+  }
 }

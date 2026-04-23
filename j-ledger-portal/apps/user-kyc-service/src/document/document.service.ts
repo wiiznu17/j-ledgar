@@ -78,4 +78,18 @@ export class DocumentService {
       orderBy: { createdAt: 'desc' },
     });
   }
+
+  async getDocumentById(id: string) {
+    return this.prisma.kYCDocument.findUnique({
+      where: { id },
+      include: {
+        user: {
+          select: {
+            id: true,
+            email: true,
+          },
+        },
+      },
+    });
+  }
 }
