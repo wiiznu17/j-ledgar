@@ -5,6 +5,7 @@ import org.springframework.cloud.gateway.filter.GlobalFilter;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.core.Ordered;
+import reactor.core.publisher.Mono;
 
 @Configuration
 public class JwtFilterConfig {
@@ -15,7 +16,7 @@ public class JwtFilterConfig {
             private final JwtValidationFilter jwtFilter = new JwtValidationFilter();
 
             @Override
-            public org.reactivestreams.Publisher<Void> filter(
+            public Mono<Void> filter(
                     org.springframework.web.server.ServerWebExchange exchange,
                     org.springframework.cloud.gateway.filter.GatewayFilterChain chain) {
                 return jwtFilter.filter(exchange, chain);

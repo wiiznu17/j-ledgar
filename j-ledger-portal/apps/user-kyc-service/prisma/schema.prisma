@@ -2,12 +2,14 @@
 // learn more about it in the docs: https://pris.ly/d/prisma-schema
 
 generator client {
-  provider = "prisma-client-js"
+  provider        = "prisma-client-js"
+  previewFeatures = ["multiSchema"]
 }
 
 datasource db {
   provider = "postgresql"
   url      = env("DATABASE_URL")
+  schemas  = ["user_kyc_schema"]
 }
 
 model User {
@@ -22,6 +24,7 @@ model User {
   pii          PII[]
 
   @@map("users")
+  @@schema("user_kyc_schema")
 }
 
 model KYCDocument {
@@ -38,6 +41,7 @@ model KYCDocument {
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@map("kyc_documents")
+  @@schema("user_kyc_schema")
 }
 
 model PII {
@@ -52,4 +56,5 @@ model PII {
 
   @@unique([userId, field])
   @@map("pii")
+  @@schema("user_kyc_schema")
 }

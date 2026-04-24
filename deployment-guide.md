@@ -59,7 +59,7 @@ sudo chmod a+r /etc/apt/keyrings/docker.gpg
 # 5. เพิ่มที่อยู่แหล่งเก็บโปรแกรม (Repository) ของ Docker เข้าไปในระบบของ Ubuntu
 echo \
   "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/docker.gpg] https://download.docker.com/linux/ubuntu \
-  $(. /etc/os-release && echo "$VERSION_CODENAME") stable" | \
+  $(. /os-release && echo "$VERSION_CODENAME") stable" | \
   sudo tee /etc/apt/sources.list.d/docker.list > /dev/null
 
 # 6. อัปเดตรายการแพ็กเกจอีกครั้งเพื่อให้มองเห็นไฟล์ของ Docker ที่เราเพิ่งเพิ่มไป
@@ -87,7 +87,7 @@ sudo usermod -aG docker $USER
 2.  **สั่ง Clone โปรเจกต์ (Repo เดียว)**:
     ```bash
     git clone https://github.com/wiiznu17/j-ledgar.git
-    cd j-ledgar
+    cd j-ledger
     ```
 
 ---
@@ -110,7 +110,6 @@ nano .env
 **แก้ไขค่าสำคัญใน `.env`:**
 
 - `JLEDGER_ALLOWED_ORIGINS=https://potayyr.site`
-- `INTERNAL_API_URL=http://admin-api:3001` (ทางด่วนสำหรับ Server คุยกันเอง)
 - `POSTGRES_USER`, `POSTGRES_PASSWORD`, `POSTGRES_DB` (ตั้งค่า database)
 - `REDIS_PASSWORD` (เปลี่ยนให้ยากๆ)
 - `JLEDGER_ADMIN_EMAIL=admin@jledger.com` (อีเมลแอดมินเริ่มต้น)
@@ -126,22 +125,62 @@ nano .env
 docker compose up -d --build
 ```
 
-_ระบบจะทำการรัน Migration อัตโนมัติ (ผ่าน core-migration และ admin-migration) ก่อนจะเริ่มแอปหลักครับ_
+_ระบบจะทำการรัน Migration อัตโนมัติ (ผ่าน core-migration, admin-migration, wallet-migration, admin-auth-migration, user-kyc-migration) ก่อนจะเริ่มแอปหลักครับ_
 _ตรวจสอบสถานะด้วย `docker compose ps`_
 
 ---
 
-## �️ การจัดการ Database Migration
+## 🛠️ 5. Local Development Mode (Hybrid)
+
+สำหรับการพัฒนาแบบ Hybrid (Infrastructure ใน Docker, Services บน Local):
+
+1. **ตั้งค่า .env.local**:
+
+```bash
+cp .env.local.example .env.local
+# แก้ค่าตามต้องการ (ส่วนใหญ่ใช้ค่า default ได้)
+```
+
+2. **เริ่ม Infrastructure**:
+
+```bash
+docker compose -f docker-compose.yml -f docker-compose.dev.yml up -d postgres redis kafka zookeeper eureka-server api-gateway
+```
+
+3. **รัน Services บน Local**:
+
+```bash
+# NestJS Services
+cd j-ledger-portal/apps/wallet-api && npm run dev
+cd j-ledger-portal/apps/admin-api && npm run dev
+cd j-ledger-portal/apps/auth-service && npm run dev
+cd j-ledger-portal/apps/admin-auth-service && npm run dev
+cd j-ledger-portal/apps/user-kyc-service && npm run dev
+
+# Java Services
+cd j-ledger-core/core-service && mvn spring-boot:run
+cd j-ledger-core/wallet-service && mvn spring-boot:run
+cd j-ledger-core/notification-service && mvn spring-boot:run
+```
+
+> [!NOTE]
+> Local services จะเชื่อมต่อ infrastructure ผ่าน localhost (ports exposed จาก docker-compose.dev.yml)
+
+---
+
+## 🗄️ 6. การจัดการ Database Migration
 
 ### โครงสร้าง Database
 
 โปรเจ็คใช้ **PostgreSQL เดียว** (`jledger_db`) แต่แยก schema กัน:
 
-| Service          | Schema          | Migration Tool |
-| ---------------- | --------------- | -------------- |
-| **core-service** | `public`        | Flyway (SQL)   |
-| **admin-api**    | `admin_schema`  | Prisma (ORM)   |
-| **wallet-api**   | `wallet_schema` | Prisma (ORM)   |
+| Service                | Schema              | Migration Tool |
+| ---------------------- | ------------------- | -------------- |
+| **core-service**       | `public`            | Flyway (SQL)   |
+| **admin-api**          | `admin_schema`      | Prisma (ORM)   |
+| **wallet-api**         | `wallet_schema`     | Prisma (ORM)   |
+| **admin-auth-service** | `admin_auth_schema` | Prisma (ORM)   |
+| **user-kyc-service**   | `user_kyc_schema`   | Prisma (ORM)   |
 
 ### การรันครั้งแรก (Initial Deployment)
 
@@ -150,8 +189,10 @@ _ตรวจสอบสถานะด้วย `docker compose ps`_
 - `core-migration` container รัน Flyway → apply SQL migrations จาก `j-ledger-core/core-service/src/main/resources/db/migration/`
 - `admin-migration` container รัน Prisma → apply migrations และ seed data สำหรับ `admin_schema`
 - `wallet-migration` container รัน Prisma → apply migrations และ seed data สำหรับ `wallet_schema`
+- `admin-auth-migration` container รัน Prisma → apply migrations สำหรับ `admin_auth_schema`
+- `user-kyc-migration` container รัน Prisma → apply migrations สำหรับ `user_kyc_schema`
 
-Services หลัก (core-service, admin-api, wallet-api) จะรอให้ migration เสร็จก่อนถึงจะเริ่มทำงาน
+Services หลักจะรอให้ migration เสร็จก่อนถึงจะเริ่มทำงาน
 
 ### เมื่อมีการแก้ Database
 
@@ -161,21 +202,24 @@ Services หลัก (core-service, admin-api, wallet-api) จะรอให�
 # สร้าง migration file ใหม่
 # ไฟล์: j-ledger-core/core-service/src/main/resources/db/migration/V13__your_change.sql
 
-# Deploy migration
+# Deploy migration (Production)
 docker compose up -d core-migration
+
+# Deploy migration (Dev - Docker)
+docker compose -f docker-compose.yml -f docker-compose.dev.yml run --rm core-migration
 ```
 
-#### 2. Admin API / Wallet API (Prisma)
+#### 2. Prisma Services (Admin API, Wallet API, Admin Auth, User KYC)
 
 ```bash
 # แก้ prisma/schema.prisma
-cd j-ledger-portal/apps/admin-api  # หรือ wallet-api
+cd j-ledger-portal/apps/admin-api  # หรือ wallet-api, admin-auth-service, user-kyc-service
 
-# สร้าง migration
+# สร้าง migration (Dev)
 npx prisma migrate dev --name your_change
 
-# Rebuild image และ deploy
-docker compose build admin-migration  # หรือ wallet-migration
+# Rebuild image และ deploy (Production)
+docker compose build admin-migration  # หรือ wallet-migration, admin-auth-migration, user-kyc-migration
 docker compose up -d admin-migration
 ```
 
@@ -190,7 +234,7 @@ docker compose up -d admin-migration
 
 ---
 
-## �🔒 5. ตั้งค่า SSL (HTTPS) ด้วย Certbot (Standalone Mode)
+## 🔒 7. ตั้งค่า SSL (HTTPS) ด้วย Certbot (Standalone Mode)
 
 เพื่อให้ป้องกันปัญหาพอร์ต 80 ชนกันระหว่าง Certbot และ Nginx ใน Docker เราจะใช้โหมด `standalone` ตามขั้นตอนที่ถูกต้องดังนี้ครับ:
 
@@ -203,7 +247,7 @@ docker compose up -d admin-migration
 2. **หยุด Nginx ชั่วคราว (เพื่อคืนพอร์ต 80 ให้ Certbot):**
 
    ```bash
-   cd ~/app/j-ledgar
+   cd ~/app/j-ledger
    docker compose stop nginx
    ```
 
@@ -236,11 +280,26 @@ docker compose up -d admin-migration
 
 ---
 
-## 🔗 6. การเข้าใช้งานหลังติดตั้ง
+## 🔗 8. การเข้าใช้งานหลังติดตั้ง
+
+### Production Mode
 
 - **Web Portal:** `https://potayyr.site` (ล้างคุกกี้เบราว์เซอร์ก่อนเข้าครั้งแรกถ้าเคยเข้ามาก่อน)
 - **Login:** `admin@jledger.com` / `Admin@123`
 - **Backend APIs:** ยิงผ่าน `https://potayyr.site/api/...`
 
+### Local Development Mode
+
+- **Admin Web:** `http://localhost:3000`
+- **Wallet API:** `http://localhost:3002`
+- **Admin API:** `http://localhost:3001`
+- **Auth Service:** `http://localhost:3003`
+- **Admin Auth Service:** `http://localhost:3005`
+- **User KYC Service:** `http://localhost:3004`
+- **Core Service:** `http://localhost:8081`
+- **Wallet Service:** `http://localhost:8082`
+- **API Gateway:** `http://localhost:8080`
+- **Eureka Server:** `http://localhost:8761`
+
 > [!IMPORTANT]
-> **Database Security**: สังเกตว่าพอร์ต 5432, 6379 จะไม่ถูกเปิดออกมาข้างนอกเครื่อง เพื่อป้องกันการเจาะระบบ ทุกอย่างสื่อสารกันภายใน Docker Network
+> **Database Security**: สังเกตว่าพอร์ต 5432, 6379 จะไม่ถูกเปิดออกมาข้างนอกเครื่องใน production เพื่อป้องกันการเจาะระบบ ทุกอย่างสื่อสารกันภายใน Docker Network

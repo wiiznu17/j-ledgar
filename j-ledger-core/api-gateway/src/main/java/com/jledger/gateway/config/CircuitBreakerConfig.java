@@ -8,7 +8,7 @@ import org.springframework.context.annotation.Configuration;
 import java.time.Duration;
 
 @Configuration
-public class CircuitBreakerConfig {
+public class CircuitBreakerConfiguration {
 
     @Bean
     public CircuitBreakerRegistry circuitBreakerRegistry() {
@@ -34,10 +34,10 @@ public class CircuitBreakerConfig {
                 .slowCallDurationThreshold(Duration.ofSeconds(3))
                 .build();
 
-        CircuitBreakerRegistry registry = CircuitBreakerRegistry.of(
-                CircuitBreakerConfig.of("coreTransferCircuitBreaker", transferConfig),
-                CircuitBreakerConfig.of("coreServiceCircuitBreaker", coreServiceConfig)
-        );
+        CircuitBreakerRegistry registry = CircuitBreakerRegistry.builder()
+                .addCircuitBreakerConfig("coreTransferCircuitBreaker", transferConfig)
+                .addCircuitBreakerConfig("coreServiceCircuitBreaker", coreServiceConfig)
+                .build();
 
         return registry;
     }
