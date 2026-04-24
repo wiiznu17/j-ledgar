@@ -1,11 +1,10 @@
 import { Module } from '@nestjs/common';
 import { HistoryController } from './history.controller';
 import { HistoryService } from './history.service';
-import { LedgerProxyModule } from '../ledger-proxy/ledger-proxy.module';
-import { UserModule } from '../user/user.module';
+import { ProxyModule } from '../proxy/proxy.module';
 
 @Module({
-  imports: [LedgerProxyModule, UserModule],
+  imports: [ProxyModule],
   controllers: [HistoryController],
   providers: [HistoryService],
 })

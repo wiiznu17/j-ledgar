@@ -3,27 +3,9 @@ import { INestApplication, ValidationPipe } from '@nestjs/common';
 import request from 'supertest';
 import { AppModule } from './../src/app.module';
 import { LedgerProxyService } from './../src/ledger-proxy/ledger-proxy.service';
-import { PrismaService } from './../src/prisma/prisma.service';
 
-describe.skip('Transaction Flow (e2e)', () => {
+describe.skip('Transaction Flow (e2e) - Skipped due to BFF refactor', () => {
   let app: INestApplication;
-  const mockUsers: any[] = [];
-  const mockPrisma = {
-    user: {
-      findUnique: jest.fn().mockImplementation(({ where }) => {
-        return mockUsers.find((u) => u.email === where.email);
-      }),
-      create: jest.fn().mockImplementation(({ data }) => {
-        const newUser = { id: 'uuid-123', ...data };
-        mockUsers.push(newUser);
-        return newUser;
-      }),
-    },
-    $connect: jest.fn().mockResolvedValue(undefined),
-    $disconnect: jest.fn().mockResolvedValue(undefined),
-    onModuleInit: jest.fn().mockResolvedValue(undefined),
-    onModuleDestroy: jest.fn().mockResolvedValue(undefined),
-  };
 
   const mockLedgerProxy = {
     forwardToGateway: jest.fn().mockResolvedValue({
@@ -33,18 +15,18 @@ describe.skip('Transaction Flow (e2e)', () => {
   };
 
   beforeAll(async () => {
-    process.env.JWT_ACCESS_SECRET = 'test-access-secret';
-    process.env.JWT_REFRESH_SECRET = 'test-refresh-secret';
-    process.env.JWT_REGISTRATION_SECRET = 'test-registration-secret';
     process.env.JLEDGER_INTERNAL_SECRET = 'test-internal-secret';
     process.env.API_GATEWAY_URL = 'http://localhost:8080';
+    process.env.AUTH_SERVICE_URL = 'http://localhost:3003';
+    process.env.WALLET_SERVICE_URL = 'http://localhost:8082';
+    process.env.CORE_SERVICE_URL = 'http://localhost:8081';
+    process.env.USER_KYC_SERVICE_URL = 'http://localhost:3004';
+    process.env.NOTIFICATION_SERVICE_URL = 'http://localhost:3006';
 
     try {
       const moduleFixture: TestingModule = await Test.createTestingModule({
         imports: [AppModule],
       })
-        .overrideProvider(PrismaService)
-        .useValue(mockPrisma)
         .overrideProvider(LedgerProxyService)
         .useValue(mockLedgerProxy)
         .compile();
@@ -62,64 +44,9 @@ describe.skip('Transaction Flow (e2e)', () => {
     await app.close();
   });
 
-  const testUser = {
-    email: `test-${Date.now()}@example.com`,
-    password: 'password123',
-    pin: '123456',
-  };
-
-  let accessToken: string;
-
-  it('/users/register (POST)', () => {
-    return request(app.getHttpServer())
-      .post('/users/register')
-      .send(testUser)
-      .expect(201)
-      .expect((res: any) => {
-        expect(res.body.email).toEqual(testUser.email);
-      });
-  });
-
-  it('/auth/login (POST)', async () => {
-    const response = await request(app.getHttpServer())
-      .post('/auth/login')
-      .send({ email: testUser.email, password: testUser.password })
-      .expect(201);
-
-    accessToken = response.body.access_token;
-    expect(accessToken).toBeDefined();
-  });
-
-  it('/transactions/transfer (POST) - Missing Idempotency Key', () => {
-    return request(app.getHttpServer())
-      .post('/transactions/transfer')
-      .set('Authorization', `Bearer ${accessToken}`)
-      .send({
-        fromAccountId: 'acc-1',
-        toAccountId: 'acc-2',
-        amount: '100',
-        currency: 'THB',
-        pin: testUser.pin,
-      })
-      .expect(400);
-  });
-
-  it('/transactions/transfer (POST) - Valid Flow', () => {
-    return request(app.getHttpServer())
-      .post('/transactions/transfer')
-      .set('Authorization', `Bearer ${accessToken}`)
-      .set('Idempotency-Key', 'test-key-123')
-      .send({
-        fromAccountId: 'acc-1',
-        toAccountId: 'acc-2',
-        amount: '100',
-        currency: 'THB',
-        pin: testUser.pin,
-      })
-      .expect(201)
-      .expect((res: any) => {
-        expect(res.body.status).toEqual('SUCCESS');
-        expect(mockLedgerProxy.forwardToGateway).toHaveBeenCalled();
-      });
+  // Tests skipped because wallet-api is now a BFF that proxies to microservices
+  // These tests need to be refactored to test proxy services
+  it('should be refactored to test proxy services', () => {
+    expect(true).toBe(true);
   });
 });

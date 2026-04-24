@@ -5,23 +5,12 @@ import { ScheduleModule } from '@nestjs/schedule';
 import { ThrottlerGuard, ThrottlerModule } from '@nestjs/throttler';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
-import { PrismaModule } from './prisma/prisma.module';
 import { AuthModule } from './auth/auth.module';
 import { LedgerProxyModule } from './ledger-proxy/ledger-proxy.module';
 import { IdempotencyInterceptor } from './common/interceptors/idempotency.interceptor';
 import { CsrfMiddleware } from './common/middleware/csrf.middleware';
-import { UserModule } from './user/user.module';
-import { TransactionModule } from './transaction/transaction.module';
-import { PaymentModule } from './payment/payment.module';
-import { MerchantModule } from './merchant/merchant.module';
 import { HistoryModule } from './history/history.module';
-import { KycModule } from './kyc/kyc.module';
-import { OutboxModule } from './outbox/outbox.module';
-import { IntegrationsModule } from './integrations/integrations.module';
-import { NotificationModule } from './notification/notification.module';
-import { WalletModule } from './wallet/wallet.module';
-import { BillPaymentModule } from './bill-payment/bill-payment.module';
-import { QrModule } from './qr/qr.module';
+import { ProxyModule } from './proxy/proxy.module';
 import { Redis } from 'ioredis';
 import { ThrottlerStorageRedisService } from 'nestjs-throttler-storage-redis';
 import { REDIS_CLIENT } from './auth/auth.constants';
@@ -30,8 +19,8 @@ import { REDIS_CLIENT } from './auth/auth.constants';
   imports: [
     ConfigModule.forRoot({ isGlobal: true }),
     ScheduleModule.forRoot(),
-    PrismaModule,
     AuthModule,
+    ProxyModule,
     ThrottlerModule.forRootAsync({
       imports: [AuthModule],
       inject: [ConfigService, REDIS_CLIENT],
@@ -116,18 +105,7 @@ import { REDIS_CLIENT } from './auth/auth.constants';
       },
     }),
     LedgerProxyModule,
-    UserModule,
-    TransactionModule,
-    PaymentModule,
-    MerchantModule,
     HistoryModule,
-    KycModule,
-    OutboxModule,
-    IntegrationsModule,
-    NotificationModule,
-    WalletModule,
-    BillPaymentModule,
-    QrModule,
   ],
   controllers: [AppController],
   providers: [

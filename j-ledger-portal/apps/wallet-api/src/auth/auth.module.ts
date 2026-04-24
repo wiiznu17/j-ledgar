@@ -5,7 +5,7 @@ import { ConfigModule, ConfigService } from '@nestjs/config';
 import { AuthService } from './auth.service';
 import { AuthController } from './auth.controller';
 import { JwtStrategy } from './jwt.strategy';
-import { UserModule } from '../user/user.module';
+import { ProxyModule } from '../proxy/proxy.module';
 import Redis from 'ioredis';
 
 import { REDIS_CLIENT } from './auth.constants';
@@ -13,7 +13,7 @@ import { REDIS_CLIENT } from './auth.constants';
 @Module({
   imports: [
     ConfigModule,
-    UserModule,
+    ProxyModule,
     PassportModule,
     JwtModule.registerAsync({
       imports: [ConfigModule],
@@ -87,7 +87,7 @@ import { REDIS_CLIENT } from './auth.constants';
             const url = new URL(address.replace('redis://', 'http://'));
             redisOptions.host = url.hostname || 'localhost';
             redisOptions.port = parseInt(url.port) || 6379;
-          } catch (e) {
+          } catch {
             // Fallback to default if parsing fails
             console.warn('Failed to parse Redis address, using defaults');
           }

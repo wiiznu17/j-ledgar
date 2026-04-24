@@ -1,6 +1,5 @@
 import { Injectable } from '@nestjs/common';
-import { LedgerProxyService } from '../ledger-proxy/ledger-proxy.service';
-import { UserService } from '../user/user.service';
+import { TransactionProxyService } from '../proxy/transaction-proxy.service';
 
 type LedgerEntryType = 'DEBIT' | 'CREDIT';
 type TransactionType = 'TOPUP' | 'TRANSFER' | 'PAYMENT';
@@ -17,28 +16,14 @@ interface LedgerEntry {
   };
 }
 
-interface PaginatedResponse<T> {
-  content: T[];
-  totalElements: number;
-  totalPages: number;
-  number: number;
-}
-
 @Injectable()
 export class HistoryService {
-  constructor(
-    private readonly ledgerProxyService: LedgerProxyService,
-    private readonly userService: UserService,
-  ) {}
+  constructor(private readonly transactionProxyService: TransactionProxyService) {}
 
   async getTransactionHistory(userId: string, page: number = 0, size: number = 20) {
-    const accountId = await this.userService.resolveLedgerAccountId(userId);
+    const historyResponse = await this.transactionProxyService.getTransactionHistory(userId, {});
 
-    const historyResponse = await this.ledgerProxyService.forwardToGateway<
-      PaginatedResponse<LedgerEntry>
-    >('get', `/api/v1/accounts/${accountId}/transactions?page=${page}&size=${size}`);
-
-    const formattedData = historyResponse.content.map((entry: LedgerEntry) => {
+    const formattedData = historyResponse.map((entry: LedgerEntry) => {
       return {
         id: entry.id,
         amount: entry.amount,
@@ -53,17 +38,17 @@ export class HistoryService {
     return {
       data: formattedData,
       meta: {
-        currentPage: historyResponse.number,
-        totalPages: historyResponse.totalPages,
-        totalItems: historyResponse.totalElements,
+        currentPage: page,
+        totalPages: Math.ceil((formattedData.length || 0) / size),
+        totalItems: formattedData.length || 0,
       },
     };
   }
 
   async getTransactionDetails(transactionId: string) {
-    const transactionResponse = await this.ledgerProxyService.forwardToGateway<any>(
-      'get',
-      `/api/v1/transactions/${transactionId}`,
+    const transactionResponse = await this.transactionProxyService.getTransactionDetails(
+      transactionId,
+      {},
     );
 
     return transactionResponse;

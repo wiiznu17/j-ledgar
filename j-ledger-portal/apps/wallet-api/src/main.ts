@@ -4,15 +4,7 @@ import helmet from 'helmet';
 import { AppModule } from './app.module';
 
 async function bootstrap() {
-  assertRequiredEnv([
-    'DATABASE_URL',
-    'API_GATEWAY_URL',
-    'JLEDGER_INTERNAL_SECRET',
-    'JWT_ACCESS_SECRET',
-    'JWT_REFRESH_SECRET',
-    'JWT_REGISTRATION_SECRET',
-    'KYC_ENCRYPTION_KEY',
-  ]);
+  assertRequiredEnv(['API_GATEWAY_URL', 'JLEDGER_INTERNAL_SECRET']);
 
   const app = await NestFactory.create(AppModule);
 
