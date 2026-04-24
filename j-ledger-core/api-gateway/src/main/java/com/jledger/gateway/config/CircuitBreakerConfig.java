@@ -2,7 +2,6 @@ package com.jledger.gateway.config;
 
 import io.github.resilience4j.circuitbreaker.CircuitBreakerConfig;
 import io.github.resilience4j.circuitbreaker.CircuitBreakerRegistry;
-import io.github.resilience4j.timelimiter.TimeLimiterConfig;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
@@ -35,16 +34,11 @@ public class CircuitBreakerConfig {
                 .slowCallDurationThreshold(Duration.ofSeconds(3))
                 .build();
 
-        return CircuitBreakerRegistry.builder()
-                .withCircuitBreakerConfig("coreTransferCircuitBreaker", transferConfig)
-                .withCircuitBreakerConfig("coreServiceCircuitBreaker", coreServiceConfig)
-                .build();
-    }
+        CircuitBreakerRegistry registry = CircuitBreakerRegistry.of(
+                CircuitBreakerConfig.of("coreTransferCircuitBreaker", transferConfig),
+                CircuitBreakerConfig.of("coreServiceCircuitBreaker", coreServiceConfig)
+        );
 
-    @Bean
-    public TimeLimiterConfig timeLimiterConfig() {
-        return TimeLimiterConfig.custom()
-                .timeoutDuration(Duration.ofSeconds(10)) // Timeout after 10s
-                .build();
+        return registry;
     }
 }

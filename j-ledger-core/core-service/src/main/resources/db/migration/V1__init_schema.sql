@@ -7,6 +7,8 @@ CREATE TABLE accounts (
     balance DECIMAL(20, 4) NOT NULL,
     currency VARCHAR(3) NOT NULL,
     status VARCHAR(20) NOT NULL DEFAULT 'ACTIVE',
+    kyc_status VARCHAR(20) NOT NULL DEFAULT 'NOT_SUBMITTED',
+    kyc_review_date TIMESTAMPTZ,
     version INTEGER NOT NULL DEFAULT 0,
     created_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
@@ -24,6 +26,8 @@ CREATE TABLE transactions (
     amount DECIMAL(20, 4) NOT NULL,
     currency VARCHAR(3) NOT NULL,
     status VARCHAR(20) NOT NULL,
+    flagged BOOLEAN DEFAULT false,
+    flag_reason VARCHAR(500),
     created_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
     CONSTRAINT fk_transactions_from_account
@@ -164,6 +168,71 @@ CREATE TABLE approvals (
   created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP
 );
 
+CREATE TABLE suspicious_activities (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  user_id UUID NOT NULL,
+  transfer_id UUID,
+  activity_type VARCHAR(50) NOT NULL,
+  status VARCHAR(50) NOT NULL,
+  amount DECIMAL(20, 4),
+  risk_score INTEGER,
+  description TEXT,
+  reviewed_at TIMESTAMPTZ,
+  reviewed_by VARCHAR(255),
+  reported_to_amlo_at TIMESTAMPTZ,
+  amlo_reference VARCHAR(255),
+  metadata JSONB,
+  created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
+  updated_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE system_settings (
+  id BIGSERIAL PRIMARY KEY,
+  system_name VARCHAR(255) NOT NULL,
+  company_name VARCHAR(255),
+  support_email VARCHAR(255),
+  support_phone VARCHAR(50),
+  default_currency VARCHAR(3) NOT NULL,
+  business_hours_start VARCHAR(5),
+  business_hours_end VARCHAR(5),
+  email_notifications_enabled BOOLEAN NOT NULL,
+  sms_notifications_enabled BOOLEAN NOT NULL,
+  kyc_required BOOLEAN NOT NULL,
+  two_factor_auth_required BOOLEAN NOT NULL,
+  default_language VARCHAR(10) NOT NULL,
+  timezone VARCHAR(50) NOT NULL,
+  session_timeout_minutes INTEGER NOT NULL,
+  registration_mode VARCHAR(20) NOT NULL,
+  transfer_fee_fixed DECIMAL(20, 4) NOT NULL,
+  transfer_fee_percentage DECIMAL(5, 4) NOT NULL,
+  top_up_fee_fixed DECIMAL(20, 4) NOT NULL,
+  top_up_fee_percentage DECIMAL(5, 4) NOT NULL,
+  bill_payment_fee_fixed DECIMAL(20, 4) NOT NULL,
+  bill_payment_fee_percentage DECIMAL(5, 4) NOT NULL,
+  withdrawal_fee_fixed DECIMAL(20, 4) NOT NULL,
+  withdrawal_fee_percentage DECIMAL(5, 4) NOT NULL,
+  minimum_fee DECIMAL(20, 4) NOT NULL,
+  daily_transaction_limit DECIMAL(20, 4) NOT NULL,
+  monthly_transaction_limit DECIMAL(20, 4) NOT NULL,
+  per_transaction_limit DECIMAL(20, 4) NOT NULL,
+  wallet_balance_limit DECIMAL(20, 4) NOT NULL,
+  daily_top_up_limit DECIMAL(20, 4) NOT NULL,
+  created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE transaction_limits (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  account_id UUID NOT NULL,
+  limit_type VARCHAR(20) NOT NULL,
+  limit_amount DECIMAL(20, 4) NOT NULL,
+  current_amount DECIMAL(20, 4),
+  reset_date TIMESTAMPTZ,
+  is_active BOOLEAN,
+  created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
+  updated_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP
+);
+
 CREATE INDEX idx_accounts_user_id ON accounts (user_id);
 CREATE INDEX idx_ledger_entries_transaction_id ON ledger_entries (transaction_id);
 CREATE INDEX idx_ledger_entries_account_id ON ledger_entries (account_id);
@@ -190,3 +259,22 @@ VALUES (
     CURRENT_TIMESTAMP,
     CURRENT_TIMESTAMP
 ) ON CONFLICT (id) DO NOTHING;
+
+-- Seed System Settings
+INSERT INTO system_settings (
+  system_name, company_name, support_email, support_phone, default_currency,
+  business_hours_start, business_hours_end, email_notifications_enabled,
+  sms_notifications_enabled, kyc_required, two_factor_auth_required,
+  default_language, timezone, session_timeout_minutes, registration_mode,
+  transfer_fee_fixed, transfer_fee_percentage, top_up_fee_fixed, top_up_fee_percentage,
+  bill_payment_fee_fixed, bill_payment_fee_percentage, withdrawal_fee_fixed,
+  withdrawal_fee_percentage, minimum_fee, daily_transaction_limit,
+  monthly_transaction_limit, per_transaction_limit, wallet_balance_limit, daily_top_up_limit
+)
+VALUES (
+  'J-Ledger', 'J-Ledger Co., Ltd.', 'support@jledger.com', '+66-2-123-4567', 'THB',
+  '09:00', '17:00', true, true, true, false, 'th', 'Asia/Bangkok', 30, 'open',
+  5.00, 0.01, 0.00, 0.00, 10.00, 0.005, 25.00, 0.02, 1.00,
+  500000.00, 5000000.00, 100000.00, 1000000.00, 200000.00
+)
+ON CONFLICT DO NOTHING;

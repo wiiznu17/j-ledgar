@@ -14,31 +14,11 @@ public class RedisConfig {
     @Bean(destroyMethod = "shutdown")
     public RedissonClient redissonClient(
             @Value("${jledger.redis.address:redis://localhost:6379}") String redisAddress,
-            @Value("${jledger.redis.password:}") String redisPassword,
-            @Value("${jledger.redis.connection-pool-size:20}") int connectionPoolSize,
-            @Value("${jledger.redis.connection-minimum-idle-size:5}") int connectionMinimumIdleSize,
-            @Value("${jledger.redis.connect-timeout:5000}") int connectTimeout,
-            @Value("${jledger.redis.timeout:5000}") int timeout
+            @Value("${jledger.redis.password:}") String redisPassword
     ) {
         Config config = new Config();
         SingleServerConfig singleServerConfig = config.useSingleServer()
-                .setAddress(redisAddress)
-                // Connection settings
-                .setConnectTimeout(connectTimeout)      // ms — fail fast on connection
-                .setTimeout(timeout)                      // ms — max wait for Redis response
-                .setRetryAttempts(3)                      // retry on transient errors
-                .setRetryInterval(1500)                  // ms — delay between retries
-                .setConnectionPoolSize(connectionPoolSize) // max connections per pod
-                .setConnectionMinimumIdleSize(connectionMinimumIdleSize)
-                .setIdleConnectionTimeout(10000)         // ms — close idle connections
-                // Performance optimizations
-                .setKeepAlive(true)                       // enable keep-alive
-                .setPingConnectionInterval(30000)         // ms — ping interval
-                .setSubscriptionConnectionPoolSize(5)     // for pub/sub
-                // Lock settings
-                .setLockWatchdogTimeout(30000)           // ms — watchdog timeout
-                .setNettyThreads(32)                      // netty threads for I/O
-                .setThreads(64);                          // total threads
+                .setAddress(redisAddress);
 
         if (redisPassword != null && !redisPassword.isBlank()) {
             singleServerConfig.setPassword(redisPassword);
