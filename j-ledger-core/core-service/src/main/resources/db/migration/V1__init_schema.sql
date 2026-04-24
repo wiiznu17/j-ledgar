@@ -1,5 +1,11 @@
 CREATE EXTENSION IF NOT EXISTS pgcrypto;
 
+-- Create schema for core-service
+CREATE SCHEMA IF NOT EXISTS core_schema;
+
+-- Set search path to core_schema for all subsequent operations
+SET search_path TO core_schema, public;
+
 CREATE TABLE accounts (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     user_id UUID NOT NULL,

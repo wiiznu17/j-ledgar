@@ -16,8 +16,6 @@ WORKDIR /app
 # First copy only the pruned lockfiles and package.json
 COPY .gitignore .gitignore
 COPY --from=pruner /app/out/json/ .
-# Copy prisma schema to allow postinstall generation
-COPY apps/admin-api/prisma/schema.prisma ./apps/admin-api/prisma/schema.prisma
 COPY turbo.json turbo.json
 RUN npm install
 
@@ -25,7 +23,6 @@ RUN npm install
 COPY --from=pruner /app/out/full/ .
 # Build shared packages first
 RUN npx turbo build --filter=@repo/dto
-RUN npx prisma generate --schema=apps/admin-api/prisma/schema.prisma
 RUN npx turbo build --filter=admin-api
 
 # --- Stage 3: Runner ---
@@ -43,8 +40,6 @@ COPY --from=installer /app/node_modules ./node_modules
 # Copy compiled shared packages
 COPY --from=installer /app/packages/dto/dist ./packages/dto/dist
 COPY --from=installer /app/packages/dto/package.json ./packages/dto/package.json
-COPY --from=installer /app/apps/admin-api/node_modules/@prisma/client-admin ./node_modules/@prisma/client-admin
-COPY --from=installer /app/apps/admin-api/prisma ./prisma
 COPY --from=installer /app/package.json .
 
 CMD ["node", "dist/src/main"]

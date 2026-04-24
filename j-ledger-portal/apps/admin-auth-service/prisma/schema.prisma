@@ -2,12 +2,14 @@
 // learn more about it in the docs: https://pris.ly/d/prisma-schema
 
 generator client {
-  provider = "prisma-client-js"
+  provider        = "prisma-client-js"
+  previewFeatures = ["multiSchema"]
 }
 
 datasource db {
   provider = "postgresql"
   url      = env("DATABASE_URL")
+  schemas  = ["admin_auth_schema"]
 }
 
 model Staff {
@@ -25,6 +27,7 @@ model Staff {
   staffRoles StaffRole[]
 
   @@map("staffs")
+  @@schema("admin_auth_schema")
 }
 
 model Role {
@@ -38,6 +41,7 @@ model Role {
   rolePermissions RolePermission[]
 
   @@map("roles")
+  @@schema("admin_auth_schema")
 }
 
 model Permission {
@@ -52,6 +56,7 @@ model Permission {
   rolePermissions RolePermission[]
 
   @@map("permissions")
+  @@schema("admin_auth_schema")
 }
 
 model StaffRole {
@@ -65,6 +70,7 @@ model StaffRole {
 
   @@unique([staffId, roleId], name: "staffId_roleId")
   @@map("staff_roles")
+  @@schema("admin_auth_schema")
 }
 
 model RolePermission {
@@ -78,6 +84,7 @@ model RolePermission {
 
   @@unique([roleId, permissionId], name: "roleId_permissionId")
   @@map("role_permissions")
+  @@schema("admin_auth_schema")
 }
 
 model AuditLog {
@@ -95,4 +102,5 @@ model AuditLog {
   createdAt      DateTime @default(now())
 
   @@map("audit_logs")
+  @@schema("admin_auth_schema")
 }
