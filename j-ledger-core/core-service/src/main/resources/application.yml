@@ -4,7 +4,7 @@ server:
 eureka:
   client:
     serviceUrl:
-      defaultZone: ${JLEDGER_EUREKA_ZONE:http://localhost:8761/eureka/}
+      defaultZone: ${JLEDGER_EUREKA_ZONE}
     # Handle race conditions during startup
     healthcheck:
       enabled: true
@@ -15,9 +15,9 @@ spring:
     name: core-service
 
   datasource:
-    url: ${JLEDGER_DATASOURCE_URL:jdbc:postgresql://localhost:5432/jledger_db}
-    username: ${JLEDGER_DATASOURCE_USERNAME:ledger_admin}
-    password: ${JLEDGER_DATASOURCE_PASSWORD:ledger_password}
+    url: ${JLEDGER_DATASOURCE_URL}
+    username: ${JLEDGER_DATASOURCE_USERNAME}
+    password: ${JLEDGER_DATASOURCE_PASSWORD}
     driver-class-name: org.postgresql.Driver
     hikari:
       # Connection pool size settings
@@ -47,7 +47,7 @@ spring:
     baseline-on-migrate: true
 
   kafka:
-    bootstrap-servers: ${JLEDGER_KAFKA_BOOTSTRAP_SERVERS:localhost:9092}
+    bootstrap-servers: ${JLEDGER_KAFKA_BOOTSTRAP_SERVERS}
     producer:
       key-serializer: org.apache.kafka.common.serialization.StringSerializer
       value-serializer: org.apache.kafka.common.serialization.StringSerializer
@@ -66,8 +66,8 @@ springdoc:
 
 jledger:
   redis:
-    address: ${JLEDGER_REDIS_ADDRESS:redis://localhost:6379}
-    password: ${JLEDGER_REDIS_PASSWORD:redis_password}
+    address: ${JLEDGER_REDIS_ADDRESS}
+    password: ${JLEDGER_REDIS_PASSWORD}
     idempotency-ttl-hours: ${JLEDGER_REDIS_IDEMPOTENCY_TTL_HOURS:24}
   lock:
     wait-seconds: ${JLEDGER_LOCK_WAIT_SECONDS:3}

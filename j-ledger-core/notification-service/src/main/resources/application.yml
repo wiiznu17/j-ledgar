@@ -5,14 +5,14 @@ spring:
   application:
     name: notification-service
   kafka:
-    bootstrap-servers: ${JLEDGER_KAFKA_BOOTSTRAP_SERVERS:localhost:9092}
+    bootstrap-servers: ${JLEDGER_KAFKA_BOOTSTRAP_SERVERS}
   datasource:
-    url: ${JLEDGER_NOTIFICATION_DB_URL:jdbc:postgresql://localhost:5432/notification_db}
-    username: ${JLEDGER_NOTIFICATION_DB_USER:notification_user}
-    password: ${JLEDGER_NOTIFICATION_DB_PASSWORD:notification_pass}
+    url: ${JLEDGER_DATASOURCE_URL}
+    username: ${JLEDGER_DATASOURCE_USERNAME}
+    password: ${JLEDGER_DATASOURCE_PASSWORD}
   jpa:
     hibernate:
-      ddl-auto: update
+      ddl-auto: validate
     show-sql: false
     properties:
       hibernate:
@@ -34,7 +34,7 @@ springdoc:
 eureka:
   client:
     serviceUrl:
-      defaultZone: ${JLEDGER_EUREKA_ZONE:http://localhost:8761/eureka/}
+      defaultZone: ${JLEDGER_EUREKA_ZONE}
 
 management:
   endpoints:

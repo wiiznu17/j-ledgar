@@ -10,8 +10,17 @@ import org.springframework.core.Ordered;
 public class JwtFilterConfig {
 
     @Bean
-    public GlobalFilter jwtValidationFilter() {
-        return new JwtValidationFilter() {
+    public GlobalFilter jwtValidationGlobalFilter() {
+        return new GlobalFilter() {
+            private final JwtValidationFilter jwtFilter = new JwtValidationFilter();
+
+            @Override
+            public org.reactivestreams.Publisher<Void> filter(
+                    org.springframework.web.server.ServerWebExchange exchange,
+                    org.springframework.cloud.gateway.filter.GatewayFilterChain chain) {
+                return jwtFilter.filter(exchange, chain);
+            }
+
             @Override
             public int getOrder() {
                 return Ordered.HIGHEST_PRECEDENCE; // Execute first

@@ -1,6 +1,7 @@
 package com.jledger.core.domain;
 
 import jakarta.persistence.*;
+import java.math.BigDecimal;
 import java.time.ZonedDateTime;
 import java.util.UUID;
 import lombok.AllArgsConstructor;

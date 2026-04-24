@@ -123,7 +123,7 @@ public class DataRetentionService {
         // 3. Update metadata
 
         // For now, we'll just count the records
-        return transactionRepository.countByCreatedAtBefore(cutoffDate);
+        return (int) transactionRepository.countByCreatedAtBefore(cutoffDate);
     }
 
     /**
@@ -146,7 +146,7 @@ public class DataRetentionService {
      */
     private int archiveOldSuspiciousActivities(ZonedDateTime cutoffDate) {
         // In production, this would export to archive storage
-        return suspiciousActivityRepository.countByCreatedAtBefore(cutoffDate);
+        return (int) suspiciousActivityRepository.countByCreatedAtBefore(cutoffDate);
     }
 
     /**
