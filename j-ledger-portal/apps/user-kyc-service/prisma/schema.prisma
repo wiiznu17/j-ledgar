@@ -44,6 +44,34 @@ model KYCDocument {
   @@schema("user_kyc_schema")
 }
 
+model KYCData {
+  id                      String   @id @default(uuid())
+  userId                  String   @unique
+  verificationStatus      String   @default("PENDING") // PENDING, APPROVED, REJECTED
+  idCardNumberEncrypted   String?
+  idCardName              String?
+  thaiNameEncrypted       String?
+  prefix                  String?
+  idCardToken             String?  @unique // SHA-256 of ID number for deduplication
+  idCardImageUrl          String?
+  idCardImageSha256       String?
+  selfieImageUrl          String?
+  selfieImageSha256       String?
+  livenessSessionId       String?
+  faceMatchScore          Int?
+  idCardIssueDate         DateTime?
+  idCardExpiryDate        DateTime?
+  religion                String?
+  reviewNote              String?
+  ocrConfidence           Float?
+  verifiedAt              DateTime?
+  createdAt               DateTime @default(now())
+  updatedAt               DateTime @updatedAt
+
+  @@map("kyc_data")
+  @@schema("user_kyc_schema")
+}
+
 model PII {
   id          String   @id @default(uuid())
   userId      String

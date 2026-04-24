@@ -7,6 +7,7 @@ import { UserModule } from './user/user.module';
 import { DocumentModule } from './document/document.module';
 import { PIIModule } from './pii/pii.module';
 import { OCRModule } from './ocr/ocr.module';
+import { IntegrationsModule } from './integrations/integrations.module';
 
 @Module({
   imports: [
@@ -15,6 +16,7 @@ import { OCRModule } from './ocr/ocr.module';
     }),
     PrismaModule,
     S3Module,
+    IntegrationsModule.register(),
     KYCModule,
     UserModule,
     DocumentModule,
