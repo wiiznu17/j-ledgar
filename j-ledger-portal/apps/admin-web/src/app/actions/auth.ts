@@ -33,7 +33,9 @@ export async function login(formData: FormData) {
   }
 
   try {
+    console.log('[admin-web] login - Calling authRequester.login');
     const data = await authRequester.login(loginData);
+    console.log('[admin-web] login - Received data:', { userId: data.userId, role: data.role });
 
     const cookieStore = await cookies();
 
@@ -44,6 +46,7 @@ export async function login(formData: FormData) {
       maxAge: 60 * 15, // 15 minutes
       path: '/',
     });
+    console.log('[admin-web] login - Set admin_session cookie');
 
     // Refresh Token (long-lived)
     cookieStore.set('refresh_token', data.refreshToken, {
@@ -52,6 +55,7 @@ export async function login(formData: FormData) {
       maxAge: 60 * 60 * 24 * 7, // 7 days
       path: '/',
     });
+    console.log('[admin-web] login - Set refresh_token cookie');
 
     // User Metadata
     cookieStore.set('user_id', data.userId, {
@@ -60,6 +64,7 @@ export async function login(formData: FormData) {
       maxAge: 60 * 60 * 24 * 7,
       path: '/',
     });
+    console.log('[admin-web] login - Set user_id cookie');
 
     cookieStore.set('user_role', data.role, {
       httpOnly: true,
@@ -67,12 +72,19 @@ export async function login(formData: FormData) {
       maxAge: 60 * 60 * 24 * 7,
       path: '/',
     });
+    console.log('[admin-web] login - Set user_role cookie');
 
     // Log successful login
     await logLoginAttempt(data.userId, true, ipAddress, userAgent);
 
+    console.log('[admin-web] login - Redirecting to /dashboard');
     redirect('/dashboard');
   } catch (error) {
+    // Don't catch redirect errors - let them propagate
+    if (error instanceof Error && error.message === 'NEXT_REDIRECT') {
+      throw error;
+    }
+
     console.error('Login error:', error);
     const errorMessage = error instanceof Error ? error.message : 'Login failed';
 

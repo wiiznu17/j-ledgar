@@ -63,7 +63,7 @@ export default function LoginPage() {
           <div className="max-w-sm w-full mx-auto space-y-8">
             <div className="text-center">
               <h1 className="text-3xl font-bold text-foreground">Welcome Back</h1>
-              <p className="text-muted-foreground mt-2">Sign in to the J-Ledger Admin Portal</p>
+              <p className="te xt-muted-foreground mt-2">Sign in to the J-Ledger Admin Portal</p>
             </div>
 
             <LoginForm action={login} />

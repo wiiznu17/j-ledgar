@@ -166,21 +166,45 @@ export class AdminAuthProxyService {
 
   // Auth endpoints
   async login(data: any) {
-    const response = await firstValueFrom(
-      this.httpService.post(`${this.baseUrl}/admin/auth/login`, data, { headers: this.headers }),
+    console.log(
+      '[admin-api] AdminAuthProxyService.login - URL:',
+      `${this.baseUrl}/admin/auth/login`,
     );
-    return response.data;
+    console.log('[admin-api] AdminAuthProxyService.login - Data:', JSON.stringify(data));
+    try {
+      const response = await firstValueFrom(
+        this.httpService.post(`${this.baseUrl}/admin/auth/login`, data, { headers: this.headers }),
+      );
+      console.log('[admin-api] AdminAuthProxyService.login - Success');
+      return response.data;
+    } catch (error: any) {
+      console.error('[admin-api] AdminAuthProxyService.login - Error:', {
+        status: error.response?.status,
+        message: error.response?.data?.message || error.message,
+        data: error.response?.data,
+      });
+      throw error;
+    }
   }
 
   async refreshTokens(userId: string, refreshToken: string) {
-    const response = await firstValueFrom(
-      this.httpService.post(
-        `${this.baseUrl}/admin/auth/refresh`,
-        { userId, refreshToken },
-        { headers: this.headers },
-      ),
-    );
-    return response.data;
+    try {
+      const response = await firstValueFrom(
+        this.httpService.post(
+          `${this.baseUrl}/admin/auth/refresh`,
+          { userId, refreshToken },
+          { headers: this.headers },
+        ),
+      );
+      return response.data;
+    } catch (error: any) {
+      console.error('[admin-api] AdminAuthProxyService.refreshTokens - Error:', {
+        status: error.response?.status,
+        message: error.response?.data?.message || error.message,
+        data: error.response?.data,
+      });
+      throw error;
+    }
   }
 
   async logout(userId: string) {

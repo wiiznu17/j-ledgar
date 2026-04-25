@@ -11,17 +11,36 @@ export class AuthService {
   ) {}
 
   async validateStaff(email: string, password: string): Promise<any> {
+    console.log('[admin-auth-service] validateStaff - email:', email);
     const staff = await this.staffService.findByEmail(email);
+    console.log('[admin-auth-service] validateStaff - staff:', staff ? 'found' : 'not found');
     if (!staff || !staff.isActive) {
+      console.log('[admin-auth-service] validateStaff - staff not active or not found');
       return null;
     }
 
     const isPasswordValid = await bcrypt.compare(password, staff.password);
+    console.log('[admin-auth-service] validateStaff - password valid:', isPasswordValid);
     if (!isPasswordValid) {
       return null;
     }
 
     const { password: _, ...result } = staff;
+    return result;
+  }
+
+  async loginWithEmailPassword(email: string, password: string) {
+    console.log('[admin-auth-service] AuthService.loginWithEmailPassword - email:', email);
+    const staff = await this.validateStaff(email, password);
+    console.log('[admin-auth-service] AuthService.loginWithEmailPassword - staff found:', !!staff);
+    if (!staff) {
+      throw new UnauthorizedException('Invalid credentials');
+    }
+    const result = await this.login(staff);
+    console.log(
+      '[admin-auth-service] AuthService.loginWithEmailPassword - result:',
+      JSON.stringify(result),
+    );
     return result;
   }
 

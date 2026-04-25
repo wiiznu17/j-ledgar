@@ -46,7 +46,8 @@ const createAxiosInstance = (): AxiosInstance => {
       const cookieStore = await cookies();
       const token = cookieStore.get('admin_session')?.value;
 
-      if (token) {
+      // Only inject auth header if token exists and not a public endpoint
+      if (token && !config.url?.includes('/auth/login')) {
         config.headers.Authorization = `Bearer ${token}`;
       }
     }
