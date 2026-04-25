@@ -1,10 +1,8 @@
-import { Controller, Get, Query, Request, UseGuards, Param } from '@nestjs/common';
+import { Controller, Get, Query, Request, Param } from '@nestjs/common';
 import { HistoryService } from './history.service';
-import { JwtAuthGuard } from '../common/guards/jwt-auth.guard';
 import type { Request as ExpressRequest } from 'express';
 
 @Controller('api/history')
-@UseGuards(JwtAuthGuard)
 export class HistoryController {
   constructor(private readonly historyService: HistoryService) {}
 

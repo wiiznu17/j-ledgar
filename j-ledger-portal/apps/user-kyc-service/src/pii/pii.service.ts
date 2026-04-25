@@ -16,7 +16,7 @@ export class PIIService {
 
   private encrypt(text: string): { encrypted: string; iv: string; authTag: string } {
     const iv = crypto.randomBytes(16);
-    const cipher = crypto.createCipheriv(this.algorithm, this.encryptionKey, iv);
+    const cipher = crypto.createCipheriv(this.algorithm, this.encryptionKey, iv) as any;
     let encrypted = cipher.update(text, 'utf8', 'hex');
     encrypted += cipher.final('hex');
     const authTag = cipher.getAuthTag();
@@ -28,7 +28,7 @@ export class PIIService {
       this.algorithm,
       this.encryptionKey,
       Buffer.from(iv, 'hex'),
-    );
+    ) as any;
     decipher.setAuthTag(Buffer.from(authTag, 'hex'));
     let decrypted = decipher.update(encrypted, 'hex', 'utf8');
     decrypted += decipher.final('utf8');

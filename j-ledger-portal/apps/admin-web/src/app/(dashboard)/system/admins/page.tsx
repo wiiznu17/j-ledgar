@@ -32,7 +32,7 @@ import {
 } from '@/components/ui/select';
 import { UserPlus, Trash2 } from 'lucide-react';
 import { showConfirm, showSuccess, showError } from '@/lib/swal';
-import { AdminUser, UserRole } from '@repo/dto';
+import { AdminUser, AdminRole } from '@repo/dto';
 import { userRequester } from '@/lib/requesters';
 
 export default function UsersPage() {
@@ -43,7 +43,7 @@ export default function UsersPage() {
   // New user form state
   const [newEmail, setNewEmail] = useState('');
   const [newPassword, setNewPassword] = useState('');
-  const [newRole, setNewRole] = useState<string>(UserRole.SUPPORT_STAFF);
+  const [newRole, setNewRole] = useState<string>(AdminRole.SUPPORT_AGENT);
 
   const fetchUsers = async () => {
     try {
@@ -62,10 +62,10 @@ export default function UsersPage() {
     e.preventDefault();
     setLoading(true);
     try {
-      await userRequester.createAdmin({ 
-        email: newEmail, 
-        password: newPassword, 
-        role: newRole 
+      await userRequester.createAdmin({
+        email: newEmail,
+        password: newPassword,
+        role: newRole,
       });
 
       showSuccess('Success', 'Admin user created successfully');
@@ -83,7 +83,7 @@ export default function UsersPage() {
   const handleDeleteUser = async (id: string) => {
     const result = await showConfirm(
       'Are you sure?',
-      'This administrator will lose all access to the system.'
+      'This administrator will lose all access to the system.',
     );
 
     if (!result.isConfirmed) return;
@@ -148,9 +148,9 @@ export default function UsersPage() {
                       <SelectValue placeholder="Select a role" />
                     </SelectTrigger>
                     <SelectContent className="bg-white">
-                      <SelectItem value={UserRole.SUPER_ADMIN}>Super Admin</SelectItem>
-                      <SelectItem value={UserRole.RECONCILER}>Reconciler</SelectItem>
-                      <SelectItem value={UserRole.SUPPORT_STAFF}>Support Staff</SelectItem>
+                      <SelectItem value={AdminRole.SUPER_ADMIN}>Super Admin</SelectItem>
+                      <SelectItem value={AdminRole.AUDITOR}>Auditor</SelectItem>
+                      <SelectItem value={AdminRole.SUPPORT_AGENT}>Support Agent</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
@@ -192,7 +192,7 @@ export default function UsersPage() {
                       <Badge
                         variant="outline"
                         className={
-                          user.role === UserRole.SUPER_ADMIN
+                          user.role === AdminRole.SUPER_ADMIN
                             ? 'border-primary text-primary bg-primary/5'
                             : 'text-slate-600'
                         }

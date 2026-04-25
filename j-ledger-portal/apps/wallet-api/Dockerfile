@@ -17,8 +17,6 @@ WORKDIR /app
 COPY .gitignore .gitignore
 COPY --from=pruner /app/out/json/ .
 COPY --from=pruner /app/out/package-lock.json ./package-lock.json
-# Copy prisma schema to allow postinstall generation
-COPY apps/wallet-api/prisma/schema.prisma ./apps/wallet-api/prisma/schema.prisma
 COPY turbo.json turbo.json
 RUN npm install
 
@@ -26,7 +24,6 @@ RUN npm install
 COPY --from=pruner /app/out/full/ .
 # Build shared packages first
 RUN npx turbo build --filter=@repo/dto
-RUN npx prisma generate --schema=apps/wallet-api/prisma/schema.prisma
 RUN npx turbo build --filter=wallet-api
 
 # --- Stage 3: Runner ---
@@ -44,9 +41,6 @@ COPY --from=installer /app/node_modules ./node_modules
 # Copy compiled shared packages
 COPY --from=installer /app/packages/dto/dist ./packages/dto/dist
 COPY --from=installer /app/packages/dto/package.json ./packages/dto/package.json
-# Copy generated Prisma client
-COPY --from=installer /app/apps/wallet-api/node_modules/@prisma/client-wallet ./node_modules/@prisma/client-wallet
-COPY --from=installer /app/apps/wallet-api/prisma ./prisma
 COPY --from=installer /app/package.json .
 
 CMD ["node", "dist/src/main"]
