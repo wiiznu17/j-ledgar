@@ -28,7 +28,8 @@ export class StaffService {
   }
 
   async findByEmail(email: string) {
-    return this.prisma.staff.findUnique({
+    console.log('[admin-auth-service] StaffService.findByEmail - email:', email);
+    const result = await this.prisma.staff.findUnique({
       where: { email },
       include: {
         staffRoles: {
@@ -46,6 +47,11 @@ export class StaffService {
         },
       },
     });
+    console.log(
+      '[admin-auth-service] StaffService.findByEmail - result:',
+      result ? 'found' : 'not found',
+    );
+    return result;
   }
 
   async updateRefreshTokenHash(staffId: string, refreshToken: string) {

@@ -7,7 +7,10 @@ export class AuthService {
   constructor(private readonly adminAuthProxy: AdminAuthProxyService) {}
 
   async login(loginDto: LoginDto) {
-    return this.adminAuthProxy.login(loginDto);
+    console.log('[admin-api] AuthService.login - Request:', JSON.stringify(loginDto));
+    const result = await this.adminAuthProxy.login(loginDto);
+    console.log('[admin-api] AuthService.login - Response:', JSON.stringify(result));
+    return result;
   }
 
   async logout(userId: string) {
