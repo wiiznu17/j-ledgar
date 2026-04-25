@@ -1,10 +1,12 @@
 generator client {
-  provider = "prisma-client-js"
+  provider        = "prisma-client-js"
+  previewFeatures = ["multiSchema"]
 }
 
 datasource db {
   provider = "postgresql"
   url      = env("DATABASE_URL")
+  schemas  = ["auth_schema"]
 }
 
 model User {
@@ -30,6 +32,7 @@ model User {
   userSettings      UserSetting[]
 
   @@map("users")
+  @@schema("auth_schema")
 }
 
 model UserDevice {
@@ -49,6 +52,7 @@ model UserDevice {
 
   @@unique([userId, deviceIdentifier])
   @@map("user_devices")
+  @@schema("auth_schema")
 }
 
 model RefreshSession {
@@ -63,6 +67,7 @@ model RefreshSession {
   user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@map("refresh_sessions")
+  @@schema("auth_schema")
 }
 
 model OtpChallenge {
@@ -78,6 +83,7 @@ model OtpChallenge {
   user         User?    @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@map("otp_challenges")
+  @@schema("auth_schema")
 }
 
 model UserConsent {
@@ -93,6 +99,7 @@ model UserConsent {
 
   @@unique([userId, consentType])
   @@map("user_consents")
+  @@schema("auth_schema")
 }
 
 model SecurityEvent {
@@ -107,6 +114,7 @@ model SecurityEvent {
   user         User?            @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@map("security_events")
+  @@schema("auth_schema")
 }
 
 model UserSetting {
@@ -121,6 +129,7 @@ model UserSetting {
 
   @@unique([userId, key])
   @@map("user_settings")
+  @@schema("auth_schema")
 }
 
 enum UserStatus {
@@ -129,6 +138,8 @@ enum UserStatus {
   SUSPENDED
   BLOCKED
   DELETED
+
+  @@schema("auth_schema")
 }
 
 enum RegistrationState {
@@ -141,12 +152,16 @@ enum RegistrationState {
   PASSWORD_SET
   PIN_SET
   COMPLETED
+
+  @@schema("auth_schema")
 }
 
 enum DeviceTrustLevel {
   UNKNOWN
   TRUSTED
   UNTRUSTED
+
+  @@schema("auth_schema")
 }
 
 enum ConsentType {
@@ -154,6 +169,8 @@ enum ConsentType {
   PRIVACY_POLICY
   MARKETING_CONSENT
   DATA_PROCESSING
+
+  @@schema("auth_schema")
 }
 
 enum SecurityEventType {
@@ -171,4 +188,6 @@ enum SecurityEventType {
   ACCOUNT_UNLOCKED
   PASSWORD_RESET
   SUSPICIOUS_ACTIVITY
+
+  @@schema("auth_schema")
 }

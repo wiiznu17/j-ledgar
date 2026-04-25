@@ -21,7 +21,12 @@ public class JwtFilterConfig {
                     org.springframework.cloud.gateway.filter.GatewayFilterChain chain) {
                 return jwtFilter.filter(exchange, chain);
             }
+        };
+    }
 
+    @Bean
+    public Ordered jwtValidationFilterOrder() {
+        return new Ordered() {
             @Override
             public int getOrder() {
                 return Ordered.HIGHEST_PRECEDENCE; // Execute first

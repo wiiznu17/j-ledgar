@@ -66,6 +66,21 @@ export class StaffService {
   async findById(id: string) {
     return this.prisma.staff.findUnique({
       where: { id },
+      include: {
+        staffRoles: {
+          include: {
+            role: {
+              include: {
+                rolePermissions: {
+                  include: {
+                    permission: true,
+                  },
+                },
+              },
+            },
+          },
+        },
+      },
     });
   }
 
