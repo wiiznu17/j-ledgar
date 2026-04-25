@@ -1,25 +1,40 @@
 'use server';
 
-import { cookies } from 'next/headers';
+import { cookies, headers } from 'next/headers';
 import { redirect } from 'next/navigation';
 import { authRequester } from '@/lib/requesters';
 import { LoginRequest, RefreshTokenRequest } from '@repo/dto';
+import { logLoginAttempt, logLogoutAttempt } from '@/lib/auth/audit';
+import { checkRateLimit } from '@/lib/auth/rate-limit';
 
 export async function login(formData: FormData) {
   const email = formData.get('email');
   const password = formData.get('password');
 
-  if (!email || !password) return;
+  if (!email || !password) {
+    throw new Error('Email and password are required');
+  }
 
   const loginData: LoginRequest = {
     email: email as string,
     password: password as string,
   };
 
-  let success = false;
+  // Get IP and user agent for audit logging
+  const headersList = await headers();
+  const ipAddress = headersList.get('x-forwarded-for') || headersList.get('x-real-ip') || 'unknown';
+  const userAgent = headersList.get('user-agent') || 'unknown';
+
+  // Check rate limit based on IP
+  const rateLimit = checkRateLimit(ipAddress);
+  if (!rateLimit.allowed) {
+    await logLoginAttempt(email as string, false, ipAddress, userAgent);
+    throw new Error('Too many login attempts. Please try again later.');
+  }
+
   try {
     const data = await authRequester.login(loginData);
-    
+
     const cookieStore = await cookies();
 
     // Access Token (short-lived)
@@ -47,30 +62,44 @@ export async function login(formData: FormData) {
     });
 
     cookieStore.set('user_role', data.role, {
-      httpOnly: false,
+      httpOnly: true,
       secure: process.env.NODE_ENV === 'production',
       maxAge: 60 * 60 * 24 * 7,
       path: '/',
     });
 
-    success = true;
+    // Log successful login
+    await logLoginAttempt(data.userId, true, ipAddress, userAgent);
+
+    redirect('/dashboard');
   } catch (error) {
     console.error('Login error:', error);
-  }
+    const errorMessage = error instanceof Error ? error.message : 'Login failed';
 
-  if (success) {
-    redirect('/dashboard');
+    // Log failed login attempt (use email as userId placeholder)
+    await logLoginAttempt(email as string, false, ipAddress, userAgent);
+
+    redirect(`/login?error=${encodeURIComponent(errorMessage)}`);
   }
 }
 
 export async function logout() {
   const cookieStore = await cookies();
-  
+  const userId = cookieStore.get('user_id')?.value || 'unknown';
+
+  // Get IP and user agent for audit logging
+  const headersList = await headers();
+  const ipAddress = headersList.get('x-forwarded-for') || headersList.get('x-real-ip') || 'unknown';
+  const userAgent = headersList.get('user-agent') || 'unknown';
+
   try {
     await authRequester.logout();
   } catch (e) {
     console.error('Remote logout failed', e);
   }
+
+  // Log logout attempt
+  await logLogoutAttempt(userId, ipAddress, userAgent);
 
   cookieStore.delete('admin_session');
   cookieStore.delete('refresh_token');

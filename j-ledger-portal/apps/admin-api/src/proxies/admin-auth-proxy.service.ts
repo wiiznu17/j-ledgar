@@ -4,7 +4,7 @@ import { firstValueFrom } from 'rxjs';
 
 @Injectable()
 export class AdminAuthProxyService {
-  private readonly baseUrl = process.env.ADMIN_AUTH_SERVICE_URL || 'http://localhost:3001';
+  private readonly baseUrl = process.env.ADMIN_AUTH_SERVICE_URL || 'http://localhost:3005';
   private readonly internalSecret =
     process.env.JLEDGER_INTERNAL_SECRET || 'jledger_ecosystem_secret_2024';
 
