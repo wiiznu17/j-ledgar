@@ -154,7 +154,8 @@ services:
 
   auth-migration:
     build:
-      context: ./j-ledger-portal/apps/auth-service
+      context: ./j-ledger-portal
+      dockerfile: apps/auth-service/Dockerfile
     image: j-ledger/auth-service:latest
     container_name: jledger-auth-migration
     depends_on:
@@ -171,7 +172,8 @@ services:
   # ----------------------------------------------------
   auth-service:
     build:
-      context: ./j-ledger-portal/apps/auth-service
+      context: ./j-ledger-portal
+      dockerfile: apps/auth-service/Dockerfile
     image: j-ledger/auth-service:latest
     container_name: jledger-auth
     depends_on:
@@ -392,7 +394,8 @@ services:
   # ----------------------------------------------------
   admin-auth-service:
     build:
-      context: ./j-ledger-portal/apps/admin-auth-service
+      context: ./j-ledger-portal
+      dockerfile: apps/admin-auth-service/Dockerfile
     image: j-ledger/admin-auth-service:latest
     container_name: jledger-admin-auth
     depends_on:
@@ -424,9 +427,11 @@ services:
 
   admin-auth-migration:
     build:
-      context: ./j-ledger-portal/apps/admin-auth-service
+      context: ./j-ledger-portal
+      dockerfile: apps/admin-auth-service/Dockerfile
     image: j-ledger/admin-auth-service:latest
     container_name: jledger-admin-auth-migration
+    user: root
     depends_on:
       postgres:
         condition: service_healthy
@@ -441,7 +446,8 @@ services:
   # ----------------------------------------------------
   user-kyc-service:
     build:
-      context: ./j-ledger-portal/apps/user-kyc-service
+      context: ./j-ledger-portal
+      dockerfile: apps/user-kyc-service/Dockerfile
     image: j-ledger/user-kyc-service:latest
     container_name: jledger-user-kyc
     depends_on:
@@ -452,6 +458,7 @@ services:
     environment:
       - PORT=3004
       - DATABASE_URL=postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB}?schema=user_kyc_schema
+      - JWT_ACCESS_SECRET=${JWT_ACCESS_SECRET}
       - AWS_REGION=${AWS_REGION}
       - AWS_ACCESS_KEY_ID=${AWS_ACCESS_KEY_ID}
       - AWS_SECRET_ACCESS_KEY=${AWS_SECRET_ACCESS_KEY}
@@ -480,9 +487,11 @@ services:
 
   user-kyc-migration:
     build:
-      context: ./j-ledger-portal/apps/user-kyc-service
+      context: ./j-ledger-portal
+      dockerfile: apps/user-kyc-service/Dockerfile
     image: j-ledger/user-kyc-service:latest
     container_name: jledger-user-kyc-migration
+    user: root
     depends_on:
       postgres:
         condition: service_healthy

@@ -43,4 +43,4 @@ COPY --from=installer /app/packages/dto/dist ./packages/dto/dist
 COPY --from=installer /app/packages/dto/package.json ./packages/dto/package.json
 COPY --from=installer /app/package.json .
 
-CMD ["node", "dist/src/main"]
+CMD ["node", "dist/main"]
