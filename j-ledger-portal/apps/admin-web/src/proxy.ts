@@ -1,9 +1,8 @@
 import { NextResponse, NextRequest } from 'next/server';
 import { jwtVerify } from 'jose';
+import { verifyToken } from '@/lib/auth/jwt';
 
-const SECRET = new TextEncoder().encode(
-  process.env.JWT_SECRET || 'jledger-local-dev-jwt-secret'
-);
+const SECRET = new TextEncoder().encode(process.env.JWT_SECRET || 'jledger-local-dev-jwt-secret');
 
 export async function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl;
@@ -25,9 +24,21 @@ export async function proxy(request: NextRequest) {
     return NextResponse.redirect(new URL('/login', request.url));
   }
 
+  // Verify token and check expiration
+  const payload = verifyToken(token);
+  if (!payload) {
+    // Token is invalid or expired, clear cookies and redirect
+    const response = NextResponse.redirect(new URL('/login', request.url));
+    response.cookies.delete('admin_session');
+    response.cookies.delete('refresh_token');
+    response.cookies.delete('user_id');
+    response.cookies.delete('user_role');
+    return response;
+  }
+
   try {
-    const { payload } = await jwtVerify(token, SECRET);
-    const role = payload.role as string;
+    const { payload: jwtPayload } = await jwtVerify(token, SECRET);
+    const role = jwtPayload.role as string;
 
     // RBAC Redirect Logic
     if (role === 'SUPPORT_STAFF' && pathname === '/reconcile') {
@@ -45,7 +56,13 @@ export async function proxy(request: NextRequest) {
     return NextResponse.next();
   } catch (err) {
     console.error('JWT verification failed:', err);
-    return NextResponse.redirect(new URL('/login', request.url));
+    // Clear cookies on error
+    const response = NextResponse.redirect(new URL('/login', request.url));
+    response.cookies.delete('admin_session');
+    response.cookies.delete('refresh_token');
+    response.cookies.delete('user_id');
+    response.cookies.delete('user_role');
+    return response;
   }
 }
 
