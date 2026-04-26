@@ -1,0 +1,4 @@
+singleServerConfig:
+  address: ${JLEDGER_REDIS_ADDRESS:redis://localhost:6379}
+  password: ${JLEDGER_REDIS_PASSWORD:}
+  database: 0

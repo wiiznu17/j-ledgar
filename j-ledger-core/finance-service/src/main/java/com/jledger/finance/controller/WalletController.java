@@ -1,0 +1,186 @@
+package com.jledger.finance.controller;
+
+import com.jledger.finance.model.Transaction;
+import com.jledger.finance.model.Wallet;
+import com.jledger.finance.service.WalletService;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.*;
+
+import java.math.BigDecimal;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
+
+@RestController
+@RequestMapping("/api/finance/wallets")
+public class WalletController {
+
+    @Autowired
+    private WalletService walletService;
+
+    @PostMapping("/create")
+    public ResponseEntity<Wallet> createWallet(@RequestBody Map<String, String> request) {
+        Long userId = Long.parseLong(request.get("userId"));
+        String currency = request.getOrDefault("currency", "THB");
+        Wallet wallet = walletService.createWallet(userId, currency);
+        return ResponseEntity.ok(wallet);
+    }
+
+    @GetMapping("/{userId}")
+    public ResponseEntity<Wallet> getWallet(@PathVariable Long userId) {
+        Optional<Wallet> wallet = walletService.getWallet(userId);
+        return wallet.map(ResponseEntity::ok)
+                .orElse(ResponseEntity.notFound().build());
+    }
+
+    @GetMapping("/{userId}/limits")
+    public ResponseEntity<Map<String, BigDecimal>> getTransactionLimits(@PathVariable Long userId) {
+        Map<String, BigDecimal> limits = walletService.getTransactionLimits(userId);
+        return ResponseEntity.ok(limits);
+    }
+
+    @PostMapping("/{userId}/activate")
+    public ResponseEntity<Wallet> activateWallet(@PathVariable Long userId) {
+        Wallet wallet = walletService.activateWallet(userId);
+        return ResponseEntity.ok(wallet);
+    }
+
+    @PostMapping("/{userId}/deactivate")
+    public ResponseEntity<Wallet> deactivateWallet(@PathVariable Long userId) {
+        Wallet wallet = walletService.deactivateWallet(userId);
+        return ResponseEntity.ok(wallet);
+    }
+
+    @PostMapping("/{userId}/freeze")
+    public ResponseEntity<Wallet> freezeWallet(@PathVariable Long userId) {
+        Wallet wallet = walletService.freezeWallet(userId);
+        return ResponseEntity.ok(wallet);
+    }
+
+    @PostMapping("/{userId}/unfreeze")
+    public ResponseEntity<Wallet> unfreezeWallet(@PathVariable Long userId) {
+        Wallet wallet = walletService.unfreezeWallet(userId);
+        return ResponseEntity.ok(wallet);
+    }
+
+    // Top-up endpoints
+    @PostMapping("/{userId}/topup/bank")
+    public ResponseEntity<Transaction> topUpBank(
+            @PathVariable Long userId,
+            @RequestBody Map<String, String> request) {
+        BigDecimal amount = new BigDecimal(request.get("amount"));
+        String bankAccount = request.get("bankAccount");
+        Transaction transaction = walletService.topUpBank(userId, amount, bankAccount);
+        return ResponseEntity.ok(transaction);
+    }
+
+    @PostMapping("/{userId}/topup/counter")
+    public ResponseEntity<Transaction> topUpCounter(
+            @PathVariable Long userId,
+            @RequestBody Map<String, String> request) {
+        BigDecimal amount = new BigDecimal(request.get("amount"));
+        String counterCode = request.get("counterCode");
+        Transaction transaction = walletService.topUpCounter(userId, amount, counterCode);
+        return ResponseEntity.ok(transaction);
+    }
+
+    @PostMapping("/{userId}/topup/cash")
+    public ResponseEntity<Transaction> topUpCash(
+            @PathVariable Long userId,
+            @RequestBody Map<String, String> request) {
+        BigDecimal amount = new BigDecimal(request.get("amount"));
+        String agentId = request.get("agentId");
+        Transaction transaction = walletService.topUpCash(userId, amount, agentId);
+        return ResponseEntity.ok(transaction);
+    }
+
+    @GetMapping("/{userId}/topup-history")
+    public ResponseEntity<List<Transaction>> getTopUpHistory(@PathVariable Long userId) {
+        List<Transaction> transactions = walletService.getTopUpHistory(userId);
+        return ResponseEntity.ok(transactions);
+    }
+
+    // QR Payment endpoints
+    @PostMapping("/{userId}/qr/generate")
+    public ResponseEntity<String> generateQR(
+            @PathVariable Long userId,
+            @RequestBody Map<String, String> request) {
+        BigDecimal amount = new BigDecimal(request.get("amount"));
+        String qrData = walletService.generateQR(userId, amount);
+        return ResponseEntity.ok(qrData);
+    }
+
+    @PostMapping("/{userId}/qr/pay")
+    public ResponseEntity<Transaction> payQR(
+            @PathVariable Long userId,
+            @RequestBody Map<String, String> request) {
+        BigDecimal amount = new BigDecimal(request.get("amount"));
+        String qrData = request.get("qrData");
+        Transaction transaction = walletService.payQR(userId, qrData, amount);
+        return ResponseEntity.ok(transaction);
+    }
+
+    @PostMapping("/{userId}/qr/static")
+    public ResponseEntity<String> generateStaticQR(@PathVariable Long userId) {
+        String qrData = walletService.generateStaticQR(userId);
+        return ResponseEntity.ok(qrData);
+    }
+
+    @GetMapping("/{userId}/qr/history")
+    public ResponseEntity<List<Transaction>> getQRHistory(@PathVariable Long userId) {
+        List<Transaction> transactions = walletService.getQRHistory(userId);
+        return ResponseEntity.ok(transactions);
+    }
+
+    @GetMapping("/health")
+    public ResponseEntity<String> health() {
+        return ResponseEntity.ok("healthy");
+    }
+
+    // Admin endpoints
+    @GetMapping("/admin/list")
+    public ResponseEntity<List<Wallet>> getAllWallets() {
+        List<Wallet> wallets = walletService.getAllWallets();
+        return ResponseEntity.ok(wallets);
+    }
+
+    @GetMapping("/admin/{id}")
+    public ResponseEntity<Wallet> getWalletById(@PathVariable Long id) {
+        Optional<Wallet> wallet = walletService.getWalletById(id);
+        return wallet.map(ResponseEntity::ok)
+                .orElse(ResponseEntity.notFound().build());
+    }
+
+    @PostMapping("/admin/{id}/adjust")
+    public ResponseEntity<Wallet> adjustBalance(
+            @PathVariable Long id,
+            @RequestBody Map<String, String> request) {
+        BigDecimal amount = new BigDecimal(request.get("amount"));
+        String reason = request.get("reason");
+        Wallet wallet = walletService.adjustBalanceById(id, amount, reason);
+        return ResponseEntity.ok(wallet);
+    }
+
+    @PostMapping("/admin/{id}/deactivate")
+    public ResponseEntity<Wallet> deactivateWalletById(@PathVariable Long id) {
+        Wallet wallet = walletService.deactivateWalletById(id);
+        return ResponseEntity.ok(wallet);
+    }
+
+    @PostMapping("/admin/{id}/activate")
+    public ResponseEntity<Wallet> activateWalletById(@PathVariable Long id) {
+        Wallet wallet = walletService.activateWalletById(id);
+        return ResponseEntity.ok(wallet);
+    }
+
+    @PutMapping("/admin/{id}/limits")
+    public ResponseEntity<Wallet> updateLimits(
+            @PathVariable Long id,
+            @RequestBody Map<String, String> request) {
+        BigDecimal dailyLimit = new BigDecimal(request.get("dailyLimit"));
+        BigDecimal monthlyLimit = new BigDecimal(request.get("monthlyLimit"));
+        Wallet wallet = walletService.updateLimits(id, dailyLimit, monthlyLimit);
+        return ResponseEntity.ok(wallet);
+    }
+}
