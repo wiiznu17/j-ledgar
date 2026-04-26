@@ -28,25 +28,22 @@ export const NETWORK_TIMEOUTS = {
  */
 export const REQUEST_TIMEOUTS = {
   // Authentication endpoints - should be quick
-  '/auth/login': NETWORK_TIMEOUTS.QUICK,
-  '/auth/register': NETWORK_TIMEOUTS.QUICK,
-  '/auth/refresh': NETWORK_TIMEOUTS.QUICK,
-  '/auth/logout': NETWORK_TIMEOUTS.QUICK,
-  '/auth/pin': NETWORK_TIMEOUTS.QUICK,
-  '/auth/biometric': NETWORK_TIMEOUTS.QUICK,
+  '/api/auth/login': NETWORK_TIMEOUTS.QUICK,
+  '/api/auth/register': NETWORK_TIMEOUTS.QUICK,
+  '/api/auth/refresh': NETWORK_TIMEOUTS.QUICK,
+  '/api/auth/logout': NETWORK_TIMEOUTS.QUICK,
+  '/api/auth/pin': NETWORK_TIMEOUTS.QUICK,
+  '/api/auth/biometric': NETWORK_TIMEOUTS.QUICK,
 
   // Balance and account queries - should be quick
-  '/account/balance': NETWORK_TIMEOUTS.QUICK,
-  '/account/details': NETWORK_TIMEOUTS.DEFAULT,
+  '/api/finance/wallets': NETWORK_TIMEOUTS.QUICK,
 
   // Transaction operations - standard timeout
-  '/transaction': NETWORK_TIMEOUTS.DEFAULT,
-  '/transfer': NETWORK_TIMEOUTS.DEFAULT,
-  '/payment': NETWORK_TIMEOUTS.DEFAULT,
+  '/api/finance/wallets/': NETWORK_TIMEOUTS.DEFAULT,
 
   // KYC operations - can be slow (file uploads)
-  '/kyc': NETWORK_TIMEOUTS.SLOW,
-  '/upload': NETWORK_TIMEOUTS.VERY_SLOW,
+  '/api/kyc': NETWORK_TIMEOUTS.SLOW,
+  '/api/kyc/upload': NETWORK_TIMEOUTS.VERY_SLOW,
 
   // Default for unknown endpoints
   DEFAULT: NETWORK_TIMEOUTS.DEFAULT,
@@ -71,11 +68,11 @@ export function getTimeoutForRequest(url?: string): number {
 const getBaseUrl = () => {
   if (__DEV__) {
     if (Platform.OS === 'android') {
-      return 'http://10.0.2.2:3002';
+      return 'http://10.0.2.2:8080';
     }
-    return 'http://localhost:3002';
+    return 'http://localhost:8080';
   }
-  return process.env.EXPO_PUBLIC_WALLET_API_URL || 'https://api.jledger.io/api/wallet';
+  return process.env.EXPO_PUBLIC_API_URL || 'https://api.jledger.io';
 };
 
 export const api = axios.create({
@@ -141,7 +138,7 @@ api.interceptors.response.use(
 
           // Attempt to refresh the token
           const response = await axios.post(
-            `${getBaseUrl()}/auth/refresh`,
+            `${getBaseUrl()}/api/auth/refresh`,
             { refreshToken },
             {
               headers: { 'Content-Type': 'application/json', 'X-Requested-With': 'XMLHttpRequest' },

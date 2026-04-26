@@ -84,9 +84,9 @@ export const useAuthStore = create<AuthState>((set, get) => ({
     if (!token) return false;
 
     try {
-      const API_URL = process.env.EXPO_PUBLIC_API_URL || 'http://localhost:3002';
+      const API_URL = process.env.EXPO_PUBLIC_PORTAL_API_URL || 'http://localhost:3000';
       await require('axios').post(
-        `${API_URL}/auth/pin/verify`,
+        `${API_URL}/api/auth/verify-pin`,
         { pin },
         { headers: { Authorization: `Bearer ${token}` } },
       );
