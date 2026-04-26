@@ -1,0 +1,160 @@
+// Portal Service Prisma Schema
+// Manages: identity, kyc, admin, integration, audit, reporting schemas
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// Identity Schema - User authentication and profiles
+model User {
+  id            BigInt   @id @default(autoincrement())
+  phone         String   @unique
+  email         String?  @unique
+  passwordHash  String
+  status        String   @default("ACTIVE") // ACTIVE, SUSPENDED, DELETED
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  @@map("identity.users")
+}
+
+model Session {
+  id        String   @id @default(uuid())
+  userId    BigInt
+  token     String   @unique
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+
+  @@map("identity.sessions")
+}
+
+model RefreshToken {
+  id        String   @id @default(uuid())
+  userId    BigInt
+  token     String   @unique
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+
+  @@map("identity.refresh_tokens")
+}
+
+// KYC Schema - Know Your Customer
+model KYCDocument {
+  id          BigInt   @id @default(autoincrement())
+  userId      BigInt
+  documentType String // ID_CARD, PASSPORT, SELFIE
+  documentUrl String
+  status      String   @default("PENDING") // PENDING, APPROVED, REJECTED
+  ocrData     Json?
+  faceMatchScore Float?
+  reviewedBy  BigInt?
+  reviewedAt  DateTime?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@map("kyc.documents")
+}
+
+model PIIRecord {
+  id          BigInt   @id @default(autoincrement())
+  userId      BigInt
+  fieldType   String // FULL_NAME, ADDRESS, TAX_ID, etc.
+  encryptedData String
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@map("kyc.pii_records")
+}
+
+// Admin Schema - Staff and permissions
+model Staff {
+  id        BigInt   @id @default(autoincrement())
+  email     String   @unique
+  passwordHash String
+  name      String
+  role      String   // ADMIN, SUPPORT, OPERATOR
+  status    String   @default("ACTIVE")
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("admin.staff")
+}
+
+model Role {
+  id          BigInt   @id @default(autoincrement())
+  name        String   @unique
+  permissions Json
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@map("admin.roles")
+}
+
+model StaffRole {
+  id      BigInt @id @default(autoincrement())
+  staffId BigInt
+  roleId  BigInt
+  createdAt DateTime @default(now())
+
+  @@unique([staffId, roleId])
+  @@map("admin.staff_roles")
+}
+
+// Integration Schema - External integrations
+model BankIntegration {
+  id          BigInt   @id @default(autoincrement())
+  bankCode    String
+  bankName    String
+  apiKey      String
+  status      String   @default("ACTIVE")
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@map("integration.banks")
+}
+
+model Merchant {
+  id          BigInt   @id @default(autoincrement())
+  merchantId  String   @unique
+  name        String
+  category    String
+  status      String   @default("ACTIVE")
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@map("integration.merchants")
+}
+
+// Audit Schema - Audit logs
+model AuditLog {
+  id          BigInt   @id @default(autoincrement())
+  userId      BigInt?
+  staffId     BigInt?
+  action      String
+  resource    String
+  details     Json
+  ipAddress   String?
+  userAgent   String?
+  createdAt   DateTime @default(now())
+
+  @@map("audit.logs")
+}
+
+// Reporting Schema - Reports and analytics
+model Report {
+  id          BigInt   @id @default(autoincrement())
+  reportType  String
+  parameters  Json
+  status      String   @default("GENERATING")
+  fileUrl     String?
+  generatedBy BigInt?
+  createdAt   DateTime @default(now())
+  completedAt DateTime?
+
+  @@map("reporting.reports")
+}
