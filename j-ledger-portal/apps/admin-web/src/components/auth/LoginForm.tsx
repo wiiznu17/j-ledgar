@@ -1,13 +1,18 @@
+'use client';
+
+import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Lock, Mail } from 'lucide-react';
+import { Eye, EyeOff, Lock, Mail } from 'lucide-react';
 
 interface LoginFormProps {
   action: (formData: FormData) => void;
 }
 
 export function LoginForm({ action }: LoginFormProps) {
+  const [showPassword, setShowPassword] = useState(false);
+
   return (
     <form action={action} className="space-y-6">
       <div className="space-y-4">
@@ -37,11 +42,18 @@ export function LoginForm({ action }: LoginFormProps) {
             <Input
               id="password"
               name="password"
-              type="password"
+              type={showPassword ? 'text' : 'password'}
               placeholder="••••••••"
               required
-              className="pl-10 h-12 border-border focus:border-ring focus:ring-1 focus:ring-ring"
+              className="pl-10 pr-10 h-12 border-border focus:border-ring focus:ring-1 focus:ring-ring"
             />
+            <button
+              type="button"
+              onClick={() => setShowPassword(!showPassword)}
+              className="absolute inset-y-0 right-0 pr-3 flex items-center text-muted-foreground hover:text-foreground transition-colors"
+            >
+              {showPassword ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
+            </button>
           </div>
         </div>
       </div>
