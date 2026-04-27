@@ -1,0 +1,375 @@
+import {
+  Body,
+  Controller,
+  Get,
+  Headers,
+  HttpCode,
+  HttpStatus,
+  Post,
+  Put,
+  Req,
+  UnauthorizedException,
+  UseGuards,
+} from '@nestjs/common';
+import { Throttle } from '@nestjs/throttler';
+import { IdentityService } from './identity.service';
+import { JwtAuthGuard } from '../common/guards/jwt-auth.guard';
+import {
+  AcceptTermsDto,
+  BiometricVerifyDto,
+  DataDeletionRequestDto,
+  DeviceVerifyDto,
+  LoginDto,
+  PinSetupDto,
+  PinVerifyDto,
+  RefreshTokenDto,
+  RegisterCredentialsDto,
+  RegisterInitDto,
+  RegisterPasswordDto,
+  RegisterPinDto,
+  RegisterProfileDto,
+  RegisterVerifyOtpDto,
+  WithdrawConsentDto,
+} from './dto/auth.dto';
+import type { Request } from 'express';
+
+interface AuthenticatedRequest extends Request {
+  user: {
+    sub: string;
+    sid: string;
+    did: string;
+    jti: string;
+    typ?: 'access';
+    scope?: 'wallet';
+    exp?: number;
+  };
+}
+
+@Controller('identity')
+export class IdentityController {
+  constructor(private readonly identityService: IdentityService) {}
+
+  @Post('register/init')
+  @HttpCode(HttpStatus.OK)
+  @Throttle({ default: {}, regInit: {} })
+  async registerInit(@Body() body: RegisterInitDto, @Req() req: Request) {
+    return this.identityService.registerInit(body, {
+      ip: req.ip,
+      userAgent: this.singleHeader(req.headers['user-agent']),
+    });
+  }
+
+  @Post('register/verify-otp')
+  @HttpCode(HttpStatus.OK)
+  @Throttle({ default: {}, regVerify: {} })
+  async registerVerifyOtp(@Body() body: RegisterVerifyOtpDto, @Req() req: Request) {
+    return this.identityService.registerVerifyOtp(body, {
+      ip: req.ip,
+      userAgent: this.singleHeader(req.headers['user-agent']),
+    });
+  }
+
+  @Post('register/accept-terms')
+  @HttpCode(HttpStatus.OK)
+  async acceptTerms(
+    @Headers('authorization') authorization: string | undefined,
+    @Body() body: AcceptTermsDto,
+    @Req() req: Request,
+  ) {
+    return this.identityService.acceptTerms(authorization, body, {
+      ip: req.ip,
+      userAgent: this.singleHeader(req.headers['user-agent']),
+    });
+  }
+
+  @Post('register/profile')
+  @HttpCode(HttpStatus.OK)
+  async registerProfile(
+    @Headers('authorization') authorization: string | undefined,
+    @Body() body: RegisterProfileDto,
+    @Req() req: Request,
+  ) {
+    return this.identityService.registerProfile(authorization, body, {
+      ip: req.ip,
+      userAgent: this.singleHeader(req.headers['user-agent']),
+    });
+  }
+
+  @Post('register/password')
+  @HttpCode(HttpStatus.OK)
+  async registerPassword(
+    @Headers('authorization') authorization: string | undefined,
+    @Body() body: RegisterPasswordDto,
+    @Req() req: Request,
+  ) {
+    return this.identityService.registerPassword(authorization, body, {
+      ip: req.ip,
+      userAgent: this.singleHeader(req.headers['user-agent']),
+    });
+  }
+
+  @Post('register/pin')
+  @HttpCode(HttpStatus.OK)
+  async registerPin(
+    @Headers('authorization') authorization: string | undefined,
+    @Body() body: RegisterPinDto,
+    @Req() req: Request,
+  ) {
+    return this.identityService.registerPin(authorization, body, {
+      ip: req.ip,
+      userAgent: this.singleHeader(req.headers['user-agent']),
+    });
+  }
+
+  @Post('register/status')
+  @HttpCode(HttpStatus.OK)
+  async getRegisterStatus(@Headers('authorization') authorization: string | undefined) {
+    return this.identityService.getRegistrationStatus(authorization);
+  }
+
+  @Post('register/complete')
+  @HttpCode(HttpStatus.CREATED)
+  async completeRegistration(
+    @Headers('authorization') authorization: string | undefined,
+    @Req() req: Request,
+  ) {
+    return this.identityService.completeRegistration(authorization, {
+      ip: req.ip,
+      userAgent: this.singleHeader(req.headers['user-agent']),
+    });
+  }
+
+  @Post('login')
+  @HttpCode(HttpStatus.OK)
+  @Throttle({ default: {}, login: {} })
+  async login(@Body() body: LoginDto, @Req() req: Request) {
+    return this.identityService.login(body, {
+      ip: req.ip,
+      userAgent: this.singleHeader(req.headers['user-agent']),
+    });
+  }
+
+  @Post('device/verify')
+  @HttpCode(HttpStatus.OK)
+  async verifyDevice(@Body() body: DeviceVerifyDto, @Req() req: Request) {
+    return this.identityService.verifyDevice(body, {
+      ip: req.ip,
+      userAgent: this.singleHeader(req.headers['user-agent']),
+    });
+  }
+
+  @Post('refresh')
+  @HttpCode(HttpStatus.OK)
+  @Throttle({ default: {}, refreshToken: {} })
+  async refresh(@Body() body: RefreshTokenDto) {
+    return this.identityService.refresh(body);
+  }
+
+  @UseGuards(JwtAuthGuard)
+  @Post('logout')
+  @HttpCode(HttpStatus.OK)
+  async logout(@Req() req: AuthenticatedRequest) {
+    if (!req.user?.sub || !req.user?.sid) {
+      throw new UnauthorizedException('User is not authenticated');
+    }
+    await this.identityService.logout(req.user);
+    return { success: true };
+  }
+
+  @UseGuards(JwtAuthGuard)
+  @Post('logout-all')
+  @HttpCode(HttpStatus.OK)
+  async logoutAll(@Req() req: AuthenticatedRequest) {
+    if (!req.user?.sub) {
+      throw new UnauthorizedException('User is not authenticated');
+    }
+    await this.identityService.logoutAll(req.user.sub, req.user);
+    return { success: true };
+  }
+
+  @UseGuards(JwtAuthGuard)
+  @Post('pin/setup')
+  @HttpCode(HttpStatus.OK)
+  async setupPin(@Body() body: PinSetupDto, @Req() req: AuthenticatedRequest) {
+    if (!req.user?.sub) {
+      throw new UnauthorizedException('User is not authenticated');
+    }
+    await this.identityService.setupPin(req.user.sub, body);
+    return { message: 'PIN setup successful' };
+  }
+
+  @UseGuards(JwtAuthGuard)
+  @Post('pin/verify')
+  @HttpCode(HttpStatus.NO_CONTENT)
+  @Throttle({ default: {}, pinVerify: {} })
+  async verifyPin(@Body() body: PinVerifyDto, @Req() req: AuthenticatedRequest) {
+    if (!req.user?.sub) {
+      throw new UnauthorizedException('User is not authenticated');
+    }
+    await this.identityService.verifyPin(req.user.sub, body);
+  }
+
+  @UseGuards(JwtAuthGuard)
+  @Post('biometric/challenge')
+  @HttpCode(HttpStatus.OK)
+  @Throttle({ default: {}, biometricVerify: {} })
+  async generateBiometricChallenge(@Req() req: AuthenticatedRequest) {
+    if (!req.user?.sub) {
+      throw new UnauthorizedException('User is not authenticated');
+    }
+    return this.identityService.generateBiometricChallenge(req.user.sub);
+  }
+
+  @UseGuards(JwtAuthGuard)
+  @Post('biometric/verify')
+  @HttpCode(HttpStatus.OK)
+  @Throttle({ default: {}, biometricVerify: {} })
+  async verifyBiometric(@Body() body: BiometricVerifyDto, @Req() req: AuthenticatedRequest) {
+    if (!req.user?.sub) {
+      throw new UnauthorizedException('User is not authenticated');
+    }
+    return this.identityService.verifyBiometric(req.user.sub, body, {
+      ip: req.ip,
+      userAgent: this.singleHeader(req.headers['user-agent']),
+    });
+  }
+
+  @UseGuards(JwtAuthGuard)
+  @Get('consents')
+  async getUserConsents(@Req() req: AuthenticatedRequest) {
+    if (!req.user?.sub) {
+      throw new UnauthorizedException('User is not authenticated');
+    }
+    return this.identityService.getUserConsents(req.user.sub);
+  }
+
+  @UseGuards(JwtAuthGuard)
+  @Post('consents/withdraw')
+  @HttpCode(HttpStatus.OK)
+  async withdrawConsent(@Body() body: WithdrawConsentDto, @Req() req: AuthenticatedRequest) {
+    if (!req.user?.sub) {
+      throw new UnauthorizedException('User is not authenticated');
+    }
+    return this.identityService.withdrawConsent(req.user.sub, body.consentType, {
+      ip: req.ip,
+      userAgent: this.singleHeader(req.headers['user-agent']),
+    });
+  }
+
+  @UseGuards(JwtAuthGuard)
+  @Get('data/export')
+  async exportUserData(@Req() req: AuthenticatedRequest) {
+    if (!req.user?.sub) {
+      throw new UnauthorizedException('User is not authenticated');
+    }
+    return this.identityService.exportUserData(req.user.sub);
+  }
+
+  @UseGuards(JwtAuthGuard)
+  @Post('account/delete-request')
+  @HttpCode(HttpStatus.OK)
+  @Throttle({ default: {}, accountDeletion: {} })
+  async requestAccountDeletion(@Req() req: AuthenticatedRequest) {
+    if (!req.user?.sub) {
+      throw new UnauthorizedException('User is not authenticated');
+    }
+    return this.identityService.requestAccountDeletion(req.user.sub, {
+      ip: req.ip,
+      userAgent: this.singleHeader(req.headers['user-agent']),
+    });
+  }
+
+  @UseGuards(JwtAuthGuard)
+  @Post('account/delete-confirm')
+  @HttpCode(HttpStatus.OK)
+  @Throttle({ default: {}, accountDeletion: {} })
+  async confirmAccountDeletion(@Req() req: AuthenticatedRequest) {
+    if (!req.user?.sub) {
+      throw new UnauthorizedException('User is not authenticated');
+    }
+    return this.identityService.confirmAccountDeletion(req.user.sub, {
+      ip: req.ip,
+      userAgent: this.singleHeader(req.headers['user-agent']),
+    });
+  }
+
+  @UseGuards(JwtAuthGuard)
+  @Get('aml/suspicious-activities')
+  async getSuspiciousActivities(@Req() req: AuthenticatedRequest) {
+    if (!req.user?.sub) {
+      throw new UnauthorizedException('User is not authenticated');
+    }
+    return this.identityService.getSuspiciousActivities(req.user.sub);
+  }
+
+  @UseGuards(JwtAuthGuard)
+  @Post('aml/report-to-amlo')
+  @HttpCode(HttpStatus.OK)
+  async reportSuspiciousActivityToAmlo(
+    @Body() body: { activityId: string },
+    @Req() req: AuthenticatedRequest,
+  ) {
+    if (!req.user?.sub) {
+      throw new UnauthorizedException('User is not authenticated');
+    }
+    return this.identityService.reportSuspiciousActivityToAmlo(body.activityId, req.user.sub);
+  }
+
+  // ==================== Admin User Management Endpoints ====================
+
+  @UseGuards(JwtAuthGuard)
+  @Get('admin/users')
+  async findAllUsers(@Req() req: Request) {
+    const page = parseInt(req.query.page as string) || 1;
+    const limit = parseInt(req.query.limit as string) || 10;
+    return this.identityService.findAllUsers(page, limit);
+  }
+
+  @UseGuards(JwtAuthGuard)
+  @Get('admin/users/:id')
+  async getUserById(@Req() req: Request) {
+    const id = this.singleHeader(req.params.id);
+    return this.identityService.findById(id);
+  }
+
+  @UseGuards(JwtAuthGuard)
+  @Get('admin/users/search')
+  async searchUsers(@Req() req: Request) {
+    return this.identityService.searchUsers(req.query.q as string);
+  }
+
+  @UseGuards(JwtAuthGuard)
+  @Put('admin/users/:id/status')
+  async updateUserStatus(@Req() req: Request, @Body() body: { status: string }) {
+    const id = this.singleHeader(req.params.id);
+    return this.identityService.updateUserStatus(id, body.status);
+  }
+
+  @UseGuards(JwtAuthGuard)
+  @Get('admin/users/:id/activity')
+  async getUserActivity(@Req() req: Request) {
+    const id = this.singleHeader(req.params.id);
+    return this.identityService.getUserActivity(id);
+  }
+
+  @UseGuards(JwtAuthGuard)
+  @Post('admin/users/:id/block')
+  async blockUser(@Req() req: Request, @Body() body?: { reason?: string }) {
+    const id = this.singleHeader(req.params.id);
+    return this.identityService.blockUser(id, body?.reason);
+  }
+
+  @UseGuards(JwtAuthGuard)
+  @Post('admin/users/:id/unblock')
+  async unblockUser(@Req() req: Request) {
+    const id = this.singleHeader(req.params.id);
+    return this.identityService.unblockUser(id);
+  }
+
+  private singleHeader(value: string | string[] | undefined) {
+    if (Array.isArray(value)) {
+      return value[0];
+    }
+    return value;
+  }
+}

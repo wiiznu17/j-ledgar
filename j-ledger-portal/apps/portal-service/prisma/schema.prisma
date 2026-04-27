@@ -1,5 +1,6 @@
 // Portal Service Prisma Schema
 // Manages: identity, kyc, admin, integration, audit, reporting schemas
+// NO foreign keys between schemas - use application-level references
 
 generator client {
   provider = "prisma-client-js"
@@ -8,104 +9,343 @@ generator client {
 datasource db {
   provider = "postgresql"
   url      = env("DATABASE_URL")
+  schemas  = ["identity", "kyc", "admin", "integration", "audit", "reporting"]
 }
 
-// Identity Schema - User authentication and profiles
+// ==================== Identity Schema ====================
+
 model User {
-  id            BigInt   @id @default(autoincrement())
-  phone         String   @unique
-  email         String?  @unique
-  passwordHash  String
-  status        String   @default("ACTIVE") // ACTIVE, SUSPENDED, DELETED
-  createdAt     DateTime @default(now())
-  updatedAt     DateTime @updatedAt
+  id                String              @id @default(uuid())
+  phoneNumber       String              @unique
+  email             String?             @unique
+  passwordHash      String?
+  pinHash           String?
+  biometricKey      String?
+  status            UserStatus          @default(ACTIVE)
+  registrationState RegistrationState   @default(PENDING)
+  pinAttempts       Int                 @default(0)
+  pinLockedUntil    DateTime?
+  ledgerAccountId   String?
+  createdAt         DateTime            @default(now())
+  updatedAt         DateTime            @updatedAt
 
-  @@map("identity.users")
+  userDevices       UserDevice[]
+  refreshSessions   RefreshSession[]
+  otpChallenges     OtpChallenge[]
+  userConsents      UserConsent[]
+  securityEvents    SecurityEvent[]
+  userSettings      UserSetting[]
+
+  @@map("users")
+  @@schema("identity")
 }
 
-model Session {
+model UserDevice {
+  id              String            @id @default(uuid())
+  userId          String
+  deviceIdentifier String
+  deviceName      String?
+  deviceType      String?
+  osVersion       String?
+  appVersion      String?
+  trustLevel      DeviceTrustLevel  @default(UNKNOWN)
+  lastSeenAt      DateTime?
+  createdAt       DateTime          @default(now())
+  updatedAt       DateTime          @updatedAt
+
+  user            User              @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, deviceIdentifier])
+  @@map("user_devices")
+  @@schema("identity")
+}
+
+model RefreshSession {
+  id           String   @id @default(uuid())
+  userId       String
+  deviceId     String?
+  tokenHash    String
+  expiresAt    DateTime
+  revokedAt    DateTime?
+  createdAt    DateTime @default(now())
+
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("refresh_sessions")
+  @@schema("identity")
+}
+
+model OtpChallenge {
+  id           String   @id @default(uuid())
+  userId       String?
+  phoneNumber  String
+  code         String
+  expiresAt    DateTime
+  verifiedAt   DateTime?
+  attempts     Int      @default(0)
+  createdAt    DateTime @default(now())
+
+  user         User?    @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("otp_challenges")
+  @@schema("identity")
+}
+
+model UserConsent {
+  id           String       @id @default(uuid())
+  userId       String
+  consentType  ConsentType
+  acceptedAt   DateTime
+  withdrawnAt  DateTime?
+  ipAddress    String?
+  userAgent    String?
+
+  user         User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, consentType])
+  @@map("user_consents")
+  @@schema("identity")
+}
+
+model SecurityEvent {
+  id           String           @id @default(uuid())
+  userId       String?
+  eventType    SecurityEventType
+  ipAddress    String?
+  userAgent    String?
+  metadata     Json?
+  createdAt    DateTime         @default(now())
+
+  user         User?            @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("security_events")
+  @@schema("identity")
+}
+
+model UserSetting {
   id        String   @id @default(uuid())
-  userId    BigInt
-  token     String   @unique
-  expiresAt DateTime
-  createdAt DateTime @default(now())
-
-  @@map("identity.sessions")
-}
-
-model RefreshToken {
-  id        String   @id @default(uuid())
-  userId    BigInt
-  token     String   @unique
-  expiresAt DateTime
-  createdAt DateTime @default(now())
-
-  @@map("identity.refresh_tokens")
-}
-
-// KYC Schema - Know Your Customer
-model KYCDocument {
-  id          BigInt   @id @default(autoincrement())
-  userId      BigInt
-  documentType String // ID_CARD, PASSPORT, SELFIE
-  documentUrl String
-  status      String   @default("PENDING") // PENDING, APPROVED, REJECTED
-  ocrData     Json?
-  faceMatchScore Float?
-  reviewedBy  BigInt?
-  reviewedAt  DateTime?
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
-
-  @@map("kyc.documents")
-}
-
-model PIIRecord {
-  id          BigInt   @id @default(autoincrement())
-  userId      BigInt
-  fieldType   String // FULL_NAME, ADDRESS, TAX_ID, etc.
-  encryptedData String
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
-
-  @@map("kyc.pii_records")
-}
-
-// Admin Schema - Staff and permissions
-model Staff {
-  id        BigInt   @id @default(autoincrement())
-  email     String   @unique
-  passwordHash String
-  name      String
-  role      String   // ADMIN, SUPPORT, OPERATOR
-  status    String   @default("ACTIVE")
+  userId    String
+  key       String
+  value     String
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  @@map("admin.staff")
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, key])
+  @@map("user_settings")
+  @@schema("identity")
 }
 
-model Role {
-  id          BigInt   @id @default(autoincrement())
-  name        String   @unique
-  permissions Json
+enum UserStatus {
+  ACTIVE
+  INACTIVE
+  SUSPENDED
+  BLOCKED
+  DELETED
+
+  @@schema("identity")
+}
+
+enum RegistrationState {
+  PENDING
+  INITIATED
+  TC_ACCEPTED
+  ID_CARD_UPLOADED
+  KYC_VERIFIED
+  PROFILE_COMPLETED
+  PASSWORD_SET
+  PIN_SET
+  COMPLETED
+
+  @@schema("identity")
+}
+
+enum DeviceTrustLevel {
+  UNKNOWN
+  TRUSTED
+  UNTRUSTED
+
+  @@schema("identity")
+}
+
+enum ConsentType {
+  TERMS_OF_SERVICE
+  PRIVACY_POLICY
+  MARKETING_CONSENT
+  DATA_PROCESSING
+
+  @@schema("identity")
+}
+
+enum SecurityEventType {
+  LOGIN_SUCCESS
+  LOGIN_FAILURE
+  LOGOUT
+  PIN_SETUP
+  PIN_CHANGE
+  PIN_LOCKED
+  BIOMETRIC_ENABLED
+  BIOMETRIC_DISABLED
+  DEVICE_REGISTERED
+  DEVICE_REMOVED
+  ACCOUNT_LOCKED
+  ACCOUNT_UNLOCKED
+  PASSWORD_RESET
+  SUSPICIOUS_ACTIVITY
+
+  @@schema("identity")
+}
+
+// ==================== KYC Schema ====================
+
+model KYCUser {
+  id        String   @id @default(uuid())
+  userId    String   @unique // Reference to identity.User (no FK)
+  email     String?
+  phone     String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("users")
+  @@schema("kyc")
+}
+
+model KYCDocument {
+  id          String   @id @default(uuid())
+  userId      String // Reference to identity.User (no FK)
+  documentType String // ID_CARD, PASSPORT, SELFIE, etc.
+  status      String   // PENDING, APPROVED, REJECTED
+  s3Key       String
+  s3Url       String?
+  metadata    Json?
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 
-  @@map("admin.roles")
+  @@map("kyc_documents")
+  @@schema("kyc")
+}
+
+model KYCData {
+  id                      String   @id @default(uuid())
+  userId                  String   @unique // Reference to identity.User (no FK)
+  verificationStatus      String   @default("PENDING") // PENDING, APPROVED, REJECTED
+  idCardNumberEncrypted   String?
+  idCardName              String?
+  thaiNameEncrypted       String?
+  prefix                  String?
+  idCardToken             String?  @unique // SHA-256 of ID number for deduplication
+  idCardImageUrl          String?
+  idCardImageSha256       String?
+  selfieImageUrl          String?
+  selfieImageSha256       String?
+  livenessSessionId       String?
+  faceMatchScore          Int?
+  idCardIssueDate         DateTime?
+  idCardExpiryDate        DateTime?
+  religion                String?
+  reviewNote              String?
+  ocrConfidence           Float?
+  verifiedAt              DateTime?
+  createdAt               DateTime @default(now())
+  updatedAt               DateTime @updatedAt
+
+  @@map("kyc_data")
+  @@schema("kyc")
+}
+
+model PII {
+  id          String   @id @default(uuid())
+  userId      String // Reference to identity.User (no FK)
+  field       String   // FULL_NAME, ID_NUMBER, ADDRESS, etc.
+  encryptedData String // Encrypted PII data
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@unique([userId, field])
+  @@map("pii")
+  @@schema("kyc")
+}
+
+// ==================== Admin Schema ====================
+
+model Staff {
+  id               String   @id @default(uuid())
+  username         String   @unique
+  password         String
+  email            String   @unique
+  firstName        String
+  lastName         String
+  isActive         Boolean  @default(true)
+  refreshTokenHash String?
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+
+  staffRoles       StaffRole[]
+
+  @@map("staffs")
+  @@schema("admin")
+}
+
+model Role {
+  id          String   @id @default(uuid())
+  name        String   @unique
+  description String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  staffRoles       StaffRole[]
+  rolePermissions  RolePermission[]
+
+  @@map("roles")
+  @@schema("admin")
+}
+
+model Permission {
+  id          String   @id @default(uuid())
+  name        String   @unique
+  description String?
+  resource    String
+  action      String
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  rolePermissions  RolePermission[]
+
+  @@map("permissions")
+  @@schema("admin")
 }
 
 model StaffRole {
-  id      BigInt @id @default(autoincrement())
-  staffId BigInt
-  roleId  BigInt
+  id        String   @id @default(uuid())
+  staffId   String
+  roleId    String
   createdAt DateTime @default(now())
 
-  @@unique([staffId, roleId])
-  @@map("admin.staff_roles")
+  staff     Staff     @relation(fields: [staffId], references: [id], onDelete: Cascade)
+  role      Role      @relation(fields: [roleId], references: [id], onDelete: Cascade)
+
+  @@unique([staffId, roleId], name: "staffId_roleId")
+  @@map("staff_roles")
+  @@schema("admin")
 }
 
-// Integration Schema - External integrations
+model RolePermission {
+  id           String   @id @default(uuid())
+  roleId       String
+  permissionId String
+  createdAt    DateTime @default(now())
+
+  role         Role       @relation(fields: [roleId], references: [id], onDelete: Cascade)
+  permission   Permission @relation(fields: [permissionId], references: [id], onDelete: Cascade)
+
+  @@unique([roleId, permissionId], name: "roleId_permissionId")
+  @@map("role_permissions")
+  @@schema("admin")
+}
+
+// ==================== Integration Schema ====================
+
 model BankIntegration {
   id          BigInt   @id @default(autoincrement())
   bankCode    String
@@ -115,7 +355,8 @@ model BankIntegration {
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 
-  @@map("integration.banks")
+  @@map("banks")
+  @@schema("integration")
 }
 
 model Merchant {
@@ -127,34 +368,43 @@ model Merchant {
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 
-  @@map("integration.merchants")
+  @@map("merchants")
+  @@schema("integration")
 }
 
-// Audit Schema - Audit logs
+// ==================== Audit Schema ====================
+
 model AuditLog {
-  id          BigInt   @id @default(autoincrement())
-  userId      BigInt?
-  staffId     BigInt?
-  action      String
-  resource    String
-  details     Json
-  ipAddress   String?
-  userAgent   String?
-  createdAt   DateTime @default(now())
+  id             String   @id @default(uuid())
+  adminUserId    String?
+  userId         String?
+  action         String
+  resourceType   String
+  resourceId     String?
+  ipAddress      String?
+  userAgent      String?
+  requestPayload Json?
+  responseStatus Int?
+  changes        Json?
+  reason         String?
+  createdAt      DateTime @default(now())
 
-  @@map("audit.logs")
+  @@map("audit_logs")
+  @@schema("audit")
 }
 
-// Reporting Schema - Reports and analytics
+// ==================== Reporting Schema ====================
+
 model Report {
   id          BigInt   @id @default(autoincrement())
   reportType  String
   parameters  Json
   status      String   @default("GENERATING")
   fileUrl     String?
-  generatedBy BigInt?
+  generatedBy String?
   createdAt   DateTime @default(now())
   completedAt DateTime?
 
-  @@map("reporting.reports")
+  @@map("reports")
+  @@schema("reporting")
 }
