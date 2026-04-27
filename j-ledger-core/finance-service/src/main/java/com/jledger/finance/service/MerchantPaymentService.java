@@ -31,7 +31,7 @@ public class MerchantPaymentService {
 
         // 1. Perform Fund Transfer using WalletService
         Transaction transaction = walletService.transferByWalletId(
-            request.fromWalletId(),
+            request.fromWalletId().toString(),
             request.toWalletId().toString(),
             request.amount()
         );

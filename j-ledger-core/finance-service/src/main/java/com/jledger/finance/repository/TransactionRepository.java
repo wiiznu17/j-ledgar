@@ -7,6 +7,7 @@ import org.springframework.stereotype.Repository;
 
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Optional;
 
 @Repository
 public interface TransactionRepository extends JpaRepository<Transaction, Long> {
@@ -14,6 +15,7 @@ public interface TransactionRepository extends JpaRepository<Transaction, Long> 
     List<Transaction> findByToWalletId(Long toWalletId);
     List<Transaction> findByFromWalletIdOrToWalletId(Long fromWalletId, Long toWalletId);
     List<Transaction> findByToWalletIdAndType(Long toWalletId, TransactionType type);
+    Optional<Transaction> findByTransactionId(String transactionId);
     
     // For AML monitoring
     long countByFromWalletIdAndCreatedAtAfter(Long fromWalletId, LocalDateTime createdAt);

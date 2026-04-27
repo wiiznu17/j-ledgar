@@ -3,12 +3,14 @@ package com.jledger.finance.controller;
 import com.jledger.finance.dto.P2pTransferRequest;
 import com.jledger.finance.dto.WalletTransferResponse;
 import com.jledger.finance.service.TransferService;
+import com.jledger.finance.repository.TransactionRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import jakarta.validation.Valid;
+import java.util.Optional;
 
 /**
  * P2P Transfer Controller
@@ -32,6 +34,7 @@ import jakarta.validation.Valid;
 public class P2pTransferController {
 
     private final TransferService transferService;
+    private final TransactionRepository transactionRepository;
 
     /**
      * Execute P2P Transfer with Double-Entry Ledger
@@ -103,7 +106,11 @@ public class P2pTransferController {
     public ResponseEntity<WalletTransferResponse> getTransferStatus(
             @PathVariable String transactionId
     ) {
-        // TODO: Implement transaction lookup
-        return ResponseEntity.notFound().build();
+        log.info("Get transfer status requested for transactionId={}", transactionId);
+
+        Optional<com.jledger.finance.model.Transaction> transaction = transactionRepository.findByTransactionId(transactionId);
+
+        return transaction.map(t -> ResponseEntity.ok(new WalletTransferResponse(t)))
+                .orElse(ResponseEntity.notFound().build());
     }
 }

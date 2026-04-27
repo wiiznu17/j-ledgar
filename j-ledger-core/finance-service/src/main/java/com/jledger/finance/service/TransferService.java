@@ -39,10 +39,6 @@ public class TransferService {
         validateTransferRequest(request);
         BigDecimal normalizedAmount = normalizeAmount(request.amount());
 
-        // Convert UUID to Long for wallet operations
-        Long fromWalletId = uuidToLong(request.fromAccountId());
-        Long toWalletId = uuidToLong(request.toAccountId());
-
         RLock firstLock = redissonClient.getLock(ACCOUNT_LOCK_PREFIX + smallerUuidString(
                 request.fromAccountId(),
                 request.toAccountId()
@@ -66,8 +62,8 @@ public class TransferService {
             }
 
             Transaction transaction = walletService.transferByWalletId(
-                fromWalletId,
-                toWalletId.toString(),
+                request.fromAccountId().toString(),
+                request.toAccountId().toString(),
                 normalizedAmount
             );
             return transaction;
@@ -117,10 +113,6 @@ public class TransferService {
         } catch (ArithmeticException exception) {
             throw new IllegalArgumentException("Transfer amount must have up to 4 decimal places", exception);
         }
-    }
-
-    private Long uuidToLong(UUID uuid) {
-        return Math.abs(uuid.getMostSignificantBits() ^ uuid.getLeastSignificantBits());
     }
 
     private static int compareUuids(UUID a, UUID b) {

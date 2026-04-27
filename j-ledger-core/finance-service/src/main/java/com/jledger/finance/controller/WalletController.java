@@ -21,45 +21,45 @@ public class WalletController {
 
     @PostMapping("/create")
     public ResponseEntity<Wallet> createWallet(@RequestBody Map<String, String> request) {
-        Long userId = Long.parseLong(request.get("userId"));
+        String userId = request.get("userId");
         String currency = request.getOrDefault("currency", "THB");
         Wallet wallet = walletService.createWallet(userId, currency);
         return ResponseEntity.ok(wallet);
     }
 
     @GetMapping("/{userId}")
-    public ResponseEntity<Wallet> getWallet(@PathVariable Long userId) {
+    public ResponseEntity<Wallet> getWallet(@PathVariable String userId) {
         Optional<Wallet> wallet = walletService.getWallet(userId);
         return wallet.map(ResponseEntity::ok)
                 .orElse(ResponseEntity.notFound().build());
     }
 
     @GetMapping("/{userId}/limits")
-    public ResponseEntity<Map<String, BigDecimal>> getTransactionLimits(@PathVariable Long userId) {
+    public ResponseEntity<Map<String, BigDecimal>> getTransactionLimits(@PathVariable String userId) {
         Map<String, BigDecimal> limits = walletService.getTransactionLimits(userId);
         return ResponseEntity.ok(limits);
     }
 
     @PostMapping("/{userId}/activate")
-    public ResponseEntity<Wallet> activateWallet(@PathVariable Long userId) {
+    public ResponseEntity<Wallet> activateWallet(@PathVariable String userId) {
         Wallet wallet = walletService.activateWallet(userId);
         return ResponseEntity.ok(wallet);
     }
 
     @PostMapping("/{userId}/deactivate")
-    public ResponseEntity<Wallet> deactivateWallet(@PathVariable Long userId) {
+    public ResponseEntity<Wallet> deactivateWallet(@PathVariable String userId) {
         Wallet wallet = walletService.deactivateWallet(userId);
         return ResponseEntity.ok(wallet);
     }
 
     @PostMapping("/{userId}/freeze")
-    public ResponseEntity<Wallet> freezeWallet(@PathVariable Long userId) {
+    public ResponseEntity<Wallet> freezeWallet(@PathVariable String userId) {
         Wallet wallet = walletService.freezeWallet(userId);
         return ResponseEntity.ok(wallet);
     }
 
     @PostMapping("/{userId}/unfreeze")
-    public ResponseEntity<Wallet> unfreezeWallet(@PathVariable Long userId) {
+    public ResponseEntity<Wallet> unfreezeWallet(@PathVariable String userId) {
         Wallet wallet = walletService.unfreezeWallet(userId);
         return ResponseEntity.ok(wallet);
     }
@@ -67,7 +67,7 @@ public class WalletController {
     // Top-up endpoints
     @PostMapping("/{userId}/topup/bank")
     public ResponseEntity<Transaction> topUpBank(
-            @PathVariable Long userId,
+            @PathVariable String userId,
             @RequestBody Map<String, String> request) {
         BigDecimal amount = new BigDecimal(request.get("amount"));
         String bankAccount = request.get("bankAccount");
@@ -77,7 +77,7 @@ public class WalletController {
 
     @PostMapping("/{userId}/topup/counter")
     public ResponseEntity<Transaction> topUpCounter(
-            @PathVariable Long userId,
+            @PathVariable String userId,
             @RequestBody Map<String, String> request) {
         BigDecimal amount = new BigDecimal(request.get("amount"));
         String counterCode = request.get("counterCode");
@@ -87,7 +87,7 @@ public class WalletController {
 
     @PostMapping("/{userId}/topup/cash")
     public ResponseEntity<Transaction> topUpCash(
-            @PathVariable Long userId,
+            @PathVariable String userId,
             @RequestBody Map<String, String> request) {
         BigDecimal amount = new BigDecimal(request.get("amount"));
         String agentId = request.get("agentId");
@@ -96,7 +96,7 @@ public class WalletController {
     }
 
     @GetMapping("/{userId}/topup-history")
-    public ResponseEntity<List<Transaction>> getTopUpHistory(@PathVariable Long userId) {
+    public ResponseEntity<List<Transaction>> getTopUpHistory(@PathVariable String userId) {
         List<Transaction> transactions = walletService.getTopUpHistory(userId);
         return ResponseEntity.ok(transactions);
     }
@@ -104,7 +104,7 @@ public class WalletController {
     // QR Payment endpoints
     @PostMapping("/{userId}/qr/generate")
     public ResponseEntity<String> generateQR(
-            @PathVariable Long userId,
+            @PathVariable String userId,
             @RequestBody Map<String, String> request) {
         BigDecimal amount = new BigDecimal(request.get("amount"));
         String qrData = walletService.generateQR(userId, amount);
@@ -113,7 +113,7 @@ public class WalletController {
 
     @PostMapping("/{userId}/qr/pay")
     public ResponseEntity<Transaction> payQR(
-            @PathVariable Long userId,
+            @PathVariable String userId,
             @RequestBody Map<String, String> request) {
         BigDecimal amount = new BigDecimal(request.get("amount"));
         String qrData = request.get("qrData");
@@ -122,13 +122,13 @@ public class WalletController {
     }
 
     @PostMapping("/{userId}/qr/static")
-    public ResponseEntity<String> generateStaticQR(@PathVariable Long userId) {
+    public ResponseEntity<String> generateStaticQR(@PathVariable String userId) {
         String qrData = walletService.generateStaticQR(userId);
         return ResponseEntity.ok(qrData);
     }
 
     @GetMapping("/{userId}/qr/history")
-    public ResponseEntity<List<Transaction>> getQRHistory(@PathVariable Long userId) {
+    public ResponseEntity<List<Transaction>> getQRHistory(@PathVariable String userId) {
         List<Transaction> transactions = walletService.getQRHistory(userId);
         return ResponseEntity.ok(transactions);
     }

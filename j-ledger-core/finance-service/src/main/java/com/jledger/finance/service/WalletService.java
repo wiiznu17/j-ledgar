@@ -33,7 +33,7 @@ public class WalletService {
     private static final BigDecimal DAILY_LIMIT = new BigDecimal("1000000");
     private static final BigDecimal TRANSACTION_LIMIT = new BigDecimal("50000");
 
-    public Wallet createWallet(Long userId, String currency) {
+    public Wallet createWallet(String userId, String currency) {
         if (walletRepository.existsByUserId(userId)) {
             throw new RuntimeException("Wallet already exists for user");
         }
@@ -47,7 +47,7 @@ public class WalletService {
         return walletRepository.save(wallet);
     }
 
-    public Optional<Wallet> getWallet(Long userId) {
+    public Optional<Wallet> getWallet(String userId) {
         String cacheKey = CACHE_PREFIX + userId;
         Wallet cached = (Wallet) redisTemplate.opsForValue().get(cacheKey);
         if (cached != null) {
@@ -60,7 +60,7 @@ public class WalletService {
     }
 
     @Transactional
-    public Wallet updateBalance(Long userId, BigDecimal amount) {
+    public Wallet updateBalance(String userId, BigDecimal amount) {
         Wallet wallet = walletRepository.findByUserId(userId)
                 .orElseThrow(() -> new RuntimeException("Wallet not found"));
 
@@ -83,7 +83,7 @@ public class WalletService {
         return updated;
     }
 
-    public boolean validateTransaction(Long userId, BigDecimal amount) {
+    public boolean validateTransaction(String userId, BigDecimal amount) {
         Wallet wallet = getWallet(userId).orElseThrow(() -> new RuntimeException("Wallet not found"));
 
         if (amount.compareTo(TRANSACTION_LIMIT) > 0) {
@@ -97,54 +97,54 @@ public class WalletService {
         return true;
     }
 
-    public Wallet deactivateWallet(Long userId) {
+    public Wallet deactivateWallet(String userId) {
         Wallet wallet = walletRepository.findByUserId(userId)
                 .orElseThrow(() -> new RuntimeException("Wallet not found"));
         wallet.setIsActive(false);
         return walletRepository.save(wallet);
     }
 
-    public Map<String, BigDecimal> getTransactionLimits(Long userId) {
+    public Map<String, BigDecimal> getTransactionLimits(String userId) {
         return Map.of(
             "dailyLimit", DAILY_LIMIT,
             "transactionLimit", TRANSACTION_LIMIT
         );
     }
 
-    public Wallet activateWallet(Long userId) {
+    public Wallet activateWallet(String userId) {
         Wallet wallet = walletRepository.findByUserId(userId)
                 .orElseThrow(() -> new RuntimeException("Wallet not found"));
         wallet.setIsActive(true);
         return walletRepository.save(wallet);
     }
 
-    public Wallet freezeWallet(Long userId) {
+    public Wallet freezeWallet(String userId) {
         Wallet wallet = walletRepository.findByUserId(userId)
                 .orElseThrow(() -> new RuntimeException("Wallet not found"));
         wallet.setStatus("FROZEN");
         return walletRepository.save(wallet);
     }
 
-    public Wallet unfreezeWallet(Long userId) {
+    public Wallet unfreezeWallet(String userId) {
         Wallet wallet = walletRepository.findByUserId(userId)
                 .orElseThrow(() -> new RuntimeException("Wallet not found"));
         wallet.setStatus("ACTIVE");
         return walletRepository.save(wallet);
     }
 
-    public List<Transaction> getTopUpHistory(Long userId) {
+    public List<Transaction> getTopUpHistory(String userId) {
         Wallet wallet = walletRepository.findByUserId(userId)
                 .orElseThrow(() -> new RuntimeException("Wallet not found"));
         return transactionRepository.findByToWalletIdAndType(wallet.getId(), TransactionType.TOPUP);
     }
 
-    public String generateStaticQR(Long userId) {
+    public String generateStaticQR(String userId) {
         Wallet wallet = walletRepository.findByUserId(userId)
                 .orElseThrow(() -> new RuntimeException("Wallet not found"));
         return "jledger|static|" + wallet.getId();
     }
 
-    public List<Transaction> getQRHistory(Long userId) {
+    public List<Transaction> getQRHistory(String userId) {
         Wallet wallet = walletRepository.findByUserId(userId)
                 .orElseThrow(() -> new RuntimeException("Wallet not found"));
         return transactionRepository.findByFromWalletIdOrToWalletId(wallet.getId(), wallet.getId());
@@ -200,7 +200,7 @@ public class WalletService {
     }
 
     @Transactional
-    public Transaction topUpBank(Long userId, BigDecimal amount, String bankAccount) {
+    public Transaction topUpBank(String userId, BigDecimal amount, String bankAccount) {
         Wallet wallet = walletRepository.findByUserId(userId)
                 .orElseThrow(() -> new RuntimeException("Wallet not found"));
 
@@ -226,7 +226,7 @@ public class WalletService {
     }
 
     @Transactional
-    public Transaction topUpCounter(Long userId, BigDecimal amount, String counterCode) {
+    public Transaction topUpCounter(String userId, BigDecimal amount, String counterCode) {
         Wallet wallet = walletRepository.findByUserId(userId)
                 .orElseThrow(() -> new RuntimeException("Wallet not found"));
 
@@ -251,7 +251,7 @@ public class WalletService {
     }
 
     @Transactional
-    public Transaction topUpCash(Long userId, BigDecimal amount, String agentId) {
+    public Transaction topUpCash(String userId, BigDecimal amount, String agentId) {
         Wallet wallet = walletRepository.findByUserId(userId)
                 .orElseThrow(() -> new RuntimeException("Wallet not found"));
 
@@ -276,7 +276,7 @@ public class WalletService {
     }
 
     @Transactional
-    public Transaction transferByPhone(Long fromUserId, String toPhone, BigDecimal amount) {
+    public Transaction transferByPhone(String fromUserId, String toPhone, BigDecimal amount) {
         Wallet fromWallet = walletRepository.findByUserId(fromUserId)
                 .orElseThrow(() -> new RuntimeException("Source wallet not found"));
 
@@ -290,7 +290,7 @@ public class WalletService {
 
         // Mock: Find wallet by phone (in real system, would query user service)
         Wallet toWallet = walletRepository.findAll().stream()
-                .filter(w -> w.getUserId().toString().equals(toPhone)) // Simplified - phone = userId for mock
+                .filter(w -> w.getUserId().equals(toPhone)) // Simplified - phone = userId for mock
                 .findFirst()
                 .orElseThrow(() -> new RuntimeException("Recipient wallet not found"));
 
@@ -318,7 +318,7 @@ public class WalletService {
     }
 
     @Transactional
-    public Transaction transferByWalletId(Long fromUserId, String toWalletId, BigDecimal amount) {
+    public Transaction transferByWalletId(String fromUserId, String toWalletId, BigDecimal amount) {
         Wallet fromWallet = walletRepository.findByUserId(fromUserId)
                 .orElseThrow(() -> new RuntimeException("Source wallet not found"));
 
@@ -355,14 +355,14 @@ public class WalletService {
     }
 
     @Transactional
-    public Transaction transferByQR(Long fromUserId, String qrData, BigDecimal amount) {
+    public Transaction transferByQR(String fromUserId, String qrData, BigDecimal amount) {
         // Mock: Parse QR data to get wallet ID
         String toWalletId = qrData; // Simplified for mock
 
         return transferByWalletId(fromUserId, toWalletId, amount);
     }
 
-    public String generateQR(Long userId, BigDecimal amount) {
+    public String generateQR(String userId, BigDecimal amount) {
         // Mock: Generate QR code data
         Wallet wallet = walletRepository.findByUserId(userId)
                 .orElseThrow(() -> new RuntimeException("Wallet not found"));
@@ -371,13 +371,13 @@ public class WalletService {
     }
 
     @Transactional
-    public Transaction payQR(Long fromUserId, String qrData, BigDecimal amount) {
+    public Transaction payQR(String fromUserId, String qrData, BigDecimal amount) {
         // Mock: Parse QR and pay
         return transferByQR(fromUserId, qrData, amount);
     }
 
     @Transactional
-    public Transaction payUtilityBill(Long userId, String billerCode, String accountNumber, BigDecimal amount) {
+    public Transaction payUtilityBill(String userId, String billerCode, String accountNumber, BigDecimal amount) {
         Wallet wallet = walletRepository.findByUserId(userId)
                 .orElseThrow(() -> new RuntimeException("Wallet not found"));
 
@@ -406,7 +406,7 @@ public class WalletService {
     }
 
     @Transactional
-    public Transaction payCreditCardBill(Long userId, String cardNumber, BigDecimal amount) {
+    public Transaction payCreditCardBill(String userId, String cardNumber, BigDecimal amount) {
         Wallet wallet = walletRepository.findByUserId(userId)
                 .orElseThrow(() -> new RuntimeException("Wallet not found"));
 
@@ -434,7 +434,7 @@ public class WalletService {
     }
 
     @Transactional
-    public Transaction payMobileTopup(Long userId, String phoneNumber, BigDecimal amount) {
+    public Transaction payMobileTopup(String userId, String phoneNumber, BigDecimal amount) {
         Wallet wallet = walletRepository.findByUserId(userId)
                 .orElseThrow(() -> new RuntimeException("Wallet not found"));
 
@@ -469,7 +469,7 @@ public class WalletService {
     public List<Wallet> searchWallets(String query) {
         // Simplified search - in real system would search by userId, phone, etc.
         return walletRepository.findAll().stream()
-                .filter(w -> w.getUserId().toString().contains(query))
+                .filter(w -> w.getUserId().contains(query))
                 .collect(java.util.stream.Collectors.toList());
     }
 
@@ -478,7 +478,7 @@ public class WalletService {
     }
 
     @Transactional
-    public Wallet adjustBalance(Long userId, BigDecimal amount, String reason) {
+    public Wallet adjustBalance(String userId, BigDecimal amount, String reason) {
         Wallet wallet = walletRepository.findByUserId(userId)
                 .orElseThrow(() -> new RuntimeException("Wallet not found"));
 
