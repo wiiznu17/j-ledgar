@@ -121,16 +121,15 @@ nano .env
 
 2.  **เริ่มระบบ (Deployment)**:
 
-```bash
+````bash
 docker compose up -d --build
-```
 
-_ระบบจะทำการรัน Migration อัตโนมัติ (ผ่าน core-migration, admin-migration, wallet-migration, admin-auth-migration, user-kyc-migration) ก่อนจะเริ่มแอปหลักครับ_
+_ระบบจะทำการรัน Migration อัตโนมัติ (ผ่าน finance-migration, portal-migration) ก่อนจะเริ่มแอปหลักครับ_
 _ตรวจสอบสถานะด้วย `docker compose ps`_
 
 ---
 
-## 🛠️ 5. Local Development Mode (Hybrid)
+## 5. Local Development Mode (Hybrid)
 
 สำหรับการพัฒนาแบบ Hybrid (Infrastructure ใน Docker, Services บน Local):
 
@@ -139,28 +138,25 @@ _ตรวจสอบสถานะด้วย `docker compose ps`_
 ```bash
 cp .env.local.example .env.local
 # แก้ค่าตามต้องการ (ส่วนใหญ่ใช้ค่า default ได้)
-```
+````
 
 2. **เริ่ม Infrastructure**:
 
 ```bash
-docker compose -f docker-compose.yml -f docker-compose.dev.yml up -d postgres redis kafka zookeeper eureka-server api-gateway
+docker compose -f docker-compose.yml -f docker-compose.dev.yml up -d postgres redis kafka zookeeper pgadmin
 ```
 
 3. **รัน Services บน Local**:
 
 ```bash
-# NestJS Services
-cd j-ledger-portal/apps/wallet-api && npm run dev
-cd j-ledger-portal/apps/admin-api && npm run dev
-cd j-ledger-portal/apps/auth-service && npm run dev
-cd j-ledger-portal/apps/admin-auth-service && npm run dev
-cd j-ledger-portal/apps/user-kyc-service && npm run dev
+# Portal Service (Monolithic - contains identity, kyc, admin, integration, audit, reporting modules)
+cd j-ledger-portal/apps/portal-service && npm run dev
 
-# Java Services
-cd j-ledger-core/core-service && mvn spring-boot:run
-cd j-ledger-core/wallet-service && mvn spring-boot:run
-cd j-ledger-core/notification-service && mvn spring-boot:run
+# Finance Service (Java)
+cd j-ledger-core/finance-service && ./mvnw spring-boot:run
+
+# Notification Worker (NestJS)
+cd j-ledger-portal/apps/notification-worker && npm run start:dev
 ```
 
 > [!NOTE]
@@ -174,53 +170,51 @@ cd j-ledger-core/notification-service && mvn spring-boot:run
 
 โปรเจ็คใช้ **PostgreSQL เดียว** (`jledger_db`) แต่แยก schema กัน:
 
-| Service                | Schema              | Migration Tool |
-| ---------------------- | ------------------- | -------------- |
-| **core-service**       | `public`            | Flyway (SQL)   |
-| **admin-api**          | `admin_schema`      | Prisma (ORM)   |
-| **wallet-api**         | `wallet_schema`     | Prisma (ORM)   |
-| **admin-auth-service** | `admin_auth_schema` | Prisma (ORM)   |
-| **user-kyc-service**   | `user_kyc_schema`   | Prisma (ORM)   |
+| Service             | Schema        | Migration Tool |
+| ------------------- | ------------- | -------------- |
+| **finance-service** | `finance`     | Flyway (SQL)   |
+| **portal-service**  | `identity`    | Prisma (ORM)   |
+| **portal-service**  | `kyc`         | Prisma (ORM)   |
+| **portal-service**  | `admin`       | Prisma (ORM)   |
+| **portal-service**  | `integration` | Prisma (ORM)   |
 
 ### การรันครั้งแรก (Initial Deployment)
 
 เมื่อรัน `docker compose up -d --build` ครั้งแรก ระบบจะทำ migration อัตโนมัติ:
 
-- `core-migration` container รัน Flyway → apply SQL migrations จาก `j-ledger-core/core-service/src/main/resources/db/migration/`
-- `admin-migration` container รัน Prisma → apply migrations และ seed data สำหรับ `admin_schema`
-- `wallet-migration` container รัน Prisma → apply migrations และ seed data สำหรับ `wallet_schema`
-- `admin-auth-migration` container รัน Prisma → apply migrations สำหรับ `admin_auth_schema`
-- `user-kyc-migration` container รัน Prisma → apply migrations สำหรับ `user_kyc_schema`
+- `finance-migration` container รัน Flyway → apply SQL migrations จาก `j-ledger-core/finance-service/src/main/resources/db/migration/`
+- `portal-migration` container รัน Prisma → apply migrations สำหรับ identity, kyc, admin, integration schemas
 
 Services หลักจะรอให้ migration เสร็จก่อนถึงจะเริ่มทำงาน
 
 ### เมื่อมีการแก้ Database
 
-#### 1. Core Service (Flyway)
+#### 1. Finance Service (Flyway)
 
 ```bash
 # สร้าง migration file ใหม่
-# ไฟล์: j-ledger-core/core-service/src/main/resources/db/migration/V13__your_change.sql
+# ไฟล์: j-ledger-core/finance-service/src/main/resources/db/migration/V2__your_change.sql
+# ระบุ schema ใน SQL: SET search_path TO finance, public;
 
 # Deploy migration (Production)
-docker compose up -d core-migration
+docker compose up -d finance-migration
 
 # Deploy migration (Dev - Docker)
-docker compose -f docker-compose.yml -f docker-compose.dev.yml run --rm core-migration
+docker compose -f docker-compose.yml -f docker-compose.dev.yml run --rm finance-migration
 ```
 
-#### 2. Prisma Services (Admin API, Wallet API, Admin Auth, User KYC)
+#### 2. Portal Service (Prisma)
 
 ```bash
 # แก้ prisma/schema.prisma
-cd j-ledger-portal/apps/admin-api  # หรือ wallet-api, admin-auth-service, user-kyc-service
+cd j-ledger-portal/apps/portal-service
 
 # สร้าง migration (Dev)
 npx prisma migrate dev --name your_change
 
 # Rebuild image และ deploy (Production)
-docker compose build admin-migration  # หรือ wallet-migration, admin-auth-migration, user-kyc-migration
-docker compose up -d admin-migration
+docker compose build portal-migration
+docker compose up -d portal-migration
 ```
 
 ### Workflow Summary
@@ -290,16 +284,9 @@ docker compose up -d admin-migration
 
 ### Local Development Mode
 
-- **Admin Web:** `http://localhost:3000`
-- **Wallet API:** `http://localhost:3002`
-- **Admin API:** `http://localhost:3001`
-- **Auth Service:** `http://localhost:3003`
-- **Admin Auth Service:** `http://localhost:3005`
-- **User KYC Service:** `http://localhost:3004`
-- **Core Service:** `http://localhost:8081`
-- **Wallet Service:** `http://localhost:8082`
-- **API Gateway:** `http://localhost:8080`
-- **Eureka Server:** `http://localhost:8761`
+- **Portal Service:** `http://localhost:3000`
+- **Finance Service:** `http://localhost:8081`
+- **Notification Worker:** `http://localhost:3001`
 
 > [!IMPORTANT]
 > **Database Security**: สังเกตว่าพอร์ต 5432, 6379 จะไม่ถูกเปิดออกมาข้างนอกเครื่องใน production เพื่อป้องกันการเจาะระบบ ทุกอย่างสื่อสารกันภายใน Docker Network

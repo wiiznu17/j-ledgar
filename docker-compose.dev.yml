@@ -29,16 +29,6 @@ services:
       KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: PLAINTEXT_INTERNAL:PLAINTEXT,PLAINTEXT_EXTERNAL:PLAINTEXT
       KAFKA_INTER_BROKER_LISTENER_NAME: PLAINTEXT_INTERNAL
 
-  eureka-server:
-    ports:
-      - "8761:8761"
-
-  api-gateway:
-    ports:
-      - "8080:8080"
-    environment:
-      JWT_ACCESS_SECRET: ${JWT_ACCESS_SECRET}
-
   pgadmin:
     image: dpage/pgadmin4
     container_name: jledger-pgadmin
@@ -51,7 +41,3 @@ services:
       - jledger-network
     depends_on:
       - postgres
-
-networks:
-  jledger-network:
-    driver: bridge

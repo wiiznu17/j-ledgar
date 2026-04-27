@@ -6,14 +6,12 @@
 
 - `docker/nginx/default.conf` - Production (HTTPS with SSL, potayyr.site) - Public NGINX
 - `docker/nginx/default.conf.example` - Local development (HTTP only, localhost) - สำหรับ Local Test
-- `docker/nginx/default.conf.prod` - Template/example file (deprecated)
-- `docker/nginx/internal.conf` - Production (HTTP/HTTPS with VPN access) - Internal NGINX for Admin
 
 **Usage:**
 
 - **Mode 1 (Dev/Hybrid)**: ไม่ใช้ nginx - เข้า services โดยตรงผ่าน localhost:port
-- **Mode 2 (Local Test)**: `docker compose -f docker-compose.yml -f docker-compose.test.yml up -d` (uses default.conf.example for HTTP only)
-- **Mode 3 (Production)**: `docker compose up -d` (uses default.conf with SSL for public traffic, internal.conf for admin access)
+- **Mode 2 (Local Test)**: `docker compose -f docker-compose.yml -f docker-compose.test.yml up -d` (uses `default.conf.example` for HTTP only)
+- **Mode 3 (Production)**: `docker compose up -d` (uses `default.conf` with SSL for public traffic)
 
 ## 1. 🛠️ โหมด Hybrid Development (แนะนำสำหรับการพัฒนา)
 
@@ -31,40 +29,31 @@
 >   - Security (ซ่อน internal ports)
 >   - Centralized routing
 
-> [!IMPORTANT]
-> **แผนภาพนี้แสดงสถานะที่ควรจะเป็นหลังจาก implement** การแก้ไข docker-compose.dev.yml
-
 **คำสั่งเริ่มใช้งาน:**
 
 ```bash
 # 1. เริ่ม Infrastructure ใน Docker
-docker compose -f docker-compose.yml -f docker-compose.dev.yml up -d postgres redis kafka zookeeper eureka-server api-gateway pgadmin
+docker compose -f docker-compose.yml -f docker-compose.dev.yml up -d postgres redis kafka zookeeper pgadmin
 
 # 2. รัน Services บนเครื่อง Local
-cd j-ledger-portal/apps/wallet-api && npm run dev
-cd j-ledger-portal/apps/admin-api && npm run dev
-cd j-ledger-portal/apps/auth-service && npm run dev
-cd j-ledger-portal/apps/admin-auth-service && npm run dev
-cd j-ledger-portal/apps/user-kyc-service && npm run dev
-cd j-ledger-core/core-service && ./mvnw spring-boot:run
-cd j-ledger-core/wallet-service && ./mvnw spring-boot:run
+cd j-ledger-portal/apps/portal-service && npm run dev
+cd j-ledger-core/finance-service && ./mvnw spring-boot:run
+cd j-ledger-portal/apps/notification-worker && npm run start:dev
 
-# 3. รัน Mobile App (Expo)
+# 3. รัน Frontend (ถ้าต้องการ)
+cd j-ledger-portal/apps/admin-web && npm run dev
 cd j-ledger-portal/apps/wallet-app && npx expo start
 ```
 
 ```mermaid
-graph TD
+graph LR
     subgraph "Local Machine (Host)"
         direction TB
         WEB["[admin-web]<br/>:3000"]
-        WAPI["[wallet-api]<br/>:3002"]
-        AAPI["[admin-api]<br/>:3001"]
-        AUTH["[auth-service]<br/>:3003"]
-        A_AUTH["[admin-auth-service]<br/>:3005"]
-        KYC["[user-kyc-service]<br/>:3004"]
-        CORE["[core-service]<br/>:8081"]
-        WALL["[wallet-service]<br/>:8082"]
+        APP["[wallet-app]<br/>Expo"]
+        PORTAL["[portal-service]<br/>:3000<br/>(Monolith)"]
+        FIN["[finance-service]<br/>:8081"]
+        WORK["[notification-worker]<br/>:3001"]
     end
 
     subgraph "Docker (Infrastructure)"
@@ -72,70 +61,41 @@ graph TD
         PG["[postgres]<br/>:5432<br/>jledger_db"]
         REDIS["[redis]<br/>:6379"]
         KAFKA["[kafka]<br/>:9092"]
-        EURE["[eureka-server]<br/>:8761"]
-        GATE["[api-gateway]<br/>:8080"]
         PGADMIN["[pgadmin]<br/>:5050<br/>DB UI"]
     end
 
     %% Service Connections
-    WEB --> AAPI
-    WAPI --> GATE
-    WAPI --> AUTH
-    WAPI --> KYC
-    WAPI --> WALL
-    AAPI --> CORE
-    AAPI --> A_AUTH
-    AAPI --> KYC
-    AAPI --> WALL
-    AAPI --> AUTH
-    GATE --> CORE
+    WEB --> PORTAL
+    APP --> PORTAL
+    PORTAL --> FIN
+    WORK --> KAFKA
+    FIN --> KAFKA
     PGADMIN --> PG
 
-    %% Service Discovery
-    CORE --> EURE
-    WALL --> EURE
-    GATE --> EURE
-
     %% Database Connections
-    AUTH -->|auth_schema| PG
-    A_AUTH -->|admin_auth_schema| PG
-    KYC -->|user_kyc_schema| PG
-    CORE -->|core_schema| PG
-    WALL -->|core_schema| PG
+    PORTAL -->|identity,kyc,admin,integration,audit| PG
+    FIN -->|finance| PG
 
     %% Cache Connections
-    AUTH --> REDIS
-    A_AUTH --> REDIS
-    CORE --> REDIS
-    WALL --> REDIS
+    PORTAL --> REDIS
+    FIN --> REDIS
 
     %% Kafka Connections
-    CORE --> KAFKA
-    WALL --> KAFKA
+    FIN --> KAFKA
+    WORK --> KAFKA
 
-    style WEB fill:#fff4e1,stroke:#f57c00
-    style WAPI fill:#e1f5ff,stroke:#0288d1
-    style AAPI fill:#e1f5ff,stroke:#0288d1
-    style AUTH fill:#e8f5e9,stroke:#388e3c
-    style A_AUTH fill:#e8f5e9,stroke:#388e3c
-    style KYC fill:#e8f5e9,stroke:#388e3c
-    style CORE fill:#e8f5e9,stroke:#388e3c
-    style WALL fill:#e8f5e9,stroke:#388e3c
-    style PG fill:#f3e5f5,stroke:#7b1fa2
-    style REDIS fill:#f3e5f5,stroke:#7b1fa2
-    style KAFKA fill:#f3e5f5,stroke:#7b1fa2
-    style EURE fill:#e8f5e9,stroke:#388e3c
-    style GATE fill:#e8f5e9,stroke:#388e3c
-    style PGADMIN fill:#fff3e0,stroke:#f57c00
+    style WEB fill:#fff4e1,stroke:#e65100
+    style APP fill:#fff4e1,stroke:#e65100
+    style PORTAL fill:#e1f5ff,stroke:#0d47a1
+    style FIN fill:#e8f5e9,stroke:#1b5e20
+    style WORK fill:#e8f5e9,stroke:#1b5e20
+    style PG fill:#f3e5f5,stroke:#4a148c
+    style REDIS fill:#f3e5f5,stroke:#4a148c
+    style KAFKA fill:#f3e5f5,stroke:#4a148c
+    style PGADMIN fill:#fff3e0,stroke:#bf360c
 ```
 
 > [!NOTE]
-> **โหมด Hybrid รองรับ Service Discovery:**
->
-> - Eureka Server และ API Gateway รวมอยู่ใน docker-compose.dev.yml
-> - BFF services (wallet-api, admin-api) สามารถใช้ Service Discovery ผ่าน API Gateway
-> - Core service ลงทะเบียนกับ Eureka Server และสามารถถูกเรียกผ่าน Gateway
->
 > **pgadmin (Database Management UI):**
 >
 > - Access: http://localhost:5050
@@ -156,84 +116,66 @@ docker compose -f docker-compose.yml -f docker-compose.test.yml up -d --build
 ```
 
 ```mermaid
-graph TD
+graph LR
     subgraph "Docker Network (jledger-network)"
         direction TB
         subgraph "Application Services"
             WEB["[admin-web]<br/>:3000"]
-            WAPI["[wallet-api]<br/>:3002"]
-            AAPI["[admin-api]<br/>:3001"]
-            AUTH["[auth-service]<br/>:3003"]
-            A_AUTH["[admin-auth-service]<br/>:3005"]
-            KYC["[user-kyc-service]<br/>:3004"]
-            CORE["[core-service]<br/>:8081"]
-            WALL["[wallet-service]<br/>:8082"]
+            PORTAL["[portal-service]<br/>:3000<br/>(Monolith)"]
+            FIN["[finance-service]<br/>:8081"]
+            WORK["[notification-worker]<br/>:3001"]
         end
 
         subgraph "Infrastructure"
             PG["[postgres]<br/>:5432<br/>jledger_db"]
             REDIS["[redis]<br/>:6379"]
             KAFKA["[kafka]<br/>:29092"]
-            EURE["[eureka-server]<br/>:8761"]
-            GATE["[api-gateway]<br/>:8080"]
             NGINX["[nginx]<br/>:80<br/>HTTP only"]
         end
     end
 
-    %% Service Connections
-    WEB --> AAPI
-    WAPI --> GATE
-    WAPI --> AUTH
-    WAPI --> KYC
-    WAPI --> WALL
-    AAPI --> CORE
-    AAPI --> AUTH
-    AAPI --> A_AUTH
-    AAPI --> KYC
-    AAPI --> WALL
-    GATE --> CORE
+    subgraph "External"
+        APP["[wallet-app]<br/>Mobile Device"]
+        BROWSER["[Browser]<br/>Admin User"]
+    end
 
-    %% Service Discovery
-    CORE --> EURE
-    WALL --> EURE
-    GATE --> EURE
+    %% Service Connections
+    WEB --> PORTAL
+    PORTAL --> FIN
+    WORK --> KAFKA
+    FIN --> KAFKA
+
+    %% External Connections via Nginx
+    APP --> NGINX
+    BROWSER --> NGINX
 
     %% Database Connections
-    AUTH -->|auth_schema| PG
-    A_AUTH -->|admin_auth_schema| PG
-    KYC -->|user_kyc_schema| PG
-    CORE -->|core_schema| PG
-    WALL --> PG
+    PORTAL -->|identity,kyc,admin,integration,audit| PG
+    FIN -->|finance| PG
 
     %% Cache Connections
-    AUTH --> REDIS
-    A_AUTH --> REDIS
-    CORE --> REDIS
-    WALL --> REDIS
+    PORTAL --> REDIS
+    FIN --> REDIS
 
     %% Kafka Connections
-    CORE --> KAFKA
-    WALL --> KAFKA
+    FIN --> KAFKA
+    WORK --> KAFKA
 
     %% Nginx Gateway
-    NGINX --> WAPI
-    NGINX --> AAPI
+    NGINX --> PORTAL
+    NGINX --> FIN
     NGINX --> WEB
 
-    style WEB fill:#fff4e1,stroke:#f57c00
-    style WAPI fill:#e1f5ff,stroke:#0288d1
-    style AAPI fill:#e1f5ff,stroke:#0288d1
-    style AUTH fill:#e8f5e9,stroke:#388e3c
-    style A_AUTH fill:#e8f5e9,stroke:#388e3c
-    style KYC fill:#e8f5e9,stroke:#388e3c
-    style CORE fill:#e8f5e9,stroke:#388e3c
-    style WALL fill:#e8f5e9,stroke:#388e3c
-    style PG fill:#f3e5f5,stroke:#7b1fa2
-    style REDIS fill:#f3e5f5,stroke:#7b1fa2
-    style KAFKA fill:#f3e5f5,stroke:#7b1fa2
-    style EURE fill:#e8f5e9,stroke:#388e3c
-    style GATE fill:#e8f5e9,stroke:#388e3c
-    style NGINX fill:#ffebee,stroke:#c62828
+    style WEB fill:#fff4e1,stroke:#e65100
+    style APP fill:#fff4e1,stroke:#e65100
+    style BROWSER fill:#e8f5e9,stroke:#1b5e20
+    style PORTAL fill:#e1f5ff,stroke:#0d47a1
+    style FIN fill:#e8f5e9,stroke:#1b5e20
+    style WORK fill:#e8f5e9,stroke:#1b5e20
+    style PG fill:#f3e5f5,stroke:#4a148c
+    style REDIS fill:#f3e5f5,stroke:#4a148c
+    style KAFKA fill:#f3e5f5,stroke:#4a148c
+    style NGINX fill:#ffebee,stroke:#b71c1c
 ```
 
 ---
@@ -249,87 +191,66 @@ docker compose up -d --build
 ```
 
 ```mermaid
-graph TD
+graph LR
     subgraph "Docker Network (jledger-network)"
         direction TB
         subgraph "Application Services"
             WEB["[admin-web]<br/>:3000"]
-            WAPI["[wallet-api]<br/>:3002"]
-            AAPI["[admin-api]<br/>:3001"]
-            AUTH["[auth-service]<br/>:3003"]
-            A_AUTH["[admin-auth-service]<br/>:3005"]
-            KYC["[user-kyc-service]<br/>:3004"]
-            CORE["[core-service]<br/>:8081"]
-            WALL["[wallet-service]<br/>:8082"]
+            PORTAL["[portal-service]<br/>:3000<br/>(Monolith)"]
+            FIN["[finance-service]<br/>:8081"]
+            WORK["[notification-worker]<br/>:3001"]
         end
 
         subgraph "Infrastructure"
             PG["[postgres]<br/>:5432<br/>jledger_db"]
             REDIS["[redis]<br/>:6379"]
             KAFKA["[kafka]<br/>:29092"]
-            EURE["[eureka-server]<br/>:8761"]
-            GATE["[api-gateway]<br/>:8080"]
             NGINX["[nginx]<br/>:80/443<br/>HTTPS with SSL"]
-            INT_NGINX["[internal-nginx]<br/>:8081/8443<br/>VPN access"]
         end
     end
 
-    %% Service Connections
-    WEB --> AAPI
-    WAPI --> GATE
-    WAPI --> AUTH
-    WAPI --> KYC
-    WAPI --> WALL
-    AAPI --> CORE
-    AAPI --> AUTH
-    AAPI --> A_AUTH
-    AAPI --> KYC
-    AAPI --> WALL
-    GATE --> CORE
+    subgraph "External"
+        APP["[wallet-app]<br/>Mobile Device"]
+        BROWSER["[Browser]<br/>Admin User"]
+    end
 
-    %% Service Discovery
-    CORE --> EURE
-    WALL --> EURE
-    GATE --> EURE
+    %% Service Connections
+    WEB --> PORTAL
+    PORTAL --> FIN
+    WORK --> KAFKA
+    FIN --> KAFKA
+
+    %% External Connections via Nginx
+    APP --> NGINX
+    BROWSER --> NGINX
 
     %% Database Connections
-    AUTH -->|auth_schema| PG
-    A_AUTH -->|admin_auth_schema| PG
-    KYC -->|user_kyc_schema| PG
-    CORE -->|core_schema| PG
-    WALL --> PG
+    PORTAL -->|identity,kyc,admin,integration,audit| PG
+    FIN -->|finance| PG
 
     %% Cache Connections
-    AUTH --> REDIS
-    A_AUTH --> REDIS
-    CORE --> REDIS
-    WALL --> REDIS
+    PORTAL --> REDIS
+    FIN --> REDIS
 
     %% Kafka Connections
-    CORE --> KAFKA
-    WALL --> KAFKA
+    FIN --> KAFKA
+    WORK --> KAFKA
 
-    %% Nginx Gateways
-    NGINX --> WAPI
-    NGINX --> AAPI
-    INT_NGINX --> WEB
-    INT_NGINX --> AAPI
+    %% Nginx Gateway
+    NGINX --> PORTAL
+    NGINX --> FIN
+    NGINX --> WEB
 
-    style WEB fill:#fff4e1,stroke:#f57c00
-    style WAPI fill:#e1f5ff,stroke:#0288d1
-    style AAPI fill:#e1f5ff,stroke:#0288d1
-    style AUTH fill:#e8f5e9,stroke:#388e3c
-    style A_AUTH fill:#e8f5e9,stroke:#388e3c
-    style KYC fill:#e8f5e9,stroke:#388e3c
-    style CORE fill:#e8f5e9,stroke:#388e3c
-    style WALL fill:#e8f5e9,stroke:#388e3c
-    style PG fill:#f3e5f5,stroke:#7b1fa2
-    style REDIS fill:#f3e5f5,stroke:#7b1fa2
-    style KAFKA fill:#f3e5f5,stroke:#7b1fa2
-    style EURE fill:#e8f5e9,stroke:#388e3c
-    style GATE fill:#e8f5e9,stroke:#388e3c
-    style NGINX fill:#ffebee,stroke:#c62828
-    style INT_NGINX fill:#e8f5e9,stroke:#1565c0
+    style WEB fill:#fff4e1,stroke:#e65100
+    style APP fill:#fff4e1,stroke:#e65100
+    style BROWSER fill:#e8f5e9,stroke:#1b5e20
+    style PORTAL fill:#e1f5ff,stroke:#0d47a1
+    style FIN fill:#e8f5e9,stroke:#1b5e20
+    style WORK fill:#e8f5e9,stroke:#1b5e20
+    style PG fill:#f3e5f5,stroke:#4a148c
+    style REDIS fill:#f3e5f5,stroke:#4a148c
+    style KAFKA fill:#f3e5f5,stroke:#4a148c
+    style NGINX fill:#ffebee,stroke:#b71c1c
 ```
 
 > [!NOTE]
