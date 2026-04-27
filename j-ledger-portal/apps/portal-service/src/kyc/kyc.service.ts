@@ -4,18 +4,22 @@ import {
   ConflictException,
   UnauthorizedException,
   InternalServerErrorException,
+  Logger,
 } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { ConfigService } from '@nestjs/config';
+import { FinanceService } from '../integration/finance.service';
 import { createHash, randomBytes, createCipheriv, randomUUID } from 'crypto';
 
 @Injectable()
 export class KycService {
   private readonly OCR_THRESHOLD = 0.85;
+  private readonly logger = new Logger(KycService.name);
 
   constructor(
     private readonly prisma: PrismaService,
     private readonly configService: ConfigService,
+    private readonly financeService: FinanceService,
   ) {}
 
   async getKYCStatus(userId: string) {
@@ -41,10 +45,38 @@ export class KycService {
   }
 
   async approveDocument(documentId: string) {
-    return this.prisma.kYCDocument.update({
+    const document = await this.prisma.kYCDocument.findUnique({
+      where: { id: documentId },
+    });
+
+    if (!document) {
+      throw new BadRequestException('Document not found');
+    }
+
+    const updated = await this.prisma.kYCDocument.update({
       where: { id: documentId },
       data: { status: 'APPROVED' },
     });
+
+    // Check if this is the second approved document (wallet activation trigger)
+    const documents = await this.prisma.kYCDocument.findMany({
+      where: { userId: document.userId },
+    });
+
+    const approvedCount = documents.filter((d) => d.status === 'APPROVED').length;
+
+    // Activate wallet when 2 documents are approved
+    if (approvedCount >= 2) {
+      try {
+        const wallet = await this.financeService.activateWallet(document.userId);
+        this.logger.log(`Wallet activated for user ${document.userId}: ${wallet.walletId}`);
+      } catch (error) {
+        this.logger.error(`Failed to activate wallet for user ${document.userId}`, error);
+        // Don't throw - wallet activation can be retried manually
+      }
+    }
+
+    return updated;
   }
 
   async rejectDocument(documentId: string, reason: string) {
@@ -243,6 +275,145 @@ export class KycService {
     return {
       isMatch,
       verificationStatus: isMatch ? 'APPROVED' : 'REJECTED',
+    };
+  }
+
+  // ==================== Simple KYC Mode (For Testing) ====================
+
+  async uploadIdCardSimple(userId: string, idCardImage: Buffer) {
+    this.logger.log(`[KYC] STEP 5: Uploading ID card for user ${userId}`);
+    this.logger.log(`[KYC] Image buffer size: ${idCardImage ? idCardImage.length : 'null'} bytes`);
+
+    const idCardHash = this.hashBuffer(idCardImage);
+    const idCardKey = `kyc/${userId}/id-card.jpg`;
+
+    // TODO: Upload to Storage (implement storage provider)
+    const idCardUrl = `https://storage.example.com/${idCardKey}`;
+
+    // Simple mode: Skip OCR, just save the image
+    const livenessSessionId = randomUUID();
+    this.logger.log(`[KYC] Generated livenessSessionId: ${livenessSessionId}`);
+
+    try {
+      await this.prisma.$transaction(async (tx) => {
+        await tx.kYCData.upsert({
+          where: { userId },
+          update: {
+            idCardImageUrl: idCardUrl,
+            idCardImageSha256: idCardHash,
+            livenessSessionId,
+            verificationStatus: 'PENDING',
+            ocrConfidence: 0,
+          },
+          create: {
+            userId,
+            verificationStatus: 'PENDING',
+            idCardImageUrl: idCardUrl,
+            idCardImageSha256: idCardHash,
+            livenessSessionId,
+            ocrConfidence: 0,
+          },
+        });
+      });
+      this.logger.log(`[KYC] KYC data upserted for user ${userId}`);
+    } catch (error) {
+      this.logger.error(`[KYC] Failed to upsert KYC data for user ${userId}`, error);
+      throw error;
+    }
+
+    // Update user registration state
+    try {
+      await this.prisma.user.update({
+        where: { id: userId },
+        data: { registrationState: 'ID_CARD_UPLOADED' },
+      });
+      this.logger.log(`[KYC] User state updated to ID_CARD_UPLOADED for user ${userId}`);
+    } catch (error) {
+      this.logger.error(`[KYC] Failed to update user state for user ${userId}`, error);
+      throw error;
+    }
+
+    this.logger.log(
+      `[KYC] STEP 5 Complete: ID card uploaded for user ${userId}, state: ID_CARD_UPLOADED`,
+    );
+
+    return {
+      extractedData: {
+        idCardNumber: '1234567890123',
+        firstName: 'John',
+        lastName: 'Doe',
+        thaiName: 'จอห์น โด',
+        prefix: 'Mr.',
+        dateOfBirth: '01/01/1990',
+        idCardIssueDate: '01/01/2010',
+        idCardExpiryDate: '01/01/2030',
+        religion: 'Buddhist',
+      },
+      livenessSessionId,
+    };
+  }
+
+  async submitSelfieSimple(userId: string, selfieImage: Buffer) {
+    this.logger.log(`[KYC] STEP 6: Submitting selfie for user ${userId}`);
+    this.logger.log(`[KYC] Selfie buffer size: ${selfieImage ? selfieImage.length : 'null'} bytes`);
+
+    const kyc = await this.prisma.kYCData.findUnique({
+      where: { userId },
+    });
+
+    this.logger.log(
+      `[KYC] Found KYC data: ${!!kyc}, has livenessSessionId: ${!!kyc?.livenessSessionId}`,
+    );
+
+    if (!kyc || !kyc.livenessSessionId) {
+      this.logger.error(`[KYC] ID Card must be uploaded before selfie for user ${userId}`);
+      throw new BadRequestException('ID Card must be uploaded before selfie');
+    }
+
+    const selfieHash = this.hashBuffer(selfieImage);
+    const selfieKey = `kyc/${userId}/selfie.jpg`;
+
+    // TODO: Upload Selfie to storage
+    const selfieUrl = `https://storage.example.com/${selfieKey}`;
+
+    // Simple mode: Skip face verification, just save the image
+    try {
+      await this.prisma.$transaction(async (tx) => {
+        await tx.kYCData.update({
+          where: { userId },
+          data: {
+            selfieImageUrl: selfieUrl,
+            selfieImageSha256: selfieHash,
+            verificationStatus: 'APPROVED', // Auto-approve in simple mode
+            verifiedAt: new Date(),
+          },
+        });
+      });
+      this.logger.log(`[KYC] KYC data updated with selfie for user ${userId}`);
+    } catch (error) {
+      this.logger.error(`[KYC] Failed to update KYC data with selfie for user ${userId}`, error);
+      throw error;
+    }
+
+    // Update user registration state
+    try {
+      await this.prisma.user.update({
+        where: { id: userId },
+        data: { registrationState: 'KYC_VERIFIED' },
+      });
+      this.logger.log(`[KYC] User state updated to KYC_VERIFIED for user ${userId}`);
+    } catch (error) {
+      this.logger.error(`[KYC] Failed to update user state for user ${userId}`, error);
+      throw error;
+    }
+
+    this.logger.log(
+      `[KYC] STEP 6 Complete: Selfie submitted for user ${userId}, state: KYC_VERIFIED`,
+    );
+
+    return {
+      isMatch: true,
+      verificationStatus: 'APPROVED',
     };
   }
 

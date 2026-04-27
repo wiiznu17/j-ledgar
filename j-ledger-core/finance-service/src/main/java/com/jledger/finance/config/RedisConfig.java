@@ -17,9 +17,9 @@ public class RedisConfig {
 
     @Bean(destroyMethod = "shutdown")
     public RedissonClient redissonClient(
-            @Value("${spring.redis.host:redis}") String redisHost,
+            @Value("${spring.redis.host:localhost}") String redisHost,
             @Value("${spring.redis.port:6379}") int redisPort,
-            @Value("${spring.redis.password:}") String redisPassword
+            @Value("${spring.redis.password:redis_password}") String redisPassword
     ) {
         Config config = new Config();
         SingleServerConfig singleServerConfig = config.useSingleServer()

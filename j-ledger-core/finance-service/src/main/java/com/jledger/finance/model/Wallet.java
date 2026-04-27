@@ -5,14 +5,14 @@ import java.math.BigDecimal;
 import java.time.LocalDateTime;
 
 @Entity
-@Table(name = "wallets")
+@Table(name = "wallets", schema = "finance")
 public class Wallet {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(name = "user_id", nullable = false, unique = true)
-    private Long userId;
+    @Column(name = "user_id", nullable = false, unique = true, length = 36)
+    private String userId;
 
     @Column(name = "wallet_id", nullable = false, unique = true)
     private String walletId;
@@ -59,8 +59,8 @@ public class Wallet {
     public Long getId() { return id; }
     public void setId(Long id) { this.id = id; }
 
-    public Long getUserId() { return userId; }
-    public void setUserId(Long userId) { this.userId = userId; }
+    public String getUserId() { return userId; }
+    public void setUserId(String userId) { this.userId = userId; }
 
     public String getWalletId() { return walletId; }
     public void setWalletId(String walletId) { this.walletId = walletId; }

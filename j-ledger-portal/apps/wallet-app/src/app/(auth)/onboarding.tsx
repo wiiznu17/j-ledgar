@@ -164,7 +164,7 @@ export default function OnboardingScreen() {
   const handlePhoneSubmit = async () => {
     setIsLoading(true);
     try {
-      const res = await axios.post(`${API_URL}/auth/register/init`, { phoneNumber: phone });
+      const res = await axios.post(`${API_URL}/identity/register/init`, { phoneNumber: phone });
       setChallengeId(res.data.challengeId);
       setStep('OTP');
       setTimer(60);
@@ -181,7 +181,7 @@ export default function OnboardingScreen() {
     console.log('[Onboarding] Verifying OTP:', otpString, 'for challenge:', challengeId);
 
     try {
-      const res = await axios.post(`${API_URL}/auth/register/verify-otp`, {
+      const res = await axios.post(`${API_URL}/identity/register/verify-otp`, {
         phoneNumber: phone,
         challengeId,
         otp: otpString,
@@ -202,11 +202,11 @@ export default function OnboardingScreen() {
     setIsLoading(true);
     try {
       const res = await axios.post(
-        `${API_URL}/auth/register/accept-terms`,
+        `${API_URL}/identity/register/accept-terms`,
         { termsVersion: '1.0' },
         { headers: { Authorization: `Bearer ${regToken}` } },
       );
-      await setRegToken(res.data.regToken);
+      if (res.data.regToken) await setRegToken(res.data.regToken);
       setStep('OCR_GUIDE');
     } catch (err: any) {
       Alert.alert('Error', 'Failed to accept terms');
@@ -246,14 +246,14 @@ export default function OnboardingScreen() {
           type: 'image/jpeg',
         } as any);
 
-        const res = await axios.post(`${API_URL}/kyc/id-card`, formData, {
+        const res = await axios.post(`${API_URL}/kyc/upload-id-card/simple`, formData, {
           headers: {
             Authorization: `Bearer ${regToken}`,
             'Content-Type': 'multipart/form-data',
           },
         });
 
-        await setRegToken(res.data.regToken);
+        if (res.data.regToken) await setRegToken(res.data.regToken);
         setLivenessSessionId(res.data.livenessSessionId);
 
         const extracted = res.data.extractedData;
@@ -316,14 +316,14 @@ export default function OnboardingScreen() {
         } as any);
         formData.append('livenessSessionId', livenessSessionId!);
 
-        const res = await axios.post(`${API_URL}/kyc/selfie`, formData, {
+        const res = await axios.post(`${API_URL}/kyc/submit-selfie/simple`, formData, {
           headers: {
             Authorization: `Bearer ${regToken}`,
             'Content-Type': 'multipart/form-data',
           },
         });
 
-        await setRegToken(res.data.regToken);
+        if (res.data.regToken) await setRegToken(res.data.regToken);
         setStep('ADDITIONAL_INFO');
       } catch (err: any) {
         Alert.alert('Face Match Failed', 'Identity could not be verified. Please try again.');
@@ -337,7 +337,7 @@ export default function OnboardingScreen() {
     setIsLoading(true);
     try {
       const res = await axios.post(
-        `${API_URL}/auth/register/profile`,
+        `${API_URL}/identity/register/profile`,
         {
           firstName,
           lastName,
@@ -351,7 +351,7 @@ export default function OnboardingScreen() {
           headers: { Authorization: `Bearer ${regToken}` },
         },
       );
-      await setRegToken(res.data.regToken);
+      if (res.data.regToken) await setRegToken(res.data.regToken);
       setStep('SET_PASSWORD');
     } catch (err: any) {
       Alert.alert('Error', 'Failed to save profile');
@@ -364,11 +364,11 @@ export default function OnboardingScreen() {
     setIsLoading(true);
     try {
       const res = await axios.post(
-        `${API_URL}/auth/register/password`,
+        `${API_URL}/identity/register/password`,
         { password },
         { headers: { Authorization: `Bearer ${regToken}` } },
       );
-      await setRegToken(res.data.regToken);
+      if (res.data.regToken) await setRegToken(res.data.regToken);
       setStep('SET_PIN');
     } catch (err: any) {
       Alert.alert('Error', 'Failed to set password');
@@ -384,17 +384,17 @@ export default function OnboardingScreen() {
       const deviceName = getDeviceName();
 
       const res = await axios.post(
-        `${API_URL}/auth/register/pin`,
+        `${API_URL}/identity/register/pin`,
         { pin: finalPin, deviceId, deviceName },
         { headers: { Authorization: `Bearer ${regToken}` } },
       );
 
-      const newToken = res.data.regToken;
-      await setRegToken(newToken);
+      const newToken = res.data.regToken || regToken;
+      if (res.data.regToken) await setRegToken(newToken);
 
       // Atomic Complete call - use the fresh token from the response
       const completeRes = await axios.post(
-        `${API_URL}/auth/register/complete`,
+        `${API_URL}/identity/register/complete`,
         {},
         {
           headers: { Authorization: `Bearer ${newToken}` },

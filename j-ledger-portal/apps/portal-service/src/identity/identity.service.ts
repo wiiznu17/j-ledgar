@@ -12,7 +12,17 @@ import { PrismaService } from '../prisma/prisma.service';
 import { REDIS_CLIENT } from '../common/constants';
 import Redis from 'ioredis';
 import { ISmsProvider } from '../integrations/interfaces/sms-provider.interface';
-import { RegisterInitDto, RegisterVerifyOtpDto, LoginDto, RefreshTokenDto } from './dto/auth.dto';
+import { FinanceService } from '../integration/finance.service';
+import {
+  RegisterInitDto,
+  RegisterVerifyOtpDto,
+  LoginDto,
+  RefreshTokenDto,
+  RegisterPasswordDto,
+  RegisterPinDto,
+  RegisterProfileDto,
+  AcceptTermsDto,
+} from './dto/auth.dto';
 import * as bcrypt from 'bcrypt';
 import { randomUUID } from 'crypto';
 
@@ -61,6 +71,7 @@ export class IdentityService {
     private readonly configService: ConfigService,
     @Inject(REDIS_CLIENT) private readonly redis: Redis,
     @Inject(ISmsProvider) private readonly smsProvider: ISmsProvider,
+    private readonly financeService: FinanceService,
   ) {
     this.accessSecret = this.requireEnv('JWT_ACCESS_SECRET');
     this.refreshSecret = this.requireEnv('JWT_REFRESH_SECRET');
@@ -83,23 +94,38 @@ export class IdentityService {
 
   async registerInit(dto: RegisterInitDto, context?: { ip?: string; userAgent?: string }) {
     const phoneNumber = this.normalizePhone(dto.phoneNumber);
-    this.logger.log(`[Register] Initiating registration for ${phoneNumber}`);
+    this.logger.log(`[Register] STEP 1: Initiating registration for ${phoneNumber}`);
 
     let user = await this.prisma.user.findUnique({
       where: { phoneNumber },
     });
 
     if (!user) {
+      this.logger.log(`[Register] Creating new user for ${phoneNumber}`);
       user = await this.prisma.user.create({
         data: {
           phoneNumber,
           status: 'ACTIVE',
-          registrationState: 'PENDING',
+          registrationState: 'PENDING_OTP',
         },
       });
+    } else {
+      this.logger.log(
+        `[Register] Existing user found for ${phoneNumber}, current state: ${user.registrationState}`,
+      );
+      // Reset registration state for fresh start
+      if (user.registrationState !== 'COMPLETED') {
+        this.logger.log(`[Register] Resetting registration state for ${phoneNumber}`);
+        await this.prisma.user.update({
+          where: { id: user.id },
+          data: { registrationState: 'PENDING_OTP' },
+        });
+        user.registrationState = 'PENDING_OTP';
+      }
     }
 
     if (user.registrationState === 'COMPLETED') {
+      this.logger.warn(`[Register] User ${phoneNumber} already registered`);
       throw new ConflictException('User already registered');
     }
 
@@ -108,6 +134,10 @@ export class IdentityService {
       ipAddress: context?.ip,
       userAgent: context?.userAgent,
     });
+
+    this.logger.log(
+      `[Register] STEP 1 Complete: OTP challenge created for ${phoneNumber}, state: PENDING_OTP`,
+    );
 
     return {
       challengeId: challenge.id,
@@ -120,11 +150,16 @@ export class IdentityService {
     context?: { ip?: string; userAgent?: string },
   ) {
     const phoneNumber = this.normalizePhone(dto.phoneNumber);
+    this.logger.log(`[Register] STEP 2: Verifying OTP for ${phoneNumber}`);
+
     const user = await this.verifyOtpChallenge(dto.challengeId, phoneNumber, dto.otp);
+    this.logger.log(
+      `[Register] OTP verified for user ${user.id}, current state: ${user.registrationState}`,
+    );
 
     await this.prisma.user.update({
       where: { id: user.id },
-      data: { registrationState: 'INITIATED' },
+      data: { registrationState: 'OTP_VERIFIED' },
     });
 
     await this.logSecurityEvent(user.id, 'REGISTER_OTP_VERIFIED', {
@@ -132,9 +167,11 @@ export class IdentityService {
       userAgent: context?.userAgent,
     });
 
+    this.logger.log(`[Register] STEP 2 Complete: State updated to OTP_VERIFIED for ${phoneNumber}`);
+
     return {
-      regToken: await this.signRegistrationToken(user.id, 'INITIATED'),
-      nextState: 'INITIATED',
+      regToken: await this.signRegistrationToken(user.id, 'OTP_VERIFIED'),
+      nextState: 'OTP_VERIFIED',
     };
   }
 
@@ -502,7 +539,7 @@ export class IdentityService {
         take: limit,
         select: {
           id: true,
-          phone: true,
+          phoneNumber: true,
           email: true,
           createdAt: true,
           status: true,
@@ -527,13 +564,13 @@ export class IdentityService {
     return this.prisma.user.findMany({
       where: {
         OR: [
-          { phone: { contains: query, mode: 'insensitive' } },
+          { phoneNumber: { contains: query, mode: 'insensitive' } },
           { email: { contains: query, mode: 'insensitive' } },
         ],
       },
       select: {
         id: true,
-        phone: true,
+        phoneNumber: true,
         email: true,
         createdAt: true,
         status: true,
@@ -545,7 +582,7 @@ export class IdentityService {
   async updateUserStatus(id: string, status: string) {
     return this.prisma.user.update({
       where: { id },
-      data: { status },
+      data: { status: status as any },
     });
   }
 
@@ -593,34 +630,352 @@ export class IdentityService {
 
   // ==================== Placeholder Methods ====================
 
-  async acceptTerms(authorization: string | undefined, dto: any, context?: any) {
-    // TODO: Implement terms acceptance logic
+  async acceptTerms(authorization: string | undefined, dto: AcceptTermsDto, context?: any) {
+    if (!authorization) {
+      throw new UnauthorizedException('Authorization header required');
+    }
+
+    const token = authorization.replace('Bearer ', '');
+    const payload = await this.jwtService.verifyAsync(token, {
+      secret: this.registrationSecret,
+    });
+
+    if (payload.typ !== 'registration') {
+      throw new UnauthorizedException('Invalid token type');
+    }
+
+    this.logger.log(`[Register] STEP 3: Accepting terms for user ${payload.sub}`);
+
+    const user = await this.prisma.user.findUnique({
+      where: { id: payload.sub },
+    });
+
+    if (!user) {
+      throw new BadRequestException('User not found');
+    }
+
+    // Save consent (upsert to handle re-acceptance)
+    await this.prisma.userConsent.upsert({
+      where: {
+        userId_consentType: {
+          userId: user.id,
+          consentType: 'TERMS_OF_SERVICE',
+        },
+      },
+      update: {
+        acceptedAt: new Date(),
+        withdrawnAt: null,
+      },
+      create: {
+        userId: user.id,
+        consentType: 'TERMS_OF_SERVICE',
+        acceptedAt: new Date(),
+      },
+    });
+    this.logger.log(`[Register] Consent saved for user ${user.id}`);
+
+    // Update state
+    await this.prisma.user.update({
+      where: { id: user.id },
+      data: { registrationState: 'TC_ACCEPTED' },
+    });
+
+    this.logger.log(`[Register] STEP 3 Complete: State updated to TC_ACCEPTED for user ${user.id}`);
+
     return { success: true };
   }
 
-  async registerProfile(authorization: string | undefined, dto: any, context?: any) {
-    // TODO: Implement profile registration logic
+  async registerProfile(authorization: string | undefined, dto: RegisterProfileDto, context?: any) {
+    if (!authorization) {
+      throw new UnauthorizedException('Authorization header required');
+    }
+
+    const token = authorization.replace('Bearer ', '');
+    const payload = await this.jwtService.verifyAsync(token, {
+      secret: this.registrationSecret,
+    });
+
+    if (payload.typ !== 'registration') {
+      throw new UnauthorizedException('Invalid token type');
+    }
+
+    this.logger.log(`[Register] STEP 4: Registering profile for user ${payload.sub}`);
+
+    const user = await this.prisma.user.findUnique({
+      where: { id: payload.sub },
+    });
+
+    if (!user) {
+      throw new BadRequestException('User not found');
+    }
+
+    // Update user profile - save to userSettings since User model doesn't have firstName/lastName
+    await this.prisma.userSetting.upsert({
+      where: { userId_key: { userId: user.id, key: 'profile' } },
+      create: {
+        userId: user.id,
+        key: 'profile',
+        value: JSON.stringify({
+          firstName: dto.firstName,
+          lastName: dto.lastName,
+          address: dto.address,
+          occupation: dto.occupation,
+          incomeRange: dto.incomeRange,
+          sourceOfFunds: dto.sourceOfFunds,
+          purposeOfAccount: dto.purposeOfAccount,
+        }),
+      },
+      update: {
+        value: JSON.stringify({
+          firstName: dto.firstName,
+          lastName: dto.lastName,
+          address: dto.address,
+          occupation: dto.occupation,
+          incomeRange: dto.incomeRange,
+          sourceOfFunds: dto.sourceOfFunds,
+          purposeOfAccount: dto.purposeOfAccount,
+        }),
+      },
+    });
+    this.logger.log(`[Register] Profile saved for user ${user.id}`);
+
+    // Update state
+    await this.prisma.user.update({
+      where: { id: user.id },
+      data: { registrationState: 'PROFILE_COMPLETED' },
+    });
+
+    this.logger.log(
+      `[Register] STEP 4 Complete: State updated to PROFILE_COMPLETED for user ${user.id}`,
+    );
+
     return { success: true };
   }
 
-  async registerPassword(authorization: string | undefined, dto: any, context?: any) {
-    // TODO: Implement password registration logic
+  async registerPassword(
+    authorization: string | undefined,
+    dto: RegisterPasswordDto,
+    context?: any,
+  ) {
+    if (!authorization) {
+      throw new UnauthorizedException('Authorization header required');
+    }
+
+    const token = authorization.replace('Bearer ', '');
+    const payload = await this.jwtService.verifyAsync(token, {
+      secret: this.registrationSecret,
+    });
+
+    if (payload.typ !== 'registration') {
+      throw new UnauthorizedException('Invalid token type');
+    }
+
+    this.logger.log(`[Register] STEP 5: Setting password for user ${payload.sub}`);
+
+    const user = await this.prisma.user.findUnique({
+      where: { id: payload.sub },
+    });
+
+    if (!user) {
+      throw new BadRequestException('User not found');
+    }
+
+    const passwordHash = await bcrypt.hash(dto.password, 10);
+
+    await this.prisma.user.update({
+      where: { id: user.id },
+      data: { passwordHash, registrationState: 'PASSWORD_SET' },
+    });
+    this.logger.log(`[Register] Password saved for user ${user.id}`);
+
+    await this.logSecurityEvent(user.id, 'PASSWORD_SET', {
+      ipAddress: context?.ip,
+      userAgent: context?.userAgent,
+    });
+
+    this.logger.log(
+      `[Register] STEP 5 Complete: State updated to PASSWORD_SET for user ${user.id}`,
+    );
+
     return { success: true };
   }
 
-  async registerPin(authorization: string | undefined, dto: any, context?: any) {
-    // TODO: Implement PIN registration logic
+  async registerPin(authorization: string | undefined, dto: RegisterPinDto, context?: any) {
+    if (!authorization) {
+      throw new UnauthorizedException('Authorization header required');
+    }
+
+    const token = authorization.replace('Bearer ', '');
+    const payload = await this.jwtService.verifyAsync(token, {
+      secret: this.registrationSecret,
+    });
+
+    if (payload.typ !== 'registration') {
+      throw new UnauthorizedException('Invalid token type');
+    }
+
+    this.logger.log(`[Register] STEP 6: Setting PIN for user ${payload.sub}`);
+
+    const user = await this.prisma.user.findUnique({
+      where: { id: payload.sub },
+    });
+
+    if (!user) {
+      throw new BadRequestException('User not found');
+    }
+
+    const pinHash = await bcrypt.hash(dto.pin, 10);
+
+    // Register device
+    await this.prisma.userDevice.upsert({
+      where: {
+        userId_deviceIdentifier: {
+          userId: user.id,
+          deviceIdentifier: dto.deviceId,
+        },
+      },
+      create: {
+        userId: user.id,
+        deviceIdentifier: dto.deviceId,
+        deviceName: dto.deviceName,
+        trustLevel: 'TRUSTED',
+      },
+      update: {
+        deviceName: dto.deviceName,
+        lastSeenAt: new Date(),
+      },
+    });
+    this.logger.log(`[Register] Device registered for user ${user.id}`);
+
+    await this.prisma.user.update({
+      where: { id: user.id },
+      data: { pinHash, registrationState: 'CREDENTIALS_SET' },
+    });
+    this.logger.log(`[Register] PIN saved for user ${user.id}`);
+
+    await this.logSecurityEvent(user.id, 'PIN_SETUP', {
+      ipAddress: context?.ip,
+      userAgent: context?.userAgent,
+    });
+
+    this.logger.log(
+      `[Register] STEP 6 Complete: State updated to CREDENTIALS_SET for user ${user.id}`,
+    );
+
     return { success: true };
   }
 
   async getRegistrationStatus(authorization: string | undefined) {
-    // TODO: Implement registration status check
-    return { state: 'PENDING' };
+    if (!authorization) {
+      throw new UnauthorizedException('Authorization header required');
+    }
+
+    const token = authorization.replace('Bearer ', '');
+
+    let payload;
+    try {
+      payload = await this.jwtService.verifyAsync(token, {
+        secret: this.registrationSecret,
+      });
+    } catch (error: any) {
+      if (error.name === 'TokenExpiredError') {
+        this.logger.warn(`[Register] Token expired in getRegistrationStatus`);
+        throw new UnauthorizedException('Token expired');
+      }
+      this.logger.warn(`[Register] Invalid token in getRegistrationStatus: ${error.message}`);
+      throw new UnauthorizedException('Invalid token');
+    }
+
+    this.logger.log(`[Register] Getting registration status for user ${payload.sub}`);
+
+    const user = await this.prisma.user.findUnique({
+      where: { id: payload.sub },
+      include: {
+        userSettings: true,
+      },
+    });
+
+    if (!user) {
+      throw new BadRequestException('User not found');
+    }
+
+    this.logger.log(`[Register] Current state for user ${user.id}: ${user.registrationState}`);
+
+    // Extract profile data from settings
+    const profileSetting = user.userSettings.find((s) => s.key === 'profile');
+    const profileData = profileSetting ? JSON.parse(profileSetting.value) : null;
+
+    return {
+      state: user.registrationState,
+      prefilledData: profileData
+        ? {
+            firstName: profileData.firstName,
+            lastName: profileData.lastName,
+            ...profileData,
+          }
+        : null,
+    };
   }
 
   async completeRegistration(authorization: string | undefined, context?: any) {
-    // TODO: Implement registration completion logic
-    return { success: true };
+    if (!authorization) {
+      throw new UnauthorizedException('Authorization header required');
+    }
+
+    const token = authorization.replace('Bearer ', '');
+    const payload = await this.jwtService.verifyAsync(token, {
+      secret: this.registrationSecret,
+    });
+
+    if (payload.typ !== 'registration') {
+      throw new UnauthorizedException('Invalid token type');
+    }
+
+    this.logger.log(`[Register] STEP 7: Completing registration for user ${payload.sub}`);
+
+    const user = await this.prisma.user.findUnique({
+      where: { id: payload.sub },
+    });
+
+    if (!user) {
+      throw new BadRequestException('User not found');
+    }
+
+    if (user.registrationState === 'COMPLETED') {
+      throw new ConflictException('Registration already completed');
+    }
+
+    // Create wallet in finance service
+    try {
+      this.logger.log(`[Register] Creating wallet for user ${user.id}`);
+      const wallet = await this.financeService.createWallet(user.id, 'THB');
+      this.logger.log(`[Register] Wallet created for user ${user.id}: ${wallet.walletId}`);
+
+      // Update user with wallet info
+      await this.prisma.user.update({
+        where: { id: user.id },
+        data: {
+          registrationState: 'COMPLETED',
+          ledgerAccountId: wallet.walletId,
+        },
+      });
+
+      await this.logSecurityEvent(user.id, 'REGISTRATION_COMPLETED', {
+        walletId: wallet.walletId,
+      });
+
+      this.logger.log(
+        `[Register] STEP 7 Complete: Registration completed for user ${user.id}, state: COMPLETED`,
+      );
+
+      return {
+        success: true,
+        walletId: wallet.walletId,
+      };
+    } catch (error) {
+      this.logger.error(`Failed to create wallet for user ${user.id}`, error);
+      throw new BadRequestException('Failed to create wallet');
+    }
   }
 
   async verifyDevice(dto: any, context?: any) {

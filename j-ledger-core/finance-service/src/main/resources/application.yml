@@ -7,8 +7,12 @@ spring:
 
   datasource:
     url: ${JLEDGER_DATASOURCE_URL:jdbc:postgresql://localhost:5432/jledger_db}
-    username: ${JLEDGER_DATASOURCE_USERNAME:postgres}
-    password: ${JLEDGER_DATASOURCE_PASSWORD:postgres}
+    username: ${JLEDGER_DATASOURCE_USERNAME:ledger_admin}
+    password: ${JLEDGER_DATASOURCE_PASSWORD:ledger_password}
+
+jledger:
+  internal:
+    secret: ${JLEDGER_INTERNAL_SECRET:default_internal_secret}
 
   jpa:
     hibernate:
@@ -23,6 +27,7 @@ spring:
     enabled: false
     locations: classpath:db/migration
     schemas: finance
+    baseline-on-migrate: false
 
   redis:
     redisson:

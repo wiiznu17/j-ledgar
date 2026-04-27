@@ -99,7 +99,7 @@ export default function LoginScreen() {
       const deviceId = await getStableDeviceId();
       const deviceName = getDeviceName();
 
-      const res = await axios.post(`${API_URL}/auth/login`, {
+      const res = await axios.post(`${API_URL}/identity/login`, {
         phoneNumber: phone,
         password,
         deviceId,
@@ -134,7 +134,7 @@ export default function LoginScreen() {
       const deviceId = await getStableDeviceId();
       const deviceName = getDeviceName();
 
-      const res = await axios.post(`${API_URL}/auth/device/verify`, {
+      const res = await axios.post(`${API_URL}/identity/device/verify`, {
         phoneNumber: phone,
         challengeId,
         otp: otpString,

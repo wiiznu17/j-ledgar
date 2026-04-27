@@ -29,9 +29,12 @@ export const SetPasswordStep: React.FC<SetPasswordStepProps> = ({
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
 
   const rules = [
-    { label: 'At least 8 characters', met: password.length >= 8 },
-    { label: 'Contains at least 1 number', met: /\d/.test(password) },
-    { label: 'Passwords match', met: password && password === confirmPassword },
+    { label: 'At least 12 characters', met: password.length >= 12 },
+    { label: 'Uppercase & lowercase letters', met: /[a-z]/.test(password) && /[A-Z]/.test(password) },
+    { label: 'At least 1 number', met: /\d/.test(password) },
+    { label: 'At least 1 special character', met: /[!@#$%^&*(),.?":{}|<>]/.test(password) },
+    { label: 'No repeating/sequential patterns', met: password.length > 0 && !/(123|234|345|456|567|678|789|890|098|987|876|765|654|543|432|321|210|012|abc|bcd|cde|def|efg|fgh|ghi|hij|ijk|jkl|klm|lmn|mno|nop|opq|pqr|qrs|rst|stu|tuv|uvw|vwx|wxy|xyz|qwe|wer|ert|rty|tyu|yui|uio|iop|pas|asd|sdf|dfg|fgh|ghj|hjk|jkl)/i.test(password) && !/([a-zA-Z0-9])\1{2}/.test(password) && !/(password|admin|user|test|guest|root|login|welcome|hello|monkey|dragon|football|baseball|letmein|master|shadow|sunshine|princess|qwerty)/i.test(password) },
+    { label: 'Passwords match', met: !!password && password === confirmPassword },
   ];
 
   const allMet = rules.every((r) => r.met);
@@ -45,7 +48,7 @@ export const SetPasswordStep: React.FC<SetPasswordStepProps> = ({
           secureTextEntry={!showPassword}
           value={password}
           onChangeText={onPasswordChange}
-          placeholder="Min. 8 characters"
+          placeholder="Min. 12 characters"
           rightElement={
             <TouchableOpacity onPress={() => setShowPassword(!showPassword)}>
               {showPassword ? (
