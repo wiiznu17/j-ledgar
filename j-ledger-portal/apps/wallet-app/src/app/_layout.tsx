@@ -37,7 +37,13 @@ export default function RootLayout() {
   const colorScheme = useColorScheme();
   const router = useRouter();
 
-  const { initialize: initializeAuth, isAuthenticated, isLoading: isAuthLoading } = useAuthStore();
+  const { 
+    initialize: initializeAuth, 
+    isAuthenticated, 
+    isLoading: isAuthLoading,
+    needsPinVerification,
+    hasSession,
+  } = useAuthStore();
 
   const [fontsLoaded, fontError] = useFonts({
     Manrope_400Regular,
@@ -61,10 +67,13 @@ export default function RootLayout() {
   useEffect(() => {
     if (!fontsLoaded || isAuthLoading) return;
 
-    if (!isAuthenticated) {
+    if (needsPinVerification) {
+      // Session exists but needs PIN - go to login which will show PIN step
+      router.replace('/(auth)/login');
+    } else if (!isAuthenticated) {
       router.replace('/(auth)/login');
     }
-  }, [isAuthenticated, isAuthLoading, fontsLoaded]);
+  }, [isAuthenticated, isAuthLoading, fontsLoaded, needsPinVerification]);
 
   if ((!fontsLoaded && !fontError) || isAuthLoading) {
     return null;

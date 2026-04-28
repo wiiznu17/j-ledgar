@@ -1,12 +1,37 @@
-import { Controller, Get, Post, Put, Delete, Body, Param, Query, UseGuards } from '@nestjs/common';
+import { Controller, Get, Post, Put, Delete, Body, Param, Query, UseGuards, Req } from '@nestjs/common';
 import { IntegrationService } from './integration.service';
 import { JwtAuthGuard } from '../common/guards/jwt-auth.guard';
 import { InternalAuthGuard } from '../common/guards/internal-auth.guard';
+
+interface TopUpBody {
+  amount: number;
+  bankAccountId: number;
+}
 
 @Controller('integration')
 @UseGuards(JwtAuthGuard)
 export class IntegrationController {
   constructor(private readonly integrationService: IntegrationService) {}
+
+  // ==================== Dashboard BFF ====================
+
+  @Get('dashboard')
+  async getDashboard(@Req() req: any) {
+    const userId = req.user?.sub;
+    return this.integrationService.getDashboardData(userId);
+  }
+
+  @Get('bank-accounts')
+  async getBankAccounts(@Req() req: any) {
+    const userId = req.user?.sub;
+    return this.integrationService.getLinkedBankAccounts(userId);
+  }
+
+  @Post('topup')
+  async topUp(@Req() req: any, @Body() body: TopUpBody) {
+    const userId = req.user?.sub;
+    return this.integrationService.topUp(userId, body.amount, body.bankAccountId);
+  }
 
   // ==================== Transaction History ====================
 

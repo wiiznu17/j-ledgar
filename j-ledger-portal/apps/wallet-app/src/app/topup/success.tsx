@@ -1,33 +1,40 @@
 import React, { useEffect, useRef } from 'react';
-import { View, Text, TouchableOpacity, ScrollView, Dimensions, Share } from 'react-native';
+import { View, Text, TouchableOpacity, ScrollView, Share } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { CheckCircle2, Share2, Home, Download, ArrowDown } from 'lucide-react-native';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import { MotiView } from 'moti';
 import * as Haptics from 'expo-haptics';
 
-const { width } = Dimensions.get('window');
-
 export default function TopupSuccessScreen() {
   const router = useRouter();
-  const { amount } = useLocalSearchParams();
+  const { amount, transactionId, bankName, accountNumberMasked, createdAt } = useLocalSearchParams<{
+    amount: string;
+    transactionId: string;
+    bankName: string;
+    accountNumberMasked: string;
+    createdAt: string;
+  }>();
   const slipRef = useRef<View>(null);
 
-  const refId = `JL${Math.random().toString(36).substring(2, 10).toUpperCase()}`;
-  const now = new Date();
-  const dateStr = now.toLocaleDateString('en-GB', {
+  const refId = transactionId || '-';
+  const eventDate = createdAt ? new Date(createdAt) : new Date();
+  const dateStr = eventDate.toLocaleDateString('en-GB', {
     day: '2-digit',
     month: 'short',
     year: 'numeric',
   });
-  const timeStr = now.toLocaleTimeString('en-US', {
+  const timeStr = eventDate.toLocaleTimeString('en-US', {
     hour: '2-digit',
     minute: '2-digit',
     hour12: false,
   });
 
+  const displayBankName = bankName || 'Linked Bank Account';
+  const displayAccountMask = accountNumberMasked || '-';
+
   const formattedAmount = amount
-    ? parseFloat(amount as string).toLocaleString(undefined, {
+    ? parseFloat(amount).toLocaleString(undefined, {
         minimumFractionDigits: 2,
         maximumFractionDigits: 2,
       })
@@ -50,7 +57,6 @@ export default function TopupSuccessScreen() {
   return (
     <SafeAreaView className="flex-1 bg-[#f48fb1]" edges={['top']}>
       <ScrollView contentContainerStyle={{ flexGrow: 1 }} showsVerticalScrollIndicator={false}>
-        {/* Success Header */}
         <View className="items-center justify-center pt-8 pb-4">
           <MotiView
             from={{ scale: 0, opacity: 0 }}
@@ -65,14 +71,12 @@ export default function TopupSuccessScreen() {
           </Text>
         </View>
 
-        {/* e-Slip Container */}
         <MotiView
           from={{ translateY: 100, opacity: 0 }}
           animate={{ translateY: 0, opacity: 1 }}
           transition={{ delay: 100, type: 'timing', duration: 400 }}
           className="flex-1 bg-[#f8f9fe] rounded-t-[2.5rem] px-5 pt-8 pb-10"
         >
-          {/* Slip Card */}
           <View
             ref={slipRef}
             className="bg-white rounded-[2rem] shadow-sm border border-gray-100 overflow-hidden"
@@ -100,25 +104,23 @@ export default function TopupSuccessScreen() {
                 <ArrowDown size={14} color="#9ca3af" />
               </View>
 
-              {/* From */}
               <View className="flex-row items-center mb-6 relative z-10">
-                <View className="w-12 h-12 border border-gray-100 rounded-[1.2rem] bg-purple-50 items-center justify-center">
-                  <Text className="font-manrope font-black text-purple-500 text-lg">SCB</Text>
+                <View className="w-12 h-12 border border-gray-100 rounded-[1.2rem] bg-pink-50 items-center justify-center">
+                  <Text className="font-manrope font-black text-pink-500 text-xs">
+                    {displayBankName.slice(0, 4).toUpperCase()}
+                  </Text>
                 </View>
                 <View className="ml-4 flex-1">
                   <Text className="text-[10px] font-manrope font-black text-gray-400 uppercase tracking-widest mb-0.5">
                     From
                   </Text>
-                  <Text className="text-sm font-manrope font-black text-gray-800">
-                    SCB Savings Account
-                  </Text>
+                  <Text className="text-sm font-manrope font-black text-gray-800">{displayBankName}</Text>
                   <Text className="text-[10px] font-manrope font-bold text-gray-400 mt-0.5">
-                    *** *** 4567
+                    {displayAccountMask}
                   </Text>
                 </View>
               </View>
 
-              {/* To */}
               <View className="flex-row items-center relative z-10">
                 <View className="w-12 h-12 border border-gray-100 rounded-[1.2rem] bg-pink-50 items-center justify-center">
                   <Text className="font-manrope font-black text-[#f48fb1] text-lg">J</Text>
@@ -148,7 +150,6 @@ export default function TopupSuccessScreen() {
             </View>
           </View>
 
-          {/* Action Buttons */}
           <View className="flex-row gap-4 mt-6">
             <TouchableOpacity
               onPress={onShare}
@@ -167,9 +168,8 @@ export default function TopupSuccessScreen() {
             </TouchableOpacity>
           </View>
 
-          {/* Back to Home Button */}
           <TouchableOpacity
-            onPress={() => router.push('/(tabs)' as any)}
+            onPress={() => router.replace('/(tabs)' as any)}
             className="w-full h-16 bg-[#f48fb1] rounded-2xl flex-row items-center justify-center gap-2 shadow-lg shadow-pink-200 mt-6 active:scale-95"
           >
             <Home size={20} color="white" />

@@ -3,7 +3,6 @@ import {
   View,
   Text,
   TouchableOpacity,
-  Dimensions,
   ActivityIndicator,
   ScrollView,
   Platform,
@@ -13,37 +12,61 @@ import { ChevronLeft, ArrowRight, ShieldCheck, Wallet, Landmark } from 'lucide-r
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import { MotiView, AnimatePresence } from 'moti';
 import { useScreenCaptureProtection } from '@/hooks/useScreenCaptureProtection';
-
-const { width } = Dimensions.get('window');
+import api from '@/lib/axios';
 
 export default function TopupReviewScreen() {
-  // Prevent screen capture on sensitive topup review
   useScreenCaptureProtection();
 
   const router = useRouter();
-  const { amount } = useLocalSearchParams();
-  const [isProcessing, setIsProcessing] = useState(false);
+  const { amount, bankAccountId, bankName, accountNumberMasked } = useLocalSearchParams<{
+    amount: string;
+    bankAccountId: string;
+    bankName: string;
+    accountNumberMasked: string;
+  }>();
 
-  const topupAmount = parseFloat(amount as string) || 0;
+  const [isProcessing, setIsProcessing] = useState(false);
+  const [error, setError] = useState('');
+
+  const topupAmount = parseFloat(amount || '0') || 0;
   const fee = 0;
   const totalAmount = topupAmount + fee;
 
-  const handleConfirm = () => {
-    if (isProcessing) return; // Guard กันการกดซ้ำรัวๆ
+  const handleConfirm = async () => {
+    if (isProcessing) {
+      return;
+    }
+
     setIsProcessing(true);
-    // Mock Gateway Connection
-    setTimeout(() => {
-      setIsProcessing(false);
-      router.push({
+    setError('');
+
+    try {
+      const res = await api.post('/integration/topup', {
+        amount: topupAmount,
+        bankAccountId: Number(bankAccountId),
+      });
+
+      const data = res.data || {};
+
+      router.replace({
         pathname: '/topup/success',
-        params: { amount },
+        params: {
+          amount: amount || '0',
+          transactionId: data.transactionId,
+          bankName: data.bankName || bankName || '',
+          accountNumberMasked: data.accountNumberMasked || accountNumberMasked || '',
+          createdAt: data.createdAt || '',
+        },
       } as any);
-    }, 1500);
+    } catch (err: any) {
+      setError(err?.response?.data?.message || 'เติมเงินไม่สำเร็จ');
+    } finally {
+      setIsProcessing(false);
+    }
   };
 
   return (
     <SafeAreaView className="flex-1 bg-[#f8f9fe]" edges={['top']}>
-      {/* Header */}
       <View className="px-5 pt-2 pb-4 flex-row items-center justify-between">
         <TouchableOpacity
           onPress={() => !isProcessing && router.back()}
@@ -51,9 +74,7 @@ export default function TopupReviewScreen() {
         >
           <ChevronLeft size={24} color="#1a1a1a" />
         </TouchableOpacity>
-        <Text className="text-lg font-manrope font-black text-gray-800 tracking-tight">
-          Review Top Up
-        </Text>
+        <Text className="text-lg font-manrope font-black text-gray-800 tracking-tight">Review Top Up</Text>
         <View className="w-10" />
       </View>
 
@@ -62,12 +83,7 @@ export default function TopupReviewScreen() {
         contentContainerStyle={{ paddingHorizontal: 20, paddingBottom: 120 }}
         showsVerticalScrollIndicator={false}
       >
-        <MotiView
-          from={{ opacity: 0, translateY: 10 }}
-          animate={{ opacity: 1, translateY: 0 }}
-          className="mt-2"
-        >
-          {/* Main Review Card */}
+        <MotiView from={{ opacity: 0, translateY: 10 }} animate={{ opacity: 1, translateY: 0 }} className="mt-2">
           <View className="bg-white rounded-[2.5rem] p-7 border border-gray-50 shadow-xl shadow-pink-100/40 relative overflow-hidden mb-6">
             <View className="absolute top-0 left-0 right-0 h-2 bg-[#f48fb1]" />
 
@@ -91,30 +107,24 @@ export default function TopupReviewScreen() {
               </View>
             </View>
 
-            {/* Transfer Direction Container */}
             <View className="bg-gray-50/80 rounded-[2rem] p-5 border border-gray-100/50 mb-8 relative">
-              {/* Connector Line */}
               <View className="absolute left-10 top-12 bottom-12 w-[2px] bg-gray-200 border-dashed border-l-[2px] border-gray-200 z-0" />
 
-              {/* From Linked Bank */}
               <View className="flex-row items-center relative z-10 mb-6">
-                <View className="w-10 h-10 bg-purple-50 rounded-xl items-center justify-center shadow-sm border border-purple-100">
-                  <Landmark size={20} color="#a855f7" />
+                <View className="w-10 h-10 bg-pink-50 rounded-xl items-center justify-center shadow-sm border border-pink-100">
+                  <Landmark size={20} color="#f48fb1" />
                 </View>
                 <View className="ml-4 flex-1">
                   <Text className="text-[10px] font-manrope font-black text-gray-400 uppercase tracking-widest mb-0.5">
                     Funding Source
                   </Text>
-                  <Text className="text-sm font-manrope font-black text-gray-800">
-                    SCB Savings Account
-                  </Text>
+                  <Text className="text-sm font-manrope font-black text-gray-800">{bankName || 'Linked Bank Account'}</Text>
                   <Text className="text-[10px] font-manrope font-bold text-gray-400 mt-0.5">
-                    *** *** 4567
+                    {accountNumberMasked || '-'}
                   </Text>
                 </View>
               </View>
 
-              {/* To Wallet */}
               <View className="flex-row items-center relative z-10">
                 <View className="w-10 h-10 bg-pink-50 rounded-xl items-center justify-center border border-pink-100 shadow-sm">
                   <Wallet size={20} color="#f48fb1" />
@@ -124,14 +134,11 @@ export default function TopupReviewScreen() {
                     To
                   </Text>
                   <Text className="text-sm font-manrope font-black text-gray-800">My E-Wallet</Text>
-                  <Text className="text-[10px] font-manrope font-bold text-gray-400 mt-0.5">
-                    J-Ledger Account
-                  </Text>
+                  <Text className="text-[10px] font-manrope font-bold text-gray-400 mt-0.5">J-Ledger Account</Text>
                 </View>
               </View>
             </View>
 
-            {/* Summary Board */}
             <View className="space-y-4">
               <SummaryRow label="Transaction Type" value="Wallet Top Up" />
               <SummaryRow label="Bank Fee" value="FREE" isHighlight />
@@ -147,7 +154,12 @@ export default function TopupReviewScreen() {
             </View>
           </View>
 
-          {/* Trust Banner */}
+          {error ? (
+            <View className="bg-red-50 border border-red-100 rounded-2xl p-4 mb-4">
+              <Text className="text-xs font-manrope font-bold text-red-500 text-center">{error}</Text>
+            </View>
+          ) : null}
+
           <View className="bg-green-50/50 p-5 rounded-2xl border border-green-100/50 flex-row items-center gap-4 shadow-sm mb-4">
             <View className="w-10 h-10 rounded-xl bg-white items-center justify-center border border-green-100">
               <ShieldCheck size={20} color="#22c55e" />
@@ -159,7 +171,6 @@ export default function TopupReviewScreen() {
         </MotiView>
       </ScrollView>
 
-      {/* Floating Action Area */}
       <View
         className="absolute bottom-0 left-0 right-0 px-5 pt-4 pb-8 bg-white/90 border-t border-gray-50"
         style={{ paddingBottom: Platform.OS === 'ios' ? 34 : 24 }}
@@ -167,7 +178,7 @@ export default function TopupReviewScreen() {
         <TouchableOpacity
           disabled={isProcessing}
           onPress={handleConfirm}
-          className={`w-full h-16 rounded-2xl flex-row items-center justify-center gap-3 transition-all ${
+          className={`w-full h-16 rounded-2xl flex-row items-center justify-center gap-3 ${
             isProcessing ? 'bg-pink-300' : 'bg-[#f48fb1] shadow-lg shadow-pink-200 active:scale-95'
           }`}
         >
@@ -182,7 +193,6 @@ export default function TopupReviewScreen() {
         </TouchableOpacity>
       </View>
 
-      {/* Processing Portal */}
       <AnimatePresence>
         {isProcessing && (
           <MotiView

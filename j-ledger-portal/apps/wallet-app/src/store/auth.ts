@@ -15,12 +15,16 @@ interface AuthState {
   refreshToken: string | null;
   isAuthenticated: boolean;
   isLoading: boolean;
+  hasSession: boolean; // true when refresh token exists (user has logged in before on this device)
+  needsPinVerification: boolean; // true when session exists but needs PIN to unlock
   user: WalletUser | null;
   biometricEnabled: boolean;
   setToken: (token: string | null, refreshToken?: string | null) => Promise<void>;
   setUser: (user: WalletUser | null) => void;
   setBiometricEnabled: (enabled: boolean) => Promise<void>;
   verifyPin: (pin: string) => Promise<boolean>;
+  refreshSession: () => Promise<boolean>;
+  unlockWithPin: (pin: string) => Promise<boolean>;
   initialize: () => Promise<void>;
   logout: () => Promise<void>;
 }
@@ -34,6 +38,8 @@ export const useAuthStore = create<AuthState>((set, get) => ({
   refreshToken: null,
   isAuthenticated: false,
   isLoading: true,
+  hasSession: false,
+  needsPinVerification: false,
   user: null,
   biometricEnabled: false,
 
@@ -97,6 +103,42 @@ export const useAuthStore = create<AuthState>((set, get) => ({
     }
   },
 
+  refreshSession: async (): Promise<boolean> => {
+    const { refreshToken } = get();
+    if (!refreshToken) return false;
+
+    try {
+      const API_URL = process.env.EXPO_PUBLIC_API_URL || 'http://localhost:3000';
+      const res = await require('axios').post(
+        `${API_URL}/identity/refresh`,
+        { refreshToken },
+      );
+
+      const { accessToken, refreshToken: newRefreshToken } = res.data;
+      await get().setToken(accessToken, newRefreshToken);
+      console.log('[Auth] Session refreshed successfully');
+      return true;
+    } catch (error: any) {
+      console.error('[Auth] Session refresh failed:', error.response?.data || error.message);
+      return false;
+    }
+  },
+
+  unlockWithPin: async (pin: string): Promise<boolean> => {
+    // First refresh the session to get a valid access token
+    const refreshed = await get().refreshSession();
+    if (!refreshed) {
+      return false;
+    }
+
+    // Then verify the PIN
+    const isValid = await get().verifyPin(pin);
+    if (isValid) {
+      set({ needsPinVerification: false });
+    }
+    return isValid;
+  },
+
   initialize: async () => {
     set({ isLoading: true });
     try {
@@ -124,10 +166,15 @@ export const useAuthStore = create<AuthState>((set, get) => ({
 
       if (token) {
         console.log('[Auth] Restored session from storage');
-        set({ token, refreshToken, isAuthenticated: true, biometricEnabled });
+        set({ token, refreshToken, isAuthenticated: true, hasSession: true, biometricEnabled });
+      } else if (refreshToken) {
+        // Access token gone but refresh token still exists
+        // User needs to verify PIN to resume session
+        console.log('[Auth] Session found but access token expired, PIN verification required');
+        set({ refreshToken, hasSession: true, needsPinVerification: true, isAuthenticated: false, biometricEnabled });
       } else {
         console.log('[Auth] No existing session found');
-        set({ biometricEnabled });
+        set({ hasSession: false, biometricEnabled });
       }
 
       // PIN will be initialized during onboarding flow
@@ -154,6 +201,6 @@ export const useAuthStore = create<AuthState>((set, get) => ({
       await SecureStore.deleteItemAsync('auth_token');
       await SecureStore.deleteItemAsync(REFRESH_TOKEN_KEY);
     }
-    set({ token: null, refreshToken: null, isAuthenticated: false, user: null });
+    set({ token: null, refreshToken: null, isAuthenticated: false, hasSession: false, needsPinVerification: false, user: null });
   },
 }));

@@ -5,7 +5,7 @@ import java.math.BigDecimal;
 import java.time.LocalDateTime;
 
 @Entity
-@Table(name = "transactions")
+@Table(name = "transactions", schema = "finance")
 public class Transaction {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -38,6 +38,7 @@ public class Transaction {
     private String description;
 
     @Column(columnDefinition = "JSONB")
+    @org.hibernate.annotations.ColumnTransformer(write = "?::jsonb")
     private String metadata;
 
     @Column(name = "created_at", nullable = false)

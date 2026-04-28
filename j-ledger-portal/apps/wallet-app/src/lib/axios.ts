@@ -67,10 +67,7 @@ export function getTimeoutForRequest(url?: string): number {
 
 const getBaseUrl = () => {
   if (__DEV__) {
-    if (Platform.OS === 'android') {
-      return 'http://10.0.2.2:8080';
-    }
-    return 'http://localhost:8080';
+    return process.env.EXPO_PUBLIC_API_URL || 'http://localhost:3000';
   }
   return process.env.EXPO_PUBLIC_API_URL || 'https://api.jledger.io';
 };
@@ -138,7 +135,7 @@ api.interceptors.response.use(
 
           // Attempt to refresh the token
           const response = await axios.post(
-            `${getBaseUrl()}/api/auth/refresh`,
+            `${getBaseUrl()}/identity/refresh`,
             { refreshToken },
             {
               headers: { 'Content-Type': 'application/json', 'X-Requested-With': 'XMLHttpRequest' },

@@ -10,6 +10,7 @@ interface PINVerificationProps {
   onSuccess: () => void;
   onFailure?: (error: string) => void;
   onCancel?: () => void;
+  useUnlock?: boolean; // When true, uses unlockWithPin (refreshes session + verifies PIN)
 }
 
 const MAX_ATTEMPTS = 5;
@@ -19,6 +20,7 @@ export const PINVerification: React.FC<PINVerificationProps> = ({
   onSuccess,
   onFailure,
   onCancel,
+  useUnlock = false,
 }) => {
   // Prevent screen capture on PIN verification
   useScreenCaptureProtection();
@@ -30,6 +32,7 @@ export const PINVerification: React.FC<PINVerificationProps> = ({
   const [suspensionEndTime, setSuspensionEndTime] = useState<number | null>(null);
   const [remainingTime, setRemainingTime] = useState<number>(SUSPENSION_MINUTES * 60);
   const verifyPin = useAuthStore((state) => state.verifyPin);
+  const unlockWithPin = useAuthStore((state) => state.unlockWithPin);
 
   // Update remaining suspension time
   React.useEffect(() => {
@@ -59,7 +62,9 @@ export const PINVerification: React.FC<PINVerificationProps> = ({
     setIsVerifying(true);
 
     try {
-      const isValid = await verifyPin(enteredPin);
+      const isValid = useUnlock
+        ? await unlockWithPin(enteredPin)
+        : await verifyPin(enteredPin);
 
       if (isValid) {
         setIsVerifying(false);
