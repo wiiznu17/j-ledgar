@@ -11,10 +11,13 @@ import com.jledger.finance.repository.TransactionRepository;
 import com.jledger.finance.repository.WalletRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.redis.core.RedisTemplate;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -168,6 +171,46 @@ public class WalletService {
         Wallet wallet = walletRepository.findByUserId(userId)
                 .orElseThrow(() -> new RuntimeException("Wallet not found"));
         return transactionRepository.findByFromWalletIdOrToWalletIdOrderByCreatedAtDesc(wallet.getId(), wallet.getId());
+    }
+
+    public List<Transaction> getTransactions(
+            String userId,
+            Integer page,
+            Integer size,
+            TransactionType type,
+            LocalDateTime from,
+            LocalDateTime to
+    ) {
+        Wallet wallet = walletRepository.findByUserId(userId)
+                .orElseThrow(() -> new RuntimeException("Wallet not found"));
+
+        int resolvedPage = Math.max(page == null ? 0 : page, 0);
+        int resolvedSize = Math.min(Math.max(size == null ? 20 : size, 1), 100);
+        Pageable pageable = PageRequest.of(resolvedPage, resolvedSize);
+
+        boolean hasType = type != null;
+        LocalDateTime resolvedFrom = from != null ? from : LocalDateTime.of(1970, 1, 1, 0, 0);
+        LocalDateTime resolvedTo = to != null ? to : LocalDateTime.of(9999, 12, 31, 23, 59);
+        boolean hasDate = from != null || to != null;
+
+        if (hasType && hasDate) {
+            return transactionRepository.findByFromWalletIdOrToWalletIdAndTypeAndCreatedAtGreaterThanEqualAndCreatedAtLessThanOrderByCreatedAtDesc(
+                    wallet.getId(), wallet.getId(), type, resolvedFrom, resolvedTo, pageable
+            );
+        }
+        if (hasType) {
+            return transactionRepository.findByFromWalletIdOrToWalletIdAndTypeOrderByCreatedAtDesc(
+                    wallet.getId(), wallet.getId(), type, pageable
+            );
+        }
+        if (hasDate) {
+            return transactionRepository.findByFromWalletIdOrToWalletIdAndCreatedAtGreaterThanEqualAndCreatedAtLessThanOrderByCreatedAtDesc(
+                    wallet.getId(), wallet.getId(), resolvedFrom, resolvedTo, pageable
+            );
+        }
+        return transactionRepository.findByFromWalletIdOrToWalletIdOrderByCreatedAtDesc(
+                wallet.getId(), wallet.getId(), pageable
+        );
     }
 
     public List<Transaction> getQRHistory(String userId) {

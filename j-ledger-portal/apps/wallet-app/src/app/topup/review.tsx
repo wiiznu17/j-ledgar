@@ -92,10 +92,10 @@ export default function TopupReviewScreen() {
         pathname: '/topup/success',
         params: {
           amount: amount || '0',
-          transactionId: latestData?.orderId,
+          transactionId: latestData?.transactionId || latestData?.orderId,
           bankName: 'Stripe Checkout',
           accountNumberMasked: 'Card / PromptPay',
-          createdAt: new Date().toISOString(),
+          createdAt: latestData?.createdAt || new Date().toISOString(),
         },
       } as any);
     } catch (err: any) {

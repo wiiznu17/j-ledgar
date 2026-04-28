@@ -13,6 +13,15 @@ interface TopupIntentBody {
   currency?: 'THB';
 }
 
+interface HistoryQuery {
+  page?: number;
+  size?: number;
+  type?: 'TOPUP' | 'TRANSFER' | 'PAYMENT' | 'WITHDRAWAL';
+  q?: string;
+  from?: string;
+  to?: string;
+}
+
 @Controller('integration')
 @UseGuards(JwtAuthGuard)
 export class IntegrationController {
@@ -52,13 +61,21 @@ export class IntegrationController {
 
   // ==================== Transaction History ====================
 
+  @Get('history')
+  async getHistory(@Req() req: any, @Query() query: HistoryQuery) {
+    const userId = req.user?.sub;
+    return this.integrationService.getHistory(userId, query);
+  }
+
   @Get('transactions/:userId')
-  async getTransactionHistory(
-    @Param('userId') userId: string,
+  async getTransactionHistoryDeprecated(
+    @Param('userId') _userId: string,
+    @Req() req: any,
     @Query('page') page?: number,
     @Query('size') size?: number,
   ) {
-    return this.integrationService.getTransactionHistory(userId, page, size);
+    const userId = req.user?.sub;
+    return this.integrationService.getHistory(userId, { page, size });
   }
 
   @Get('transactions/details/:transactionId')

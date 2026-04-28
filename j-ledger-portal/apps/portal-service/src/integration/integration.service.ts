@@ -1,7 +1,6 @@
-import { Injectable, Logger } from '@nestjs/common';
+import { HttpException, HttpStatus, Injectable, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { HttpService } from '@nestjs/axios';
-import { firstValueFrom } from 'rxjs';
 import { PrismaService } from '../prisma/prisma.service';
 import { FinanceService } from './finance.service';
 import Stripe from 'stripe';
@@ -15,6 +14,10 @@ export class IntegrationService {
 
   private readonly logger = new Logger(IntegrationService.name);
   private readonly stripe: any;
+
+  private static readonly HISTORY_PAGE_DEFAULT = 0;
+  private static readonly HISTORY_SIZE_DEFAULT = 20;
+  private static readonly HISTORY_SIZE_MAX = 100;
 
   constructor(
     private readonly httpService: HttpService,
@@ -69,58 +72,61 @@ export class IntegrationService {
 
   // ==================== Transaction History ====================
 
-  async getTransactionHistory(userId: string, page: number = 0, size: number = 20) {
-    const historyResponse = await this.forwardToGateway(
-      'get',
-      `/api/v1/transactions/user/${userId}`,
-      {},
-      undefined,
-    );
+  async getHistory(
+    userId: string,
+    query: {
+      page?: number;
+      size?: number;
+      type?: 'TOPUP' | 'TRANSFER' | 'PAYMENT' | 'WITHDRAWAL';
+      q?: string;
+      from?: string;
+      to?: string;
+    },
+  ) {
+    if (!userId) {
+      throw new HttpException({ message: 'Unauthorized' }, HttpStatus.UNAUTHORIZED);
+    }
+    try {
+      const startedAt = Date.now();
+      const page = Math.max(Number(query.page ?? IntegrationService.HISTORY_PAGE_DEFAULT), 0);
+      const size = Math.min(
+        Math.max(Number(query.size ?? IntegrationService.HISTORY_SIZE_DEFAULT), 1),
+        IntegrationService.HISTORY_SIZE_MAX,
+      );
+      const overFetchSize = size * 3;
 
-    const formattedData = historyResponse.map((entry: any) => {
+      const walletTransactions = await this.financeService.getTransactions(userId, {
+        page: 0,
+        size: overFetchSize,
+        type: query.type,
+        from: query.from,
+        to: query.to,
+      });
+
+      const walletItems = (walletTransactions || []).map((tx: any) => this.mapWalletTransactionToHistoryItem(tx));
+      const searched = this.applyHistorySearch(walletItems, query.q);
+      const offset = page * size;
+      const pagedItems = searched.slice(offset, offset + size);
+
+      this.logger.log(
+        `[HistoryDebug] user=${userId} type=${query.type || 'ALL'} page=${page} size=${size} walletRaw=${(walletTransactions || []).length} walletMapped=${walletItems.length} searched=${searched.length} returned=${pagedItems.length} hasMore=${offset + size < searched.length} elapsedMs=${Date.now() - startedAt}`,
+      );
+
       return {
-        id: entry.id,
-        amount: entry.amount,
-        type: entry.entryType,
-        date: entry.createdAt,
-        title: this.generateTransactionTitle(entry),
-        status: entry.transaction?.status,
-        reference: entry.transaction?.id,
+        items: pagedItems,
+        page,
+        size,
+        hasMore: offset + size < searched.length,
       };
-    });
-
-    return {
-      data: formattedData,
-      meta: {
-        currentPage: page,
-        totalPages: Math.ceil((formattedData.length || 0) / size),
-        totalItems: formattedData.length || 0,
-      },
-    };
+    } catch (error: any) {
+      const message = error?.response?.data?.message || error?.message || 'Failed to fetch history';
+      this.logger.error(`[History] user=${userId} message="${message}"`);
+      throw new HttpException({ message }, error?.status || HttpStatus.BAD_GATEWAY);
+    }
   }
 
   async getTransactionDetails(transactionId: string) {
     return this.forwardToGateway('get', `/api/v1/transactions/${transactionId}`);
-  }
-
-  private generateTransactionTitle(entry: any): string {
-    const txnType = entry.transaction?.transactionType;
-    const isCredit = entry.entryType === 'CREDIT';
-
-    if (!txnType) {
-      return 'ธุรกรรมอื่นๆ';
-    }
-
-    switch (txnType) {
-      case 'TOPUP':
-        return 'เติมเงินเข้าบัญชี';
-      case 'PAYMENT':
-        return 'ชำระเงินร้านค้า';
-      case 'TRANSFER':
-        return isCredit ? 'รับเงินโอน' : 'โอนเงินออก';
-      default:
-        return 'ธุรกรรมอื่นๆ';
-    }
   }
 
   // ==================== Bank Integration ====================
@@ -295,6 +301,8 @@ export class IntegrationService {
       status: order.status,
       amount: order.amount,
       currency: order.currency,
+      transactionId: order.financeTransactionId || order.id,
+      createdAt: order.updatedAt,
     };
   }
 
@@ -416,5 +424,59 @@ export class IntegrationService {
       default:
         return tx.description || 'ธุรกรรมอื่นๆ';
     }
+  }
+
+  private parseMetadata(raw: unknown): Record<string, any> {
+    if (!raw) {
+      return {};
+    }
+    if (typeof raw === 'object') {
+      return raw as Record<string, any>;
+    }
+    if (typeof raw === 'string') {
+      try {
+        return JSON.parse(raw);
+      } catch {
+        return {};
+      }
+    }
+    return {};
+  }
+
+  private mapWalletTransactionToHistoryItem(tx: any) {
+    const kind = (tx?.type || 'PAYMENT') as 'TOPUP' | 'TRANSFER' | 'PAYMENT' | 'WITHDRAWAL';
+    const metadata = this.parseMetadata(tx?.metadata);
+    const isIncome = kind === 'TOPUP' || (!tx?.fromWalletId && !!tx?.toWalletId);
+    const occurredAt = tx?.createdAt ? new Date(tx.createdAt).toISOString() : new Date().toISOString();
+    const amount = Number(tx?.amount || 0);
+
+    return {
+      id: tx?.transactionId || String(tx?.id || randomUUID()),
+      kind,
+      title: this.formatTransactionTitle(tx),
+      subtitle: tx?.description || undefined,
+      amount: amount.toFixed(2),
+      currency: 'THB',
+      direction: isIncome ? 'IN' : 'OUT',
+      status: tx?.status === 'FAILED' ? 'FAILED' : 'COMPLETED',
+      occurredAt,
+      source: 'WALLET_TXN' as const,
+      provider: metadata.provider || undefined,
+      paymentIntentId: metadata.paymentIntentId || undefined,
+      orderId: metadata.orderId || undefined,
+      reference: tx?.transactionId || undefined,
+    };
+  }
+
+  private applyHistorySearch(items: any[], query?: string) {
+    if (!query || !query.trim()) {
+      return items;
+    }
+    const q = query.trim().toLowerCase();
+    return items.filter((item) =>
+      [item.title, item.subtitle, item.reference, item.paymentIntentId, item.orderId]
+        .filter(Boolean)
+        .some((value) => String(value).toLowerCase().includes(q)),
+    );
   }
 }
