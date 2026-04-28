@@ -1,9 +1,12 @@
 package com.jledger.finance.service;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.jledger.finance.model.LinkedBankAccount;
 import com.jledger.finance.model.Transaction;
 import com.jledger.finance.model.TransactionStatus;
 import com.jledger.finance.model.TransactionType;
 import com.jledger.finance.model.Wallet;
+import com.jledger.finance.repository.LinkedBankAccountRepository;
 import com.jledger.finance.repository.TransactionRepository;
 import com.jledger.finance.repository.WalletRepository;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -12,6 +15,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -27,7 +31,13 @@ public class WalletService {
     private TransactionRepository transactionRepository;
 
     @Autowired
+    private LinkedBankAccountRepository linkedBankAccountRepository;
+
+    @Autowired
     private RedisTemplate<String, Object> redisTemplate;
+
+    @Autowired
+    private ObjectMapper objectMapper;
 
     private static final String CACHE_PREFIX = "wallet:";
     private static final BigDecimal DAILY_LIMIT = new BigDecimal("1000000");
@@ -44,14 +54,24 @@ public class WalletService {
         wallet.setBalance(BigDecimal.ZERO);
         wallet.setIsActive(true);
 
-        return walletRepository.save(wallet);
+        Wallet createdWallet = walletRepository.save(wallet);
+        ensureDefaultLinkedBankAccountExists(userId);
+        return createdWallet;
     }
 
     public Optional<Wallet> getWallet(String userId) {
         String cacheKey = CACHE_PREFIX + userId;
-        Wallet cached = (Wallet) redisTemplate.opsForValue().get(cacheKey);
-        if (cached != null) {
-            return Optional.of(cached);
+        Object cached = redisTemplate.opsForValue().get(cacheKey);
+        if (cached instanceof Wallet wallet) {
+            return Optional.of(wallet);
+        }
+        if (cached instanceof Map<?, ?> cachedMap) {
+            try {
+                Wallet wallet = objectMapper.convertValue(cachedMap, Wallet.class);
+                return Optional.of(wallet);
+            } catch (IllegalArgumentException ignored) {
+                redisTemplate.delete(cacheKey);
+            }
         }
 
         Optional<Wallet> wallet = walletRepository.findByUserId(userId);
@@ -135,7 +155,7 @@ public class WalletService {
     public List<Transaction> getTopUpHistory(String userId) {
         Wallet wallet = walletRepository.findByUserId(userId)
                 .orElseThrow(() -> new RuntimeException("Wallet not found"));
-        return transactionRepository.findByToWalletIdAndType(wallet.getId(), TransactionType.TOPUP);
+        return transactionRepository.findByToWalletIdAndTypeOrderByCreatedAtDesc(wallet.getId(), TransactionType.TOPUP);
     }
 
     public String generateStaticQR(String userId) {
@@ -144,10 +164,16 @@ public class WalletService {
         return "jledger|static|" + wallet.getId();
     }
 
+    public List<Transaction> getTransactions(String userId) {
+        Wallet wallet = walletRepository.findByUserId(userId)
+                .orElseThrow(() -> new RuntimeException("Wallet not found"));
+        return transactionRepository.findByFromWalletIdOrToWalletIdOrderByCreatedAtDesc(wallet.getId(), wallet.getId());
+    }
+
     public List<Transaction> getQRHistory(String userId) {
         Wallet wallet = walletRepository.findByUserId(userId)
                 .orElseThrow(() -> new RuntimeException("Wallet not found"));
-        return transactionRepository.findByFromWalletIdOrToWalletId(wallet.getId(), wallet.getId());
+        return transactionRepository.findByFromWalletIdOrToWalletIdOrderByCreatedAtDesc(wallet.getId(), wallet.getId());
     }
 
     public Optional<Wallet> getWalletById(Long id) {
@@ -200,7 +226,11 @@ public class WalletService {
     }
 
     @Transactional
-    public Transaction topUpBank(String userId, BigDecimal amount, String bankAccount) {
+    public Transaction topUpBank(String userId, BigDecimal amount, Long bankAccountId) {
+        if (amount == null || amount.compareTo(BigDecimal.ZERO) <= 0) {
+            throw new IllegalArgumentException("Top-up amount must be greater than zero");
+        }
+
         Wallet wallet = walletRepository.findByUserId(userId)
                 .orElseThrow(() -> new RuntimeException("Wallet not found"));
 
@@ -208,21 +238,165 @@ public class WalletService {
             throw new RuntimeException("Wallet is inactive");
         }
 
-        // Mock bank transfer - just add balance
-        wallet.setBalance(wallet.getBalance().add(amount));
-        walletRepository.save(wallet);
+        LinkedBankAccount bankAccount = findOwnedLinkedBankAccount(userId, bankAccountId);
+        if (!Boolean.TRUE.equals(bankAccount.getIsVerified())) {
+            throw new RuntimeException("Bank account is not verified");
+        }
 
-        // Record transaction
+        wallet.setBalance(wallet.getBalance().add(amount));
+        Wallet updatedWallet = walletRepository.save(wallet);
+        cacheWallet(updatedWallet);
+
         Transaction transaction = new Transaction();
         transaction.setType(TransactionType.TOPUP);
         transaction.setAmount(amount);
         transaction.setStatus(TransactionStatus.COMPLETED);
         transaction.setFromWalletId(null);
         transaction.setToWalletId(wallet.getId());
-        transaction.setDescription("Bank top-up from " + bankAccount);
-        transaction.setMetadata("{\"bankAccount\":\"" + bankAccount + "\"}");
+        transaction.setDescription(
+                String.format("Bank top-up from %s %s", bankAccount.getBankName(), bankAccount.getAccountNumber())
+        );
+        transaction.setMetadata(buildTopUpBankMetadata(bankAccount));
 
         return transactionRepository.save(transaction);
+    }
+
+    public List<LinkedBankAccount> listLinkedBankAccounts(String userId) {
+        ensureDefaultLinkedBankAccountExists(userId);
+        return linkedBankAccountRepository.findByUserIdOrderByIsDefaultDescCreatedAtAsc(userId);
+    }
+
+    @Transactional
+    public LinkedBankAccount createLinkedBankAccount(
+            String userId,
+            String bankCode,
+            String bankName,
+            String accountNumber,
+            String accountName,
+            String accountType,
+            boolean isDefault,
+            boolean isVerified
+    ) {
+        if (userId == null || userId.isBlank()) {
+            throw new IllegalArgumentException("userId is required");
+        }
+        if (bankCode == null || bankCode.isBlank()) {
+            throw new IllegalArgumentException("bankCode is required");
+        }
+        if (bankName == null || bankName.isBlank()) {
+            throw new IllegalArgumentException("bankName is required");
+        }
+        if (accountNumber == null || accountNumber.isBlank()) {
+            throw new IllegalArgumentException("accountNumber is required");
+        }
+        if (accountName == null || accountName.isBlank()) {
+            throw new IllegalArgumentException("accountName is required");
+        }
+
+        LinkedBankAccount linkedBankAccount = new LinkedBankAccount();
+        linkedBankAccount.setUserId(userId);
+        linkedBankAccount.setBankCode(bankCode);
+        linkedBankAccount.setBankName(bankName);
+        linkedBankAccount.setAccountNumber(accountNumber);
+        linkedBankAccount.setAccountName(accountName);
+        linkedBankAccount.setAccountType((accountType == null || accountType.isBlank()) ? "SAVINGS" : accountType);
+        linkedBankAccount.setIsDefault(isDefault);
+        linkedBankAccount.setIsVerified(isVerified);
+
+        LinkedBankAccount saved = linkedBankAccountRepository.save(linkedBankAccount);
+        if (Boolean.TRUE.equals(saved.getIsDefault())) {
+            normalizeDefaultAccount(userId, saved.getId());
+        }
+        return saved;
+    }
+
+    public LinkedBankAccount findOwnedLinkedBankAccount(String userId, Long bankAccountId) {
+        if (bankAccountId == null) {
+            throw new IllegalArgumentException("bankAccountId is required");
+        }
+        return linkedBankAccountRepository.findByIdAndUserId(bankAccountId, userId)
+                .orElseThrow(() -> new RuntimeException("Bank account not found"));
+    }
+
+    @Transactional
+    public LinkedBankAccount setDefaultLinkedBankAccount(String userId, Long bankAccountId) {
+        LinkedBankAccount target = findOwnedLinkedBankAccount(userId, bankAccountId);
+        normalizeDefaultAccount(userId, target.getId());
+        return linkedBankAccountRepository.findById(target.getId())
+                .orElseThrow(() -> new RuntimeException("Bank account not found"));
+    }
+
+    @Transactional
+    public void deleteOwnedLinkedBankAccount(String userId, Long bankAccountId) {
+        LinkedBankAccount account = findOwnedLinkedBankAccount(userId, bankAccountId);
+        boolean wasDefault = Boolean.TRUE.equals(account.getIsDefault());
+        linkedBankAccountRepository.delete(account);
+
+        if (!wasDefault) {
+            return;
+        }
+
+        List<LinkedBankAccount> remaining = linkedBankAccountRepository.findByUserIdOrderByIsDefaultDescCreatedAtAsc(userId);
+        if (!remaining.isEmpty()) {
+            normalizeDefaultAccount(userId, remaining.get(0).getId());
+        }
+    }
+
+    private void cacheWallet(Wallet wallet) {
+        String cacheKey = CACHE_PREFIX + wallet.getUserId();
+        redisTemplate.opsForValue().set(cacheKey, wallet, 5, TimeUnit.MINUTES);
+    }
+
+    @Transactional
+    protected void ensureDefaultLinkedBankAccountExists(String userId) {
+        if (linkedBankAccountRepository.existsByUserId(userId)) {
+            return;
+        }
+
+        LinkedBankAccount defaultBank = new LinkedBankAccount();
+        defaultBank.setUserId(userId);
+        defaultBank.setBankCode("SCB");
+        defaultBank.setBankName("ธนาคารไทยพาณิชย์");
+        defaultBank.setAccountNumber("*** *** 4567");
+        defaultBank.setAccountName("Mock Account");
+        defaultBank.setAccountType("SAVINGS");
+        defaultBank.setIsDefault(true);
+        defaultBank.setIsVerified(true);
+        linkedBankAccountRepository.save(defaultBank);
+    }
+
+    @Transactional
+    protected void normalizeDefaultAccount(String userId, Long targetId) {
+        List<LinkedBankAccount> accounts = new ArrayList<>(
+                linkedBankAccountRepository.findByUserIdOrderByIsDefaultDescCreatedAtAsc(userId)
+        );
+        boolean changed = false;
+        for (LinkedBankAccount account : accounts) {
+            boolean shouldBeDefault = account.getId().equals(targetId);
+            if (!Boolean.valueOf(shouldBeDefault).equals(account.getIsDefault())) {
+                account.setIsDefault(shouldBeDefault);
+                changed = true;
+            }
+        }
+        if (changed) {
+            linkedBankAccountRepository.saveAll(accounts);
+        }
+    }
+
+    private String buildTopUpBankMetadata(LinkedBankAccount bankAccount) {
+        return String.format(
+                "{\"bankAccountId\":%d,\"bankCode\":\"%s\",\"accountNumberMasked\":\"%s\"}",
+                bankAccount.getId(),
+                escapeJson(bankAccount.getBankCode()),
+                escapeJson(bankAccount.getAccountNumber())
+        );
+    }
+
+    private String escapeJson(String value) {
+        if (value == null) {
+            return "";
+        }
+        return value.replace("\\", "\\\\").replace("\"", "\\\"");
     }
 
     @Transactional

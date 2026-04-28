@@ -1,16 +1,22 @@
-import { Injectable, HttpException, HttpStatus } from '@nestjs/common';
+import { Injectable, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { HttpService } from '@nestjs/axios';
 import { firstValueFrom } from 'rxjs';
+import { PrismaService } from '../prisma/prisma.service';
+import { FinanceService } from './finance.service';
 
 @Injectable()
 export class IntegrationService {
   private readonly apiGatewayUrl: string;
   private readonly internalSecret: string;
 
+  private readonly logger = new Logger(IntegrationService.name);
+
   constructor(
     private readonly httpService: HttpService,
     private readonly configService: ConfigService,
+    private readonly prisma: PrismaService,
+    private readonly financeService: FinanceService,
   ) {
     this.apiGatewayUrl = this.configService.get<string>('API_GATEWAY_URL', 'http://localhost:8080');
     this.internalSecret = this.configService.get<string>(
@@ -148,5 +154,83 @@ export class IntegrationService {
   async deleteWebhook(id: string) {
     // TODO: Delete webhook from Prisma
     return { success: true };
+  }
+  // ==================== Dashboard BFF ====================
+
+  async getDashboardData(userId: string) {
+    this.logger.log(`[Dashboard] Fetching dashboard data for user ${userId}`);
+
+    // Fetch data in parallel for performance
+    const [kycData, wallet, transactions] = await Promise.all([
+      this.prisma.kYCData.findUnique({ where: { userId } }).catch(() => null),
+      this.financeService.getWallet(userId).catch(() => null),
+      this.financeService.getTransactions(userId).catch(() => []),
+    ]);
+
+    // Format recent transactions for the frontend
+    const recentTransactions = (transactions || []).slice(0, 10).map((tx: any) => ({
+      id: tx.transactionId || tx.id?.toString(),
+      title: this.formatTransactionTitle(tx),
+      category: tx.type || 'OTHER',
+      amount: Math.abs(tx.amount || 0),
+      type: tx.type === 'TOPUP' ? 'income' : 'expense',
+      time: tx.createdAt ? new Date(tx.createdAt).toLocaleString('th-TH', { hour: '2-digit', minute: '2-digit' }) : '',
+    }));
+
+    return {
+      user: {
+        id: userId,
+        name: kycData?.idCardName || 'J-Ledger User',
+        kycStatus: kycData?.verificationStatus || 'NOT_STARTED',
+      },
+      wallet: wallet ? {
+        balance: wallet.balance || 0,
+        currency: wallet.currency || 'THB',
+        status: wallet.status || 'ACTIVE',
+        walletId: wallet.walletId,
+      } : null,
+      recentTransactions,
+    };
+  }
+
+  async getLinkedBankAccounts(userId: string) {
+    const accounts = await this.financeService.getLinkedBankAccounts(userId);
+    return (accounts || []).map((account: any) => ({
+      id: account.id,
+      bankCode: account.bankCode,
+      bankName: account.bankName,
+      accountNumberMasked: account.accountNumber,
+      accountName: account.accountName,
+      accountType: account.accountType,
+      isDefault: account.isDefault,
+      isVerified: account.isVerified,
+    }));
+  }
+
+  async topUp(userId: string, amount: number, bankAccountId: number) {
+    const tx = await this.financeService.topUp(userId, amount, bankAccountId);
+
+    const bankAccounts = await this.financeService.getLinkedBankAccounts(userId);
+    const linkedBank = bankAccounts.find((account: any) => account.id === bankAccountId);
+
+    return {
+      transactionId: tx.transactionId || tx.id?.toString(),
+      amount: tx.amount,
+      status: tx.status,
+      createdAt: tx.createdAt,
+      bankName: linkedBank?.bankName || null,
+      accountNumberMasked: linkedBank?.accountNumber || null,
+      metadata: tx.metadata || null,
+    };
+  }
+
+  private formatTransactionTitle(tx: any): string {
+    switch (tx.type) {
+      case 'TOPUP': return 'เติมเงินเข้าบัญชี';
+      case 'PAYMENT': return 'ชำระเงิน';
+      case 'TRANSFER': return 'โอนเงิน';
+      case 'WITHDRAWAL': return 'ถอนเงิน';
+      default: return tx.description || 'ธุรกรรมอื่นๆ';
+    }
   }
 }

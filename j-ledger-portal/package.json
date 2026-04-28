@@ -5,7 +5,7 @@
     "build": "turbo run build",
     "dev": "turbo run dev",
     "dev:admin": "turbo run dev --filter=admin-web --filter=portal-service",
-    "dev:wallet": "turbo run dev --filter=wallet-api --filter=portal-service",
+    "dev:wallet": "turbo run dev --filter=wallet-app --filter=portal-service",
     "dev:admin-web": "turbo run dev --filter=admin-web",
     "lint": "turbo run lint",
     "format": "prettier --write \"**/*.{ts,tsx,md}\"",

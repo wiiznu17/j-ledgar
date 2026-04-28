@@ -55,6 +55,17 @@ export default function LoginScreen() {
   const router = useRouter();
   const setToken = useAuthStore((state) => state.setToken);
   const setUser = useAuthStore((state) => state.setUser);
+  const needsPinVerification = useAuthStore((state) => state.needsPinVerification);
+  const unlockWithPin = useAuthStore((state) => state.unlockWithPin);
+  const logout = useAuthStore((state) => state.logout);
+
+  // Auto-skip to PIN if returning user with valid session
+  useEffect(() => {
+    if (needsPinVerification && step === 'CREDENTIALS') {
+      console.log('[Login] Existing session found, skipping to PIN...');
+      setStep('PIN');
+    }
+  }, [needsPinVerification]);
 
   // Timer Effect
   useEffect(() => {
@@ -162,7 +173,18 @@ export default function LoginScreen() {
   const handlePinFailure = (errMsg: string) => {
     console.warn('[Login] Authentication failed:', errMsg);
     setIsLoading(false);
-    setError(errMsg);
+    // If PIN-only login fails, check if we should fall back to full login
+    if (needsPinVerification) {
+      setError('ไม่สามารถยืนยัน PIN ได้ กรุณาเข้าสู่ระบบใหม่');
+    } else {
+      setError(errMsg);
+    }
+  };
+
+  const handleSwitchAccount = async () => {
+    await logout();
+    setStep('CREDENTIALS');
+    setError('');
   };
 
   return (
@@ -372,11 +394,26 @@ export default function LoginScreen() {
           {/* ========================================= */}
           <StepWrapper visible={step === 'PIN'}>
             <View className="py-6">
+              {needsPinVerification && (
+                <View className="items-center mb-4">
+                  <Text className="text-sm font-manrope font-bold text-gray-400">
+                    ยินดีต้อนรับกลับมา
+                  </Text>
+                </View>
+              )}
               <PINVerification
                 onSuccess={handlePinSuccess}
                 onFailure={handlePinFailure}
-                onCancel={() => setStep('CREDENTIALS')}
+                onCancel={needsPinVerification ? handleSwitchAccount : () => setStep('CREDENTIALS')}
+                useUnlock={needsPinVerification}
               />
+              {needsPinVerification && (
+                <TouchableOpacity onPress={handleSwitchAccount} className="items-center mt-4">
+                  <Text className="text-xs font-manrope font-bold text-gray-400">
+                    เข้าสู่ระบบด้วยบัญชีอื่น
+                  </Text>
+                </TouchableOpacity>
+              )}
             </View>
           </StepWrapper>
 

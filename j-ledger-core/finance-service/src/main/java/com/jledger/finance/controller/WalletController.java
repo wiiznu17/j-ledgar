@@ -70,8 +70,8 @@ public class WalletController {
             @PathVariable String userId,
             @RequestBody Map<String, String> request) {
         BigDecimal amount = new BigDecimal(request.get("amount"));
-        String bankAccount = request.get("bankAccount");
-        Transaction transaction = walletService.topUpBank(userId, amount, bankAccount);
+        Long bankAccountId = Long.parseLong(request.get("bankAccountId"));
+        Transaction transaction = walletService.topUpBank(userId, amount, bankAccountId);
         return ResponseEntity.ok(transaction);
     }
 
@@ -125,6 +125,12 @@ public class WalletController {
     public ResponseEntity<String> generateStaticQR(@PathVariable String userId) {
         String qrData = walletService.generateStaticQR(userId);
         return ResponseEntity.ok(qrData);
+    }
+
+    @GetMapping("/{userId}/transactions")
+    public ResponseEntity<List<Transaction>> getTransactions(@PathVariable String userId) {
+        List<Transaction> transactions = walletService.getTransactions(userId);
+        return ResponseEntity.ok(transactions);
     }
 
     @GetMapping("/{userId}/qr/history")

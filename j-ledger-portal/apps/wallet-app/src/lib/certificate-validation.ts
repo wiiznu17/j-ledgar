@@ -96,7 +96,12 @@ export function getExpectedCertificateFingerprints(): string[] {
  * This is called before making API requests.
  */
 export function validateConnectionSecurity(url: string): CertificateValidationResult {
-  // Basic HTTPS validation
+  // Skip HTTPS check in development (localhost uses HTTP)
+  if (__DEV__) {
+    return { isValid: true };
+  }
+
+  // Basic HTTPS validation (production only)
   const httpsCheck = validateHttpsUrl(url);
   if (!httpsCheck.isValid) {
     return httpsCheck;

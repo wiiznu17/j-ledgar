@@ -14,7 +14,9 @@ public interface TransactionRepository extends JpaRepository<Transaction, Long> 
     List<Transaction> findByFromWalletId(Long fromWalletId);
     List<Transaction> findByToWalletId(Long toWalletId);
     List<Transaction> findByFromWalletIdOrToWalletId(Long fromWalletId, Long toWalletId);
+    List<Transaction> findByFromWalletIdOrToWalletIdOrderByCreatedAtDesc(Long fromWalletId, Long toWalletId);
     List<Transaction> findByToWalletIdAndType(Long toWalletId, TransactionType type);
+    List<Transaction> findByToWalletIdAndTypeOrderByCreatedAtDesc(Long toWalletId, TransactionType type);
     Optional<Transaction> findByTransactionId(String transactionId);
     
     // For AML monitoring
