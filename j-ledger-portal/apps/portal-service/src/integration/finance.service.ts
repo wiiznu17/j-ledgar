@@ -1,6 +1,7 @@
 import { Injectable, Logger, HttpException, HttpStatus } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { HttpService } from '@nestjs/axios';
+import { URLSearchParams } from 'url';
 
 interface CreateWalletRequest {
   userId: string;
@@ -40,6 +41,14 @@ interface CreditTopUpRequest {
   externalRef: string;
   provider: 'STRIPE';
   metadata?: Record<string, any>;
+}
+
+interface GetTransactionsQuery {
+  page?: number;
+  size?: number;
+  type?: 'TOPUP' | 'TRANSFER' | 'PAYMENT' | 'WITHDRAWAL';
+  from?: string;
+  to?: string;
 }
 
 @Injectable()
@@ -105,8 +114,15 @@ export class FinanceService {
     }
   }
 
-  async getTransactions(userId: string): Promise<any[]> {
-    const url = `${this.financeServiceUrl}/api/finance/wallets/${userId}/transactions`;
+  async getTransactions(userId: string, query?: GetTransactionsQuery): Promise<any[]> {
+    const params = new URLSearchParams();
+    if (query?.page !== undefined) params.set('page', String(query.page));
+    if (query?.size !== undefined) params.set('size', String(query.size));
+    if (query?.type) params.set('type', query.type);
+    if (query?.from) params.set('from', query.from);
+    if (query?.to) params.set('to', query.to);
+    const suffix = params.toString() ? `?${params.toString()}` : '';
+    const url = `${this.financeServiceUrl}/api/finance/wallets/${userId}/transactions${suffix}`;
 
     try {
       const response = await this.httpService.axiosRef.get(url, {

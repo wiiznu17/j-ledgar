@@ -1,6 +1,7 @@
 package com.jledger.finance.controller;
 
 import com.jledger.finance.model.Transaction;
+import com.jledger.finance.model.TransactionType;
 import com.jledger.finance.model.Wallet;
 import com.jledger.finance.service.WalletService;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -8,6 +9,8 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.math.BigDecimal;
+import java.time.LocalDateTime;
+import java.time.OffsetDateTime;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -128,9 +131,29 @@ public class WalletController {
     }
 
     @GetMapping("/{userId}/transactions")
-    public ResponseEntity<List<Transaction>> getTransactions(@PathVariable String userId) {
-        List<Transaction> transactions = walletService.getTransactions(userId);
+    public ResponseEntity<List<Transaction>> getTransactions(
+            @PathVariable String userId,
+            @RequestParam(required = false) Integer page,
+            @RequestParam(required = false) Integer size,
+            @RequestParam(required = false) TransactionType type,
+            @RequestParam(required = false) String from,
+            @RequestParam(required = false) String to
+    ) {
+        LocalDateTime fromDate = parseDateTime(from);
+        LocalDateTime toDate = parseDateTime(to);
+        List<Transaction> transactions = walletService.getTransactions(userId, page, size, type, fromDate, toDate);
         return ResponseEntity.ok(transactions);
+    }
+
+    private LocalDateTime parseDateTime(String value) {
+        if (value == null || value.isBlank()) {
+            return null;
+        }
+        try {
+            return OffsetDateTime.parse(value).toLocalDateTime();
+        } catch (Exception ignored) {
+            return LocalDateTime.parse(value);
+        }
     }
 
     @GetMapping("/{userId}/qr/history")
