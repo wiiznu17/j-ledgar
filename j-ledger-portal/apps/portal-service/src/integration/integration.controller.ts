@@ -13,6 +13,16 @@ interface TopupIntentBody {
   currency?: 'THB';
 }
 
+interface P2PPreviewBody {
+  recipientPhone: string;
+  amount: number;
+}
+
+interface P2PTransferBody extends P2PPreviewBody {
+  note?: string;
+  idempotencyKey: string;
+}
+
 interface HistoryQuery {
   page?: number;
   size?: number;
@@ -57,6 +67,18 @@ export class IntegrationController {
   async getTopupStatus(@Req() req: any, @Param('orderId') orderId: string) {
     const userId = req.user?.sub;
     return this.integrationService.getTopupOrderStatus(userId, orderId);
+  }
+
+  @Post('p2p/preview')
+  async previewP2P(@Req() req: any, @Body() body: P2PPreviewBody) {
+    const userId = req.user?.sub;
+    return this.integrationService.previewP2PTransfer(userId, body);
+  }
+
+  @Post('p2p/transfer')
+  async transferP2P(@Req() req: any, @Body() body: P2PTransferBody) {
+    const userId = req.user?.sub;
+    return this.integrationService.transferP2P(userId, body);
   }
 
   // ==================== Transaction History ====================

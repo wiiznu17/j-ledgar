@@ -87,7 +87,35 @@ export class IdentityService {
   }
 
   private normalizePhone(phone: string): string {
-    return phone.replace(/^0/, '+66');
+    const digits = (phone || '').replace(/\D/g, '');
+    // Convert to +66 format (E.164)
+    if (digits.startsWith('66') && digits.length === 11) {
+      return `+66${digits.slice(2)}`;
+    }
+    if (digits.startsWith('0') && digits.length === 10) {
+      return `+66${digits.slice(1)}`;
+    }
+    if (digits.length === 9) {
+      return `+66${digits}`;
+    }
+    // If already has + prefix, keep it
+    if (phone.startsWith('+')) {
+      return phone;
+    }
+    // Default: assume Thai number and add +66
+    return `+66${digits}`;
+  }
+
+  private toE164Phone(localPhone: string): string {
+    return this.normalizePhone(localPhone);
+  }
+
+  private getPhoneCandidates(phone: string): string[] {
+    const e164 = this.normalizePhone(phone);
+    const digits = e164.replace(/\D/g, '');
+    // Generate variations for backward compatibility during search
+    const local = `0${digits.slice(2)}`;
+    return [...new Set([e164, local])];
   }
 
   // ==================== Registration ====================
@@ -96,8 +124,8 @@ export class IdentityService {
     const phoneNumber = this.normalizePhone(dto.phoneNumber);
     this.logger.log(`[Register] STEP 1: Initiating registration for ${phoneNumber}`);
 
-    let user = await this.prisma.user.findUnique({
-      where: { phoneNumber },
+    let user = await this.prisma.user.findFirst({
+      where: { phoneNumber: { in: this.getPhoneCandidates(phoneNumber) } },
     });
 
     if (!user) {
@@ -181,8 +209,8 @@ export class IdentityService {
     const phoneNumber = this.normalizePhone(dto.phoneNumber);
     this.logger.log(`[Login] Attempting login for ${phoneNumber}`);
 
-    const user = await this.prisma.user.findUnique({
-      where: { phoneNumber },
+    const user = await this.prisma.user.findFirst({
+      where: { phoneNumber: { in: this.getPhoneCandidates(phoneNumber) } },
     });
 
     if (!user) {
@@ -405,7 +433,7 @@ export class IdentityService {
       throw new BadRequestException('Invalid challenge');
     }
 
-    if (challenge.phoneNumber !== phoneNumber) {
+    if (!this.getPhoneCandidates(phoneNumber).includes(challenge.phoneNumber)) {
       throw new BadRequestException('Phone number mismatch');
     }
 
@@ -463,8 +491,9 @@ export class IdentityService {
   }
 
   async findByPhoneNumber(phoneNumber: string) {
-    return this.prisma.user.findUnique({
-      where: { phoneNumber: phoneNumber.trim() },
+    const normalized = this.normalizePhone(phoneNumber.trim());
+    return this.prisma.user.findFirst({
+      where: { phoneNumber: { in: this.getPhoneCandidates(normalized) } },
     });
   }
 

@@ -19,15 +19,13 @@ const MOCK_RECIPIENT_AVATAR = { uri: 'https://randomuser.me/api/portraits/men/55
 
 export default function TransferSuccessScreen() {
   const router = useRouter();
-  const { recipient, amount, note, merchantName } = useLocalSearchParams();
+  const { recipient, amount, note, merchantName, transactionId, createdAt, recipientName, recipientMasked } = useLocalSearchParams();
   const slipRef = useRef<View>(null);
 
   const isMerchant = !!merchantName;
-  const displayRecipient = (merchantName as string) || (recipient as string);
-
-  // สร้างข้อมูลจำลอง
-  const refId = `JLED${Math.random().toString(36).substring(2, 12).toUpperCase()}`;
-  const now = new Date();
+  const displayRecipient = (recipientName as string) || (merchantName as string) || (recipient as string);
+  const refId = (transactionId as string) || '-';
+  const now = createdAt ? new Date(createdAt as string) : new Date();
   const dateStr = now.toLocaleDateString('en-GB', {
     day: '2-digit',
     month: 'short',
@@ -152,7 +150,7 @@ export default function TransferSuccessScreen() {
                     {displayRecipient}
                   </Text>
                   <Text className="text-[10px] font-manrope font-bold text-gray-400 mt-0.5">
-                    {isMerchant ? 'PromptPay Merchant' : 'PromptPay / J-Ledger'}
+                    {isMerchant ? 'PromptPay Merchant' : ((recipientMasked as string) || 'PromptPay / J-Ledger')}
                   </Text>
                 </View>
               </View>

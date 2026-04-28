@@ -1,45 +1,20 @@
-import React, { useState } from 'react';
+import React from 'react';
 import {
   View,
   Text,
   TouchableOpacity,
   ScrollView,
-  Image,
-  Dimensions,
   TextInput,
   Platform,
   KeyboardAvoidingView,
   Alert,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { ChevronLeft, User, Info, ArrowRight, Scan, Search, X } from 'lucide-react-native';
+import { ChevronLeft, Info, ArrowRight, X } from 'lucide-react-native';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import { MotiView } from 'moti';
 import { TransferParamsSchema } from '../../types/transfer';
-
-const { width } = Dimensions.get('window');
-
-const RECENT_RECIPIENTS = [
-  // ... (unchanged)
-  {
-    id: '1',
-    name: 'Somchai D.',
-    phone: '0812345678',
-    avatar: require('../../../assets/images/mock_user_avatar.png'),
-  },
-  {
-    id: '2',
-    name: 'Jane S.',
-    phone: '0898881234',
-    avatar: { uri: 'https://randomuser.me/api/portraits/women/44.jpg' },
-  },
-  {
-    id: '3',
-    name: 'Wichai R.',
-    phone: '0859990000',
-    avatar: { uri: 'https://randomuser.me/api/portraits/men/55.jpg' },
-  },
-];
+import api from '@/lib/axios';
 
 export default function TransferScreen() {
   const router = useRouter();
@@ -99,11 +74,29 @@ export default function TransferScreen() {
     }
 
     setIsSubmitting(true);
-    router.push({
-      pathname: '/transfer/review',
-      params: { recipient, amount, note },
-    } as any);
-    setIsSubmitting(false);
+    api
+      .post('/integration/p2p/preview', {
+        recipientPhone: recipient,
+        amount: parseFloat(amount),
+      })
+      .then((res) => {
+        const preview = res.data || {};
+        router.push({
+          pathname: '/transfer/review',
+          params: {
+            recipient,
+            amount,
+            note,
+            recipientName: preview?.recipient?.displayName || '',
+            recipientMasked: preview?.recipient?.phoneMasked || '',
+          },
+        } as any);
+      })
+      .catch((err: any) => {
+        const message = err?.response?.data?.message || 'Unable to preview transfer';
+        Alert.alert('Transfer Error', message);
+      })
+      .finally(() => setIsSubmitting(false));
   };
 
   const handleQuickAmount = (val: string) => {
@@ -159,50 +152,6 @@ export default function TransferScreen() {
                   </TouchableOpacity>
                 )}
               </View>
-            </View>
-
-            {/* Recent Contacts */}
-            <View className="mb-6">
-              <Text className="text-[10px] font-manrope font-black text-gray-400 uppercase tracking-widest px-1 mb-3">
-                Recent Contacts
-              </Text>
-              <ScrollView horizontal showsHorizontalScrollIndicator={false} className="-mx-2">
-                {RECENT_RECIPIENTS.map((contact) => (
-                  <TouchableOpacity
-                    key={contact.id}
-                    onPress={() => handleRecipientChange(contact.phone)}
-                    className="items-center mx-3"
-                  >
-                    <MotiView
-                      from={{ scale: 0.9, opacity: 0 }}
-                      animate={{ scale: 1, opacity: 1 }}
-                      className="relative"
-                    >
-                      <View className="p-[2.5px] border-2 border-pink-100 rounded-[1.2rem] mb-1 bg-white">
-                        <Image
-                          source={contact.avatar as any}
-                          className="w-12 h-12 rounded-[1rem]"
-                        />
-                      </View>
-                    </MotiView>
-                    <Text className="text-[10px] font-manrope font-black text-gray-800 tracking-tight">
-                      {contact.name}
-                    </Text>
-                    <Text className="text-[8px] font-manrope font-bold text-gray-400 mt-0.5">
-                      {contact.phone}
-                    </Text>
-                  </TouchableOpacity>
-                ))}
-
-                <TouchableOpacity className="items-center mx-3">
-                  <View className="w-12 h-12 rounded-[1.1rem] bg-gray-50 border border-dashed border-gray-300 items-center justify-center mb-1">
-                    <User size={20} color="#9ca3af" />
-                  </View>
-                  <Text className="text-[10px] font-manrope font-black text-gray-400 uppercase tracking-tight">
-                    All
-                  </Text>
-                </TouchableOpacity>
-              </ScrollView>
             </View>
 
             {/* Amount Card */}
