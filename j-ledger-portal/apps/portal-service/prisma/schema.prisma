@@ -379,6 +379,35 @@ model Merchant {
   @@schema("integration")
 }
 
+model TopupOrder {
+  id                    String           @id @default(uuid())
+  userId                String
+  amount                Decimal          @db.Decimal(19, 4)
+  currency              String           @default("THB")
+  status                TopupOrderStatus @default(PENDING)
+  stripePaymentIntentId String?          @unique
+  clientSecretRef       String?
+  idempotencyKey        String           @unique
+  financeTransactionId  String?
+  processedEventId      String?
+  createdAt             DateTime         @default(now())
+  updatedAt             DateTime         @updatedAt
+
+  @@index([userId, status])
+  @@map("topup_orders")
+  @@schema("integration")
+}
+
+enum TopupOrderStatus {
+  PENDING
+  PROCESSING
+  PAID
+  FAILED
+  CANCELED
+
+  @@schema("integration")
+}
+
 // ==================== Audit Schema ====================
 
 model AuditLog {

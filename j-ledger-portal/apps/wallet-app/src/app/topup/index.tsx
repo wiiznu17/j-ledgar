@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useState } from 'react';
 import {
   View,
   Text,
@@ -7,70 +7,20 @@ import {
   TextInput,
   Platform,
   KeyboardAvoidingView,
-  ActivityIndicator,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { ChevronLeft, Landmark, ArrowRight, CheckCircle2, Zap } from 'lucide-react-native';
+import { ChevronLeft, CreditCard, ArrowRight, Zap } from 'lucide-react-native';
 import { useRouter } from 'expo-router';
 import { MotiView } from 'moti';
-import api from '@/lib/axios';
-
-type BankAccount = {
-  id: number;
-  bankCode: string;
-  bankName: string;
-  accountNumberMasked: string;
-  accountName: string;
-  accountType: string;
-  isDefault: boolean;
-  isVerified: boolean;
-};
 
 export default function TopupScreen() {
   const [amount, setAmount] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [isLoadingBanks, setIsLoadingBanks] = useState(true);
-  const [bankAccounts, setBankAccounts] = useState<BankAccount[]>([]);
-  const [selectedBankId, setSelectedBankId] = useState<number | null>(null);
-  const [error, setError] = useState('');
 
   const router = useRouter();
 
-  const selectedAccount = useMemo(
-    () => bankAccounts.find((account) => account.id === selectedBankId) ?? null,
-    [bankAccounts, selectedBankId],
-  );
-
-  useEffect(() => {
-    const fetchBankAccounts = async () => {
-      try {
-        setIsLoadingBanks(true);
-        const res = await api.get('/integration/bank-accounts');
-        const accounts: BankAccount[] = res.data || [];
-        setBankAccounts(accounts);
-
-        if (accounts.length > 0) {
-          const defaultAccount = accounts.find((account) => account.isDefault) || accounts[0];
-          if (defaultAccount) {
-            setSelectedBankId(defaultAccount.id);
-          }
-        } else {
-          setSelectedBankId(null);
-        }
-
-        setError('');
-      } catch (err: any) {
-        setError(err?.response?.data?.message || 'ไม่สามารถโหลดบัญชีธนาคารได้');
-      } finally {
-        setIsLoadingBanks(false);
-      }
-    };
-
-    fetchBankAccounts();
-  }, []);
-
   const handleNextStep = () => {
-    if (isSubmitting || !selectedAccount) {
+    if (isSubmitting) {
       return;
     }
 
@@ -79,17 +29,13 @@ export default function TopupScreen() {
       pathname: '/topup/review',
       params: {
         amount,
-        bankAccountId: selectedAccount.id.toString(),
-        bankCode: selectedAccount.bankCode,
-        bankName: selectedAccount.bankName,
-        accountNumberMasked: selectedAccount.accountNumberMasked,
       },
     } as any);
     setIsSubmitting(false);
   };
 
   const isAmountValid = amount && parseFloat(amount) > 0;
-  const canContinue = Boolean(isAmountValid && selectedAccount && !isSubmitting && !isLoadingBanks);
+  const canContinue = Boolean(isAmountValid && !isSubmitting);
 
   return (
     <SafeAreaView className="flex-1 bg-[#f8f9fe]" edges={['top']}>
@@ -170,63 +116,22 @@ export default function TopupScreen() {
               transition={{ delay: 100 }}
               className="mb-6"
             >
-              {isLoadingBanks ? (
-                <View className="bg-white rounded-2xl p-6 border border-gray-100 items-center">
-                  <ActivityIndicator color="#f48fb1" />
-                  <Text className="text-xs font-manrope font-bold text-gray-400 mt-3">
-                    กำลังโหลดบัญชีธนาคาร...
-                  </Text>
+              <View className="flex-row items-center justify-between p-5 rounded-[2rem] mb-4 border bg-white border-pink-200 shadow-md shadow-pink-100">
+                <View className="flex-row items-center gap-4 flex-1">
+                  <View className="w-12 h-12 rounded-[1.2rem] items-center justify-center bg-pink-50">
+                    <CreditCard size={20} color="#f48fb1" />
+                  </View>
+                  <View className="flex-1">
+                    <Text className="text-sm font-manrope font-black text-gray-800">
+                      Stripe Checkout
+                    </Text>
+                    <Text className="text-[10px] font-manrope font-bold text-gray-400 mt-1">
+                      Choose Card or PromptPay in checkout
+                    </Text>
+                  </View>
                 </View>
-              ) : bankAccounts.length === 0 ? (
-                <View className="bg-white rounded-2xl p-6 border border-gray-100">
-                  <Text className="text-sm font-manrope font-black text-gray-700 text-center">
-                    ยังไม่มีบัญชีธนาคาร
-                  </Text>
-                </View>
-              ) : (
-                bankAccounts.map((account) => {
-                  const isSelected = selectedBankId === account.id;
-                  return (
-                    <TouchableOpacity
-                      key={account.id}
-                      onPress={() => setSelectedBankId(account.id)}
-                      className={`flex-row items-center justify-between p-5 rounded-[2rem] mb-4 border ${
-                        isSelected
-                          ? 'bg-white border-pink-200 shadow-md shadow-pink-100'
-                          : 'bg-white border-gray-100'
-                      }`}
-                    >
-                      <View className="flex-row items-center gap-4 flex-1">
-                        <View className="w-12 h-12 rounded-[1.2rem] items-center justify-center bg-pink-50">
-                          <Landmark size={20} color="#f48fb1" />
-                        </View>
-                        <View className="flex-1">
-                          <Text className="text-sm font-manrope font-black text-gray-800">
-                            {account.bankName}
-                          </Text>
-                          <Text className="text-[10px] font-manrope font-bold text-gray-400 mt-1">
-                            {account.accountNumberMasked}
-                          </Text>
-                        </View>
-                      </View>
-                      <View
-                        className={`w-5 h-5 rounded-full border-[1.5px] items-center justify-center ${
-                          isSelected ? 'bg-[#f48fb1] border-[#f48fb1]' : 'bg-white border-gray-300'
-                        }`}
-                      >
-                        {isSelected ? <CheckCircle2 size={12} color="white" /> : null}
-                      </View>
-                    </TouchableOpacity>
-                  );
-                })
-              )}
-            </MotiView>
-
-            {error ? (
-              <View className="bg-red-50 border border-red-100 rounded-2xl p-4 mb-6">
-                <Text className="text-xs font-manrope font-bold text-red-500 text-center">{error}</Text>
               </View>
-            ) : null}
+            </MotiView>
 
             <MotiView
               from={{ opacity: 0, translateY: 10 }}

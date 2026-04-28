@@ -261,6 +261,56 @@ public class WalletService {
         return transactionRepository.save(transaction);
     }
 
+    @Transactional
+    public Transaction creditTopUpFromExternal(
+            String userId,
+            BigDecimal amount,
+            String currency,
+            String externalRef,
+            String provider,
+            String metadataJson
+    ) {
+        if (amount == null || amount.compareTo(BigDecimal.ZERO) <= 0) {
+            throw new IllegalArgumentException("Top-up amount must be greater than zero");
+        }
+        if (externalRef == null || externalRef.isBlank()) {
+            throw new IllegalArgumentException("externalRef is required");
+        }
+
+        Optional<Transaction> existing = transactionRepository.findByTransactionId(externalRef);
+        if (existing.isPresent()) {
+            return existing.get();
+        }
+
+        Wallet wallet = walletRepository.findByUserId(userId)
+                .orElseThrow(() -> new RuntimeException("Wallet not found"));
+
+        if (!wallet.getIsActive()) {
+            throw new RuntimeException("Wallet is inactive");
+        }
+
+        if (currency != null && !currency.isBlank() && wallet.getCurrency() != null
+                && !wallet.getCurrency().equalsIgnoreCase(currency)) {
+            throw new IllegalArgumentException("Currency mismatch");
+        }
+
+        wallet.setBalance(wallet.getBalance().add(amount));
+        Wallet updatedWallet = walletRepository.save(wallet);
+        cacheWallet(updatedWallet);
+
+        Transaction transaction = new Transaction();
+        transaction.setTransactionId(externalRef);
+        transaction.setType(TransactionType.TOPUP);
+        transaction.setAmount(amount);
+        transaction.setStatus(TransactionStatus.COMPLETED);
+        transaction.setFromWalletId(null);
+        transaction.setToWalletId(wallet.getId());
+        transaction.setDescription(String.format("%s top-up credit", provider == null ? "EXTERNAL" : provider));
+        transaction.setMetadata(metadataJson);
+
+        return transactionRepository.save(transaction);
+    }
+
     public List<LinkedBankAccount> listLinkedBankAccounts(String userId) {
         ensureDefaultLinkedBankAccountExists(userId);
         return linkedBankAccountRepository.findByUserIdOrderByIsDefaultDescCreatedAtAsc(userId);

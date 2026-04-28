@@ -8,6 +8,11 @@ interface TopUpBody {
   bankAccountId: number;
 }
 
+interface TopupIntentBody {
+  amount: number;
+  currency?: 'THB';
+}
+
 @Controller('integration')
 @UseGuards(JwtAuthGuard)
 export class IntegrationController {
@@ -31,6 +36,18 @@ export class IntegrationController {
   async topUp(@Req() req: any, @Body() body: TopUpBody) {
     const userId = req.user?.sub;
     return this.integrationService.topUp(userId, body.amount, body.bankAccountId);
+  }
+
+  @Post('topup/intent')
+  async createTopupIntent(@Req() req: any, @Body() body: TopupIntentBody) {
+    const userId = req.user?.sub;
+    return this.integrationService.createStripeTopupIntent(userId, body.amount, body.currency || 'THB');
+  }
+
+  @Get('topup/:orderId')
+  async getTopupStatus(@Req() req: any, @Param('orderId') orderId: string) {
+    const userId = req.user?.sub;
+    return this.integrationService.getTopupOrderStatus(userId, orderId);
   }
 
   // ==================== Transaction History ====================

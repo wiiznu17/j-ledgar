@@ -4,6 +4,9 @@ import { HttpService } from '@nestjs/axios';
 import { firstValueFrom } from 'rxjs';
 import { PrismaService } from '../prisma/prisma.service';
 import { FinanceService } from './finance.service';
+import Stripe from 'stripe';
+import { TopupOrderStatus } from '@prisma/client';
+import { randomUUID } from 'crypto';
 
 @Injectable()
 export class IntegrationService {
@@ -11,6 +14,7 @@ export class IntegrationService {
   private readonly internalSecret: string;
 
   private readonly logger = new Logger(IntegrationService.name);
+  private readonly stripe: any;
 
   constructor(
     private readonly httpService: HttpService,
@@ -23,6 +27,8 @@ export class IntegrationService {
       'JLEDGER_INTERNAL_SECRET',
       'default-secret',
     );
+    const stripeSecretKey = this.configService.get<string>('STRIPE_SECRET_KEY', '');
+    this.stripe = new Stripe(stripeSecretKey);
   }
 
   // ==================== Ledger Proxy ====================
@@ -174,7 +180,9 @@ export class IntegrationService {
       category: tx.type || 'OTHER',
       amount: Math.abs(tx.amount || 0),
       type: tx.type === 'TOPUP' ? 'income' : 'expense',
-      time: tx.createdAt ? new Date(tx.createdAt).toLocaleString('th-TH', { hour: '2-digit', minute: '2-digit' }) : '',
+      time: tx.createdAt
+        ? new Date(tx.createdAt).toLocaleString('th-TH', { hour: '2-digit', minute: '2-digit' })
+        : '',
     }));
 
     return {
@@ -183,12 +191,14 @@ export class IntegrationService {
         name: kycData?.idCardName || 'J-Ledger User',
         kycStatus: kycData?.verificationStatus || 'NOT_STARTED',
       },
-      wallet: wallet ? {
-        balance: wallet.balance || 0,
-        currency: wallet.currency || 'THB',
-        status: wallet.status || 'ACTIVE',
-        walletId: wallet.walletId,
-      } : null,
+      wallet: wallet
+        ? {
+            balance: wallet.balance || 0,
+            currency: wallet.currency || 'THB',
+            status: wallet.status || 'ACTIVE',
+            walletId: wallet.walletId,
+          }
+        : null,
       recentTransactions,
     };
   }
@@ -224,13 +234,187 @@ export class IntegrationService {
     };
   }
 
+  async createStripeTopupIntent(userId: string, amount: number, currency: string = 'THB') {
+    if (!amount || amount <= 0) {
+      throw new Error('Invalid top-up amount');
+    }
+
+    const normalizedCurrency = currency.toLowerCase();
+    const amountMinor = Math.round(amount * 100);
+    const idempotencyKey = `topup_${userId}_${randomUUID()}`;
+
+    const order = await this.prisma.topupOrder.create({
+      data: {
+        userId,
+        amount: amount.toFixed(4),
+        currency: currency.toUpperCase(),
+        status: TopupOrderStatus.PENDING,
+        idempotencyKey,
+      },
+    });
+
+    const paymentIntent = await this.stripe.paymentIntents.create(
+      {
+        amount: amountMinor,
+        currency: normalizedCurrency,
+        metadata: {
+          userId,
+          orderId: order.id,
+        },
+      },
+      {
+        idempotencyKey,
+      },
+    );
+
+    await this.prisma.topupOrder.update({
+      where: { id: order.id },
+      data: {
+        stripePaymentIntentId: paymentIntent.id,
+        clientSecretRef: paymentIntent.client_secret || '',
+      },
+    });
+
+    return {
+      orderId: order.id,
+      clientSecret: paymentIntent.client_secret,
+      paymentIntentId: paymentIntent.id,
+      publishableKey: this.configService.get<string>('STRIPE_PUBLISHABLE_KEY', ''),
+    };
+  }
+
+  async getTopupOrderStatus(userId: string, orderId: string) {
+    const order = await this.prisma.topupOrder.findFirst({
+      where: { id: orderId, userId },
+    });
+    if (!order) {
+      throw new Error('Top-up order not found');
+    }
+    return {
+      orderId: order.id,
+      status: order.status,
+      amount: order.amount,
+      currency: order.currency,
+    };
+  }
+
+  async processStripeWebhook(signature: string | undefined, rawBody: Buffer) {
+    const webhookSecret = this.configService.get<string>('STRIPE_WEBHOOK_SECRET', '');
+    if (!signature) {
+      throw new Error('Missing stripe signature');
+    }
+
+    const event = this.stripe.webhooks.constructEvent(rawBody, signature, webhookSecret);
+    this.logger.log(`[StripeWebhook] event=${event.type} id=${event.id}`);
+    if (event.type === 'payment_intent.succeeded') {
+      await this.handlePaymentIntentSucceeded(event);
+    }
+
+    if (
+      event.type === 'payment_intent.payment_failed' ||
+      event.type === 'payment_intent.canceled'
+    ) {
+      await this.handlePaymentIntentFailed(event);
+    }
+
+    return { received: true };
+  }
+
+  private async handlePaymentIntentSucceeded(event: any) {
+    const paymentIntent = event.data.object as any;
+    const paymentIntentId = paymentIntent.id;
+
+    const order = await this.prisma.topupOrder.findUnique({
+      where: { stripePaymentIntentId: paymentIntentId },
+    });
+    if (!order) {
+      this.logger.warn(`[StripeWebhook] missing order for paymentIntent=${paymentIntentId}`);
+      return;
+    }
+
+    if (order.status === TopupOrderStatus.PAID) {
+      return;
+    }
+    if (order.status === TopupOrderStatus.PROCESSING && order.processedEventId === event.id) {
+      return;
+    }
+
+    await this.prisma.topupOrder.update({
+      where: { id: order.id },
+      data: { status: TopupOrderStatus.PROCESSING, processedEventId: event.id },
+    });
+
+    let creditResult: any;
+    try {
+      creditResult = await this.financeService.creditStripeTopUp(order.userId, {
+        amount: Number(order.amount).toFixed(4),
+        currency: order.currency,
+        externalRef: paymentIntentId,
+        provider: 'STRIPE',
+        metadata: {
+          provider: 'STRIPE',
+          paymentIntentId,
+          orderId: order.id,
+        },
+      });
+    } catch (error: any) {
+      this.logger.error(
+        `[StripeWebhook] credit failed order=${order.id} paymentIntent=${paymentIntentId} message="${error?.message || 'unknown'}"`,
+      );
+      await this.prisma.topupOrder.update({
+        where: { id: order.id },
+        data: {
+          status: TopupOrderStatus.FAILED,
+          processedEventId: event.id,
+        },
+      });
+      throw error;
+    }
+
+    await this.prisma.topupOrder.update({
+      where: { id: order.id },
+      data: {
+        status: TopupOrderStatus.PAID,
+        financeTransactionId: creditResult?.transactionId ?? null,
+        processedEventId: event.id,
+      },
+    });
+  }
+
+  private async handlePaymentIntentFailed(event: any) {
+    const paymentIntent = event.data.object as any;
+    const paymentIntentId = paymentIntent.id;
+
+    const order = await this.prisma.topupOrder.findUnique({
+      where: { stripePaymentIntentId: paymentIntentId },
+    });
+    if (!order || order.status === TopupOrderStatus.PAID) {
+      return;
+    }
+
+    const failedStatus =
+      event.type === 'payment_intent.canceled'
+        ? TopupOrderStatus.CANCELED
+        : TopupOrderStatus.FAILED;
+
+    await this.prisma.topupOrder.update({
+      where: { id: order.id },
+      data: { status: failedStatus, processedEventId: event.id },
+    });
+  }
+
   private formatTransactionTitle(tx: any): string {
     switch (tx.type) {
-      case 'TOPUP': return 'เติมเงินเข้าบัญชี';
-      case 'PAYMENT': return 'ชำระเงิน';
-      case 'TRANSFER': return 'โอนเงิน';
-      case 'WITHDRAWAL': return 'ถอนเงิน';
-      default: return tx.description || 'ธุรกรรมอื่นๆ';
+      case 'TOPUP':
+        return 'เติมเงินเข้าบัญชี';
+      case 'PAYMENT':
+        return 'ชำระเงิน';
+      case 'TRANSFER':
+        return 'โอนเงิน';
+      case 'WITHDRAWAL':
+        return 'ถอนเงิน';
+      default:
+        return tx.description || 'ธุรกรรมอื่นๆ';
     }
   }
 }

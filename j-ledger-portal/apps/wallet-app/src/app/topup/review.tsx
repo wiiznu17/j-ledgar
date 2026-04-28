@@ -8,25 +8,27 @@ import {
   Platform,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { ChevronLeft, ArrowRight, ShieldCheck, Wallet, Landmark } from 'lucide-react-native';
+import { ChevronLeft, ArrowRight, ShieldCheck, Wallet, CreditCard } from 'lucide-react-native';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import { MotiView, AnimatePresence } from 'moti';
 import { useScreenCaptureProtection } from '@/hooks/useScreenCaptureProtection';
 import api from '@/lib/axios';
+import { useStripe } from '@stripe/stripe-react-native';
+import { useAuthStore } from '@/store/auth';
 
 export default function TopupReviewScreen() {
   useScreenCaptureProtection();
 
   const router = useRouter();
-  const { amount, bankAccountId, bankName, accountNumberMasked } = useLocalSearchParams<{
+  const { amount } = useLocalSearchParams<{
     amount: string;
-    bankAccountId: string;
-    bankName: string;
-    accountNumberMasked: string;
   }>();
 
   const [isProcessing, setIsProcessing] = useState(false);
   const [error, setError] = useState('');
+  const [processingText, setProcessingText] = useState('Processing Payment');
+  const { initPaymentSheet, presentPaymentSheet } = useStripe();
+  const userEmail = useAuthStore((state) => state.user?.email);
 
   const topupAmount = parseFloat(amount || '0') || 0;
   const fee = 0;
@@ -41,27 +43,66 @@ export default function TopupReviewScreen() {
     setError('');
 
     try {
-      const res = await api.post('/integration/topup', {
+      setProcessingText('Preparing payment');
+      const intentRes = await api.post('/integration/topup/intent', {
         amount: topupAmount,
-        bankAccountId: Number(bankAccountId),
+        currency: 'THB',
       });
+      const intentData = intentRes.data || {};
 
-      const data = res.data || {};
+      const initResult = await initPaymentSheet({
+        merchantDisplayName: 'J-Ledger',
+        paymentIntentClientSecret: intentData.clientSecret,
+        returnURL: 'walletapp://stripe-redirect',
+        defaultBillingDetails: userEmail ? { email: userEmail } : undefined,
+      });
+      if (initResult.error) {
+        throw new Error(initResult.error.message);
+      }
+
+      setProcessingText('Waiting for payment confirmation');
+      const presentResult = await presentPaymentSheet();
+      if (presentResult.error) {
+        throw new Error(presentResult.error.message);
+      }
+
+      setProcessingText('Verifying payment');
+      const orderId = intentData.orderId;
+      let status = 'PENDING';
+      let latestData: any = null;
+
+      for (let attempt = 0; attempt < 30; attempt++) {
+        const statusRes = await api.get(`/integration/topup/${orderId}`);
+        latestData = statusRes.data;
+        status = latestData?.status;
+        if (status === 'PAID') {
+          break;
+        }
+        if (status === 'FAILED' || status === 'CANCELED') {
+          throw new Error(`Payment ${status.toLowerCase()}`);
+        }
+        await new Promise((resolve) => setTimeout(resolve, 2000));
+      }
+
+      if (status !== 'PAID') {
+        throw new Error('Payment verification timeout');
+      }
 
       router.replace({
         pathname: '/topup/success',
         params: {
           amount: amount || '0',
-          transactionId: data.transactionId,
-          bankName: data.bankName || bankName || '',
-          accountNumberMasked: data.accountNumberMasked || accountNumberMasked || '',
-          createdAt: data.createdAt || '',
+          transactionId: latestData?.orderId,
+          bankName: 'Stripe Checkout',
+          accountNumberMasked: 'Card / PromptPay',
+          createdAt: new Date().toISOString(),
         },
       } as any);
     } catch (err: any) {
-      setError(err?.response?.data?.message || 'เติมเงินไม่สำเร็จ');
+      setError(err?.response?.data?.message || err?.message || 'เติมเงินไม่สำเร็จ');
     } finally {
       setIsProcessing(false);
+      setProcessingText('Processing Payment');
     }
   };
 
@@ -112,15 +153,15 @@ export default function TopupReviewScreen() {
 
               <View className="flex-row items-center relative z-10 mb-6">
                 <View className="w-10 h-10 bg-pink-50 rounded-xl items-center justify-center shadow-sm border border-pink-100">
-                  <Landmark size={20} color="#f48fb1" />
+                  <CreditCard size={20} color="#f48fb1" />
                 </View>
                 <View className="ml-4 flex-1">
                   <Text className="text-[10px] font-manrope font-black text-gray-400 uppercase tracking-widest mb-0.5">
                     Funding Source
                   </Text>
-                  <Text className="text-sm font-manrope font-black text-gray-800">{bankName || 'Linked Bank Account'}</Text>
+                  <Text className="text-sm font-manrope font-black text-gray-800">Stripe Checkout</Text>
                   <Text className="text-[10px] font-manrope font-bold text-gray-400 mt-0.5">
-                    {accountNumberMasked || '-'}
+                    Card or PromptPay
                   </Text>
                 </View>
               </View>
@@ -209,10 +250,10 @@ export default function TopupReviewScreen() {
               <ActivityIndicator size="large" color="#f48fb1" />
             </MotiView>
             <Text className="text-2xl font-manrope font-black text-gray-800 tracking-tight text-center">
-              Processing Payment
+              {processingText}
             </Text>
             <Text className="text-sm font-manrope font-bold text-gray-400 mt-3 text-center leading-relaxed">
-              Connecting to your linked bank account...
+              Waiting for Stripe payment confirmation...
             </Text>
           </MotiView>
         )}
