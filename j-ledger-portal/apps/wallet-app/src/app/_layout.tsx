@@ -5,6 +5,7 @@ import { StatusBar } from 'expo-status-bar';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import 'react-native-reanimated';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
+import { StripeProvider } from '@stripe/stripe-react-native';
 
 import { useColorScheme } from '@/hooks/use-color-scheme';
 import { useAuthStore } from '@/store/auth';
@@ -80,29 +81,34 @@ export default function RootLayout() {
   }
 
   return (
-    <QueryClientProvider client={queryClient}>
-      <SafeAreaProvider>
-        <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
-          <BackgroundGradient>
-            <Stack>
-              <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
-              <Stack.Screen name="(auth)" options={{ headerShown: false }} />
-              <Stack.Screen name="transfer" options={{ headerShown: false }} />
-              <Stack.Screen name="topup" options={{ headerShown: false }} />
-              <Stack.Screen name="transaction" options={{ headerShown: false }} />
-              <Stack.Screen name="deal" options={{ headerShown: false }} />
-              <Stack.Screen name="my-qr" options={{ headerShown: false }} />
-              <Stack.Screen name="notifications" options={{ headerShown: false }} />
-              <Stack.Screen
-                name="settings"
-                options={{ presentation: 'modal', title: 'Settings' }}
-              />
-              <Stack.Screen name="profile/information" options={{ headerShown: false }} />
-            </Stack>
-          </BackgroundGradient>
-          <StatusBar style="auto" />
-        </ThemeProvider>
-      </SafeAreaProvider>
-    </QueryClientProvider>
+    <StripeProvider
+      publishableKey={process.env.EXPO_PUBLIC_STRIPE_PUBLISHABLE_KEY || 'pk_test_placeholder'}
+      merchantIdentifier="merchant.com.jledger.app"
+    >
+      <QueryClientProvider client={queryClient}>
+        <SafeAreaProvider>
+          <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
+            <BackgroundGradient>
+              <Stack>
+                <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
+                <Stack.Screen name="(auth)" options={{ headerShown: false }} />
+                <Stack.Screen name="transfer" options={{ headerShown: false }} />
+                <Stack.Screen name="topup" options={{ headerShown: false }} />
+                <Stack.Screen name="transaction" options={{ headerShown: false }} />
+                <Stack.Screen name="deal" options={{ headerShown: false }} />
+                <Stack.Screen name="my-qr" options={{ headerShown: false }} />
+                <Stack.Screen name="notifications" options={{ headerShown: false }} />
+                <Stack.Screen
+                  name="settings"
+                  options={{ presentation: 'modal', title: 'Settings' }}
+                />
+                <Stack.Screen name="profile/information" options={{ headerShown: false }} />
+              </Stack>
+            </BackgroundGradient>
+            <StatusBar style="auto" />
+          </ThemeProvider>
+        </SafeAreaProvider>
+      </QueryClientProvider>
+    </StripeProvider>
   );
 }
