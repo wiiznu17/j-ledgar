@@ -9,16 +9,20 @@ import com.jledger.finance.model.Wallet;
 import com.jledger.finance.repository.LinkedBankAccountRepository;
 import com.jledger.finance.repository.TransactionRepository;
 import com.jledger.finance.repository.WalletRepository;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
+import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -26,6 +30,7 @@ import java.util.concurrent.TimeUnit;
 
 @Service
 public class WalletService {
+    private static final Logger logger = LoggerFactory.getLogger(WalletService.class);
 
     @Autowired
     private WalletRepository walletRepository;
@@ -41,6 +46,9 @@ public class WalletService {
 
     @Autowired
     private ObjectMapper objectMapper;
+
+    @Autowired
+    private JdbcTemplate jdbcTemplate;
 
     private static final String CACHE_PREFIX = "wallet:";
     private static final BigDecimal DAILY_LIMIT = new BigDecimal("1000000");
@@ -544,43 +552,125 @@ public class WalletService {
 
     @Transactional
     public Transaction transferByPhone(String fromUserId, String toPhone, BigDecimal amount) {
+        logger.info("transferByPhone called: fromUserId={}, toPhone={}, amount={}", fromUserId, toPhone, amount);
+        String recipientUserId = findUserIdByPhone(toPhone);
+        logger.info("Found recipientUserId: {}", recipientUserId);
+        return transferByPhoneInternal(fromUserId, toPhone, recipientUserId, amount, null, null);
+    }
+
+    public Map<String, Object> previewTransferByPhone(String fromUserId, String recipientPhone, BigDecimal amount) {
+        logger.info("previewTransferByPhone called: fromUserId={}, recipientPhone={}", fromUserId, recipientPhone);
+        if (amount == null || amount.compareTo(BigDecimal.ZERO) <= 0) {
+            throw new IllegalArgumentException("Transfer amount must be greater than zero");
+        }
+
         Wallet fromWallet = walletRepository.findByUserId(fromUserId)
                 .orElseThrow(() -> new RuntimeException("Source wallet not found"));
-
         if (!fromWallet.getIsActive()) {
             throw new RuntimeException("Source wallet is inactive");
         }
 
+        String recipientUserId = findUserIdByPhone(recipientPhone);
+        logger.info("Found recipientUserId: {}", recipientUserId);
+        if (fromUserId.equals(recipientUserId)) {
+            throw new IllegalArgumentException("Cannot transfer to your own account");
+        }
+
+        Wallet toWallet = walletRepository.findByUserId(recipientUserId)
+                .orElseThrow(() -> new RuntimeException("Recipient wallet not found"));
+        if (!toWallet.getIsActive()) {
+            throw new RuntimeException("Recipient wallet is inactive");
+        }
         if (fromWallet.getBalance().compareTo(amount) < 0) {
             throw new RuntimeException("Insufficient balance");
         }
 
-        // Mock: Find wallet by phone (in real system, would query user service)
-        Wallet toWallet = walletRepository.findAll().stream()
-                .filter(w -> w.getUserId().equals(toPhone)) // Simplified - phone = userId for mock
-                .findFirst()
+        BigDecimal fee = BigDecimal.ZERO.setScale(4);
+        BigDecimal totalDebit = amount.add(fee);
+        Map<String, Object> recipient = new HashMap<>();
+        recipient.put("userId", recipientUserId);
+        recipient.put("phoneMasked", maskPhone(recipientPhone));
+
+        Map<String, Object> response = new HashMap<>();
+        response.put("recipient", recipient);
+        response.put("amount", amount.setScale(4));
+        response.put("fee", fee);
+        response.put("totalDebit", totalDebit.setScale(4));
+        response.put("currency", fromWallet.getCurrency() == null ? "THB" : fromWallet.getCurrency());
+        return response;
+    }
+
+    @Transactional
+    public Transaction transferByPhoneV1(
+            String fromUserId,
+            String recipientPhone,
+            BigDecimal amount,
+            String note,
+            String idempotencyKey
+    ) {
+        logger.info("transferByPhoneV1 called: fromUserId={}, recipientPhone={}, amount={}, idempotencyKey={}", fromUserId, recipientPhone, amount, idempotencyKey);
+        if (idempotencyKey == null || idempotencyKey.isBlank()) {
+            throw new IllegalArgumentException("idempotencyKey is required");
+        }
+        Optional<Transaction> existing = transactionRepository.findByTransactionId(idempotencyKey);
+        if (existing.isPresent()) {
+            logger.info("Transaction already exists with idempotencyKey: {}", idempotencyKey);
+            return existing.get();
+        }
+        String recipientUserId = findUserIdByPhone(recipientPhone);
+        logger.info("Found recipientUserId: {}", recipientUserId);
+        return transferByPhoneInternal(fromUserId, recipientPhone, recipientUserId, amount, note, idempotencyKey);
+    }
+
+    @Transactional
+    protected Transaction transferByPhoneInternal(
+            String fromUserId,
+            String normalizedPhone,
+            String recipientUserId,
+            BigDecimal amount,
+            String note,
+            String idempotencyKey
+    ) {
+        if (amount == null || amount.compareTo(BigDecimal.ZERO) <= 0) {
+            throw new IllegalArgumentException("Transfer amount must be greater than zero");
+        }
+
+        Wallet fromWallet = walletRepository.findByUserId(fromUserId)
+                .orElseThrow(() -> new RuntimeException("Source wallet not found"));
+        Wallet toWallet = walletRepository.findByUserId(recipientUserId)
                 .orElseThrow(() -> new RuntimeException("Recipient wallet not found"));
 
+        if (fromUserId.equals(recipientUserId)) {
+            throw new IllegalArgumentException("Cannot transfer to your own account");
+        }
+        if (!fromWallet.getIsActive()) {
+            throw new RuntimeException("Source wallet is inactive");
+        }
         if (!toWallet.getIsActive()) {
             throw new RuntimeException("Recipient wallet is inactive");
         }
+        if (fromWallet.getBalance().compareTo(amount) < 0) {
+            throw new RuntimeException("Insufficient balance");
+        }
 
-        // Perform transfer
         fromWallet.setBalance(fromWallet.getBalance().subtract(amount));
         toWallet.setBalance(toWallet.getBalance().add(amount));
-        walletRepository.save(fromWallet);
-        walletRepository.save(toWallet);
+        Wallet updatedFrom = walletRepository.save(fromWallet);
+        Wallet updatedTo = walletRepository.save(toWallet);
+        cacheWallet(updatedFrom);
+        cacheWallet(updatedTo);
 
-        // Record transaction
         Transaction transaction = new Transaction();
+        if (idempotencyKey != null && !idempotencyKey.isBlank()) {
+            transaction.setTransactionId(idempotencyKey);
+        }
         transaction.setType(TransactionType.TRANSFER);
         transaction.setAmount(amount);
         transaction.setStatus(TransactionStatus.COMPLETED);
         transaction.setFromWalletId(fromWallet.getId());
         transaction.setToWalletId(toWallet.getId());
-        transaction.setDescription("Transfer to phone " + toPhone);
-        transaction.setMetadata("{\"recipientPhone\":\"" + toPhone + "\"}");
-
+        transaction.setDescription("Transfer to phone " + normalizedPhone);
+        transaction.setMetadata(buildTransferMetadata(normalizedPhone, recipientUserId, note, idempotencyKey));
         return transactionRepository.save(transaction);
     }
 
@@ -765,5 +855,120 @@ public class WalletService {
         transactionRepository.save(transaction);
 
         return updated;
+    }
+
+    private String findUserIdByPhone(String phone) {
+        logger.info("=== findUserIdByPhone START ===");
+        logger.info("Input phone: '{}'", phone);
+        
+        String e164Phone = normalizePhoneToE164(phone);
+        logger.info("Normalized to E.164: '{}'", e164Phone);
+        
+        List<String> phoneVariations = getPhoneCandidates(e164Phone);
+        logger.info("Generated {} phone variations: {}", phoneVariations.size(), phoneVariations);
+        
+        for (String variation : phoneVariations) {
+            logger.info("Trying variation: '{}'", variation);
+            String sql = "SELECT id FROM identity.users WHERE \"phoneNumber\" = ? LIMIT 1";
+            List<String> ids = jdbcTemplate.query(sql, (rs, rowNum) -> rs.getString("id"), variation);
+            logger.info("Query returned {} results for variation: '{}'", ids.size(), variation);
+            
+            if (!ids.isEmpty()) {
+                logger.info("=== findUserIdByPhone END (SUCCESS) ===");
+                return ids.get(0);
+            }
+        }
+        
+        // Debug: show sample users in database
+        try {
+            String debugSql = "SELECT id, \"phoneNumber\" FROM identity.users LIMIT 5";
+            List<Map<String, Object>> samples = jdbcTemplate.queryForList(debugSql);
+            logger.warn("Sample users in database: {}", samples);
+        } catch (Exception e) {
+            logger.error("Failed to query sample users", e);
+        }
+        
+        logger.error("=== findUserIdByPhone END (NOT FOUND) ===");
+        throw new RuntimeException("Recipient not found");
+    }
+
+    private List<String> getPhoneCandidates(String e164Phone) {
+        List<String> candidates = new ArrayList<>();
+        String digits = e164Phone.replaceAll("\\D", "");
+        
+        // Try E.164 format (+66...)
+        candidates.add(e164Phone);
+        
+        // Try local format (0...)
+        if (digits.startsWith("66") && digits.length() == 11) {
+            candidates.add("0" + digits.substring(2));
+        }
+        
+        logger.debug("Phone candidates generated: {}", candidates);
+        return candidates;
+    }
+
+    private String normalizePhone(String phone) {
+        if (phone == null) {
+            throw new IllegalArgumentException("recipientPhone is required");
+        }
+        String digits = phone.replaceAll("\\D", "");
+        if (digits.length() == 9) {
+            digits = "0" + digits;
+        }
+        if (digits.length() != 10) {
+            throw new IllegalArgumentException("Recipient phone must be 10 digits");
+        }
+        return digits;
+    }
+
+    private String normalizePhoneToE164(String phone) {
+        logger.info("normalizePhoneToE164 input: '{}'", phone);
+        if (phone == null) {
+            throw new IllegalArgumentException("recipientPhone is required");
+        }
+        String digits = phone.replaceAll("\\D", "");
+        logger.info("Digits after removing non-digits: '{}'", digits);
+        
+        // Convert to +66 format (E.164)
+        if (digits.startsWith("66") && digits.length() == 11) {
+            String result = "+66" + digits.substring(2);
+            logger.info("Case: starts with 66, length 11 -> '{}'", result);
+            return result;
+        }
+        if (digits.startsWith("0") && digits.length() == 10) {
+            String result = "+66" + digits.substring(1);
+            logger.info("Case: starts with 0, length 10 -> '{}'", result);
+            return result;
+        }
+        if (digits.length() == 9) {
+            String result = "+66" + digits;
+            logger.info("Case: length 9 -> '{}'", result);
+            return result;
+        }
+        // If already has + prefix, keep it
+        if (phone.startsWith("+")) {
+            logger.info("Case: already has + prefix -> '{}'", phone);
+            return phone;
+        }
+        // Default: assume Thai number and add +66
+        String result = "+66" + digits;
+        logger.info("Case: default -> '{}'", result);
+        return result;
+    }
+
+    private String maskPhone(String phone) {
+        return phone.substring(0, 3) + "-***-" + phone.substring(phone.length() - 3);
+    }
+
+    private String buildTransferMetadata(String phone, String recipientUserId, String note, String idempotencyKey) {
+        String escapedNote = note == null ? "" : escapeJson(note);
+        return String.format(
+                "{\"recipientPhone\":\"%s\",\"recipientUserId\":\"%s\",\"note\":\"%s\",\"idempotencyKey\":\"%s\"}",
+                escapeJson(phone),
+                escapeJson(recipientUserId),
+                escapedNote,
+                idempotencyKey == null ? "" : escapeJson(idempotencyKey)
+        );
     }
 }

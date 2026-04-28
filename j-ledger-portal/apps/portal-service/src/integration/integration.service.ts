@@ -5,7 +5,7 @@ import { PrismaService } from '../prisma/prisma.service';
 import { FinanceService } from './finance.service';
 import Stripe from 'stripe';
 import { TopupOrderStatus } from '@prisma/client';
-import { randomUUID } from 'crypto';
+import { createHash, randomUUID } from 'crypto';
 
 @Injectable()
 export class IntegrationService {
@@ -103,7 +103,9 @@ export class IntegrationService {
         to: query.to,
       });
 
-      const walletItems = (walletTransactions || []).map((tx: any) => this.mapWalletTransactionToHistoryItem(tx));
+      const walletItems = (walletTransactions || []).map((tx: any) =>
+        this.mapWalletTransactionToHistoryItem(tx),
+      );
       const searched = this.applyHistorySearch(walletItems, query.q);
       const offset = page * size;
       const pagedItems = searched.slice(offset, offset + size);
@@ -306,6 +308,113 @@ export class IntegrationService {
     };
   }
 
+  async previewP2PTransfer(userId: string, body: { recipientPhone: string; amount: number }) {
+    const recipientPhone = this.normalizePhone(body.recipientPhone);
+    const amount = Number(body.amount || 0);
+    if (amount <= 0) {
+      throw new HttpException(
+        { message: 'Amount must be greater than zero' },
+        HttpStatus.BAD_REQUEST,
+      );
+    }
+
+    try {
+      const preview = await this.financeService.previewP2PTransfer(userId, {
+        recipientPhone,
+        amount: amount.toFixed(4),
+      });
+
+      const recipientUserId = preview?.recipient?.userId;
+      const recipientProfile = recipientUserId
+        ? await this.prisma.kYCData
+            .findUnique({ where: { userId: recipientUserId } })
+            .catch(() => null)
+        : null;
+
+      this.logger.log(
+        `[P2PPreview] user=${userId} recipientHash=${this.hashPhone(recipientPhone)} amount=${amount.toFixed(2)} outcome=success`,
+      );
+
+      return {
+        recipient: {
+          userId: recipientUserId,
+          phoneMasked: preview?.recipient?.phoneMasked || this.maskPhone(recipientPhone),
+          displayName: recipientProfile?.idCardName || null,
+        },
+        amount: preview?.amount ?? amount.toFixed(4),
+        fee: preview?.fee ?? '0.0000',
+        totalDebit: preview?.totalDebit ?? amount.toFixed(4),
+        currency: preview?.currency ?? 'THB',
+      };
+    } catch (error: any) {
+      const message =
+        error?.response?.data?.message || error?.message || 'Failed to preview transfer';
+      this.logger.error(
+        `[P2PPreview] user=${userId} recipientHash=${this.hashPhone(recipientPhone)} amount=${amount.toFixed(2)} outcome=failed message="${message}"`,
+      );
+      throw new HttpException({ message }, error?.status || HttpStatus.BAD_GATEWAY);
+    }
+  }
+
+  async transferP2P(
+    userId: string,
+    body: { recipientPhone: string; amount: number; note?: string; idempotencyKey: string },
+  ) {
+    const recipientPhone = this.normalizePhone(body.recipientPhone);
+    const amount = Number(body.amount || 0);
+    if (amount <= 0) {
+      throw new HttpException(
+        { message: 'Amount must be greater than zero' },
+        HttpStatus.BAD_REQUEST,
+      );
+    }
+    if (!body.idempotencyKey) {
+      throw new HttpException({ message: 'idempotencyKey is required' }, HttpStatus.BAD_REQUEST);
+    }
+
+    try {
+      const tx = await this.financeService.transferByPhone(userId, {
+        recipientPhone,
+        amount: amount.toFixed(4),
+        note: body.note,
+        idempotencyKey: body.idempotencyKey,
+      });
+
+      const metadata = this.parseMetadata(tx?.metadata);
+      const recipientUserId = metadata?.recipientUserId;
+      const recipientProfile = recipientUserId
+        ? await this.prisma.kYCData
+            .findUnique({ where: { userId: recipientUserId } })
+            .catch(() => null)
+        : null;
+
+      this.logger.log(
+        `[P2PTransfer] user=${userId} recipientHash=${this.hashPhone(recipientPhone)} amount=${amount.toFixed(2)} outcome=success txn=${tx?.transactionId || tx?.id}`,
+      );
+
+      return {
+        transactionId: tx?.transactionId || tx?.id?.toString(),
+        status: tx?.status || 'COMPLETED',
+        amount: Number(tx?.amount || amount).toFixed(4),
+        fee: '0.0000',
+        totalDebit: Number(tx?.amount || amount).toFixed(4),
+        currency: 'THB',
+        recipient: {
+          userId: recipientUserId || null,
+          phoneMasked: this.maskPhone(recipientPhone),
+          displayName: recipientProfile?.idCardName || null,
+        },
+        createdAt: tx?.createdAt || new Date().toISOString(),
+      };
+    } catch (error: any) {
+      const message = error?.response?.data?.message || error?.message || 'Failed to transfer';
+      this.logger.error(
+        `[P2PTransfer] user=${userId} recipientHash=${this.hashPhone(recipientPhone)} amount=${amount.toFixed(2)} outcome=failed message="${message}"`,
+      );
+      throw new HttpException({ message }, error?.status || HttpStatus.BAD_GATEWAY);
+    }
+  }
+
   async processStripeWebhook(signature: string | undefined, rawBody: Buffer) {
     const webhookSecret = this.configService.get<string>('STRIPE_WEBHOOK_SECRET', '');
     if (!signature) {
@@ -447,7 +556,9 @@ export class IntegrationService {
     const kind = (tx?.type || 'PAYMENT') as 'TOPUP' | 'TRANSFER' | 'PAYMENT' | 'WITHDRAWAL';
     const metadata = this.parseMetadata(tx?.metadata);
     const isIncome = kind === 'TOPUP' || (!tx?.fromWalletId && !!tx?.toWalletId);
-    const occurredAt = tx?.createdAt ? new Date(tx.createdAt).toISOString() : new Date().toISOString();
+    const occurredAt = tx?.createdAt
+      ? new Date(tx.createdAt).toISOString()
+      : new Date().toISOString();
     const amount = Number(tx?.amount || 0);
 
     return {
@@ -478,5 +589,27 @@ export class IntegrationService {
         .filter(Boolean)
         .some((value) => String(value).toLowerCase().includes(q)),
     );
+  }
+
+  private normalizePhone(phone: string) {
+    const digits = (phone || '').replace(/\D/g, '');
+    if (digits.length === 9) {
+      return `0${digits}`;
+    }
+    return digits;
+  }
+
+  private maskPhone(phone: string) {
+    if (!phone || phone.length < 6) {
+      return phone;
+    }
+    return `${phone.slice(0, 3)}-***-${phone.slice(-3)}`;
+  }
+
+  private hashPhone(phone: string) {
+    return createHash('sha256')
+      .update(phone || '')
+      .digest('hex')
+      .slice(0, 10);
   }
 }

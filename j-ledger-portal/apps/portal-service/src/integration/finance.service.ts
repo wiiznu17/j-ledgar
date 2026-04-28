@@ -43,6 +43,16 @@ interface CreditTopUpRequest {
   metadata?: Record<string, any>;
 }
 
+interface P2PPreviewRequest {
+  recipientPhone: string;
+  amount: string;
+}
+
+interface P2PTransferRequest extends P2PPreviewRequest {
+  note?: string;
+  idempotencyKey: string;
+}
+
 interface GetTransactionsQuery {
   page?: number;
   size?: number;
@@ -179,6 +189,32 @@ export class FinanceService {
     } catch (error: any) {
       this.logCompactError(`creditStripeTopUp user=${userId}`, error);
       this.rethrowAsHttpException(error, 'Failed to credit top up');
+    }
+  }
+
+  async previewP2PTransfer(fromUserId: string, payload: P2PPreviewRequest): Promise<any> {
+    const url = `${this.financeServiceUrl}/api/finance/wallets/${fromUserId}/transfer/preview`;
+    try {
+      const response = await this.httpService.axiosRef.post(url, payload, {
+        headers: this.getInternalHeaders(),
+      });
+      return response.data;
+    } catch (error: any) {
+      this.logCompactError(`previewP2PTransfer user=${fromUserId}`, error);
+      this.rethrowAsHttpException(error, 'Failed to preview transfer');
+    }
+  }
+
+  async transferByPhone(fromUserId: string, payload: P2PTransferRequest): Promise<any> {
+    const url = `${this.financeServiceUrl}/api/finance/wallets/${fromUserId}/transfer/phone`;
+    try {
+      const response = await this.httpService.axiosRef.post(url, payload, {
+        headers: this.getInternalHeaders(),
+      });
+      return response.data;
+    } catch (error: any) {
+      this.logCompactError(`transferByPhone user=${fromUserId}`, error);
+      this.rethrowAsHttpException(error, 'Failed to transfer');
     }
   }
 

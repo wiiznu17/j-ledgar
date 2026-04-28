@@ -25,6 +25,7 @@ import {
 } from '../../lib/error-handling';
 import { NotificationService } from '../../lib/notification-service';
 import { useScreenCaptureProtection } from '@/hooks/useScreenCaptureProtection';
+import api from '@/lib/axios';
 
 const { width } = Dimensions.get('window');
 
@@ -33,7 +34,7 @@ export default function ReviewTransferScreen() {
   useScreenCaptureProtection();
 
   const router = useRouter();
-  const { recipient, amount, note, merchantName } = useLocalSearchParams();
+  const { recipient, amount, note, merchantName, recipientName, recipientMasked } = useLocalSearchParams();
   const [isProcessing, setIsProcessing] = useState(false);
   const [isConfirming, setIsConfirming] = useState(false);
 
@@ -126,14 +127,14 @@ export default function ReviewTransferScreen() {
         details: { merchantName, note },
       });
 
-      // Mock transfer API call (replace with actual API in production)
-      await new Promise((resolve) => setTimeout(resolve, 1500));
-
-      // Simulate random network error for testing
-      // Remove this in production
-      // if (Math.random() < 0.1) {
-      //   throw { message: 'Network Error', code: 'ECONNABORTED' };
-      // }
+      const idempotencyKey = `p2p_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
+      const transferRes = await api.post('/integration/p2p/transfer', {
+        recipientPhone: recipient,
+        amount: transferAmount,
+        note: note || undefined,
+        idempotencyKey,
+      });
+      const transferData = transferRes.data || {};
 
       setIsProcessing(false);
 
@@ -144,7 +145,16 @@ export default function ReviewTransferScreen() {
 
       router.push({
         pathname: '/transfer/success',
-        params: { recipient, amount, note, merchantName },
+        params: {
+          recipient,
+          amount,
+          note,
+          merchantName,
+          transactionId: transferData.transactionId,
+          createdAt: transferData.createdAt,
+          recipientName: transferData?.recipient?.displayName || recipientName,
+          recipientMasked: transferData?.recipient?.phoneMasked || recipientMasked,
+        },
       } as any);
     } catch (err: any) {
       console.error('[Transfer] Error:', err);

@@ -98,6 +98,29 @@ public class WalletController {
         return ResponseEntity.ok(transaction);
     }
 
+    @PostMapping("/{fromUserId}/transfer/preview")
+    public ResponseEntity<Map<String, Object>> previewTransferByPhone(
+            @PathVariable String fromUserId,
+            @RequestBody Map<String, String> request
+    ) {
+        BigDecimal amount = new BigDecimal(request.get("amount"));
+        String recipientPhone = request.get("recipientPhone");
+        return ResponseEntity.ok(walletService.previewTransferByPhone(fromUserId, recipientPhone, amount));
+    }
+
+    @PostMapping("/{fromUserId}/transfer/phone")
+    public ResponseEntity<Transaction> transferByPhone(
+            @PathVariable String fromUserId,
+            @RequestBody Map<String, String> request
+    ) {
+        BigDecimal amount = new BigDecimal(request.get("amount"));
+        String recipientPhone = request.get("recipientPhone");
+        String note = request.get("note");
+        String idempotencyKey = request.get("idempotencyKey");
+        Transaction transaction = walletService.transferByPhoneV1(fromUserId, recipientPhone, amount, note, idempotencyKey);
+        return ResponseEntity.ok(transaction);
+    }
+
     @GetMapping("/{userId}/topup-history")
     public ResponseEntity<List<Transaction>> getTopUpHistory(@PathVariable String userId) {
         List<Transaction> transactions = walletService.getTopUpHistory(userId);
