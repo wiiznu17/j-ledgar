@@ -1,6 +1,16 @@
-import React, { useState } from 'react';
-import { View, Text, ScrollView, Image, TouchableOpacity, Switch, Platform } from 'react-native';
+import React, { useState, useEffect } from 'react';
+import {
+  View,
+  Text,
+  ScrollView,
+  Image,
+  TouchableOpacity,
+  Switch,
+  Platform,
+  ActivityIndicator,
+} from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { useFocusEffect } from '@react-navigation/native';
 import {
   User,
   Shield,
@@ -10,27 +20,45 @@ import {
   Fingerprint,
   Smartphone,
   CreditCard,
-  Edit2,
 } from 'lucide-react-native';
 import { MotiView } from 'moti';
 import { useRouter } from 'expo-router';
 import { useAuthStore } from '@/store/auth';
-
-// Mock User Data
-const MOCK_USER = {
-  name: 'Alex Johnson',
-  phone: '+66 81 234 5678',
-  avatar: require('../../../assets/images/mock_user_avatar.png'),
-};
+import { UserProfileService, UserProfile } from '@/lib/user-service';
 
 export default function SettingsScreen() {
   const { logout } = useAuthStore();
   const router = useRouter();
 
   // States
+  const [isLoading, setIsLoading] = useState(true);
+  const [userProfile, setUserProfile] = useState<UserProfile | null>(null);
   const [isAccountFrozen, setIsAccountFrozen] = useState(false);
   const [biometrics, setBiometrics] = useState(true);
   const [pushNotifs, setPushNotifs] = useState(true);
+
+  // Fetch user profile
+  const fetchProfile = async () => {
+    try {
+      const profile = await UserProfileService.getProfile();
+      setUserProfile(profile);
+    } catch (error) {
+      console.error('[Profile] Failed to fetch profile:', error);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  // Fetch on mount and when screen is focused
+  useEffect(() => {
+    fetchProfile();
+  }, []);
+
+  useFocusEffect(
+    React.useCallback(() => {
+      fetchProfile();
+    }, []),
+  );
 
   const handleLogout = async () => {
     try {
@@ -38,10 +66,38 @@ export default function SettingsScreen() {
       router.replace('/(auth)/login' as any);
     } catch (err) {
       console.error('[Profile] Logout failed:', err);
-      // Fallback redirect
       router.replace('/(auth)/login' as any);
     }
   };
+
+  // Format phone number for display
+  const formatPhone = (phone: string) => {
+    if (!phone) return '';
+    const digits = phone.replace(/\D/g, '');
+    if (digits.length === 10 && digits.startsWith('0')) {
+      return `${digits.slice(0, 3)}-${digits.slice(3, 6)}-${digits.slice(6)}`;
+    }
+    return phone;
+  };
+
+  // Get display name from profile
+  const getDisplayName = () => {
+    if (userProfile?.profile?.firstName && userProfile?.profile?.lastName) {
+      return `${userProfile.profile.firstName} ${userProfile.profile.lastName}`;
+    }
+    return userProfile?.phoneNumber || 'J-Ledger User';
+  };
+
+  if (isLoading) {
+    return (
+      <SafeAreaView className="flex-1 bg-[#f8f9fe] items-center justify-center" edges={['top']}>
+        <ActivityIndicator size="large" color="#f48fb1" />
+        <Text className="text-sm font-manrope font-bold text-gray-400 mt-4">
+          กำลังโหลดข้อมูล...
+        </Text>
+      </SafeAreaView>
+    );
+  }
 
   return (
     <SafeAreaView className="flex-1 bg-[#f8f9fe]" edges={['top']}>
@@ -63,12 +119,14 @@ export default function SettingsScreen() {
           >
             <TouchableOpacity
               activeOpacity={0.8}
-              onPress={() => router.push('/edit-profile' as any)} // เปลี่ยน Path ไปหน้า Profile ที่ทำก่อนหน้านี้
+              onPress={() => router.push('/profile/information' as any)}
             >
               <View className="p-1 border-[3px] border-white rounded-[2.5rem] shadow-sm bg-white">
-                <Image source={MOCK_USER.avatar} className="w-28 h-28 rounded-[2.2rem]" />
+                <Image
+                  source={require('../../../assets/images/mock_user_avatar.png')}
+                  className="w-28 h-28 rounded-[2.2rem]"
+                />
               </View>
-              {/* Edit Badge */}
               <View className="absolute -bottom-2 -right-2 w-10 h-10 bg-[#f48fb1] rounded-full items-center justify-center border-4 border-[#f8f9fe] shadow-sm">
                 <User size={18} color="white" />
               </View>
@@ -77,12 +135,16 @@ export default function SettingsScreen() {
 
           <View className="items-center mt-5">
             <Text className="text-2xl font-manrope font-black text-gray-800 tracking-tight">
-              {MOCK_USER.name}
+              {getDisplayName()}
             </Text>
-            <Text className="text-sm font-bold text-gray-400 mt-1">{MOCK_USER.phone}</Text>
+            <Text className="text-sm font-bold text-gray-400 mt-1">
+              {formatPhone(userProfile?.phoneNumber || '')}
+            </Text>
             <View className="bg-pink-50 px-3 py-1.5 rounded-full mt-3 border border-pink-100">
               <Text className="text-[10px] font-black text-[#f48fb1] uppercase tracking-widest">
-                Premium Member
+                {userProfile?.registrationState === 'COMPLETED'
+                  ? 'Premium Member'
+                  : 'Standard Member'}
               </Text>
             </View>
           </View>
@@ -95,7 +157,7 @@ export default function SettingsScreen() {
           </Text>
           <View className="bg-white rounded-[2rem] border border-gray-50 shadow-sm overflow-hidden">
             <SettingItem
-              icon={<User size={20} color="#3b82f6" />} // Blue
+              icon={<User size={20} color="#3b82f6" />}
               iconBg="bg-blue-50"
               label="My Information Profile"
               onPress={() => router.push('/profile/information' as any)}
@@ -110,7 +172,7 @@ export default function SettingsScreen() {
           </Text>
           <View className="bg-white rounded-[2rem] border border-gray-50 shadow-sm overflow-hidden">
             <ToggleSetting
-              icon={<Shield size={20} color="#ef4444" />} // Red
+              icon={<Shield size={20} color="#ef4444" />}
               iconBg="bg-red-50"
               label="Freeze Account"
               active={isAccountFrozen}
@@ -118,14 +180,14 @@ export default function SettingsScreen() {
             />
             <Divider />
             <SettingItem
-              icon={<Shield size={20} color="#3b82f6" />} // Blue
+              icon={<Shield size={20} color="#3b82f6" />}
               iconBg="bg-blue-50"
               label="Change Security PIN"
               onPress={() => {}}
             />
             <Divider />
             <ToggleSetting
-              icon={<Fingerprint size={20} color="#a855f7" />} // Purple
+              icon={<Fingerprint size={20} color="#a855f7" />}
               iconBg="bg-purple-50"
               label="Biometric ID"
               active={biometrics}
@@ -133,7 +195,7 @@ export default function SettingsScreen() {
             />
             <Divider />
             <SettingItem
-              icon={<Smartphone size={20} color="#64748b" />} // Slate
+              icon={<Smartphone size={20} color="#64748b" />}
               iconBg="bg-slate-50"
               label="Manage Devices"
               onPress={() => {}}
@@ -148,7 +210,7 @@ export default function SettingsScreen() {
           </Text>
           <View className="bg-white rounded-[2rem] border border-gray-50 shadow-sm overflow-hidden">
             <ToggleSetting
-              icon={<Bell size={20} color="#f97316" />} // Orange
+              icon={<Bell size={20} color="#f97316" />}
               iconBg="bg-orange-50"
               label="Push Notifications"
               active={pushNotifs}
@@ -156,7 +218,7 @@ export default function SettingsScreen() {
             />
             <Divider />
             <SettingItem
-              icon={<CreditCard size={20} color="#14b8a6" />} // Teal
+              icon={<CreditCard size={20} color="#14b8a6" />}
               iconBg="bg-teal-50"
               label="Linked Cards"
               onPress={() => {}}

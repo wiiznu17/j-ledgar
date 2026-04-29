@@ -2,6 +2,7 @@ import { create } from 'zustand';
 import * as SecureStore from 'expo-secure-store';
 import { Platform } from 'react-native';
 import { verifySecureStorage } from '@/lib/device.utils';
+import { api } from '@/lib/axios';
 
 interface WalletUser {
   id: string;
@@ -90,12 +91,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
     if (!token) return false;
 
     try {
-      const API_URL = process.env.EXPO_PUBLIC_API_URL || 'http://localhost:3000';
-      await require('axios').post(
-        `${API_URL}/identity/pin/verify`,
-        { pin },
-        { headers: { Authorization: `Bearer ${token}` } },
-      );
+      await api.post('/identity/pin/verify', { pin });
       return true;
     } catch (error: any) {
       console.error('[Auth] PIN verification failed:', error.response?.data || error.message);
@@ -108,11 +104,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
     if (!refreshToken) return false;
 
     try {
-      const API_URL = process.env.EXPO_PUBLIC_API_URL || 'http://localhost:3000';
-      const res = await require('axios').post(
-        `${API_URL}/identity/refresh`,
-        { refreshToken },
-      );
+      const res = await api.post('/identity/refresh', { refreshToken });
 
       const { accessToken, refreshToken: newRefreshToken } = res.data;
       await get().setToken(accessToken, newRefreshToken);
@@ -171,7 +163,13 @@ export const useAuthStore = create<AuthState>((set, get) => ({
         // Access token gone but refresh token still exists
         // User needs to verify PIN to resume session
         console.log('[Auth] Session found but access token expired, PIN verification required');
-        set({ refreshToken, hasSession: true, needsPinVerification: true, isAuthenticated: false, biometricEnabled });
+        set({
+          refreshToken,
+          hasSession: true,
+          needsPinVerification: true,
+          isAuthenticated: false,
+          biometricEnabled,
+        });
       } else {
         console.log('[Auth] No existing session found');
         set({ hasSession: false, biometricEnabled });
@@ -201,6 +199,13 @@ export const useAuthStore = create<AuthState>((set, get) => ({
       await SecureStore.deleteItemAsync('auth_token');
       await SecureStore.deleteItemAsync(REFRESH_TOKEN_KEY);
     }
-    set({ token: null, refreshToken: null, isAuthenticated: false, hasSession: false, needsPinVerification: false, user: null });
+    set({
+      token: null,
+      refreshToken: null,
+      isAuthenticated: false,
+      hasSession: false,
+      needsPinVerification: false,
+      user: null,
+    });
   },
 }));

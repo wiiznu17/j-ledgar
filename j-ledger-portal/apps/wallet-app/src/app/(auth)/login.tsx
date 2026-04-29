@@ -29,10 +29,7 @@ import { useAuthStore } from '@/store/auth';
 import { OtpInputFields } from '@/components/common/OtpInputFields';
 import { getStableDeviceId, getDeviceName } from '@/lib/device.utils';
 import { useScreenCaptureProtection } from '@/hooks/useScreenCaptureProtection';
-
-import axios from 'axios';
-
-const API_URL = process.env.EXPO_PUBLIC_API_URL || 'http://localhost:3002';
+import { api } from '@/lib/axios';
 
 const { width } = Dimensions.get('window');
 
@@ -110,11 +107,25 @@ export default function LoginScreen() {
       const deviceId = await getStableDeviceId();
       const deviceName = getDeviceName();
 
-      const res = await axios.post(`${API_URL}/identity/login`, {
+      console.log('[Login] Attempting login with:', {
+        phone,
+        deviceId,
+        deviceName,
+        url: '/identity/login',
+      });
+
+      const res = await api.post('/identity/login', {
         phoneNumber: phone,
         password,
         deviceId,
         deviceName,
+      });
+
+      console.log('[Login] Login response:', {
+        status: res.status,
+        hasAccessToken: !!res.data.accessToken,
+        hasRefreshToken: !!res.data.refreshToken,
+        userId: res.data.userId,
       });
 
       // If successful (no OTP required)
@@ -122,6 +133,12 @@ export default function LoginScreen() {
       setUser({ id: res.data.userId || 'current', phoneNumber: phone });
       setStep('PIN');
     } catch (err: any) {
+      console.error('[Login] Login failed:', {
+        message: err.message,
+        status: err.response?.status,
+        data: err.response?.data,
+      });
+
       const errorData = err.response?.data;
 
       if (errorData?.errorCode === 'NEW_DEVICE_OTP_REQUIRED') {
@@ -145,7 +162,7 @@ export default function LoginScreen() {
       const deviceId = await getStableDeviceId();
       const deviceName = getDeviceName();
 
-      const res = await axios.post(`${API_URL}/identity/device/verify`, {
+      const res = await api.post('/identity/device/verify', {
         phoneNumber: phone,
         challengeId,
         otp: otpString,

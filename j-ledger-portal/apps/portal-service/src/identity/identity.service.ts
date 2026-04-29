@@ -1047,6 +1047,73 @@ export class IdentityService {
     return { exportedAt: new Date().toISOString() };
   }
 
+  async getProfile(userId: string) {
+    this.logger.log(`[Identity] Fetching profile for user ${userId}`);
+
+    const user = await this.prisma.user.findUnique({
+      where: { id: userId },
+      include: {
+        userSettings: {
+          where: { key: 'profile' },
+        },
+      },
+    });
+
+    if (!user) {
+      throw new BadRequestException('User not found');
+    }
+
+    const profileSetting = user.userSettings[0];
+    let profileData = {};
+
+    if (profileSetting) {
+      try {
+        profileData = JSON.parse(profileSetting.value);
+      } catch (e) {
+        this.logger.error(`Failed to parse profile data for user ${userId}`, e);
+      }
+    }
+
+    return {
+      id: user.id,
+      phoneNumber: user.phoneNumber,
+      email: user.email,
+      status: user.status,
+      registrationState: user.registrationState,
+      ledgerAccountId: user.ledgerAccountId,
+      createdAt: user.createdAt,
+      profile: profileData,
+    };
+  }
+
+  async updateProfile(userId: string, profileData: any) {
+    this.logger.log(`[Identity] Updating profile for user ${userId}`);
+
+    const user = await this.prisma.user.findUnique({
+      where: { id: userId },
+    });
+
+    if (!user) {
+      throw new BadRequestException('User not found');
+    }
+
+    await this.prisma.userSetting.upsert({
+      where: { userId_key: { userId: user.id, key: 'profile' } },
+      create: {
+        userId: user.id,
+        key: 'profile',
+        value: JSON.stringify(profileData),
+      },
+      update: {
+        value: JSON.stringify(profileData),
+      },
+    });
+
+    this.logger.log(`[Identity] Profile updated for user ${userId}`);
+
+    return { success: true };
+  }
+
   async requestAccountDeletion(userId: string, context?: any) {
     // TODO: Implement account deletion request logic
     return { success: true };

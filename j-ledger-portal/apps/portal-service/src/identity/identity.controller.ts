@@ -143,10 +143,21 @@ export class IdentityController {
   @HttpCode(HttpStatus.OK)
   @Throttle({ default: {}, login: {} })
   async login(@Body() body: LoginDto, @Req() req: Request) {
-    return this.identityService.login(body, {
+    console.log('[IdentityController] Login request:', {
+      phoneNumber: body.phoneNumber,
       ip: req.ip,
       userAgent: this.singleHeader(req.headers['user-agent']),
     });
+    const result = await this.identityService.login(body, {
+      ip: req.ip,
+      userAgent: this.singleHeader(req.headers['user-agent']),
+    });
+    console.log('[IdentityController] Login response:', {
+      success: !!result,
+      hasAccessToken: !!result.accessToken,
+      hasRefreshToken: !!result.refreshToken,
+    });
+    return result;
   }
 
   @Post('device/verify')
@@ -263,6 +274,24 @@ export class IdentityController {
       throw new UnauthorizedException('User is not authenticated');
     }
     return this.identityService.exportUserData(req.user.sub);
+  }
+
+  @UseGuards(JwtAuthGuard)
+  @Get('profile')
+  async getProfile(@Req() req: AuthenticatedRequest) {
+    if (!req.user?.sub) {
+      throw new UnauthorizedException('User is not authenticated');
+    }
+    return this.identityService.getProfile(req.user.sub);
+  }
+
+  @UseGuards(JwtAuthGuard)
+  @Put('profile')
+  async updateProfile(@Req() req: AuthenticatedRequest, @Body() body: any) {
+    if (!req.user?.sub) {
+      throw new UnauthorizedException('User is not authenticated');
+    }
+    return this.identityService.updateProfile(req.user.sub, body);
   }
 
   @UseGuards(JwtAuthGuard)

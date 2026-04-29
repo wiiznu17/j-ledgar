@@ -67,9 +67,14 @@ export function getTimeoutForRequest(url?: string): number {
 
 const getBaseUrl = () => {
   if (__DEV__) {
-    return process.env.EXPO_PUBLIC_API_URL || 'http://localhost:3000';
+    // Use localhost for iOS simulator on same machine, or IP for real device
+    const baseUrl = process.env.EXPO_PUBLIC_API_URL || 'http://localhost:3000';
+    // Ensure /api suffix
+    return baseUrl.endsWith('/api') ? baseUrl : `${baseUrl}/api`;
   }
-  return process.env.EXPO_PUBLIC_API_URL || 'https://api.jledger.io';
+  const baseUrl = process.env.EXPO_PUBLIC_API_URL || 'https://api.jledger.io';
+  // Ensure /api suffix
+  return baseUrl.endsWith('/api') ? baseUrl : `${baseUrl}/api`;
 };
 
 export const api = axios.create({
@@ -87,6 +92,13 @@ let refreshSubscribers: ((token: string) => void)[] = [];
 // Request Interceptor: Attach JWT Token and validate connection security
 api.interceptors.request.use(
   async (config) => {
+    console.log('[Axios] Request:', {
+      baseURL: config.baseURL,
+      url: config.url,
+      fullURL: `${config.baseURL}${config.url}`,
+      method: config.method,
+    });
+
     // Validate connection security before making request
     if (config.baseURL) {
       const securityCheck = validateConnectionSecurity(config.baseURL);
