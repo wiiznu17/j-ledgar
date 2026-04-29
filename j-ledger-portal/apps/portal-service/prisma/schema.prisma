@@ -238,7 +238,12 @@ model KYCData {
   userId                  String   @unique // Reference to identity.User (no FK)
   verificationStatus      String   @default("PENDING") // PENDING, APPROVED, REJECTED
   idCardNumberEncrypted   String?
-  idCardName              String?
+  idCardName              String?  // Keep for backward compatibility/full string
+  firstNameTh             String?
+  lastNameTh              String?
+  firstNameEn             String?
+  lastNameEn              String?
+  dateOfBirth             DateTime?
   thaiNameEncrypted       String?
   prefix                  String?
   idCardToken             String?  @unique // SHA-256 of ID number for deduplication
@@ -251,6 +256,7 @@ model KYCData {
   idCardIssueDate         DateTime?
   idCardExpiryDate        DateTime?
   religion                String?
+  registeredAddress       String?
   reviewNote              String?
   ocrConfidence           Float?
   verifiedAt              DateTime?

@@ -125,16 +125,21 @@ export class KycService {
     const idCardUrl = `https://storage.example.com/${idCardKey}`;
 
     // TODO: Perform OCR (implement OCR provider)
+    // mock
     const extraction = {
       idCardNumber: '1234567890123',
-      firstName: 'John',
-      lastName: 'Doe',
-      thaiName: 'จอห์น โด',
-      prefix: 'Mr.',
+      firstNameEn: 'John',
+      lastNameEn: 'Doe',
+      prefixEn: 'Mr.',
+      firstNameTh: 'สมชาย',
+      lastNameTh: 'เข็มกลัด',
+      prefixTh: 'นาย',
+      thaiName: 'นายสมชาย เข็มกลัด',
       dateOfBirth: '01/01/1990',
       idCardIssueDate: '01/01/2010',
       idCardExpiryDate: '01/01/2030',
-      religion: 'Buddhist',
+      religion: 'พุทธ',
+      address: '123/45 ถนนพระราม 9 แขวงห้วยขวาง เขตห้วยขวาง กรุงเทพฯ 10310',
     };
 
     const idCardNumber = extraction.idCardNumber;
@@ -156,8 +161,8 @@ export class KycService {
     // Encryption of PII
     const encryptedId = this.encryptPii(idCardNumber);
     const encryptedName =
-      extraction.firstName && extraction.lastName
-        ? this.encryptPii(`${extraction.firstName} ${extraction.lastName}`)
+      extraction.firstNameEn && extraction.lastNameEn
+        ? this.encryptPii(`${extraction.firstNameEn} ${extraction.lastNameEn}`)
         : null;
     const encryptedThaiName = extraction.thaiName ? this.encryptPii(extraction.thaiName) : null;
 
@@ -174,9 +179,14 @@ export class KycService {
         where: { userId },
         update: {
           idCardNumberEncrypted: encryptedId,
-          idCardName: encryptedName,
+          idCardName: extraction.thaiName,
+          firstNameTh: extraction.firstNameTh,
+          lastNameTh: extraction.lastNameTh,
+          firstNameEn: extraction.firstNameEn,
+          lastNameEn: extraction.lastNameEn,
+          dateOfBirth: extraction.dateOfBirth ? this.parseDate(extraction.dateOfBirth) : null,
           thaiNameEncrypted: encryptedThaiName,
-          prefix: extraction.prefix,
+          prefix: extraction.prefixTh,
           idCardToken,
           idCardImageUrl: idCardUrl,
           idCardImageSha256: idCardHash,
@@ -195,9 +205,14 @@ export class KycService {
           userId,
           verificationStatus: 'PENDING',
           idCardNumberEncrypted: encryptedId,
-          idCardName: encryptedName,
+          idCardName: extraction.thaiName,
+          firstNameTh: extraction.firstNameTh,
+          lastNameTh: extraction.lastNameTh,
+          firstNameEn: extraction.firstNameEn,
+          lastNameEn: extraction.lastNameEn,
+          dateOfBirth: extraction.dateOfBirth ? this.parseDate(extraction.dateOfBirth) : null,
           thaiNameEncrypted: encryptedThaiName,
-          prefix: extraction.prefix,
+          prefix: extraction.prefixTh,
           idCardToken,
           idCardImageUrl: idCardUrl,
           idCardImageSha256: idCardHash,
@@ -214,18 +229,22 @@ export class KycService {
         },
       });
     });
-
+    console.log("data from OCR = ", extraction)
     return {
       extractedData: {
         idCardNumber: idCardNumber,
-        firstName: extraction.firstName,
-        lastName: extraction.lastName,
+        firstNameTh: extraction.firstNameTh,
+        lastNameTh: extraction.lastNameTh,
+        prefixTh: extraction.prefixTh,
+        firstNameEn: extraction.firstNameEn,
+        lastNameEn: extraction.lastNameEn,
+        prefixEn: extraction.prefixEn,
         thaiName: extraction.thaiName,
-        prefix: extraction.prefix,
         dateOfBirth: extraction.dateOfBirth,
         idCardIssueDate: extraction.idCardIssueDate,
         idCardExpiryDate: extraction.idCardExpiryDate,
         religion: extraction.religion,
+        address: extraction.address,
       },
       livenessSessionId,
     };
@@ -290,7 +309,28 @@ export class KycService {
     // TODO: Upload to Storage (implement storage provider)
     const idCardUrl = `https://storage.example.com/${idCardKey}`;
 
-    // Simple mode: Skip OCR, just save the image
+    // Mock extraction for simple mode
+    const extraction = {
+      idCardNumber: '1234567890123',
+      firstNameTh: 'สมชาย',
+      lastNameTh: 'เข็มกลัด',
+      prefixTh: 'นาย',
+      firstNameEn: 'John',
+      lastNameEn: 'Doe',
+      prefixEn: 'Mr.',
+      thaiName: 'นายสมชาย เข็มกลัด',
+      dateOfBirth: '01/01/1990',
+      idCardIssueDate: '01/01/2010',
+      idCardExpiryDate: '01/01/2030',
+      religion: 'พุทธ',
+      address: '123/45 ถนนพระราม 9 แขวงห้วยขวาง เขตห้วยขวาง กรุงเทพฯ 10310',
+    };
+    console.log("data from simple mode = ", extraction)
+    const idCardNumber = extraction.idCardNumber;
+    const idCardToken = this.hashString(idCardNumber);
+    const encryptedId = this.encryptPii(idCardNumber);
+    const encryptedThaiName = this.encryptPii(extraction.thaiName);
+    
     const livenessSessionId = randomUUID();
     this.logger.log(`[KYC] Generated livenessSessionId: ${livenessSessionId}`);
 
@@ -301,21 +341,45 @@ export class KycService {
           update: {
             idCardImageUrl: idCardUrl,
             idCardImageSha256: idCardHash,
+            idCardNumberEncrypted: encryptedId,
+            idCardName: extraction.thaiName,
+            firstNameTh: extraction.firstNameTh,
+            lastNameTh: extraction.lastNameTh,
+            firstNameEn: extraction.firstNameEn,
+            lastNameEn: extraction.lastNameEn,
+            prefix: extraction.prefixTh,
+            dateOfBirth: this.parseDate(extraction.dateOfBirth),
+            thaiNameEncrypted: encryptedThaiName,
+            registeredAddress: extraction.address,
+            religion: extraction.religion,
+            idCardToken,
             livenessSessionId,
             verificationStatus: 'PENDING',
-            ocrConfidence: 0,
+            ocrConfidence: 0.95,
           },
           create: {
             userId,
             verificationStatus: 'PENDING',
             idCardImageUrl: idCardUrl,
             idCardImageSha256: idCardHash,
+            idCardNumberEncrypted: encryptedId,
+            idCardName: extraction.thaiName,
+            firstNameTh: extraction.firstNameTh,
+            lastNameTh: extraction.lastNameTh,
+            firstNameEn: extraction.firstNameEn,
+            lastNameEn: extraction.lastNameEn,
+            prefix: extraction.prefixTh,
+            dateOfBirth: this.parseDate(extraction.dateOfBirth),
+            thaiNameEncrypted: encryptedThaiName,
+            registeredAddress: extraction.address,
+            religion: extraction.religion,
+            idCardToken,
             livenessSessionId,
-            ocrConfidence: 0,
+            ocrConfidence: 0.95,
           },
         });
       });
-      this.logger.log(`[KYC] KYC data upserted for user ${userId}`);
+      this.logger.log(`[KYC] KYC data upserted for user ${userId} with encrypted fields`);
     } catch (error) {
       this.logger.error(`[KYC] Failed to upsert KYC data for user ${userId}`, error);
       throw error;
@@ -339,18 +403,59 @@ export class KycService {
 
     return {
       extractedData: {
-        idCardNumber: '1234567890123',
-        firstName: 'John',
-        lastName: 'Doe',
-        thaiName: 'จอห์น โด',
-        prefix: 'Mr.',
-        dateOfBirth: '01/01/1990',
-        idCardIssueDate: '01/01/2010',
-        idCardExpiryDate: '01/01/2030',
-        religion: 'Buddhist',
+        idCardNumber: idCardNumber,
+        firstNameTh: extraction.firstNameTh,
+        lastNameTh: extraction.lastNameTh,
+        prefixTh: extraction.prefixTh,
+        firstNameEn: extraction.firstNameEn,
+        lastNameEn: extraction.lastNameEn,
+        prefixEn: extraction.prefixEn,
+        thaiName: extraction.thaiName,
+        dateOfBirth: extraction.dateOfBirth,
+        idCardIssueDate: extraction.idCardIssueDate,
+        idCardExpiryDate: extraction.idCardExpiryDate,
+        religion: extraction.religion,
+        address: extraction.address,
       },
       livenessSessionId,
     };
+  }
+
+  async confirmOcrData(userId: string, dto: any) {
+    this.logger.log(`[KYC] STEP 5.5: Confirming OCR data for user ${userId}`);
+    
+    // Encrypt sensitive fields
+    const encryptedId = dto.idNumber ? this.encryptPii(dto.idNumber) : null;
+    const thaiName = `${dto.prefixTh || ''}${dto.firstNameTh || ''} ${dto.lastNameTh || ''}`.trim();
+    const encryptedThaiName = thaiName ? this.encryptPii(thaiName) : null;
+    const idCardToken = dto.idNumber ? this.hashString(dto.idNumber) : null;
+
+    try {
+      const updated = await this.prisma.kYCData.update({
+        where: { userId },
+        data: {
+          idCardNumberEncrypted: encryptedId,
+          idCardName: thaiName,
+          firstNameTh: dto.firstNameTh,
+          lastNameTh: dto.lastNameTh,
+          firstNameEn: dto.firstNameEn,
+          lastNameEn: dto.lastNameEn,
+          prefix: dto.prefixTh,
+          dateOfBirth: dto.dateOfBirth ? this.parseDate(dto.dateOfBirth) : null,
+          idCardIssueDate: dto.issueDate ? this.parseDate(dto.issueDate) : null,
+          idCardExpiryDate: dto.expiryDate ? this.parseDate(dto.expiryDate) : null,
+          thaiNameEncrypted: encryptedThaiName,
+          registeredAddress: dto.registeredAddress,
+          religion: dto.religion,
+          ...(idCardToken && { idCardToken }),
+        },
+      });
+      this.logger.log(`[KYC] OCR data confirmed and saved for user ${userId}`);
+      return updated;
+    } catch (error) {
+      this.logger.error(`[KYC] Failed to save confirmed OCR data for user ${userId}`, error);
+      throw error;
+    }
   }
 
   async submitSelfieSimple(userId: string, selfieImage: Buffer) {

@@ -31,6 +31,9 @@ CREATE TYPE "identity"."ConsentType" AS ENUM ('TERMS_OF_SERVICE', 'PRIVACY_POLIC
 -- CreateEnum
 CREATE TYPE "identity"."SecurityEventType" AS ENUM ('LOGIN_SUCCESS', 'LOGIN_FAILURE', 'LOGOUT', 'LOGOUT_ALL', 'PIN_SETUP', 'PIN_CHANGE', 'PIN_LOCKED', 'BIOMETRIC_ENABLED', 'BIOMETRIC_DISABLED', 'DEVICE_REGISTERED', 'DEVICE_REMOVED', 'ACCOUNT_LOCKED', 'ACCOUNT_UNLOCKED', 'PASSWORD_SET', 'PASSWORD_RESET', 'SUSPICIOUS_ACTIVITY', 'REGISTER_INIT_OTP', 'REGISTER_OTP_VERIFIED', 'REGISTRATION_COMPLETED');
 
+-- CreateEnum
+CREATE TYPE "integration"."TopupOrderStatus" AS ENUM ('PENDING', 'PROCESSING', 'PAID', 'FAILED', 'CANCELED');
+
 -- CreateTable
 CREATE TABLE "identity"."users" (
     "id" TEXT NOT NULL,
@@ -166,6 +169,11 @@ CREATE TABLE "kyc"."kyc_data" (
     "verificationStatus" TEXT NOT NULL DEFAULT 'PENDING',
     "idCardNumberEncrypted" TEXT,
     "idCardName" TEXT,
+    "firstNameTh" TEXT,
+    "lastNameTh" TEXT,
+    "firstNameEn" TEXT,
+    "lastNameEn" TEXT,
+    "dateOfBirth" TIMESTAMP(3),
     "thaiNameEncrypted" TEXT,
     "prefix" TEXT,
     "idCardToken" TEXT,
@@ -286,6 +294,24 @@ CREATE TABLE "integration"."merchants" (
 );
 
 -- CreateTable
+CREATE TABLE "integration"."topup_orders" (
+    "id" TEXT NOT NULL,
+    "userId" TEXT NOT NULL,
+    "amount" DECIMAL(19,4) NOT NULL,
+    "currency" TEXT NOT NULL DEFAULT 'THB',
+    "status" "integration"."TopupOrderStatus" NOT NULL DEFAULT 'PENDING',
+    "stripePaymentIntentId" TEXT,
+    "clientSecretRef" TEXT,
+    "idempotencyKey" TEXT NOT NULL,
+    "financeTransactionId" TEXT,
+    "processedEventId" TEXT,
+    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updatedAt" TIMESTAMP(3) NOT NULL,
+
+    CONSTRAINT "topup_orders_pkey" PRIMARY KEY ("id")
+);
+
+-- CreateTable
 CREATE TABLE "audit"."audit_logs" (
     "id" TEXT NOT NULL,
     "adminUserId" TEXT,
@@ -365,6 +391,15 @@ CREATE UNIQUE INDEX "role_permissions_roleId_permissionId_key" ON "admin"."role_
 
 -- CreateIndex
 CREATE UNIQUE INDEX "merchants_merchantId_key" ON "integration"."merchants"("merchantId");
+
+-- CreateIndex
+CREATE UNIQUE INDEX "topup_orders_stripePaymentIntentId_key" ON "integration"."topup_orders"("stripePaymentIntentId");
+
+-- CreateIndex
+CREATE UNIQUE INDEX "topup_orders_idempotencyKey_key" ON "integration"."topup_orders"("idempotencyKey");
+
+-- CreateIndex
+CREATE INDEX "topup_orders_userId_status_idx" ON "integration"."topup_orders"("userId", "status");
 
 -- AddForeignKey
 ALTER TABLE "identity"."user_devices" ADD CONSTRAINT "user_devices_userId_fkey" FOREIGN KEY ("userId") REFERENCES "identity"."users"("id") ON DELETE CASCADE ON UPDATE CASCADE;

@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { ScrollView, ActivityIndicator } from 'react-native';
+import { ScrollView, ActivityIndicator, Alert } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useFocusEffect } from '@react-navigation/native';
 
@@ -98,12 +98,18 @@ export default function ProfileInformationScreen() {
   const fetchProfile = async () => {
     try {
       const profile: UserProfile = await UserProfileService.getProfile();
-
+      console.log("profile from bacend = ", profile)
       // Map API response to form data
       setFormData({
         ...DEFAULT_FORM_DATA,
-        nameEn: profile.profile?.firstName || '',
-        nameTh: profile.profile?.firstName || '',
+        nameEn:
+          profile.kycData?.firstNameEn || profile.kycData?.lastNameEn
+            ? `${profile.kycData.firstNameEn || ''} ${profile.kycData.lastNameEn || ''}`.trim()
+            : `${profile.profile?.firstName || ''} ${profile.profile?.lastName || ''}`.trim(),
+        nameTh:
+          profile.kycData?.firstNameTh || profile.kycData?.lastNameTh
+            ? `${profile.kycData.firstNameTh || ''} ${profile.kycData.lastNameTh || ''}`.trim()
+            : `${profile.profile?.firstName || ''} ${profile.profile?.lastName || ''}`.trim(),
         phone: profile.phoneNumber || '',
         email: profile.email || '',
         kycTier: profile.registrationState === 'COMPLETED' ? 'Premium Tier' : 'Standard Tier',
@@ -119,6 +125,7 @@ export default function ProfileInformationScreen() {
           postalCode: '',
         },
       });
+      console.log("profile data = ", formData)
     } catch (error) {
       console.error('[Profile Information] Failed to fetch profile:', error);
     } finally {
@@ -142,10 +149,14 @@ export default function ProfileInformationScreen() {
     setIsSaving(true);
 
     try {
-      // Prepare update data
+      // Split nameEn into firstName and lastName
+      const nameParts = (formData.nameEn || '').trim().split(/\s+/);
+      const firstName = nameParts[0] || '';
+      const lastName = nameParts.slice(1).join(' ') || '';
+
       const updateData: UpdateProfileData = {
-        firstName: formData.nameEn,
-        lastName: '',
+        firstName,
+        lastName,
         address: formData.currentAddress.street,
         occupation: formData.occupation,
         incomeRange: formData.income,
@@ -154,7 +165,12 @@ export default function ProfileInformationScreen() {
       };
 
       await UserProfileService.updateProfile(updateData);
+      
+      // Re-fetch profile data to sync UI
+      await fetchProfile();
+      
       setActiveModal(null);
+      Alert.alert('Success', 'Your profile has been updated successfully.');
     } catch (error) {
       console.error('[Profile Information] Failed to save profile:', error);
     } finally {
@@ -179,7 +195,7 @@ export default function ProfileInformationScreen() {
         showsVerticalScrollIndicator={false}
       >
         <UserHeaderCard
-          nameTh={`${formData.prefixTh}${formData.nameTh}`}
+          nameTh={`${formData.prefixTh} ${formData.nameTh}`}
           nameEn={`${formData.prefixEn} ${formData.nameEn}`}
           avatar={formData.avatar}
           phone={formData.phone}

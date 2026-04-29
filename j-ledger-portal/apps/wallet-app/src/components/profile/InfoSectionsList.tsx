@@ -1,6 +1,6 @@
 import React from 'react';
 import { View, Text } from 'react-native';
-import { User, MapPin, Phone, Briefcase, ShieldCheck } from 'lucide-react-native';
+import { Shield, Phone, MapPin, Briefcase, ShieldCheck } from 'lucide-react-native';
 import { DataSection, InfoItem } from './ProfileUIAtoms';
 
 export interface InfoSectionsListProps {
@@ -21,27 +21,29 @@ export function InfoSectionsList({ formData, onEdit }: InfoSectionsListProps) {
     return `${p.slice(0, 3)}-XXX-XX${p.slice(8)}`;
   };
 
+  const isVerified = formData.kycTier === 'Premium Tier';
+
   return (
     <View className="space-y-3 gap-y-3">
       {/* 1. Identification Section */}
       <DataSection
-        title="Identification Info"
-        icon={<ShieldCheck color="#a855f7" />}
-        onEdit={() => {}} // No edit for identification
+        title="Identification"
+        icon={<Shield color="#ec4899" />}
+        onEdit={isVerified ? undefined : () => onEdit('IDENTIFICATION')}
       >
         <View className="gap-y-4">
           <View className="flex-row justify-between">
             <InfoItem
               label="Verification Status"
-              value="Tier 2 Verified"
-              valueClass="text-green-500"
+              value={isVerified ? 'Tier 2 Verified' : 'Standard Tier'}
+              valueClass={isVerified ? 'text-green-500' : 'text-orange-500'}
             />
             <InfoItem label="Identity Type" value="ID Card" />
           </View>
           <InfoItem label="Identity Number" value={maskIdCard(formData.idNumber)} />
           <View className="flex-row">
             <View className="w-1/2">
-              <InfoItem label="Name (Thai)" value={`${formData.prefixTh}${formData.nameTh}`} />
+              <InfoItem label="Name (Thai)" value={`${formData.prefixTh} ${formData.nameTh}`} />
             </View>
             <View className="w-1/2">
               <InfoItem label="Name (English)" value={`${formData.prefixEn} ${formData.nameEn}`} />

@@ -96,18 +96,6 @@ export class AcceptTermsDto {
 
 export class RegisterProfileDto {
   @IsString()
-  @IsNotEmpty()
-  firstName!: string;
-
-  @IsString()
-  @IsNotEmpty()
-  lastName!: string;
-
-  @IsString()
-  @IsOptional()
-  dateOfBirth?: string;
-
-  @IsString()
   @IsOptional()
   address?: string;
 
