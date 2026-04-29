@@ -14,7 +14,7 @@ import { ChevronLeft, Info, ArrowRight, X } from 'lucide-react-native';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import { MotiView } from 'moti';
 import { TransferParamsSchema } from '../../types/transfer';
-import api from '@/lib/axios';
+import { api } from '@/lib/axios';
 
 export default function TransferScreen() {
   const router = useRouter();
@@ -24,6 +24,7 @@ export default function TransferScreen() {
   const [amount, setAmount] = React.useState('');
   const [note, setNote] = React.useState((params.merchantName as string) || '');
   const [isSubmitting, setIsSubmitting] = React.useState(false);
+  const [recipientNotFound, setRecipientNotFound] = React.useState(false);
 
   React.useEffect(() => {
     // Handle params from QR scan (validated by qr-validation)
@@ -52,6 +53,7 @@ export default function TransferScreen() {
 
   const handleNext = () => {
     if (isSubmitting) return;
+    setRecipientNotFound(false);
 
     // Validate transfer params using Zod schema
     const validation = TransferParamsSchema.safeParse({
@@ -94,6 +96,20 @@ export default function TransferScreen() {
       })
       .catch((err: any) => {
         const message = err?.response?.data?.message || 'Unable to preview transfer';
+        const status = err?.response?.status;
+
+        // Show warning banner for recipient not found errors
+        const isRecipientNotFound =
+          status === 404 ||
+          message.toLowerCase().includes('not found') ||
+          message.toLowerCase().includes('recipient');
+
+        if (isRecipientNotFound) {
+          setRecipientNotFound(true);
+          // Don't show Alert for recipient not found - banner is sufficient
+          return;
+        }
+
         Alert.alert('Transfer Error', message);
       })
       .finally(() => setIsSubmitting(false));
@@ -220,6 +236,26 @@ export default function TransferScreen() {
                 />
               </View>
             </View>
+
+            {/* Recipient Not Found Warning */}
+            {recipientNotFound && (
+              <MotiView
+                from={{ opacity: 0, translateY: -10 }}
+                animate={{ opacity: 1, translateY: 0 }}
+                className="bg-red-50 p-4 rounded-2xl border border-red-100 flex-row items-center gap-3 mb-4"
+              >
+                <Info size={16} color="#ef4444" />
+                <View className="flex-1">
+                  <Text className="text-xs font-manrope font-black text-red-600 mb-0.5">
+                    Recipient Not Found
+                  </Text>
+                  <Text className="text-[10px] font-manrope font-medium text-red-500 leading-relaxed">
+                    This phone number is not registered in J-Ledger. Please check the number or
+                    invite them to join.
+                  </Text>
+                </View>
+              </MotiView>
+            )}
 
             {/* Warning Banner */}
             <View className="bg-orange-50 p-4 rounded-2xl border border-orange-100 flex-row items-center gap-3 mb-6">

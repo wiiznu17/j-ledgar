@@ -329,6 +329,18 @@ export class IntegrationService {
       );
     }
 
+    // Verify recipient exists in system before calling finance service
+    const recipientUser = await this.findUserByPhone(recipientPhone);
+    if (!recipientUser) {
+      this.logger.warn(
+        `[P2PPreview] user=${userId} recipientHash=${this.hashPhone(recipientPhone)} outcome=recipient_not_found`,
+      );
+      throw new HttpException(
+        { message: 'Recipient not found. This phone number is not registered in the system.' },
+        HttpStatus.NOT_FOUND,
+      );
+    }
+
     try {
       const preview = await this.financeService.previewP2PTransfer(userId, {
         recipientPhone,
@@ -363,6 +375,13 @@ export class IntegrationService {
       this.logger.error(
         `[P2PPreview] user=${userId} recipientHash=${this.hashPhone(recipientPhone)} amount=${amount.toFixed(2)} outcome=failed message="${message}"`,
       );
+      // Map finance service "Recipient not found" to 404
+      if (message.toLowerCase().includes('recipient not found')) {
+        throw new HttpException(
+          { message: 'Recipient not found. This phone number is not registered in the system.' },
+          HttpStatus.NOT_FOUND,
+        );
+      }
       throw new HttpException({ message }, error?.status || HttpStatus.BAD_GATEWAY);
     }
   }
@@ -381,6 +400,18 @@ export class IntegrationService {
     }
     if (!body.idempotencyKey) {
       throw new HttpException({ message: 'idempotencyKey is required' }, HttpStatus.BAD_REQUEST);
+    }
+
+    // Verify recipient exists in system before calling finance service
+    const recipientUser = await this.findUserByPhone(recipientPhone);
+    if (!recipientUser) {
+      this.logger.warn(
+        `[P2PTransfer] user=${userId} recipientHash=${this.hashPhone(recipientPhone)} outcome=recipient_not_found`,
+      );
+      throw new HttpException(
+        { message: 'Recipient not found. This phone number is not registered in the system.' },
+        HttpStatus.NOT_FOUND,
+      );
     }
 
     try {
@@ -422,6 +453,13 @@ export class IntegrationService {
       this.logger.error(
         `[P2PTransfer] user=${userId} recipientHash=${this.hashPhone(recipientPhone)} amount=${amount.toFixed(2)} outcome=failed message="${message}"`,
       );
+      // Map finance service "Recipient not found" to 404
+      if (message.toLowerCase().includes('recipient not found')) {
+        throw new HttpException(
+          { message: 'Recipient not found. This phone number is not registered in the system.' },
+          HttpStatus.NOT_FOUND,
+        );
+      }
       throw new HttpException({ message }, error?.status || HttpStatus.BAD_GATEWAY);
     }
   }
@@ -628,5 +666,28 @@ export class IntegrationService {
       .update(phone || '')
       .digest('hex')
       .slice(0, 10);
+  }
+
+  private getPhoneCandidates(phone: string): string[] {
+    const digits = (phone || '').replace(/\D/g, '');
+    const candidates = [phone];
+    // Local Thai format (0xxxxxxxx)
+    if (digits.length === 10 && digits.startsWith('0')) {
+      candidates.push(digits);
+      candidates.push(`+66${digits.slice(1)}`);
+    }
+    // E.164 format (+66xxxxxxxx)
+    if (digits.length === 11 && digits.startsWith('66')) {
+      candidates.push(`+${digits}`);
+      candidates.push(`0${digits.slice(2)}`);
+    }
+    return [...new Set(candidates)];
+  }
+
+  private async findUserByPhone(phone: string) {
+    const candidates = this.getPhoneCandidates(phone);
+    return this.prisma.user.findFirst({
+      where: { phoneNumber: { in: candidates } },
+    });
   }
 }

@@ -13,6 +13,20 @@ export const validateAndParseQR = (rawData: string): ValidationResult => {
     // Parse raw QR data
     const parsed: ParsedQR = parseRawQRData(rawData);
 
+    // Handle unsupported formats (PromptPay, etc.)
+    if (parsed.type === 'UNSUPPORTED') {
+      return {
+        success: false,
+        error: {
+          code: 'INVALID_QR',
+          message:
+            parsed.error ||
+            'This QR code format is not supported. Only JLEDGER QR codes are accepted.',
+          field: 'format',
+        },
+      };
+    }
+
     // Validate required fields
     if (!parsed.recipient || parsed.recipient.trim() === '') {
       return {
@@ -42,18 +56,22 @@ export const validateAndParseQR = (rawData: string): ValidationResult => {
       };
     }
 
-    // Format as XXX-XXX-XXXX
-    const formattedRecipient = `${recipient.slice(0, 3)}-${recipient.slice(3, 6)}-${recipient.slice(6)}`;
-
-    // Amount is optional for QR, default to empty string
+    // Amount is optional for QR - user will enter on transfer screen if not specified
     const amount = parsed.amount || '';
 
-    // Validate using Zod schema
-    const validationResult = TransferParamsSchema.safeParse({
-      recipient: formattedRecipient,
-      amount: amount,
+    // Build validation payload - only include amount if QR specifies it
+    const validationPayload: any = {
+      recipient: recipient,
       merchantName: parsed.merchantName,
-    });
+    };
+    if (amount) {
+      validationPayload.amount = amount;
+    } else {
+      // Pass dummy amount to pass schema validation, but we'll clear it in UI
+      validationPayload.amount = '1';
+    }
+
+    const validationResult = TransferParamsSchema.safeParse(validationPayload);
 
     if (!validationResult.success) {
       const firstError = validationResult.error.issues?.[0];
@@ -69,7 +87,11 @@ export const validateAndParseQR = (rawData: string): ValidationResult => {
 
     return {
       success: true,
-      data: validationResult.data,
+      data: {
+        ...validationResult.data,
+        // If amount was empty/dummy, mark it as optional
+        amount: amount || '',
+      },
     };
   } catch (err) {
     console.error('[QR Validation] Parse error:', err);

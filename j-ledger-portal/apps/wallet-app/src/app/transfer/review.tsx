@@ -25,7 +25,7 @@ import {
 } from '../../lib/error-handling';
 import { NotificationService } from '../../lib/notification-service';
 import { useScreenCaptureProtection } from '@/hooks/useScreenCaptureProtection';
-import api from '@/lib/axios';
+import { api } from '@/lib/axios';
 
 const { width } = Dimensions.get('window');
 
@@ -34,7 +34,8 @@ export default function ReviewTransferScreen() {
   useScreenCaptureProtection();
 
   const router = useRouter();
-  const { recipient, amount, note, merchantName, recipientName, recipientMasked } = useLocalSearchParams();
+  const { recipient, amount, note, merchantName, recipientName, recipientMasked } =
+    useLocalSearchParams();
   const [isProcessing, setIsProcessing] = useState(false);
   const [isConfirming, setIsConfirming] = useState(false);
 
@@ -198,7 +199,7 @@ export default function ReviewTransferScreen() {
 
   const handleErrorBack = () => {
     setError(null);
-    router.push('/transfer/index' as any);
+    router.push('/transfer' as any);
   };
 
   return (
