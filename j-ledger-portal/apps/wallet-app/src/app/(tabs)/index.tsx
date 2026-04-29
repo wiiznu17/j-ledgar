@@ -38,7 +38,7 @@ export default function HomeScreen() {
     try {
       // Uses `api` client which auto-refreshes token on 401
       const res = await api.get('/integration/dashboard');
-
+      
       const data = res.data;
 
       // User info

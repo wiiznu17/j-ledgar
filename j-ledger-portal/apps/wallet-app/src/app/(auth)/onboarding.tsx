@@ -18,13 +18,12 @@ import { AppButton } from '@/components/common/AppButton';
 import { AppTextInput } from '@/components/common/AppTextInput';
 import { StepWrapper } from '@/components/common/StepWrapper';
 import { MotiView } from 'moti';
-import axios from 'axios';
+import { api } from '@/lib/axios';
 import { useRegistrationStore, RegistrationState } from '@/store/registration';
 import { getStableDeviceId, getDeviceName } from '@/lib/device.utils';
 import { useScreenCaptureProtection } from '@/hooks/useScreenCaptureProtection';
 
 const { width, height } = Dimensions.get('window');
-const API_URL = process.env.EXPO_PUBLIC_API_URL || 'http://localhost:3002';
 
 type OnboardingStepUI =
   | 'WELCOME'
@@ -164,7 +163,7 @@ export default function OnboardingScreen() {
   const handlePhoneSubmit = async () => {
     setIsLoading(true);
     try {
-      const res = await axios.post(`${API_URL}/identity/register/init`, { phoneNumber: phone });
+      const res = await api.post('/identity/register/init', { phoneNumber: phone });
       setChallengeId(res.data.challengeId);
       setStep('OTP');
       setTimer(60);
@@ -181,7 +180,7 @@ export default function OnboardingScreen() {
     console.log('[Onboarding] Verifying OTP:', otpString, 'for challenge:', challengeId);
 
     try {
-      const res = await axios.post(`${API_URL}/identity/register/verify-otp`, {
+      const res = await api.post('/identity/register/verify-otp', {
         phoneNumber: phone,
         challengeId,
         otp: otpString,
@@ -201,10 +200,12 @@ export default function OnboardingScreen() {
   const handleAcceptTerms = async () => {
     setIsLoading(true);
     try {
-      const res = await axios.post(
-        `${API_URL}/identity/register/accept-terms`,
+      const res = await api.post(
+        '/identity/register/accept-terms',
         { termsVersion: '1.0' },
-        { headers: { Authorization: `Bearer ${regToken}` } },
+        {
+          headers: { Authorization: `Bearer ${regToken}` },
+        },
       );
       if (res.data.regToken) await setRegToken(res.data.regToken);
       setStep('OCR_GUIDE');
@@ -246,7 +247,7 @@ export default function OnboardingScreen() {
           type: 'image/jpeg',
         } as any);
 
-        const res = await axios.post(`${API_URL}/kyc/upload-id-card/simple`, formData, {
+        const res = await api.post('/kyc/upload-id-card/simple', formData, {
           headers: {
             Authorization: `Bearer ${regToken}`,
             'Content-Type': 'multipart/form-data',
@@ -316,7 +317,7 @@ export default function OnboardingScreen() {
         } as any);
         formData.append('livenessSessionId', livenessSessionId!);
 
-        const res = await axios.post(`${API_URL}/kyc/submit-selfie/simple`, formData, {
+        const res = await api.post('/kyc/submit-selfie/simple', formData, {
           headers: {
             Authorization: `Bearer ${regToken}`,
             'Content-Type': 'multipart/form-data',
@@ -336,8 +337,8 @@ export default function OnboardingScreen() {
   const handleProfileSubmit = async () => {
     setIsLoading(true);
     try {
-      const res = await axios.post(
-        `${API_URL}/identity/register/profile`,
+      const res = await api.post(
+        '/identity/register/profile',
         {
           firstName,
           lastName,
@@ -363,8 +364,8 @@ export default function OnboardingScreen() {
   const handlePasswordSubmit = async () => {
     setIsLoading(true);
     try {
-      const res = await axios.post(
-        `${API_URL}/identity/register/password`,
+      const res = await api.post(
+        '/identity/register/password',
         { password },
         { headers: { Authorization: `Bearer ${regToken}` } },
       );
@@ -383,8 +384,8 @@ export default function OnboardingScreen() {
       const deviceId = await getStableDeviceId();
       const deviceName = getDeviceName();
 
-      const res = await axios.post(
-        `${API_URL}/identity/register/pin`,
+      const res = await api.post(
+        '/identity/register/pin',
         { pin: finalPin, deviceId, deviceName },
         { headers: { Authorization: `Bearer ${regToken}` } },
       );
@@ -393,8 +394,8 @@ export default function OnboardingScreen() {
       if (res.data.regToken) await setRegToken(newToken);
 
       // Atomic Complete call - use the fresh token from the response
-      const completeRes = await axios.post(
-        `${API_URL}/identity/register/complete`,
+      const completeRes = await api.post(
+        '/identity/register/complete',
         {},
         {
           headers: { Authorization: `Bearer ${newToken}` },

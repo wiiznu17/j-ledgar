@@ -1,5 +1,6 @@
 import { create } from 'zustand';
 import * as SecureStore from 'expo-secure-store';
+import { api } from '@/lib/axios';
 import axios from 'axios';
 
 // Align with Backend RegistrationState
@@ -66,8 +67,8 @@ export const useRegistrationStore = create<RegistrationStore>((set, get) => ({
 
     set({ isSyncing: true });
     try {
-      const response = await axios.post(
-        `${API_URL}/identity/register/status`,
+      const response = await api.post(
+        '/identity/register/status',
         {},
         {
           headers: { Authorization: `Bearer ${regToken}` },
