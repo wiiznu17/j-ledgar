@@ -4,7 +4,7 @@ import { View, Text, TouchableOpacity, TextInput } from 'react-native';
 export interface DataSectionProps {
   title: string;
   icon: React.ReactElement<any>;
-  onEdit: () => void;
+  onEdit?: () => void;
   children: React.ReactNode;
 }
 
@@ -18,11 +18,13 @@ export function DataSection({ title, icon, onEdit, children }: DataSectionProps)
           </View>
           <Text className="font-manrope font-black text-gray-800 text-base">{title}</Text>
         </View>
-        <TouchableOpacity onPress={onEdit} className="px-3 py-1.5 bg-pink-50 rounded-xl">
-          <Text className="font-black text-[10px] uppercase tracking-widest text-[#f48fb1]">
-            Edit
-          </Text>
-        </TouchableOpacity>
+        {onEdit && (
+          <TouchableOpacity onPress={onEdit} className="px-3 py-1.5 bg-pink-50 rounded-xl">
+            <Text className="font-black text-[10px] uppercase tracking-widest text-[#f48fb1]">
+              Edit
+            </Text>
+          </TouchableOpacity>
+        )}
       </View>
       <View>{children}</View>
     </View>

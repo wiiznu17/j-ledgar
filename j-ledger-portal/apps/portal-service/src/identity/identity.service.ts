@@ -738,15 +738,14 @@ export class IdentityService {
       throw new BadRequestException('User not found');
     }
 
-    // Update user profile - save to userSettings since User model doesn't have firstName/lastName
+    // Update user profile - save to userSettings for editable info
+    // KYCData is now updated separately in KycService.confirmOcrData
     await this.prisma.userSetting.upsert({
       where: { userId_key: { userId: user.id, key: 'profile' } },
       create: {
         userId: user.id,
         key: 'profile',
         value: JSON.stringify({
-          firstName: dto.firstName,
-          lastName: dto.lastName,
           address: dto.address,
           occupation: dto.occupation,
           incomeRange: dto.incomeRange,
@@ -756,8 +755,6 @@ export class IdentityService {
       },
       update: {
         value: JSON.stringify({
-          firstName: dto.firstName,
-          lastName: dto.lastName,
           address: dto.address,
           occupation: dto.occupation,
           incomeRange: dto.incomeRange,
@@ -1050,19 +1047,24 @@ export class IdentityService {
   async getProfile(userId: string) {
     this.logger.log(`[Identity] Fetching profile for user ${userId}`);
 
-    const user = await this.prisma.user.findUnique({
-      where: { id: userId },
-      include: {
-        userSettings: {
-          where: { key: 'profile' },
+    const [user, kycData] = await Promise.all([
+      this.prisma.user.findUnique({
+        where: { id: userId },
+        include: {
+          userSettings: {
+            where: { key: 'profile' },
+          },
         },
-      },
-    });
+      }),
+      this.prisma.kYCData.findUnique({
+        where: { userId },
+      }).catch(() => null),
+    ]);
 
     if (!user) {
       throw new BadRequestException('User not found');
     }
-
+    console.log("user = ", user)
     const profileSetting = user.userSettings[0];
     let profileData = {};
 
@@ -1073,7 +1075,7 @@ export class IdentityService {
         this.logger.error(`Failed to parse profile data for user ${userId}`, e);
       }
     }
-
+    console.log("ProfileData = ", profileData)
     return {
       id: user.id,
       phoneNumber: user.phoneNumber,
@@ -1083,6 +1085,18 @@ export class IdentityService {
       ledgerAccountId: user.ledgerAccountId,
       createdAt: user.createdAt,
       profile: profileData,
+      kycData: kycData
+        ? {
+            firstNameTh: kycData.firstNameTh,
+            lastNameTh: kycData.lastNameTh,
+            firstNameEn: kycData.firstNameEn,
+            lastNameEn: kycData.lastNameEn,
+            idCardName: kycData.idCardName,
+            dateOfBirth: kycData.dateOfBirth,
+            verificationStatus: kycData.verificationStatus,
+            verifiedAt: kycData.verifiedAt,
+          }
+        : null,
     };
   }
 

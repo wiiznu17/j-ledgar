@@ -17,6 +17,16 @@ export interface UserProfile {
     sourceOfFunds?: string;
     purposeOfAccount?: string;
   };
+  kycData?: {
+    firstNameTh?: string;
+    lastNameTh?: string;
+    firstNameEn?: string;
+    lastNameEn?: string;
+    idCardName?: string;
+    dateOfBirth?: string;
+    verificationStatus?: string;
+    verifiedAt?: string;
+  };
 }
 
 export interface UpdateProfileData {

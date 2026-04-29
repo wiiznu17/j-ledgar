@@ -11,6 +11,7 @@ import {
   Req,
 } from '@nestjs/common';
 import { KycService } from './kyc.service';
+import { ConfirmOcrDto } from './dto/kyc.dto';
 import { JwtAuthGuard } from '../common/guards/jwt-auth.guard';
 import { RegistrationAuthGuard } from '../common/guards/registration-auth.guard';
 import { InternalAuthGuard } from '../common/guards/internal-auth.guard';
@@ -82,6 +83,26 @@ export class KycController {
     }
 
     return this.kycService.uploadIdCardSimple(targetUserId, file.buffer);
+  }
+
+  @Post('confirm-ocr')
+  @UseGuards(RegistrationAuthGuard)
+  async confirmOcrData(
+    @Body() dto: ConfirmOcrDto,
+    @Body('userId') userId: string,
+    @Headers('authorization') authorization: string,
+    @Req() request: Request,
+  ) {
+    let targetUserId = userId;
+    if (!userId) {
+      const user = (request as any).user;
+      if (user && user.sub) {
+        targetUserId = user.sub;
+      }
+    }
+    
+    this.logger.log(`[KYC Controller] confirmOcrData for user ${targetUserId}, Data: ${JSON.stringify(dto)}`);
+    return this.kycService.confirmOcrData(targetUserId, dto);
   }
 
   @Post('submit-selfie/simple')

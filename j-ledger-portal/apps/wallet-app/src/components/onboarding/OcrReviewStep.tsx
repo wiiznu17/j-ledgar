@@ -12,10 +12,12 @@ interface OcrReviewStepProps {
     idNumber: string;
     issueDate: string;
     expiryDate: string;
-    prefix: string;
-    thaiName: string;
-    firstName: string;
-    lastName: string;
+    prefixTh: string;
+    firstNameTh: string;
+    lastNameTh: string;
+    prefixEn: string;
+    firstNameEn: string;
+    lastNameEn: string;
     dateOfBirth: string;
     religion: string;
     address: string;
@@ -37,9 +39,10 @@ export const OcrReviewStep: React.FC<OcrReviewStepProps> = ({
 }) => {
   const isValid =
     data.idNumber.length === 13 &&
-    data.thaiName.trim().length > 0 &&
-    data.firstName.trim().length > 0 &&
-    data.lastName.trim().length > 0 &&
+    data.firstNameTh.trim().length > 0 &&
+    data.lastNameTh.trim().length > 0 &&
+    data.firstNameEn.trim().length > 0 &&
+    data.lastNameEn.trim().length > 0 &&
     data.dateOfBirth.trim().length > 0;
 
   return (
@@ -84,40 +87,54 @@ export const OcrReviewStep: React.FC<OcrReviewStepProps> = ({
           <Text className="text-xs font-manrope font-extrabold text-primary mb-3 uppercase">
             Thai Information
           </Text>
-          <View className="flex-row gap-4">
+          <View className="flex-row gap-4 mb-4">
             <View className="w-24">
               <AppTextInput
                 label="PREFIX"
-                value={data.prefix}
-                onChangeText={(v) => setData('prefix', v)}
+                value={data.prefixTh}
+                onChangeText={(v) => setData('prefixTh', v)}
               />
             </View>
             <View className="flex-1">
               <AppTextInput
-                label="FULL NAME (THAI)"
-                value={data.thaiName}
-                onChangeText={(v) => setData('thaiName', v)}
+                label="FIRST NAME (TH)"
+                value={data.firstNameTh}
+                onChangeText={(v) => setData('firstNameTh', v)}
               />
             </View>
           </View>
+          <AppTextInput
+            label="LAST NAME (TH)"
+            value={data.lastNameTh}
+            onChangeText={(v) => setData('lastNameTh', v)}
+          />
         </View>
 
         <View className="mb-4">
           <Text className="text-xs font-manrope font-extrabold text-primary mb-3 uppercase">
             English Information
           </Text>
-          <AppTextInput
-            label="FIRST NAME"
-            value={data.firstName}
-            onChangeText={(v) => setData('firstName', v)}
-          />
-          <View className="mt-4">
-            <AppTextInput
-              label="LAST NAME"
-              value={data.lastName}
-              onChangeText={(v) => setData('lastName', v)}
-            />
+          <View className="flex-row gap-4 mb-4">
+            <View className="w-24">
+              <AppTextInput
+                label="PREFIX"
+                value={data.prefixEn}
+                onChangeText={(v) => setData('prefixEn', v)}
+              />
+            </View>
+            <View className="flex-1">
+              <AppTextInput
+                label="FIRST NAME (EN)"
+                value={data.firstNameEn}
+                onChangeText={(v) => setData('firstNameEn', v)}
+              />
+            </View>
           </View>
+          <AppTextInput
+            label="LAST NAME (EN)"
+            value={data.lastNameEn}
+            onChangeText={(v) => setData('lastNameEn', v)}
+          />
         </View>
 
         <View className="mb-4">

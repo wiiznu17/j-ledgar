@@ -82,10 +82,11 @@ export default function SettingsScreen() {
 
   // Get display name from profile
   const getDisplayName = () => {
-    if (userProfile?.profile?.firstName && userProfile?.profile?.lastName) {
-      return `${userProfile.profile.firstName} ${userProfile.profile.lastName}`;
-    }
-    return userProfile?.phoneNumber || 'J-Ledger User';
+    const firstName = userProfile?.profile?.firstName || '';
+    const lastName = userProfile?.profile?.lastName || '';
+    const fullName = `${firstName} ${lastName}`.trim();
+    
+    return fullName || userProfile?.phoneNumber || 'J-Ledger User';
   };
 
   if (isLoading) {

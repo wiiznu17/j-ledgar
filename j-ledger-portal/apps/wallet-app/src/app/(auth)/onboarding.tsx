@@ -23,7 +23,7 @@ import { useRegistrationStore, RegistrationState } from '@/store/registration';
 import { getStableDeviceId, getDeviceName } from '@/lib/device.utils';
 import { useScreenCaptureProtection } from '@/hooks/useScreenCaptureProtection';
 
-const { width, height } = Dimensions.get('window');
+// const { width, height } = Dimensions.get('window');
 
 type OnboardingStepUI =
   | 'WELCOME'
@@ -50,10 +50,13 @@ export default function OnboardingScreen() {
   const [phone, setPhone] = useState('');
   const [otp, setOtp] = useState(['', '', '', '', '', '']);
   const [challengeId, setChallengeId] = useState('');
-  const [firstName, setFirstName] = useState('');
-  const [lastName, setLastName] = useState('');
-  const [thaiName, setThaiName] = useState('');
-  const [prefix, setPrefix] = useState('');
+  const [firstNameEn, setFirstNameEn] = useState('');
+  const [lastNameEn, setLastNameEn] = useState('');
+  const [prefixEn, setPrefixEn] = useState('');
+  const [firstNameTh, setFirstNameTh] = useState('');
+  const [lastNameTh, setLastNameTh] = useState('');
+  const [prefixTh, setPrefixTh] = useState('');
+  const [thaiName, setThaiName] = useState(''); // Keep for raw OCR storage
   const [idNumber, setIdNumber] = useState('');
   const [dateOfBirth, setDateOfBirth] = useState('');
   const [issueDate, setIssueDate] = useState('');
@@ -96,8 +99,8 @@ export default function OnboardingScreen() {
   // Update form when prefilled data arrives
   useEffect(() => {
     if (prefillData) {
-      if (prefillData.firstName) setFirstName(prefillData.firstName);
-      if (prefillData.lastName) setLastName(prefillData.lastName);
+      if (prefillData.firstName) setFirstNameEn(prefillData.firstName);
+      if (prefillData.lastName) setLastNameEn(prefillData.lastName);
     }
   }, [prefillData]);
 
@@ -258,6 +261,7 @@ export default function OnboardingScreen() {
         setLivenessSessionId(res.data.livenessSessionId);
 
         const extracted = res.data.extractedData;
+        console.log('extracted from OCR = ', extracted);
         if (!extracted) {
           Alert.alert(
             'OCR Failed',
@@ -266,10 +270,13 @@ export default function OnboardingScreen() {
           return;
         }
 
-        setFirstName(extracted.firstName || '');
-        setLastName(extracted.lastName || '');
+        setFirstNameEn(extracted.firstNameEn || extracted.firstName || '');
+        setLastNameEn(extracted.lastNameEn || extracted.lastName || '');
+        setPrefixEn(extracted.prefixEn || '');
+        setFirstNameTh(extracted.firstNameTh || '');
+        setLastNameTh(extracted.lastNameTh || '');
+        setPrefixTh(extracted.prefixTh || '');
         setThaiName(extracted.thaiName || '');
-        setPrefix(extracted.prefix || '');
         setIdNumber(extracted.idCardNumber || '');
         setDateOfBirth(extracted.dateOfBirth || '');
         setIssueDate(extracted.idCardIssueDate || '');
@@ -279,6 +286,7 @@ export default function OnboardingScreen() {
 
         setStep('OCR_REVIEW');
       } catch (err: any) {
+        console.log('[Onboarding] OCR Failed:', err.response?.data || err.message);
         Alert.alert('OCR Failed', 'Could not read ID card. Please try again with better lighting.');
       } finally {
         setIsLoading(false);
@@ -334,14 +342,46 @@ export default function OnboardingScreen() {
     }
   };
 
+  const handleConfirmOcr = async () => {
+    setIsLoading(true);
+    const payload = {
+      idNumber,
+      issueDate,
+      expiryDate,
+      prefixTh,
+      firstNameTh,
+      lastNameTh,
+      prefixEn,
+      firstNameEn,
+      lastNameEn,
+      dateOfBirth,
+      religion,
+      registeredAddress: address,
+    };
+
+    console.log('[Onboarding] Sending Confirm OCR Data:', JSON.stringify(payload, null, 2));
+
+    try {
+      const res = await api.post('/kyc/confirm-ocr', payload, {
+        headers: { Authorization: `Bearer ${regToken}` },
+      });
+      console.log('[Onboarding] OCR Data Confirmed Successfully');
+      setStep('FACE_GUIDE');
+    } catch (err: any) {
+      const errorMsg = err.response?.data?.message || err.message;
+      console.error('[Onboarding] Confirm OCR Error details:', JSON.stringify(err.response?.data, null, 2) || err);
+      Alert.alert('Error', `Failed to save identity data: ${errorMsg}`);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   const handleProfileSubmit = async () => {
     setIsLoading(true);
     try {
       const res = await api.post(
         '/identity/register/profile',
         {
-          firstName,
-          lastName,
           address,
           occupation,
           incomeRange,
@@ -421,17 +461,23 @@ export default function OnboardingScreen() {
       case 'expiryDate':
         setExpiryDate(value);
         break;
-      case 'prefix':
-        setPrefix(value);
+      case 'prefixTh':
+        setPrefixTh(value);
         break;
-      case 'thaiName':
-        setThaiName(value);
+      case 'firstNameTh':
+        setFirstNameTh(value);
         break;
-      case 'firstName':
-        setFirstName(value);
+      case 'lastNameTh':
+        setLastNameTh(value);
         break;
-      case 'lastName':
-        setLastName(value);
+      case 'prefixEn':
+        setPrefixEn(value);
+        break;
+      case 'firstNameEn':
+        setFirstNameEn(value);
+        break;
+      case 'lastNameEn':
+        setLastNameEn(value);
         break;
       case 'dateOfBirth':
         setDateOfBirth(value);
@@ -538,17 +584,19 @@ export default function OnboardingScreen() {
                 idNumber,
                 issueDate,
                 expiryDate,
-                prefix,
-                thaiName,
-                firstName,
-                lastName,
+                prefixTh,
+                firstNameTh,
+                lastNameTh,
+                prefixEn,
+                firstNameEn,
+                lastNameEn,
                 dateOfBirth,
                 religion,
                 address,
               }}
               setData={updateOcrData}
               isLoading={isLoading}
-              onConfirm={() => setStep('FACE_GUIDE')}
+              onConfirm={handleConfirmOcr}
               onRescan={() => setStep('OCR_GUIDE')}
             />
 
