@@ -23,7 +23,7 @@ import {
   RegisterProfileDto,
   AcceptTermsDto,
 } from './dto/auth.dto';
-import * as bcrypt from 'bcrypt';
+import * as bcrypt from 'bcryptjs';
 import { randomUUID } from 'crypto';
 
 const ACCESS_TOKEN_TTL_SECONDS = 15 * 60;

@@ -71,7 +71,7 @@ services:
       KAFKA_GROUP_INITIAL_REBALANCE_DELAY_MS: 0
       KAFKA_AUTO_CREATE_TOPICS_ENABLE: "true"
     healthcheck:
-      test: ["CMD-SHELL", "nc -z localhost 29092 || exit 1"]
+      test: ["CMD-SHELL", "cub kafka-ready -b localhost:29092 1 20"]
       interval: 10s
       timeout: 5s
       retries: 5
@@ -103,7 +103,7 @@ services:
     depends_on:
       postgres:
         condition: service_healthy
-    command: sh -c "npx prisma migrate deploy"
+    command: sh -c "npx prisma migrate deploy && npx prisma db seed"
     environment:
       - DATABASE_URL=postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB}
     networks:
@@ -123,7 +123,7 @@ services:
       redis:
         condition: service_healthy
       kafka:
-        condition: service_started
+        condition: service_healthy
       finance-migration:
         condition: service_completed_successfully
     environment:
@@ -133,22 +133,14 @@ services:
       - SPRING_REDIS_HOST=redis
       - SPRING_REDIS_PORT=6379
       - SPRING_REDIS_PASSWORD=${REDIS_PASSWORD}
-      - KAFKA_BOOTSTRAP_SERVERS=kafka:29092
+      - JLEDGER_KAFKA_BOOTSTRAP_SERVERS=kafka:29092
       - jledger.internal.secret=${JLEDGER_INTERNAL_SECRET}
     networks:
       - jledger-network
     expose:
       - "8081"
     healthcheck:
-      test:
-        [
-          "CMD",
-          "wget",
-          "--no-verbose",
-          "--tries=1",
-          "--spider",
-          "http://localhost:8081/actuator/health",
-        ]
+      test: ["CMD-SHELL", "curl -fsS http://localhost:8081/actuator/health >/dev/null || exit 1"]
       interval: 10s
       timeout: 5s
       retries: 5
@@ -163,6 +155,8 @@ services:
     image: j-ledger/portal-service:latest
     container_name: jledger-portal
     depends_on:
+      redis:
+        condition: service_healthy
       finance-service:
         condition: service_healthy
       portal-migration:
@@ -171,10 +165,21 @@ services:
       - PORT=3000
       - FINANCE_SERVICE_URL=http://finance-service:8081
       - DATABASE_URL=postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB}
+      - JLEDGER_REDIS_ADDRESS=redis://redis:6379
+      - JLEDGER_REDIS_PASSWORD=${REDIS_PASSWORD}
+      - JWT_ACCESS_SECRET=${JWT_ACCESS_SECRET}
+      - JWT_REFRESH_SECRET=${JWT_REFRESH_SECRET}
+      - JWT_REGISTRATION_SECRET=${JWT_REGISTRATION_SECRET}
+      - JLEDGER_INTERNAL_SECRET=${JLEDGER_INTERNAL_SECRET}
     networks:
       - jledger-network
     expose:
       - "3000"
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://localhost:3000/health >/dev/null 2>&1 || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
 
   # ----------------------------------------------------
   # 8. Notification Worker (NestJS)

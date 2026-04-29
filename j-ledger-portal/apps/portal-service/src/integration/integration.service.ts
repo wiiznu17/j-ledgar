@@ -13,7 +13,7 @@ export class IntegrationService {
   private readonly internalSecret: string;
 
   private readonly logger = new Logger(IntegrationService.name);
-  private readonly stripe: any;
+  private readonly stripe: any | null;
 
   private static readonly HISTORY_PAGE_DEFAULT = 0;
   private static readonly HISTORY_SIZE_DEFAULT = 20;
@@ -31,7 +31,12 @@ export class IntegrationService {
       'default-secret',
     );
     const stripeSecretKey = this.configService.get<string>('STRIPE_SECRET_KEY', '');
-    this.stripe = new Stripe(stripeSecretKey);
+    if (!stripeSecretKey) {
+      this.logger.warn('STRIPE_SECRET_KEY is not set; Stripe features are disabled.');
+      this.stripe = null;
+    } else {
+      this.stripe = new Stripe(stripeSecretKey);
+    }
   }
 
   // ==================== Ledger Proxy ====================
@@ -243,6 +248,12 @@ export class IntegrationService {
   }
 
   async createStripeTopupIntent(userId: string, amount: number, currency: string = 'THB') {
+    if (!this.stripe) {
+      throw new HttpException(
+        { message: 'Stripe is not configured' },
+        HttpStatus.SERVICE_UNAVAILABLE,
+      );
+    }
     if (!amount || amount <= 0) {
       throw new Error('Invalid top-up amount');
     }
@@ -416,6 +427,12 @@ export class IntegrationService {
   }
 
   async processStripeWebhook(signature: string | undefined, rawBody: Buffer) {
+    if (!this.stripe) {
+      throw new HttpException(
+        { message: 'Stripe is not configured' },
+        HttpStatus.SERVICE_UNAVAILABLE,
+      );
+    }
     const webhookSecret = this.configService.get<string>('STRIPE_WEBHOOK_SECRET', '');
     if (!signature) {
       throw new Error('Missing stripe signature');
