@@ -2,6 +2,11 @@ server {
     listen 80;
     server_name localhost;
 
+    location /health {
+        add_header Content-Type text/plain;
+        return 200 'ok';
+    }
+
     # Finance Service (Wallets, Transactions, Transfers)
     location /api/finance/ {
         proxy_pass http://finance-service:8081/api/finance/;

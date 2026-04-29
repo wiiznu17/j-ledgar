@@ -40,11 +40,13 @@ The Java core uses Flyway and will migrate automatically on startup. For the Nes
 ```bash
 # Sync Wallet BFF Schema
 cd ../j-ledger-portal/apps/wallet-api
-npx prisma db push --schema=./prisma/schema.prisma
+# Prefer migrations (safe) over db push (unsafe on shared envs)
+npx prisma migrate dev
 
 # Sync & Seed Admin BFF Schema
 cd ../admin-api
-npx prisma db push --schema=./prisma/schema.prisma
+# Prefer migrations (safe) over db push (unsafe on shared envs)
+npx prisma migrate dev
 npm run seed  # Creates admin@jledger.com / Admin@123
 ```
 

@@ -1,0 +1,40 @@
+const { PrismaClient } = require('@prisma/client');
+
+const prisma = new PrismaClient();
+
+async function main() {
+  // Minimal, idempotent baseline seed.
+  const permissions = [
+    { name: 'admin:read', resource: 'admin', action: 'read', description: 'Read admin resources' },
+    { name: 'admin:write', resource: 'admin', action: 'write', description: 'Write admin resources' },
+  ];
+
+  for (const p of permissions) {
+    await prisma.permission.upsert({
+      where: { name: p.name },
+      update: {
+        description: p.description,
+        resource: p.resource,
+        action: p.action,
+      },
+      create: p,
+    });
+  }
+
+  await prisma.role.upsert({
+    where: { name: 'SUPER_ADMIN' },
+    update: { description: 'Bootstrap super admin role' },
+    create: { name: 'SUPER_ADMIN', description: 'Bootstrap super admin role' },
+  });
+}
+
+main()
+  .catch((e) => {
+    // eslint-disable-next-line no-console
+    console.error(e);
+    process.exit(1);
+  })
+  .finally(async () => {
+    await prisma.$disconnect();
+  });
+
