@@ -13,7 +13,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { X, Image as ImageIcon, QrCode, Lightbulb, AlertCircle } from 'lucide-react-native';
 import { useRouter } from 'expo-router';
 import { MotiView, AnimatePresence } from 'moti';
-import { CameraView, useCameraPermissions } from 'expo-camera';
+import { CameraView, useCameraPermissions, Camera } from 'expo-camera';
 import * as ImagePicker from 'expo-image-picker';
 import * as Haptics from 'expo-haptics';
 import { validateAndParseQR, logQRScan, getErrorMessage } from '../../lib/qr-validation';
@@ -24,11 +24,12 @@ const { width } = Dimensions.get('window');
 // คำนวณขนาดกรอบสแกนให้พอดีกับหน้าจอ (70% ของความกว้าง)
 const SCAN_FRAME_SIZE = width * 0.72;
 
-// Mock QR codes for testing on simulator
-// Note: INTERNAL format only for now, PromptPay requires more complex EMVCo parsing
+// Mock QR codes for testing on simulator - Only JLEDGER format supported
 const MOCK_QR_CODES = [
-  'JLEDGER:0812345678', // INTERNAL format: recipient phone
-  'JLEDGER:0987654321', // INTERNAL format: another test recipient
+  { label: 'Internal (no amount): 0812345678', data: 'JLEDGER:0812345678' },
+  { label: 'Internal (+500 THB): 0987654321', data: 'JLEDGER:0987654321:500.00' },
+  { label: 'Real Account: 0000000000', data: 'JLEDGER:0000000000' },
+  { label: 'Invalid Format Test', data: 'INVALID_QR_CODE_TEST' },
 ];
 
 export default function ScanScreen() {
@@ -61,7 +62,7 @@ export default function ScanScreen() {
 
   // For simulator testing only
   const testQRScan = (qrData?: string) => {
-    const testData = qrData || MOCK_QR_CODES[0] || 'JLEDGER:0812345678';
+    const testData = qrData || MOCK_QR_CODES[0]?.data || 'JLEDGER:0812345678';
     console.log('[Scan] Testing with mock QR:', testData);
     processQRResult(testData);
   };
@@ -79,7 +80,7 @@ export default function ScanScreen() {
         // Log successful scan
         await logQRScan({
           timestamp: Date.now(),
-          type: validationResult.data.merchantName ? 'PROMPTPAY' : 'INTERNAL',
+          type: 'INTERNAL',
           recipient: validationResult.data.recipient,
           amount: validationResult.data.amount,
           success: true,
@@ -88,12 +89,13 @@ export default function ScanScreen() {
         // Navigate to transfer with validated data
         setTimeout(() => {
           setIsProcessing(false);
+          const rawData = validationResult.data!;
           router.push({
-            pathname: '/transfer/index',
+            pathname: '/transfer',
             params: {
-              recipient: validationResult.data!.recipient,
-              amount: validationResult.data!.amount || '',
-              merchantName: validationResult.data!.merchantName || '',
+              recipient: rawData.recipient,
+              amount: rawData.amount || '',
+              merchantName: rawData.merchantName || '',
             },
           } as any);
           setTimeout(() => setScanned(false), 1000);
@@ -157,28 +159,25 @@ export default function ScanScreen() {
         const imageUri = asset?.uri;
 
         try {
-          // Attempt to extract QR from image
-          // Note: Full implementation requires ML Kit or backend API integration
           if (imageUri) {
             console.log('[Gallery] Selected image:', imageUri);
-          }
 
-          setIsProcessing(false);
-          Alert.alert(
-            'Gallery Scanning',
-            'QR code extraction from gallery is coming soon. Please use the camera to scan QR codes for now.',
-            [
-              {
-                text: 'Use Camera',
-                onPress: () => {
-                  // Return to camera scanning (already active)
-                },
-              },
-              {
-                text: 'Dismiss',
-              },
-            ],
-          );
+            // Use Camera.scanFromURLAsync to scan QR from image
+            const scanResults = await Camera.scanFromURLAsync(imageUri, ['qr']);
+
+            if (scanResults && scanResults.length > 0 && scanResults[0]) {
+              const qrData = scanResults[0].data;
+              console.log('[Gallery] QR detected:', qrData);
+              processQRResult(qrData);
+            } else {
+              setIsProcessing(false);
+              Alert.alert(
+                'No QR Code Found',
+                'No QR code was detected in the selected image. Please try another image.',
+                [{ text: 'OK' }],
+              );
+            }
+          }
         } catch (error) {
           setIsProcessing(false);
           console.error('[Gallery] Error processing image:', error);
@@ -257,10 +256,17 @@ export default function ScanScreen() {
           style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.65)' }}
           className="items-center justify-end pb-8"
         >
-          <View className="bg-black/60 px-5 py-2.5 rounded-full border border-white/20">
-            <Text className="text-white font-manrope font-bold text-xs tracking-widest uppercase">
-              Position QR Code in Frame
-            </Text>
+          <View className="items-center gap-2">
+            <View className="bg-black/60 px-5 py-2.5 rounded-full border border-white/20">
+              <Text className="text-white font-manrope font-bold text-xs tracking-widest uppercase">
+                Position QR Code in Frame
+              </Text>
+            </View>
+            <View className="bg-black/40 px-4 py-1.5 rounded-full">
+              <Text className="text-white/70 font-manrope text-[10px]">
+                Supports: JLEDGER QR only
+              </Text>
+            </View>
           </View>
         </View>
 
@@ -328,6 +334,18 @@ export default function ScanScreen() {
           </TouchableOpacity>
         </View>
 
+        {/* Supported Format Hint */}
+        <View
+          className="absolute w-full items-center"
+          style={{ bottom: Math.max(insets.bottom, 20) + 160 }}
+        >
+          <View className="bg-[#1a1a1a]/60 px-4 py-2 rounded-full border border-white/10">
+            <Text className="text-white/50 font-manrope text-[10px]">
+              Only JLEDGER QR codes are supported
+            </Text>
+          </View>
+        </View>
+
         {/* Bottom Menu (ใช้ style bottom ดันขึ้นจากขอบล่างชัดเจน การันตีไม่โดนบัง) */}
         <View
           className="absolute w-full items-center"
@@ -372,14 +390,10 @@ export default function ScanScreen() {
             <TouchableOpacity
               onPress={() => {
                 Alert.alert('Test QR Code', 'Select a test QR code', [
-                  {
-                    text: 'Test 1: 0812345678',
-                    onPress: () => testQRScan(MOCK_QR_CODES[0]),
-                  },
-                  {
-                    text: 'Test 2: 0987654321',
-                    onPress: () => testQRScan(MOCK_QR_CODES[1]),
-                  },
+                  ...MOCK_QR_CODES.map((item, index) => ({
+                    text: item.label,
+                    onPress: () => testQRScan(item.data),
+                  })),
                   {
                     text: 'Cancel',
                   },
