@@ -121,6 +121,15 @@ export class IdentityService {
   // ==================== Registration ====================
 
   async registerInit(dto: RegisterInitDto, context?: { ip?: string; userAgent?: string }) {
+    // Validate phone number format BEFORE normalization (Thai numbers must be 10 digits and start with 0)
+    const inputDigits = (dto.phoneNumber || '').replace(/\D/g, '');
+    if (inputDigits.length !== 10) {
+      throw new BadRequestException('Phone number must be 10 digits');
+    }
+    if (!inputDigits.startsWith('0')) {
+      throw new BadRequestException('Phone number must start with 0');
+    }
+
     const phoneNumber = this.normalizePhone(dto.phoneNumber);
     this.logger.log(`[Register] STEP 1: Initiating registration for ${phoneNumber}`);
 
@@ -206,6 +215,15 @@ export class IdentityService {
   // ==================== Login ====================
 
   async login(dto: LoginDto, context?: { ip?: string; userAgent?: string }) {
+    // Validate phone number format BEFORE normalization (Thai numbers must be 10 digits and start with 0)
+    const inputDigits = (dto.phoneNumber || '').replace(/\D/g, '');
+    if (inputDigits.length !== 10) {
+      throw new BadRequestException('Phone number must be 10 digits');
+    }
+    if (!inputDigits.startsWith('0')) {
+      throw new BadRequestException('Phone number must start with 0');
+    }
+
     const phoneNumber = this.normalizePhone(dto.phoneNumber);
     this.logger.log(`[Login] Attempting login for ${phoneNumber}`);
 
@@ -1063,9 +1081,11 @@ export class IdentityService {
           },
         },
       }),
-      this.prisma.kYCData.findUnique({
-        where: { userId },
-      }).catch(() => null),
+      this.prisma.kYCData
+        .findUnique({
+          where: { userId },
+        })
+        .catch(() => null),
       this.prisma.address.findMany({
         where: { userId, deletedAt: null },
       }),
@@ -1074,7 +1094,7 @@ export class IdentityService {
     if (!user) {
       throw new BadRequestException('User not found');
     }
-    
+
     const profileSetting = user.userSettings[0];
     let profileData: any = {};
 
@@ -1118,10 +1138,10 @@ export class IdentityService {
   async updateAddress(userId: string, type: any, dto: any, source?: any) {
     this.logger.log(`[Identity] Updating address ${type} for user ${userId}`);
 
-    // Address History Pattern: 
+    // Address History Pattern:
     // 1. Soft-delete current active address of this type
     // 2. Insert new record
-    
+
     return await this.prisma.$transaction(async (tx) => {
       // Soft-delete existing active address of this type
       await tx.address.updateMany({

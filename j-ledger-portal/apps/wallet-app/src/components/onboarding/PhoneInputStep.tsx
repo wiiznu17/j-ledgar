@@ -39,14 +39,15 @@ export const PhoneInputStep: React.FC<PhoneInputStepProps> = ({
         label="Mobile Number"
         placeholder="08X-XXX-XXXX"
         value={formatPhone(phone)}
-        onChangeText={(val) => onPhoneChange(val.replace(/\D/g, ''))}
+        onChangeText={(val) => onPhoneChange(val.replace(/\D/g, '').slice(0, 10))}
         keyboardType="phone-pad"
+        maxLength={12}
       />
       <AppButton
         title="Continue"
         loading={isLoading}
         className="mt-8"
-        disabled={phone.length < 9}
+        disabled={phone.length !== 10 || !phone.startsWith('0')}
         onPress={onSubmit}
       />
     </StepWrapper>
