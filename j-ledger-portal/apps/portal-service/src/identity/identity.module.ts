@@ -16,5 +16,6 @@ import { IntegrationModule } from '../integration/integration.module';
   ],
   providers: [IdentityService, SmsProviderMockProvider, JwtStrategy],
   controllers: [IdentityController],
+  exports: [IdentityService],
 })
 export class IdentityModule {}

@@ -20,9 +20,15 @@ interface OcrReviewStepProps {
     lastNameEn: string;
     dateOfBirth: string;
     religion: string;
-    address: string;
+    registeredAddress: {
+      line1?: string;
+      subdistrict?: string;
+      district?: string;
+      province?: string;
+      postalCode?: string;
+    };
   };
-  setData: (field: string, value: string) => void;
+  setData: (field: string, value: any) => void;
   isLoading: boolean;
   onConfirm: () => void;
   onRescan: () => void;
@@ -156,11 +162,44 @@ export const OcrReviewStep: React.FC<OcrReviewStepProps> = ({
           </View>
           <View className="mt-4">
             <AppTextInput
-              label="ADDRESS"
-              value={data.address}
-              onChangeText={(v) => setData('address', v)}
-              multiline
+              label="HOUSE NO / STREET"
+              value={data.registeredAddress.line1}
+              onChangeText={(v) => setData('addressField', { field: 'line1', text: v })}
             />
+          </View>
+          <View className="flex-row gap-4 mt-4">
+            <View className="flex-1">
+              <AppTextInput
+                label="SUB-DISTRICT"
+                value={data.registeredAddress.subdistrict}
+                onChangeText={(v) => setData('addressField', { field: 'subdistrict', text: v })}
+              />
+            </View>
+            <View className="flex-1">
+              <AppTextInput
+                label="DISTRICT"
+                value={data.registeredAddress.district}
+                onChangeText={(v) => setData('addressField', { field: 'district', text: v })}
+              />
+            </View>
+          </View>
+          <View className="flex-row gap-4 mt-4">
+            <View className="flex-1">
+              <AppTextInput
+                label="PROVINCE"
+                value={data.registeredAddress.province}
+                onChangeText={(v) => setData('addressField', { field: 'province', text: v })}
+              />
+            </View>
+            <View className="flex-1">
+              <AppTextInput
+                label="POSTAL CODE"
+                value={data.registeredAddress.postalCode}
+                onChangeText={(v) => setData('addressField', { field: 'postalCode', text: v })}
+                keyboardType="number-pad"
+                maxLength={5}
+              />
+            </View>
           </View>
         </View>
 

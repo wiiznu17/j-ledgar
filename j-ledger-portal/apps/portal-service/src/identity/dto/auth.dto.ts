@@ -8,7 +8,10 @@ import {
   Matches,
   MaxLength,
   MinLength,
+  ValidateNested,
 } from 'class-validator';
+import { Type } from 'class-transformer';
+import { UpdateAddressDto } from './address.dto';
 
 export class RegisterInitDto {
   @IsString()
@@ -114,6 +117,11 @@ export class RegisterProfileDto {
   @IsString()
   @IsNotEmpty()
   purposeOfAccount!: string;
+
+  @IsOptional()
+  @ValidateNested()
+  @Type(() => UpdateAddressDto)
+  currentAddress?: UpdateAddressDto;
 }
 
 export class RegisterCredentialsDto {

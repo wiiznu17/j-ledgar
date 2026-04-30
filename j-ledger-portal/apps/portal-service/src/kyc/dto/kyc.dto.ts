@@ -1,4 +1,27 @@
-import { IsNotEmpty, IsOptional, IsString } from 'class-validator';
+import { IsNotEmpty, IsOptional, IsString, ValidateNested } from 'class-validator';
+import { Type } from 'class-transformer';
+
+export class OcrAddressDto {
+  @IsString()
+  @IsOptional()
+  line1?: string;
+
+  @IsString()
+  @IsOptional()
+  subdistrict?: string;
+
+  @IsString()
+  @IsOptional()
+  district?: string;
+
+  @IsString()
+  @IsOptional()
+  province?: string;
+
+  @IsString()
+  @IsOptional()
+  postalCode?: string;
+}
 
 export class ConfirmOcrDto {
   @IsString()
@@ -45,7 +68,8 @@ export class ConfirmOcrDto {
   @IsOptional()
   religion?: string;
 
-  @IsString()
   @IsOptional()
-  registeredAddress?: string;
+  @ValidateNested()
+  @Type(() => OcrAddressDto)
+  registeredAddress?: OcrAddressDto;
 }

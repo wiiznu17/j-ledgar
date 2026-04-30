@@ -1,5 +1,24 @@
 import api from './axios';
 
+export type AddressType = 'REGISTERED' | 'CURRENT' | 'WORK' | 'SHIPPING' | 'BILLING';
+
+export interface Address {
+  id: string;
+  userId: string;
+  type: AddressType;
+  label?: string;
+  line1?: string;
+  line2?: string;
+  subdistrict?: string;
+  district?: string;
+  province?: string;
+  postalCode?: string;
+  countryCode: string;
+  isVerified: boolean;
+  verifiedAt?: string;
+  createdAt: string;
+}
+
 export interface UserProfile {
   id: string;
   phoneNumber: string;
@@ -11,12 +30,12 @@ export interface UserProfile {
   profile: {
     firstName?: string;
     lastName?: string;
-    address?: string;
     occupation?: string;
     incomeRange?: string;
     sourceOfFunds?: string;
     purposeOfAccount?: string;
   };
+  addresses: Address[];
   kycData?: {
     firstNameTh?: string;
     lastNameTh?: string;
@@ -32,11 +51,21 @@ export interface UserProfile {
 export interface UpdateProfileData {
   firstName?: string;
   lastName?: string;
-  address?: string;
   occupation?: string;
   incomeRange?: string;
   sourceOfFunds?: string;
   purposeOfAccount?: string;
+}
+
+export interface UpdateAddressData {
+  line1?: string;
+  line2?: string;
+  subdistrict?: string;
+  district?: string;
+  province?: string;
+  postalCode?: string;
+  label?: string;
+  countryCode?: string;
 }
 
 export const UserProfileService = {
@@ -47,6 +76,11 @@ export const UserProfileService = {
 
   updateProfile: async (data: UpdateProfileData): Promise<{ success: boolean }> => {
     const response = await api.put('/identity/profile', data);
+    return response.data;
+  },
+
+  updateAddress: async (type: AddressType, data: UpdateAddressData): Promise<Address> => {
+    const response = await api.put(`/identity/address/${type}`, data);
     return response.data;
   },
 };
