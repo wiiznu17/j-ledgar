@@ -1,64 +1,103 @@
-import React from 'react';
-import { View, Text, Image, TouchableOpacity } from 'react-native';
+import React, { useRef, forwardRef, useImperativeHandle } from 'react';
+import { View, Text, Image, TouchableOpacity, ImageSourcePropType } from 'react-native';
 import { Copy, Zap, Coins } from 'lucide-react-native';
 import { Svg, Polyline } from 'react-native-svg';
+import QRCode from 'react-native-qrcode-svg';
+import { captureRef } from 'react-native-view-shot';
+
+export interface QRCardRef {
+  capture: () => Promise<string>;
+}
 
 interface QRCardProps {
   name: string;
-  walletId: string;
-  avatar: any;
-  qrUrl: string;
+  phone: string;
+  avatar: ImageSourcePropType;
+  qrData: string;
   amount: string;
 }
 
-export function QRCard({ name, walletId, avatar, qrUrl, amount }: QRCardProps) {
-  return (
-    <View className="w-full bg-white rounded-[2.5rem] p-8 items-center mb-6 shadow-xl shadow-pink-100 border border-gray-50">
-      <View className="relative mb-5">
-        <View className="p-1 border-2 border-pink-100 rounded-[1.8rem]">
-          <Image source={avatar} className="w-16 h-16 rounded-[1.5rem]" />
-        </View>
-        <View className="absolute bottom-0 right-0 w-6 h-6 bg-green-500 rounded-full border-2 border-white items-center justify-center shadow-sm">
-          <CheckIcon size={12} color="white" strokeWidth={3} />
-        </View>
-      </View>
+export const QRCard = forwardRef<QRCardRef, QRCardProps>(
+  ({ name, phone, avatar, qrData, amount }, ref) => {
+    const cardRef = useRef<View>(null);
 
-      <Text className="text-xl font-manrope font-black text-gray-800 mb-1 tracking-tight">
-        {name}
-      </Text>
-      <View className="flex-row items-center gap-2 mb-8">
-        <Text className="text-[10px] font-manrope font-black text-gray-400 uppercase tracking-[0.2em]">
-          {walletId}
-        </Text>
-        <TouchableOpacity className="bg-pink-50 px-2 py-1.5 rounded-lg border border-pink-100">
-          <Copy size={12} color="#f48fb1" />
-        </TouchableOpacity>
-      </View>
+    useImperativeHandle(ref, () => ({
+      capture: async () => {
+        if (cardRef.current) {
+          try {
+            const uri = await captureRef(cardRef.current, {
+              format: 'png',
+              quality: 1,
+            });
+            return uri;
+          } catch (error) {
+            console.error('Failed to capture QR card:', error);
+            return '';
+          }
+        }
+        return '';
+      },
+    }));
 
-      {/* QR Code Container */}
-      <View className="w-64 h-64 bg-[#f8f9fe] rounded-[2.5rem] items-center justify-center p-6 shadow-inner border border-gray-100 relative">
-        <Image source={{ uri: qrUrl }} className="w-full h-full" resizeMode="contain" />
-        {/* Logo Overlay */}
-        <View className="absolute bg-white p-2 rounded-2xl shadow-md border border-gray-50">
-          <View className="w-8 h-8 rounded-xl bg-[#f48fb1] items-center justify-center">
-            <Zap size={16} color="white" fill="white" />
+    return (
+      <View
+        ref={cardRef}
+        className="w-full bg-white rounded-[2.5rem] p-8 items-center mb-6 shadow-xl shadow-pink-100 border border-gray-50"
+      >
+        <View className="relative mb-5">
+          <View className="p-1 border-2 border-pink-100 rounded-[1.8rem]">
+            <Image source={avatar} className="w-16 h-16 rounded-[1.5rem]" />
+          </View>
+          <View className="absolute bottom-0 right-0 w-6 h-6 bg-green-500 rounded-full border-2 border-white items-center justify-center shadow-sm">
+            <CheckIcon size={12} color="white" strokeWidth={3} />
           </View>
         </View>
-      </View>
 
-      {amount ? (
-        <View className="mt-8 px-5 py-2.5 bg-pink-50 rounded-2xl border border-pink-100 flex-row items-center gap-2">
-          <Coins size={14} color="#f48fb1" />
-          <Text className="text-[14px] font-manrope font-black text-[#f48fb1]">
-            Amount: ฿{amount.replace(/\B(?=(\d{3})+(?!\d))/g, ', ')}
+        <Text className="text-xl font-manrope font-black text-gray-800 mb-1 tracking-tight">
+          {name}
+        </Text>
+        <View className="flex-row items-center gap-2 mb-8">
+          <Text className="text-[10px] font-manrope font-black text-gray-400 uppercase tracking-[0.2em]">
+            {phone}
           </Text>
+          <TouchableOpacity className="bg-pink-50 px-2 py-1.5 rounded-lg border border-pink-100">
+            <Copy size={12} color="#f48fb1" />
+          </TouchableOpacity>
         </View>
-      ) : null}
-    </View>
-  );
-}
 
-function CheckIcon({ size, color, strokeWidth }: any) {
+        {/* QR Code Container */}
+        <View className="w-64 h-64 bg-[#f8f9fe] rounded-[2.5rem] items-center justify-center p-6 shadow-inner border border-gray-100 relative">
+          <QRCode value={qrData} size={220} color="#1a1a1a" backgroundColor="transparent" />
+          {/* Logo Overlay */}
+          <View className="absolute bg-white p-2 rounded-2xl shadow-md border border-gray-50">
+            <View className="w-8 h-8 rounded-xl bg-[#f48fb1] items-center justify-center">
+              <Zap size={16} color="white" fill="white" />
+            </View>
+          </View>
+        </View>
+
+        {amount ? (
+          <View className="mt-8 px-5 py-2.5 bg-pink-50 rounded-2xl border border-pink-100 flex-row items-center gap-2">
+            <Coins size={14} color="#f48fb1" />
+            <Text className="text-[14px] font-manrope font-black text-[#f48fb1]">
+              Amount: ฿{amount.replace(/\B(?=(\d{3})+(?!\d))/g, ', ')}
+            </Text>
+          </View>
+        ) : null}
+      </View>
+    );
+  },
+);
+
+function CheckIcon({
+  size,
+  color,
+  strokeWidth,
+}: {
+  size: number;
+  color: string;
+  strokeWidth: number;
+}) {
   return (
     <Svg
       width={size}
