@@ -86,7 +86,7 @@ export function InfoSectionsList({ formData, onEdit }: InfoSectionsListProps) {
 
       {/* 3. Address Information */}
       <DataSection
-        title="Current / Shipping Address"
+        title="Current Address"
         icon={<MapPin color="#f97316" />}
         onEdit={() => onEdit('ADDRESS')}
       >

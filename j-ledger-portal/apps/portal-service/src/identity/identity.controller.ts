@@ -31,6 +31,7 @@ import {
   RegisterVerifyOtpDto,
   WithdrawConsentDto,
 } from './dto/auth.dto';
+import { UpdateAddressDto } from './dto/address.dto';
 import type { Request } from 'express';
 
 interface AuthenticatedRequest extends Request {
@@ -172,8 +173,11 @@ export class IdentityController {
   @Post('refresh')
   @HttpCode(HttpStatus.OK)
   @Throttle({ default: {}, refreshToken: {} })
-  async refresh(@Body() body: RefreshTokenDto) {
-    return this.identityService.refresh(body);
+  async refresh(@Body() body: RefreshTokenDto, @Req() req: Request) {
+    return this.identityService.refresh(body, {
+      ip: req.ip,
+      userAgent: this.singleHeader(req.headers['user-agent']),
+    });
   }
 
   @UseGuards(JwtAuthGuard)
@@ -292,6 +296,18 @@ export class IdentityController {
       throw new UnauthorizedException('User is not authenticated');
     }
     return this.identityService.updateProfile(req.user.sub, body);
+  }
+
+  @UseGuards(JwtAuthGuard)
+  @Put('address/:type')
+  async updateAddress(
+    @Req() req: AuthenticatedRequest,
+    @Req() rawReq: Request,
+    @Body() body: UpdateAddressDto,
+  ) {
+    const userId = req.user.sub;
+    const type = rawReq.params.type;
+    return this.identityService.updateAddress(userId, type, body, 'MANUAL');
   }
 
   @UseGuards(JwtAuthGuard)

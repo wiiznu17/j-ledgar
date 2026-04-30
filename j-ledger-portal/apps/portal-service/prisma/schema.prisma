@@ -36,6 +36,10 @@ model User {
   securityEvents    SecurityEvent[]
   userSettings      UserSetting[]
 
+  @@index([phoneNumber])
+  @@index([status])
+  @@index([registrationState])
+  @@index([createdAt])
   @@map("users")
   @@schema("identity")
 }
@@ -69,8 +73,17 @@ model RefreshSession {
   revokedAt    DateTime?
   createdAt    DateTime @default(now())
 
+  ipAddress    String?
+  userAgent    String?
+  deviceType   String?
+  location     String?
+  lastSeenAt   DateTime?
+
   user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 
+  @@index([userId])
+  @@index([expiresAt])
+  @@index([revokedAt])
   @@map("refresh_sessions")
   @@schema("identity")
 }
@@ -87,6 +100,9 @@ model OtpChallenge {
 
   user         User?    @relation(fields: [userId], references: [id], onDelete: Cascade)
 
+  @@index([phoneNumber])
+  @@index([expiresAt])
+  @@index([createdAt])
   @@map("otp_challenges")
   @@schema("identity")
 }
@@ -137,6 +153,37 @@ model UserSetting {
   @@schema("identity")
 }
 
+model Address {
+  id                 String      @id @default(uuid())
+  userId             String
+  type               AddressType @default(CURRENT)
+  label              String?     // e.g., "Home", "Office", "Mom's house"
+
+  line1              String?     // House number, village, lane, road
+  line2              String?     // Apartment, suite, etc.
+  subdistrict        String?     // ตำบล/แขวง
+  district           String?     // อำเภอ/เขต
+  province           String?     // จังหวัด
+  postalCode         String?     // รหัสไปรษณีย์
+  countryCode        String      @default("TH")
+
+  isVerified         Boolean     @default(false)
+  verifiedAt         DateTime?
+  verificationSource AddressVerificationSource?
+  documentRef        String?     // Reference to KYC document
+
+  deletedAt          DateTime?
+  createdAt          DateTime    @default(now())
+  updatedAt          DateTime    @updatedAt
+
+  // Partial unique index (userId, type WHERE deletedAt IS NULL) 
+  // is enforced via raw SQL in migration file.
+  @@index([userId])
+  @@index([isVerified])
+  @@map("addresses")
+  @@schema("identity")
+}
+
 enum UserStatus {
   ACTIVE
   INACTIVE
@@ -159,6 +206,25 @@ enum RegistrationState {
   PASSWORD_SET
   CREDENTIALS_SET
   COMPLETED
+
+  @@schema("identity")
+}
+
+enum AddressType {
+  REGISTERED
+  CURRENT
+  WORK
+  SHIPPING
+  BILLING
+
+  @@schema("identity")
+}
+
+enum AddressVerificationSource {
+  ID_CARD_OCR
+  MANUAL
+  UTILITY_BILL
+  BANK_STATEMENT
 
   @@schema("identity")
 }
@@ -219,24 +285,27 @@ model KYCUser {
 }
 
 model KYCDocument {
-  id          String   @id @default(uuid())
+  id          String            @id @default(uuid())
   userId      String // Reference to identity.User (no FK)
   documentType String // ID_CARD, PASSPORT, SELFIE, etc.
-  status      String   // PENDING, APPROVED, REJECTED
+  status      KYCDocumentStatus @default(PENDING)
   s3Key       String
   s3Url       String?
   metadata    Json?
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  createdAt   DateTime          @default(now())
+  updatedAt   DateTime          @updatedAt
 
+  @@index([userId])
+  @@index([status])
+  @@index([documentType])
   @@map("kyc_documents")
   @@schema("kyc")
 }
 
 model KYCData {
-  id                      String   @id @default(uuid())
-  userId                  String   @unique // Reference to identity.User (no FK)
-  verificationStatus      String   @default("PENDING") // PENDING, APPROVED, REJECTED
+  id                      String                @id @default(uuid())
+  userId                  String                @unique // Reference to identity.User (no FK)
+  verificationStatus      KYCVerificationStatus @default(PENDING)
   idCardNumberEncrypted   String?
   idCardName              String?  // Keep for backward compatibility/full string
   firstNameTh             String?
@@ -256,13 +325,14 @@ model KYCData {
   idCardIssueDate         DateTime?
   idCardExpiryDate        DateTime?
   religion                String?
-  registeredAddress       String?
   reviewNote              String?
   ocrConfidence           Float?
   verifiedAt              DateTime?
   createdAt               DateTime @default(now())
   updatedAt               DateTime @updatedAt
 
+  @@index([userId])
+  @@index([verificationStatus])
   @@map("kyc_data")
   @@schema("kyc")
 }
@@ -277,6 +347,22 @@ model PII {
 
   @@unique([userId, field])
   @@map("pii")
+  @@schema("kyc")
+}
+
+enum KYCDocumentStatus {
+  PENDING
+  APPROVED
+  REJECTED
+
+  @@schema("kyc")
+}
+
+enum KYCVerificationStatus {
+  PENDING
+  APPROVED
+  REJECTED
+
   @@schema("kyc")
 }
 
@@ -360,26 +446,26 @@ model RolePermission {
 // ==================== Integration Schema ====================
 
 model BankIntegration {
-  id          BigInt   @id @default(autoincrement())
+  id          BigInt     @id @default(autoincrement())
   bankCode    String
   bankName    String
   apiKey      String
-  status      String   @default("ACTIVE")
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  status      BankStatus @default(ACTIVE)
+  createdAt   DateTime   @default(now())
+  updatedAt   DateTime   @updatedAt
 
   @@map("banks")
   @@schema("integration")
 }
 
 model Merchant {
-  id          BigInt   @id @default(autoincrement())
-  merchantId  String   @unique
+  id          BigInt         @id @default(autoincrement())
+  merchantId  String         @unique
   name        String
   category    String
-  status      String   @default("ACTIVE")
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  status      MerchantStatus @default(ACTIVE)
+  createdAt   DateTime       @default(now())
+  updatedAt   DateTime       @updatedAt
 
   @@map("merchants")
   @@schema("integration")
@@ -414,6 +500,20 @@ enum TopupOrderStatus {
   @@schema("integration")
 }
 
+enum BankStatus {
+  ACTIVE
+  INACTIVE
+
+  @@schema("integration")
+}
+
+enum MerchantStatus {
+  ACTIVE
+  INACTIVE
+
+  @@schema("integration")
+}
+
 // ==================== Audit Schema ====================
 
 model AuditLog {
@@ -431,6 +531,9 @@ model AuditLog {
   reason         String?
   createdAt      DateTime @default(now())
 
+  @@index([userId])
+  @@index([adminUserId])
+  @@index([createdAt])
   @@map("audit_logs")
   @@schema("audit")
 }
@@ -438,15 +541,23 @@ model AuditLog {
 // ==================== Reporting Schema ====================
 
 model Report {
-  id          BigInt   @id @default(autoincrement())
+  id          BigInt       @id @default(autoincrement())
   reportType  String
   parameters  Json
-  status      String   @default("GENERATING")
+  status      ReportStatus @default(GENERATING)
   fileUrl     String?
   generatedBy String?
-  createdAt   DateTime @default(now())
+  createdAt   DateTime     @default(now())
   completedAt DateTime?
 
   @@map("reports")
+  @@schema("reporting")
+}
+
+enum ReportStatus {
+  GENERATING
+  COMPLETED
+  FAILED
+
   @@schema("reporting")
 }

@@ -260,6 +260,9 @@ export class IdentityService {
         deviceId: device.id,
         tokenHash: await bcrypt.hash(refreshToken, 10),
         expiresAt: new Date(Date.now() + REFRESH_TOKEN_TTL_SECONDS * 1000),
+        ipAddress: context?.ip,
+        userAgent: context?.userAgent,
+        lastSeenAt: new Date(),
       },
     });
 
@@ -277,7 +280,7 @@ export class IdentityService {
 
   // ==================== Refresh Token ====================
 
-  async refresh(dto: RefreshTokenDto) {
+  async refresh(dto: RefreshTokenDto, context?: { ip?: string; userAgent?: string }) {
     try {
       const payload = await this.jwtService.verifyAsync<RefreshTokenPayload>(dto.refreshToken, {
         secret: this.refreshSecret,
@@ -310,6 +313,9 @@ export class IdentityService {
         data: {
           tokenHash: await bcrypt.hash(newRefreshToken, 10),
           expiresAt: new Date(Date.now() + REFRESH_TOKEN_TTL_SECONDS * 1000),
+          ipAddress: context?.ip || session.ipAddress,
+          userAgent: context?.userAgent || session.userAgent,
+          lastSeenAt: new Date(),
         },
       });
 
@@ -740,30 +746,31 @@ export class IdentityService {
 
     // Update user profile - save to userSettings for editable info
     // KYCData is now updated separately in KycService.confirmOcrData
+    // Address is now saved in identity.addresses table via separate call or logic
+    const sanitizedProfile = {
+      occupation: dto.occupation,
+      incomeRange: dto.incomeRange,
+      sourceOfFunds: dto.sourceOfFunds,
+      purposeOfAccount: dto.purposeOfAccount,
+    };
+
     await this.prisma.userSetting.upsert({
       where: { userId_key: { userId: user.id, key: 'profile' } },
       create: {
         userId: user.id,
         key: 'profile',
-        value: JSON.stringify({
-          address: dto.address,
-          occupation: dto.occupation,
-          incomeRange: dto.incomeRange,
-          sourceOfFunds: dto.sourceOfFunds,
-          purposeOfAccount: dto.purposeOfAccount,
-        }),
+        value: JSON.stringify(sanitizedProfile),
       },
       update: {
-        value: JSON.stringify({
-          address: dto.address,
-          occupation: dto.occupation,
-          incomeRange: dto.incomeRange,
-          sourceOfFunds: dto.sourceOfFunds,
-          purposeOfAccount: dto.purposeOfAccount,
-        }),
+        value: JSON.stringify(sanitizedProfile),
       },
     });
-    this.logger.log(`[Register] Profile saved for user ${user.id}`);
+    this.logger.log(`[Register] Profile (sanitized) saved for user ${user.id}`);
+
+    // Update Address if provided
+    if (dto.currentAddress) {
+      await this.updateAddress(user.id, 'CURRENT', dto.currentAddress, 'MANUAL');
+    }
 
     // Update state
     await this.prisma.user.update({
@@ -1047,7 +1054,7 @@ export class IdentityService {
   async getProfile(userId: string) {
     this.logger.log(`[Identity] Fetching profile for user ${userId}`);
 
-    const [user, kycData] = await Promise.all([
+    const [user, kycData, addresses] = await Promise.all([
       this.prisma.user.findUnique({
         where: { id: userId },
         include: {
@@ -1059,23 +1066,30 @@ export class IdentityService {
       this.prisma.kYCData.findUnique({
         where: { userId },
       }).catch(() => null),
+      this.prisma.address.findMany({
+        where: { userId, deletedAt: null },
+      }),
     ]);
 
     if (!user) {
       throw new BadRequestException('User not found');
     }
-    console.log("user = ", user)
+    
     const profileSetting = user.userSettings[0];
-    let profileData = {};
+    let profileData: any = {};
 
     if (profileSetting) {
       try {
         profileData = JSON.parse(profileSetting.value);
+        // Remove legacy address string if it exists in JSON
+        if (profileData.address) {
+          delete profileData.address;
+        }
       } catch (e) {
         this.logger.error(`Failed to parse profile data for user ${userId}`, e);
       }
     }
-    console.log("ProfileData = ", profileData)
+
     return {
       id: user.id,
       phoneNumber: user.phoneNumber,
@@ -1085,6 +1099,7 @@ export class IdentityService {
       ledgerAccountId: user.ledgerAccountId,
       createdAt: user.createdAt,
       profile: profileData,
+      addresses: addresses,
       kycData: kycData
         ? {
             firstNameTh: kycData.firstNameTh,
@@ -1100,6 +1115,38 @@ export class IdentityService {
     };
   }
 
+  async updateAddress(userId: string, type: any, dto: any, source?: any) {
+    this.logger.log(`[Identity] Updating address ${type} for user ${userId}`);
+
+    // Address History Pattern: 
+    // 1. Soft-delete current active address of this type
+    // 2. Insert new record
+    
+    return await this.prisma.$transaction(async (tx) => {
+      // Soft-delete existing active address of this type
+      await tx.address.updateMany({
+        where: {
+          userId,
+          type: type as any,
+          deletedAt: null,
+        },
+        data: {
+          deletedAt: new Date(),
+        },
+      });
+
+      // Create new address
+      return tx.address.create({
+        data: {
+          userId,
+          type: type as any,
+          ...dto,
+          verificationSource: source || undefined,
+        },
+      });
+    });
+  }
+
   async updateProfile(userId: string, profileData: any) {
     this.logger.log(`[Identity] Updating profile for user ${userId}`);
 
@@ -1109,6 +1156,11 @@ export class IdentityService {
 
     if (!user) {
       throw new BadRequestException('User not found');
+    }
+
+    // Ensure address is not being saved in generic profile setting anymore
+    if (profileData.address) {
+      delete profileData.address;
     }
 
     await this.prisma.userSetting.upsert({

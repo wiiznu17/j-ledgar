@@ -98,7 +98,7 @@ export default function ProfileInformationScreen() {
   const fetchProfile = async () => {
     try {
       const profile: UserProfile = await UserProfileService.getProfile();
-      console.log("profile from bacend = ", profile)
+      console.log("profile from backend = ", profile)
       // Map API response to form data
       setFormData({
         ...DEFAULT_FORM_DATA,
@@ -117,13 +117,27 @@ export default function ProfileInformationScreen() {
         sourceOfIncome: profile.profile?.sourceOfFunds || '',
         income: profile.profile?.incomeRange || '',
         purpose: profile.profile?.purposeOfAccount || '',
-        currentAddress: {
-          street: profile.profile?.address || '',
-          subdistrict: '',
-          district: '',
-          province: '',
-          postalCode: '',
-        },
+        idAddress: profile.addresses?.find(a => a.type === 'REGISTERED') ? {
+          street: profile.addresses.find(a => a.type === 'REGISTERED')?.line1 || '',
+          subdistrict: profile.addresses.find(a => a.type === 'REGISTERED')?.subdistrict || '',
+          district: profile.addresses.find(a => a.type === 'REGISTERED')?.district || '',
+          province: profile.addresses.find(a => a.type === 'REGISTERED')?.province || '',
+          postalCode: profile.addresses.find(a => a.type === 'REGISTERED')?.postalCode || '',
+        } : DEFAULT_FORM_DATA.idAddress,
+        currentAddress: profile.addresses?.find(a => a.type === 'CURRENT') ? {
+          street: profile.addresses.find(a => a.type === 'CURRENT')?.line1 || '',
+          subdistrict: profile.addresses.find(a => a.type === 'CURRENT')?.subdistrict || '',
+          district: profile.addresses.find(a => a.type === 'CURRENT')?.district || '',
+          province: profile.addresses.find(a => a.type === 'CURRENT')?.province || '',
+          postalCode: profile.addresses.find(a => a.type === 'CURRENT')?.postalCode || '',
+        } : DEFAULT_FORM_DATA.currentAddress,
+        workAddress: profile.addresses?.find(a => a.type === 'WORK') ? {
+          street: profile.addresses.find(a => a.type === 'WORK')?.line1 || '',
+          subdistrict: profile.addresses.find(a => a.type === 'WORK')?.subdistrict || '',
+          district: profile.addresses.find(a => a.type === 'WORK')?.district || '',
+          province: profile.addresses.find(a => a.type === 'WORK')?.province || '',
+          postalCode: profile.addresses.find(a => a.type === 'WORK')?.postalCode || '',
+        } : DEFAULT_FORM_DATA.workAddress,
       });
       console.log("profile data = ", formData)
     } catch (error) {
@@ -157,14 +171,35 @@ export default function ProfileInformationScreen() {
       const updateData: UpdateProfileData = {
         firstName,
         lastName,
-        address: formData.currentAddress.street,
         occupation: formData.occupation,
         incomeRange: formData.income,
         sourceOfFunds: formData.sourceOfIncome,
         purposeOfAccount: formData.purpose,
       };
 
+      // 1. Update Profile (JSON settings)
       await UserProfileService.updateProfile(updateData);
+      
+      // 2. Update Address (Targeted model)
+      if (activeModal === 'ADDRESS') {
+        await UserProfileService.updateAddress('CURRENT', {
+          line1: formData.currentAddress.street,
+          subdistrict: formData.currentAddress.subdistrict,
+          district: formData.currentAddress.district,
+          province: formData.currentAddress.province,
+          postalCode: formData.currentAddress.postalCode,
+        });
+      }
+
+      if (activeModal === 'EMPLOYMENT') {
+        await UserProfileService.updateAddress('WORK', {
+          line1: formData.workAddress.street,
+          subdistrict: formData.workAddress.subdistrict,
+          district: formData.workAddress.district,
+          province: formData.workAddress.province,
+          postalCode: formData.workAddress.postalCode,
+        });
+      }
       
       // Re-fetch profile data to sync UI
       await fetchProfile();

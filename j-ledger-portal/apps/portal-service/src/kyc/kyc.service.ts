@@ -9,7 +9,9 @@ import {
 import { PrismaService } from '../prisma/prisma.service';
 import { ConfigService } from '@nestjs/config';
 import { FinanceService } from '../integration/finance.service';
+import { IdentityService } from '../identity/identity.service';
 import { createHash, randomBytes, createCipheriv, randomUUID } from 'crypto';
+import { ConfirmOcrDto } from './dto/kyc.dto';
 
 @Injectable()
 export class KycService {
@@ -20,6 +22,7 @@ export class KycService {
     private readonly prisma: PrismaService,
     private readonly configService: ConfigService,
     private readonly financeService: FinanceService,
+    private readonly identityService: IdentityService,
   ) {}
 
   async getKYCStatus(userId: string) {
@@ -323,11 +326,18 @@ export class KycService {
       idCardIssueDate: '01/01/2010',
       idCardExpiryDate: '01/01/2030',
       religion: 'พุทธ',
-      address: '123/45 ถนนพระราม 9 แขวงห้วยขวาง เขตห้วยขวาง กรุงเทพฯ 10310',
+      address: {
+        line1: '123/45 ถนนพระราม 9',
+        subdistrict: 'ห้วยขวาง',
+        district: 'ห้วยขวาง',
+        province: 'กรุงเทพฯ',
+        postalCode: '10310',
+      },
     };
     console.log("data from simple mode = ", extraction)
     const idCardNumber = extraction.idCardNumber;
-    const idCardToken = this.hashString(idCardNumber);
+    // In mock/simple mode, we use userId in the token to allow multiple users to test with the same mock ID
+    const idCardToken = this.hashString(idCardNumber + userId);
     const encryptedId = this.encryptPii(idCardNumber);
     const encryptedThaiName = this.encryptPii(extraction.thaiName);
     
@@ -350,7 +360,7 @@ export class KycService {
             prefix: extraction.prefixTh,
             dateOfBirth: this.parseDate(extraction.dateOfBirth),
             thaiNameEncrypted: encryptedThaiName,
-            registeredAddress: extraction.address,
+
             religion: extraction.religion,
             idCardToken,
             livenessSessionId,
@@ -371,7 +381,7 @@ export class KycService {
             prefix: extraction.prefixTh,
             dateOfBirth: this.parseDate(extraction.dateOfBirth),
             thaiNameEncrypted: encryptedThaiName,
-            registeredAddress: extraction.address,
+
             religion: extraction.religion,
             idCardToken,
             livenessSessionId,
@@ -415,7 +425,7 @@ export class KycService {
         idCardIssueDate: extraction.idCardIssueDate,
         idCardExpiryDate: extraction.idCardExpiryDate,
         religion: extraction.religion,
-        address: extraction.address,
+        registeredAddress: extraction.address,
       },
       livenessSessionId,
     };
@@ -428,7 +438,9 @@ export class KycService {
     const encryptedId = dto.idNumber ? this.encryptPii(dto.idNumber) : null;
     const thaiName = `${dto.prefixTh || ''}${dto.firstNameTh || ''} ${dto.lastNameTh || ''}`.trim();
     const encryptedThaiName = thaiName ? this.encryptPii(thaiName) : null;
-    const idCardToken = dto.idNumber ? this.hashString(dto.idNumber) : null;
+    // In mock/simple mode, we use userId in the token to allow multiple users to test with the same mock ID
+    // TODO: For production, remove + userId to enforce global deduplication of ID cards
+    const idCardToken = dto.idNumber ? this.hashString(dto.idNumber + userId) : null;
 
     try {
       const updated = await this.prisma.kYCData.update({
@@ -445,13 +457,23 @@ export class KycService {
           idCardIssueDate: dto.issueDate ? this.parseDate(dto.issueDate) : null,
           idCardExpiryDate: dto.expiryDate ? this.parseDate(dto.expiryDate) : null,
           thaiNameEncrypted: encryptedThaiName,
-          registeredAddress: dto.registeredAddress,
           religion: dto.religion,
           ...(idCardToken && { idCardToken }),
         },
       });
-      this.logger.log(`[KYC] OCR data confirmed and saved for user ${userId}`);
-      return updated;
+
+      // 4. Update identity.addresses table via IdentityService
+      if (dto.registeredAddress) {
+        await this.identityService.updateAddress(
+          userId,
+          'REGISTERED',
+          dto.registeredAddress,
+          'ID_CARD_OCR',
+        );
+      }
+
+      this.logger.log(`[KYC] OCR data confirmed for user ${userId}`);
+      return { success: true };
     } catch (error) {
       this.logger.error(`[KYC] Failed to save confirmed OCR data for user ${userId}`, error);
       throw error;

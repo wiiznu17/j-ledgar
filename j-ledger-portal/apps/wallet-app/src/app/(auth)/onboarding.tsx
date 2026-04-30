@@ -62,7 +62,14 @@ export default function OnboardingScreen() {
   const [issueDate, setIssueDate] = useState('');
   const [expiryDate, setExpiryDate] = useState('');
   const [religion, setReligion] = useState('');
-  const [address, setAddress] = useState('');
+  const [address, setAddress] = useState<any>({
+    line1: '',
+    subdistrict: '',
+    district: '',
+    province: '',
+    postalCode: '',
+    label: '',
+  });
   const [occupation, setOccupation] = useState('');
   const [incomeRange, setIncomeRange] = useState('');
   const [sourceOfFunds, setSourceOfFunds] = useState('');
@@ -282,7 +289,9 @@ export default function OnboardingScreen() {
         setIssueDate(extracted.idCardIssueDate || '');
         setExpiryDate(extracted.idCardExpiryDate || '');
         setReligion(extracted.religion || '');
-        setAddress(extracted.address || '');
+        if (extracted.registeredAddress) {
+          setAddress(extracted.registeredAddress);
+        }
 
         setStep('OCR_REVIEW');
       } catch (err: any) {
@@ -382,16 +391,17 @@ export default function OnboardingScreen() {
       const res = await api.post(
         '/identity/register/profile',
         {
-          address,
           occupation,
           incomeRange,
           sourceOfFunds,
           purposeOfAccount: purpose,
+          currentAddress: address,
         },
         {
           headers: { Authorization: `Bearer ${regToken}` },
         },
       );
+      
       if (res.data.regToken) await setRegToken(res.data.regToken);
       setStep('SET_PASSWORD');
     } catch (err: any) {
@@ -485,16 +495,19 @@ export default function OnboardingScreen() {
       case 'religion':
         setReligion(value);
         break;
-      case 'address':
-        setAddress(value);
+      case 'addressField':
+        // value is { field, text }
+        const { field, text } = value as any;
+        setAddress((prev: any) => ({ ...prev, [field]: text }));
         break;
     }
   };
 
   const updateProfileData = (field: string, value: string) => {
     switch (field) {
-      case 'address':
-        setAddress(value);
+      case 'addressField':
+        const { field: addrField, text } = value as any;
+        setAddress((prev: any) => ({ ...prev, [addrField]: text }));
         break;
       case 'occupation':
         setOccupation(value);
@@ -592,7 +605,7 @@ export default function OnboardingScreen() {
                 lastNameEn,
                 dateOfBirth,
                 religion,
-                address,
+                registeredAddress: address,
               }}
               setData={updateOcrData}
               isLoading={isLoading}
