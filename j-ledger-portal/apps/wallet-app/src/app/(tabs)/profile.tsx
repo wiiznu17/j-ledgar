@@ -33,7 +33,6 @@ export default function SettingsScreen() {
   // States
   const [isLoading, setIsLoading] = useState(true);
   const [userProfile, setUserProfile] = useState<UserProfile | null>(null);
-  const [isAccountFrozen, setIsAccountFrozen] = useState(false);
   const [biometrics, setBiometrics] = useState(true);
   const [pushNotifs, setPushNotifs] = useState(true);
 
@@ -85,7 +84,7 @@ export default function SettingsScreen() {
     const firstName = userProfile?.profile?.firstName || '';
     const lastName = userProfile?.profile?.lastName || '';
     const fullName = `${firstName} ${lastName}`.trim();
-    
+
     return fullName || userProfile?.phoneNumber || 'J-Ledger User';
   };
 
@@ -163,6 +162,14 @@ export default function SettingsScreen() {
               label="My Information Profile"
               onPress={() => router.push('/profile/information' as any)}
             />
+            <Divider />
+            <SettingItem
+              icon={<CreditCard size={20} color="#14b8a6" />}
+              iconBg="bg-teal-50"
+              label="Transaction History"
+              onPress={() => {}}
+              badge="Coming Soon"
+            />
           </View>
         </View>
 
@@ -172,19 +179,12 @@ export default function SettingsScreen() {
             Security & Privacy
           </Text>
           <View className="bg-white rounded-[2rem] border border-gray-50 shadow-sm overflow-hidden">
-            <ToggleSetting
-              icon={<Shield size={20} color="#ef4444" />}
-              iconBg="bg-red-50"
-              label="Freeze Account"
-              active={isAccountFrozen}
-              onToggle={() => setIsAccountFrozen(!isAccountFrozen)}
-            />
-            <Divider />
             <SettingItem
               icon={<Shield size={20} color="#3b82f6" />}
               iconBg="bg-blue-50"
               label="Change Security PIN"
               onPress={() => {}}
+              badge="Coming Soon"
             />
             <Divider />
             <ToggleSetting
@@ -200,12 +200,21 @@ export default function SettingsScreen() {
               iconBg="bg-slate-50"
               label="Manage Devices"
               onPress={() => {}}
+              badge="Coming Soon"
+            />
+            <Divider />
+            <SettingItem
+              icon={<LogOut size={20} color="#ef4444" />}
+              iconBg="bg-red-50"
+              label="Delete Account"
+              onPress={() => {}}
+              badge="Coming Soon"
             />
           </View>
         </View>
 
         {/* Preferences */}
-        <View className="mb-8">
+        <View className="mb-6">
           <Text className="text-[10px] font-black text-gray-400 uppercase tracking-widest px-2 mb-3">
             Preferences
           </Text>
@@ -223,6 +232,39 @@ export default function SettingsScreen() {
               iconBg="bg-teal-50"
               label="Linked Cards"
               onPress={() => {}}
+              badge="Coming Soon"
+            />
+          </View>
+        </View>
+
+        {/* Support */}
+        <View className="mb-8">
+          <Text className="text-[10px] font-black text-gray-400 uppercase tracking-widest px-2 mb-3">
+            Support
+          </Text>
+          <View className="bg-white rounded-[2rem] border border-gray-50 shadow-sm overflow-hidden">
+            <SettingItem
+              icon={<Bell size={20} color="#3b82f6" />}
+              iconBg="bg-blue-50"
+              label="Help & Support"
+              onPress={() => {}}
+              badge="Coming Soon"
+            />
+            <Divider />
+            <SettingItem
+              icon={<Shield size={20} color="#64748b" />}
+              iconBg="bg-slate-50"
+              label="Privacy Policy"
+              onPress={() => {}}
+              badge="Coming Soon"
+            />
+            <Divider />
+            <SettingItem
+              icon={<Shield size={20} color="#64748b" />}
+              iconBg="bg-slate-50"
+              label="Terms of Service"
+              onPress={() => {}}
+              badge="Coming Soon"
             />
           </View>
         </View>
@@ -252,7 +294,7 @@ export default function SettingsScreen() {
 
 // --- Reusable Components ---
 
-function SettingItem({ icon, iconBg, label, onPress }: any) {
+function SettingItem({ icon, iconBg, label, onPress, badge }: any) {
   return (
     <TouchableOpacity
       onPress={onPress}
@@ -265,7 +307,16 @@ function SettingItem({ icon, iconBg, label, onPress }: any) {
         </View>
         <Text className="font-manrope font-black text-sm text-gray-800">{label}</Text>
       </View>
-      <ChevronRight size={18} color="#d1d5db" />
+      <View className="flex-row items-center gap-2">
+        {badge && (
+          <View className="bg-gray-100 px-2 py-1 rounded-full">
+            <Text className="text-[9px] font-bold text-gray-500 uppercase tracking-wider">
+              {badge}
+            </Text>
+          </View>
+        )}
+        <ChevronRight size={18} color="#d1d5db" />
+      </View>
     </TouchableOpacity>
   );
 }
