@@ -1,6 +1,7 @@
 import { useEffect } from 'react';
+import { View, StyleSheet } from 'react-native';
 import { DarkTheme, DefaultTheme, ThemeProvider } from '@react-navigation/native';
-import { useRouter, Stack, SplashScreen } from 'expo-router';
+import { router, Stack, SplashScreen } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import 'react-native-reanimated';
@@ -37,7 +38,6 @@ import { BackgroundGradient } from '@/components/common/BackgroundGradient';
 
 export default function RootLayout() {
   const colorScheme = useColorScheme();
-  const router = useRouter();
   useNotifications();
 
   const { 
@@ -82,6 +82,14 @@ export default function RootLayout() {
     return null;
   }
 
+  const navTheme = {
+    ...(colorScheme === 'dark' ? DarkTheme : DefaultTheme),
+    colors: {
+      ...(colorScheme === 'dark' ? DarkTheme.colors : DefaultTheme.colors),
+      background: 'transparent',
+    },
+  };
+
   return (
     <StripeProvider
       publishableKey={process.env.EXPO_PUBLIC_STRIPE_PUBLISHABLE_KEY || 'pk_test_placeholder'}
@@ -89,24 +97,32 @@ export default function RootLayout() {
     >
       <QueryClientProvider client={queryClient}>
         <SafeAreaProvider>
-          <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
-            <BackgroundGradient>
-              <Stack>
-                <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
-                <Stack.Screen name="(auth)" options={{ headerShown: false }} />
-                <Stack.Screen name="transfer" options={{ headerShown: false }} />
-                <Stack.Screen name="topup" options={{ headerShown: false }} />
-                <Stack.Screen name="transaction" options={{ headerShown: false }} />
-                <Stack.Screen name="deal" options={{ headerShown: false }} />
-                <Stack.Screen name="my-qr" options={{ headerShown: false }} />
-                <Stack.Screen name="notifications" options={{ headerShown: false }} />
+          <ThemeProvider value={navTheme}>
+            <View style={{ flex: 1, backgroundColor: 'transparent' }}>
+              {/* Standalone Background */}
+              <View style={StyleSheet.absoluteFill}>
+                <BackgroundGradient />
+              </View>
+              
+              <Stack screenOptions={{ 
+                contentStyle: { backgroundColor: 'transparent' },
+                headerShown: false 
+              }}>
+                <Stack.Screen name="(tabs)" />
+                <Stack.Screen name="(auth)" />
+                <Stack.Screen name="transfer" />
+                <Stack.Screen name="topup" />
+                <Stack.Screen name="transaction" />
+                <Stack.Screen name="deal" />
+                <Stack.Screen name="my-qr" />
+                <Stack.Screen name="notifications" />
                 <Stack.Screen
                   name="settings"
                   options={{ presentation: 'modal', title: 'Settings' }}
                 />
-                <Stack.Screen name="profile/information" options={{ headerShown: false }} />
+                <Stack.Screen name="profile/information" />
               </Stack>
-            </BackgroundGradient>
+            </View>
             <StatusBar style="auto" />
           </ThemeProvider>
         </SafeAreaProvider>

@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { View, Text, TouchableOpacity, Dimensions, ActivityIndicator, RefreshControl } from 'react-native';
+import { View, Text, TouchableOpacity, Dimensions, ActivityIndicator, RefreshControl, Pressable, ScrollView, FlatList } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import {
   Bell,
@@ -17,7 +17,6 @@ import {
 import { useRouter } from 'expo-router';
 import { MotiView } from 'moti';
 import { useInfiniteQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { FlatList } from 'react-native';
 import { api } from '@/lib/axios';
 
 const { width } = Dimensions.get('window');
@@ -158,54 +157,12 @@ export default function NotificationsScreen() {
   };
 
 
-  const renderNotification = ({ item, index }: { item: any; index: number }) => (
-    <MotiView
-      from={{ opacity: 0, translateY: 20 }}
-      animate={{ opacity: 1, translateY: 0 }}
-      transition={{ delay: index * 50, type: 'timing', duration: 400 }}
-      className="mb-4"
-    >
-      <TouchableOpacity
-        onPress={() => handleNotificationPress(item)}
-        className={`border rounded-[30] p-5 flex-row gap-5 shadow-sm active:opacity-70 ${
-          item.isRead ? 'bg-white/40 border-outline-variant/5' : 'bg-blue-50/40 border-primary/20'
-        }`}
-      >
-        <View
-          className={`w-14 h-14 rounded-2xl ${getIconBg(
-            item.type,
-          )} items-center justify-center border border-outline-variant/5`}
-        >
-          {getIcon(item.type)}
-        </View>
-        <View className="flex-1">
-          <View className="flex-row justify-between items-center mb-1">
-            <Text
-              numberOfLines={1}
-              className={`text-base font-manrope tracking-tight flex-1 mr-2 ${
-                item.isRead ? 'font-bold text-on-surface' : 'font-black text-primary'
-              }`}
-            >
-              {item.title}
-            </Text>
-            <Text className="text-[10px] font-manrope font-black text-on-surfaceVariant/40 uppercase tracking-tighter">
-              {formatTime(item.createdAt)}
-            </Text>
-          </View>
-          <Text className="text-[12px] font-manrope font-medium text-on-surfaceVariant leading-relaxed">
-            {item.message}
-          </Text>
-        </View>
-      </TouchableOpacity>
-    </MotiView>
-  );
-
   return (
-    <SafeAreaView className="flex-1 bg-[#f5f6fc]">
+    <SafeAreaView className="flex-1 bg-transparent">
       <View className="px-6 mt-6 mb-4 flex-row items-center gap-4">
         <TouchableOpacity
           onPress={() => router.back()}
-          className="w-12 h-12 rounded-2xl bg-white/60 border border-outline-variant/10 flex items-center justify-center shadow-sm"
+          className="w-12 h-12 rounded-2xl bg-white border border-gray-100 flex items-center justify-center shadow-md active:scale-95"
         >
           <ChevronLeft size={24} color="#4855a5" />
         </TouchableOpacity>
@@ -215,37 +172,58 @@ export default function NotificationsScreen() {
       </View>
 
       {/* Filter Categories */}
-      <View className="mb-6 h-14">
-        <FlatList
+      <View className="mb-6 h-16" style={{ zIndex: 20 }}>
+        <ScrollView
           horizontal
-          data={CATEGORIES}
           showsHorizontalScrollIndicator={false}
-          contentContainerStyle={{ paddingHorizontal: 24, gap: 12 }}
-          keyExtractor={(item) => item.id}
-          renderItem={({ item: cat }) => {
+          contentContainerStyle={{ paddingHorizontal: 24, gap: 12, paddingBottom: 8 }}
+        >
+          {CATEGORIES.map((cat) => {
             const Icon = cat.icon;
             const isSelected = selectedCategory === cat.id;
             return (
-              <TouchableOpacity
+              <Pressable
+                key={cat.id}
                 onPress={() => setSelectedCategory(cat.id)}
-                className={`flex-row items-center px-5 py-3 rounded-2xl border ${
-                  isSelected
-                    ? 'bg-primary border-primary shadow-md'
-                    : 'bg-white border-outline-variant/10'
-                }`}
+                style={({ pressed }) => ({
+                  opacity: pressed ? 0.8 : 1,
+                  transform: [{ scale: pressed ? 0.96 : 1 }],
+                })}
               >
-                <Icon size={18} color={isSelected ? '#fff' : '#4855a5'} />
-                <Text
-                  className={`ml-2 font-manrope font-bold text-sm ${
-                    isSelected ? 'text-white' : 'text-on-surfaceVariant'
-                  }`}
+                <View
+                  style={{
+                    flexDirection: 'row',
+                    alignItems: 'center',
+                    paddingHorizontal: 20,
+                    paddingVertical: 12,
+                    borderRadius: 16,
+                    borderWidth: 1,
+                    backgroundColor: isSelected ? '#4855a5' : '#ffffff',
+                    borderColor: isSelected ? '#4855a5' : 'rgba(72, 85, 165, 0.1)',
+                    // Manual shadow-md implementation
+                    shadowColor: '#000',
+                    shadowOffset: { width: 0, height: 4 },
+                    shadowOpacity: isSelected ? 0.15 : 0.05,
+                    shadowRadius: 6,
+                    elevation: isSelected ? 5 : 1,
+                  }}
                 >
-                  {cat.label}
-                </Text>
-              </TouchableOpacity>
+                  <Icon size={18} color={isSelected ? '#ffffff' : '#4855a5'} />
+                  <Text
+                    style={{
+                      marginLeft: 8,
+                      fontFamily: 'Manrope_700Bold',
+                      fontSize: 14,
+                      color: isSelected ? '#ffffff' : '#4855a5',
+                    }}
+                  >
+                    {cat.label}
+                  </Text>
+                </View>
+              </Pressable>
             );
-          }}
-        />
+          })}
+        </ScrollView>
       </View>
 
       {isLoading && !isRefetching ? (
@@ -255,7 +233,16 @@ export default function NotificationsScreen() {
       ) : (
         <FlatList
           data={notifications}
-          renderItem={renderNotification}
+          renderItem={({ item, index }) => (
+            <NotificationItem
+              item={item}
+              index={index}
+              onPress={handleNotificationPress}
+              getIcon={getIcon}
+              getIconBg={getIconBg}
+              formatTime={formatTime}
+            />
+          )}
           keyExtractor={(item) => item.id}
           contentContainerStyle={{ paddingHorizontal: 24, paddingBottom: 120 }}
           showsVerticalScrollIndicator={false}
@@ -299,14 +286,43 @@ export default function NotificationsScreen() {
         />
       )}
 
-      {/* Background Decorative Blob */}
-      <MotiView
-        from={{ opacity: 0, scale: 0 }}
-        animate={{ opacity: 0.1, scale: 1 }}
-        className="absolute top-0 right-[-50] w-[200] h-[200] bg-primary rounded-full"
-        pointerEvents="none"
-        style={{ filter: [{ blur: 80 }], zIndex: -1 }}
-      />
     </SafeAreaView>
   );
 }
+
+const NotificationItem = React.memo(({ item, index, onPress, getIcon, getIconBg, formatTime }: any) => (
+  <View className="mb-4">
+    <TouchableOpacity
+      onPress={() => onPress(item)}
+      className={`border rounded-[30] p-5 flex-row gap-5 shadow-md active:opacity-70 ${
+        item.isRead ? 'bg-white border-gray-100' : 'bg-blue-50 border-blue-100 shadow-blue-100'
+      }`}
+    >
+      <View
+        className={`w-14 h-14 rounded-2xl ${getIconBg(
+          item.type,
+        )} items-center justify-center border border-outline-variant/5`}
+      >
+        {getIcon(item.type)}
+      </View>
+      <View className="flex-1">
+        <View className="flex-row justify-between items-center mb-1">
+          <Text
+            numberOfLines={1}
+            className={`text-base font-manrope tracking-tight flex-1 mr-2 ${
+              item.isRead ? 'font-bold text-on-surface' : 'font-black text-primary'
+            }`}
+          >
+            {item.title}
+          </Text>
+          <Text className="text-[10px] font-manrope font-black text-gray-500 uppercase tracking-tighter">
+            {formatTime(item.createdAt)}
+          </Text>
+        </View>
+        <Text className="text-[12px] font-manrope font-bold text-gray-600 leading-relaxed">
+          {item.message}
+        </Text>
+      </View>
+    </TouchableOpacity>
+  </View>
+));

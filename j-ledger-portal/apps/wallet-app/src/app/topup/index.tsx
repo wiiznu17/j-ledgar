@@ -38,7 +38,7 @@ export default function TopupScreen() {
   const canContinue = Boolean(isAmountValid && !isSubmitting);
 
   return (
-    <SafeAreaView className="flex-1 bg-[#f8f9fe]" edges={['top']}>
+    <SafeAreaView className="flex-1 bg-transparent" edges={['top']}>
       <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'} className="flex-1">
         <View className="flex-1 px-5">
           <View className="flex-row items-center justify-between pt-2 pb-4">

@@ -92,7 +92,7 @@ export default function HomeScreen() {
 
   if (isLoading) {
     return (
-      <SafeAreaView className="flex-1 bg-[#f8f9fe] items-center justify-center" edges={['top']}>
+      <SafeAreaView className="flex-1 bg-transparent items-center justify-center" edges={['top']}>
         <ActivityIndicator size="large" color="#f48fb1" />
         <Text className="text-sm font-manrope font-bold text-gray-400 mt-4">
           กำลังโหลดข้อมูล...
@@ -102,7 +102,7 @@ export default function HomeScreen() {
   }
 
   return (
-    <SafeAreaView className="flex-1 bg-[#f8f9fe]" edges={['top']}>
+    <SafeAreaView className="flex-1 bg-transparent" edges={['top']}>
       {/* Header Section */}
       <HomeHeader />
 

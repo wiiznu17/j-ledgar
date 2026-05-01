@@ -90,7 +90,7 @@ export default function SettingsScreen() {
 
   if (isLoading) {
     return (
-      <SafeAreaView className="flex-1 bg-[#f8f9fe] items-center justify-center" edges={['top']}>
+      <SafeAreaView className="flex-1 bg-transparent items-center justify-center" edges={['top']}>
         <ActivityIndicator size="large" color="#f48fb1" />
         <Text className="text-sm font-manrope font-bold text-gray-400 mt-4">
           กำลังโหลดข้อมูล...
@@ -100,7 +100,7 @@ export default function SettingsScreen() {
   }
 
   return (
-    <SafeAreaView className="flex-1 bg-[#f8f9fe]" edges={['top']}>
+    <SafeAreaView className="flex-1 bg-transparent" edges={['top']}>
       {/* Header */}
       <View className="px-5 pt-2 pb-4 items-center justify-center">
         <Text className="text-lg font-black text-gray-800 font-manrope">Me</Text>

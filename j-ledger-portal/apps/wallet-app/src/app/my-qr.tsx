@@ -87,14 +87,14 @@ export default function MyQrScreen() {
 
   if (isLoading) {
     return (
-      <SafeAreaView className="flex-1 bg-[#f8f9fe]" edges={['top']}>
+      <SafeAreaView className="flex-1 bg-transparent" edges={['top']}>
         <QRHeader isProcessing={false} setIsProcessing={() => {}} />
       </SafeAreaView>
     );
   }
 
   return (
-    <SafeAreaView className="flex-1 bg-[#f8f9fe]" edges={['top']}>
+    <SafeAreaView className="flex-1 bg-transparent" edges={['top']}>
       <QRHeader isProcessing={isProcessing} setIsProcessing={setIsProcessing} />
 
       <ScrollView

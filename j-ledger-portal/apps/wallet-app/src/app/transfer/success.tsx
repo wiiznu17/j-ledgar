@@ -59,7 +59,7 @@ export default function TransferSuccessScreen() {
   };
 
   return (
-    <SafeAreaView className="flex-1 bg-[#f48fb1]" edges={['top']}>
+    <SafeAreaView className="flex-1 bg-transparent" edges={['top']}>
       <ScrollView contentContainerStyle={{ flexGrow: 1 }} showsVerticalScrollIndicator={false}>
         {/* Success Header Area */}
         <View className="items-center justify-center pt-8 pb-4">
@@ -81,7 +81,7 @@ export default function TransferSuccessScreen() {
           from={{ translateY: 100, opacity: 0 }}
           animate={{ translateY: 0, opacity: 1 }}
           transition={{ delay: 100, type: 'timing', duration: 400 }}
-          className="flex-1 bg-[#f8f9fe] rounded-t-[2.5rem] px-5 pt-8 pb-10"
+          className="flex-1 bg-transparent rounded-t-[2.5rem] px-5 pt-8 pb-10"
         >
           {/* Slip Card */}
           <View
