@@ -146,7 +146,14 @@ export default function HomeScreen() {
           transactions={recentTransactions}
           currency={currency}
           onSeeAll={() => router.push('/(tabs)/history' as any)}
-          onTransactionPress={(tx) => console.log('Transaction pressed:', tx.id)}
+          onTransactionPress={(tx) => {
+            router.push({
+              pathname: `/transaction/${tx.id}` as any,
+              params: {
+                payload: JSON.stringify(tx),
+              },
+            });
+          }}
         />
       </ScrollView>
     </SafeAreaView>

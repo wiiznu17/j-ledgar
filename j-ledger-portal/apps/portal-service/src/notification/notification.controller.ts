@@ -22,11 +22,13 @@ export class NotificationController {
     @Req() req: AuthenticatedRequest,
     @Query('page') page?: string,
     @Query('limit') limit?: string,
+    @Query('category') category?: string,
   ) {
     return this.notificationService.getNotifications(
       req.user.sub,
       parseInt(page || '1'),
       parseInt(limit || '20'),
+      category,
     );
   }
 

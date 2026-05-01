@@ -1,21 +1,12 @@
 import React from 'react';
 import { View, Text, TouchableOpacity } from 'react-native';
-import { ShoppingBag, Landmark } from 'lucide-react-native';
-
-interface Transaction {
-  id: string;
-  title: string;
-  category: string;
-  amount: number;
-  type: string;
-  time: string;
-}
+import { formatCreatedAt, getAmountColor, getTypeMeta, type HistoryItem } from '@/features/history/presentation';
 
 interface RecentActivityListProps {
-  transactions: Transaction[];
+  transactions: HistoryItem[];
   currency: string;
   onSeeAll: () => void;
-  onTransactionPress: (tx: Transaction) => void;
+  onTransactionPress: (tx: HistoryItem) => void;
 }
 
 export const RecentActivityList = ({
@@ -34,41 +25,43 @@ export const RecentActivityList = ({
       </View>
 
       <View className="gap-y-2">
-        {transactions.map((tx) => (
-          <TouchableOpacity
-            key={tx.id}
-            onPress={() => onTransactionPress(tx)}
-            className="bg-white rounded-[1.5rem] p-4 flex-row items-center justify-between border border-gray-50 shadow-sm"
-          >
-            <View className="flex-row items-center gap-4">
-              <View className="w-12 h-12 rounded-full bg-pink-50 flex-row items-center justify-center">
-                {tx.category === 'Shopping' ? (
-                  <ShoppingBag size={20} color="#f48fb1" />
-                ) : (
-                  <Landmark size={20} color="#f48fb1" />
-                )}
+        {transactions.map((tx) => {
+          const Icon = getTypeMeta(tx.type).icon;
+          const amountColor = getAmountColor(tx.direction, tx.status);
+          
+          return (
+            <TouchableOpacity
+              key={tx.id}
+              onPress={() => onTransactionPress(tx)}
+              className="bg-white rounded-[1.5rem] p-4 flex-row items-center justify-between border border-gray-50 shadow-sm"
+            >
+              <View className="flex-row items-center gap-4">
+                <View className="w-12 h-12 rounded-full bg-pink-50 flex-row items-center justify-center">
+                  <Icon size={20} color="#f48fb1" />
+                </View>
+                <View>
+                  <Text className="font-manrope font-black text-gray-800 text-sm">{tx.title}</Text>
+                  <Text className="font-manrope text-[10px] font-bold text-gray-400 mt-0.5 uppercase tracking-widest">
+                    {getTypeMeta(tx.type).label}
+                  </Text>
+                </View>
               </View>
-              <View>
-                <Text className="font-manrope font-black text-gray-800 text-sm">{tx.title}</Text>
-                <Text className="font-manrope text-[10px] font-bold text-gray-400 mt-0.5 uppercase tracking-widest">
-                  {tx.category}
+              <View className="items-end">
+                <Text
+                  className="font-manrope font-black text-base"
+                  style={{ color: amountColor }}
+                >
+                  {tx.direction === 'OUT' ? '-' : '+'}
+                  {currency}
+                  {Number(tx.amount || 0).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                </Text>
+                <Text className="font-manrope text-[9px] font-bold text-gray-400 mt-1">
+                  {formatCreatedAt(tx.createdAt)}
                 </Text>
               </View>
-            </View>
-            <View className="items-end">
-              <Text
-                className={`font-manrope font-black text-base ${tx.type === 'income' ? 'text-green-500' : 'text-gray-800'}`}
-              >
-                {tx.type === 'expense' ? '-' : '+'}
-                {currency}
-                {tx.amount.toLocaleString()}
-              </Text>
-              <Text className="font-manrope text-[9px] font-bold text-gray-400 mt-1">
-                {tx.time}
-              </Text>
-            </View>
-          </TouchableOpacity>
-        ))}
+            </TouchableOpacity>
+          );
+        })}
       </View>
     </View>
   );

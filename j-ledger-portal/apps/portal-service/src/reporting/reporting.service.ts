@@ -11,7 +11,7 @@ export class ReportingService {
     private readonly httpService: HttpService,
     private readonly configService: ConfigService,
   ) {
-    this.apiGatewayUrl = this.configService.get<string>('API_GATEWAY_URL', 'http://localhost:8080');
+    this.apiGatewayUrl = this.configService.get<string>('FINANCE_SERVICE_URL', 'http://localhost:8081');
     this.internalSecret = this.configService.get<string>(
       'JLEDGER_INTERNAL_SECRET',
       'default-secret',

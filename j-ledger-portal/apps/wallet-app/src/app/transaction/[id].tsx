@@ -6,7 +6,7 @@ import { useRouter, useLocalSearchParams } from 'expo-router';
 import { MotiView } from 'moti';
 import { useQuery } from '@tanstack/react-query';
 import { api } from '@/lib/axios';
-import { formatOccurredAt, getAmountColor, getKindMeta, type HistoryItem } from '@/features/history/presentation';
+import { formatCreatedAt, getAmountColor, getTypeMeta, type HistoryItem } from '@/features/history/presentation';
 
 export default function TransactionDetailScreen() {
   const router = useRouter();
@@ -14,37 +14,32 @@ export default function TransactionDetailScreen() {
 
   // Parse payload if available (from app navigation)
   const initialTransaction: HistoryItem | null = React.useMemo(() => {
-    if (!params.payload || typeof params.payload !== 'string') return null;
-    try {
-      return JSON.parse(params.payload) as HistoryItem;
-    } catch {
+    if (!params.payload || typeof params.payload !== 'string') {
       return null;
     }
-  }, [params.payload]);
+    try {
+      const parsed = JSON.parse(params.payload) as HistoryItem;
+      return parsed;
+    } catch (err) {
+      return null;
+    }
+  }, [params.payload, params.id]);
 
   // Fetch transaction from API if payload is missing (from notification/deep link)
-  const { data: fetchedTransaction, isLoading, isError } = useQuery({
+  const { data: fetchedTransaction, isLoading, isError, error: apiError } = useQuery({
     queryKey: ['transaction', params.id],
     queryFn: async () => {
-      const response = await api.get(`/finance/wallets/transactions/${params.id}`);
-      const t = response.data;
-      
-      // Map API Transaction model to HistoryItem interface
-      return {
-        id: t.id.toString(),
-        kind: t.type,
-        title: t.type === 'TRANSFER' ? 'Transfer' : t.type === 'TOPUP' ? 'Top Up' : 'Transaction',
-        amount: t.amount.toString(),
-        direction: t.type === 'TOPUP' ? 'IN' : 'OUT',
-        status: t.status,
-        occurredAt: t.createdAt,
-        source: 'WALLET_TXN',
-        reference: t.transactionId,
-        description: t.description,
-      } as HistoryItem;
+      const url = `/integration/transactions/details/${params.id}`;
+      try {
+        const { data } = await api.get(url);
+        return data;
+      } catch (err: any) {
+        throw err;
+      }
     },
     enabled: !!params.id && !initialTransaction,
   });
+
 
   const transaction = initialTransaction || fetchedTransaction;
 
@@ -74,7 +69,7 @@ export default function TransactionDetailScreen() {
     );
   }
 
-  const Icon = getKindMeta(transaction.kind).icon;
+  const Icon = getTypeMeta(transaction.type).icon;
   const amountColor = getAmountColor(transaction.direction, transaction.status);
 
   return (
@@ -99,7 +94,7 @@ export default function TransactionDetailScreen() {
               </View>
               <Text className="text-xl font-manrope font-black text-gray-800 tracking-tight">{transaction.title}</Text>
               <Text className="text-[10px] font-manrope font-bold text-gray-400 mt-1 uppercase tracking-widest">
-                {getKindMeta(transaction.kind).label}
+                {getTypeMeta(transaction.type).label}
               </Text>
             </View>
 
@@ -126,7 +121,7 @@ export default function TransactionDetailScreen() {
 
             <View className="gap-y-4 pb-2">
               <DetailRow label="Status" value={transaction.status} valueColor={amountColor} />
-              <DetailRow label="Date & Time" value={formatOccurredAt(transaction.occurredAt)} />
+              <DetailRow label="Date & Time" value={formatCreatedAt(transaction.createdAt)} />
               <DetailRow label="Source" value={transaction.source} />
               <DetailRow label="Reference ID" value={transaction.reference || transaction.id} />
               {transaction.paymentIntentId ? <DetailRow label="Payment Intent" value={transaction.paymentIntentId} /> : null}
