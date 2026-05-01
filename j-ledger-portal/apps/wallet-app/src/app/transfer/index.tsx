@@ -120,7 +120,7 @@ export default function TransferScreen() {
   };
 
   return (
-    <SafeAreaView className="flex-1 bg-[#f8f9fe]" edges={['top']}>
+    <SafeAreaView className="flex-1 bg-transparent" edges={['top']}>
       <KeyboardAvoidingView
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
         className="flex-1"

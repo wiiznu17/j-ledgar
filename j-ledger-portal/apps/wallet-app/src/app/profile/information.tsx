@@ -215,14 +215,14 @@ export default function ProfileInformationScreen() {
 
   if (isLoading) {
     return (
-      <SafeAreaView className="flex-1 bg-[#f8f9fe] items-center justify-center">
+      <SafeAreaView className="flex-1 bg-transparent items-center justify-center">
         <ActivityIndicator size="large" color="#f48fb1" />
       </SafeAreaView>
     );
   }
 
   return (
-    <SafeAreaView className="flex-1 bg-[#f8f9fe]" edges={['top']}>
+    <SafeAreaView className="flex-1 bg-transparent" edges={['top']}>
       <InformationHeader isSaving={isSaving} setIsSaving={setIsSaving} />
 
       <ScrollView

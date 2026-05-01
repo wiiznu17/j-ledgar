@@ -45,7 +45,7 @@ export default function TransactionDetailScreen() {
 
   if (isLoading) {
     return (
-      <SafeAreaView className="flex-1 bg-[#f8f9fe] items-center justify-center">
+      <SafeAreaView className="flex-1 bg-transparent items-center justify-center">
         <ActivityIndicator size="large" color="#4855a5" />
         <Text className="font-manrope font-bold text-gray-400 mt-4">Loading transaction details...</Text>
       </SafeAreaView>
@@ -54,7 +54,7 @@ export default function TransactionDetailScreen() {
 
   if (!transaction || isError) {
     return (
-      <SafeAreaView className="flex-1 bg-[#f8f9fe] items-center justify-center p-6">
+      <SafeAreaView className="flex-1 bg-transparent items-center justify-center p-6">
         <View className="w-20 h-20 bg-gray-100 rounded-full items-center justify-center mb-6">
           <Bell size={40} color="#9ca3af" />
         </View>
@@ -73,7 +73,7 @@ export default function TransactionDetailScreen() {
   const amountColor = getAmountColor(transaction.direction, transaction.status);
 
   return (
-    <SafeAreaView className="flex-1 bg-[#f8f9fe]" edges={['top']}>
+    <SafeAreaView className="flex-1 bg-transparent" edges={['top']}>
       <View className="px-5 pt-2 pb-4 flex-row items-center justify-between">
         <TouchableOpacity
           onPress={() => router.back()}

@@ -33,7 +33,7 @@ export const RecentActivityList = ({
             <TouchableOpacity
               key={tx.id}
               onPress={() => onTransactionPress(tx)}
-              className="bg-white rounded-[1.5rem] p-4 flex-row items-center justify-between border border-gray-50 shadow-sm"
+              className="bg-white rounded-[1.5rem] p-4 flex-row items-center justify-between border border-gray-100 shadow-md active:scale-95"
             >
               <View className="flex-row items-center gap-4">
                 <View className="w-12 h-12 rounded-full bg-pink-50 flex-row items-center justify-center">

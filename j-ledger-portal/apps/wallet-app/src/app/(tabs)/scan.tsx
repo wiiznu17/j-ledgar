@@ -200,7 +200,7 @@ export default function ScanScreen() {
 
   if (!permission.granted) {
     return (
-      <View className="flex-1 bg-[#f8f9fe] items-center justify-center px-10">
+      <View className="flex-1 bg-transparent items-center justify-center px-10">
         <View className="w-24 h-24 bg-pink-50 rounded-full items-center justify-center mb-6">
           <QrCode size={40} color="#f48fb1" />
         </View>

@@ -40,7 +40,7 @@ export default function DealsScreen() {
   const router = useRouter();
 
   return (
-    <SafeAreaView className="flex-1 bg-[#f8f9fe]" edges={['top']}>
+    <SafeAreaView className="flex-1 bg-transparent" edges={['top']}>
       <DealHeader
         title="Today's Deals"
         showGift
