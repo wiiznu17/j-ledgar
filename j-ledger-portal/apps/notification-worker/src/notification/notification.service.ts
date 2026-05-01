@@ -49,13 +49,17 @@ export class NotificationService {
       const title = this.generateTitle(topic, actualEventType, metadata);
       const body = this.generateBody(topic, actualEventType, metadata);
 
-      // 3. Persist to Inbox (Atomic within transaction if needed, but here simple create is fine)
+      const { category, path } = this.getCategoryAndPath(actualEventType, metadata);
+
+      // 3. Persist to Inbox
       await this.prisma.notification.create({
         data: {
           userId,
           type: actualEventType,
           title,
           message: body,
+          category,
+          path,
           metadata: metadata || {},
           referenceId: actualReferenceId,
           idempotencyKey,
@@ -149,4 +153,34 @@ export class NotificationService {
       </div>
     `;
   }
-}
+  
+  private getCategoryAndPath(eventType: string, metadata: any): { category: string; path?: string } {
+    const type = eventType?.toUpperCase();
+    
+    // Default Category Mapping
+    if (['TRANSFER', 'TOPUP', 'PAYMENT', 'FINANCE'].includes(type)) {
+      const transactionId = metadata?.transactionId || metadata?.referenceId;
+      return { 
+        category: 'FINANCE', 
+        path: transactionId ? `/transaction/${transactionId}` : undefined 
+      };
+    }
+    
+    if (['SECURITY', 'LOGIN_SUCCESS', 'PASSWORD_CHANGE'].includes(type)) {
+      return { category: 'SYSTEM', path: '/profile/security' };
+    }
+    
+    if (['KYC_STATUS', 'APPROVED', 'REJECTED'].includes(type)) {
+      return { category: 'SYSTEM', path: '/profile/information' };
+    }
+    
+    if (['PROMO', 'OFFER', 'CAMPAIGN'].includes(type)) {
+      return { category: 'PROMO' };
+    }
+    
+    if (['NEWS', 'ANNOUNCEMENT'].includes(type)) {
+      return { category: 'NEWS' };
+    }
+    
+    return { category: 'SYSTEM' };
+  }

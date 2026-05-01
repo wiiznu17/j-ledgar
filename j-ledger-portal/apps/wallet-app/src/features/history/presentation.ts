@@ -1,20 +1,20 @@
 import { ArrowDownToLine, ArrowUpFromLine, ArrowLeftRight, Receipt, CircleHelp, List } from 'lucide-react-native';
 import type { LucideIcon } from 'lucide-react-native';
 
-export type HistoryKind = 'TOPUP' | 'TRANSFER' | 'PAYMENT' | 'WITHDRAWAL';
+export type TransactionType = 'TOPUP' | 'TRANSFER' | 'PAYMENT' | 'WITHDRAWAL';
 export type HistoryStatus = 'PENDING' | 'COMPLETED' | 'FAILED' | 'CANCELED';
 export type HistoryDirection = 'IN' | 'OUT';
 
 export interface HistoryItem {
   id: string;
-  kind: HistoryKind;
+  type: TransactionType;
   title: string;
-  subtitle?: string;
+  description?: string;
   amount: string;
   currency: string;
   direction: HistoryDirection;
   status: HistoryStatus;
-  occurredAt: string;
+  createdAt: string;
   source: 'WALLET_TXN' | 'TOPUP_ORDER';
   provider?: string;
   paymentIntentId?: string;
@@ -23,7 +23,7 @@ export interface HistoryItem {
 }
 
 export interface HistoryFilter {
-  key: 'ALL' | HistoryKind;
+  key: 'ALL' | TransactionType;
   label: string;
   icon: LucideIcon;
 }
@@ -36,16 +36,16 @@ export const HISTORY_FILTERS: HistoryFilter[] = [
   { key: 'WITHDRAWAL', label: 'Withdrawal', icon: ArrowUpFromLine },
 ];
 
-export const KIND_META: Record<HistoryKind, { label: string; icon: LucideIcon }> = {
+export const TYPE_META: Record<TransactionType, { label: string; icon: LucideIcon }> = {
   TOPUP: { label: 'Top Up', icon: ArrowDownToLine },
   TRANSFER: { label: 'Transfer', icon: ArrowLeftRight },
   PAYMENT: { label: 'Payment', icon: Receipt },
   WITHDRAWAL: { label: 'Withdrawal', icon: ArrowUpFromLine },
 };
 
-export function getKindMeta(kind?: string) {
-  if (kind && kind in KIND_META) {
-    return KIND_META[kind as HistoryKind];
+export function getTypeMeta(type?: string) {
+  if (type && type in TYPE_META) {
+    return TYPE_META[type as TransactionType];
   }
   return { label: 'Transaction', icon: CircleHelp };
 }
@@ -60,7 +60,7 @@ export function getAmountColor(direction: HistoryDirection, status: HistoryStatu
   return direction === 'IN' ? '#22c55e' : '#1f2937';
 }
 
-export function formatOccurredAt(value?: string) {
+export function formatCreatedAt(value?: string) {
   if (!value) {
     return '-';
   }

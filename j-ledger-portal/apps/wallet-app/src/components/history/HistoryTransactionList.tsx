@@ -2,7 +2,7 @@ import React from 'react';
 import { View, Text, ScrollView, TouchableOpacity, RefreshControl } from 'react-native';
 import { MotiView } from 'moti';
 import { ArrowDownLeft, ArrowUpRight, Search } from 'lucide-react-native';
-import { formatOccurredAt, getAmountColor, getKindMeta, type HistoryItem } from '@/features/history/presentation';
+import { formatCreatedAt, getAmountColor, getTypeMeta, type HistoryItem } from '@/features/history/presentation';
 
 interface HistoryTransactionListProps {
   transactions: HistoryItem[];
@@ -56,7 +56,7 @@ export const HistoryTransactionList = ({
                 {/* Icon Container with Overlay */}
                 <View className="w-12 h-12 rounded-full bg-pink-50 items-center justify-center relative">
                   {(() => {
-                    const Icon = getKindMeta(tx.kind).icon;
+                    const Icon = getTypeMeta(tx.type).icon;
                     return <Icon size={22} color="#f48fb1" />;
                   })()}
                   <View
@@ -73,7 +73,7 @@ export const HistoryTransactionList = ({
                 <View>
                   <Text className="text-sm font-manrope font-black text-gray-800">{tx.title}</Text>
                   <Text className="text-[10px] font-manrope font-bold text-gray-400 uppercase tracking-widest mt-1">
-                    {getKindMeta(tx.kind).label}
+                    {getTypeMeta(tx.type).label}
                   </Text>
                 </View>
               </View>
@@ -83,7 +83,7 @@ export const HistoryTransactionList = ({
                   {tx.direction === 'OUT' ? '-' : '+'}฿{Number(tx.amount || 0).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                 </Text>
                 <Text className="text-[9px] font-manrope font-bold text-gray-400 mt-1">
-                  {formatOccurredAt(tx.occurredAt)}
+                  {formatCreatedAt(tx.createdAt)}
                 </Text>
               </View>
             </TouchableOpacity>

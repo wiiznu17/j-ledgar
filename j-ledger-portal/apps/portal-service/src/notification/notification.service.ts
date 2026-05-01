@@ -11,16 +11,45 @@ export class NotificationService {
     private readonly kafkaProducer: KafkaProducerService,
   ) {}
 
-  async getNotifications(userId: string, page: number = 1, limit: number = 20) {
+  async getNotifications(
+    userId: string,
+    page: number = 1,
+    limit: number = 20,
+    category?: string,
+  ) {
     const skip = (page - 1) * limit;
+
+    const where: any = { userId };
+
+    if (category && category !== 'ALL') {
+      // Define legacy type mapping for each category
+      const typeMapping: Record<string, string[]> = {
+        FINANCE: ['TRANSFER', 'TOPUP', 'PAYMENT', 'FINANCE'],
+        SYSTEM: ['SECURITY', 'KYC_STATUS', 'SYSTEM'],
+        PROMO: ['PROMO', 'OFFER'],
+        NEWS: ['NEWS', 'ANNOUNCEMENT'],
+      };
+
+      const mappedTypes = typeMapping[category] || [];
+
+      // Query for either the specific category OR a legacy type with null category
+      where.OR = [
+        { category },
+        {
+          category: null,
+          type: { in: mappedTypes },
+        },
+      ];
+    }
+
     const [items, total] = await Promise.all([
       this.prisma.notification.findMany({
-        where: { userId },
+        where,
         orderBy: { createdAt: 'desc' },
         skip,
         take: limit,
       }),
-      this.prisma.notification.count({ where: { userId } }),
+      this.prisma.notification.count({ where }),
     ]);
 
     return {

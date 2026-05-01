@@ -25,7 +25,7 @@ export class IntegrationService {
     private readonly prisma: PrismaService,
     private readonly financeService: FinanceService,
   ) {
-    this.apiGatewayUrl = this.configService.get<string>('API_GATEWAY_URL', 'http://localhost:8080');
+    this.apiGatewayUrl = this.configService.get<string>('FINANCE_SERVICE_URL', 'http://localhost:8081');
     this.internalSecret = this.configService.get<string>(
       'JLEDGER_INTERNAL_SECRET',
       'default-secret',
@@ -115,9 +115,7 @@ export class IntegrationService {
       const offset = page * size;
       const pagedItems = searched.slice(offset, offset + size);
 
-      this.logger.log(
-        `[HistoryDebug] user=${userId} type=${query.type || 'ALL'} page=${page} size=${size} walletRaw=${(walletTransactions || []).length} walletMapped=${walletItems.length} searched=${searched.length} returned=${pagedItems.length} hasMore=${offset + size < searched.length} elapsedMs=${Date.now() - startedAt}`,
-      );
+
 
       return {
         items: pagedItems,
@@ -133,7 +131,78 @@ export class IntegrationService {
   }
 
   async getTransactionDetails(transactionId: string) {
-    return this.forwardToGateway('get', `/api/v1/transactions/${transactionId}`);
+    let actualId = transactionId;
+    try {
+      if (transactionId.startsWith('topup_') || transactionId.startsWith('p2p_')) {
+        
+        // Strategy A: Check TopupOrder table
+        if (transactionId.startsWith('topup_')) {
+          const order = await this.prisma.topupOrder.findUnique({
+            where: { idempotencyKey: transactionId },
+            select: { financeTransactionId: true }
+          });
+          if (order?.financeTransactionId) {
+            actualId = order.financeTransactionId;
+          }
+        }
+
+        // Strategy B: Check Notification Metadata (Most reliable for existing ones)
+        if (actualId === transactionId) {
+          const notifications = await this.prisma.notification.findMany({
+            where: { referenceId: transactionId },
+            select: { metadata: true },
+            orderBy: { createdAt: 'desc' }
+          });
+          
+          for (const notification of notifications) {
+            const meta = notification?.metadata as any;
+            let resolved = meta?.transactionId || meta?.financeTransactionId || meta?.id;
+            
+            if (resolved !== undefined && resolved !== null) {
+              const resolvedStr = String(resolved);
+              if (resolvedStr && !resolvedStr.startsWith('p2p_')) {
+                actualId = resolvedStr;
+                break;
+              }
+            }
+          }
+        }
+
+        // Strategy C: Check AuditLogs (as fallback)
+        if (actualId === transactionId) {
+          const auditLog = await this.prisma.auditLog.findFirst({
+            where: {
+              OR: [
+                { requestPayload: { path: ['idempotencyKey'], equals: transactionId } },
+                { requestPayload: { path: ['body', 'idempotencyKey'], equals: transactionId } }
+              ]
+            },
+            select: { resourceId: true, changes: true },
+            orderBy: { createdAt: 'desc' },
+          });
+
+          if (auditLog?.resourceId) {
+            actualId = auditLog.resourceId;
+          } else if ((auditLog?.changes as any)?.transactionId) {
+            actualId = (auditLog.changes as any).transactionId;
+          }
+        }
+      }
+      // 2. Fetch from Finance Gateway (Correct Path: /api/finance/wallets/transactions/:id)
+      const raw = await this.forwardToGateway('get', `/api/finance/wallets/transactions/${actualId}`);
+      return this.mapWalletTransactionToHistoryItem(raw);
+    } catch (error: any) {
+      const errorMsg = error.response?.data?.message || error.message;
+      this.logger.error(`[TransactionDetails] Failed for ID ${transactionId} (actual: ${actualId}): ${errorMsg}`);
+      
+      throw new HttpException(
+        { 
+          message: 'ไม่พบรายละเอียดธุรกรรม หรือรหัสอ้างอิงไม่ถูกต้อง',
+          debug: { originalId: transactionId, resolvedId: actualId, error: errorMsg }
+        },
+        error?.response?.status || HttpStatus.INTERNAL_SERVER_ERROR
+      );
+    }
   }
 
   // ==================== Bank Integration ====================
@@ -186,17 +255,10 @@ export class IntegrationService {
       this.financeService.getTransactions(userId).catch(() => []),
     ]);
 
-    // Format recent transactions for the frontend
-    const recentTransactions = (transactions || []).slice(0, 10).map((tx: any) => ({
-      id: tx.transactionId || tx.id?.toString(),
-      title: this.formatTransactionTitle(tx),
-      category: tx.type || 'OTHER',
-      amount: Math.abs(tx.amount || 0),
-      type: tx.type === 'TOPUP' ? 'income' : 'expense',
-      time: tx.createdAt
-        ? new Date(tx.createdAt).toLocaleString('th-TH', { hour: '2-digit', minute: '2-digit' })
-        : '',
-    }));
+    // Format recent transactions for the frontend using unified mapping
+    const recentTransactions = (transactions || []).slice(0, 10).map((tx: any) => 
+      this.mapWalletTransactionToHistoryItem(tx)
+    );
 
     return {
       user: {
@@ -430,12 +492,27 @@ export class IntegrationService {
             .catch(() => null)
         : null;
 
+      const finalTxId = tx?.transactionId || tx?.id?.toString();
+
+      // Log to AuditLog for future resolution
+      await this.prisma.auditLog.create({
+        data: {
+          userId,
+          action: 'P2P_TRANSFER',
+          resourceType: 'TRANSACTION',
+          resourceId: finalTxId,
+          requestPayload: { ...body },
+          changes: { transactionId: finalTxId },
+          responseStatus: 200,
+        }
+      }).catch(err => this.logger.error(`[P2PTransfer] Audit logging failed: ${err.message}`));
+
       this.logger.log(
-        `[P2PTransfer] user=${userId} recipientHash=${this.hashPhone(recipientPhone)} amount=${amount.toFixed(2)} outcome=success txn=${tx?.transactionId || tx?.id}`,
+        `[P2PTransfer] user=${userId} recipientHash=${this.hashPhone(recipientPhone)} amount=${amount.toFixed(2)} outcome=success txn=${finalTxId}`,
       );
 
       return {
-        transactionId: tx?.transactionId || tx?.id?.toString(),
+        transactionId: finalTxId,
         status: tx?.status || 'COMPLETED',
         amount: Number(tx?.amount || amount).toFixed(4),
         fee: '0.0000',
@@ -608,24 +685,24 @@ export class IntegrationService {
   }
 
   private mapWalletTransactionToHistoryItem(tx: any) {
-    const kind = (tx?.type || 'PAYMENT') as 'TOPUP' | 'TRANSFER' | 'PAYMENT' | 'WITHDRAWAL';
+    const type = (tx?.type || 'PAYMENT') as 'TOPUP' | 'TRANSFER' | 'PAYMENT' | 'WITHDRAWAL';
     const metadata = this.parseMetadata(tx?.metadata);
-    const isIncome = kind === 'TOPUP' || (!tx?.fromWalletId && !!tx?.toWalletId);
-    const occurredAt = tx?.createdAt
+    const isIncome = type === 'TOPUP' || (!tx?.fromWalletId && !!tx?.toWalletId);
+    const createdAt = tx?.createdAt
       ? new Date(tx.createdAt).toISOString()
       : new Date().toISOString();
     const amount = Number(tx?.amount || 0);
 
     return {
       id: tx?.transactionId || String(tx?.id || randomUUID()),
-      kind,
+      type,
       title: this.formatTransactionTitle(tx),
-      subtitle: tx?.description || undefined,
+      description: tx?.description || undefined,
       amount: amount.toFixed(2),
-      currency: 'THB',
+      currency: tx?.currency || 'THB',
       direction: isIncome ? 'IN' : 'OUT',
       status: tx?.status === 'FAILED' ? 'FAILED' : 'COMPLETED',
-      occurredAt,
+      createdAt,
       source: 'WALLET_TXN' as const,
       provider: metadata.provider || undefined,
       paymentIntentId: metadata.paymentIntentId || undefined,

@@ -163,6 +163,8 @@ model Notification {
   title           String
   message         String
   isRead          Boolean  @default(false)
+  category        String?  // FINANCE, NEWS, PROMO, SYSTEM
+  path            String?  // Deep link path
   metadata        Json?
   referenceId     String?
   idempotencyKey  String   @unique
