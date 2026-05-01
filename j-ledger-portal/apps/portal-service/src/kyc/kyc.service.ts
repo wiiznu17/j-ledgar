@@ -10,6 +10,7 @@ import { PrismaService } from '../prisma/prisma.service';
 import { ConfigService } from '@nestjs/config';
 import { FinanceService } from '../integration/finance.service';
 import { IdentityService } from '../identity/identity.service';
+import { KafkaProducerService } from '../notification/kafka-producer.service';
 import { createHash, randomBytes, createCipheriv, randomUUID } from 'crypto';
 import { ConfirmOcrDto } from './dto/kyc.dto';
 
@@ -23,6 +24,7 @@ export class KycService {
     private readonly configService: ConfigService,
     private readonly financeService: FinanceService,
     private readonly identityService: IdentityService,
+    private readonly kafkaProducer: KafkaProducerService,
   ) {}
 
   async getKYCStatus(userId: string) {
@@ -79,17 +81,38 @@ export class KycService {
       }
     }
 
+    // Emit to Kafka for notification-worker
+    await this.kafkaProducer.emit('kyc-events', {
+      userId: document.userId,
+      documentId,
+      status: 'APPROVED',
+      timestamp: new Date().toISOString(),
+      referenceId: documentId,
+    });
+
     return updated;
   }
 
   async rejectDocument(documentId: string, reason: string) {
-    return this.prisma.kYCDocument.update({
+    const updated = await this.prisma.kYCDocument.update({
       where: { id: documentId },
       data: {
         status: 'REJECTED',
         metadata: { reason },
       },
     });
+
+    // Emit to Kafka for notification-worker
+    await this.kafkaProducer.emit('kyc-events', {
+      userId: updated.userId,
+      documentId,
+      status: 'REJECTED',
+      reason,
+      timestamp: new Date().toISOString(),
+      referenceId: documentId,
+    });
+
+    return updated;
   }
 
   async getPendingKYCList() {

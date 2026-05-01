@@ -42,16 +42,6 @@ export class KafkaService implements OnModuleInit, OnModuleDestroy {
   }
 
   private async handleMessage(topic: string, payload: any) {
-    switch (topic) {
-      case 'transaction-events':
-        await this.notificationService.sendTransactionNotification(payload);
-        break;
-      case 'kyc-events':
-        await this.notificationService.sendKYCNotification(payload);
-        break;
-      case 'security-events':
-        await this.notificationService.sendSecurityNotification(payload);
-        break;
-    }
+    await this.notificationService.handleEvent(topic, payload);
   }
 }

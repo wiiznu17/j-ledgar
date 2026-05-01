@@ -8,6 +8,7 @@ import { AdminModule } from './admin/admin.module';
 import { IntegrationModule } from './integration/integration.module';
 import { AuditModule } from './audit/audit.module';
 import { ReportingModule } from './reporting/reporting.module';
+import { NotificationModule } from './notification/notification.module';
 import { HealthController } from './health/health.controller';
 
 @Module({
@@ -23,6 +24,7 @@ import { HealthController } from './health/health.controller';
     IntegrationModule,
     AuditModule,
     ReportingModule,
+    NotificationModule,
   ],
   controllers: [HealthController],
 })

@@ -13,6 +13,7 @@ import { REDIS_CLIENT } from '../common/constants';
 import Redis from 'ioredis';
 import { ISmsProvider } from '../integrations/interfaces/sms-provider.interface';
 import { FinanceService } from '../integration/finance.service';
+import { KafkaProducerService } from '../notification/kafka-producer.service';
 import {
   RegisterInitDto,
   RegisterVerifyOtpDto,
@@ -69,6 +70,7 @@ export class IdentityService {
     private readonly prisma: PrismaService,
     private readonly jwtService: JwtService,
     private readonly configService: ConfigService,
+    private readonly kafkaProducer: KafkaProducerService,
     @Inject(REDIS_CLIENT) private readonly redis: Redis,
     @Inject(ISmsProvider) private readonly smsProvider: ISmsProvider,
     private readonly financeService: FinanceService,
@@ -258,6 +260,7 @@ export class IdentityService {
       update: {
         lastSeenAt: new Date(),
         trustLevel: 'TRUSTED',
+        ...(dto.pushToken && { pushToken: dto.pushToken }),
       },
       create: {
         userId: user.id,
@@ -265,6 +268,7 @@ export class IdentityService {
         deviceName: dto.deviceName,
         trustLevel: 'TRUSTED',
         lastSeenAt: new Date(),
+        ...(dto.pushToken && { pushToken: dto.pushToken }),
       },
     });
 
@@ -503,6 +507,15 @@ export class IdentityService {
         eventType: eventType as any,
         metadata: metadata || {},
       },
+    });
+
+    // Emit to Kafka for notification-worker
+    await this.kafkaProducer.emit('security-events', {
+      userId,
+      eventType,
+      metadata: metadata || {},
+      timestamp: new Date().toISOString(),
+      referenceId: new Date().getTime().toString(), // Using time as fallback reference
     });
   }
 
@@ -890,10 +903,12 @@ export class IdentityService {
         deviceIdentifier: dto.deviceId,
         deviceName: dto.deviceName,
         trustLevel: 'TRUSTED',
+        ...(dto.pushToken && { pushToken: dto.pushToken }),
       },
       update: {
         deviceName: dto.deviceName,
         lastSeenAt: new Date(),
+        ...(dto.pushToken && { pushToken: dto.pushToken }),
       },
     });
     this.logger.log(`[Register] Device registered for user ${user.id}`);

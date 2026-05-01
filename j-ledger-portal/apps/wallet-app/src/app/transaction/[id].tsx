@@ -1,32 +1,74 @@
 import React from 'react';
-import { View, Text, TouchableOpacity, ScrollView } from 'react-native';
+import { View, Text, TouchableOpacity, ScrollView, ActivityIndicator } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { ChevronLeft, AlertCircle } from 'lucide-react-native';
+import { ChevronLeft, AlertCircle, Bell } from 'lucide-react-native';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import { MotiView } from 'moti';
+import { useQuery } from '@tanstack/react-query';
+import { api } from '@/lib/axios';
 import { formatOccurredAt, getAmountColor, getKindMeta, type HistoryItem } from '@/features/history/presentation';
 
 export default function TransactionDetailScreen() {
   const router = useRouter();
   const params = useLocalSearchParams<{ id: string; payload?: string }>();
 
-  const transaction: HistoryItem | null = (() => {
-    if (!params.payload || typeof params.payload !== 'string') {
-      return null;
-    }
+  // Parse payload if available (from app navigation)
+  const initialTransaction: HistoryItem | null = React.useMemo(() => {
+    if (!params.payload || typeof params.payload !== 'string') return null;
     try {
       return JSON.parse(params.payload) as HistoryItem;
     } catch {
       return null;
     }
-  })();
+  }, [params.payload]);
 
-  if (!transaction) {
+  // Fetch transaction from API if payload is missing (from notification/deep link)
+  const { data: fetchedTransaction, isLoading, isError } = useQuery({
+    queryKey: ['transaction', params.id],
+    queryFn: async () => {
+      const response = await api.get(`/finance/wallets/transactions/${params.id}`);
+      const t = response.data;
+      
+      // Map API Transaction model to HistoryItem interface
+      return {
+        id: t.id.toString(),
+        kind: t.type,
+        title: t.type === 'TRANSFER' ? 'Transfer' : t.type === 'TOPUP' ? 'Top Up' : 'Transaction',
+        amount: t.amount.toString(),
+        direction: t.type === 'TOPUP' ? 'IN' : 'OUT',
+        status: t.status,
+        occurredAt: t.createdAt,
+        source: 'WALLET_TXN',
+        reference: t.transactionId,
+        description: t.description,
+      } as HistoryItem;
+    },
+    enabled: !!params.id && !initialTransaction,
+  });
+
+  const transaction = initialTransaction || fetchedTransaction;
+
+  if (isLoading) {
     return (
       <SafeAreaView className="flex-1 bg-[#f8f9fe] items-center justify-center">
-        <Text className="font-manrope font-black text-gray-500">Transaction not found.</Text>
-        <TouchableOpacity onPress={() => router.back()} className="mt-4 px-6 py-3 bg-pink-50 rounded-xl">
-          <Text className="font-manrope font-black text-[#f48fb1]">Go Back</Text>
+        <ActivityIndicator size="large" color="#4855a5" />
+        <Text className="font-manrope font-bold text-gray-400 mt-4">Loading transaction details...</Text>
+      </SafeAreaView>
+    );
+  }
+
+  if (!transaction || isError) {
+    return (
+      <SafeAreaView className="flex-1 bg-[#f8f9fe] items-center justify-center p-6">
+        <View className="w-20 h-20 bg-gray-100 rounded-full items-center justify-center mb-6">
+          <Bell size={40} color="#9ca3af" />
+        </View>
+        <Text className="text-xl font-manrope font-black text-gray-800 text-center">Transaction not found</Text>
+        <Text className="text-sm font-manrope font-medium text-gray-500 text-center mt-2">
+          We couldn't find the details for this transaction. It might still be processing or has been removed.
+        </Text>
+        <TouchableOpacity onPress={() => router.back()} className="mt-8 px-10 py-4 bg-[#4855a5] rounded-2xl shadow-lg shadow-blue-200">
+          <Text className="font-manrope font-black text-white">Go Back</Text>
         </TouchableOpacity>
       </SafeAreaView>
     );

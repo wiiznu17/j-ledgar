@@ -179,6 +179,13 @@ public class WalletController {
         }
     }
 
+    @GetMapping("/transactions/{id}")
+    public ResponseEntity<Transaction> getTransactionById(@PathVariable String id) {
+        return walletService.getTransactionById(id)
+                .map(ResponseEntity::ok)
+                .orElse(ResponseEntity.notFound().build());
+    }
+
     @GetMapping("/{userId}/qr/history")
     public ResponseEntity<List<Transaction>> getQRHistory(@PathVariable String userId) {
         List<Transaction> transactions = walletService.getQRHistory(userId);
