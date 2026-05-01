@@ -129,6 +129,14 @@ export default function TransactionDetailScreen() {
             </View>
           </View>
 
+          {/* View Receipt Button */}
+          <TouchableOpacity
+            onPress={() => router.push(`/billing/${transaction.reference || transaction.id}` as any)}
+            className="w-full h-16 bg-white border-2 border-[#f48fb1] rounded-2xl flex-row items-center justify-center gap-2 mb-4 active:scale-95"
+          >
+            <Text className="text-sm font-manrope font-black text-[#f48fb1]">View Receipt</Text>
+          </TouchableOpacity>
+
           <TouchableOpacity className="bg-red-50 p-4 rounded-2xl border border-red-100 flex-row items-center justify-center gap-2 shadow-sm active:scale-95 mb-6">
             <AlertCircle size={16} color="#ef4444" />
             <Text className="text-xs font-manrope font-black text-red-500 uppercase tracking-widest">

@@ -201,10 +201,18 @@ export default function TransferSuccessScreen() {
             </TouchableOpacity>
           </View>
 
+          {/* View Receipt Button */}
+          <TouchableOpacity
+            onPress={() => router.push(`/billing/${refId}` as any)}
+            className="w-full h-16 bg-white border-2 border-[#f48fb1] rounded-2xl flex-row items-center justify-center gap-2 mt-6 active:scale-95"
+          >
+            <Text className="text-sm font-manrope font-black text-[#f48fb1]">View Receipt</Text>
+          </TouchableOpacity>
+
           {/* Back to Home Button */}
           <TouchableOpacity
             onPress={() => router.push('/(tabs)' as any)}
-            className="w-full h-16 bg-[#f48fb1] rounded-2xl flex-row items-center justify-center gap-2 shadow-lg shadow-pink-200 mt-6 active:scale-95"
+            className="w-full h-16 bg-[#f48fb1] rounded-2xl flex-row items-center justify-center gap-2 shadow-lg shadow-pink-200 mt-4 active:scale-95"
           >
             <Home size={20} color="white" />
             <Text className="text-sm font-manrope font-black text-white">Back to Home</Text>
