@@ -6,6 +6,8 @@ import { FinanceService } from './finance.service';
 import Stripe from 'stripe';
 import { TopupOrderStatus } from '@prisma/client';
 import { createHash, randomUUID } from 'crypto';
+import { BillingService } from '../billing/billing.service';
+import { Inject, forwardRef } from '@nestjs/common';
 
 @Injectable()
 export class IntegrationService {
@@ -24,6 +26,8 @@ export class IntegrationService {
     private readonly configService: ConfigService,
     private readonly prisma: PrismaService,
     private readonly financeService: FinanceService,
+    @Inject(forwardRef(() => BillingService))
+    private readonly billingService: BillingService,
   ) {
     this.apiGatewayUrl = this.configService.get<string>('FINANCE_SERVICE_URL', 'http://localhost:8081');
     this.internalSecret = this.configService.get<string>(
@@ -511,7 +515,7 @@ export class IntegrationService {
         `[P2PTransfer] user=${userId} recipientHash=${this.hashPhone(recipientPhone)} amount=${amount.toFixed(2)} outcome=success txn=${finalTxId}`,
       );
 
-      return {
+      const result = {
         transactionId: finalTxId,
         status: tx?.status || 'COMPLETED',
         amount: Number(tx?.amount || amount).toFixed(4),
@@ -525,6 +529,27 @@ export class IntegrationService {
         },
         createdAt: tx?.createdAt || new Date().toISOString(),
       };
+
+      // Create Invoice after successful transfer
+      try {
+        await this.billingService.createInvoice({
+          userId,
+          senderName: 'J-Ledger Wallet',
+          note: body.note,
+          referenceId: finalTxId,
+          items: [
+            {
+              name: `P2P Transfer to ${recipientProfile?.idCardName || recipientPhone}`,
+              quantity: 1,
+              unitPrice: amount
+            }
+          ]
+        });
+      } catch (err) {
+        this.logger.error(`[P2PTransfer] Invoice creation failed: ${err.message}`);
+      }
+
+      return result;
     } catch (error: any) {
       const message = error?.response?.data?.message || error?.message || 'Failed to transfer';
       this.logger.error(
@@ -572,6 +597,7 @@ export class IntegrationService {
   private async handlePaymentIntentSucceeded(event: any) {
     const paymentIntent = event.data.object as any;
     const paymentIntentId = paymentIntent.id;
+    this.logger.log(`[StripeWebhook] Processing successful payment: ${paymentIntentId}`);
 
     const order = await this.prisma.topupOrder.findUnique({
       where: { stripePaymentIntentId: paymentIntentId },
@@ -628,6 +654,26 @@ export class IntegrationService {
         processedEventId: event.id,
       },
     });
+
+    // Create Invoice after successful Top-up
+    this.logger.log(`[StripeWebhook] Triggering invoice creation for order=${order.id} user=${order.userId}`);
+    try {
+      await this.billingService.createInvoice({
+        userId: order.userId,
+        senderName: 'J-Ledger Top-up',
+        note: `Top-up via ${order.currency}`,
+        referenceId: paymentIntentId,
+        items: [
+          {
+            name: `Wallet Top-up (${order.currency})`,
+            quantity: 1,
+            unitPrice: Number(order.amount)
+          }
+        ]
+      });
+    } catch (err) {
+      this.logger.error(`[StripeWebhook] Invoice creation failed: ${err.message}`);
+    }
   }
 
   private async handlePaymentIntentFailed(event: any) {

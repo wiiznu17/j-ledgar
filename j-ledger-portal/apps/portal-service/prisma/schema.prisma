@@ -1,7 +1,3 @@
-// Portal Service Prisma Schema
-// Manages: identity, kyc, admin, integration, audit, reporting schemas
-// NO foreign keys between schemas - use application-level references
-
 generator client {
   provider = "prisma-client-js"
 }
@@ -9,34 +5,32 @@ generator client {
 datasource db {
   provider = "postgresql"
   url      = env("DATABASE_URL")
-  schemas  = ["identity", "kyc", "admin", "integration", "audit", "reporting"]
+  schemas  = ["admin", "audit", "billing", "identity", "integration", "kyc", "reporting"]
 }
 
-// ==================== Identity Schema ====================
-
 model User {
-  id                String              @id @default(uuid())
-  phoneNumber       String              @unique @db.VarChar(15)
-  email             String?             @unique
+  id                String                  @id @default(uuid())
+  phoneNumber       String                  @unique @db.VarChar(15)
+  email             String?                 @unique
   passwordHash      String?
   pinHash           String?
   biometricKey      String?
-  status            UserStatus          @default(ACTIVE)
-  registrationState RegistrationState   @default(PENDING)
-  pinAttempts       Int                 @default(0)
+  status            UserStatus              @default(ACTIVE)
+  registrationState RegistrationState       @default(PENDING)
+  pinAttempts       Int                     @default(0)
   pinLockedUntil    DateTime?
   ledgerAccountId   String?
-  createdAt         DateTime            @default(now())
-  updatedAt         DateTime            @updatedAt
-
-  userDevices       UserDevice[]
-  refreshSessions   RefreshSession[]
-  otpChallenges     OtpChallenge[]
-  userConsents      UserConsent[]
-  securityEvents    SecurityEvent[]
-  userSettings      UserSetting[]
-  notifications     Notification[]
+  createdAt         DateTime                @default(now())
+  updatedAt         DateTime                @updatedAt
+  invoices          Invoice[]
   notificationPrefs NotificationPreference?
+  notifications     Notification[]
+  otpChallenges     OtpChallenge[]
+  refreshSessions   RefreshSession[]
+  securityEvents    SecurityEvent[]
+  userConsents      UserConsent[]
+  userDevices       UserDevice[]
+  userSettings      UserSetting[]
 
   @@index([phoneNumber])
   @@index([status])
@@ -47,20 +41,19 @@ model User {
 }
 
 model UserDevice {
-  id              String            @id @default(uuid())
-  userId          String
+  id               String           @id @default(uuid())
+  userId           String
   deviceIdentifier String
-  pushToken       String?
-  deviceName      String?
-  deviceType      String?
-  osVersion       String?
-  appVersion      String?
-  trustLevel      DeviceTrustLevel  @default(UNKNOWN)
-  lastSeenAt      DateTime?
-  createdAt       DateTime          @default(now())
-  updatedAt       DateTime          @updatedAt
-
-  user            User              @relation(fields: [userId], references: [id], onDelete: Cascade)
+  deviceName       String?
+  deviceType       String?
+  osVersion        String?
+  appVersion       String?
+  trustLevel       DeviceTrustLevel @default(UNKNOWN)
+  lastSeenAt       DateTime?
+  createdAt        DateTime         @default(now())
+  updatedAt        DateTime         @updatedAt
+  pushToken        String?
+  user             User             @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@unique([userId, deviceIdentifier])
   @@map("user_devices")
@@ -68,21 +61,19 @@ model UserDevice {
 }
 
 model RefreshSession {
-  id           String   @id @default(uuid())
-  userId       String
-  deviceId     String?
-  tokenHash    String
-  expiresAt    DateTime
-  revokedAt    DateTime?
-  createdAt    DateTime @default(now())
-
-  ipAddress    String?
-  userAgent    String?
-  deviceType   String?
-  location     String?
-  lastSeenAt   DateTime?
-
-  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  id         String    @id @default(uuid())
+  userId     String
+  deviceId   String?
+  tokenHash  String
+  expiresAt  DateTime
+  revokedAt  DateTime?
+  createdAt  DateTime  @default(now())
+  deviceType String?
+  ipAddress  String?
+  lastSeenAt DateTime?
+  location   String?
+  userAgent  String?
+  user       User      @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([userId])
   @@index([expiresAt])
@@ -92,16 +83,15 @@ model RefreshSession {
 }
 
 model OtpChallenge {
-  id           String   @id @default(uuid())
-  userId       String?
-  phoneNumber  String
-  code         String
-  expiresAt    DateTime
-  verifiedAt   DateTime?
-  attempts     Int      @default(0)
-  createdAt    DateTime @default(now())
-
-  user         User?    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  id          String    @id @default(uuid())
+  userId      String?
+  phoneNumber String
+  code        String
+  expiresAt   DateTime
+  verifiedAt  DateTime?
+  attempts    Int       @default(0)
+  createdAt   DateTime  @default(now())
+  user        User?     @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([phoneNumber])
   @@index([expiresAt])
@@ -111,15 +101,14 @@ model OtpChallenge {
 }
 
 model UserConsent {
-  id           String       @id @default(uuid())
-  userId       String
-  consentType  ConsentType
-  acceptedAt   DateTime
-  withdrawnAt  DateTime?
-  ipAddress    String?
-  userAgent    String?
-
-  user         User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  id          String      @id @default(uuid())
+  userId      String
+  consentType ConsentType
+  acceptedAt  DateTime
+  withdrawnAt DateTime?
+  ipAddress   String?
+  userAgent   String?
+  user        User        @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@unique([userId, consentType])
   @@map("user_consents")
@@ -127,15 +116,14 @@ model UserConsent {
 }
 
 model SecurityEvent {
-  id           String           @id @default(uuid())
-  userId       String?
-  eventType    SecurityEventType
-  ipAddress    String?
-  userAgent    String?
-  metadata     Json?
-  createdAt    DateTime         @default(now())
-
-  user         User?            @relation(fields: [userId], references: [id], onDelete: Cascade)
+  id        String            @id @default(uuid())
+  userId    String?
+  eventType SecurityEventType
+  ipAddress String?
+  userAgent String?
+  metadata  Json?
+  createdAt DateTime          @default(now())
+  user      User?             @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@map("security_events")
   @@schema("identity")
@@ -148,7 +136,6 @@ model UserSetting {
   value     String
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
-
   user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@unique([userId, key])
@@ -157,21 +144,20 @@ model UserSetting {
 }
 
 model Notification {
-  id              String   @id @default(uuid())
-  userId          String
-  type            String   // TRANSACTION, SECURITY, KYC, etc.
-  title           String
-  message         String
-  isRead          Boolean  @default(false)
-  category        String?  // FINANCE, NEWS, PROMO, SYSTEM
-  path            String?  // Deep link path
-  metadata        Json?
-  referenceId     String?
-  idempotencyKey  String   @unique
-  createdAt       DateTime @default(now())
-  updatedAt       DateTime @updatedAt
-
-  user            User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  id             String   @id @default(uuid())
+  userId         String
+  title          String
+  category       String?
+  isRead         Boolean  @default(false)
+  createdAt      DateTime @default(now())
+  idempotencyKey String   @unique
+  message        String
+  metadata       Json?
+  path           String?
+  referenceId    String?
+  type           String
+  updatedAt      DateTime @updatedAt
+  user           User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([userId])
   @@map("notifications")
@@ -183,7 +169,6 @@ model NotificationPreference {
   pushEnabled        Boolean @default(true)
   emailEnabled       Boolean @default(true)
   securityForceEmail Boolean @default(true)
-
   user               User    @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@map("notification_preferences")
@@ -191,34 +176,298 @@ model NotificationPreference {
 }
 
 model Address {
-  id                 String      @id @default(uuid())
+  id                 String                     @id @default(uuid())
   userId             String
-  type               AddressType @default(CURRENT)
-  label              String?     // e.g., "Home", "Office", "Mom's house"
-
-  line1              String?     // House number, village, lane, road
-  line2              String?     // Apartment, suite, etc.
-  subdistrict        String?     // ตำบล/แขวง
-  district           String?     // อำเภอ/เขต
-  province           String?     // จังหวัด
-  postalCode         String?     // รหัสไปรษณีย์
-  countryCode        String      @default("TH")
-
-  isVerified         Boolean     @default(false)
+  type               AddressType                @default(CURRENT)
+  label              String?
+  line1              String?
+  line2              String?
+  subdistrict        String?
+  district           String?
+  province           String?
+  postalCode         String?
+  countryCode        String                     @default("TH")
+  isVerified         Boolean                    @default(false)
   verifiedAt         DateTime?
   verificationSource AddressVerificationSource?
-  documentRef        String?     // Reference to KYC document
-
+  documentRef        String?
   deletedAt          DateTime?
-  createdAt          DateTime    @default(now())
-  updatedAt          DateTime    @updatedAt
+  createdAt          DateTime                   @default(now())
+  updatedAt          DateTime                   @updatedAt
 
-  // Partial unique index (userId, type WHERE deletedAt IS NULL) 
-  // is enforced via raw SQL in migration file.
   @@index([userId])
   @@index([isVerified])
   @@map("addresses")
   @@schema("identity")
+}
+
+model KYCUser {
+  id        String   @id @default(uuid())
+  userId    String   @unique
+  email     String?
+  phone     String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("users")
+  @@schema("kyc")
+}
+
+model KYCDocument {
+  id           String            @id @default(uuid())
+  userId       String
+  documentType String
+  s3Key        String
+  s3Url        String?
+  metadata     Json?
+  createdAt    DateTime          @default(now())
+  updatedAt    DateTime          @updatedAt
+  status       KYCDocumentStatus @default(PENDING)
+
+  @@index([userId])
+  @@index([status])
+  @@index([documentType])
+  @@map("kyc_documents")
+  @@schema("kyc")
+}
+
+model KYCData {
+  id                    String                @id @default(uuid())
+  userId                String                @unique
+  idCardNumberEncrypted String?
+  idCardName            String?
+  firstNameTh           String?
+  lastNameTh            String?
+  firstNameEn           String?
+  lastNameEn            String?
+  dateOfBirth           DateTime?
+  thaiNameEncrypted     String?
+  prefix                String?
+  idCardToken           String?               @unique
+  idCardImageUrl        String?
+  idCardImageSha256     String?
+  selfieImageUrl        String?
+  selfieImageSha256     String?
+  livenessSessionId     String?
+  faceMatchScore        Int?
+  idCardIssueDate       DateTime?
+  idCardExpiryDate      DateTime?
+  religion              String?
+  reviewNote            String?
+  ocrConfidence         Float?
+  verifiedAt            DateTime?
+  createdAt             DateTime              @default(now())
+  updatedAt             DateTime              @updatedAt
+  verificationStatus    KYCVerificationStatus @default(PENDING)
+
+  @@index([userId])
+  @@index([verificationStatus])
+  @@map("kyc_data")
+  @@schema("kyc")
+}
+
+model PII {
+  id            String   @id @default(uuid())
+  userId        String
+  field         String
+  encryptedData String
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  @@unique([userId, field])
+  @@map("pii")
+  @@schema("kyc")
+}
+
+model Staff {
+  id               String      @id @default(uuid())
+  username         String      @unique
+  password         String
+  email            String      @unique
+  firstName        String
+  lastName         String
+  isActive         Boolean     @default(true)
+  refreshTokenHash String?
+  createdAt        DateTime    @default(now())
+  updatedAt        DateTime    @updatedAt
+  staffRoles       StaffRole[]
+
+  @@map("staffs")
+  @@schema("admin")
+}
+
+model Role {
+  id              String           @id @default(uuid())
+  name            String           @unique
+  description     String?
+  createdAt       DateTime         @default(now())
+  updatedAt       DateTime         @updatedAt
+  rolePermissions RolePermission[]
+  staffRoles      StaffRole[]
+
+  @@map("roles")
+  @@schema("admin")
+}
+
+model Permission {
+  id              String           @id @default(uuid())
+  name            String           @unique
+  description     String?
+  resource        String
+  action          String
+  createdAt       DateTime         @default(now())
+  updatedAt       DateTime         @updatedAt
+  rolePermissions RolePermission[]
+
+  @@map("permissions")
+  @@schema("admin")
+}
+
+model StaffRole {
+  id        String   @id @default(uuid())
+  staffId   String
+  roleId    String
+  createdAt DateTime @default(now())
+  role      Role     @relation(fields: [roleId], references: [id], onDelete: Cascade)
+  staff     Staff    @relation(fields: [staffId], references: [id], onDelete: Cascade)
+
+  @@unique([staffId, roleId], name: "staffId_roleId")
+  @@map("staff_roles")
+  @@schema("admin")
+}
+
+model RolePermission {
+  id           String     @id @default(uuid())
+  roleId       String
+  permissionId String
+  createdAt    DateTime   @default(now())
+  permission   Permission @relation(fields: [permissionId], references: [id], onDelete: Cascade)
+  role         Role       @relation(fields: [roleId], references: [id], onDelete: Cascade)
+
+  @@unique([roleId, permissionId], name: "roleId_permissionId")
+  @@map("role_permissions")
+  @@schema("admin")
+}
+
+model BankIntegration {
+  id        BigInt     @id @default(autoincrement())
+  bankCode  String
+  bankName  String
+  apiKey    String
+  createdAt DateTime   @default(now())
+  updatedAt DateTime   @updatedAt
+  status    BankStatus @default(ACTIVE)
+
+  @@map("banks")
+  @@schema("integration")
+}
+
+model Merchant {
+  id         BigInt         @id @default(autoincrement())
+  merchantId String         @unique
+  name       String
+  category   String
+  createdAt  DateTime       @default(now())
+  updatedAt  DateTime       @updatedAt
+  status     MerchantStatus @default(ACTIVE)
+
+  @@map("merchants")
+  @@schema("integration")
+}
+
+model TopupOrder {
+  id                    String           @id @default(uuid())
+  userId                String
+  amount                Decimal          @db.Decimal(19, 4)
+  currency              String           @default("THB")
+  status                TopupOrderStatus @default(PENDING)
+  stripePaymentIntentId String?          @unique
+  clientSecretRef       String?
+  idempotencyKey        String           @unique
+  financeTransactionId  String?
+  processedEventId      String?
+  createdAt             DateTime         @default(now())
+  updatedAt             DateTime         @updatedAt
+
+  @@index([userId, status])
+  @@map("topup_orders")
+  @@schema("integration")
+}
+
+model AuditLog {
+  id             String   @id @default(uuid())
+  adminUserId    String?
+  userId         String?
+  action         String
+  resourceType   String
+  resourceId     String?
+  ipAddress      String?
+  userAgent      String?
+  requestPayload Json?
+  responseStatus Int?
+  changes        Json?
+  reason         String?
+  createdAt      DateTime @default(now())
+
+  @@index([userId])
+  @@index([adminUserId])
+  @@index([createdAt])
+  @@map("audit_logs")
+  @@schema("audit")
+}
+
+model Report {
+  id          BigInt       @id @default(autoincrement())
+  reportType  String
+  parameters  Json
+  fileUrl     String?
+  generatedBy String?
+  createdAt   DateTime     @default(now())
+  completedAt DateTime?
+  status      ReportStatus @default(GENERATING)
+
+  @@map("reports")
+  @@schema("reporting")
+}
+
+model Invoice {
+  id            String        @id @default(uuid())
+  invoiceNumber String        @unique
+  userId        String
+  senderName    String?
+  senderDetail  String?
+  amount        Decimal       @db.Decimal(19, 4)
+  tax           Decimal       @default(0) @db.Decimal(19, 4)
+  total         Decimal       @db.Decimal(19, 4)
+  currency      String        @default("THB")
+  status        InvoiceStatus @default(PENDING)
+  dueDate       DateTime?
+  paidAt        DateTime?
+  referenceId   String?
+  note          String?
+  createdAt     DateTime      @default(now())
+  updatedAt     DateTime      @updatedAt
+  items         InvoiceItem[]
+  user          User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([status])
+  @@index([createdAt])
+  @@map("invoices")
+  @@schema("billing")
+}
+
+model InvoiceItem {
+  id        String  @id @default(uuid())
+  invoiceId String
+  name      String
+  quantity  Int     @default(1)
+  unitPrice Decimal @db.Decimal(19, 4)
+  amount    Decimal @db.Decimal(19, 4)
+  invoice   Invoice @relation(fields: [invoiceId], references: [id], onDelete: Cascade)
+
+  @@map("invoice_items")
+  @@schema("billing")
 }
 
 enum UserStatus {
@@ -307,86 +556,6 @@ enum SecurityEventType {
   @@schema("identity")
 }
 
-// ==================== KYC Schema ====================
-
-model KYCUser {
-  id        String   @id @default(uuid())
-  userId    String   @unique // Reference to identity.User (no FK)
-  email     String?
-  phone     String?
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-
-  @@map("users")
-  @@schema("kyc")
-}
-
-model KYCDocument {
-  id          String            @id @default(uuid())
-  userId      String // Reference to identity.User (no FK)
-  documentType String // ID_CARD, PASSPORT, SELFIE, etc.
-  status      KYCDocumentStatus @default(PENDING)
-  s3Key       String
-  s3Url       String?
-  metadata    Json?
-  createdAt   DateTime          @default(now())
-  updatedAt   DateTime          @updatedAt
-
-  @@index([userId])
-  @@index([status])
-  @@index([documentType])
-  @@map("kyc_documents")
-  @@schema("kyc")
-}
-
-model KYCData {
-  id                      String                @id @default(uuid())
-  userId                  String                @unique // Reference to identity.User (no FK)
-  verificationStatus      KYCVerificationStatus @default(PENDING)
-  idCardNumberEncrypted   String?
-  idCardName              String?  // Keep for backward compatibility/full string
-  firstNameTh             String?
-  lastNameTh              String?
-  firstNameEn             String?
-  lastNameEn              String?
-  dateOfBirth             DateTime?
-  thaiNameEncrypted       String?
-  prefix                  String?
-  idCardToken             String?  @unique // SHA-256 of ID number for deduplication
-  idCardImageUrl          String?
-  idCardImageSha256       String?
-  selfieImageUrl          String?
-  selfieImageSha256       String?
-  livenessSessionId       String?
-  faceMatchScore          Int?
-  idCardIssueDate         DateTime?
-  idCardExpiryDate        DateTime?
-  religion                String?
-  reviewNote              String?
-  ocrConfidence           Float?
-  verifiedAt              DateTime?
-  createdAt               DateTime @default(now())
-  updatedAt               DateTime @updatedAt
-
-  @@index([userId])
-  @@index([verificationStatus])
-  @@map("kyc_data")
-  @@schema("kyc")
-}
-
-model PII {
-  id          String   @id @default(uuid())
-  userId      String // Reference to identity.User (no FK)
-  field       String   // FULL_NAME, ID_NUMBER, ADDRESS, etc.
-  encryptedData String // Encrypted PII data
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
-
-  @@unique([userId, field])
-  @@map("pii")
-  @@schema("kyc")
-}
-
 enum KYCDocumentStatus {
   PENDING
   APPROVED
@@ -401,130 +570,6 @@ enum KYCVerificationStatus {
   REJECTED
 
   @@schema("kyc")
-}
-
-// ==================== Admin Schema ====================
-
-model Staff {
-  id               String   @id @default(uuid())
-  username         String   @unique
-  password         String
-  email            String   @unique
-  firstName        String
-  lastName         String
-  isActive         Boolean  @default(true)
-  refreshTokenHash String?
-  createdAt        DateTime @default(now())
-  updatedAt        DateTime @updatedAt
-
-  staffRoles       StaffRole[]
-
-  @@map("staffs")
-  @@schema("admin")
-}
-
-model Role {
-  id          String   @id @default(uuid())
-  name        String   @unique
-  description String?
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
-
-  staffRoles       StaffRole[]
-  rolePermissions  RolePermission[]
-
-  @@map("roles")
-  @@schema("admin")
-}
-
-model Permission {
-  id          String   @id @default(uuid())
-  name        String   @unique
-  description String?
-  resource    String
-  action      String
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
-
-  rolePermissions  RolePermission[]
-
-  @@map("permissions")
-  @@schema("admin")
-}
-
-model StaffRole {
-  id        String   @id @default(uuid())
-  staffId   String
-  roleId    String
-  createdAt DateTime @default(now())
-
-  staff     Staff     @relation(fields: [staffId], references: [id], onDelete: Cascade)
-  role      Role      @relation(fields: [roleId], references: [id], onDelete: Cascade)
-
-  @@unique([staffId, roleId], name: "staffId_roleId")
-  @@map("staff_roles")
-  @@schema("admin")
-}
-
-model RolePermission {
-  id           String   @id @default(uuid())
-  roleId       String
-  permissionId String
-  createdAt    DateTime @default(now())
-
-  role         Role       @relation(fields: [roleId], references: [id], onDelete: Cascade)
-  permission   Permission @relation(fields: [permissionId], references: [id], onDelete: Cascade)
-
-  @@unique([roleId, permissionId], name: "roleId_permissionId")
-  @@map("role_permissions")
-  @@schema("admin")
-}
-
-// ==================== Integration Schema ====================
-
-model BankIntegration {
-  id          BigInt     @id @default(autoincrement())
-  bankCode    String
-  bankName    String
-  apiKey      String
-  status      BankStatus @default(ACTIVE)
-  createdAt   DateTime   @default(now())
-  updatedAt   DateTime   @updatedAt
-
-  @@map("banks")
-  @@schema("integration")
-}
-
-model Merchant {
-  id          BigInt         @id @default(autoincrement())
-  merchantId  String         @unique
-  name        String
-  category    String
-  status      MerchantStatus @default(ACTIVE)
-  createdAt   DateTime       @default(now())
-  updatedAt   DateTime       @updatedAt
-
-  @@map("merchants")
-  @@schema("integration")
-}
-
-model TopupOrder {
-  id                    String           @id @default(uuid())
-  userId                String
-  amount                Decimal          @db.Decimal(19, 4)
-  currency              String           @default("THB")
-  status                TopupOrderStatus @default(PENDING)
-  stripePaymentIntentId String?          @unique
-  clientSecretRef       String?
-  idempotencyKey        String           @unique
-  financeTransactionId  String?
-  processedEventId      String?
-  createdAt             DateTime         @default(now())
-  updatedAt             DateTime         @updatedAt
-
-  @@index([userId, status])
-  @@map("topup_orders")
-  @@schema("integration")
 }
 
 enum TopupOrderStatus {
@@ -551,50 +596,19 @@ enum MerchantStatus {
   @@schema("integration")
 }
 
-// ==================== Audit Schema ====================
-
-model AuditLog {
-  id             String   @id @default(uuid())
-  adminUserId    String?
-  userId         String?
-  action         String
-  resourceType   String
-  resourceId     String?
-  ipAddress      String?
-  userAgent      String?
-  requestPayload Json?
-  responseStatus Int?
-  changes        Json?
-  reason         String?
-  createdAt      DateTime @default(now())
-
-  @@index([userId])
-  @@index([adminUserId])
-  @@index([createdAt])
-  @@map("audit_logs")
-  @@schema("audit")
-}
-
-// ==================== Reporting Schema ====================
-
-model Report {
-  id          BigInt       @id @default(autoincrement())
-  reportType  String
-  parameters  Json
-  status      ReportStatus @default(GENERATING)
-  fileUrl     String?
-  generatedBy String?
-  createdAt   DateTime     @default(now())
-  completedAt DateTime?
-
-  @@map("reports")
-  @@schema("reporting")
-}
-
 enum ReportStatus {
   GENERATING
   COMPLETED
   FAILED
 
   @@schema("reporting")
+}
+
+enum InvoiceStatus {
+  PENDING
+  PAID
+  OVERDUE
+  CANCELLED
+
+  @@schema("billing")
 }

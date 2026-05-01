@@ -151,6 +151,7 @@ export class NotificationService {
       
       case 'TRANSFER':
         if (metadata?.isReceiver) {
+          console.log(metadata);
           const sender = metadata?.senderName || metadata?.senderPhone || 'a J-Ledger user';
           return `You have received ฿${amount} from ${sender}.${refText}`;
         } else {
