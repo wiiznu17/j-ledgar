@@ -5,6 +5,7 @@ import { IdentityController } from './identity.controller';
 import { SmsProviderMockProvider } from '../integrations/providers/sms-provider.mock';
 import { JwtStrategy } from './jwt.strategy';
 import { IntegrationModule } from '../integration/integration.module';
+import { NotificationModule } from '../notification/notification.module';
 
 @Module({
   imports: [
@@ -13,6 +14,7 @@ import { IntegrationModule } from '../integration/integration.module';
       signOptions: { expiresIn: '15m' },
     }),
     IntegrationModule,
+    NotificationModule,
   ],
   providers: [IdentityService, SmsProviderMockProvider, JwtStrategy],
   controllers: [IdentityController],

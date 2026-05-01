@@ -6,6 +6,8 @@ import com.jledger.finance.model.Transaction;
 import com.jledger.finance.model.TransactionStatus;
 import com.jledger.finance.model.TransactionType;
 import com.jledger.finance.model.Wallet;
+import com.jledger.finance.domain.IntegrationOutbox;
+import com.jledger.finance.repository.IntegrationOutboxRepository;
 import com.jledger.finance.repository.LinkedBankAccountRepository;
 import com.jledger.finance.repository.TransactionRepository;
 import com.jledger.finance.repository.WalletRepository;
@@ -40,6 +42,9 @@ public class WalletService {
 
     @Autowired
     private LinkedBankAccountRepository linkedBankAccountRepository;
+
+    @Autowired
+    private IntegrationOutboxRepository integrationOutboxRepository;
 
     @Autowired
     private RedisTemplate<String, Object> redisTemplate;
@@ -309,7 +314,9 @@ public class WalletService {
         );
         transaction.setMetadata(buildTopUpBankMetadata(bankAccount));
 
-        return transactionRepository.save(transaction);
+        Transaction savedTransaction = transactionRepository.save(transaction);
+        publishTransactionEvent(userId, savedTransaction);
+        return savedTransaction;
     }
 
     @Transactional
@@ -671,7 +678,14 @@ public class WalletService {
         transaction.setToWalletId(toWallet.getId());
         transaction.setDescription("Transfer to phone " + normalizedPhone);
         transaction.setMetadata(buildTransferMetadata(normalizedPhone, recipientUserId, note, idempotencyKey));
-        return transactionRepository.save(transaction);
+        Transaction savedTransaction = transactionRepository.save(transaction);
+
+        // Notify Sender
+        publishTransactionEvent(fromUserId, savedTransaction);
+        // Notify Receiver
+        publishTransactionEvent(recipientUserId, savedTransaction);
+
+        return savedTransaction;
     }
 
     @Transactional
@@ -970,5 +984,55 @@ public class WalletService {
                 escapedNote,
                 idempotencyKey == null ? "" : escapeJson(idempotencyKey)
         );
+    }
+
+    private void publishTransactionEvent(String userId, Transaction transaction) {
+        try {
+            Map<String, Object> event = new HashMap<>();
+            event.put("userId", userId);
+            event.put("eventType", transaction.getType().name());
+            event.put("amount", transaction.getAmount());
+            event.put("referenceId", transaction.getTransactionId() != null ? transaction.getTransactionId() : transaction.getId().toString());
+            event.put("status", transaction.getStatus().name());
+            event.put("description", transaction.getDescription());
+            event.put("timestamp", LocalDateTime.now().toString());
+
+            // Add metadata for worker to use in notification body and deep linking
+            Map<String, Object> metadata = new HashMap<>();
+            metadata.put("transactionId", transaction.getId());
+            metadata.put("amount", transaction.getAmount());
+            metadata.put("description", transaction.getDescription());
+            event.put("metadata", metadata);
+
+            IntegrationOutbox outbox = IntegrationOutbox.builder()
+                    .eventType("TRANSACTION")
+                    .payload(objectMapper.valueToTree(event))
+                    .status("PENDING")
+                    .build();
+
+            integrationOutboxRepository.save(outbox);
+            logger.info("[Outbox] Saved transaction event for user {}: {}", userId, transaction.getType());
+        } catch (Exception e) {
+            logger.error("Failed to save transaction event to outbox", e);
+        }
+    }
+
+    public Optional<Transaction> getTransactionById(String id) {
+        try {
+            // Try as Long first (Primary Key)
+            try {
+                Long longId = Long.parseLong(id);
+                Optional<Transaction> txn = transactionRepository.findById(longId);
+                if (txn.isPresent()) return txn;
+            } catch (NumberFormatException e) {
+                // Not a long, move to next check
+            }
+
+            // Try as string-based transactionId (e.g., p2p_...)
+            return transactionRepository.findByTransactionId(id);
+        } catch (Exception e) {
+            logger.error("Error fetching transaction by ID: {}", id, e);
+            return Optional.empty();
+        }
     }
 }

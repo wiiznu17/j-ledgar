@@ -27,11 +27,11 @@
     "@nestjs/core": "^11.0.1",
     "@nestjs/platform-express": "^11.0.1",
     "@prisma/client": "^6.2.0",
+    "expo-server-sdk": "^6.1.0",
     "kafkajs": "^2.2.4",
     "nodemailer": "^6.9.0",
     "reflect-metadata": "^0.2.2",
-    "rxjs": "^7.8.1",
-    "twilio": "^5.0.0"
+    "rxjs": "^7.8.1"
   },
   "devDependencies": {
     "@nestjs/cli": "^11.0.0",

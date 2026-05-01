@@ -35,6 +35,8 @@ model User {
   userConsents      UserConsent[]
   securityEvents    SecurityEvent[]
   userSettings      UserSetting[]
+  notifications     Notification[]
+  notificationPrefs NotificationPreference?
 
   @@index([phoneNumber])
   @@index([status])
@@ -48,6 +50,7 @@ model UserDevice {
   id              String            @id @default(uuid())
   userId          String
   deviceIdentifier String
+  pushToken       String?
   deviceName      String?
   deviceType      String?
   osVersion       String?
@@ -150,6 +153,38 @@ model UserSetting {
 
   @@unique([userId, key])
   @@map("user_settings")
+  @@schema("identity")
+}
+
+model Notification {
+  id              String   @id @default(uuid())
+  userId          String
+  type            String   // TRANSACTION, SECURITY, KYC, etc.
+  title           String
+  message         String
+  isRead          Boolean  @default(false)
+  metadata        Json?
+  referenceId     String?
+  idempotencyKey  String   @unique
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  user            User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@map("notifications")
+  @@schema("identity")
+}
+
+model NotificationPreference {
+  userId             String  @id
+  pushEnabled        Boolean @default(true)
+  emailEnabled       Boolean @default(true)
+  securityForceEmail Boolean @default(true)
+
+  user               User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("notification_preferences")
   @@schema("identity")
 }
 

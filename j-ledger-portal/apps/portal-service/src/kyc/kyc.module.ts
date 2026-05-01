@@ -5,9 +5,16 @@ import { IntegrationModule } from '../integration/integration.module';
 import { JwtModule } from '@nestjs/jwt';
 import { ConfigModule } from '@nestjs/config';
 import { IdentityModule } from '../identity/identity.module';
+import { NotificationModule } from '../notification/notification.module';
 
 @Module({
-  imports: [IntegrationModule, JwtModule.register({}), ConfigModule, IdentityModule],
+  imports: [
+    IntegrationModule,
+    JwtModule.register({}),
+    ConfigModule,
+    IdentityModule,
+    NotificationModule,
+  ],
   controllers: [KycController],
   providers: [KycService],
   exports: [KycService],

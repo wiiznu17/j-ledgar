@@ -79,6 +79,10 @@ export class RegisterPinDto {
   @IsString()
   @IsOptional()
   deviceName?: string;
+
+  @IsString()
+  @IsOptional()
+  pushToken?: string;
 }
 
 export class AcceptTermsDto {
@@ -174,6 +178,10 @@ export class LoginDto {
   @IsString()
   @IsOptional()
   deviceName?: string;
+
+  @IsString()
+  @IsOptional()
+  pushToken?: string;
 }
 
 export class DeviceVerifyDto {

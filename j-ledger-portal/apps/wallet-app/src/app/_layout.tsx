@@ -9,6 +9,7 @@ import { StripeProvider } from '@stripe/stripe-react-native';
 
 import { useColorScheme } from '@/hooks/use-color-scheme';
 import { useAuthStore } from '@/store/auth';
+import { useNotifications } from '@/hooks/useNotifications';
 
 import {
   useFonts,
@@ -37,6 +38,7 @@ import { BackgroundGradient } from '@/components/common/BackgroundGradient';
 export default function RootLayout() {
   const colorScheme = useColorScheme();
   const router = useRouter();
+  useNotifications();
 
   const { 
     initialize: initializeAuth, 
