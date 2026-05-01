@@ -116,30 +116,50 @@ export class NotificationService {
 
   private generateTitle(topic: string, eventType: string, metadata: any): string {
     if (topic === 'security-events') return 'Security Alert';
-    if (topic === 'kyc-events') return 'KYC Status Update';
-    if (topic === 'transaction-events' || eventType === 'TOPUP' || eventType === 'TRANSFER') {
-      if (eventType === 'TOPUP') return 'Top-up Successful';
-      if (eventType === 'TRANSFER') return 'Transfer Successful';
-      return 'Transaction Notification';
+    if (topic === 'kyc-events') return 'Identity Verification';
+    
+    const type = eventType?.toUpperCase();
+    if (type === 'TOPUP') return 'Wallet Top-up';
+    if (type === 'TRANSFER') {
+      // Check if user is receiver based on metadata
+      return metadata?.isReceiver ? 'Money Received' : 'Payment Sent';
     }
+    
     return 'J-Ledger Notification';
   }
 
   private generateBody(topic: string, eventType: string, metadata: any): string {
-    switch (eventType) {
+    const amount = Number(metadata?.amount || 0).toLocaleString(undefined, {
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2,
+    });
+    const ref = metadata?.transactionId || metadata?.referenceId || '';
+    const refText = ref ? ` (Ref: ${ref.slice(-8).toUpperCase()})` : '';
+
+    switch (eventType?.toUpperCase()) {
       case 'LOGIN_SUCCESS':
-        return `New login detected from ${metadata?.ipAddress || 'unknown device'}.`;
+        return `Secure login detected from ${metadata?.deviceName || metadata?.ipAddress || 'a new device'}. If this wasn't you, please secure your account immediately.`;
+      
       case 'APPROVED':
-        return `Your verification has been approved.`;
+        return 'Congratulations! Your identity verification has been successfully approved. You now have full access to all features.';
+      
       case 'REJECTED':
-        return `Your verification was rejected. Reason: ${metadata?.reason || 'Please contact support'}.`;
+        return `Identity verification was not successful. Reason: ${metadata?.reason || 'Document clarity issue'}. Please try again or contact support.`;
+      
       case 'TOPUP':
-        return `Successfully topped up ฿${metadata?.amount || '0.00'}.`;
+        return `Your wallet has been successfully topped up with ฿${amount} via ${metadata?.source || 'PromptPay'}.${refText}`;
+      
       case 'TRANSFER':
-        const desc = metadata?.description ? ` (${metadata.description})` : '';
-        return `Transaction complete: ฿${metadata?.amount || '0.00'}${desc}.`;
+        if (metadata?.isReceiver) {
+          const sender = metadata?.senderName || metadata?.senderPhone || 'a J-Ledger user';
+          return `You have received ฿${amount} from ${sender}.${refText}`;
+        } else {
+          const recipient = metadata?.recipientName || metadata?.recipientPhone || 'Recipient';
+          return `Payment of ฿${amount} to ${recipient} has been processed successfully.${refText}`;
+        }
+
       default:
-        return `You have a new update regarding your account.`;
+        return `You have a new update regarding your account activities.`;
     }
   }
 
@@ -184,3 +204,4 @@ export class NotificationService {
     
     return { category: 'SYSTEM' };
   }
+}
