@@ -72,6 +72,12 @@ const navigation: NavigationItem[] = [
   },
   { name: 'Users', href: '/users', icon: Users, roles: ['SUPER_ADMIN'] },
   {
+    name: 'User Activity',
+    href: '/users/activity',
+    icon: Activity,
+    roles: ['SUPER_ADMIN', 'AUDITOR', 'SUPPORT_STAFF'],
+  },
+  {
     name: 'Admins',
     href: '/system/admins',
     icon: ShieldCheck,
@@ -110,7 +116,15 @@ export function Sidebar({
         {navigation.map((item) => {
           if (item.roles && !item.roles.includes(userRole)) return null;
 
-          const isActive = pathname === item.href || pathname.startsWith(item.href + '/');
+          const isActive = 
+            pathname === item.href || 
+            (item.href !== '/' && 
+             pathname.startsWith(item.href + '/') && 
+             !navigation.some(other => 
+               other.href !== item.href && 
+               other.href.startsWith(item.href + '/') && 
+               pathname.startsWith(other.href)
+             ));
           return (
             <Link
               key={item.name}

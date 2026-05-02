@@ -12,22 +12,22 @@ spring:
 
   jpa:
     hibernate:
-      ddl-auto: none
+      ddl-auto: validate
     show-sql: false
     properties:
       hibernate:
         default_schema: finance
         dialect: org.hibernate.dialect.PostgreSQLDialect
-
-jledger:
-  internal:
-    secret: ${JLEDGER_INTERNAL_SECRET:default_internal_secret}
-
+ 
   flyway:
     enabled: false
     locations: classpath:db/migration
     schemas: finance
     baseline-on-migrate: false
+
+jledger:
+  internal:
+    secret: ${JLEDGER_INTERNAL_SECRET:default_internal_secret}
 
   redis:
     redisson:

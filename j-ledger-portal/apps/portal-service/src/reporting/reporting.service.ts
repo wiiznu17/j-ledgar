@@ -164,14 +164,18 @@ export class ReportingService {
     if (query.reportDate) params.reportDate = query.reportDate;
     if (query.status) params.status = query.status;
 
-    return this.forwardToGateway<any>('get', '/api/v1/system/reconciliation/reports', params);
+    return this.forwardToGateway<any>('get', '/api/v1/system/reconcile/reports', params);
   }
 
   async getReconciliationReport(id: string) {
-    return this.forwardToGateway<any>('get', `/api/v1/system/reconciliation/reports/${id}`);
+    return this.forwardToGateway<any>('get', `/api/v1/system/reconcile/reports/${id}`);
   }
 
   async runReconciliation() {
-    return this.forwardToGateway<any>('post', '/api/v1/system/reconcile');
+    return this.forwardToGateway<any>('post', '/api/v1/system/reconcile/trigger');
+  }
+
+  async getOutbox() {
+    return this.forwardToGateway<any[]>('get', '/api/v1/system/outbox');
   }
 }

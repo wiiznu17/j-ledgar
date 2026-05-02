@@ -12,16 +12,25 @@ import {
 
 export interface WalletUser {
   id: string;
-  email: string;
-  isActive: boolean;
-  createdAt: string;
+  phoneNumber: string;
+  email: string | null;
+  status: string; // UserStatus enum
+  registrationState: string; // RegistrationState enum
+  ledgerAccountId: string | null;
+  createdAt: Date | string;
+  updatedAt: Date | string;
 }
 
 export interface AdminUser {
   id: string;
+  username: string;
   email: string;
+  firstName: string;
+  lastName: string;
+  isActive: boolean;
   role: AdminRole;
-  createdAt: string;
+  createdAt: Date | string;
+  updatedAt?: Date | string;
 }
 
 export interface Account {
@@ -92,20 +101,21 @@ export interface PaginatedResponse<T> {
 // Admin-specific types
 export interface AuditLog {
   id: string;
-  adminUserId: string;
+  adminUserId: string | null;
+  userId: string | null;
   action: AuditAction;
   resourceType: ResourceType;
-  resourceId: string;
-  ipAddress: string;
-  userAgent: string;
+  resourceId: string | null;
+  ipAddress: string | null;
+  userAgent: string | null;
   requestPayload?: Record<string, any>;
-  responseStatus: number;
+  responseStatus: number | null;
   changes?: {
     before?: Record<string, any>;
     after?: Record<string, any>;
   };
-  reason?: string;
-  createdAt: string;
+  reason?: string | null;
+  createdAt: Date | string;
 }
 
 export interface SuspiciousActivity {

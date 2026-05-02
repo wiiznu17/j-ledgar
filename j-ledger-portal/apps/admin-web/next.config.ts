@@ -8,6 +8,14 @@ const nextConfig: NextConfig = {
         source: '/api/:path*',
         destination: 'http://localhost:3000/api/:path*',
       },
+      {
+        source: '/admin/:path*',
+        destination: 'http://localhost:3000/api/admin/:path*',
+      },
+      {
+        source: '/users/:path*',
+        destination: 'http://localhost:3000/api/users/:path*',
+      },
     ];
   },
   async headers() {

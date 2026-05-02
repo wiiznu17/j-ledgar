@@ -1,6 +1,7 @@
 'use client';
 
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { useEffect, useState } from 'react';
 import { Area, AreaChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts';
 
 interface ChartData {
@@ -13,6 +14,26 @@ interface TransactionVolumeChartProps {
 }
 
 export function TransactionVolumeChart({ data }: TransactionVolumeChartProps) {
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
+  if (!mounted) {
+    return (
+      <Card className="col-span-4 border-border shadow-sm">
+        <CardHeader>
+          <CardTitle>Transaction Volume</CardTitle>
+          <CardDescription>Mock visualization of system load throughout the day</CardDescription>
+        </CardHeader>
+        <CardContent className="pl-2">
+          <div className="h-[300px] w-full mt-4 flex items-center justify-center bg-slate-50/50 rounded-lg animate-pulse" />
+        </CardContent>
+      </Card>
+    );
+  }
+
   return (
     <Card className="col-span-4 border-border shadow-sm">
       <CardHeader>

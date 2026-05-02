@@ -75,9 +75,9 @@ export class IdentityService {
     @Inject(ISmsProvider) private readonly smsProvider: ISmsProvider,
     private readonly financeService: FinanceService,
   ) {
-    this.accessSecret = this.requireEnv('JWT_ACCESS_SECRET');
-    this.refreshSecret = this.requireEnv('JWT_REFRESH_SECRET');
-    this.registrationSecret = this.requireEnv('JWT_REGISTRATION_SECRET');
+    this.accessSecret = this.requireEnv('CUSTOMER_JWT_SECRET');
+    this.refreshSecret = this.requireEnv('CUSTOMER_REFRESH_SECRET');
+    this.registrationSecret = this.requireEnv('CUSTOMER_REGISTRATION_SECRET');
   }
 
   private requireEnv(key: string): string {
@@ -607,8 +607,11 @@ export class IdentityService {
           id: true,
           phoneNumber: true,
           email: true,
-          createdAt: true,
           status: true,
+          registrationState: true,
+          ledgerAccountId: true,
+          createdAt: true,
+          updatedAt: true,
         },
         orderBy: { createdAt: 'desc' },
       }),
@@ -617,6 +620,72 @@ export class IdentityService {
 
     return {
       data: users,
+      meta: {
+        total,
+        page,
+        limit,
+        totalPages: Math.ceil(total / limit),
+      },
+    };
+  }
+
+  async findAllStaff(page: number = 1, limit: number = 10) {
+    const skip = (page - 1) * limit;
+    const [staffs, total] = await Promise.all([
+      this.prisma.staff.findMany({
+        skip,
+        take: limit,
+        select: {
+          id: true,
+          username: true,
+          email: true,
+          firstName: true,
+          lastName: true,
+          isActive: true,
+          createdAt: true,
+          updatedAt: true,
+        },
+        orderBy: { createdAt: 'desc' },
+      }),
+      this.prisma.staff.count(),
+    ]);
+
+    return {
+      data: staffs,
+      meta: {
+        total,
+        page,
+        limit,
+        totalPages: Math.ceil(total / limit),
+      },
+    };
+  }
+
+  async findAllSecurityEvents(page: number = 1, limit: number = 50, userId?: string) {
+    const skip = (page - 1) * limit;
+    const where: any = {};
+    if (userId) where.userId = userId;
+
+    const [events, total] = await Promise.all([
+      this.prisma.securityEvent.findMany({
+        where,
+        skip,
+        take: limit,
+        orderBy: { createdAt: 'desc' },
+        include: {
+          user: {
+            select: {
+              email: true,
+              phoneNumber: true,
+            },
+          },
+        },
+      }),
+      this.prisma.securityEvent.count({ where }),
+    ]);
+
+    return {
+      data: events,
       meta: {
         total,
         page,
