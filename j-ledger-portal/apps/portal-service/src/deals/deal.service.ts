@@ -176,6 +176,12 @@ export class DealService {
     return redemption;
   }
 
+  async getBrands() {
+    return this.prisma.brand.findMany({
+      orderBy: { name: 'asc' },
+    });
+  }
+
   // ==================== Admin APIs ====================
 
   async createDeal(data: any) {

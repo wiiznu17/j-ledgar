@@ -4,3 +4,4 @@ export { accountRequester } from './accountRequester';
 export { transactionRequester } from './transactionRequester';
 export { reconcileRequester } from './reconcileRequester';
 export { systemRequester } from './systemRequester';
+export { promotionsRequester } from './promotionsRequester';

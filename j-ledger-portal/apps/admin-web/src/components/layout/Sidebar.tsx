@@ -11,6 +11,9 @@ import {
   ShieldCheck,
   Users,
   LucideIcon,
+  Ticket,
+  Image as ImageIcon,
+  ClipboardList,
 } from 'lucide-react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
@@ -32,6 +35,21 @@ interface SidebarProps {
 const navigation: NavigationItem[] = [
   { name: 'Dashboard', href: '/dashboard', icon: LayoutDashboard },
   { name: 'Transactions', href: '/transactions', icon: Activity },
+  {
+    name: 'Deals',
+    href: '/promotions/deals',
+    icon: Ticket,
+  },
+  {
+    name: 'Banners',
+    href: '/promotions/banners',
+    icon: ImageIcon,
+  },
+  {
+    name: 'Redemptions',
+    href: '/promotions/redemptions',
+    icon: ClipboardList,
+  },
   {
     name: 'AML Monitor',
     href: '/aml',

@@ -36,4 +36,14 @@ export class AdminDealController {
   async deleteDeal(@Param('id') id: string) {
     return this.dealService.deleteDeal(id);
   }
+
+  @Get('meta/brands')
+  async getBrands() {
+    return this.dealService.getBrands();
+  }
+
+  @Get('meta/categories')
+  async getCategories() {
+    return this.dealService.getCategories();
+  }
 }

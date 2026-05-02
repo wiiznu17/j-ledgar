@@ -1,6 +1,7 @@
 const { PrismaClient } = require('@prisma/client');
 
 const prisma = new PrismaClient();
+const bcrypt = require('bcryptjs');
 
 async function main() {
   // Minimal, idempotent baseline seed.
@@ -21,11 +22,43 @@ async function main() {
     });
   }
 
-  await prisma.role.upsert({
+  const superAdminRole = await prisma.role.upsert({
     where: { name: 'SUPER_ADMIN' },
     update: { description: 'Bootstrap super admin role' },
     create: { name: 'SUPER_ADMIN', description: 'Bootstrap super admin role' },
   });
+
+  // Create default admin user
+  const adminPassword = await bcrypt.hash('password123', 10);
+  const adminUser = await prisma.staff.upsert({
+    where: { username: 'admin' },
+    update: {},
+    create: {
+      username: 'admin',
+      password: adminPassword,
+      email: 'admin@jledger.com',
+      firstName: 'System',
+      lastName: 'Admin',
+      isActive: true,
+    },
+  });
+
+  // Assign role to admin
+  const existingRole = await prisma.staffRole.findFirst({
+    where: {
+      staffId: adminUser.id,
+      roleId: superAdminRole.id,
+    },
+  });
+
+  if (!existingRole) {
+    await prisma.staffRole.create({
+      data: {
+        staffId: adminUser.id,
+        roleId: superAdminRole.id,
+      },
+    });
+  }
 
   // ==================== Loyalty & Deals Seed ====================
   
