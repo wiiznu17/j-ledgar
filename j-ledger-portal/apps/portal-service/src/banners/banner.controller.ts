@@ -1,6 +1,6 @@
 import { Controller, Get, Post, Put, Delete, Body, Param, UseGuards } from '@nestjs/common';
 import { BannerService } from './banner.service';
-import { JwtAuthGuard } from '../common/guards/jwt-auth.guard';
+import { AdminJwtGuard } from '../admin/admin-jwt.guard';
 
 @Controller('banners')
 export class BannerController {
@@ -13,7 +13,7 @@ export class BannerController {
 }
 
 @Controller('admin/banners')
-@UseGuards(JwtAuthGuard)
+@UseGuards(AdminJwtGuard)
 export class AdminBannerController {
   constructor(private readonly bannerService: BannerService) {}
 

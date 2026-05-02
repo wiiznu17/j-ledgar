@@ -1,9 +1,9 @@
 import { Controller, Get, Post, Put, Delete, Body, Param, UseGuards } from '@nestjs/common';
 import { DealService } from './deal.service';
-import { JwtAuthGuard } from '../common/guards/jwt-auth.guard';
+import { AdminJwtGuard } from '../admin/admin-jwt.guard';
 
 @Controller('admin/deals')
-@UseGuards(JwtAuthGuard)
+@UseGuards(AdminJwtGuard)
 export class AdminDealController {
   constructor(private readonly dealService: DealService) {}
 

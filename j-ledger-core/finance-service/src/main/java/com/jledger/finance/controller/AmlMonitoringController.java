@@ -26,6 +26,12 @@ public class AmlMonitoringController {
 
     private final AmlMonitoringService amlMonitoringService;
 
+    @GetMapping("/suspicious-activities")
+    @Operation(summary = "List all suspicious activities", description = "Retrieves all suspicious activities in the system")
+    public ResponseEntity<List<SuspiciousActivity>> getAllSuspiciousActivities() {
+        return ResponseEntity.ok(amlMonitoringService.getAllSuspiciousActivities());
+    }
+
     @GetMapping("/suspicious-activities/{userId}")
     @Operation(summary = "Get suspicious activities for user", description = "Retrieves all suspicious activities for a given user")
     @ApiResponses(value = {

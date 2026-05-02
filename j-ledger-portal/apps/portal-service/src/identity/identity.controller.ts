@@ -360,57 +360,6 @@ export class IdentityController {
     return this.identityService.reportSuspiciousActivityToAmlo(body.activityId, req.user.sub);
   }
 
-  // ==================== Admin User Management Endpoints ====================
-
-  @UseGuards(JwtAuthGuard)
-  @Get('admin/users')
-  async findAllUsers(@Req() req: Request) {
-    const page = parseInt(req.query.page as string) || 1;
-    const limit = parseInt(req.query.limit as string) || 10;
-    return this.identityService.findAllUsers(page, limit);
-  }
-
-  @UseGuards(JwtAuthGuard)
-  @Get('admin/users/:id')
-  async getUserById(@Req() req: Request) {
-    const id = this.singleHeader(req.params.id);
-    return this.identityService.findById(id);
-  }
-
-  @UseGuards(JwtAuthGuard)
-  @Get('admin/users/search')
-  async searchUsers(@Req() req: Request) {
-    return this.identityService.searchUsers(req.query.q as string);
-  }
-
-  @UseGuards(JwtAuthGuard)
-  @Put('admin/users/:id/status')
-  async updateUserStatus(@Req() req: Request, @Body() body: { status: string }) {
-    const id = this.singleHeader(req.params.id);
-    return this.identityService.updateUserStatus(id, body.status);
-  }
-
-  @UseGuards(JwtAuthGuard)
-  @Get('admin/users/:id/activity')
-  async getUserActivity(@Req() req: Request) {
-    const id = this.singleHeader(req.params.id);
-    return this.identityService.getUserActivity(id);
-  }
-
-  @UseGuards(JwtAuthGuard)
-  @Post('admin/users/:id/block')
-  async blockUser(@Req() req: Request, @Body() body?: { reason?: string }) {
-    const id = this.singleHeader(req.params.id);
-    return this.identityService.blockUser(id, body?.reason);
-  }
-
-  @UseGuards(JwtAuthGuard)
-  @Post('admin/users/:id/unblock')
-  async unblockUser(@Req() req: Request) {
-    const id = this.singleHeader(req.params.id);
-    return this.identityService.unblockUser(id);
-  }
-
   private singleHeader(value: string | string[] | undefined) {
     if (Array.isArray(value)) {
       return value[0];

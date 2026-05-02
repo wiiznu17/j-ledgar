@@ -47,8 +47,8 @@ export default function UsersPage() {
 
   const fetchUsers = async () => {
     try {
-      const data = await userRequester.getAdminUsers();
-      setUsers(data);
+      const response = await userRequester.getAdminUsers();
+      setUsers(response.data);
     } catch {
       showError('Access Denied', 'Failed to load users. You might need higher permissions.');
     }

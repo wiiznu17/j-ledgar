@@ -1,6 +1,7 @@
 'use client';
 
 import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
 import {
   Table,
   TableBody,
@@ -10,7 +11,7 @@ import {
   TableRow,
 } from '@/components/ui/table';
 import { WalletUser } from '@repo/dto';
-import { FreezeUserAction } from './FreezeUserAction';
+import { UserControlActions } from './UserControlActions';
 
 interface WalletUsersTableProps {
   users: WalletUser[];
@@ -26,6 +27,7 @@ export function WalletUsersTable({ users }: WalletUsersTableProps) {
             <TableHead className="hidden md:table-cell">Internal ID</TableHead>
             <TableHead>Status</TableHead>
             <TableHead>Joined Date</TableHead>
+            <TableHead>Activity</TableHead>
             <TableHead className="text-right">Fraud Control</TableHead>
           </TableRow>
         </TableHeader>
@@ -40,19 +42,38 @@ export function WalletUsersTable({ users }: WalletUsersTableProps) {
                 <Badge
                   variant="outline"
                   className={
-                    user.isActive
+                    user.status === 'ACTIVE'
                       ? 'border-primary text-primary bg-primary/5'
                       : 'border-destructive text-destructive bg-destructive/5'
                   }
                 >
-                  {user.isActive ? 'Active' : 'Frozen'}
+                  {user.status === 'ACTIVE' ? 'Active' : 'Frozen'}
                 </Badge>
               </TableCell>
               <TableCell className="text-sm text-muted-foreground">
-                {new Date(user.createdAt).toLocaleDateString()}
+                {new Date(user.createdAt).toLocaleDateString('en-GB', {
+                  day: '2-digit',
+                  month: '2-digit',
+                  year: 'numeric',
+                })}
+              </TableCell>
+              <TableCell>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="text-primary hover:text-primary-foreground hover:bg-primary"
+                  render={<a href={`/users/activity?userId=${user.id}`} />}
+                  nativeButton={false}
+                >
+                  View Logs
+                </Button>
               </TableCell>
               <TableCell className="text-right">
-                <FreezeUserAction userId={user.id} email={user.email} isActive={user.isActive} />
+                <UserControlActions
+                  userId={user.id}
+                  email={user.email || ''}
+                  status={user.status}
+                />
               </TableCell>
             </TableRow>
           ))}

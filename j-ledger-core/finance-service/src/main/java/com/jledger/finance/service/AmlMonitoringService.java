@@ -170,6 +170,10 @@ public class AmlMonitoringService {
         return suspiciousActivityRepository.findByUserIdOrderByCreatedAtDesc(userId);
     }
 
+    public List<SuspiciousActivity> getAllSuspiciousActivities() {
+        return suspiciousActivityRepository.findAll();
+    }
+
     /**
      * Records suspicious activity for account takeover detection.
      *

@@ -18,7 +18,11 @@ export const API_PATHS = {
     USERS: {
       BASE: '/api/admin/users',
       WALLET: '/api/admin/users/wallet',
-      FREEZE: (id: string) => `/api/admin/users/${id}/freeze`,
+      SECURITY_EVENTS: '/api/admin/users/security-events',
+      SUSPEND: (id: string) => `/api/admin/users/${id}/suspend`,
+      UNSUSPEND: (id: string) => `/api/admin/users/${id}/unsuspend`,
+      BLOCK: (id: string) => `/api/admin/users/${id}/block`,
+      UNBLOCK: (id: string) => `/api/admin/users/${id}/unblock`,
     },
     ACCOUNTS: {
       BASE: '/api/admin/accounts',
@@ -29,9 +33,14 @@ export const API_PATHS = {
       DETAILS: (id: string) => `/api/admin/transactions/${id}`,
       TRANSFER: '/api/admin/transactions/transfer',
     },
+    RECONCILIATION: {
+      REPORTS: '/api/admin/reconciliation/reports',
+      RUN: '/api/admin/reconciliation/run',
+    },
     SYSTEM: {
-      RECONCILE_REPORTS: '/api/admin/system/reconcile/reports',
-      RECONCILE_TRIGGER: '/api/admin/system/reconcile/trigger',
+      RECONCILE_REPORTS: '/api/admin/reconciliation/reports',
+      RECONCILE_TRIGGER: '/api/admin/reconciliation/run',
+      OUTBOX: '/api/admin/system/outbox',
     },
     PROMOTIONS: {
       DEALS: '/api/admin/deals',

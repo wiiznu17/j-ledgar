@@ -73,6 +73,15 @@ const createAxiosInstance = (): AxiosInstance => {
         }
 
         throw new ApiError(status, errorMessage, data);
+      } else if (error.response?.status === 401 && !error.config?._retry) {
+        // Attempt refresh token for client-side fetches
+        if (typeof window !== 'undefined') {
+          // This is a bit complex for client-side without a shared state, 
+          // but we can try to call the login action or just redirect.
+          // For now, let's just redirect to login if we get 401 on client
+          window.location.href = '/login?error=Session expired';
+        }
+        throw new ApiError(401, 'Unauthorized', error.response?.data);
       } else if (error.request) {
         // Request was made but no response received
         throw new ApiError(0, 'Network Error - No response received', error.request);

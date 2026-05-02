@@ -13,6 +13,7 @@
     "postinstall": "turbo run generate"
   },
   "devDependencies": {
+    "@next/swc-darwin-arm64": "^16.2.4",
     "@repo/prettier-config": "*",
     "prettier": "^3.7.4",
     "react": "19.1.0",

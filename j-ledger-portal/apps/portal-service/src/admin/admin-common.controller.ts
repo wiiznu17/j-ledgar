@@ -8,11 +8,11 @@ import {
   HttpStatus,
 } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
-import { JwtAuthGuard } from '../common/guards/jwt-auth.guard';
+import { AdminJwtGuard } from './admin-jwt.guard';
 import { StorageService } from '../storage/storage.service';
 
 @Controller('admin/common')
-@UseGuards(JwtAuthGuard)
+@UseGuards(AdminJwtGuard)
 export class AdminCommonController {
   constructor(private readonly storageService: StorageService) {}
 

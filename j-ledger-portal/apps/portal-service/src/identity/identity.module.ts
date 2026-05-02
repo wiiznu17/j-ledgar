@@ -10,7 +10,7 @@ import { NotificationModule } from '../notification/notification.module';
 @Module({
   imports: [
     JwtModule.register({
-      secret: process.env.JWT_ACCESS_SECRET || 'default_access_secret',
+      secret: process.env.CUSTOMER_JWT_SECRET || 'jledger-customer-secret-dev-2024',
       signOptions: { expiresIn: '15m' },
     }),
     IntegrationModule,

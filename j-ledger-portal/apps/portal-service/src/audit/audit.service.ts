@@ -85,6 +85,7 @@ export class AuditService {
     page?: number;
     limit?: number;
     adminUserId?: string;
+    userId?: string;
     action?: AuditAction;
     resourceType?: ResourceType;
     resourceId?: string;
@@ -98,6 +99,7 @@ export class AuditService {
     const where: any = {};
 
     if (query.adminUserId) where.adminUserId = query.adminUserId;
+    if (query.userId) where.userId = query.userId;
     if (query.action) where.action = query.action;
     if (query.resourceType) where.resourceType = query.resourceType;
     if (query.resourceId) where.resourceId = query.resourceId;
