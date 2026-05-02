@@ -1,18 +1,27 @@
 import { Module } from '@nestjs/common';
-import { AdminService } from './admin.service';
-import { AdminController } from './admin.controller';
-import { AdminCommonController } from './admin-common.controller';
-import { AdminAuthController } from './admin-auth.controller';
-import { AdminSystemController } from './admin-system.controller';
-import { AdminReconciliationController } from './admin-reconciliation.controller';
-import { AdminFinanceController } from './admin-finance.controller';
-import { AdminUserController } from './admin-user.controller';
-import { IdentityModule } from '../identity/identity.module';
-import { StorageModule } from '../storage/storage.module';
-import { ReportingModule } from '../reporting/reporting.module';
-import { IntegrationModule } from '../integration/integration.module';
+import { AdminService } from './services/admin.service';
+import { AdminStaffController } from './staff/admin-staff.controller';
+import { AdminCommonController } from './common/admin-common.controller';
+import { AdminAuthController } from './auth/admin-auth.controller';
+import { AdminSystemController } from './system/admin-system.controller';
+import { AdminReconciliationController } from './reconciliation/admin-reconciliation.controller';
+import { AdminFinanceController } from './finance/admin-finance.controller';
+import { AdminUserController } from './users/admin-user.controller';
+import { AdminBannerController } from './banners/admin-banner.controller';
+import { AdminDealController } from './deals/admin-deal.controller';
+import { AdminAuditController } from './audit/admin-audit.controller';
+import { AdminIntegrationController } from './integration/admin-integration.controller';
+import { AdminKycController } from './kyc/admin-kyc.controller';
+import { IdentityModule } from '../modules/identity/identity.module';
+import { StorageModule } from '../core/storage/storage.module';
+import { ReportingModule } from '../modules/reporting/reporting.module';
+import { IntegrationModule } from '../modules/integration/integration.module';
+import { BannerModule } from '../modules/banners/banner.module';
+import { DealModule } from '../modules/deals/deal.module';
+import { AuditModule } from '../modules/audit/audit.module';
+import { KycModule } from '../modules/kyc/kyc.module';
 import { JwtModule } from '@nestjs/jwt';
-import { AdminJwtStrategy } from './admin-jwt.strategy';
+import { AdminJwtStrategy } from './strategies/admin-jwt.strategy';
 
 @Module({
   imports: [
@@ -20,19 +29,28 @@ import { AdminJwtStrategy } from './admin-jwt.strategy';
     StorageModule,
     ReportingModule,
     IntegrationModule,
+    BannerModule,
+    DealModule,
+    AuditModule,
+    KycModule,
     JwtModule.register({
       secret: process.env.ADMIN_JWT_SECRET || 'jledger-admin-super-secret-2024-dev-key-32chars',
       signOptions: { expiresIn: '1h' },
     }),
   ],
   controllers: [
-    AdminController, 
+    AdminStaffController, 
     AdminCommonController, 
     AdminAuthController,
     AdminSystemController,
     AdminReconciliationController,
     AdminFinanceController,
-    AdminUserController
+    AdminUserController,
+    AdminBannerController,
+    AdminDealController,
+    AdminAuditController,
+    AdminIntegrationController,
+    AdminKycController,
   ],
   providers: [AdminService, AdminJwtStrategy],
   exports: [AdminService],
