@@ -10,6 +10,10 @@ import { AuditModule } from './audit/audit.module';
 import { ReportingModule } from './reporting/reporting.module';
 import { NotificationModule } from './notification/notification.module';
 import { BillingModule } from './billing/billing.module';
+import { StorageModule } from './storage/storage.module';
+import { LoyaltyModule } from './loyalty/loyalty.module';
+import { DealModule } from './deals/deal.module';
+import { BannerModule } from './banners/banner.module';
 import { HealthController } from './health/health.controller';
 
 @Module({
@@ -27,6 +31,10 @@ import { HealthController } from './health/health.controller';
     ReportingModule,
     NotificationModule,
     BillingModule,
+    StorageModule,
+    LoyaltyModule,
+    DealModule,
+    BannerModule,
   ],
   controllers: [HealthController],
 })

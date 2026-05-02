@@ -8,6 +8,8 @@ import { TopupOrderStatus } from '@prisma/client';
 import { createHash, randomUUID } from 'crypto';
 import { BillingService } from '../billing/billing.service';
 import { Inject, forwardRef } from '@nestjs/common';
+import { LoyaltyService } from '../loyalty/loyalty.service';
+import { BannerService } from '../banners/banner.service';
 
 @Injectable()
 export class IntegrationService {
@@ -28,6 +30,8 @@ export class IntegrationService {
     private readonly financeService: FinanceService,
     @Inject(forwardRef(() => BillingService))
     private readonly billingService: BillingService,
+    private readonly loyaltyService: LoyaltyService,
+    private readonly bannerService: BannerService,
   ) {
     this.apiGatewayUrl = this.configService.get<string>('FINANCE_SERVICE_URL', 'http://localhost:8081');
     this.internalSecret = this.configService.get<string>(
@@ -253,10 +257,12 @@ export class IntegrationService {
     this.logger.log(`[Dashboard] Fetching dashboard data for user ${userId}`);
 
     // Fetch data in parallel for performance
-    const [kycData, wallet, transactions] = await Promise.all([
+    const [kycData, wallet, transactions, userPoint, banners] = await Promise.all([
       this.prisma.kYCData.findUnique({ where: { userId } }).catch(() => null),
       this.financeService.getWallet(userId).catch(() => null),
       this.financeService.getTransactions(userId).catch(() => []),
+      this.loyaltyService.getUserBalance(userId).catch(() => ({ balance: 0 })),
+      this.bannerService.getActiveBanners().catch(() => []),
     ]);
 
     // Format recent transactions for the frontend using unified mapping
@@ -269,6 +275,7 @@ export class IntegrationService {
         id: userId,
         name: kycData?.idCardName || 'J-Ledger User',
         kycStatus: kycData?.verificationStatus || 'NOT_STARTED',
+        points: userPoint?.balance || 0,
       },
       wallet: wallet
         ? {
@@ -278,6 +285,7 @@ export class IntegrationService {
             walletId: wallet.walletId,
           }
         : null,
+      banners,
       recentTransactions,
     };
   }
@@ -547,6 +555,32 @@ export class IntegrationService {
         });
       } catch (err) {
         this.logger.error(`[P2PTransfer] Invoice creation failed: ${err.message}`);
+      }
+
+      // Earn Loyalty Points (25 THB = 1 Point)
+      try {
+        const pointsEarned = await this.loyaltyService.earnPoints(
+          userId,
+          amount,
+          `P2P Transfer to ${recipientProfile?.idCardName || recipientPhone}`,
+          finalTxId,
+        );
+
+        if (pointsEarned) {
+          // Send Notification about earned points
+          await this.prisma.notification.create({
+            data: {
+              userId,
+              title: 'Points Earned! 🏆',
+              message: `You earned ${Math.floor(amount * 0.04)} points from your transfer.`,
+              type: 'LOYALTY_EARN',
+              idempotencyKey: `points_earn_${finalTxId}`,
+              referenceId: finalTxId,
+            }
+          }).catch(() => {});
+        }
+      } catch (err) {
+        this.logger.error(`[P2PTransfer] Point earning failed: ${err.message}`);
       }
 
       return result;
