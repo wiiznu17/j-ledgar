@@ -5,11 +5,13 @@ import { IntegrationService } from './integration.service';
 import { IntegrationController } from './integration.controller';
 import { StripeWebhookController } from './stripe-webhook.controller';
 import { BillingModule } from '../billing/billing.module';
+import { BannerModule } from '../banners/banner.module';
 
 @Module({
   imports: [
     HttpModule,
     forwardRef(() => BillingModule),
+    BannerModule,
   ],
   providers: [FinanceService, IntegrationService],
   controllers: [IntegrationController, StripeWebhookController],

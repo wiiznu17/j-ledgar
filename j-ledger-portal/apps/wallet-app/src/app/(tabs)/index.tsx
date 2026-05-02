@@ -29,6 +29,8 @@ export default function HomeScreen() {
   const [userName, setUserName] = useState('J-Ledger User');
   const [kycStatus, setKycStatus] = useState('NOT_STARTED');
   const [balance, setBalance] = useState(0);
+  const [points, setPoints] = useState(0);
+  const [banners, setBanners] = useState<any[]>([]);
   const [currency, setCurrency] = useState('฿');
   const [recentTransactions, setRecentTransactions] = useState<any[]>([]);
 
@@ -44,12 +46,16 @@ export default function HomeScreen() {
       // User info
       setUserName(data.user?.name || 'J-Ledger User');
       setKycStatus(data.user?.kycStatus || 'NOT_STARTED');
+      setPoints(data.user?.points || 0);
 
       // Wallet info
       if (data.wallet) {
         setBalance(data.wallet.balance || 0);
         setCurrency(data.wallet.currency === 'THB' ? '฿' : data.wallet.currency);
       }
+
+      // Banners
+      setBanners(data.banners || []);
 
       // Transactions
       setRecentTransactions(data.recentTransactions || []);
@@ -126,20 +132,23 @@ export default function HomeScreen() {
         {/* Dashboard Section */}
         <DashboardSection
           balance={balance}
-          points={0}
+          points={points}
           currency={currency}
           onTransfer={() => router.push('/transfer' as any)}
           onTopUp={() => router.push('/topup' as any)}
           onMyQR={() => router.push('/my-qr' as any)}
           onHistory={() => router.push('/(tabs)/history' as any)}
-          onRedeem={() => {}}
+          onRedeem={() => router.push('/(tabs)/deals' as any)}
         />
 
         {/* Services Section */}
         <ServicesGrid onServicePress={(route) => route && router.push(route as any)} />
 
         {/* Promotional Banners */}
-        <PromoBanners onPromoPress={(id) => console.log('Promo pressed:', id)} />
+        <PromoBanners 
+          banners={banners} 
+          onPromoPress={(path) => router.push(path as any)} 
+        />
 
         {/* Recent Activity */}
         <RecentActivityList

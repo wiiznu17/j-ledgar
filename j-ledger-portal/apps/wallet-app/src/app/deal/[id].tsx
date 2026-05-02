@@ -7,50 +7,80 @@ import {
   Image,
   Dimensions,
   ActivityIndicator,
-  Platform,
-  Modal,
+  Alert,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { ChevronLeft, Zap, Info, CheckCircle2, X } from 'lucide-react-native';
+import { ChevronLeft, Zap, Info } from 'lucide-react-native';
 import { useRouter, useLocalSearchParams } from 'expo-router';
-import { MOCK_DEALS } from '@/app/(tabs)/deals';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { api } from '@/lib/axios';
 import { RedemptionConfirmationModal } from '@/components/deal/RedemptionConfirmationModal';
 import { RedemptionSuccessOverlay } from '@/components/deal/RedemptionSuccessOverlay';
-
-const { width } = Dimensions.get('window');
 
 export default function DealDetailScreen() {
   const router = useRouter();
   const { id } = useLocalSearchParams();
   const insets = useSafeAreaInsets();
+  const queryClient = useQueryClient();
 
-  const [isProcessing, setIsProcessing] = useState(false);
   const [isSuccess, setIsSuccess] = useState(false);
   const [showConfirm, setShowConfirm] = useState(false);
 
-  const deal = MOCK_DEALS.find((d) => d.id === id);
+  // 1. Fetch Deal Detail
+  const { data: deal, isLoading: isDealLoading } = useQuery({
+    queryKey: ['deal', id],
+    queryFn: async () => {
+      const { data } = await api.get(`/deals/${id}`);
+      return data;
+    },
+    enabled: !!id,
+  });
 
-  if (!deal) return null;
+  // 2. Fetch Points Balance
+  const { data: balanceData } = useQuery({
+    queryKey: ['loyalty-balance'],
+    queryFn: async () => {
+      const { data } = await api.get('/loyalty/balance');
+      return data;
+    },
+  });
+
+  // 3. Redeem Mutation
+  const redeemMutation = useMutation({
+    mutationFn: async () => {
+      const { data } = await api.post(`/deals/${id}/redeem`);
+      return data;
+    },
+    onSuccess: () => {
+      setShowConfirm(false);
+      setIsSuccess(true);
+      
+      // Invalidate queries to refresh balance and history
+      queryClient.invalidateQueries({ queryKey: ['loyalty-balance'] });
+      queryClient.invalidateQueries({ queryKey: ['deals'] });
+      queryClient.invalidateQueries({ queryKey: ['deal', id] });
+
+      setTimeout(() => {
+        setIsSuccess(false);
+        router.replace('/deal/my-deals' as any); // Later rename to my-redemptions if needed
+      }, 1800);
+    },
+    onError: (error: any) => {
+      const message = error?.response?.data?.message || 'Failed to redeem deal. Please try again.';
+      Alert.alert('Error', message);
+    },
+  });
+
+  if (isDealLoading || !deal) {
+    return (
+      <View className="flex-1 bg-white items-center justify-center">
+        <ActivityIndicator color="#f48fb1" size="large" />
+      </View>
+    );
+  }
 
   const handleRedeem = () => {
-    if (isProcessing) return;
-    setIsProcessing(true);
-
-    // Mock Processing time
-    setTimeout(() => {
-      setIsProcessing(false);
-      setShowConfirm(false); // ปิด Modal ยืนยัน
-
-      // หน่วงเวลาเล็กน้อยก่อนโชว์ Success ป้องกัน UI กระตุก
-      setTimeout(() => {
-        setIsSuccess(true);
-        // Mock Success display time ก่อนเด้งไปหน้า My Deals
-        setTimeout(() => {
-          setIsSuccess(false);
-          router.replace('/deal/my-deals' as any);
-        }, 1800);
-      }, 300);
-    }, 1500);
+    redeemMutation.mutate();
   };
 
   return (
@@ -61,8 +91,11 @@ export default function DealDetailScreen() {
       >
         {/* Full Image Header */}
         <View className="relative w-full h-[380px] bg-white rounded-b-[3rem] overflow-hidden shadow-sm">
-          <Image source={deal.image} className="w-full h-full" resizeMode="cover" />
-          {/* Dark gradient overlay ด้านบน เพื่อให้ปุ่ม Back เห็นชัดเสมอ */}
+          <Image 
+            source={{ uri: deal.imageUrl }} 
+            className="w-full h-full" 
+            resizeMode="cover" 
+          />
           <View className="absolute top-0 left-0 right-0 h-32 bg-black/20" />
 
           {/* Back Button Floating */}
@@ -78,7 +111,7 @@ export default function DealDetailScreen() {
           {/* Tag Badge */}
           <View className="absolute bottom-6 left-6 bg-[#f48fb1] px-4 py-2 rounded-xl shadow-lg shadow-pink-200">
             <Text className="text-white text-[10px] font-manrope font-black uppercase tracking-widest">
-              {deal.tag}
+              {deal.priority > 5 ? 'HOT DEAL' : 'LIMITED'}
             </Text>
           </View>
         </View>
@@ -86,11 +119,19 @@ export default function DealDetailScreen() {
         {/* Content Section */}
         <View className="px-5 pt-8 space-y-6">
           <View>
+            <View className="flex-row items-center gap-2 mb-2">
+              <Text className="text-[10px] font-manrope font-black text-pink-500 uppercase tracking-widest bg-pink-50 px-3 py-1 rounded-lg">
+                {deal.brand?.name}
+              </Text>
+              <Text className="text-[10px] font-manrope font-black text-gray-400 uppercase tracking-widest bg-gray-100 px-3 py-1 rounded-lg">
+                {deal.category?.name}
+              </Text>
+            </View>
             <Text className="text-3xl font-manrope font-black text-gray-800 tracking-tight leading-tight">
               {deal.title}
             </Text>
             <Text className="text-sm font-manrope font-bold text-gray-400 mt-2 leading-relaxed">
-              {deal.desc}
+              {deal.description}
             </Text>
           </View>
 
@@ -105,7 +146,7 @@ export default function DealDetailScreen() {
                   Required Points
                 </Text>
                 <Text className="text-2xl font-manrope font-black text-[#f48fb1] tracking-tighter">
-                  {deal.points.toLocaleString()} <Text className="text-sm">pts</Text>
+                  {deal.pointsRequired.toLocaleString()} <Text className="text-sm">pts</Text>
                 </Text>
               </View>
             </View>
@@ -114,10 +155,22 @@ export default function DealDetailScreen() {
                 My Balance
               </Text>
               <Text className="text-base font-manrope font-black text-gray-800 tracking-tighter">
-                1,250 <Text className="text-xs">pts</Text>
+                {(balanceData?.balance || 0).toLocaleString()} <Text className="text-xs">pts</Text>
               </Text>
             </View>
           </View>
+
+          {/* Terms & Conditions */}
+          {deal.termsCondition && (
+            <View className="space-y-3 px-1">
+              <Text className="text-sm font-manrope font-black text-gray-800 uppercase tracking-widest">
+                Terms & Conditions
+              </Text>
+              <Text className="text-[11px] font-manrope font-bold text-gray-400 leading-relaxed">
+                {deal.termsCondition}
+              </Text>
+            </View>
+          )}
 
           {/* Info Notice */}
           <View className="bg-gray-50 p-5 rounded-[1.8rem] border border-gray-100 flex-row gap-4 mb-6">
@@ -137,9 +190,12 @@ export default function DealDetailScreen() {
       >
         <TouchableOpacity
           onPress={() => setShowConfirm(true)}
-          className="w-full h-16 bg-[#f48fb1] rounded-2xl flex-row items-center justify-center gap-2 shadow-xl shadow-pink-200 active:scale-95 transition-all"
+          disabled={deal.remainingStock <= 0}
+          className={`w-full h-16 rounded-2xl flex-row items-center justify-center gap-2 shadow-xl active:scale-95 transition-all ${deal.remainingStock <= 0 ? 'bg-gray-300 shadow-gray-100' : 'bg-[#f48fb1] shadow-pink-200'}`}
         >
-          <Text className="font-manrope font-black text-base text-white">Redeem This Deal</Text>
+          <Text className="font-manrope font-black text-base text-white">
+            {deal.remainingStock <= 0 ? 'Out of Stock' : 'Redeem This Deal'}
+          </Text>
         </TouchableOpacity>
       </View>
 
@@ -147,9 +203,9 @@ export default function DealDetailScreen() {
         isVisible={showConfirm}
         onClose={() => setShowConfirm(false)}
         onConfirm={handleRedeem}
-        points={deal.points}
+        points={deal.pointsRequired}
         dealTitle={deal.title}
-        isProcessing={isProcessing}
+        isProcessing={redeemMutation.isPending}
       />
 
       <RedemptionSuccessOverlay isVisible={isSuccess} />
