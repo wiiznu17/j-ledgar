@@ -33,6 +33,16 @@ export const API_PATHS = {
       RECONCILE_REPORTS: '/api/admin/system/reconcile/reports',
       RECONCILE_TRIGGER: '/api/admin/system/reconcile/trigger',
     },
+    PROMOTIONS: {
+      DEALS: '/api/admin/deals',
+      BANNERS: '/api/admin/banners',
+      REDEMPTIONS: '/api/admin/deals/redemptions',
+      DEAL_DETAIL: (id: string) => `/api/admin/deals/${id}`,
+      BANNER_DETAIL: (id: string) => `/api/admin/banners/${id}`,
+      BRANDS: '/api/admin/deals/meta/brands',
+      CATEGORIES: '/api/admin/deals/meta/categories',
+      UPLOAD: '/api/admin/common/upload',
+    },
   },
   PORTAL: {
     AUTH: {
@@ -46,6 +56,19 @@ export const API_PATHS = {
     KYC: {
       UPLOAD: '/api/kyc/upload',
       STATUS: '/api/kyc/status',
+    },
+    LOYALTY: {
+      BALANCE: '/api/loyalty/balance',
+      HISTORY: '/api/loyalty/history',
+    },
+    DEALS: {
+      BASE: '/api/deals',
+      CATEGORIES: '/api/deals/categories',
+      MY_REDEMPTIONS: '/api/deals/my-redemptions',
+      DETAIL: (id: string) => `/api/deals/${id}`,
+      REDEEM: (id: string) => `/api/deals/${id}/redeem`,
+      REDEMPTION_DETAIL: (id: string) => `/api/deals/redemptions/${id}`,
+      REDEMPTION_USE: (id: string) => `/api/deals/redemptions/${id}/use`,
     },
   },
   FINANCE: {

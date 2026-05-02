@@ -17,6 +17,15 @@ export class StorageService {
     return this.storageProvider.uploadFile(file, fileName, mimeType, folder);
   }
 
+  async uploadFile(
+    file: Buffer,
+    fileName: string,
+    mimeType: string,
+    folder?: string,
+  ) {
+    return this.storageProvider.uploadFile(file, fileName, mimeType, folder);
+  }
+
   async deleteFile(key: string) {
     return this.storageProvider.deleteFile(key);
   }
