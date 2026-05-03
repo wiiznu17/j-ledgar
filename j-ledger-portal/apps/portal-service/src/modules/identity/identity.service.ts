@@ -1130,13 +1130,73 @@ export class IdentityService {
   }
 
   async setupPin(userId: string, dto: any) {
-    // TODO: Implement PIN setup logic
+    const pinHash = await bcrypt.hash(dto.pin, 10);
+    await this.prisma.user.update({
+      where: { id: userId },
+      data: { pinHash },
+    });
     return { success: true };
   }
 
   async verifyPin(userId: string, dto: any) {
-    // TODO: Implement PIN verification logic
-    return;
+    this.logger.debug(`[Identity] Verifying PIN for user ${userId}`);
+    const user = await this.prisma.user.findUnique({
+      where: { id: userId },
+    });
+
+    if (!user) {
+      this.logger.warn(`[Identity] User not found for ID: ${userId}`);
+      throw new BadRequestException('User not found');
+    }
+
+    if (!user.pinHash) {
+      this.logger.warn(`[Identity] PIN not set for user: ${userId}`);
+      throw new BadRequestException('PIN not set');
+    }
+
+    this.logger.debug(`[Identity] Comparing PIN for user ${userId}`);
+    const isPinValid = await bcrypt.compare(dto.pin, user.pinHash);
+    if (!isPinValid) {
+      this.logger.warn(`[Identity] Invalid PIN attempt for user: ${userId}`);
+      throw new UnauthorizedException('Invalid PIN');
+    }
+
+    // Reset pin attempts on success
+    await this.prisma.user.update({
+      where: { id: userId },
+      data: { pinAttempts: 0, pinLockedUntil: null },
+    });
+
+    // Generate fresh tokens for the unlocked session
+    const device = await this.prisma.userDevice.findFirst({
+      where: { userId, deviceIdentifier: dto.deviceId },
+    });
+
+    return this.generateAuthResponse(user, device?.id);
+  }
+
+  private async generateAuthResponse(user: any, deviceId?: string, context?: any) {
+    const sessionId = randomUUID();
+    const accessToken = await this.signAccessToken(user.id, sessionId, deviceId);
+    const refreshToken = await this.signRefreshToken(user.id, sessionId, deviceId);
+
+    await this.prisma.refreshSession.create({
+      data: {
+        userId: user.id,
+        deviceId: deviceId,
+        tokenHash: await bcrypt.hash(refreshToken, 10),
+        expiresAt: new Date(Date.now() + REFRESH_TOKEN_TTL_SECONDS * 1000),
+        ipAddress: context?.ip,
+        userAgent: context?.userAgent,
+        lastSeenAt: new Date(),
+      },
+    });
+
+    return {
+      accessToken,
+      refreshToken,
+      userId: user.id,
+    };
   }
 
   async generateBiometricChallenge(userId: string) {

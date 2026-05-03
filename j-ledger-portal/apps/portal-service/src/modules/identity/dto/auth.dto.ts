@@ -215,6 +215,14 @@ export class PinVerifyDto {
   @IsString()
   @Matches(/^\d{6}$/)
   pin!: string;
+
+  @IsString()
+  @IsNotEmpty()
+  deviceId!: string;
+
+  @IsString()
+  @IsOptional()
+  deviceName?: string;
 }
 
 export class WithdrawConsentDto {

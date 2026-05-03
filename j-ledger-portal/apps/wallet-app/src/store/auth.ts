@@ -20,12 +20,15 @@ interface AuthState {
   needsPinVerification: boolean; // true when session exists but needs PIN to unlock
   user: WalletUser | null;
   biometricEnabled: boolean;
+  lastActiveAt: number; // timestamp of last activity
   setToken: (token: string | null, refreshToken?: string | null) => Promise<void>;
   setUser: (user: WalletUser | null) => void;
   setBiometricEnabled: (enabled: boolean) => Promise<void>;
   verifyPin: (pin: string) => Promise<boolean>;
   refreshSession: () => Promise<boolean>;
   unlockWithPin: (pin: string) => Promise<boolean>;
+  lockSession: () => void;
+  updateActivity: () => void;
   initialize: () => Promise<void>;
   logout: () => Promise<void>;
 }
@@ -33,6 +36,7 @@ interface AuthState {
 const isWeb = Platform.OS === 'web';
 const BIOMETRIC_ENABLED_KEY = 'biometric_enabled';
 const REFRESH_TOKEN_KEY = 'refresh_token';
+const LAST_ACTIVE_KEY = 'last_active_at';
 
 export const useAuthStore = create<AuthState>((set, get) => ({
   token: null,
@@ -43,6 +47,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
   needsPinVerification: false,
   user: null,
   biometricEnabled: false,
+  lastActiveAt: Date.now(),
 
   setToken: async (token: string | null, refreshToken?: string | null) => {
     if (token) {
@@ -57,7 +62,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
           await SecureStore.setItemAsync(REFRESH_TOKEN_KEY, refreshToken);
         }
       }
-      set({ token, refreshToken: refreshToken || null, isAuthenticated: true });
+      set({ token, refreshToken: refreshToken || null, isAuthenticated: true, lastActiveAt: Date.now() });
     } else {
       if (isWeb) {
         localStorage.removeItem('auth_token');
@@ -71,7 +76,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
     }
   },
 
-  setUser: (user: WalletUser | null) => set({ user }),
+  setUser: (user: WalletUser | null) => set({ user, lastActiveAt: Date.now() }),
 
   setBiometricEnabled: async (enabled: boolean) => {
     try {
@@ -87,11 +92,25 @@ export const useAuthStore = create<AuthState>((set, get) => ({
   },
 
   verifyPin: async (pin: string): Promise<boolean> => {
-    const { token } = get();
-    if (!token) return false;
-
+    // Note: We don't need a token if we're using PIN to unlock/refresh
+    // But currently backend JwtAuthGuard is blocking it.
+    // We'll pass the token if we have it, or use deviceId in the future.
     try {
-      await api.post('/identity/pin/verify', { pin });
+      const { user } = get();
+      const deviceId = await require('@/lib/device.utils').getStableDeviceId();
+      const deviceName = require('@/lib/device.utils').getDeviceName();
+
+      const res = await api.post('/identity/pin/verify', { 
+        pin,
+        deviceId,
+        deviceName
+      });
+
+      // If backend returns new tokens on PIN verify, use them!
+      if (res.data.accessToken) {
+        await get().setToken(res.data.accessToken, res.data.refreshToken);
+      }
+      
       return true;
     } catch (error: any) {
       console.error('[Auth] PIN verification failed:', error.response?.data || error.message);
@@ -117,18 +136,21 @@ export const useAuthStore = create<AuthState>((set, get) => ({
   },
 
   unlockWithPin: async (pin: string): Promise<boolean> => {
-    // First refresh the session to get a valid access token
-    const refreshed = await get().refreshSession();
-    if (!refreshed) {
-      return false;
-    }
-
-    // Then verify the PIN
+    // PIN verification now also issues new tokens if needed
     const isValid = await get().verifyPin(pin);
     if (isValid) {
-      set({ needsPinVerification: false });
+      set({ needsPinVerification: false, lastActiveAt: Date.now() });
     }
     return isValid;
+  },
+
+  lockSession: () => {
+    console.log('[Auth] Session locked, PIN required');
+    set({ needsPinVerification: true, lastActiveAt: Date.now() });
+  },
+
+  updateActivity: () => {
+    set({ lastActiveAt: Date.now() });
   },
 
   initialize: async () => {

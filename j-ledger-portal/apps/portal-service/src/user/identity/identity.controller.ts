@@ -215,13 +215,13 @@ export class IdentityController {
 
   @UseGuards(JwtAuthGuard)
   @Post('pin/verify')
-  @HttpCode(HttpStatus.NO_CONTENT)
+  @HttpCode(HttpStatus.OK)
   @Throttle({ default: {}, pinVerify: {} })
   async verifyPin(@Body() body: PinVerifyDto, @Req() req: AuthenticatedRequest) {
     if (!req.user?.sub) {
       throw new UnauthorizedException('User is not authenticated');
     }
-    await this.identityService.verifyPin(req.user.sub, body);
+    return this.identityService.verifyPin(req.user.sub, body);
   }
 
   @UseGuards(JwtAuthGuard)
