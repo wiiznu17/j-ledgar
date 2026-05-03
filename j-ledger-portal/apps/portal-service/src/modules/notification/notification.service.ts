@@ -79,18 +79,27 @@ export class NotificationService {
   }
 
   async updateDevicePushToken(userId: string, deviceIdentifier: string, pushToken: string) {
-    const device = await this.prisma.userDevice.findUnique({
+    const result = await this.prisma.userDevice.upsert({
       where: { userId_deviceIdentifier: { userId, deviceIdentifier } },
+      update: { pushToken, lastSeenAt: new Date() },
+      create: {
+        userId,
+        deviceIdentifier,
+        pushToken,
+        lastSeenAt: new Date(),
+        trustLevel: 'TRUSTED',
+      },
     });
 
-    if (!device) {
-      throw new NotFoundException('Device not registered');
-    }
-
-    return this.prisma.userDevice.update({
-      where: { id: device.id },
-      data: { pushToken },
+    // Enforce 1 User = 1 Device for Notifications: Remove other devices
+    await this.prisma.userDevice.deleteMany({
+      where: {
+        userId,
+        deviceIdentifier: { not: deviceIdentifier },
+      },
     });
+
+    return result;
   }
 
   async updatePreferences(userId: string, prefs: { pushEnabled?: boolean; emailEnabled?: boolean }) {

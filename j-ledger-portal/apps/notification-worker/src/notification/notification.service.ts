@@ -14,6 +14,7 @@ export class NotificationService {
   ) {}
 
   async handleEvent(topic: string, payload: any) {
+    this.logger.debug(`[HandleEvent] topic=${topic} eventType=${payload.eventType || payload.status} userId=${payload.userId}`);
     try {
       const { userId, eventType, referenceId, metadata, status } = payload;
       
@@ -133,8 +134,9 @@ export class NotificationService {
       minimumFractionDigits: 2,
       maximumFractionDigits: 2,
     });
-    const ref = metadata?.transactionId || metadata?.referenceId || '';
-    const refText = ref ? ` (Ref: ${ref.slice(-8).toUpperCase()})` : '';
+    const rawRef = metadata?.transactionId || metadata?.referenceId || '';
+    const ref = String(rawRef);
+    const refText = ref && ref.length > 0 ? ` (Ref: ${ref.slice(-8).toUpperCase()})` : '';
 
     switch (eventType?.toUpperCase()) {
       case 'LOGIN_SUCCESS':
@@ -147,7 +149,8 @@ export class NotificationService {
         return `Identity verification was not successful. Reason: ${metadata?.reason || 'Document clarity issue'}. Please try again or contact support.`;
       
       case 'TOPUP':
-        return `Your wallet has been successfully topped up with ฿${amount} via ${metadata?.source || 'PromptPay'}.${refText}`;
+        const source = metadata?.source || metadata?.description?.split('via ')?.[1] || 'Bank Transfer';
+        return `Your wallet has been successfully topped up with ฿${amount} via ${source}.${refText}`;
       
       case 'TRANSFER':
         if (metadata?.isReceiver) {

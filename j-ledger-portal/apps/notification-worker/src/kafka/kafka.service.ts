@@ -25,13 +25,17 @@ export class KafkaService implements OnModuleInit, OnModuleDestroy {
     this.consumer = this.kafka.consumer({ groupId });
 
     await this.consumer.connect();
-    await this.consumer.subscribe({ topics: ['transaction-events', 'kyc-events', 'security-events'] });
+    await this.consumer.subscribe({ topics: ['financial-events-v1', 'transaction-events', 'kyc-events', 'security-events'] });
 
     await this.consumer.run({
       eachMessage: async ({ topic, partition, message }: EachMessagePayload) => {
-        const value = message.value?.toString();
-        if (value) {
-          await this.handleMessage(topic, JSON.parse(value));
+        try {
+          const value = message.value?.toString();
+          if (value) {
+            await this.handleMessage(topic, JSON.parse(value));
+          }
+        } catch (error) {
+          console.error(`[KafkaService] Error processing message on topic ${topic}:`, error);
         }
       },
     });

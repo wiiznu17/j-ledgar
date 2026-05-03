@@ -24,7 +24,7 @@ export class RegistrationAuthGuard implements CanActivate {
 
     try {
       // Try to verify as access token first
-      const accessSecret = this.configService.get<string>('JWT_ACCESS_SECRET');
+      const accessSecret = this.configService.get<string>('CUSTOMER_JWT_SECRET');
       const payload = await this.jwtService.verifyAsync(token, {
         secret: accessSecret,
       });
@@ -33,7 +33,7 @@ export class RegistrationAuthGuard implements CanActivate {
     } catch (accessError) {
       // If access token fails, try as registration token
       try {
-        const registrationSecret = this.configService.get<string>('JWT_REGISTRATION_SECRET');
+        const registrationSecret = this.configService.get<string>('CUSTOMER_REGISTRATION_SECRET');
         const payload = await this.jwtService.verifyAsync(token, {
           secret: registrationSecret,
         });
