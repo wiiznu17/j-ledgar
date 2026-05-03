@@ -315,7 +315,7 @@ public class WalletService {
         transaction.setMetadata(buildTopUpBankMetadata(bankAccount));
 
         Transaction savedTransaction = transactionRepository.save(transaction);
-        publishTransactionEvent(userId, savedTransaction);
+        publishTransactionEvent(userId, savedTransaction, true);
         return savedTransaction;
     }
 
@@ -366,7 +366,9 @@ public class WalletService {
         transaction.setDescription(String.format("%s top-up credit", provider == null ? "EXTERNAL" : provider));
         transaction.setMetadata(metadataJson);
 
-        return transactionRepository.save(transaction);
+        Transaction savedTransaction = transactionRepository.save(transaction);
+        publishTransactionEvent(userId, savedTransaction, true);
+        return savedTransaction;
     }
 
     public List<LinkedBankAccount> listLinkedBankAccounts(String userId) {
@@ -681,9 +683,9 @@ public class WalletService {
         Transaction savedTransaction = transactionRepository.save(transaction);
 
         // Notify Sender
-        publishTransactionEvent(fromUserId, savedTransaction);
+        publishTransactionEvent(fromUserId, savedTransaction, false);
         // Notify Receiver
-        publishTransactionEvent(recipientUserId, savedTransaction);
+        publishTransactionEvent(recipientUserId, savedTransaction, true);
 
         return savedTransaction;
     }
@@ -722,7 +724,14 @@ public class WalletService {
         transaction.setDescription("Transfer to wallet " + toWalletId);
         transaction.setMetadata("{\"toWalletId\":\"" + toWalletId + "\"}");
 
-        return transactionRepository.save(transaction);
+        Transaction savedTransaction = transactionRepository.save(transaction);
+        
+        // Notify Sender
+        publishTransactionEvent(fromUserId, savedTransaction, false);
+        // Notify Receiver
+        publishTransactionEvent(toWallet.getUserId(), savedTransaction, true);
+
+        return savedTransaction;
     }
 
     @Transactional
@@ -986,7 +995,7 @@ public class WalletService {
         );
     }
 
-    private void publishTransactionEvent(String userId, Transaction transaction) {
+    private void publishTransactionEvent(String userId, Transaction transaction, boolean isReceiver) {
         try {
             Map<String, Object> event = new HashMap<>();
             event.put("userId", userId);
@@ -1002,6 +1011,25 @@ public class WalletService {
             metadata.put("transactionId", transaction.getId());
             metadata.put("amount", transaction.getAmount());
             metadata.put("description", transaction.getDescription());
+            metadata.put("isReceiver", isReceiver);
+            
+            // Extract info from existing metadata if available
+            if (transaction.getMetadata() != null && !transaction.getMetadata().isBlank()) {
+                try {
+                    Map<String, Object> txMetadata = objectMapper.readValue(transaction.getMetadata(), Map.class);
+                    metadata.putAll(txMetadata);
+                    
+                    // Standardize source field
+                    if (txMetadata.containsKey("bankName")) {
+                        metadata.put("source", txMetadata.get("bankName"));
+                    } else if (transaction.getDescription().contains("Stripe")) {
+                        metadata.put("source", "Credit Card (Stripe)");
+                    }
+                } catch (Exception e) {
+                    logger.warn("Failed to parse transaction metadata for outbox: {}", e.getMessage());
+                }
+            }
+            
             event.put("metadata", metadata);
 
             IntegrationOutbox outbox = IntegrationOutbox.builder()

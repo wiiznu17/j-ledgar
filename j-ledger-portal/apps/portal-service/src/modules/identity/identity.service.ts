@@ -250,6 +250,17 @@ export class IdentityService {
       throw new UnauthorizedException('Invalid credentials');
     }
 
+    // Enforce 1 User = 1 Session: Revoke all existing sessions for this user
+    await this.prisma.refreshSession.updateMany({
+      where: {
+        userId: user.id,
+        revokedAt: null,
+      },
+      data: {
+        revokedAt: new Date(),
+      },
+    });
+
     const device = await this.prisma.userDevice.upsert({
       where: {
         userId_deviceIdentifier: {

@@ -25,7 +25,7 @@ public class OutboxProcessor {
     private final IntegrationOutboxRepository integrationOutboxRepository;
     private final KafkaTemplate<String, String> kafkaTemplate;
 
-    @Value("${jledger.outbox.topic:transaction-events}")
+    @Value("${jledger.outbox.topic:financial-events-v1}")
     private String topicName;
 
     @Value("${jledger.outbox.max-retries:5}")
