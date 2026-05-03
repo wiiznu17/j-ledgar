@@ -11,6 +11,7 @@ import { StripeProvider } from '@stripe/stripe-react-native';
 import { useColorScheme } from '@/hooks/use-color-scheme';
 import { useAuthStore } from '@/store/auth';
 import { useNotifications } from '@/hooks/useNotifications';
+import { useAppLock } from '@/hooks/useAppLock';
 
 import {
   useFonts,
@@ -39,6 +40,7 @@ import { BackgroundGradient } from '@/components/common/BackgroundGradient';
 export default function RootLayout() {
   const colorScheme = useColorScheme();
   useNotifications();
+  useAppLock();
 
   const { 
     initialize: initializeAuth, 

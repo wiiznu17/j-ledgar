@@ -128,9 +128,14 @@ export default function LoginScreen() {
         userId: res.data.userId,
       });
 
-      // If successful (no OTP required)
+      // If successful (no OTP required), go to PIN step
+      // DO NOT set tokens yet, wait for PIN verification
+      // But we need to save the tokens temporarily or just set the flag
       await setToken(res.data.accessToken, res.data.refreshToken);
       setUser({ id: res.data.userId || 'current', phoneNumber: phone });
+      
+      // Force PIN verification state
+      useAuthStore.getState().lockSession();
       setStep('PIN');
     } catch (err: any) {
       console.error('[Login] Login failed:', {
@@ -258,7 +263,11 @@ export default function LoginScreen() {
                   <AppTextInput
                     placeholder="08X-XXX-XXXX"
                     value={formatPhone(phone)}
-                    onChangeText={(val) => setPhone(val.replace(/\D/g, ''))}
+                    onChangeText={(val) => {
+                      const cleaned = val.replace(/\D/g, '');
+                      setPhone(cleaned.slice(0, 10));
+                    }}
+                    maxLength={12}
                     keyboardType="phone-pad"
                     containerClassName="bg-transparent border border-gray-100 h-14"
                     className="font-manrope font-bold text-gray-800 text-base tracking-widest"

@@ -170,8 +170,10 @@ api.interceptors.response.use(
           // Retry original request
           return api(originalRequest);
         } catch (refreshError) {
-          // Refresh failed, clear tokens and reject
-          await clearTokens();
+          // Refresh failed, instead of logout, lock the session
+          // This allows user to unlock with PIN which might trigger another refresh
+          useAuthStore.getState().lockSession();
+          
           refreshSubscribers.forEach((callback) => callback(''));
           refreshSubscribers = [];
           return Promise.reject(refreshError);
@@ -179,8 +181,8 @@ api.interceptors.response.use(
           isRefreshing = false;
         }
       } else {
-        // No refresh token available, clear access token
-        await clearTokens();
+        // No refresh token available, lock the session (it might be a brand new install or cleared storage)
+        useAuthStore.getState().lockSession();
       }
     }
 
