@@ -89,11 +89,13 @@ async function main() {
 
   const brandMap = {};
   for (const b of brands) {
-    const result = await prisma.brand.upsert({
-      where: { id: b.id || undefined, name: b.name }, // Hack since name is not unique in schema, but we use it for seeding
-      update: b,
-      create: b,
-    });
+    const existing = await prisma.brand.findFirst({ where: { name: b.name } });
+    let result;
+    if (existing) {
+      result = await prisma.brand.update({ where: { id: existing.id }, data: b });
+    } else {
+      result = await prisma.brand.create({ data: b });
+    }
     brandMap[b.name] = result.id;
   }
 
@@ -128,11 +130,12 @@ async function main() {
   ];
 
   for (const d of deals) {
-    await prisma.deal.upsert({
-      where: { id: d.id || 'MOCK_ID_' + d.title.replace(/\s/g, '_') }, // Just for seeding
-      update: d,
-      create: d,
-    });
+    const existing = await prisma.deal.findFirst({ where: { title: d.title } });
+    if (existing) {
+      await prisma.deal.update({ where: { id: existing.id }, data: d });
+    } else {
+      await prisma.deal.create({ data: d });
+    }
   }
 
   // 4. Banners
@@ -152,11 +155,12 @@ async function main() {
   ];
 
   for (const b of banners) {
-    await prisma.banner.upsert({
-      where: { id: b.id || 'MOCK_ID_' + b.title.replace(/\s/g, '_') },
-      update: b,
-      create: b,
-    });
+    const existing = await prisma.banner.findFirst({ where: { title: b.title } });
+    if (existing) {
+      await prisma.banner.update({ where: { id: existing.id }, data: b });
+    } else {
+      await prisma.banner.create({ data: b });
+    }
   }
 
   console.log('✅ Seed completed successfully!');

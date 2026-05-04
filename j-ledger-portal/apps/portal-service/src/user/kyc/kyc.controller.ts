@@ -30,22 +30,77 @@ export class KycController {
     return this.kycService.getKYCStatus(userId);
   }
 
+  @Get('pending')
+  getPending() {
+    return this.kycService.getPendingKYCList();
+  }
+
+  @Get('details/:userId')
+  getDetails(@Param('userId') userId: string) {
+    return this.kycService.getKYCDetails(userId);
+  }
+
+  @Post('approve/:userId')
+  approveKyc(@Param('userId') userId: string) {
+    return this.kycService.approveKyc(userId);
+  }
+
+  @Post('reject/:userId')
+  rejectKyc(@Param('userId') userId: string, @Body('reason') reason: string) {
+    return this.kycService.rejectKyc(userId, reason);
+  }
+
   @Post('upload-id-card')
+  @UseGuards(RegistrationAuthGuard)
   @UseInterceptors(FileInterceptor('idCardImage'))
-  async uploadIdCard(@UploadedFile() file: any, @Body('userId') userId: string) {
+  async uploadIdCard(
+    @UploadedFile() file: any,
+    @Body('userId') userId: string,
+    @Req() request: Request,
+  ) {
     if (!file) {
       throw new Error('No file uploaded');
     }
-    return this.kycService.uploadIdCard(userId, file.buffer);
+
+    let targetUserId = userId;
+    if (!userId) {
+      const user = (request as any).user;
+      if (user && user.sub) targetUserId = user.sub;
+    }
+
+    return this.kycService.uploadIdCard(targetUserId, file.buffer);
   }
 
   @Post('submit-selfie')
+  @UseGuards(RegistrationAuthGuard)
   @UseInterceptors(FileInterceptor('selfieImage'))
-  async submitSelfie(@UploadedFile() file: any, @Body('userId') userId: string) {
-    if (!file) {
-      throw new Error('No file uploaded');
+  async submitSelfie(
+    @UploadedFile() file: any,
+    @Body('userId') userId: string,
+    @Req() request: Request,
+  ) {
+    let targetUserId = userId;
+    if (!userId) {
+      const user = (request as any).user;
+      if (user && user.sub) targetUserId = user.sub;
     }
-    return this.kycService.submitSelfie(userId, file.buffer);
+
+    return this.kycService.submitSelfie(targetUserId, file?.buffer);
+  }
+
+  @Post('verify-liveness')
+  @UseGuards(RegistrationAuthGuard)
+  async verifyLiveness(
+    @Body('userId') userId: string,
+    @Req() request: Request,
+  ) {
+    let targetUserId = userId;
+    if (!userId) {
+      const user = (request as any).user;
+      if (user && user.sub) targetUserId = user.sub;
+    }
+
+    return this.kycService.submitSelfie(targetUserId);
   }
 
   @Post('upload-id-card/simple')

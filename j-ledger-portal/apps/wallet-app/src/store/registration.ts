@@ -5,10 +5,13 @@ import axios from 'axios';
 
 // Align with Backend RegistrationState
 export type RegistrationState =
+  | 'PENDING'
   | 'PENDING_OTP'
+  | 'INITIATED'
   | 'OTP_VERIFIED'
   | 'TC_ACCEPTED'
   | 'ID_CARD_UPLOADED'
+  | 'ID_CARD_CONFIRMED'
   | 'KYC_VERIFIED'
   | 'PROFILE_COMPLETED'
   | 'PASSWORD_SET'

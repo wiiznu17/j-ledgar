@@ -11,6 +11,9 @@ import { ConfigService } from '@nestjs/config';
 import { FinanceService } from '../integration/finance.service';
 import { IdentityService } from '../identity/identity.service';
 import { KafkaProducerService } from '../notification/kafka-producer.service';
+import { S3Service } from './services/s3.service';
+import { GoogleVisionService } from './services/ocr.service';
+import { AwsRekognitionService } from './services/face.service';
 import { createHash, randomBytes, createCipheriv, randomUUID } from 'crypto';
 import { ConfirmOcrDto } from './dto/kyc.dto';
 
@@ -25,6 +28,9 @@ export class KycService {
     private readonly financeService: FinanceService,
     private readonly identityService: IdentityService,
     private readonly kafkaProducer: KafkaProducerService,
+    private readonly s3Service: S3Service,
+    private readonly ocrService: GoogleVisionService,
+    private readonly faceService: AwsRekognitionService,
   ) {}
 
   async getKYCStatus(userId: string) {
@@ -115,25 +121,95 @@ export class KycService {
     return updated;
   }
 
+  async approveKyc(userId: string) {
+    const kyc = await this.prisma.kYCData.update({
+      where: { userId },
+      data: { 
+        verificationStatus: 'APPROVED',
+        verifiedAt: new Date()
+      },
+    });
+
+    // Activate wallet on KYC approval
+    try {
+      await this.financeService.activateWallet(userId);
+      this.logger.log(`Wallet activated for user ${userId} after KYC approval`);
+    } catch (err) {
+      this.logger.error(`Failed to activate wallet for user ${userId}`, err);
+    }
+
+    // Update main user status and registration state
+    await this.prisma.user.update({
+      where: { id: userId },
+      data: { 
+        registrationState: 'COMPLETED',
+        status: 'ACTIVE'
+      }
+    });
+
+    return kyc;
+  }
+
+  async rejectKyc(userId: string, reason: string) {
+    const kyc = await this.prisma.kYCData.update({
+      where: { userId },
+      data: { 
+        verificationStatus: 'REJECTED',
+        reviewNote: reason
+      },
+    });
+
+    return kyc;
+  }
+
   async getPendingKYCList() {
-    const documents = await this.prisma.kYCDocument.findMany({
+    // Query from KYCData (the real OCR/Liveness flow writes here)
+    const pendingKyc = await this.prisma.kYCData.findMany({
+      where: { verificationStatus: 'PENDING' },
+      orderBy: { createdAt: 'asc' },
+    });
+
+    // Also check KYCDocument for legacy/simple-mode entries
+    const pendingDocs = await this.prisma.kYCDocument.findMany({
       where: { status: 'PENDING' },
       orderBy: { createdAt: 'asc' },
     });
 
-    // Get user emails separately (no FK relation)
-    const userIds = [...new Set(documents.map((d) => d.userId))];
+    // Merge user IDs from both sources
+    const allUserIds = [
+      ...new Set([
+        ...pendingKyc.map((k) => k.userId),
+        ...pendingDocs.map((d) => d.userId),
+      ]),
+    ];
+
     const users = await this.prisma.user.findMany({
-      where: { id: { in: userIds } },
-      select: { id: true, email: true },
+      where: { id: { in: allUserIds } },
+      select: { id: true, email: true, phoneNumber: true },
     });
 
     const userMap = new Map(users.map((u) => [u.id, u]));
 
-    return documents.map((doc) => ({
-      ...doc,
-      user: userMap.get(doc.userId) || null,
+    // Combine into a unified list
+    const kycEntries = pendingKyc.map((k) => ({
+      id: k.id,
+      userId: k.userId,
+      documentType: 'KYC_VERIFICATION',
+      status: k.verificationStatus,
+      createdAt: k.createdAt,
+      user: userMap.get(k.userId) || null,
     }));
+
+    const docEntries = pendingDocs.map((d) => ({
+      id: d.id,
+      userId: d.userId,
+      documentType: d.documentType,
+      status: d.status,
+      createdAt: d.createdAt,
+      user: userMap.get(d.userId) || null,
+    }));
+
+    return [...kycEntries, ...docEntries];
   }
 
   async getKYCHistory(userId: string) {
@@ -143,140 +219,105 @@ export class KycService {
     });
   }
 
+  async getKYCDetails(userId: string) {
+    const [kycData, documents, user] = await Promise.all([
+      this.prisma.kYCData.findUnique({ where: { userId } }),
+      this.prisma.kYCDocument.findMany({ where: { userId } }),
+      this.prisma.user.findUnique({ 
+        where: { id: userId },
+        select: { id: true, email: true, phoneNumber: true }
+      }),
+    ]);
+
+    return {
+      user,
+      kycData,
+      documents,
+    };
+  }
+
   async uploadIdCard(userId: string, idCardImage: Buffer) {
     const idCardHash = this.hashBuffer(idCardImage);
     const idCardKey = `kyc/${userId}/id-card.jpg`;
 
-    // TODO: Upload to Storage (implement storage provider)
-    const idCardUrl = `https://storage.example.com/${idCardKey}`;
+    // 1. Upload to S3
+    const idCardUrl = await this.s3Service.uploadFile(idCardKey, idCardImage, 'image/jpeg');
 
-    // TODO: Perform OCR (implement OCR provider)
-    // mock
-    const extraction = {
-      idCardNumber: '1234567890123',
-      firstNameEn: 'John',
-      lastNameEn: 'Doe',
-      prefixEn: 'Mr.',
-      firstNameTh: 'สมชาย',
-      lastNameTh: 'เข็มกลัด',
-      prefixTh: 'นาย',
-      thaiName: 'นายสมชาย เข็มกลัด',
-      dateOfBirth: '01/01/1990',
-      idCardIssueDate: '01/01/2010',
-      idCardExpiryDate: '01/01/2030',
-      religion: 'พุทธ',
-      address: '123/45 ถนนพระราม 9 แขวงห้วยขวาง เขตห้วยขวาง กรุงเทพฯ 10310',
-    };
-
-    const idCardNumber = extraction.idCardNumber;
-
-    if (!idCardNumber) {
-      throw new BadRequestException('Failed to extract ID card number');
+    // 2. Perform OCR via Google Vision
+    const ocrResult = await this.ocrService.extractIdCardData(idCardImage);
+    
+    // Fail early if OCR results are clearly invalid/empty
+    if (!ocrResult || !ocrResult.idNumber) {
+      this.logger.warn(`[KYC] OCR failed to extract ID number for user ${userId}`);
+      throw new BadRequestException('Could not read ID card number. Please ensure the card is clear and try again.');
     }
 
-    // Identity Deduplication (SHA-256 of Raw Data)
-    const idCardToken = this.hashString(idCardNumber);
-    const existingKyc = await this.prisma.kYCData.findUnique({
-      where: { idCardToken },
-    });
+    const idCardNumber = ocrResult.idNumber;
+    const extraction = ocrResult;
 
-    if (existingKyc && existingKyc.userId !== userId) {
-      throw new ConflictException('This ID card is already registered with another account');
+    // 3. Identity Deduplication (SHA-256 of Raw Data)
+    const idCardToken = idCardNumber ? this.hashString(idCardNumber) : null;
+    if (idCardToken) {
+      const existingKyc = await this.prisma.kYCData.findUnique({
+        where: { idCardToken },
+      });
+
+      if (existingKyc && existingKyc.userId !== userId) {
+        throw new ConflictException('This ID card is already registered with another account');
+      }
     }
 
-    // Encryption of PII
-    const encryptedId = this.encryptPii(idCardNumber);
-    const encryptedName =
-      extraction.firstNameEn && extraction.lastNameEn
-        ? this.encryptPii(`${extraction.firstNameEn} ${extraction.lastNameEn}`)
-        : null;
-    const encryptedThaiName = extraction.thaiName ? this.encryptPii(extraction.thaiName) : null;
+    // 4. Initialize AWS Liveness Session
+    const livenessSessionId = await this.faceService.createLivenessSession();
 
-    // TODO: AWS Liveness Session Initialization (implement face provider)
-    const livenessSessionId = randomUUID();
-
-    // Threshold Branching (Manual Review)
+    // 5. Threshold Branching (Manual Review)
     const isLowConfidence = !idCardNumber || idCardNumber.length < 13;
     const reviewNote = isLowConfidence ? 'OCR failed to extract complete ID number' : null;
 
-    // Upsert Data
+    // 6. Upsert Data
     await this.prisma.$transaction(async (tx) => {
       await tx.kYCData.upsert({
         where: { userId },
         update: {
-          idCardNumberEncrypted: encryptedId,
-          idCardName: extraction.thaiName,
-          firstNameTh: extraction.firstNameTh,
-          lastNameTh: extraction.lastNameTh,
-          firstNameEn: extraction.firstNameEn,
-          lastNameEn: extraction.lastNameEn,
-          dateOfBirth: extraction.dateOfBirth ? this.parseDate(extraction.dateOfBirth) : null,
-          thaiNameEncrypted: encryptedThaiName,
-          prefix: extraction.prefixTh,
+          idCardNumberEncrypted: idCardNumber ? this.encryptPii(idCardNumber) : null,
           idCardToken,
           idCardImageUrl: idCardUrl,
           idCardImageSha256: idCardHash,
           livenessSessionId,
-          idCardIssueDate: extraction.idCardIssueDate
-            ? this.parseDate(extraction.idCardIssueDate)
-            : null,
-          idCardExpiryDate: extraction.idCardExpiryDate
-            ? this.parseDate(extraction.idCardExpiryDate)
-            : null,
-          religion: extraction.religion,
           reviewNote,
           ocrConfidence: isLowConfidence ? 0.5 : 0.95,
+          verificationStatus: 'PENDING',
         },
         create: {
           userId,
           verificationStatus: 'PENDING',
-          idCardNumberEncrypted: encryptedId,
-          idCardName: extraction.thaiName,
-          firstNameTh: extraction.firstNameTh,
-          lastNameTh: extraction.lastNameTh,
-          firstNameEn: extraction.firstNameEn,
-          lastNameEn: extraction.lastNameEn,
-          dateOfBirth: extraction.dateOfBirth ? this.parseDate(extraction.dateOfBirth) : null,
-          thaiNameEncrypted: encryptedThaiName,
-          prefix: extraction.prefixTh,
+          idCardNumberEncrypted: idCardNumber ? this.encryptPii(idCardNumber) : null,
           idCardToken,
           idCardImageUrl: idCardUrl,
           idCardImageSha256: idCardHash,
           livenessSessionId,
-          idCardIssueDate: extraction.idCardIssueDate
-            ? this.parseDate(extraction.idCardIssueDate)
-            : null,
-          idCardExpiryDate: extraction.idCardExpiryDate
-            ? this.parseDate(extraction.idCardExpiryDate)
-            : null,
-          religion: extraction.religion,
           reviewNote,
           ocrConfidence: isLowConfidence ? 0.5 : 0.95,
         },
       });
     });
-    console.log("data from OCR = ", extraction)
+
+    // Update user registration state
+    await this.prisma.user.update({
+      where: { id: userId },
+      data: { registrationState: 'ID_CARD_UPLOADED' },
+    });
+
     return {
       extractedData: {
         idCardNumber: idCardNumber,
-        firstNameTh: extraction.firstNameTh,
-        lastNameTh: extraction.lastNameTh,
-        prefixTh: extraction.prefixTh,
-        firstNameEn: extraction.firstNameEn,
-        lastNameEn: extraction.lastNameEn,
-        prefixEn: extraction.prefixEn,
-        thaiName: extraction.thaiName,
-        dateOfBirth: extraction.dateOfBirth,
-        idCardIssueDate: extraction.idCardIssueDate,
-        idCardExpiryDate: extraction.idCardExpiryDate,
-        religion: extraction.religion,
-        address: extraction.address,
+        ...extraction, // Spread names, dates, etc.
       },
       livenessSessionId,
     };
   }
 
-  async submitSelfie(userId: string, selfieImage: Buffer) {
+  async submitSelfie(userId: string, selfieImage?: Buffer) {
     const kyc = await this.prisma.kYCData.findUnique({
       where: { userId },
     });
@@ -285,23 +326,68 @@ export class KycService {
       throw new BadRequestException('ID Card must be uploaded before selfie');
     }
 
-    const selfieHash = this.hashBuffer(selfieImage);
-    const selfieKey = `kyc/${userId}/selfie.jpg`;
+    // 1. Try to get Liveness Session Results if exists, otherwise fallback to manual comparison
+    let livenessResults: any = null;
+    try {
+      livenessResults = await this.faceService.getLivenessResults(kyc.livenessSessionId);
+      this.logger.log(`Liveness check for user ${userId}: Status=${livenessResults.status}, Confidence=${livenessResults.confidence}`);
+    } catch (err) {
+      this.logger.warn(`Liveness results not available for session ${kyc.livenessSessionId}, proceeding with manual face comparison.`);
+    }
+    
+    const minLivenessScore = this.configService.get('KYC_MIN_LIVENESS_CONFIDENCE', 90);
+    const isLive = livenessResults && 
+                   livenessResults.status === 'SUCCEEDED' && 
+                   (livenessResults.confidence || 0) >= minLivenessScore;
 
-    // TODO: Upload Selfie to storage
-    const selfieUrl = `https://storage.example.com/${selfieKey}`;
-
-    // TODO: Verify Liveness Session from AWS
-    const liveness = { isLive: true };
-
-    if (!liveness.isLive) {
-      throw new UnauthorizedException('Face Liveness check failed. Please retry.');
+    // 2. Determine which image to use for Comparison
+    let finalSelfieBuffer: Buffer;
+    if (isLive && livenessResults?.referenceImage?.Bytes) {
+      finalSelfieBuffer = Buffer.from(livenessResults.referenceImage.Bytes);
+      this.logger.debug(`Using AWS Liveness Reference Image for user ${userId}`);
+    } else if (selfieImage) {
+      finalSelfieBuffer = selfieImage;
+      this.logger.debug(`Using manual selfie upload for user ${userId}`);
+    } else {
+      throw new BadRequestException('Face verification data missing. Please capture your face correctly.');
     }
 
-    // TODO: Face Comparison
-    const comparison = { isMatch: true, score: 95 };
+    const selfieHash = this.hashBuffer(finalSelfieBuffer);
+    const selfieKey = `kyc/${userId}/selfie.jpg`;
 
-    const isMatch = comparison.isMatch && comparison.score >= 90;
+    // 3. Upload Selfie to S3
+    const selfieUrl = await this.s3Service.uploadFile(selfieKey, finalSelfieBuffer, 'image/jpeg');
+
+    // 4. Face Comparison (Real Comparison)
+    // We use the ID card key from S3 and the new selfie buffer
+    const idCardKey = `kyc/${userId}/id-card.jpg`;
+    
+    // AWS Rekognition can take bytes for both. Since we have selfie as buffer, 
+    // we just need the ID card buffer.
+    // Optimization: In a real high-scale system, we'd use S3 objects directly in Rekognition
+    // But for this flow, we'll download ID card buffer once to compare.
+    
+    this.logger.debug(`Performing real face comparison for user ${userId}`);
+    
+    let isMatch = false;
+    let similarity = 0;
+
+    try {
+      // Fetch ID card image from S3
+      const idCardBuffer = await this.s3Service.getFile(idCardKey);
+      
+      // Compare with the reference image (from liveness) or provided selfie
+      const comparison = await this.faceService.compareFaces(idCardBuffer, finalSelfieBuffer);
+      
+      const minSimilarity = this.configService.get('KYC_MIN_SIMILARITY_SCORE', 80);
+      isMatch = comparison.isMatch && comparison.similarity >= minSimilarity;
+      similarity = comparison.similarity;
+
+      this.logger.log(`Face match result for user ${userId}: isMatch=${isMatch}, similarity=${similarity}%`);
+    } catch (err) {
+      this.logger.error(`Face comparison failed for user ${userId}`, err);
+      isMatch = false;
+    }
 
     // Finalize KYC
     await this.prisma.$transaction(async (tx) => {
@@ -310,10 +396,16 @@ export class KycService {
         data: {
           selfieImageUrl: selfieUrl,
           selfieImageSha256: selfieHash,
-          faceMatchScore: comparison.score,
+          faceMatchScore: Math.round(similarity),
           verificationStatus: isMatch ? 'APPROVED' : 'REJECTED',
           verifiedAt: new Date(),
         },
+      });
+      
+      // Update user registration state
+      await tx.user.update({
+        where: { id: userId },
+        data: { registrationState: 'KYC_VERIFIED' },
       });
     });
 
@@ -495,7 +587,13 @@ export class KycService {
         );
       }
 
-      this.logger.log(`[KYC] OCR data confirmed for user ${userId}`);
+      // Update user registration state to ID_CARD_CONFIRMED
+      await this.prisma.user.update({
+        where: { id: userId },
+        data: { registrationState: 'ID_CARD_CONFIRMED' },
+      });
+
+      this.logger.log(`[KYC] OCR data confirmed and state updated to ID_CARD_CONFIRMED for user ${userId}`);
       return { success: true };
     } catch (error) {
       this.logger.error(`[KYC] Failed to save confirmed OCR data for user ${userId}`, error);
@@ -567,13 +665,23 @@ export class KycService {
     };
   }
 
-  private parseDate(dateStr: string): Date | null {
-    const parts = dateStr.split('/');
-    if (parts.length !== 3) return null;
-    const day = parts[0];
+  private parseDate(dateStr: string | null): Date | null {
+    if (!dateStr) return null;
+    
+    // Split by /, space, or dot
+    const parts = dateStr.split(/[\/\s.]+/).filter(Boolean);
+    if (parts.length < 3) return null;
+
+    const day = parseInt(parts[0]);
     const month = parts[1];
-    const year = parts[2];
-    const d = new Date(parseInt(year), this.mapMonth(month), parseInt(day));
+    let year = parseInt(parts[2]);
+
+    // Handle Buddhist Era (BE) - Thai years are usually > 2400
+    if (year > 2400) {
+      year -= 543;
+    }
+
+    const d = new Date(year, this.mapMonth(month), day);
     return isNaN(d.getTime()) ? null : d;
   }
 

@@ -12,6 +12,7 @@ import { useColorScheme } from '@/hooks/use-color-scheme';
 import { useAuthStore } from '@/store/auth';
 import { useNotifications } from '@/hooks/useNotifications';
 import { useAppLock } from '@/hooks/useAppLock';
+import { configureAmplify } from '@/lib/amplify-config';
 
 import {
   useFonts,
@@ -48,6 +49,7 @@ export default function RootLayout() {
     isLoading: isAuthLoading,
     needsPinVerification,
     hasSession,
+    user,
   } = useAuthStore();
 
   const [fontsLoaded, fontError] = useFonts({
@@ -60,6 +62,7 @@ export default function RootLayout() {
 
   useEffect(() => {
     initializeAuth();
+    configureAmplify();
   }, []);
 
   useEffect(() => {
@@ -72,13 +75,39 @@ export default function RootLayout() {
   useEffect(() => {
     if (!fontsLoaded || isAuthLoading) return;
 
+    console.log('[RootLayout] Auth Guard Check:', {
+      isAuthenticated,
+      needsPinVerification,
+      status: user?.status,
+      registrationState: user?.registrationState
+    });
+
     if (needsPinVerification) {
-      // Session exists but needs PIN - go to login which will show PIN step
       router.replace('/(auth)/login');
     } else if (!isAuthenticated) {
       router.replace('/(auth)/login');
+    } else if (user) {
+      // 1. Handle Account Status Guards
+      if (user.status === 'DELETED') {
+        console.log('[RootLayout] Redirecting to Login (DELETED)');
+        initializeAuth();
+        router.replace('/(auth)/login');
+      } else if (user.status === 'BLOCKED' || user.status === 'SUSPENDED' || user.status === 'INACTIVE') {
+        console.log('[RootLayout] Redirecting to Account Restricted');
+        router.replace('/(auth)/account-restricted');
+      } else if (user.status === 'PENDING_APPROVAL') {
+        console.log('[RootLayout] Redirecting to Pending Approval');
+        router.replace('/(auth)/pending-approval');
+      } else if (user.status === 'ACTIVE') {
+        if (user.registrationState !== 'COMPLETED') {
+          console.log('[RootLayout] Redirecting to Onboarding (Incomplete)');
+          router.replace('/(auth)/onboarding');
+        } else {
+          console.log('[RootLayout] Access Granted to App');
+        }
+      }
     }
-  }, [isAuthenticated, isAuthLoading, fontsLoaded, needsPinVerification]);
+  }, [isAuthenticated, isAuthLoading, fontsLoaded, needsPinVerification, user?.status, user?.registrationState]);
 
   if ((!fontsLoaded && !fontError) || isAuthLoading) {
     return null;
@@ -112,6 +141,8 @@ export default function RootLayout() {
               }}>
                 <Stack.Screen name="(tabs)" />
                 <Stack.Screen name="(auth)" />
+                <Stack.Screen name="(auth)/pending-approval" />
+                <Stack.Screen name="(auth)/account-restricted" />
                 <Stack.Screen name="transfer" />
                 <Stack.Screen name="topup" />
                 <Stack.Screen name="transaction" />

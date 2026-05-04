@@ -4,6 +4,9 @@ import { AppButton } from '@/components/common/AppButton';
 import { AppTextInput } from '@/components/common/AppTextInput';
 import { StepWrapper } from '@/components/common/StepWrapper';
 import { StepHeader } from './StepHeader';
+import { ThaiDatePickerModal } from './ThaiDatePickerModal';
+import { Calendar } from 'lucide-react-native';
+import { TouchableOpacity } from 'react-native';
 
 interface OcrReviewStepProps {
   visible: boolean;
@@ -43,6 +46,30 @@ export const OcrReviewStep: React.FC<OcrReviewStepProps> = ({
   onConfirm,
   onRescan,
 }) => {
+  const [pickerConfig, setPickerConfig] = React.useState<{
+    visible: boolean;
+    field: string;
+    title: string;
+    initialValue: string;
+  }>({
+    visible: false,
+    field: '',
+    title: '',
+    initialValue: '',
+  });
+
+  const openPicker = (field: string, title: string, initialValue: string) => {
+    setPickerConfig({
+      visible: true,
+      field,
+      title,
+      initialValue,
+    });
+  };
+
+  const handleDateSelect = (dateStr: string) => {
+    setData(pickerConfig.field, dateStr);
+  };
   const isValid =
     data.idNumber.length === 13 &&
     data.firstNameTh.trim().length > 0 &&
@@ -70,22 +97,38 @@ export const OcrReviewStep: React.FC<OcrReviewStepProps> = ({
             maxLength={13}
           />
           <View className="flex-row gap-4 mt-4">
-            <View className="flex-1">
-              <AppTextInput
-                label="ISSUE DATE"
-                value={data.issueDate}
-                onChangeText={(v) => setData('issueDate', v)}
-                placeholder="DD/MM/YYYY"
-              />
-            </View>
-            <View className="flex-1">
-              <AppTextInput
-                label="EXPIRY DATE"
-                value={data.expiryDate}
-                onChangeText={(v) => setData('expiryDate', v)}
-                placeholder="DD/MM/YYYY"
-              />
-            </View>
+            <TouchableOpacity 
+              onPress={() => openPicker('issueDate', 'เลือกวันออกบัตร', data.issueDate)}
+              className="flex-1"
+            >
+              <View pointerEvents="none">
+                <AppTextInput
+                  label="ISSUE DATE (พ.ศ.)"
+                  value={data.issueDate}
+                  placeholder="เลือกวันที่"
+                  editable={false}
+                />
+                <View className="absolute right-4 bottom-4">
+                  <Calendar size={18} color="#f48fb1" />
+                </View>
+              </View>
+            </TouchableOpacity>
+            <TouchableOpacity 
+              onPress={() => openPicker('expiryDate', 'เลือกวันหมดอายุ', data.expiryDate)}
+              className="flex-1"
+            >
+              <View pointerEvents="none">
+                <AppTextInput
+                  label="EXPIRY DATE (พ.ศ.)"
+                  value={data.expiryDate}
+                  placeholder="เลือกวันที่"
+                  editable={false}
+                />
+                <View className="absolute right-4 bottom-4">
+                  <Calendar size={18} color="#f48fb1" />
+                </View>
+              </View>
+            </TouchableOpacity>
           </View>
         </View>
 
@@ -147,12 +190,22 @@ export const OcrReviewStep: React.FC<OcrReviewStepProps> = ({
           <Text className="text-xs font-manrope font-extrabold text-primary mb-3 uppercase">
             Additional Info
           </Text>
-          <AppTextInput
-            label="DATE OF BIRTH"
-            placeholder="DD/MM/YYYY"
-            value={data.dateOfBirth}
-            onChangeText={(v) => setData('dateOfBirth', v)}
-          />
+          <TouchableOpacity 
+            onPress={() => openPicker('dateOfBirth', 'เลือกวันเกิด', data.dateOfBirth)}
+            className="mb-4"
+          >
+            <View pointerEvents="none">
+              <AppTextInput
+                label="DATE OF BIRTH (พ.ศ.)"
+                placeholder="เลือกวันที่"
+                value={data.dateOfBirth}
+                editable={false}
+              />
+              <View className="absolute right-4 bottom-4">
+                <Calendar size={18} color="#f48fb1" />
+              </View>
+            </View>
+          </TouchableOpacity>
           <View className="mt-4">
             <AppTextInput
               label="RELIGION"
@@ -183,23 +236,12 @@ export const OcrReviewStep: React.FC<OcrReviewStepProps> = ({
               />
             </View>
           </View>
-          <View className="flex-row gap-4 mt-4">
-            <View className="flex-1">
-              <AppTextInput
-                label="PROVINCE"
-                value={data.registeredAddress.province}
-                onChangeText={(v) => setData('addressField', { field: 'province', text: v })}
-              />
-            </View>
-            <View className="flex-1">
-              <AppTextInput
-                label="POSTAL CODE"
-                value={data.registeredAddress.postalCode}
-                onChangeText={(v) => setData('addressField', { field: 'postalCode', text: v })}
-                keyboardType="number-pad"
-                maxLength={5}
-              />
-            </View>
+          <View className="mt-4">
+            <AppTextInput
+              label="PROVINCE"
+              value={data.registeredAddress.province}
+              onChangeText={(v) => setData('addressField', { field: 'province', text: v })}
+            />
           </View>
         </View>
 
@@ -214,6 +256,14 @@ export const OcrReviewStep: React.FC<OcrReviewStepProps> = ({
           <AppButton title="Rescan" variant="outline" onPress={onRescan} />
         </View>
       </ScrollView>
+
+      <ThaiDatePickerModal
+        visible={pickerConfig.visible}
+        title={pickerConfig.title}
+        initialValue={pickerConfig.initialValue}
+        onClose={() => setPickerConfig(prev => ({ ...prev, visible: false }))}
+        onSelect={handleDateSelect}
+      />
     </StepWrapper>
   );
 };
