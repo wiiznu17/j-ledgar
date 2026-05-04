@@ -144,7 +144,6 @@ export class IdentityService {
       user = await this.prisma.user.create({
         data: {
           phoneNumber,
-          status: 'ACTIVE',
           registrationState: 'PENDING_OTP',
         },
       });
@@ -237,7 +236,7 @@ export class IdentityService {
       throw new UnauthorizedException('Invalid credentials');
     }
 
-    if (user.status !== 'ACTIVE') {
+    if (user.status !== 'ACTIVE' && user.status !== 'PENDING_APPROVAL') {
       throw new UnauthorizedException('Account is not active');
     }
 
@@ -308,6 +307,13 @@ export class IdentityService {
       accessToken,
       refreshToken,
       expiresIn: ACCESS_TOKEN_TTL_SECONDS,
+      user: {
+        id: user.id,
+        phoneNumber: user.phoneNumber,
+        email: user.email,
+        status: user.status,
+        registrationState: user.registrationState,
+      }
     };
   }
 
@@ -352,10 +358,22 @@ export class IdentityService {
         },
       });
 
+      const user = await this.prisma.user.findUnique({
+        where: { id: payload.sub },
+        select: {
+          id: true,
+          phoneNumber: true,
+          email: true,
+          status: true,
+          registrationState: true,
+        }
+      });
+
       return {
         accessToken,
         refreshToken: newRefreshToken,
         expiresIn: ACCESS_TOKEN_TTL_SECONDS,
+        user
       };
     } catch (error) {
       throw new UnauthorizedException('Invalid refresh token');

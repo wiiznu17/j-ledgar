@@ -129,10 +129,10 @@ export default function LoginScreen() {
       });
 
       // If successful (no OTP required), go to PIN step
-      // DO NOT set tokens yet, wait for PIN verification
-      // But we need to save the tokens temporarily or just set the flag
       await setToken(res.data.accessToken, res.data.refreshToken);
-      setUser({ id: res.data.userId || 'current', phoneNumber: phone });
+      if (res.data.user) {
+        setUser(res.data.user);
+      }
       
       // Force PIN verification state
       useAuthStore.getState().lockSession();
@@ -176,7 +176,9 @@ export default function LoginScreen() {
       });
 
       await setToken(res.data.accessToken, res.data.refreshToken);
-      setUser({ id: res.data.userId || 'current', phoneNumber: phone });
+      if (res.data.user) {
+        setUser(res.data.user);
+      }
       setStep('PIN');
     } catch (err: any) {
       setError(err.response?.data?.message || 'Verification failed');
@@ -187,9 +189,9 @@ export default function LoginScreen() {
   };
 
   const handlePinSuccess = () => {
-    console.log('[Login] Authentication successful, entering app...');
+    console.log('[Login] Authentication successful, relying on global guard for navigation...');
     setIsLoading(false);
-    router.replace('/(tabs)' as any);
+    // Removed direct redirect to (tabs) to let RootLayout handle status-based navigation
   };
 
   const handlePinFailure = (errMsg: string) => {
@@ -326,7 +328,10 @@ export default function LoginScreen() {
             </View>
 
             <TouchableOpacity
-              onPress={() => router.push('/onboarding' as any)}
+              onPress={async () => {
+                await logout(); // Clear any stale sessions before starting new registration
+                router.push('/onboarding' as any);
+              }}
               className="items-center"
             >
               <Text className="text-sm font-manrope font-bold text-gray-400">

@@ -41,9 +41,10 @@ export const REQUEST_TIMEOUTS = {
   // Transaction operations - standard timeout
   '/api/finance/wallets/': NETWORK_TIMEOUTS.DEFAULT,
 
-  // KYC operations - can be slow (file uploads)
-  '/api/kyc': NETWORK_TIMEOUTS.SLOW,
-  '/api/kyc/upload': NETWORK_TIMEOUTS.VERY_SLOW,
+  // KYC operations - can be slow (file uploads + OCR + Face Comparison)
+  '/kyc/upload-id-card': NETWORK_TIMEOUTS.VERY_SLOW,
+  '/kyc/submit-selfie': NETWORK_TIMEOUTS.VERY_SLOW,
+  '/kyc/confirm-ocr': NETWORK_TIMEOUTS.SLOW,
 
   // Default for unknown endpoints
   DEFAULT: NETWORK_TIMEOUTS.DEFAULT,
@@ -98,6 +99,9 @@ api.interceptors.request.use(
       fullURL: `${config.baseURL}${config.url}`,
       method: config.method,
     });
+
+    // Dynamically set timeout based on endpoint
+    config.timeout = getTimeoutForRequest(config.url);
 
     // Validate connection security before making request
     if (config.baseURL) {

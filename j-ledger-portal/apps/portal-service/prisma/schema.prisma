@@ -15,7 +15,7 @@ model User {
   passwordHash      String?
   pinHash           String?
   biometricKey      String?
-  status            UserStatus              @default(ACTIVE)
+  status            UserStatus              @default(PENDING_APPROVAL)
   registrationState RegistrationState       @default(PENDING)
   pinAttempts       Int                     @default(0)
   pinLockedUntil    DateTime?
@@ -615,6 +615,7 @@ model InvoiceItem {
 }
 
 enum UserStatus {
+  PENDING_APPROVAL
   ACTIVE
   INACTIVE
   SUSPENDED
@@ -631,6 +632,7 @@ enum RegistrationState {
   OTP_VERIFIED
   TC_ACCEPTED
   ID_CARD_UPLOADED
+  ID_CARD_CONFIRMED
   KYC_VERIFIED
   PROFILE_COMPLETED
   PASSWORD_SET

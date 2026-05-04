@@ -8,11 +8,14 @@ import {
   KeyboardAvoidingView,
   Platform,
   Alert,
+  StyleSheet,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import * as ImagePicker from 'expo-image-picker';
+import * as ImageManipulator from 'expo-image-manipulator';
 import * as Onboarding from '@/components/onboarding';
+import { FaceLivenessScanner, IDCardScanner } from '@/components/onboarding';
 import { GlassPanel } from '@/components/common/GlassPanel';
 import { AppButton } from '@/components/common/AppButton';
 import { AppTextInput } from '@/components/common/AppTextInput';
@@ -83,15 +86,19 @@ export default function OnboardingScreen() {
   const [idCardUri, setIdCardUri] = useState<string | null>(null);
   const [selfieUri, setSelfieUri] = useState<string | null>(null);
   const [livenessSessionId, setLivenessSessionId] = useState<string | null>(null);
+  const [isScanningID, setIsScanningID] = useState(false);
 
   const router = useRouter();
-  const { regToken, setRegToken, syncStatus, prefillData, reset } = useRegistrationStore();
+  const { regToken, setRegToken, syncStatus, prefillData, reset, initialize } = useRegistrationStore();
 
   // Initialize & Sync
   useEffect(() => {
-    const initialize = async () => {
+    const initializeFlow = async () => {
       setIsLoading(true);
       try {
+        // 1. Load token from SecureStore first
+        await initialize();
+        // 2. Sync with backend status
         const currentState = await syncStatus();
         mapBackendStateToUI(currentState);
       } catch (err) {
@@ -100,7 +107,7 @@ export default function OnboardingScreen() {
         setIsLoading(false);
       }
     };
-    initialize();
+    initializeFlow();
   }, []);
 
   // Update form when prefilled data arrives
@@ -124,7 +131,10 @@ export default function OnboardingScreen() {
         setStep('OCR_GUIDE');
         break;
       case 'ID_CARD_UPLOADED':
-        setStep('FACE_GUIDE');
+        setStep('OCR_REVIEW'); // แสดงหน้า Review ก่อนเสมอ
+        break;
+      case 'ID_CARD_CONFIRMED':
+        setStep('FACE_GUIDE'); // เมื่อยืนยันแล้วค่อยไปสแกนหน้า
         break;
       case 'KYC_VERIFIED':
         setStep('ADDITIONAL_INFO');
@@ -227,132 +237,135 @@ export default function OnboardingScreen() {
   };
 
   const handleIdCapture = async () => {
-    let result;
+    setIsScanningID(true);
+  };
+
+  const onIDScanned = async (uri: string) => {
+    // Note: Do NOT call setIsScanningID(false) here yet. 
+    // We want to keep the scanner visible while we process with the backend.
+    setIdCardUri(uri);
+
+    // Upload & OCR
+    setIsLoading(true);
     try {
-      result = await ImagePicker.launchCameraAsync({
-        mediaTypes: ImagePicker.MediaTypeOptions.Images,
-        allowsEditing: true,
-        quality: 0.8,
+    // IDCardScanner already cropped and compressed the image. 
+    // We can use the URI directly or just do a minimal check.
+    const finalUri = uri;
+
+      const formData = new FormData();
+      formData.append('idCardImage', {
+        uri: finalUri,
+        name: 'id_card.jpg',
+        type: 'image/jpeg',
+      } as any);
+
+      const res = await api.post('/kyc/upload-id-card', formData, {
+        headers: {
+          Authorization: `Bearer ${regToken}`,
+          'Content-Type': 'multipart/form-data',
+        },
       });
-    } catch (e) {
-      console.log('[Onboarding] Camera not available, falling back to gallery');
-      result = await ImagePicker.launchImageLibraryAsync({
-        mediaTypes: ImagePicker.MediaTypeOptions.Images,
-        allowsEditing: true,
-        quality: 0.8,
-      });
-    }
 
-    if (!result.canceled && result.assets && result.assets[0]) {
-      const uri = result.assets[0].uri;
-      setIdCardUri(uri);
+      if (res.data.regToken) await setRegToken(res.data.regToken);
+      setLivenessSessionId(res.data.livenessSessionId);
 
-      // Upload & OCR
-      setIsLoading(true);
-      try {
-        const formData = new FormData();
-        formData.append('idCardImage', {
-          uri,
-          name: 'id_card.jpg',
-          type: 'image/jpeg',
-        } as any);
+      const extracted = res.data.extractedData;
+      console.log('[Onboarding] OCR Extracted Data:', JSON.stringify(extracted, null, 2));
 
-        const res = await api.post('/kyc/upload-id-card/simple', formData, {
-          headers: {
-            Authorization: `Bearer ${regToken}`,
-            'Content-Type': 'multipart/form-data',
-          },
-        });
-
-        if (res.data.regToken) await setRegToken(res.data.regToken);
-        setLivenessSessionId(res.data.livenessSessionId);
-
-        const extracted = res.data.extractedData;
-        console.log('extracted from OCR = ', extracted);
-        if (!extracted) {
-          Alert.alert(
-            'OCR Failed',
-            'Could not read ID card data. Please try again with better lighting.',
-          );
-          return;
-        }
-
-        setFirstNameEn(extracted.firstNameEn || extracted.firstName || '');
-        setLastNameEn(extracted.lastNameEn || extracted.lastName || '');
-        setPrefixEn(extracted.prefixEn || '');
-        setFirstNameTh(extracted.firstNameTh || '');
-        setLastNameTh(extracted.lastNameTh || '');
-        setPrefixTh(extracted.prefixTh || '');
-        setThaiName(extracted.thaiName || '');
-        setIdNumber(extracted.idCardNumber || '');
-        setDateOfBirth(extracted.dateOfBirth || '');
-        setIssueDate(extracted.idCardIssueDate || '');
-        setExpiryDate(extracted.idCardExpiryDate || '');
-        setReligion(extracted.religion || '');
-        if (extracted.registeredAddress) {
-          setAddress(extracted.registeredAddress);
-        }
-
-        setStep('OCR_REVIEW');
-      } catch (err: any) {
-        console.log('[Onboarding] OCR Failed:', err.response?.data || err.message);
-        Alert.alert('OCR Failed', 'Could not read ID card. Please try again with better lighting.');
-      } finally {
-        setIsLoading(false);
+      if (!extracted || !extracted.idNumber || !extracted.firstNameTh || !extracted.lastNameTh || !extracted.idCardIssueDate) {
+        Alert.alert(
+          'Scanning Failed',
+          'We couldn\'t read some essential information (ID number, Name, or Issue Date). Please ensure the card is clear and well-lit, then try again.',
+          [{ text: 'OK' }]
+        );
+        return;
       }
+
+      // Auto-fill states with extracted data
+      setIdNumber(extracted.idNumber || '');
+      setPrefixEn(extracted.prefixEn || '');
+      setFirstNameEn(extracted.firstNameEn || '');
+      setLastNameEn(extracted.lastNameEn || '');
+      setPrefixTh(extracted.prefixTh || '');
+      setFirstNameTh(extracted.firstNameTh || '');
+      setLastNameTh(extracted.lastNameTh || '');
+      setDateOfBirth(extracted.dateOfBirth || '');
+      setIssueDate(extracted.idCardIssueDate || '');
+      setExpiryDate(extracted.idCardExpiryDate || '');
+      setReligion(extracted.religion || '');
+      
+      if (extracted.registeredAddress) {
+        setAddress((prev: any) => ({
+          ...prev,
+          line1: extracted.registeredAddress,
+          subdistrict: extracted.subdistrict || prev.subdistrict,
+          district: extracted.district || prev.district,
+          province: extracted.province || prev.province,
+        }));
+      }
+      
+      // If we have full text, log it for debugging
+      if (extracted.fullText) {
+        console.log('[Onboarding] Full OCR Text Analysis Complete');
+      }
+
+      setIsScanningID(false); // Only close the scanner on success
+      setStep('OCR_REVIEW');
+    } catch (err: any) {
+      const errorMsg = err.response?.data?.message || 'Could not process ID card. Please check your connection and try again.';
+      console.log('[Onboarding] OCR Failed:', err.response?.data || err.message);
+      Alert.alert('Scanning Failed', errorMsg);
+    } finally {
+      setIsLoading(false);
     }
   };
 
   const handleSelfieCapture = async () => {
-    let result;
+    // Transition to the actual Liveness Scan step
+    setStep('FACE_SCAN');
+  };
+
+  const handleLivenessSuccess = async (uri: string) => {
+    setIsLoading(true);
     try {
-      result = await ImagePicker.launchCameraAsync({
-        mediaTypes: ImagePicker.MediaTypeOptions.Images,
-        allowsEditing: true,
-        quality: 0.8,
+      // Compress image before upload
+      const manipResult = await ImageManipulator.manipulateAsync(
+        uri,
+        [{ resize: { width: 800 } }],
+        { compress: 0.7, format: ImageManipulator.SaveFormat.JPEG }
+      );
+
+      const formData = new FormData();
+      formData.append('selfieImage', {
+        uri: manipResult.uri,
+        name: 'selfie.jpg',
+        type: 'image/jpeg',
+      } as any);
+
+      // After custom scan is successful, we upload to verify with ID card
+      const res = await api.post('/kyc/submit-selfie', formData, {
+        headers: { 
+          Authorization: `Bearer ${regToken}`,
+          'Content-Type': 'multipart/form-data',
+        }
       });
-    } catch (e) {
-      console.log('[Onboarding] Camera not available, falling back to gallery for selfie');
-      result = await ImagePicker.launchImageLibraryAsync({
-        mediaTypes: ImagePicker.MediaTypeOptions.Images,
-        allowsEditing: true,
-        quality: 0.8,
-      });
-    }
-
-    if (!result.canceled && result.assets && result.assets[0]) {
-      const uri = result.assets[0].uri;
-      setSelfieUri(uri);
-
-      setIsLoading(true);
-      try {
-        const formData = new FormData();
-        formData.append('selfieImage', {
-          uri,
-          name: 'selfie.jpg',
-          type: 'image/jpeg',
-        } as any);
-        formData.append('livenessSessionId', livenessSessionId!);
-
-        const res = await api.post('/kyc/submit-selfie/simple', formData, {
-          headers: {
-            Authorization: `Bearer ${regToken}`,
-            'Content-Type': 'multipart/form-data',
-          },
-        });
-
-        if (res.data.regToken) await setRegToken(res.data.regToken);
-        setStep('ADDITIONAL_INFO');
-      } catch (err: any) {
-        Alert.alert('Face Match Failed', 'Identity could not be verified. Please try again.');
-      } finally {
-        setIsLoading(false);
-      }
+      
+      if (res.data.regToken) await setRegToken(res.data.regToken);
+      setStep('ADDITIONAL_INFO');
+    } catch (err: any) {
+      Alert.alert('Verification Failed', 'Could not verify your identity. Please ensure you are the same person as on the ID card.');
+      setStep('FACE_GUIDE');
+    } finally {
+      setIsLoading(false);
     }
   };
 
   const handleConfirmOcr = async () => {
     setIsLoading(true);
+    
+    // Clean address object: Remove label and postalCode (backend doesn't allow them here)
+    const { label, postalCode, ...cleanAddress } = address;
+    
     const payload = {
       idNumber,
       issueDate,
@@ -365,7 +378,7 @@ export default function OnboardingScreen() {
       lastNameEn,
       dateOfBirth,
       religion,
-      registeredAddress: address,
+      registeredAddress: cleanAddress,
     };
 
     console.log('[Onboarding] Sending Confirm OCR Data:', JSON.stringify(payload, null, 2));
@@ -525,7 +538,8 @@ export default function OnboardingScreen() {
   };
 
   return (
-    <SafeAreaView className="flex-1 bg-transparent">
+    <>
+      <SafeAreaView className="flex-1 bg-transparent">
       <KeyboardAvoidingView
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
         className="flex-1"
@@ -586,6 +600,7 @@ export default function OnboardingScreen() {
               visible={step === 'TERMS'}
               isLoading={isLoading}
               onAccept={handleAcceptTerms}
+              onBack={() => setStep('OTP')}
             />
 
             <Onboarding.OcrGuideStep visible={step === 'OCR_GUIDE'} onScan={handleIdCapture} />
@@ -617,6 +632,17 @@ export default function OnboardingScreen() {
               visible={step === 'FACE_GUIDE'}
               onScan={handleSelfieCapture}
             />
+
+            {step === 'FACE_SCAN' && (
+              <FaceLivenessScanner
+                onComplete={handleLivenessSuccess}
+                onError={(err) => {
+                  Alert.alert('Liveness Error', 'Something went wrong during face scan.');
+                  setStep('FACE_GUIDE');
+                }}
+                onCancel={() => setStep('FACE_GUIDE')}
+              />
+            )}
 
             <Onboarding.AdditionalInfoStep
               visible={step === 'ADDITIONAL_INFO'}
@@ -665,8 +691,13 @@ export default function OnboardingScreen() {
             <Onboarding.SuccessStep
               visible={step === 'SUCCESS'}
               onEnterWallet={async () => {
-                await reset(); // ล้าง registration_token และสถานะเดิมทั้งหมด
-                router.replace('/login'); // ย้อนกลับไปหน้า Login เพื่อเริ่มใหม่
+                setIsLoading(true);
+                try {
+                  await reset(); // ล้าง registration_token
+                  router.replace('/(auth)/login'); // กลับไปหน้า Login เพื่อเข้าใช้งานจริง
+                } finally {
+                  setIsLoading(false);
+                }
               }}
             />
           </ScrollView>
@@ -679,6 +710,18 @@ export default function OnboardingScreen() {
           </View>
         </View>
       </KeyboardAvoidingView>
-    </SafeAreaView>
+      </SafeAreaView>
+
+      {/* Full screen ID Card Scanner Overlay */}
+      {isScanningID && (
+        <View style={StyleSheet.absoluteFill} className="bg-black z-[100]">
+          <IDCardScanner
+            onCapture={onIDScanned}
+            onClose={() => setIsScanningID(false)}
+            isLoading={isLoading}
+          />
+        </View>
+      )}
+    </>
   );
 }

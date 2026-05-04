@@ -8,6 +8,8 @@ interface WalletUser {
   id: string;
   email?: string;
   phoneNumber?: string;
+  status?: string;
+  registrationState?: string;
   createdAt?: string;
 }
 
@@ -76,7 +78,22 @@ export const useAuthStore = create<AuthState>((set, get) => ({
     }
   },
 
-  setUser: (user: WalletUser | null) => set({ user, lastActiveAt: Date.now() }),
+  setUser: async (user: WalletUser | null) => {
+    if (user) {
+      if (isWeb) {
+        localStorage.setItem('wallet_user', JSON.stringify(user));
+      } else {
+        await SecureStore.setItemAsync('wallet_user', JSON.stringify(user));
+      }
+    } else {
+      if (isWeb) {
+        localStorage.removeItem('wallet_user');
+      } else {
+        await SecureStore.deleteItemAsync('wallet_user');
+      }
+    }
+    set({ user, lastActiveAt: Date.now() });
+  },
 
   setBiometricEnabled: async (enabled: boolean) => {
     try {
@@ -125,8 +142,11 @@ export const useAuthStore = create<AuthState>((set, get) => ({
     try {
       const res = await api.post('/identity/refresh', { refreshToken });
 
-      const { accessToken, refreshToken: newRefreshToken } = res.data;
+      const { accessToken, refreshToken: newRefreshToken, user } = res.data;
       await get().setToken(accessToken, newRefreshToken);
+      if (user) {
+        get().setUser(user);
+      }
       console.log('[Auth] Session refreshed successfully');
       return true;
     } catch (error: any) {
@@ -178,23 +198,35 @@ export const useAuthStore = create<AuthState>((set, get) => ({
         ? localStorage.getItem(BIOMETRIC_ENABLED_KEY) === 'true'
         : (await SecureStore.getItemAsync(BIOMETRIC_ENABLED_KEY)) === 'true';
 
-      if (token) {
+      const userJson = isWeb
+        ? localStorage.getItem('wallet_user')
+        : await SecureStore.getItemAsync('wallet_user');
+      const user = userJson ? JSON.parse(userJson) : null;
+
+      if (token && user) {
         console.log('[Auth] Restored session from storage');
-        set({ token, refreshToken, isAuthenticated: true, hasSession: true, biometricEnabled });
-      } else if (refreshToken) {
-        // Access token gone but refresh token still exists
-        // User needs to verify PIN to resume session
+        set({ token, refreshToken, user, isAuthenticated: true, hasSession: true, biometricEnabled });
+      } else if (refreshToken && user) {
+        // Only require PIN if we actually have user data to go with the session
         console.log('[Auth] Session found but access token expired, PIN verification required');
         set({
           refreshToken,
+          user,
           hasSession: true,
           needsPinVerification: true,
           isAuthenticated: false,
           biometricEnabled,
         });
       } else {
-        console.log('[Auth] No existing session found');
-        set({ hasSession: false, biometricEnabled });
+        console.log('[Auth] No complete session found, starting fresh');
+        // Clear any orphaned tokens to be safe
+        if (token || refreshToken) {
+          if (!isWeb) {
+            await SecureStore.deleteItemAsync('auth_token');
+            await SecureStore.deleteItemAsync(REFRESH_TOKEN_KEY);
+          }
+        }
+        set({ hasSession: false, biometricEnabled, token: null, refreshToken: null, needsPinVerification: false });
       }
 
       // PIN will be initialized during onboarding flow
