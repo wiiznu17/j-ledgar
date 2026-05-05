@@ -42,6 +42,7 @@ import { walletRequester } from '@/lib/requesters';
 import { WalletDto } from '@repo/dto';
 import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
+import Link from 'next/link';
 import {
   Popover,
   PopoverContent,
@@ -56,9 +57,13 @@ export default function WalletAccountsPage() {
   const [totalPages, setTotalPages] = useState(1);
   const [userRole, setUserRole] = useState('SUPPORT_STAFF');
 
-  // Filters
-  const [searchQuery, setSearchQuery] = useState('');
-  const [statusFilter, setStatusFilter] = useState('ALL');
+  // Filter Inputs
+  const [searchInput, setSearchInput] = useState('');
+  const [statusInput, setStatusInput] = useState('ALL');
+
+  // Applied Filters
+  const [appliedSearch, setAppliedSearch] = useState('');
+  const [appliedStatus, setAppliedStatus] = useState('ALL');
 
   useEffect(() => {
     const role = document.cookie
@@ -78,15 +83,15 @@ export default function WalletAccountsPage() {
       
       // Filter client-side if search is used (since Java search is simplified)
       let filteredData = response.data;
-      if (searchQuery) {
+      if (appliedSearch) {
         filteredData = filteredData.filter(w => 
-          w.walletId.toLowerCase().includes(searchQuery.toLowerCase()) || 
-          w.userId.toLowerCase().includes(searchQuery.toLowerCase())
+          w.walletId.toLowerCase().includes(appliedSearch.toLowerCase()) || 
+          w.userId.toLowerCase().includes(appliedSearch.toLowerCase())
         );
       }
       
-      if (statusFilter !== 'ALL') {
-        filteredData = filteredData.filter(w => w.status === statusFilter);
+      if (appliedStatus !== 'ALL') {
+        filteredData = filteredData.filter(w => w.status === appliedStatus);
       }
 
       setWallets(filteredData);
@@ -98,7 +103,7 @@ export default function WalletAccountsPage() {
     } finally {
       setLoading(false);
     }
-  }, [page, searchQuery, statusFilter]);
+  }, [page, appliedSearch, appliedStatus]);
 
   useEffect(() => {
     fetchWallets();
@@ -106,13 +111,16 @@ export default function WalletAccountsPage() {
 
   const handleApplyFilter = (e: React.FormEvent) => {
     e.preventDefault();
+    setAppliedSearch(searchInput);
+    setAppliedStatus(statusInput);
     setPage(1);
-    fetchWallets();
   };
 
   const handleReset = () => {
-    setSearchQuery('');
-    setStatusFilter('ALL');
+    setSearchInput('');
+    setStatusInput('ALL');
+    setAppliedSearch('');
+    setAppliedStatus('ALL');
     setPage(1);
   };
 
@@ -172,8 +180,8 @@ export default function WalletAccountsPage() {
                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-300" />
                 <Input 
                   placeholder="W-XXXXXX or UUID" 
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
+                  value={searchInput}
+                  onChange={(e) => setSearchInput(e.target.value)}
                   className="pl-9 !h-10 w-full text-sm border-slate-200 focus:ring-indigo-500 rounded-xl bg-slate-50/50 focus:bg-white transition-all"
                 />
               </div>
@@ -183,7 +191,7 @@ export default function WalletAccountsPage() {
               <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest ml-1">
                 Account Status
               </label>
-              <Select value={statusFilter} onValueChange={(v) => setStatusFilter(v || 'ALL')}>
+              <Select value={statusInput} onValueChange={(v) => setStatusInput(v || 'ALL')}>
                 <SelectTrigger className="w-full bg-slate-50/50 border-slate-200 !h-10 rounded-xl font-medium text-sm focus:bg-white transition-all">
                   <SelectValue placeholder="All Status" />
                 </SelectTrigger>
@@ -223,6 +231,7 @@ export default function WalletAccountsPage() {
             <Table>
               <TableHeader className="bg-slate-50/50">
                 <TableRow className="border-slate-100 hover:bg-transparent">
+                  <TableHead className="w-[60px] text-[11px] font-bold text-slate-500 uppercase tracking-wider pl-6">No.</TableHead>
                   <TableHead className="w-[180px] text-[11px] font-bold text-slate-500 uppercase tracking-wider">Wallet ID</TableHead>
                   <TableHead className="text-[11px] font-bold text-slate-500 uppercase tracking-wider">Owner (User ID)</TableHead>
                   <TableHead className="text-[11px] font-bold text-slate-500 uppercase tracking-wider text-right">Balance</TableHead>
@@ -235,14 +244,19 @@ export default function WalletAccountsPage() {
                 {loading ? (
                   Array.from({ length: 5 }).map((_, i) => (
                     <TableRow key={i} className="animate-pulse border-slate-50">
-                      <TableCell colSpan={6} className="h-16 bg-slate-50/20" />
+                      <TableCell colSpan={7} className="h-16 bg-slate-50/20" />
                     </TableRow>
                   ))
                 ) : wallets.length > 0 ? (
-                  wallets.map((wallet) => (
+                  wallets.map((wallet, index) => (
                     <TableRow key={wallet.id} className="border-slate-50 hover:bg-slate-50/30 transition-colors group">
+                      <TableCell className="pl-6 text-xs font-bold text-slate-400 tabular-nums">
+                        {(page - 1) * 10 + index + 1}
+                      </TableCell>
                       <TableCell className="font-mono text-xs font-bold text-indigo-600">
-                        {wallet.walletId}
+                        <Link href={`/accounts/${wallet.id}`} className="hover:underline underline-offset-4">
+                          {wallet.walletId}
+                        </Link>
                       </TableCell>
                       <TableCell>
                         <div className="flex flex-col">
@@ -284,9 +298,12 @@ export default function WalletAccountsPage() {
                             <PopoverContent align="end" className="w-48 p-2 rounded-xl border-slate-100 shadow-xl bg-white">
                               <div className="text-[10px] font-bold text-slate-400 uppercase tracking-widest px-3 py-2">Management</div>
                               <div className="h-px bg-slate-50 my-1" />
-                              <button className="flex items-center w-full px-3 py-2 text-sm font-medium text-slate-600 hover:bg-slate-50 rounded-lg transition-colors">
-                                <Search className="w-4 h-4 mr-2 text-slate-400" /> View History
-                              </button>
+                              <Link 
+                                href={`/accounts/${wallet.id}`}
+                                className="flex items-center w-full px-3 py-2 text-sm font-medium text-slate-600 hover:bg-slate-50 rounded-lg transition-colors"
+                              >
+                                <Search className="w-4 h-4 mr-2 text-slate-400" /> View Detail
+                              </Link>
                               
                               {isSuperAdmin && (
                                 <>

@@ -101,6 +101,14 @@ export class AdminFinanceController {
     );
   }
 
+  @Get('wallets/:id')
+  async getWalletDetail(@Param('id') id: string): Promise<WalletDto> {
+    return this.integrationService.forwardToGateway<WalletDto>(
+      'get',
+      `/api/finance/wallets/admin/${id}`,
+    );
+  }
+
   // ==================== Transaction Management ====================
 
   @Get('transactions')
