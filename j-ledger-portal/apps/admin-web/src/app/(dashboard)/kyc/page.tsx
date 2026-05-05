@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useEffect, useState } from 'react';
-import { ShieldCheck, User, Clock, CheckCircle2, XCircle, Eye, Search, Calendar as CalendarIcon, Filter, RotateCcw } from 'lucide-react';
+import { ShieldCheck, User, Clock, CheckCircle2, XCircle, Eye, Search, Calendar as CalendarIcon, Filter, RotateCcw, ChevronLeft, ChevronRight } from 'lucide-react';
 import Link from 'next/link';
 import { apiClient } from '@/lib/api-client';
 import { Button } from '@/components/ui/button';
@@ -35,12 +35,17 @@ export default function KycListPage() {
   const [startDate, setStartDate] = useState('');
   const [endDate, setEndDate] = useState('');
 
+  const [currentPage, setCurrentPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
+  const [totalItems, setTotalItems] = useState(0);
+
   // Values that will be used for the actual fetch
   const [activeFilters, setActiveFilters] = useState({
     status: 'PENDING_APPROVAL',
     phoneNumber: '',
     startDate: '',
-    endDate: ''
+    endDate: '',
+    page: 1
   });
 
   const fetchDocuments = async () => {
@@ -51,10 +56,17 @@ export default function KycListPage() {
         ...(activeFilters.phoneNumber && { phoneNumber: activeFilters.phoneNumber }),
         ...(activeFilters.startDate && { startDate: activeFilters.startDate }),
         ...(activeFilters.endDate && { endDate: activeFilters.endDate }),
+        page: activeFilters.page.toString(),
+        limit: '10'
       });
-      const res = await apiClient.get<{ items: KycDocument[], stats: any }>(`/api/admin/kyc/list?${params.toString()}`);
+      const res = await apiClient.get<{ items: KycDocument[], stats: any, meta: any }>(`/api/admin/kyc/list?${params.toString()}`);
       setDocuments(res.items);
       setStats(res.stats);
+      if (res.meta) {
+        setTotalPages(res.meta.totalPages);
+        setTotalItems(res.meta.total);
+        setCurrentPage(res.meta.page);
+      }
     } catch (err) {
       console.error(err);
     } finally {
@@ -72,68 +84,53 @@ export default function KycListPage() {
       status,
       phoneNumber,
       startDate,
-      endDate
+      endDate,
+      page: 1
     });
+    setCurrentPage(1);
+  };
+
+  const handlePageChange = (newPage: number) => {
+    if (newPage < 1 || newPage > totalPages) return;
+    setCurrentPage(newPage);
+    setActiveFilters(prev => ({ ...prev, page: newPage }));
   };
 
   return (
-    <div className="space-y-6">
-      <div className="flex justify-between items-center">
-        <div>
-          <h1 className="text-2xl font-bold text-slate-800 flex items-center gap-2">
-            <ShieldCheck className="w-8 h-8 text-indigo-500" />
-            KYC Verification
-          </h1>
-          <p className="text-slate-500 text-sm">Review and manage user identity verifications</p>
+    <div className="space-y-4">
+      {/* Compact Stats Row */}
+      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 bg-white p-4 rounded-xl shadow-sm border border-slate-100">
+        <div className="flex items-center gap-2">
+          <Clock className="w-4 h-4 text-indigo-500" />
+          <span className="text-sm font-bold text-slate-700">Today's Overview</span>
+        </div>
+
+        <div className="flex items-center flex-wrap gap-4 md:gap-6 text-sm">
+          <div className="flex items-center gap-2">
+            <div className="w-2 h-2 rounded-full bg-amber-500" />
+            <span className="text-slate-500 font-medium">Pending: <strong className="text-slate-800">{stats?.pending || 0}</strong></span>
+          </div>
+          <div className="flex items-center gap-2">
+            <div className="w-2 h-2 rounded-full bg-emerald-500" />
+            <span className="text-slate-500 font-medium">Approved Today: <strong className="text-slate-800">{stats?.approvedToday || 0}</strong></span>
+          </div>
+          <div className="flex items-center gap-2">
+            <div className="w-2 h-2 rounded-full bg-rose-500" />
+            <span className="text-slate-500 font-medium">Rejected Today: <strong className="text-slate-800">{stats?.rejectedToday || 0}</strong></span>
+          </div>
         </div>
       </div>
 
-      {/* Stats Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        <Card className="border-none shadow-sm ring-1 ring-slate-100 overflow-hidden">
-          <div className="p-4 flex items-center gap-4">
-            <div className="w-10 h-10 rounded-full bg-amber-100 flex items-center justify-center">
-              <Clock className="w-5 h-5 text-amber-600" />
-            </div>
-            <div>
-              <p className="text-xs font-bold text-slate-400 uppercase">Total Pending</p>
-              <h2 className="text-xl font-black text-slate-700">{stats?.pending || 0}</h2>
-            </div>
-          </div>
-        </Card>
-        <Card className="border-none shadow-sm ring-1 ring-slate-100 overflow-hidden">
-          <div className="p-4 flex items-center gap-4">
-            <div className="w-10 h-10 rounded-full bg-emerald-100 flex items-center justify-center">
-              <CheckCircle2 className="w-5 h-5 text-emerald-600" />
-            </div>
-            <div>
-              <p className="text-xs font-bold text-slate-400 uppercase">Approved Today</p>
-              <h2 className="text-xl font-black text-slate-700">{stats?.approvedToday || 0}</h2>
-            </div>
-          </div>
-        </Card>
-        <Card className="border-none shadow-sm ring-1 ring-slate-100 overflow-hidden">
-          <div className="p-4 flex items-center gap-4">
-            <div className="w-10 h-10 rounded-full bg-rose-100 flex items-center justify-center">
-              <XCircle className="w-5 h-5 text-rose-600" />
-            </div>
-            <div>
-              <p className="text-xs font-bold text-slate-400 uppercase">Rejected Today</p>
-              <h2 className="text-xl font-black text-slate-700">{stats?.rejectedToday || 0}</h2>
-            </div>
-          </div>
-        </Card>
-      </div>
-
-      <Card className="border-none shadow-lg shadow-slate-200/50 overflow-hidden">
-        <div className="p-5 bg-slate-50/50 border-b border-slate-100">
-          <form onSubmit={handleApplyFilter} className="flex flex-wrap items-end gap-4">
+      <Card className="border-none shadow-sm ring-1 ring-slate-100 overflow-hidden">
+        {/* Filter Toolbar */}
+        <div className="p-3 bg-white border-b border-slate-100">
+          <form onSubmit={handleApplyFilter} className="grid grid-cols-1 md:grid-cols-5 gap-4 items-end">
             <div className="space-y-1.5">
               <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">
                 Verification Status
               </label>
               <Select value={status} onValueChange={(val: any) => setStatus(val)}>
-                <SelectTrigger className="w-[180px] bg-white border-slate-200 h-10 shadow-sm rounded-xl font-bold text-xs">
+                <SelectTrigger className="w-full bg-white border-slate-200 h-10 shadow-sm rounded-xl font-bold text-xs">
                   <SelectValue placeholder="Select Status" />
                 </SelectTrigger>
                 <SelectContent>
@@ -148,13 +145,13 @@ export default function KycListPage() {
               <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">
                 Phone Number
               </label>
-              <div className="relative w-48">
+              <div className="relative w-full">
                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
                 <Input 
                   placeholder="08x-xxx-xxxx" 
                   value={phoneNumber}
                   onChange={(e) => setPhoneNumber(e.target.value)}
-                  className="pl-9 h-10 text-xs border-slate-200 focus:ring-indigo-500 rounded-xl bg-white shadow-sm font-medium"
+                  className="pl-9 h-10 w-full text-xs border-slate-200 focus:ring-indigo-500 rounded-xl bg-white shadow-sm font-medium"
                 />
               </div>
             </div>
@@ -166,9 +163,9 @@ export default function KycListPage() {
               <Popover>
                 <PopoverTrigger 
                   render={
-                    <Button variant="outline" className={`w-40 h-10 justify-start text-left font-medium text-xs bg-white border-slate-200 rounded-xl shadow-sm ${!startDate && "text-muted-foreground"}`}>
-                      <CalendarIcon className="mr-2 h-4 w-4 text-slate-400" />
-                      {startDate ? format(new Date(startDate), "PPP") : "Pick date"}
+                    <Button variant="outline" className={`w-full h-10 justify-start text-left font-medium text-xs bg-white border-slate-200 rounded-xl shadow-sm ${!startDate && "text-muted-foreground"}`}>
+                      <CalendarIcon className="mr-2 h-4 w-4 text-slate-400 flex-shrink-0" />
+                      <span className="truncate">{startDate ? format(new Date(startDate), "PPP") : "Pick date"}</span>
                     </Button>
                   }
                 />
@@ -190,9 +187,9 @@ export default function KycListPage() {
               <Popover>
                 <PopoverTrigger 
                   render={
-                    <Button variant="outline" className={`w-40 h-10 justify-start text-left font-medium text-xs bg-white border-slate-200 rounded-xl shadow-sm ${!endDate && "text-muted-foreground"}`}>
-                      <CalendarIcon className="mr-2 h-4 w-4 text-slate-400" />
-                      {endDate ? format(new Date(endDate), "PPP") : "Pick date"}
+                    <Button variant="outline" className={`w-full h-10 justify-start text-left font-medium text-xs bg-white border-slate-200 rounded-xl shadow-sm ${!endDate && "text-muted-foreground"}`}>
+                      <CalendarIcon className="mr-2 h-4 w-4 text-slate-400 flex-shrink-0" />
+                      <span className="truncate">{endDate ? format(new Date(endDate), "PPP") : "Pick date"}</span>
                     </Button>
                   }
                 />
@@ -207,7 +204,7 @@ export default function KycListPage() {
               </Popover>
             </div>
 
-            <div className="flex gap-2 ml-auto">
+            <div className="flex gap-2 w-full h-10">
               <Button 
                 type="button" 
                 variant="outline" 
@@ -221,17 +218,19 @@ export default function KycListPage() {
                     status: 'PENDING_APPROVAL',
                     phoneNumber: '',
                     startDate: '',
-                    endDate: ''
+                    endDate: '',
+                    page: 1
                   });
+                  setCurrentPage(1);
                 }}
-                className="h-10 text-slate-500 hover:text-slate-700 hover:bg-slate-100 text-xs font-bold px-4 rounded-xl border-slate-200"
+                className="flex-1 h-10 text-slate-500 hover:text-slate-700 hover:bg-slate-100 text-xs font-bold rounded-xl border-slate-200"
               >
-                <RotateCcw className="w-4 h-4 mr-2" />
+                <RotateCcw className="w-4 h-4 mr-1" />
                 Reset
               </Button>
-              <Button type="submit" size="sm" className="h-10 bg-indigo-600 hover:bg-indigo-700 text-xs font-bold px-8 rounded-xl shadow-lg shadow-indigo-200">
-                <Filter className="w-4 h-4 mr-2" />
-                Apply Filters
+              <Button type="submit" size="sm" className="flex-[2] h-10 bg-indigo-600 hover:bg-indigo-700 text-xs font-bold rounded-xl shadow-lg shadow-indigo-200">
+                <Filter className="w-4 h-4 mr-1" />
+                Apply
               </Button>
             </div>
           </form>
@@ -319,6 +318,38 @@ export default function KycListPage() {
             </tbody>
           </table>
         </div>
+
+        {/* Pagination UI */}
+        {totalPages > 0 && (
+          <div className="p-4 bg-white border-t border-slate-100 flex items-center justify-between">
+            <p className="text-xs text-slate-500 font-medium">
+              Showing page <strong className="text-slate-800">{currentPage}</strong> of <strong className="text-slate-800">{totalPages}</strong> 
+              <span className="hidden sm:inline"> ({totalItems} total records)</span>
+            </p>
+            <div className="flex gap-2">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => handlePageChange(currentPage - 1)}
+                disabled={currentPage === 1 || isLoading}
+                className="h-8 px-3 text-xs font-bold rounded-lg border-slate-200 text-slate-600"
+              >
+                <ChevronLeft className="w-4 h-4 mr-1" />
+                Prev
+              </Button>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => handlePageChange(currentPage + 1)}
+                disabled={currentPage === totalPages || isLoading}
+                className="h-8 px-3 text-xs font-bold rounded-lg border-slate-200 text-slate-600"
+              >
+                Next
+                <ChevronRight className="w-4 h-4 ml-1" />
+              </Button>
+            </div>
+          </div>
+        )}
       </Card>
     </div>
   );

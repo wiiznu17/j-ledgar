@@ -80,9 +80,13 @@ export class AdminKycController {
     @Query('phoneNumber') phoneNumber?: string,
     @Query('startDate') startDate?: string,
     @Query('endDate') endDate?: string,
+    @Query('page') page?: string,
+    @Query('limit') limit?: string,
   ) {
-    this.logger.log(`[AdminKyc] Fetching KYC list - status: ${status}, phone: ${phoneNumber}, dates: ${startDate} to ${endDate}`);
-    return this.kycService.getKYCList(status, phoneNumber, startDate, endDate);
+    const pageNumber = parseInt(page || '1', 10);
+    const limitNumber = parseInt(limit || '50', 10);
+    this.logger.log(`[AdminKyc] Fetching KYC list - status: ${status}, page: ${pageNumber}, limit: ${limitNumber}`);
+    return this.kycService.getKYCList(status, phoneNumber, startDate, endDate, pageNumber, limitNumber);
   }
 
   @Get('details/:userId')

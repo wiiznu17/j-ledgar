@@ -15,14 +15,17 @@ export function DashboardWrapper({ children, userRole }: DashboardWrapperProps) 
 
   return (
     <div className="min-h-screen bg-slate-50 flex h-screen overflow-hidden">
-      <Sidebar onLogout={logout} isCollapsed={isCollapsed} userRole={userRole} />
+      <Sidebar 
+        onLogout={logout} 
+        isCollapsed={isCollapsed} 
+        onToggle={() => setIsCollapsed(!isCollapsed)}
+        userRole={userRole} 
+      />
 
       <div
         className={`flex-1 flex flex-col min-w-0 h-full transition-all duration-300 ease-in-out`}
       >
         <Topbar
-          title="J-Ledger Admin"
-          onToggle={() => setIsCollapsed(!isCollapsed)}
           onLogout={logout}
         />
         <main className="flex-1 p-8 overflow-auto bg-white">{children}</main>
