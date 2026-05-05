@@ -626,10 +626,27 @@ export class IdentityService {
     });
   }
 
-  async findAllUsers(page: number = 1, limit: number = 10) {
+  async findAllUsers(
+    page: number = 1,
+    limit: number = 10,
+    filters?: { email?: string; phone?: string; status?: string },
+  ) {
     const skip = (page - 1) * limit;
+    const where: any = {};
+
+    if (filters?.email) {
+      where.email = { contains: filters.email, mode: 'insensitive' };
+    }
+    if (filters?.phone) {
+      where.phoneNumber = { contains: filters.phone, mode: 'insensitive' };
+    }
+    if (filters?.status) {
+      where.status = filters.status;
+    }
+
     const [users, total] = await Promise.all([
       this.prisma.user.findMany({
+        where,
         skip,
         take: limit,
         select: {
@@ -644,7 +661,7 @@ export class IdentityService {
         },
         orderBy: { createdAt: 'desc' },
       }),
-      this.prisma.user.count(),
+      this.prisma.user.count({ where }),
     ]);
 
     return {

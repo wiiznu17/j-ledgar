@@ -36,6 +36,14 @@ export class AdminFinanceController {
     };
   }
 
+  @Get('accounts/user/:userId')
+  async getAccountByUserId(@Param('userId') userId: string): Promise<Account> {
+    return this.integrationService.forwardToGateway<Account>(
+      'get',
+      `/api/v1/accounts/user/${userId}`,
+    );
+  }
+
   @Put('accounts/:id/status')
   async updateAccountStatus(
     @Param('id') id: string,
