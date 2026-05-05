@@ -387,6 +387,7 @@ model KYCData {
   dateOfBirth           DateTime?
   thaiNameEncrypted     String?
   prefix                String?
+  prefixEn              String?
   idCardToken           String?               @unique
   idCardImageUrl        String?
   idCardImageSha256     String?
