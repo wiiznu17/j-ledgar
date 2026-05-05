@@ -125,12 +125,12 @@ export default function KycListPage() {
         {/* Filter Toolbar */}
         <div className="p-3 bg-white border-b border-slate-100">
           <form onSubmit={handleApplyFilter} className="grid grid-cols-1 md:grid-cols-5 gap-4 items-end">
-            <div className="space-y-1.5">
+            <div className="flex flex-col gap-1.5">
               <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">
                 Verification Status
               </label>
               <Select value={status} onValueChange={(val: any) => setStatus(val)}>
-                <SelectTrigger className="w-full bg-white border-slate-200 h-10 shadow-sm rounded-xl font-bold text-xs">
+                <SelectTrigger className="w-full bg-white border-slate-200 !h-10 shadow-sm rounded-xl font-bold text-xs">
                   <SelectValue placeholder="Select Status" />
                 </SelectTrigger>
                 <SelectContent>
