@@ -62,11 +62,27 @@ export class AdminFinanceController {
   async getTransactions(
     @Query('page') page: number = 0,
     @Query('size') size: number = 50,
+    @Query('status') status?: string,
+    @Query('type') type?: string,
+    @Query('reference') reference?: string,
+    @Query('startDate') startDate?: string,
+    @Query('endDate') endDate?: string,
   ): Promise<AdminPaginatedResponse<Transaction>> {
+    // Build query params for gateway
+    const query = new URLSearchParams({
+      page: page.toString(),
+      size: size.toString(),
+      ...(status && { status }),
+      ...(type && { type }),
+      ...(reference && { reference }),
+      ...(startDate && { startDate }),
+      ...(endDate && { endDate }),
+    });
+
     // Proxy to finance-service
     const response = await this.integrationService.forwardToGateway<any>(
       'get',
-      `/api/v1/transactions?page=${page}&size=${size}`,
+      `/api/v1/transactions?${query.toString()}`,
     );
     
     const content = Array.isArray(response) ? response : (response.content || []);

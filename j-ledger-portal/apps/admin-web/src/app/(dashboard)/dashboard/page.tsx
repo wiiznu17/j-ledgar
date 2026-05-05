@@ -27,8 +27,8 @@ export default function DashboardPage() {
         setLoading(true);
         const [recData, accData, txData, dashStats] = await Promise.all([
           reconcileRequester.triggerManualAudit().catch(() => null),
-          accountRequester.getAccounts(0, 1).catch(() => ({ totalElements: 0 })),
-          transactionRequester.getHistory(0, 1).catch(() => ({ totalElements: 0 })),
+          accountRequester.getAccounts({ page: 0, size: 1 }).catch(() => ({ pagination: { total: 0 } })),
+          transactionRequester.getHistory({ page: 0, size: 1 }).catch(() => ({ pagination: { total: 0 } })),
           dashboardRequester.getAggregatedStats().catch(() => null)
         ]);
 
@@ -36,8 +36,8 @@ export default function DashboardPage() {
           setTotalBalance(recData.totalAccountBalances.toFixed(2));
         }
 
-        setTotalAccounts(accData?.totalElements || 0);
-        setTotalTransactions(txData?.totalElements || 0);
+        setTotalAccounts(accData?.pagination?.total || 0);
+        setTotalTransactions(txData?.pagination?.total || 0);
         
         if (dashStats) {
           setKycStats(dashStats.kyc);
