@@ -5,3 +5,5 @@ export { transactionRequester } from './transactionRequester';
 export { reconcileRequester } from './reconcileRequester';
 export { systemRequester } from './systemRequester';
 export { promotionsRequester } from './promotionsRequester';
+export { kycRequester } from './kycRequester';
+export { dashboardRequester } from './dashboardRequester';

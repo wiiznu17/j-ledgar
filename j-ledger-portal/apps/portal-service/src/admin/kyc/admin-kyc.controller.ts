@@ -23,6 +23,12 @@ export class AdminKycController {
     private readonly kycService: KycService,
     private readonly auditService: AuditService,
   ) {}
+  
+  @Get('stats')
+  async getKYCStats() {
+    this.logger.log('[AdminKyc] Fetching KYC stats for dashboard');
+    return this.kycService.getKYCStats();
+  }
 
   @Post('approve/:userId')
   async approveKyc(@Param('userId') userId: string, @Req() req: any) {

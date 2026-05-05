@@ -7,6 +7,7 @@ interface StatCardProps {
   description: string;
   icon: LucideIcon;
   iconClassName?: string;
+  className?: string;
 }
 
 export function StatCard({
@@ -15,9 +16,10 @@ export function StatCard({
   description,
   icon: Icon,
   iconClassName = 'text-accent',
+  className,
 }: StatCardProps) {
   return (
-    <Card className="border-border shadow-sm">
+    <Card className={`border-border shadow-sm ${className}`}>
       <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
         <CardTitle className="text-sm font-medium">{title}</CardTitle>
         <Icon className={`h-4 w-4 ${iconClassName}`} />
