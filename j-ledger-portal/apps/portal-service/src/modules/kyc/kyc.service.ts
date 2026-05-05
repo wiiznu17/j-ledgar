@@ -199,7 +199,14 @@ export class KycService {
     return kyc;
   }
 
-  async getKYCList(status: string = 'PENDING_APPROVAL', phoneNumber?: string, startDate?: string, endDate?: string) {
+  async getKYCList(
+    status: string = 'PENDING_APPROVAL', 
+    phoneNumber?: string, 
+    startDate?: string, 
+    endDate?: string,
+    page: number = 1,
+    limit: number = 50
+  ) {
     this.logger.log(`[KYC] Fetching KYC list - status: ${status}, phone: ${phoneNumber}, dates: ${startDate} to ${endDate}`);
 
     // 1. Build where clause for User
@@ -219,12 +226,16 @@ export class KycService {
       }
     }
 
-    const usersWithStatus = await this.prisma.user.findMany({
-      where,
-      select: { id: true, email: true, phoneNumber: true },
-      orderBy: { createdAt: 'desc' },
-      take: 50,
-    });
+    const [total, usersWithStatus] = await Promise.all([
+      this.prisma.user.count({ where }),
+      this.prisma.user.findMany({
+        where,
+        select: { id: true, email: true, phoneNumber: true },
+        orderBy: { createdAt: 'desc' },
+        skip: (page - 1) * limit,
+        take: limit,
+      })
+    ]);
 
     const userIds = usersWithStatus.map(u => u.id);
 
@@ -253,7 +264,16 @@ export class KycService {
       user: userMap.get(k.userId) || null,
     }));
 
-    return { items, stats };
+    return { 
+      items, 
+      stats,
+      meta: {
+        total,
+        page,
+        limit,
+        totalPages: Math.ceil(total / limit)
+      }
+    };
   }
 
   async getKYCStats() {

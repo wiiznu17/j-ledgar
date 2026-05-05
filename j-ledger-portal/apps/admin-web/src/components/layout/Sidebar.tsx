@@ -14,6 +14,7 @@ import {
   Ticket,
   Image as ImageIcon,
   ClipboardList,
+  Menu,
 } from 'lucide-react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
@@ -28,6 +29,7 @@ interface NavigationItem {
 
 interface SidebarProps {
   onLogout: (formData: FormData) => void;
+  onToggle?: () => void;
   isCollapsed?: boolean;
   userRole?: string;
 }
@@ -93,6 +95,7 @@ const navigation: NavigationItem[] = [
 
 export function Sidebar({
   onLogout,
+  onToggle,
   isCollapsed = false,
   userRole = 'SUPPORT_STAFF',
 }: SidebarProps) {
@@ -104,18 +107,29 @@ export function Sidebar({
       }`}
     >
       <div
-        className={`h-16 flex items-center border-b border-border/50 flex-shrink-0 transition-all duration-300 ${
-          isCollapsed ? 'justify-center px-0' : 'px-6'
+        className={`h-16 flex items-center justify-between border-b border-border/50 flex-shrink-0 transition-all duration-300 ${
+          isCollapsed ? 'px-0 justify-center' : 'px-6'
         }`}
       >
-        <div className="w-8 h-8 rounded-lg bg-gradient-to-r from-[var(--color-magenta)] to-[var(--color-pink)] flex items-center justify-center shadow-md flex-shrink-0">
-          <ShieldCheck className="w-5 h-5 text-white" />
-        </div>
-        {!isCollapsed && (
-          <span className="ml-3 text-xl font-bold text-slate-800 animate-in fade-in duration-500">
-            J-Ledger
-          </span>
-        )}
+        {!isCollapsed ? (
+          <div className="flex items-center">
+            <div className="w-8 h-8 rounded-lg bg-gradient-to-r from-[var(--color-magenta)] to-[var(--color-pink)] flex items-center justify-center shadow-md flex-shrink-0">
+              <ShieldCheck className="w-5 h-5 text-white" />
+            </div>
+            <span className="ml-3 text-xl font-bold text-slate-800 animate-in fade-in duration-500">
+              J-Ledger
+            </span>
+          </div>
+        ) : null}
+        
+        <Button
+          variant="ghost"
+          size="icon"
+          onClick={onToggle}
+          className="text-slate-500 hover:text-slate-900 transition-colors"
+        >
+          <Menu className="h-5 w-5" />
+        </Button>
       </div>
 
       <nav className="flex-1 px-3 py-6 space-y-2 overflow-y-auto">

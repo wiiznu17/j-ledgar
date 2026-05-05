@@ -2,29 +2,46 @@
 
 import { ThemeToggle } from '@/components/theme-toggle';
 import { Button } from '@/components/ui/button';
-import { PanelLeft, LogOut } from 'lucide-react';
+import { LogOut } from 'lucide-react';
+import { usePathname } from 'next/navigation';
 
 interface TopbarProps {
-  title?: string;
-  onToggle?: () => void;
   onLogout?: (formData: FormData) => void;
 }
 
-export function Topbar({ title = 'J-Ledger Admin', onToggle, onLogout }: TopbarProps) {
+const routeTitles: Record<string, string> = {
+  '/dashboard': 'Dashboard',
+  '/transactions': 'Transactions',
+  '/promotions/deals': 'Deals',
+  '/promotions/banners': 'Banners',
+  '/promotions/redemptions': 'Redemptions',
+  '/aml': 'AML Monitor',
+  '/accounts': 'Accounts',
+  '/kyc': 'KYC Verification',
+  '/system/outbox': 'System Outbox',
+  '/reconcile': 'Reconcile',
+  '/audit': 'Audit Logs',
+  '/users': 'Users',
+  '/users/activity': 'User Activity',
+  '/system/admins': 'Admins',
+};
+
+export function Topbar({ onLogout }: TopbarProps) {
+  const pathname = usePathname();
+  
+  // Find the exact match or the closest parent route match
+  const getPageTitle = () => {
+    if (routeTitles[pathname]) return routeTitles[pathname];
+    const match = Object.keys(routeTitles).find(route => pathname.startsWith(route));
+    return match ? routeTitles[match] : 'J-Ledger Admin';
+  };
+
   return (
-    <header className="h-16 bg-white border-b border-border flex items-center justify-between pl-4 pr-8 flex-shrink-0">
+    <header className="h-16 bg-white border-b border-border flex items-center justify-between pl-8 pr-8 flex-shrink-0">
       <div className="flex items-center gap-4">
-        <Button
-          variant="ghost"
-          size="icon"
-          onClick={onToggle}
-          className="text-slate-500 hover:text-slate-900 transition-colors"
-        >
-          <PanelLeft className="h-5 w-5" />
-        </Button>
-        <div className="flex items-center text-xl font-bold text-[#2D3748]">
-          <span className="lg:hidden">{title}</span>
-        </div>
+        <h1 className="text-xl font-black text-slate-800 tracking-tight">
+          {getPageTitle()}
+        </h1>
       </div>
       <div className="flex items-center gap-4">
         <ThemeToggle />
