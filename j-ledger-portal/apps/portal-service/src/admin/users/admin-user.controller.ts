@@ -29,8 +29,15 @@ export class AdminUserController {
   async getWalletUsers(
     @Query('page') page: number = 1,
     @Query('limit') limit: number = 50,
+    @Query('email') email?: string,
+    @Query('phone') phone?: string,
+    @Query('status') status?: string,
   ): Promise<AdminPaginatedResponse<WalletUser>> {
-    const result = await this.identityService.findAllUsers(Number(page), Number(limit));
+    const result = await this.identityService.findAllUsers(Number(page), Number(limit), {
+      email,
+      phone,
+      status,
+    });
     return {
       data: result.data,
       pagination: {

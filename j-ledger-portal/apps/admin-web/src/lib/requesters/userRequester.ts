@@ -11,4 +11,7 @@ export const userRequester = {
   unblockWalletUser: async (id: string, options?: RequestOptions) => apiClient.post<void>(API_PATHS.ADMIN.USERS.UNBLOCK(id), {}, options),
   createAdmin: async (data: CreateAdminRequest, options?: RequestOptions) => apiClient.post<AdminUser>(API_PATHS.ADMIN.USERS.BASE, data, options),
   deleteAdmin: async (id: string, options?: RequestOptions) => apiClient.delete<void>(`${API_PATHS.ADMIN.USERS.BASE}/${id}`, options),
+  getUserDetail: async (id: string) => apiClient.get<WalletUser>(`/admin/users/${id}`),
+  getUserActivity: async (id: string) => apiClient.get<any>(`/admin/users/${id}/activity`),
+  getUserAccount: async (userId: string) => apiClient.get<any>(`/admin/accounts/user/${userId}`),
 };
