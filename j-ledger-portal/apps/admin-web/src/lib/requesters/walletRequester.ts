@@ -11,5 +11,8 @@ export const walletRequester = {
   },
   unfreezeWallet: async (userId: string) => {
     return apiClient.post<void>(`/api/admin/wallets/${userId}/unfreeze`, {});
+  },
+  getWalletById: async (id: string) => {
+    return apiClient.get<WalletDto>(`/api/admin/wallets/${id}`);
   }
 };

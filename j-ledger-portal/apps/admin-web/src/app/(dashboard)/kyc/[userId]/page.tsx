@@ -14,8 +14,10 @@ import {
   Calendar,
   CreditCard,
   User as UserIcon,
-  Fingerprint
+  Fingerprint,
+  ChevronRight
 } from 'lucide-react';
+import Link from 'next/link';
 import { apiClient } from '@/lib/api-client';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -131,13 +133,22 @@ export default function KycDetailPage() {
 
   return (
     <div className="space-y-6 pb-20">
-      <div className="flex items-center gap-4">
-        <Button variant="ghost" size="icon" onClick={() => router.back()}>
-          <ArrowLeft className="w-5 h-5" />
-        </Button>
-        <div>
-          <h1 className="text-2xl font-bold text-slate-800">Verification Detail</h1>
-          <p className="text-slate-500 text-sm">Reviewing identity for {user?.email || user?.phoneNumber}</p>
+      {/* Header with Breadcrumbs */}
+      <div className="flex flex-col gap-3">
+        <div className="flex items-center text-[10px] font-bold text-slate-400 uppercase tracking-widest gap-2">
+          <button onClick={() => router.back()} className="hover:text-indigo-600 transition-colors uppercase tracking-widest font-bold text-[10px]">KYC Verification</button>
+          <ChevronRight className="w-3 h-3" />
+          <span className="text-slate-900">Verification Details</span>
+        </div>
+        <div className="flex items-center justify-between">
+          <div>
+            <h1 className="text-2xl font-bold text-slate-900 tracking-tight">Verification Detail</h1>
+            <div className="flex items-center gap-2 mt-0.5">
+              <span className="text-xs text-slate-500 font-medium">
+                Reviewing identity for <span className="font-bold text-slate-700">{user?.email || user?.phoneNumber}</span>
+              </span>
+            </div>
+          </div>
         </div>
       </div>
 

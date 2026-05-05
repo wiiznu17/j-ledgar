@@ -32,6 +32,7 @@ import {
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { Button } from '@/components/ui/button';
+import { cn } from '@/lib/utils';
 
 interface NavigationItem {
   name: string;
@@ -39,6 +40,7 @@ interface NavigationItem {
   icon: LucideIcon;
   roles?: string[];
   isNew?: boolean;
+  isSoon?: boolean;
 }
 
 interface NavigationGroup {
@@ -64,28 +66,28 @@ const navigationGroups: NavigationGroup[] = [
   {
     title: 'Finance & Accounting',
     items: [
-      { name: 'Treasury', href: '/finance/treasury', icon: Landmark, roles: ['SUPER_ADMIN', 'FINANCE_MANAGER'], isNew: true },
-      { name: 'Settlement', href: '/finance/settlement', icon: Briefcase, roles: ['SUPER_ADMIN', 'FINANCE_MANAGER'], isNew: true },
-      { name: 'Fees & Limits', href: '/finance/fees', icon: SlidersHorizontal, roles: ['SUPER_ADMIN', 'FINANCE_MANAGER'], isNew: true },
+      { name: 'Treasury', href: '/finance/treasury', icon: Landmark, roles: ['SUPER_ADMIN', 'FINANCE_MANAGER'], isSoon: true },
+      { name: 'Settlement', href: '/finance/settlement', icon: Briefcase, roles: ['SUPER_ADMIN', 'FINANCE_MANAGER'], isSoon: true },
+      { name: 'Fees & Limits', href: '/finance/fees', icon: SlidersHorizontal, roles: ['SUPER_ADMIN', 'FINANCE_MANAGER'], isSoon: true },
       { name: 'Ledger', href: '/accounts', icon: CreditCard, roles: ['SUPER_ADMIN', 'SUPPORT_STAFF'] },
-      { name: 'Reconcile', href: '/reconcile', icon: ShieldCheck, roles: ['SUPER_ADMIN', 'FINANCE_MANAGER'] },
+      { name: 'Reconcile', href: '/reconcile', icon: ShieldCheck, roles: ['SUPER_ADMIN', 'FINANCE_MANAGER'], isSoon: true },
     ]
   },
   {
     title: 'Risk & Compliance',
     items: [
       { name: 'KYC Verification', href: '/kyc', icon: ShieldCheck, roles: ['SUPER_ADMIN', 'SUPPORT_STAFF', 'COMPLIANCE_OFFICER'] },
-      { name: 'AML Monitor', href: '/aml', icon: AlertTriangle, roles: ['SUPER_ADMIN', 'COMPLIANCE_OFFICER'] },
-      { name: 'Fraud Mgmt', href: '/risk/fraud', icon: ShieldAlert, roles: ['SUPER_ADMIN', 'COMPLIANCE_OFFICER'], isNew: true },
-      { name: 'Blacklist', href: '/risk/blacklist', icon: Ban, roles: ['SUPER_ADMIN', 'COMPLIANCE_OFFICER'], isNew: true },
+      { name: 'AML Monitor', href: '/aml', icon: AlertTriangle, roles: ['SUPER_ADMIN', 'COMPLIANCE_OFFICER'], isSoon: true },
+      { name: 'Fraud Mgmt', href: '/risk/fraud', icon: ShieldAlert, roles: ['SUPER_ADMIN', 'COMPLIANCE_OFFICER'], isSoon: true },
+      { name: 'Blacklist', href: '/risk/blacklist', icon: Ban, roles: ['SUPER_ADMIN', 'COMPLIANCE_OFFICER'], isSoon: true },
     ]
   },
   {
     title: 'Promotions',
     items: [
-      { name: 'Deals', href: '/promotions/deals', icon: Ticket },
-      { name: 'Banners', href: '/promotions/banners', icon: ImageIcon },
-      { name: 'Redemptions', href: '/promotions/redemptions', icon: ClipboardList },
+      { name: 'Deals', href: '/promotions/deals', icon: Ticket, isSoon: true },
+      { name: 'Banners', href: '/promotions/banners', icon: ImageIcon, isSoon: true },
+      { name: 'Redemptions', href: '/promotions/redemptions', icon: ClipboardList, isSoon: true },
     ]
   },
   {
@@ -93,15 +95,15 @@ const navigationGroups: NavigationGroup[] = [
     items: [
       { name: 'Users', href: '/users', icon: Users, roles: ['SUPER_ADMIN'] },
       { name: 'User Activity', href: '/users/activity', icon: History, roles: ['SUPER_ADMIN', 'AUDITOR', 'SUPPORT_STAFF'] },
-      { name: 'User Devices', href: '/support/devices', icon: Smartphone, roles: ['SUPER_ADMIN', 'SUPPORT_STAFF', 'COMPLIANCE_OFFICER'], isNew: true },
-      { name: 'Disputes', href: '/support/disputes', icon: HelpCircle, roles: ['SUPER_ADMIN', 'SUPPORT_STAFF'], isNew: true },
+      { name: 'User Devices', href: '/support/devices', icon: Smartphone, roles: ['SUPER_ADMIN', 'SUPPORT_STAFF', 'COMPLIANCE_OFFICER'], isSoon: true },
+      { name: 'Disputes', href: '/support/disputes', icon: HelpCircle, roles: ['SUPER_ADMIN', 'SUPPORT_STAFF'], isSoon: true },
     ]
   },
   {
     title: 'System & Security',
     items: [
-      { name: 'Approvals', href: '/system/approvals', icon: CheckSquare, roles: ['SUPER_ADMIN', 'FINANCE_MANAGER', 'COMPLIANCE_OFFICER'], isNew: true },
-      { name: 'Security Settings', href: '/system/security', icon: Lock, roles: ['SUPER_ADMIN'], isNew: true },
+      { name: 'Approvals', href: '/system/approvals', icon: CheckSquare, roles: ['SUPER_ADMIN', 'FINANCE_MANAGER', 'COMPLIANCE_OFFICER'], isSoon: true },
+      { name: 'Security Settings', href: '/system/security', icon: Lock, roles: ['SUPER_ADMIN'], isSoon: true },
       { name: 'Admins', href: '/system/admins', icon: ShieldCheck, roles: ['SUPER_ADMIN'] },
       { name: 'System Outbox', href: '/system/outbox', icon: Send },
     ]
@@ -110,7 +112,7 @@ const navigationGroups: NavigationGroup[] = [
     title: 'Reporting',
     items: [
       { name: 'Audit Logs', href: '/audit', icon: FileText, roles: ['SUPER_ADMIN', 'AUDITOR'] },
-      { name: 'Reports', href: '/reports', icon: BarChart3, roles: ['SUPER_ADMIN', 'FINANCE_MANAGER', 'AUDITOR'], isNew: true },
+      { name: 'Reports', href: '/reports', icon: BarChart3, roles: ['SUPER_ADMIN', 'FINANCE_MANAGER', 'AUDITOR'], isSoon: true },
     ]
   }
 ];
@@ -155,7 +157,7 @@ export function Sidebar({
         </Button>
       </div>
 
-      <nav className="flex-1 px-3 py-6 space-y-8 overflow-y-auto custom-scrollbar">
+      <nav className="flex-1 px-3 py-6 space-y-8 overflow-y-auto custom-scrollbar text-pretty">
         {navigationGroups.map((group) => {
           // Filter items based on role
           const filteredItems = group.items.filter(item => 
@@ -185,30 +187,43 @@ export function Sidebar({
                   return (
                     <Link
                       key={item.name}
-                      href={item.href}
+                      href={item.isSoon ? '#' : item.href}
                       title={isCollapsed ? item.name : ''}
+                      onClick={(e) => {
+                        if (item.isSoon) e.preventDefault();
+                      }}
                       className={`flex items-center rounded-xl transition-all duration-200 group ${
                         isCollapsed ? 'justify-center px-0 py-3' : 'px-4 py-2'
                       } ${
                         isActive
                           ? 'bg-gradient-to-r from-[#BFDBFE] to-[#E9D5FF] text-slate-800 shadow-[0_4px_0_0_#A5B4FC] border-t border-[#FFFFFF/60]'
-                          : 'text-slate-600 hover:bg-slate-500/10 hover:text-slate-900'
+                          : item.isSoon 
+                            ? 'text-slate-300 cursor-not-allowed opacity-70'
+                            : 'text-slate-600 hover:bg-slate-500/10 hover:text-slate-900'
                       }`}
                     >
                       <item.icon
                         className={`flex-shrink-0 transition-colors ${
                           isCollapsed ? 'h-6 w-6' : 'mr-3 h-4 w-4'
-                        } ${isActive ? 'text-slate-800' : 'text-slate-500 group-hover:text-slate-900'}`}
+                        } ${isActive ? 'text-slate-800' : item.isSoon ? 'text-slate-200' : 'text-slate-500 group-hover:text-slate-900'}`}
                         aria-hidden="true"
                       />
                       {!isCollapsed && (
                         <div className="flex items-center justify-between flex-1 min-w-0">
-                          <span className="text-sm font-semibold truncate animate-in fade-in slide-in-from-left-2 duration-300">
+                          <span className={cn(
+                            "text-sm font-semibold truncate animate-in fade-in slide-in-from-left-2 duration-300",
+                            item.isSoon && "text-slate-300"
+                          )}>
                             {item.name}
                           </span>
-                          {item.isNew && (
+                          {item.isNew && !item.isSoon && (
                             <span className="ml-2 px-1.5 py-0.5 rounded-md bg-gradient-to-r from-[var(--color-magenta)] to-[var(--color-pink)] text-[8px] font-bold text-white tracking-tighter animate-pulse shadow-sm">
                               NEW
+                            </span>
+                          )}
+                          {item.isSoon && (
+                            <span className="ml-2 px-1.5 py-0.5 rounded-md bg-slate-100 text-[8px] font-bold text-slate-400 tracking-tighter border border-slate-200 uppercase">
+                              SOON
                             </span>
                           )}
                         </div>
