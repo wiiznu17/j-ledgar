@@ -11,10 +11,7 @@ export const reconcileRequester = {
    * Path: /api/admin/system/reconcile/reports
    */
   getReports: async (options?: RequestOptions) => {
-    return apiClient.get<ReconciliationReport[]>(API_PATHS.ADMIN.SYSTEM.RECONCILE_REPORTS, {
-      ...options,
-      next: { revalidate: 0, ...options?.next },
-    });
+    return apiClient.get<ReconciliationReport[]>(API_PATHS.ADMIN.SYSTEM.RECONCILE_REPORTS, options);
   },
 
   /**

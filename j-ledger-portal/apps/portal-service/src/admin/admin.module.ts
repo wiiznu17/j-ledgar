@@ -12,6 +12,7 @@ import { AdminDealController } from './deals/admin-deal.controller';
 import { AdminAuditController } from './audit/admin-audit.controller';
 import { AdminIntegrationController } from './integration/admin-integration.controller';
 import { AdminKycController } from './kyc/admin-kyc.controller';
+import { AdminDashboardController } from './dashboard/admin-dashboard.controller';
 import { IdentityModule } from '../modules/identity/identity.module';
 import { StorageModule } from '../core/storage/storage.module';
 import { ReportingModule } from '../modules/reporting/reporting.module';
@@ -51,6 +52,7 @@ import { AdminJwtStrategy } from './strategies/admin-jwt.strategy';
     AdminAuditController,
     AdminIntegrationController,
     AdminKycController,
+    AdminDashboardController,
   ],
   providers: [AdminService, AdminJwtStrategy],
   exports: [AdminService],

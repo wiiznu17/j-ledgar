@@ -3,11 +3,12 @@ import { Activity } from 'lucide-react';
 
 interface SystemHealthStatusProps {
   isOnline: boolean;
+  className?: string;
 }
 
-export function SystemHealthStatus({ isOnline }: SystemHealthStatusProps) {
+export function SystemHealthStatus({ isOnline, className }: SystemHealthStatusProps) {
   return (
-    <Card className="border-border shadow-sm">
+    <Card className={`border-border shadow-sm ${className}`}>
       <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
         <CardTitle className="text-sm font-medium">System Health</CardTitle>
         <Activity className={`h-4 w-4 ${isOnline ? 'text-green-500' : 'text-red-500'}`} />
