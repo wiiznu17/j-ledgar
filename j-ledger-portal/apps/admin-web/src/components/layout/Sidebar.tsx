@@ -15,6 +15,19 @@ import {
   Image as ImageIcon,
   ClipboardList,
   Menu,
+  Briefcase,
+  Landmark,
+  SlidersHorizontal,
+  ShieldAlert,
+  Ban,
+  CheckSquare,
+  Lock,
+  HelpCircle,
+  Smartphone,
+  BarChart3,
+  Search,
+  Database,
+  History,
 } from 'lucide-react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
@@ -25,6 +38,12 @@ interface NavigationItem {
   href: string;
   icon: LucideIcon;
   roles?: string[];
+  isNew?: boolean;
+}
+
+interface NavigationGroup {
+  title: string;
+  items: NavigationItem[];
 }
 
 interface SidebarProps {
@@ -34,63 +53,66 @@ interface SidebarProps {
   userRole?: string;
 }
 
-const navigation: NavigationItem[] = [
-  { name: 'Dashboard', href: '/dashboard', icon: LayoutDashboard },
-  { name: 'Transactions', href: '/transactions', icon: Activity },
+const navigationGroups: NavigationGroup[] = [
   {
-    name: 'Deals',
-    href: '/promotions/deals',
-    icon: Ticket,
+    title: 'Overview',
+    items: [
+      { name: 'Dashboard', href: '/dashboard', icon: LayoutDashboard },
+      { name: 'Transactions', href: '/transactions', icon: Activity },
+    ]
   },
   {
-    name: 'Banners',
-    href: '/promotions/banners',
-    icon: ImageIcon,
+    title: 'Finance & Accounting',
+    items: [
+      { name: 'Treasury', href: '/finance/treasury', icon: Landmark, roles: ['SUPER_ADMIN', 'FINANCE_MANAGER'], isNew: true },
+      { name: 'Settlement', href: '/finance/settlement', icon: Briefcase, roles: ['SUPER_ADMIN', 'FINANCE_MANAGER'], isNew: true },
+      { name: 'Fees & Limits', href: '/finance/fees', icon: SlidersHorizontal, roles: ['SUPER_ADMIN', 'FINANCE_MANAGER'], isNew: true },
+      { name: 'Ledger', href: '/accounts', icon: CreditCard, roles: ['SUPER_ADMIN', 'SUPPORT_STAFF'] },
+      { name: 'Reconcile', href: '/reconcile', icon: ShieldCheck, roles: ['SUPER_ADMIN', 'FINANCE_MANAGER'] },
+    ]
   },
   {
-    name: 'Redemptions',
-    href: '/promotions/redemptions',
-    icon: ClipboardList,
+    title: 'Risk & Compliance',
+    items: [
+      { name: 'KYC Verification', href: '/kyc', icon: ShieldCheck, roles: ['SUPER_ADMIN', 'SUPPORT_STAFF', 'COMPLIANCE_OFFICER'] },
+      { name: 'AML Monitor', href: '/aml', icon: AlertTriangle, roles: ['SUPER_ADMIN', 'COMPLIANCE_OFFICER'] },
+      { name: 'Fraud Mgmt', href: '/risk/fraud', icon: ShieldAlert, roles: ['SUPER_ADMIN', 'COMPLIANCE_OFFICER'], isNew: true },
+      { name: 'Blacklist', href: '/risk/blacklist', icon: Ban, roles: ['SUPER_ADMIN', 'COMPLIANCE_OFFICER'], isNew: true },
+    ]
   },
   {
-    name: 'AML Monitor',
-    href: '/aml',
-    icon: AlertTriangle,
-    roles: ['SUPER_ADMIN', 'COMPLIANCE_OFFICER'],
+    title: 'Promotions',
+    items: [
+      { name: 'Deals', href: '/promotions/deals', icon: Ticket },
+      { name: 'Banners', href: '/promotions/banners', icon: ImageIcon },
+      { name: 'Redemptions', href: '/promotions/redemptions', icon: ClipboardList },
+    ]
   },
   {
-    name: 'Accounts',
-    href: '/accounts',
-    icon: CreditCard,
-    roles: ['SUPER_ADMIN', 'SUPPORT_STAFF'],
+    title: 'Support & Operations',
+    items: [
+      { name: 'Users', href: '/users', icon: Users, roles: ['SUPER_ADMIN'] },
+      { name: 'User Activity', href: '/users/activity', icon: History, roles: ['SUPER_ADMIN', 'AUDITOR', 'SUPPORT_STAFF'] },
+      { name: 'User Devices', href: '/support/devices', icon: Smartphone, roles: ['SUPER_ADMIN', 'SUPPORT_STAFF', 'COMPLIANCE_OFFICER'], isNew: true },
+      { name: 'Disputes', href: '/support/disputes', icon: HelpCircle, roles: ['SUPER_ADMIN', 'SUPPORT_STAFF'], isNew: true },
+    ]
   },
   {
-    name: 'KYC Verification',
-    href: '/kyc',
-    icon: ShieldCheck,
-    roles: ['SUPER_ADMIN', 'SUPPORT_STAFF', 'COMPLIANCE_OFFICER'],
-  },
-  { name: 'System Outbox', href: '/system/outbox', icon: Send },
-  { name: 'Reconcile', href: '/reconcile', icon: ShieldCheck },
-  {
-    name: 'Audit Logs',
-    href: '/audit',
-    icon: FileText,
-    roles: ['SUPER_ADMIN', 'AUDITOR'],
-  },
-  { name: 'Users', href: '/users', icon: Users, roles: ['SUPER_ADMIN'] },
-  {
-    name: 'User Activity',
-    href: '/users/activity',
-    icon: Activity,
-    roles: ['SUPER_ADMIN', 'AUDITOR', 'SUPPORT_STAFF'],
+    title: 'System & Security',
+    items: [
+      { name: 'Approvals', href: '/system/approvals', icon: CheckSquare, roles: ['SUPER_ADMIN', 'FINANCE_MANAGER', 'COMPLIANCE_OFFICER'], isNew: true },
+      { name: 'Security Settings', href: '/system/security', icon: Lock, roles: ['SUPER_ADMIN'], isNew: true },
+      { name: 'Admins', href: '/system/admins', icon: ShieldCheck, roles: ['SUPER_ADMIN'] },
+      { name: 'System Outbox', href: '/system/outbox', icon: Send },
+    ]
   },
   {
-    name: 'Admins',
-    href: '/system/admins',
-    icon: ShieldCheck,
-    roles: ['SUPER_ADMIN'],
-  },
+    title: 'Reporting',
+    items: [
+      { name: 'Audit Logs', href: '/audit', icon: FileText, roles: ['SUPER_ADMIN', 'AUDITOR'] },
+      { name: 'Reports', href: '/reports', icon: BarChart3, roles: ['SUPER_ADMIN', 'FINANCE_MANAGER', 'AUDITOR'], isNew: true },
+    ]
+  }
 ];
 
 export function Sidebar({
@@ -100,6 +122,7 @@ export function Sidebar({
   userRole = 'SUPPORT_STAFF',
 }: SidebarProps) {
   const pathname = usePathname();
+  
   return (
     <aside
       className={`bg-gradient-to-b from-[#E0F2FE] via-white to-[#FCE7F3] border-r border-border flex-col hidden lg:flex h-full transition-all duration-300 ease-in-out ${
@@ -132,44 +155,69 @@ export function Sidebar({
         </Button>
       </div>
 
-      <nav className="flex-1 px-3 py-6 space-y-2 overflow-y-auto">
-        {navigation.map((item) => {
-          if (item.roles && !item.roles.includes(userRole)) return null;
+      <nav className="flex-1 px-3 py-6 space-y-8 overflow-y-auto custom-scrollbar">
+        {navigationGroups.map((group) => {
+          // Filter items based on role
+          const filteredItems = group.items.filter(item => 
+            !item.roles || item.roles.includes(userRole)
+          );
 
-          const isActive = 
-            pathname === item.href || 
-            (item.href !== '/' && 
-             pathname.startsWith(item.href + '/') && 
-             !navigation.some(other => 
-               other.href !== item.href && 
-               other.href.startsWith(item.href + '/') && 
-               pathname.startsWith(other.href)
-             ));
+          if (filteredItems.length === 0) return null;
+
           return (
-            <Link
-              key={item.name}
-              href={item.href}
-              title={isCollapsed ? item.name : ''}
-              className={`flex items-center rounded-xl transition-all duration-200 group ${
-                isCollapsed ? 'justify-center px-0 py-3' : 'px-4 py-3'
-              } ${
-                isActive
-                  ? 'bg-gradient-to-r from-[#BFDBFE] to-[#E9D5FF] text-slate-800 shadow-[0_4px_0_0_#A5B4FC] border-t border-[#FFFFFF/60]'
-                  : 'text-slate-600 hover:bg-slate-500/10 hover:text-slate-900'
-              }`}
-            >
-              <item.icon
-                className={`flex-shrink-0 transition-colors ${
-                  isCollapsed ? 'h-6 w-6' : 'mr-3 h-5 w-5'
-                } ${isActive ? 'text-slate-800' : 'text-slate-500 group-hover:text-slate-900'}`}
-                aria-hidden="true"
-              />
+            <div key={group.title} className="space-y-2">
               {!isCollapsed && (
-                <span className="text-sm font-semibold truncate animate-in fade-in slide-in-from-left-2 duration-300">
-                  {item.name}
-                </span>
+                <h3 className="px-4 text-[10px] font-bold text-slate-400 uppercase tracking-[0.2em] mb-2">
+                  {group.title}
+                </h3>
               )}
-            </Link>
+              <div className="space-y-1">
+                {filteredItems.map((item) => {
+                  const isActive = 
+                    pathname === item.href || 
+                    (item.href !== '/' && 
+                     pathname.startsWith(item.href + '/') && 
+                     !navigationGroups.flatMap(g => g.items).some(other => 
+                       other.href !== item.href && 
+                       other.href.startsWith(item.href + '/') && 
+                       pathname.startsWith(other.href)
+                     ));
+                  return (
+                    <Link
+                      key={item.name}
+                      href={item.href}
+                      title={isCollapsed ? item.name : ''}
+                      className={`flex items-center rounded-xl transition-all duration-200 group ${
+                        isCollapsed ? 'justify-center px-0 py-3' : 'px-4 py-2'
+                      } ${
+                        isActive
+                          ? 'bg-gradient-to-r from-[#BFDBFE] to-[#E9D5FF] text-slate-800 shadow-[0_4px_0_0_#A5B4FC] border-t border-[#FFFFFF/60]'
+                          : 'text-slate-600 hover:bg-slate-500/10 hover:text-slate-900'
+                      }`}
+                    >
+                      <item.icon
+                        className={`flex-shrink-0 transition-colors ${
+                          isCollapsed ? 'h-6 w-6' : 'mr-3 h-4 w-4'
+                        } ${isActive ? 'text-slate-800' : 'text-slate-500 group-hover:text-slate-900'}`}
+                        aria-hidden="true"
+                      />
+                      {!isCollapsed && (
+                        <div className="flex items-center justify-between flex-1 min-w-0">
+                          <span className="text-sm font-semibold truncate animate-in fade-in slide-in-from-left-2 duration-300">
+                            {item.name}
+                          </span>
+                          {item.isNew && (
+                            <span className="ml-2 px-1.5 py-0.5 rounded-md bg-gradient-to-r from-[var(--color-magenta)] to-[var(--color-pink)] text-[8px] font-bold text-white tracking-tighter animate-pulse shadow-sm">
+                              NEW
+                            </span>
+                          )}
+                        </div>
+                      )}
+                    </Link>
+                  );
+                })}
+              </div>
+            </div>
           );
         })}
       </nav>
