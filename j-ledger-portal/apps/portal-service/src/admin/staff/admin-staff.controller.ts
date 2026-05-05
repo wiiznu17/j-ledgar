@@ -11,8 +11,14 @@ export class AdminStaffController {
   // ==================== Staff Endpoints ====================
 
   @Get('staff')
-  async findAllStaff() {
-    return this.adminService.findAllStaff();
+  async findAllStaff(
+    @Query('page') page: number = 1,
+    @Query('limit') limit: number = 10,
+    @Query('search') search?: string,
+    @Query('role') role?: string,
+    @Query('status') status?: string,
+  ) {
+    return this.adminService.findAllStaff(Number(page), Number(limit), { search, role, status });
   }
 
   @Get('staff/:id')
@@ -41,6 +47,12 @@ export class AdminStaffController {
   @UseGuards(InternalAuthGuard)
   async removeStaff(@Param('id') id: string) {
     return this.adminService.removeStaff(id);
+  }
+
+  @Post('staff/:id/reset-password')
+  @UseGuards(InternalAuthGuard)
+  async resetPassword(@Param('id') id: string) {
+    return this.adminService.requestPasswordReset(id);
   }
 
   @Post('staff/:id/deactivate')

@@ -1,5 +1,6 @@
 import { Module } from '@nestjs/common';
 import { AdminService } from './services/admin.service';
+import { MailService } from './services/mail.service';
 import { AdminStaffController } from './staff/admin-staff.controller';
 import { AdminCommonController } from './common/admin-common.controller';
 import { AdminAuthController } from './auth/admin-auth.controller';
@@ -54,7 +55,7 @@ import { AdminJwtStrategy } from './strategies/admin-jwt.strategy';
     AdminKycController,
     AdminDashboardController,
   ],
-  providers: [AdminService, AdminJwtStrategy],
+  providers: [AdminService, AdminJwtStrategy, MailService],
   exports: [AdminService],
 })
 export class AdminModule {}

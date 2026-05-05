@@ -21,6 +21,7 @@ import {
 } from '@/components/ui/dialog';
 import { adminApi } from '@/lib/admin-api';
 import { useState, useEffect, useCallback } from 'react';
+import { useSearchParams } from 'next/navigation';
 import { ChevronLeft, ChevronRight, Search, X } from 'lucide-react';
 
 export default function AuditPage() {
@@ -31,8 +32,10 @@ export default function AuditPage() {
   const [total, setTotal] = useState(0);
   const [selectedLog, setSelectedLog] = useState<any>(null);
 
+  const searchParams = useSearchParams();
+
   // Filters
-  const [adminUserId, setAdminUserId] = useState('');
+  const [adminUserId, setAdminUserId] = useState(searchParams.get('adminUserId') || '');
   const [action, setAction] = useState<string | null>(null);
   const [resourceType, setResourceType] = useState<string | null>(null);
   const [startDate, setStartDate] = useState('');

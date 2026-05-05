@@ -666,39 +666,7 @@ export class IdentityService {
 
     return {
       data: users,
-      meta: {
-        total,
-        page,
-        limit,
-        totalPages: Math.ceil(total / limit),
-      },
-    };
-  }
-
-  async findAllStaff(page: number = 1, limit: number = 10) {
-    const skip = (page - 1) * limit;
-    const [staffs, total] = await Promise.all([
-      this.prisma.staff.findMany({
-        skip,
-        take: limit,
-        select: {
-          id: true,
-          username: true,
-          email: true,
-          firstName: true,
-          lastName: true,
-          isActive: true,
-          createdAt: true,
-          updatedAt: true,
-        },
-        orderBy: { createdAt: 'desc' },
-      }),
-      this.prisma.staff.count(),
-    ]);
-
-    return {
-      data: staffs,
-      meta: {
+      pagination: {
         total,
         page,
         limit,
@@ -732,7 +700,7 @@ export class IdentityService {
 
     return {
       data: events,
-      meta: {
+      pagination: {
         total,
         page,
         limit,

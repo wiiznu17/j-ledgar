@@ -1,52 +1,38 @@
 import { Controller, Get, Post, Put, Body, Param, Query, UseGuards } from '@nestjs/common';
 import { IdentityService } from '../../modules/identity/identity.service';
+import { AdminService } from '../services/admin.service';
 import { AdminPaginatedResponse, PaginatedResponse, WalletUser } from '@repo/dto';
 import { AdminJwtGuard } from '../guards/admin-jwt.guard';
 
 @Controller('admin/users')
 @UseGuards(AdminJwtGuard)
 export class AdminUserController {
-  constructor(private readonly identityService: IdentityService) {}
+  constructor(
+    private readonly identityService: IdentityService,
+    private readonly adminService: AdminService,
+  ) {}
 
   @Get()
   async getAdminUsers(
     @Query('page') page: number = 1,
-    @Query('limit') limit: number = 50,
+    @Query('limit') limit: number = 10,
   ): Promise<AdminPaginatedResponse<any>> {
-    const result = await this.identityService.findAllStaff(Number(page), Number(limit));
-    return {
-      data: result.data,
-      pagination: {
-        page: Number(page),
-        limit: Number(limit),
-        total: result.meta.total,
-        totalPages: result.meta.totalPages,
-      },
-    };
+    return this.adminService.findAllStaff(Number(page), Number(limit));
   }
 
   @Get('wallet')
   async getWalletUsers(
     @Query('page') page: number = 1,
-    @Query('limit') limit: number = 50,
+    @Query('limit') limit: number = 10,
     @Query('email') email?: string,
     @Query('phone') phone?: string,
     @Query('status') status?: string,
   ): Promise<AdminPaginatedResponse<WalletUser>> {
-    const result = await this.identityService.findAllUsers(Number(page), Number(limit), {
+    return this.identityService.findAllUsers(Number(page), Number(limit), {
       email,
       phone,
       status,
     });
-    return {
-      data: result.data,
-      pagination: {
-        page: Number(page),
-        limit: Number(limit),
-        total: result.meta.total,
-        totalPages: result.meta.totalPages,
-      },
-    };
   }
 
   @Get('search')
@@ -82,19 +68,10 @@ export class AdminUserController {
   @Get('security-events')
   async getSecurityEvents(
     @Query('page') page: number = 1,
-    @Query('limit') limit: number = 50,
+    @Query('limit') limit: number = 10,
     @Query('userId') userId?: string,
   ): Promise<AdminPaginatedResponse<any>> {
-    const result = await this.identityService.findAllSecurityEvents(Number(page), Number(limit), userId);
-    return {
-      data: result.data,
-      pagination: {
-        page: Number(page),
-        limit: Number(limit),
-        total: result.meta.total,
-        totalPages: result.meta.totalPages,
-      },
-    };
+    return this.identityService.findAllSecurityEvents(Number(page), Number(limit), userId);
   }
 
   @Post(':id/suspend')
