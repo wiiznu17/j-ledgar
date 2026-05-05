@@ -7,3 +7,4 @@ export { systemRequester } from './systemRequester';
 export { promotionsRequester } from './promotionsRequester';
 export { kycRequester } from './kycRequester';
 export { dashboardRequester } from './dashboardRequester';
+export { walletRequester } from './walletRequester';

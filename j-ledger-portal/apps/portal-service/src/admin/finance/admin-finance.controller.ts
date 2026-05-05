@@ -1,7 +1,7 @@
-import { Controller, Get, Put, Body, Param, Query, UseGuards } from '@nestjs/common';
+import { Controller, Get, Post, Put, Body, Param, Query, UseGuards } from '@nestjs/common';
 import { AdminJwtGuard } from '../guards/admin-jwt.guard';
 import { IntegrationService } from '../../modules/integration/integration.service';
-import { AdminPaginatedResponse, PaginatedResponse, Account, Transaction } from '@repo/dto';
+import { AdminPaginatedResponse, PaginatedResponse, Account, Transaction, WalletDto } from '@repo/dto';
 
 @Controller('admin')
 @UseGuards(AdminJwtGuard)
@@ -53,6 +53,51 @@ export class AdminFinanceController {
       'put',
       `/api/v1/accounts/${id}/status`,
       { status },
+    );
+  }
+
+  // ==================== Wallet Management ====================
+
+  @Get('wallets')
+  async getWallets(
+    @Query('page') page: number = 0,
+    @Query('size') size: number = 20,
+  ): Promise<AdminPaginatedResponse<WalletDto>> {
+    const response = await this.integrationService.forwardToGateway<any>(
+      'get',
+      `/api/finance/wallets/admin/list?page=${page}&size=${size}`,
+    );
+
+    const content = response.content || [];
+    const totalElements = response.totalElements || content.length;
+    const totalPages = response.totalPages || 1;
+
+    return {
+      data: content,
+      pagination: {
+        page: Number(page),
+        limit: Number(size),
+        total: totalElements,
+        totalPages: totalPages,
+      },
+    };
+  }
+
+  @Post('wallets/:userId/freeze')
+  async freezeWallet(@Param('userId') userId: string): Promise<void> {
+    await this.integrationService.forwardToGateway(
+      'post',
+      `/api/finance/wallets/${userId}/freeze`,
+      {},
+    );
+  }
+
+  @Post('wallets/:userId/unfreeze')
+  async unfreezeWallet(@Param('userId') userId: string): Promise<void> {
+    await this.integrationService.forwardToGateway(
+      'post',
+      `/api/finance/wallets/${userId}/unfreeze`,
+      {},
     );
   }
 

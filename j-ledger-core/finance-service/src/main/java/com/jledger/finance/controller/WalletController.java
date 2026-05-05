@@ -199,8 +199,11 @@ public class WalletController {
 
     // Admin endpoints
     @GetMapping("/admin/list")
-    public ResponseEntity<List<Wallet>> getAllWallets() {
-        List<Wallet> wallets = walletService.getAllWallets();
+    public ResponseEntity<org.springframework.data.domain.Page<Wallet>> getAllWallets(
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "20") int size) {
+        org.springframework.data.domain.Pageable pageable = org.springframework.data.domain.PageRequest.of(page, size);
+        org.springframework.data.domain.Page<Wallet> wallets = walletService.getAllWallets(pageable);
         return ResponseEntity.ok(wallets);
     }
 

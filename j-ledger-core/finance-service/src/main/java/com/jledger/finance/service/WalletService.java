@@ -842,6 +842,10 @@ public class WalletService {
     }
 
     // Admin methods
+    public org.springframework.data.domain.Page<Wallet> getAllWallets(org.springframework.data.domain.Pageable pageable) {
+        return walletRepository.findAll(pageable);
+    }
+
     public List<Wallet> getAllWallets() {
         return walletRepository.findAll();
     }
