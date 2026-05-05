@@ -4,38 +4,99 @@ import {
   Post,
   Param,
   Body,
+  Query,
+  Req,
   UseGuards,
+  Logger,
 } from '@nestjs/common';
 import { KycService } from '../../modules/kyc/kyc.service';
+import { AuditService, AuditAction, ResourceType } from '../../modules/audit/audit.service';
 import { AdminJwtGuard } from '../guards/admin-jwt.guard';
-import { InternalAuthGuard } from '../../core/common/guards/internal-auth.guard';
+import { Request } from 'express';
 
 @Controller('admin/kyc')
 @UseGuards(AdminJwtGuard)
 export class AdminKycController {
-  constructor(private readonly kycService: KycService) {}
+  private readonly logger = new Logger(AdminKycController.name);
 
-  @Post('approve/:documentId')
-  @UseGuards(InternalAuthGuard)
-  approveDocument(@Param('documentId') documentId: string) {
-    return this.kycService.approveDocument(documentId);
+  constructor(
+    private readonly kycService: KycService,
+    private readonly auditService: AuditService,
+  ) {}
+
+  @Post('approve/:userId')
+  async approveKyc(@Param('userId') userId: string, @Req() req: any) {
+    this.logger.log(`[AdminKyc] Approving KYC for user: ${userId}`);
+    const result = await this.kycService.approveKyc(userId);
+    
+    // Log Audit
+    await this.auditService.log({
+      adminUserId: req.user?.id || 'system',
+      action: AuditAction.UPDATE,
+      resourceType: ResourceType.KYC_DOCUMENT,
+      resourceId: userId,
+      ipAddress: req.ip || 'unknown',
+      userAgent: req.headers['user-agent'] || 'unknown',
+      requestPayload: { userId, action: 'APPROVE' },
+      responseStatus: 200,
+      reason: 'KYC Approved by Admin',
+    });
+
+    this.logger.log(`[AdminKyc] Approved result: ${JSON.stringify(result)}`);
+    return result;
   }
 
-  @Post('reject/:documentId')
-  @UseGuards(InternalAuthGuard)
-  rejectDocument(@Param('documentId') documentId: string, @Body() dto: { reason: string }) {
-    return this.kycService.rejectDocument(documentId, dto.reason);
+  @Post('reject/:userId')
+  async rejectKyc(@Param('userId') userId: string, @Body('reason') reason: string, @Req() req: any) {
+    this.logger.log(`[AdminKyc] Rejecting KYC for user: ${userId}, Reason: ${reason}`);
+    const result = await this.kycService.rejectKyc(userId, reason);
+    
+    // Log Audit
+    await this.auditService.log({
+      adminUserId: req.user?.id || 'system',
+      action: AuditAction.UPDATE,
+      resourceType: ResourceType.KYC_DOCUMENT,
+      resourceId: userId,
+      ipAddress: req.ip || 'unknown',
+      userAgent: req.headers['user-agent'] || 'unknown',
+      requestPayload: { userId, action: 'REJECT', reason },
+      responseStatus: 200,
+      reason: `KYC Rejected: ${reason}`,
+    });
+
+    this.logger.log(`[AdminKyc] Rejected result: ${JSON.stringify(result)}`);
+    return result;
   }
 
   @Get('pending')
-  @UseGuards(InternalAuthGuard)
-  getPendingKYCList() {
+  async getPendingKYCList() {
+    this.logger.log('[AdminKyc] Fetching pending KYC list');
     return this.kycService.getPendingKYCList();
   }
 
+  @Get('list')
+  async getKYCList(
+    @Query('status') status: string,
+    @Query('phoneNumber') phoneNumber?: string,
+    @Query('startDate') startDate?: string,
+    @Query('endDate') endDate?: string,
+  ) {
+    this.logger.log(`[AdminKyc] Fetching KYC list - status: ${status}, phone: ${phoneNumber}, dates: ${startDate} to ${endDate}`);
+    return this.kycService.getKYCList(status, phoneNumber, startDate, endDate);
+  }
+
+  @Get('details/:userId')
+  async getKYCDetails(@Param('userId') userId: string) {
+    this.logger.log(`[AdminKyc] Fetching KYC details for user: ${userId}`);
+    const result = await this.kycService.getKYCDetails(userId);
+    this.logger.log(`[AdminKyc] KYC details for ${userId}: ${JSON.stringify(result)}`);
+    return result;
+  }
+
   @Get('history/:userId')
-  @UseGuards(InternalAuthGuard)
-  getKYCHistory(@Param('userId') userId: string) {
-    return this.kycService.getKYCHistory(userId);
+  async getKYCHistory(@Param('userId') userId: string) {
+    this.logger.log(`[AdminKyc] Fetching KYC history for user: ${userId}`);
+    const result = await this.kycService.getKYCHistory(userId);
+    return result;
   }
 }

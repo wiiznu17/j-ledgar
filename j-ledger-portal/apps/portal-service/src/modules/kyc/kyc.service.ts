@@ -14,7 +14,7 @@ import { KafkaProducerService } from '../notification/kafka-producer.service';
 import { S3Service } from './services/s3.service';
 import { GoogleVisionService } from './services/ocr.service';
 import { AwsRekognitionService } from './services/face.service';
-import { createHash, randomBytes, createCipheriv, randomUUID } from 'crypto';
+import { createHash, randomBytes, createCipheriv, createDecipheriv, randomUUID } from 'crypto';
 import { ConfirmOcrDto } from './dto/kyc.dto';
 
 @Injectable()
@@ -122,6 +122,12 @@ export class KycService {
   }
 
   async approveKyc(userId: string) {
+    // Check current status
+    const current = await this.prisma.kYCData.findUnique({ where: { userId } });
+    if (current?.verificationStatus === 'APPROVED') {
+      throw new Error('KYC is already approved');
+    }
+
     const kyc = await this.prisma.kYCData.update({
       where: { userId },
       data: { 
@@ -147,10 +153,26 @@ export class KycService {
       }
     });
 
+    // Emit event for notification
+    await this.kafkaProducer.emit('kyc-events', {
+      userId,
+      status: 'APPROVED',
+      timestamp: new Date().toISOString(),
+    });
+
     return kyc;
   }
 
   async rejectKyc(userId: string, reason: string) {
+    // Check current status
+    const current = await this.prisma.kYCData.findUnique({ where: { userId } });
+    if (current?.verificationStatus === 'APPROVED') {
+      throw new Error('Cannot reject an already approved KYC');
+    }
+    if (current?.verificationStatus === 'REJECTED') {
+      throw new Error('KYC is already rejected');
+    }
+
     const kyc = await this.prisma.kYCData.update({
       where: { userId },
       data: { 
@@ -159,39 +181,70 @@ export class KycService {
       },
     });
 
+    // Update main user status to REJECTED
+    await this.prisma.user.update({
+      where: { id: userId },
+      data: { status: 'REJECTED' as any }
+    });
+
+    // Emit event for notification
+    await this.kafkaProducer.emit('kyc-events', {
+      userId,
+      status: 'REJECTED',
+      reason,
+      timestamp: new Date().toISOString(),
+      metadata: { reason }
+    });
+
     return kyc;
   }
 
-  async getPendingKYCList() {
-    // Query from KYCData (the real OCR/Liveness flow writes here)
-    const pendingKyc = await this.prisma.kYCData.findMany({
-      where: { verificationStatus: 'PENDING' },
-      orderBy: { createdAt: 'asc' },
-    });
+  async getKYCList(status: string = 'PENDING_APPROVAL', phoneNumber?: string, startDate?: string, endDate?: string) {
+    this.logger.log(`[KYC] Fetching KYC list - status: ${status}, phone: ${phoneNumber}, dates: ${startDate} to ${endDate}`);
 
-    // Also check KYCDocument for legacy/simple-mode entries
-    const pendingDocs = await this.prisma.kYCDocument.findMany({
-      where: { status: 'PENDING' },
-      orderBy: { createdAt: 'asc' },
-    });
+    // 1. Build where clause for User
+    const where: any = { status: status as any };
+    
+    if (phoneNumber) {
+      where.phoneNumber = { contains: phoneNumber };
+    }
 
-    // Merge user IDs from both sources
-    const allUserIds = [
-      ...new Set([
-        ...pendingKyc.map((k) => k.userId),
-        ...pendingDocs.map((d) => d.userId),
-      ]),
-    ];
+    if (startDate || endDate) {
+      where.createdAt = {};
+      if (startDate) where.createdAt.gte = new Date(startDate);
+      if (endDate) {
+        const end = new Date(endDate);
+        end.setHours(23, 59, 59, 999);
+        where.createdAt.lte = end;
+      }
+    }
 
-    const users = await this.prisma.user.findMany({
-      where: { id: { in: allUserIds } },
+    const usersWithStatus = await this.prisma.user.findMany({
+      where,
       select: { id: true, email: true, phoneNumber: true },
+      orderBy: { createdAt: 'desc' },
+      take: 50,
     });
 
-    const userMap = new Map(users.map((u) => [u.id, u]));
+    const userIds = usersWithStatus.map(u => u.id);
 
-    // Combine into a unified list
-    const kycEntries = pendingKyc.map((k) => ({
+    // 2. Query KYCData and documents for these users
+    const [kycData, documents, stats] = await Promise.all([
+      this.prisma.kYCData.findMany({
+        where: { userId: { in: userIds } },
+        orderBy: { createdAt: 'desc' },
+      }),
+      this.prisma.kYCDocument.findMany({
+        where: { userId: { in: userIds } },
+        orderBy: { createdAt: 'desc' },
+      }),
+      // Phase 3: Stats Summary
+      this.getKYCStats()
+    ]);
+
+    const userMap = new Map(usersWithStatus.map((u) => [u.id, u]));
+
+    const items = kycData.map((k) => ({
       id: k.id,
       userId: k.userId,
       documentType: 'KYC_VERIFICATION',
@@ -200,16 +253,25 @@ export class KycService {
       user: userMap.get(k.userId) || null,
     }));
 
-    const docEntries = pendingDocs.map((d) => ({
-      id: d.id,
-      userId: d.userId,
-      documentType: d.documentType,
-      status: d.status,
-      createdAt: d.createdAt,
-      user: userMap.get(d.userId) || null,
-    }));
+    return { items, stats };
+  }
 
-    return [...kycEntries, ...docEntries];
+  async getKYCStats() {
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+
+    const [pending, approvedToday, rejectedToday] = await Promise.all([
+      this.prisma.user.count({ where: { status: 'PENDING_APPROVAL' } }),
+      this.prisma.kYCData.count({ where: { verificationStatus: 'APPROVED', verifiedAt: { gte: today } } }),
+      this.prisma.kYCData.count({ where: { verificationStatus: 'REJECTED', updatedAt: { gte: today } } })
+    ]);
+
+    return { pending, approvedToday, rejectedToday };
+  }
+
+  async getPendingKYCList() {
+    const list = await this.getKYCList('PENDING_APPROVAL');
+    return list.items;
   }
 
   async getKYCHistory(userId: string) {
@@ -220,19 +282,114 @@ export class KycService {
   }
 
   async getKYCDetails(userId: string) {
-    const [kycData, documents, user] = await Promise.all([
-      this.prisma.kYCData.findUnique({ where: { userId } }),
-      this.prisma.kYCDocument.findMany({ where: { userId } }),
+    const [kycData, documents, user, addresses, profileSetting] = await Promise.all([
+      this.prisma.kYCData.findUnique({ 
+        where: { userId },
+        select: {
+          idCardNumberEncrypted: true,
+          firstNameTh: true,
+          lastNameTh: true,
+          firstNameEn: true,
+          lastNameEn: true,
+          prefix: true,
+          dateOfBirth: true,
+          idCardIssueDate: true,
+          idCardExpiryDate: true,
+          religion: true,
+          idCardImageUrl: true,
+          selfieImageUrl: true,
+          faceMatchScore: true,
+          ocrConfidence: true,
+          verificationStatus: true,
+          reviewNote: true,
+          createdAt: true,
+        }
+      }),
+      this.prisma.kYCDocument.findMany({ 
+        where: { userId },
+        select: { id: true, documentType: true, status: true, s3Url: true, createdAt: true }
+      }),
       this.prisma.user.findUnique({ 
         where: { id: userId },
         select: { id: true, email: true, phoneNumber: true }
       }),
+      this.prisma.address.findMany({ 
+        where: { userId },
+        select: { type: true, label: true, line1: true, subdistrict: true, district: true, province: true, postalCode: true }
+      }),
+      this.prisma.userSetting.findUnique({
+        where: { userId_key: { userId, key: 'profile' } }
+      })
     ]);
 
+    // Parse profile if exists
+    let profile = null;
+    if (profileSetting) {
+      try {
+        profile = JSON.parse(profileSetting.value);
+      } catch (e) {
+        this.logger.error(`Failed to parse profile for user ${userId}`, e);
+      }
+    }
+
+    // Generate signed URLs if images exist and decrypt PII
+    if (kycData) {
+      // Decrypt ID card number for admin review
+      if (kycData.idCardNumberEncrypted) {
+        try {
+          kycData.idCardNumberEncrypted = this.decryptPii(kycData.idCardNumberEncrypted);
+        } catch (e) {
+          this.logger.error(`Failed to decrypt ID card number for user ${userId}`, e);
+          kycData.idCardNumberEncrypted = 'DECRYPTION_FAILED';
+        }
+      }
+
+      if (kycData.idCardImageUrl) {
+        const key = `kyc/${userId}/id-card.jpg`;
+        try {
+          kycData.idCardImageUrl = await this.s3Service.getPresignedUrl(key);
+        } catch (e) {}
+      }
+      if (kycData.selfieImageUrl) {
+        const key = `kyc/${userId}/selfie.jpg`;
+        try {
+          kycData.selfieImageUrl = await this.s3Service.getPresignedUrl(key);
+        } catch (e) {
+          this.logger.error(`Failed to generate signed URL for selfie: ${userId}`, e);
+        }
+      }
+    }
+
     return {
-      user,
       kycData,
       documents,
+      user: {
+        ...user,
+        profile
+      },
+      addresses,
+      // Phase 2: Audit History (Manual Join with Staff)
+      history: await (async () => {
+        const logs = await this.prisma.auditLog.findMany({
+          where: { resourceId: userId, resourceType: 'KYC_DOCUMENT' },
+          orderBy: { createdAt: 'desc' },
+          take: 10
+        });
+
+        // Fetch staff names manually
+        const staffIds = logs.map(l => l.adminUserId).filter(Boolean) as string[];
+        const staff = await this.prisma.staff.findMany({
+          where: { id: { in: staffIds } },
+          select: { id: true, firstName: true, lastName: true, email: true }
+        });
+
+        const staffMap = new Map(staff.map(s => [s.id, s]));
+
+        return logs.map(log => ({
+          ...log,
+          adminUser: log.adminUserId ? staffMap.get(log.adminUserId) : null
+        }));
+      })()
     };
   }
 
@@ -397,8 +554,8 @@ export class KycService {
           selfieImageUrl: selfieUrl,
           selfieImageSha256: selfieHash,
           faceMatchScore: Math.round(similarity),
-          verificationStatus: isMatch ? 'APPROVED' : 'REJECTED',
-          verifiedAt: new Date(),
+          verificationStatus: isMatch ? 'PENDING' : 'REJECTED',
+          verifiedAt: isMatch ? null : new Date(),
         },
       });
       
@@ -424,10 +581,9 @@ export class KycService {
     const idCardHash = this.hashBuffer(idCardImage);
     const idCardKey = `kyc/${userId}/id-card.jpg`;
 
-    // TODO: Upload to Storage (implement storage provider)
-    const idCardUrl = `https://storage.example.com/${idCardKey}`;
+    // Upload to S3
+    const idCardUrl = await this.s3Service.uploadFile(idCardKey, idCardImage, 'image/jpeg');
 
-    // Mock extraction for simple mode
     const extraction = {
       idCardNumber: '1234567890123',
       firstNameTh: 'สมชาย',
@@ -621,8 +777,8 @@ export class KycService {
     const selfieHash = this.hashBuffer(selfieImage);
     const selfieKey = `kyc/${userId}/selfie.jpg`;
 
-    // TODO: Upload Selfie to storage
-    const selfieUrl = `https://storage.example.com/${selfieKey}`;
+    // Upload Selfie to S3
+    const selfieUrl = await this.s3Service.uploadFile(selfieKey, selfieImage, 'image/jpeg');
 
     // Simple mode: Skip face verification, just save the image
     try {
@@ -632,8 +788,8 @@ export class KycService {
           data: {
             selfieImageUrl: selfieUrl,
             selfieImageSha256: selfieHash,
-            verificationStatus: 'APPROVED', // Auto-approve in simple mode
-            verifiedAt: new Date(),
+            verificationStatus: 'PENDING', // Wait for admin review even in simple mode
+            verifiedAt: null,
           },
         });
       });
@@ -661,7 +817,7 @@ export class KycService {
 
     return {
       isMatch: true,
-      verificationStatus: 'APPROVED',
+      verificationStatus: 'PENDING',
     };
   }
 
@@ -736,6 +892,35 @@ export class KycService {
     const authTag = cipher.getAuthTag().toString('hex');
 
     return `${iv.toString('hex')}:${authTag}:${encrypted}`;
+  }
+
+  private decryptPii(encryptedData: string): string {
+    const encryptionKey = this.configService.get<string>('PII_ENCRYPTION_KEY');
+    if (!encryptionKey) {
+      throw new InternalServerErrorException('System missing PII decryption capabilities');
+    }
+
+    try {
+      const [ivHex, authTagHex, encryptedHex] = encryptedData.split(':');
+      if (!ivHex || !authTagHex || !encryptedHex) {
+        throw new Error('Invalid encrypted data format');
+      }
+
+      const iv = Buffer.from(ivHex, 'hex');
+      const authTag = Buffer.from(authTagHex, 'hex');
+      const key = Buffer.from(encryptionKey, 'hex');
+      const decipher = createDecipheriv('aes-256-gcm', key, iv);
+      
+      decipher.setAuthTag(authTag);
+      
+      let decrypted = decipher.update(encryptedHex, 'hex', 'utf8');
+      decrypted += decipher.final('utf8');
+      
+      return decrypted;
+    } catch (error) {
+      this.logger.error(`Decryption failed: ${error.message}`);
+      throw new Error('Could not decrypt PII data');
+    }
   }
 
   private hashBuffer(buffer: Buffer): string {
