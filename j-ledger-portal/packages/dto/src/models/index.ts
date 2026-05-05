@@ -138,3 +138,16 @@ export interface AdminPaginatedResponse<T> {
     totalPages: number;
   };
 }
+
+export interface WalletDto {
+  id: number;
+  userId: string;
+  walletId: string;
+  balance: number;
+  currency: string;
+  status: string;
+  dailyLimit: number;
+  monthlyLimit: number;
+  createdAt: string;
+  updatedAt: string;
+}
