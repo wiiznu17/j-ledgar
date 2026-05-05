@@ -43,11 +43,25 @@ export function WalletUsersTable({ users }: WalletUsersTableProps) {
                   variant="outline"
                   className={
                     user.status === 'ACTIVE'
-                      ? 'border-primary text-primary bg-primary/5'
+                      ? 'border-emerald-500 text-emerald-600 bg-emerald-50'
+                      : user.status === 'PENDING_APPROVAL'
+                      ? 'border-amber-500 text-amber-600 bg-amber-50'
+                      : user.status === 'SUSPENDED'
+                      ? 'border-orange-500 text-orange-600 bg-orange-50'
                       : 'border-destructive text-destructive bg-destructive/5'
                   }
                 >
-                  {user.status === 'ACTIVE' ? 'Active' : 'Frozen'}
+                  {user.status === 'ACTIVE' 
+                    ? 'Active' 
+                    : user.status === 'PENDING_APPROVAL'
+                    ? 'Pending Approval'
+                    : user.status === 'SUSPENDED'
+                    ? 'Suspended'
+                    : user.status === 'BLOCKED'
+                    ? 'Blocked'
+                    : user.status === 'INACTIVE'
+                    ? 'Inactive'
+                    : user.status}
                 </Badge>
               </TableCell>
               <TableCell className="text-sm text-muted-foreground">

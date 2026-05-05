@@ -62,6 +62,12 @@ const navigation: NavigationItem[] = [
     icon: CreditCard,
     roles: ['SUPER_ADMIN', 'SUPPORT_STAFF'],
   },
+  {
+    name: 'KYC Verification',
+    href: '/kyc',
+    icon: ShieldCheck,
+    roles: ['SUPER_ADMIN', 'SUPPORT_STAFF', 'COMPLIANCE_OFFICER'],
+  },
   { name: 'System Outbox', href: '/system/outbox', icon: Send },
   { name: 'Reconcile', href: '/reconcile', icon: ShieldCheck },
   {
