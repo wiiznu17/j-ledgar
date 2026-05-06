@@ -1,11 +1,11 @@
 package com.jledger.finance.service;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.jledger.finance.model.LinkedBankAccount;
-import com.jledger.finance.model.Transaction;
-import com.jledger.finance.model.TransactionStatus;
-import com.jledger.finance.model.TransactionType;
-import com.jledger.finance.model.Wallet;
+import com.jledger.finance.domain.LinkedBankAccount;
+import com.jledger.finance.domain.Transaction;
+import com.jledger.finance.domain.TransactionStatus;
+import com.jledger.finance.domain.TransactionType;
+import com.jledger.finance.domain.Wallet;
 import com.jledger.finance.domain.IntegrationOutbox;
 import com.jledger.finance.repository.IntegrationOutboxRepository;
 import com.jledger.finance.repository.LinkedBankAccountRepository;

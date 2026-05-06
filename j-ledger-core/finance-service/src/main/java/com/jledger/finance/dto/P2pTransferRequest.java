@@ -6,24 +6,10 @@ import lombok.NoArgsConstructor;
 
 import jakarta.validation.constraints.*;
 import java.math.BigDecimal;
-import java.util.UUID;
 
 /**
  * P2P Transfer Request DTO
  * Received from wallet-api
- *
- * Fields:
- * - idempotencyKey: UUID or request ID from wallet-api to prevent duplicates
- * - fromAccountId: Sender's j-ledger account UUID
- * - toAccountId: Recipient's j-ledger account UUID
- * - amount: Transfer amount (in satoshi equivalent)
- * - currency: Always "THB" for Thai baht
- *
- * Validation:
- * - Idempotency key must be present
- * - Account IDs must be different
- * - Amount must be positive
- * - Currency must be THB
  */
 @Data
 @NoArgsConstructor
@@ -33,10 +19,10 @@ public class P2pTransferRequest {
     @NotBlank(message = "idempotencyKey is required")
     private String idempotencyKey;
 
-    @NotNull(message = "fromAccountId is required")
+    @NotBlank(message = "fromAccountId is required")
     private String fromAccountId;
 
-    @NotNull(message = "toAccountId is required")
+    @NotBlank(message = "toAccountId is required")
     private String toAccountId;
 
     @NotNull(message = "amount is required")
@@ -63,8 +49,8 @@ public class P2pTransferRequest {
      */
     public TransferRequest toDomain() {
         return new TransferRequest(
-                UUID.fromString(fromAccountId),
-                UUID.fromString(toAccountId),
+                fromAccountId,
+                toAccountId,
                 amount,
                 currency
         );

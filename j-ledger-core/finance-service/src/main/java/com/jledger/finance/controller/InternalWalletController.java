@@ -1,7 +1,7 @@
 package com.jledger.finance.controller;
 
-import com.jledger.finance.model.Transaction;
-import com.jledger.finance.model.Wallet;
+import com.jledger.finance.domain.Transaction;
+import com.jledger.finance.domain.Wallet;
 import com.jledger.finance.service.WalletService;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;

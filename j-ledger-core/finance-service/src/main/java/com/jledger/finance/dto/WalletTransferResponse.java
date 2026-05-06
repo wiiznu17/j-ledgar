@@ -1,6 +1,6 @@
 package com.jledger.finance.dto;
 
-import com.jledger.finance.model.Transaction;
+import com.jledger.finance.domain.Transaction;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
