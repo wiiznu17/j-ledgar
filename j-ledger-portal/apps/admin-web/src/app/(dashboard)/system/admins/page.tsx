@@ -258,9 +258,9 @@ export default function UsersPage() {
       <Card className="border-border shadow-sm overflow-hidden">
         <div className="p-4 bg-white border-b border-slate-100">
           <form onSubmit={handleApplyFilter} className="grid grid-cols-1 md:grid-cols-4 gap-4 items-end">
-            <div className="space-y-1.5">
+            <div className="flex flex-col gap-1.5">
               <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">
-                Search Name / Email
+                Staff Name / Email
               </label>
               <div className="relative w-full">
                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
@@ -268,40 +268,40 @@ export default function UsersPage() {
                   placeholder="Enter keyword..." 
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
-                  className="pl-9 h-10 w-full text-xs border-slate-200 focus:ring-primary rounded-xl bg-white shadow-sm font-medium"
+                  className="pl-9 h-10 w-full text-xs border-slate-200 focus:ring-indigo-500 rounded-xl bg-white shadow-sm font-medium"
                 />
               </div>
             </div>
 
             <div className="flex flex-col gap-1.5">
               <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">
-                Role
+                Role Assignment
               </label>
               <Select value={filterRole} onValueChange={(val) => val && setFilterRole(val)}>
                 <SelectTrigger className="w-full bg-white border-slate-200 !h-10 shadow-sm rounded-xl font-bold text-xs">
                   <SelectValue placeholder="Select Role" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="ALL">All Roles</SelectItem>
-                  <SelectItem value={AdminRole.SUPER_ADMIN}>Super Admin</SelectItem>
-                  <SelectItem value={AdminRole.AUDITOR}>Auditor</SelectItem>
-                  <SelectItem value={AdminRole.SUPPORT_AGENT}>Support Agent</SelectItem>
+                  <SelectItem value="ALL">ALL ROLES</SelectItem>
+                  <SelectItem value={AdminRole.SUPER_ADMIN}>SUPER ADMIN</SelectItem>
+                  <SelectItem value={AdminRole.AUDITOR}>AUDITOR</SelectItem>
+                  <SelectItem value={AdminRole.SUPPORT_AGENT}>SUPPORT AGENT</SelectItem>
                 </SelectContent>
               </Select>
             </div>
 
             <div className="flex flex-col gap-1.5">
               <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">
-                Status
+                Account Status
               </label>
               <Select value={filterStatus} onValueChange={(val) => val && setFilterStatus(val)}>
                 <SelectTrigger className="w-full bg-white border-slate-200 !h-10 shadow-sm rounded-xl font-bold text-xs">
                   <SelectValue placeholder="Select Status" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="ALL">All Status</SelectItem>
-                  <SelectItem value="ACTIVE">Active</SelectItem>
-                  <SelectItem value="SUSPENDED">Suspended</SelectItem>
+                  <SelectItem value="ALL">ALL STATUS</SelectItem>
+                  <SelectItem value="ACTIVE">ACTIVE</SelectItem>
+                  <SelectItem value="SUSPENDED">SUSPENDED</SelectItem>
                 </SelectContent>
               </Select>
             </div>
@@ -310,16 +310,15 @@ export default function UsersPage() {
               <Button 
                 type="button" 
                 variant="outline" 
-                size="sm" 
                 onClick={handleResetFilter}
                 className="flex-1 h-10 text-slate-500 hover:text-slate-700 hover:bg-slate-100 text-xs font-bold rounded-xl border-slate-200"
               >
                 <RotateCcw className="w-4 h-4 mr-1" />
                 Reset
               </Button>
-              <Button type="submit" size="sm" className="flex-[2] h-10 bg-primary hover:bg-primary/90 text-white text-xs font-bold rounded-xl shadow-md">
-                <Filter className="w-4 h-4 mr-1" />
-                Apply
+              <Button type="submit" disabled={loading} className="flex-[2] h-10 bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold rounded-xl shadow-lg shadow-indigo-200 transition-all active:scale-95">
+                <Search className="w-4 h-4 mr-1" />
+                Search
               </Button>
             </div>
           </form>
