@@ -73,7 +73,7 @@ const navigationGroups: NavigationGroup[] = [
       { name: 'Settlement', href: '/finance/settlement', icon: Briefcase, requiredPermission: Permission.VIEW_TRANSACTIONS, isSoon: true },
       { name: 'Fees & Limits', href: '/finance/fees', icon: SlidersHorizontal, requiredPermission: Permission.VIEW_DASHBOARD, isSoon: true },
       { name: 'Ledger', href: '/accounts', icon: CreditCard, requiredPermission: Permission.VIEW_LEDGER_ENTRIES },
-      { name: 'Reconcile', href: '/reconcile', icon: ShieldCheck, requiredPermission: Permission.RUN_RECONCILIATION, isSoon: true },
+      { name: 'Reconcile', href: '/reconcile', icon: ShieldCheck, requiredPermission: Permission.RUN_RECONCILIATION },
     ]
   },
   {

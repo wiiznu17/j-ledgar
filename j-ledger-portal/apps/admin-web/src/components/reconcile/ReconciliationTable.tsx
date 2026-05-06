@@ -21,8 +21,19 @@ export function ReconciliationTable({ reports }: ReconciliationTableProps) {
     return new Intl.NumberFormat('th-TH', {
       style: 'currency',
       currency: 'THB',
-      minimumFractionDigits: 4,
+      minimumFractionDigits: 2,
     }).format(amt);
+  };
+
+  const getStatusStyle = (status: string) => {
+    switch (status) {
+      case ReconciliationStatus.MATCHED:
+        return 'bg-emerald-50 text-emerald-700 border-emerald-100';
+      case ReconciliationStatus.DISCREPANCY:
+        return 'bg-rose-50 text-rose-700 border-rose-100 animate-pulse';
+      default:
+        return 'bg-slate-50 text-slate-700 border-slate-100';
+    }
   };
 
   if (!reports || reports.length === 0) {
@@ -35,45 +46,42 @@ export function ReconciliationTable({ reports }: ReconciliationTableProps) {
   }
 
   return (
-    <div className="rounded-md border bg-card">
+    <div className="rounded-2xl border border-slate-100 overflow-hidden shadow-sm bg-white">
       <Table>
         <TableHeader>
-          <TableRow className="bg-muted/50">
-            <TableHead className="w-[180px]">Report Date</TableHead>
-            <TableHead className="text-right">System Assets</TableHead>
-            <TableHead className="text-right">User Liabilities</TableHead>
-            <TableHead className="text-right">Discrepancy</TableHead>
-            <TableHead className="text-center">Status</TableHead>
+          <TableRow className="bg-slate-50/50 hover:bg-slate-50/50 border-b border-slate-100">
+            <TableHead className="font-bold text-[11px] uppercase tracking-widest text-slate-400 py-4 px-6">Report Date</TableHead>
+            <TableHead className="text-right font-bold text-[11px] uppercase tracking-widest text-slate-400 py-4 px-6">System Assets</TableHead>
+            <TableHead className="text-right font-bold text-[11px] uppercase tracking-widest text-slate-400 py-4 px-6">User Liabilities</TableHead>
+            <TableHead className="text-right font-bold text-[11px] uppercase tracking-widest text-slate-400 py-4 px-6">Discrepancy</TableHead>
+            <TableHead className="text-center font-bold text-[11px] uppercase tracking-widest text-slate-400 py-4 px-6">Status</TableHead>
           </TableRow>
         </TableHeader>
         <TableBody>
           {reports.map((report) => (
             <TableRow 
               key={report.id}
-              className={report.status === ReconciliationStatus.DISCREPANCY ? 'bg-destructive/5 hover:bg-destructive/10 transition-colors' : ''}
+              className={`hover:bg-slate-50/30 transition-colors border-b border-slate-50 last:border-0 ${report.status === ReconciliationStatus.DISCREPANCY ? 'bg-rose-50/20' : ''}`}
             >
-              <TableCell className="font-medium">
-                {format(new Date(report.reportDate), 'dd MMM yyyy')}
+              <TableCell className="py-4 px-6">
+                <div className="flex flex-col">
+                  <span className="text-sm font-bold text-slate-700">{format(new Date(report.reportDate), 'dd MMM yyyy')}</span>
+                  <span className="text-[10px] text-slate-400 font-medium">Daily Audit</span>
+                </div>
               </TableCell>
-              <TableCell className="text-right text-foreground font-mono">
+              <TableCell className="text-right py-4 px-6 font-mono text-sm font-medium text-slate-600">
                 {formatCurrency(report.totalSystemAssets)}
               </TableCell>
-              <TableCell className="text-right text-foreground font-mono">
+              <TableCell className="text-right py-4 px-6 font-mono text-sm font-medium text-slate-600">
                 {formatCurrency(report.totalUserLiabilities)}
               </TableCell>
-              <TableCell className={`text-right font-mono font-bold ${report.discrepancy !== 0 ? 'text-destructive' : 'text-primary'}`}>
-                {formatCurrency(report.discrepancy)}
+              <TableCell className={`text-right py-4 px-6 font-mono text-sm font-black ${report.discrepancy !== 0 ? 'text-rose-600' : 'text-emerald-600'}`}>
+                {report.discrepancy > 0 ? '+' : ''}{formatCurrency(report.discrepancy)}
               </TableCell>
-              <TableCell className="text-center">
-                {report.status === ReconciliationStatus.MATCHED ? (
-                  <Badge className="bg-green-500/10 text-green-600 hover:bg-green-500/20 border-green-200/50">
-                    MATCHED
-                  </Badge>
-                ) : (
-                  <Badge variant="destructive" className="font-bold border-2">
-                    DISCREPANCY
-                  </Badge>
-                )}
+              <TableCell className="text-center py-4 px-6">
+                <Badge variant="outline" className={`px-2.5 py-0.5 rounded-full text-[10px] font-black tracking-tight border shadow-sm ${getStatusStyle(report.status)}`}>
+                  {report.status}
+                </Badge>
               </TableCell>
             </TableRow>
           ))}
