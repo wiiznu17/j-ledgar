@@ -1,5 +1,5 @@
 import React, { useState, useRef } from 'react';
-import { View, StyleSheet, Text, TouchableOpacity, Dimensions } from 'react-native';
+import { View, StyleSheet, Text, TouchableOpacity, Dimensions, Image, ActivityIndicator } from 'react-native';
 import { CameraView, useCameraPermissions } from 'expo-camera';
 import * as ImageManipulator from 'expo-image-manipulator';
 import { Ionicons } from '@expo/vector-icons';
@@ -19,6 +19,7 @@ interface IDCardScannerProps {
 export const IDCardScanner: React.FC<IDCardScannerProps> = ({ onCapture, onClose, isLoading }) => {
   const [permission, requestPermission] = useCameraPermissions();
   const [isCapturing, setIsCapturing] = useState(false); // เปลี่ยนชื่อเพื่อไม่ให้สับสน
+  const [capturedUri, setCapturedUri] = useState<string | null>(null);
   const cameraRef = useRef<any>(null);
 
   const processing = isLoading || isCapturing;
@@ -44,31 +45,39 @@ export const IDCardScanner: React.FC<IDCardScannerProps> = ({ onCapture, onClose
           base64: false,
         });
 
-        // --- ขั้นตอนการ Crop รูปตามกรอบ (ปรับปรุงความแม่นยำ) ---
-        // คำนวณอัตราส่วนระหว่างรูปถ่ายกับหน้าจอ
-        const scaleX = photo.width / width;
-        const scaleY = photo.height / height;
+        setCapturedUri(photo.uri); // Store for preview while processing
 
-        // คำนวณขนาดที่จะตัดในหน่วยพิกเซลของรูปถ่าย
-        const cropWidth = FRAME_WIDTH * scaleX;
-        const cropHeight = FRAME_HEIGHT * scaleY;
+        // --- Improved Cropping Logic (Precision Fix) ---
+        const photoWidth = photo.width;
+        const photoHeight = photo.height;
         
-        // คำนวณจุดเริ่มต้น (กึ่งกลาง)
-        const cropX = (photo.width - cropWidth) / 2;
-        const cropY = (photo.height - cropHeight) / 2;
+        // We assume the camera preview fills the screen width.
+        // So the scale should be uniform based on width to avoid distortion.
+        const scale = photoWidth / width;
+
+        // Calculate crop dimensions using the uniform scale
+        const cropWidth = FRAME_WIDTH * scale;
+        const cropHeight = FRAME_HEIGHT * scale;
+        
+        // Calculate crop position based on the center of the photo
+        // (Assuming the camera preview is centered)
+        const cropX = (photoWidth - cropWidth) / 2;
+        const cropY = (photoHeight - cropHeight) / 2;
 
         const manipulated = await ImageManipulator.manipulateAsync(
           photo.uri,
           [{
             crop: {
-              originX: Math.max(0, cropX),
-              originY: Math.max(0, cropY),
-              width: cropWidth,
-              height: cropHeight,
+              originX: Math.max(0, Math.floor(cropX)),
+              originY: Math.max(0, Math.floor(cropY)),
+              width: Math.floor(cropWidth),
+              height: Math.floor(cropHeight),
             },
           }],
-          { compress: 0.8, format: ImageManipulator.SaveFormat.JPEG }
+          { compress: 0.9, format: ImageManipulator.SaveFormat.JPEG }
         );
+
+        setCapturedUri(manipulated.uri); // Update with cropped version
 
         // Give the camera a moment to finish its internal tasks before unmounting
         setTimeout(() => {
@@ -90,10 +99,26 @@ export const IDCardScanner: React.FC<IDCardScannerProps> = ({ onCapture, onClose
           <View style={styles.middleContainer}>
             <View style={styles.sideOverlay} />
             <View style={styles.frame}>
+              {/* Show captured image inside the frame when processing */}
+              {processing && capturedUri && (
+                <Image 
+                  source={{ uri: capturedUri }} 
+                  style={StyleSheet.absoluteFill}
+                  resizeMode="cover"
+                />
+              )}
+              
               <View style={[styles.corner, styles.topLeft]} />
               <View style={[styles.corner, styles.topRight]} />
               <View style={[styles.corner, styles.bottomLeft]} />
               <View style={[styles.corner, styles.bottomRight]} />
+
+              {/* Internal Spinner inside frame */}
+              {processing && (
+                <View style={[StyleSheet.absoluteFill, { backgroundColor: 'rgba(0,0,0,0.3)', justifyContent: 'center', alignItems: 'center' }]}>
+                  <ActivityIndicator size="large" color="#00E676" />
+                </View>
+              )}
             </View>
             <View style={styles.sideOverlay} />
           </View>
@@ -104,18 +129,12 @@ export const IDCardScanner: React.FC<IDCardScannerProps> = ({ onCapture, onClose
           </View>
         </View>
 
-        {/* Full screen processing overlay */}
+        {/* Global Text Overlay (Optional, can keep or remove) */}
         {processing && (
-          <View style={[StyleSheet.absoluteFill, { backgroundColor: 'rgba(0,0,0,0.7)', justifyContent: 'center', alignItems: 'center', zIndex: 999 }]}>
-            <View className="items-center">
-              <View className="w-16 h-16 border-4 border-primary border-t-transparent rounded-full animate-spin mb-6" />
-              <Text className="text-white font-manrope font-bold text-xl tracking-wider">
+          <View style={[StyleSheet.absoluteFill, { backgroundColor: 'transparent', justifyContent: 'flex-end', alignItems: 'center', paddingBottom: 150 }]}>
+             <Text className="text-white font-manrope font-bold text-xl tracking-wider shadow-lg">
                 Scanning ID Card...
-              </Text>
-              <Text className="text-white/60 font-manrope text-sm mt-2">
-                Please hold still while we process
-              </Text>
-            </View>
+             </Text>
           </View>
         )}
       </CameraView>

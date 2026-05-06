@@ -199,6 +199,29 @@ export class KycService {
     return kyc;
   }
 
+  async retryKyc(userId: string) {
+    // 1. Reset user status to PENDING_APPROVAL
+    await this.prisma.user.update({
+      where: { id: userId },
+      data: { 
+        registrationState: 'TC_ACCEPTED' // Back to step before OCR, keep status as is (REJECTED)
+      }
+    });
+
+    // 2. Reset KYC data status back to PENDING but keep images for reference if needed
+    // (Or let them be overwritten by the next upload)
+    await this.prisma.kYCData.update({
+      where: { userId },
+      data: {
+        verificationStatus: 'PENDING',
+        reviewNote: null,
+        verifiedAt: null
+      }
+    });
+
+    return { success: true };
+  }
+
   async getKYCList(
     status: string = 'PENDING_APPROVAL', 
     phoneNumber?: string, 
@@ -562,9 +585,15 @@ export class KycService {
       similarity = comparison.similarity;
 
       this.logger.log(`Face match result for user ${userId}: isMatch=${isMatch}, similarity=${similarity}%`);
+
+      if (!isMatch) {
+        throw new BadRequestException(`Face verification failed (Similarity: ${similarity}%). Please ensure your face is clearly visible and matches your ID card.`);
+      }
     } catch (err) {
+      if (err instanceof BadRequestException) throw err;
       this.logger.error(`Face comparison failed for user ${userId}`, err);
       isMatch = false;
+      throw new BadRequestException('Face verification failed. Please try again with better lighting.');
     }
 
     // Finalize KYC
@@ -575,9 +604,9 @@ export class KycService {
           selfieImageUrl: selfieUrl,
           selfieImageSha256: selfieHash,
           faceMatchScore: Math.round(similarity),
-          verificationStatus: isMatch ? 'PENDING' : 'REJECTED',
-          verifiedAt: isMatch ? null : new Date(),
-        },
+          verificationStatus: 'PENDING',
+          updatedAt: new Date()
+        }
       });
       
       // Update user registration state

@@ -1,7 +1,7 @@
 import { useEffect } from 'react';
 import { View, StyleSheet } from 'react-native';
 import { DarkTheme, DefaultTheme, ThemeProvider } from '@react-navigation/native';
-import { router, Stack, SplashScreen } from 'expo-router';
+import { router, Stack, SplashScreen, useSegments } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import 'react-native-reanimated';
@@ -51,6 +51,7 @@ export default function RootLayout() {
     hasSession,
     user,
   } = useAuthStore();
+  const segments = useSegments();
 
   const [fontsLoaded, fontError] = useFonts({
     Manrope_400Regular,
@@ -95,9 +96,20 @@ export default function RootLayout() {
       } else if (user.status === 'BLOCKED' || user.status === 'SUSPENDED' || user.status === 'INACTIVE') {
         console.log('[RootLayout] Redirecting to Account Restricted');
         router.replace('/(auth)/account-restricted');
-      } else if (user.status === 'PENDING_APPROVAL') {
-        console.log('[RootLayout] Redirecting to Pending Approval');
-        router.replace('/(auth)/pending-approval');
+      } else if (user.status === 'PENDING_APPROVAL' || user.status === 'REJECTED') {
+        if (user.registrationState !== 'COMPLETED') {
+          // If not completed, must be in onboarding flow
+          if (segments[1] !== 'onboarding') {
+            console.log('[RootLayout] Redirecting to Onboarding for Pending/Rejected user');
+            router.replace('/(auth)/onboarding');
+          }
+        } else {
+          // If completed, must be in pending-approval screen
+          if (segments[1] !== 'pending-approval') {
+            console.log(`[RootLayout] Redirecting to Pending/Rejected Approval (Status: ${user.status})`);
+            router.replace('/(auth)/pending-approval');
+          }
+        }
       } else if (user.status === 'ACTIVE') {
         if (user.registrationState !== 'COMPLETED') {
           console.log('[RootLayout] Redirecting to Onboarding (Incomplete)');

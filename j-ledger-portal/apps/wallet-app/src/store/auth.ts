@@ -10,6 +10,7 @@ interface WalletUser {
   phoneNumber?: string;
   status?: string;
   registrationState?: string;
+  reviewNote?: string;
   createdAt?: string;
 }
 
@@ -147,6 +148,14 @@ export const useAuthStore = create<AuthState>((set, get) => ({
       if (user) {
         get().setUser(user);
       }
+
+      // Save regToken if provided (for resuming onboarding)
+      if (res.data.regToken) {
+        console.log('[Auth] Saving regToken from refresh to resume onboarding');
+        const { useRegistrationStore } = await import('@/store/registration');
+        await useRegistrationStore.getState().setRegToken(res.data.regToken);
+      }
+
       console.log('[Auth] Session refreshed successfully');
       return true;
     } catch (error: any) {

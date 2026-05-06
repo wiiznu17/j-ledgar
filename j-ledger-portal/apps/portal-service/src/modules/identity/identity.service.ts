@@ -236,7 +236,7 @@ export class IdentityService {
       throw new UnauthorizedException('Invalid credentials');
     }
 
-    if (user.status !== 'ACTIVE' && user.status !== 'PENDING_APPROVAL') {
+    if (user.status !== 'ACTIVE' && user.status !== 'PENDING_APPROVAL' && user.status !== 'REJECTED') {
       throw new UnauthorizedException('Account is not active');
     }
 
@@ -303,9 +303,26 @@ export class IdentityService {
       userAgent: context?.userAgent,
     });
 
+    // Fetch review note if rejected
+    let reviewNote = null;
+    if (user.status === 'REJECTED') {
+      const kyc = await this.prisma.kYCData.findUnique({
+        where: { userId: user.id },
+        select: { reviewNote: true }
+      });
+      reviewNote = kyc?.reviewNote;
+    }
+
+    // Include regToken if registration is not completed so the app can resume
+    let regToken = null;
+    if (user.registrationState !== 'COMPLETED') {
+      regToken = await this.signRegistrationToken(user.id, user.registrationState);
+    }
+
     return {
       accessToken,
       refreshToken,
+      regToken,
       expiresIn: ACCESS_TOKEN_TTL_SECONDS,
       user: {
         id: user.id,
@@ -313,6 +330,7 @@ export class IdentityService {
         email: user.email,
         status: user.status,
         registrationState: user.registrationState,
+        reviewNote
       }
     };
   }
@@ -369,11 +387,31 @@ export class IdentityService {
         }
       });
 
+      // Fetch review note if rejected
+      let reviewNote = null;
+      if (user?.status === 'REJECTED') {
+        const kyc = await this.prisma.kYCData.findUnique({
+          where: { userId: payload.sub },
+          select: { reviewNote: true }
+        });
+        reviewNote = kyc?.reviewNote;
+      }
+
+      // Include regToken if registration is not completed so the app can resume
+      let regToken = null;
+      if (user?.registrationState !== 'COMPLETED') {
+        regToken = await this.signRegistrationToken(user.id, user.registrationState);
+      }
+
       return {
         accessToken,
         refreshToken: newRefreshToken,
+        regToken,
         expiresIn: ACCESS_TOKEN_TTL_SECONDS,
-        user
+        user: {
+          ...user,
+          reviewNote
+        }
       };
     } catch (error) {
       throw new UnauthorizedException('Invalid refresh token');
@@ -1106,40 +1144,90 @@ export class IdentityService {
       throw new BadRequestException('User not found');
     }
 
-    if (user.registrationState === 'COMPLETED') {
-      throw new ConflictException('Registration already completed');
+    // Allow completion if status is PENDING_APPROVAL or REJECTED (for retries)
+    if (user.registrationState === 'COMPLETED' && user.status === 'ACTIVE') {
+      throw new ConflictException('Registration already completed and account is active');
     }
 
     // Create wallet in finance service
     try {
       this.logger.log(`[Register] Creating wallet for user ${user.id}`);
-      const wallet = await this.financeService.createWallet(user.id, 'THB');
-      this.logger.log(`[Register] Wallet created for user ${user.id}: ${wallet.walletId}`);
+      let walletId = user.ledgerAccountId;
 
-      // Update user with wallet info
-      await this.prisma.user.update({
+      if (!walletId) {
+        try {
+          const wallet = await this.financeService.createWallet(user.id, 'THB');
+          walletId = wallet.walletId;
+          this.logger.log(`[Register] New wallet created for user ${user.id}: ${walletId}`);
+        } catch (walletError: any) {
+          // If wallet already exists, try to fetch it instead of failing
+          if (walletError.message?.includes('already exists') || walletError.status === 409) {
+            this.logger.warn(`[Register] Wallet already exists for user ${user.id}, attempting to link existing one`);
+            // We can either fetch it from finance service or just assume it's there if we have a way to find it
+            // For now, let's try to get status which might return the wallet info
+            const existingWallet = await this.financeService.getWallet(user.id);
+            walletId = existingWallet?.walletId;
+          } else {
+            throw walletError;
+          }
+        }
+      }
+
+      // Update user with wallet info and final state
+      const updatedUser = await this.prisma.user.update({
         where: { id: user.id },
         data: {
           registrationState: 'COMPLETED',
-          ledgerAccountId: wallet.walletId,
+          status: 'PENDING_APPROVAL' as any,
+          ledgerAccountId: walletId,
         },
       });
 
       await this.logSecurityEvent(user.id, 'REGISTRATION_COMPLETED', {
-        walletId: wallet.walletId,
+        walletId: walletId,
+      });
+
+      // Issue tokens so user can be automatically logged in
+      const sessionId = randomUUID();
+      const deviceId = context?.deviceId || 'UNKNOWN';
+      const device = await this.prisma.userDevice.findFirst({
+        where: { userId: user.id, deviceIdentifier: deviceId }
+      });
+      
+      const accessToken = await this.signAccessToken(user.id, sessionId, device?.id || 'UNKNOWN');
+      const refreshToken = await this.signRefreshToken(updatedUser.id, sessionId, device?.id || 'UNKNOWN');
+
+      await this.prisma.refreshSession.create({
+        data: {
+          userId: updatedUser.id,
+          deviceId: device?.id || 'UNKNOWN',
+          tokenHash: await bcrypt.hash(refreshToken, 10),
+          expiresAt: new Date(Date.now() + REFRESH_TOKEN_TTL_SECONDS * 1000),
+          ipAddress: context?.ip,
+          userAgent: context?.userAgent,
+          lastSeenAt: new Date(),
+        },
       });
 
       this.logger.log(
-        `[Register] STEP 7 Complete: Registration completed for user ${user.id}, state: COMPLETED`,
+        `[Register] STEP 7 Complete: Registration completed for user ${user.id}, tokens issued`,
       );
 
       return {
         success: true,
-        walletId: wallet.walletId,
+        accessToken,
+        refreshToken,
+        user: {
+          id: updatedUser.id,
+          phoneNumber: updatedUser.phoneNumber,
+          email: updatedUser.email,
+          status: updatedUser.status,
+          registrationState: updatedUser.registrationState,
+        }
       };
     } catch (error) {
-      this.logger.error(`Failed to create wallet for user ${user.id}`, error);
-      throw new BadRequestException('Failed to create wallet');
+      this.logger.error(`Failed to complete registration for user ${user.id}`, error);
+      throw new BadRequestException('Failed to complete registration setup');
     }
   }
 
@@ -1312,32 +1400,33 @@ export class IdentityService {
   async updateAddress(userId: string, type: any, dto: any, source?: any) {
     this.logger.log(`[Identity] Updating address ${type} for user ${userId}`);
 
-    // Address History Pattern:
-    // 1. Soft-delete current active address of this type
-    // 2. Insert new record
+    // Manual find and update/create to ensure only one active record per type
+    const existing = await this.prisma.address.findFirst({
+      where: {
+        userId,
+        type: type as any,
+        deletedAt: null,
+      },
+    });
 
-    return await this.prisma.$transaction(async (tx) => {
-      // Soft-delete existing active address of this type
-      await tx.address.updateMany({
-        where: {
-          userId,
-          type: type as any,
-          deletedAt: null,
-        },
+    if (existing) {
+      return await this.prisma.address.update({
+        where: { id: existing.id },
         data: {
-          deletedAt: new Date(),
-        },
-      });
-
-      // Create new address
-      return tx.address.create({
-        data: {
-          userId,
-          type: type as any,
           ...dto,
           verificationSource: source || undefined,
+          updatedAt: new Date(),
         },
       });
+    }
+
+    return await this.prisma.address.create({
+      data: {
+        userId,
+        type: type as any,
+        ...dto,
+        verificationSource: source || undefined,
+      },
     });
   }
 

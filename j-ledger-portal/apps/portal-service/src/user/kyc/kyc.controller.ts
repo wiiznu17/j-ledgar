@@ -50,6 +50,13 @@ export class KycController {
     return this.kycService.rejectKyc(userId, reason);
   }
 
+  @Post('retry')
+  @UseGuards(JwtAuthGuard)
+  async retryKyc(@Req() request: Request) {
+    const user = (request as any).user;
+    return this.kycService.retryKyc(user.sub);
+  }
+
   @Post('upload-id-card')
   @UseGuards(RegistrationAuthGuard)
   @UseInterceptors(FileInterceptor('idCardImage'))

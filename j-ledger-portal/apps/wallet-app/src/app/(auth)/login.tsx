@@ -133,6 +133,13 @@ export default function LoginScreen() {
       if (res.data.user) {
         setUser(res.data.user);
       }
+
+      // Save regToken if provided (for resuming onboarding)
+      if (res.data.regToken) {
+        console.log('[Login] Saving regToken to resume onboarding');
+        const { useRegistrationStore } = await import('@/store/registration');
+        await useRegistrationStore.getState().setRegToken(res.data.regToken);
+      }
       
       // Force PIN verification state
       useAuthStore.getState().lockSession();
@@ -178,6 +185,13 @@ export default function LoginScreen() {
       await setToken(res.data.accessToken, res.data.refreshToken);
       if (res.data.user) {
         setUser(res.data.user);
+      }
+
+      // Save regToken if provided (for resuming onboarding)
+      if (res.data.regToken) {
+        console.log('[Login] Saving regToken to resume onboarding (New Device)');
+        const { useRegistrationStore } = await import('@/store/registration');
+        await useRegistrationStore.getState().setRegToken(res.data.regToken);
       }
       setStep('PIN');
     } catch (err: any) {
