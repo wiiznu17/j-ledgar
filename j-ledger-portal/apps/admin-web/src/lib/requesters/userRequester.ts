@@ -3,6 +3,7 @@ import { WalletUser, AdminUser, CreateAdminRequest, API_PATHS, AdminPaginatedRes
 
 export const userRequester = {
   getWalletUsers: async (options?: RequestOptions) => apiClient.get<AdminPaginatedResponse<WalletUser>>(API_PATHS.ADMIN.USERS.WALLET, options),
+  getWalletUserStats: async (options?: RequestOptions) => apiClient.get<any>(`${API_PATHS.ADMIN.USERS.WALLET}/stats`, options),
   getSecurityEvents: async (options?: RequestOptions) => apiClient.get<AdminPaginatedResponse<any>>(API_PATHS.ADMIN.USERS.SECURITY_EVENTS, options),
   getAdminUsers: async (options?: RequestOptions) => apiClient.get<AdminPaginatedResponse<AdminUser>>('/api/admin/staff', options),
   suspendWalletUser: async (id: string, options?: RequestOptions) => apiClient.post<void>(API_PATHS.ADMIN.USERS.SUSPEND(id), {}, options),

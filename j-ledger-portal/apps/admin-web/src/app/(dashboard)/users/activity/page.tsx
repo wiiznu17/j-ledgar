@@ -21,8 +21,9 @@ import {
 } from '@/components/ui/dialog';
 import { userRequester } from '@/lib/requesters';
 import { useState, useEffect, useCallback } from 'react';
-import { ChevronLeft, ChevronRight, Search, X, ShieldAlert } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Search, RotateCcw, Filter, ShieldAlert, Activity, Eye, ShieldCheck, Lock } from 'lucide-react';
 import { useSearchParams, useRouter } from 'next/navigation';
+import { format } from 'date-fns';
 
 export default function UserActivityPage() {
   const searchParams = useSearchParams();
@@ -37,7 +38,7 @@ export default function UserActivityPage() {
 
   // Filters
   const [userId, setUserId] = useState(searchParams.get('userId') || '');
-  const [eventType, setEventType] = useState<string | null>(null);
+  const [eventType, setEventType] = useState<string>('ALL');
 
   const limit = 50;
 
@@ -49,7 +50,7 @@ export default function UserActivityPage() {
           page: String(page),
           limit: String(limit),
           ...(userId ? { userId } : {}),
-          ...(eventType ? { eventType } : {}),
+          ...(eventType !== 'ALL' ? { eventType } : {}),
         }
       });
       setLogs(response.data || []);
@@ -67,224 +68,265 @@ export default function UserActivityPage() {
     fetchLogs();
   }, [fetchLogs]);
 
-  const handleFilter = () => {
+  const handleFilter = (e?: React.FormEvent) => {
+    if (e) e.preventDefault();
     setPage(1);
     fetchLogs();
   };
 
   const handleClearFilters = () => {
     setUserId('');
-    setEventType(null);
+    setEventType('ALL');
     setPage(1);
     router.push('/users/activity');
   };
 
   const getEventColor = (type: string) => {
     if (type.includes('FAILURE') || type.includes('LOCKED') || type.includes('SUSPICIOUS')) {
-      return 'bg-red-100 text-red-800';
+      return 'bg-rose-50 text-rose-600 border-rose-100';
     }
     if (type.includes('SUCCESS') || type.includes('COMPLETED') || type.includes('VERIFIED')) {
-      return 'bg-green-100 text-green-800';
+      return 'bg-emerald-50 text-emerald-600 border-emerald-100';
     }
-    return 'bg-blue-100 text-blue-800';
+    return 'bg-slate-50 text-slate-600 border-slate-100';
   };
 
   return (
-    <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <h2 className="text-3xl font-bold tracking-tight text-[#2D3748]">User Activity Logs</h2>
+    <div className="space-y-4 pb-10">
+      {/* Header */}
+      <div>
+        <h2 className="text-2xl font-bold tracking-tight text-slate-900">User Activity Logs</h2>
+        <p className="text-sm text-slate-500 mt-1">
+          Monitor real-time security events and identity transactions.
+        </p>
       </div>
 
-      {/* Filters */}
-      <Card className="border-border shadow-sm">
-        <CardHeader>
-          <CardTitle>Security Event Filters</CardTitle>
-          <CardDescription>
-            Search for specific user activities across the platform.
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            <div>
-              <Label htmlFor="userId">Wallet User ID</Label>
-              <Input
-                id="userId"
-                value={userId}
-                onChange={(e) => setUserId(e.target.value)}
-                placeholder="Enter user ID"
-              />
+      {/* Security Overview Row */}
+      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 bg-white p-4 rounded-xl shadow-sm border border-slate-100">
+        <div className="flex items-center gap-2">
+          <Activity className="w-4 h-4 text-indigo-500" />
+          <span className="text-sm font-bold text-slate-700">Security Pulse</span>
+        </div>
+
+        <div className="flex items-center flex-wrap gap-4 md:gap-6 text-sm">
+          <div className="flex items-center gap-2">
+            <div className="w-2 h-2 rounded-full bg-rose-500" />
+            <span className="text-slate-500 font-medium">Failed Logins: <strong className="text-slate-800">{logs.filter(l => l.eventType === 'LOGIN_FAILURE').length}+</strong></span>
+          </div>
+          <div className="flex items-center gap-2">
+            <div className="w-2 h-2 rounded-full bg-emerald-500" />
+            <span className="text-slate-500 font-medium">Successful Logins: <strong className="text-slate-800">{logs.filter(l => l.eventType === 'LOGIN_SUCCESS').length}+</strong></span>
+          </div>
+          <div className="flex items-center gap-2">
+            <div className="w-2 h-2 rounded-full bg-amber-500" />
+            <span className="text-slate-500 font-medium">Device Changes: <strong className="text-slate-800">{logs.filter(l => l.eventType === 'DEVICE_REGISTERED').length}+</strong></span>
+          </div>
+        </div>
+      </div>
+
+      <Card className="border-none shadow-sm ring-1 ring-slate-100 overflow-hidden bg-white">
+        {/* Filter Toolbar */}
+        <div className="p-3 bg-white border-b border-slate-100">
+          <form onSubmit={handleFilter} className="grid grid-cols-1 md:grid-cols-5 gap-4 items-end">
+            <div className="md:col-span-2 flex flex-col gap-1.5">
+              <Label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">
+                Wallet User Identifier
+              </Label>
+              <div className="relative w-full">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+                <Input 
+                  placeholder="ID, Email, or Phone..." 
+                  value={userId}
+                  onChange={(e) => setUserId(e.target.value)}
+                  className="pl-9 h-10 w-full text-xs border-slate-200 focus:ring-indigo-500 rounded-xl bg-white shadow-sm font-medium"
+                />
+              </div>
             </div>
-            <div>
-              <Label htmlFor="eventType">Event Type</Label>
-              <Select value={eventType || ''} onValueChange={(val) => setEventType(val || null)}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Select event type" />
+
+            <div className="flex flex-col gap-1.5">
+              <Label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">
+                Event Classification
+              </Label>
+              <Select value={eventType} onValueChange={(val) => setEventType(val || 'ALL')}>
+                <SelectTrigger className="w-full bg-white border-slate-200 !h-10 shadow-sm rounded-xl font-bold text-xs">
+                  <SelectValue placeholder="All Categories" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value=" ">All Events</SelectItem>
+                  <SelectItem value="ALL">All Categories</SelectItem>
                   <SelectItem value="LOGIN_SUCCESS">LOGIN_SUCCESS</SelectItem>
                   <SelectItem value="LOGIN_FAILURE">LOGIN_FAILURE</SelectItem>
                   <SelectItem value="PIN_LOCKED">PIN_LOCKED</SelectItem>
                   <SelectItem value="SUSPICIOUS_ACTIVITY">SUSPICIOUS_ACTIVITY</SelectItem>
                   <SelectItem value="DEVICE_REGISTERED">DEVICE_REGISTERED</SelectItem>
-                  <SelectItem value="REGISTRATION_COMPLETED">REGISTRATION_COMPLETED</SelectItem>
                 </SelectContent>
               </Select>
             </div>
-          </div>
-          <div className="flex gap-2 mt-4">
-            <Button onClick={handleFilter} className="flex items-center gap-2">
-              <Search className="w-4 h-4" />
-              Apply Filters
-            </Button>
-            <Button
-              onClick={handleClearFilters}
-              variant="outline"
-              className="flex items-center gap-2"
-            >
-              <X className="w-4 h-4" />
-              Clear
-            </Button>
-          </div>
-        </CardContent>
-      </Card>
 
-      {/* Logs Table */}
-      <Card className="border-border shadow-sm">
-        <CardHeader>
-          <div className="flex items-center gap-2">
-            <ShieldAlert className="w-5 h-5 text-primary" />
-            <CardTitle>User Activity Feed</CardTitle>
-          </div>
-          <CardDescription>
-            Real-time feed of user-triggered security and identity events. Total: {total} records
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <div className="rounded-md border overflow-hidden">
-            <table className="w-full text-sm">
-              <thead>
-                <tr className="border-b bg-secondary/30">
-                  <th className="p-4 text-left font-semibold">Timestamp</th>
-                  <th className="p-4 text-left font-semibold">User</th>
-                  <th className="p-4 text-left font-semibold">Event Type</th>
-                  <th className="p-4 text-left font-semibold">IP Address</th>
-                  <th className="p-4 text-left font-semibold">Metadata</th>
-                  <th className="p-4 text-right font-semibold">Actions</th>
+            <div className="md:col-span-2 flex gap-2 w-full h-10">
+              <Button 
+                type="button" 
+                variant="outline" 
+                size="sm" 
+                onClick={handleClearFilters}
+                className="flex-1 h-10 text-slate-500 hover:text-slate-700 hover:bg-slate-100 text-xs font-bold rounded-xl border-slate-200"
+              >
+                <RotateCcw className="w-4 h-4 mr-1" />
+                Reset
+              </Button>
+              <Button type="submit" size="sm" className="flex-[2] h-10 bg-indigo-600 hover:bg-indigo-700 text-xs font-bold rounded-xl shadow-lg shadow-indigo-200 text-white">
+                <Filter className="w-4 h-4 mr-1" />
+                Analyze Events
+              </Button>
+            </div>
+          </form>
+        </div>
+
+        <div className="overflow-x-auto">
+          <table className="w-full text-left">
+            <thead>
+              <tr className="border-b border-slate-100 bg-slate-50/30 text-slate-400 text-[10px] uppercase font-bold tracking-widest">
+                <th className="px-6 py-4">Timestamp</th>
+                <th className="px-6 py-4">User Subject</th>
+                <th className="px-6 py-4">Event Type</th>
+                <th className="px-6 py-4">Security Intel</th>
+                <th className="px-6 py-4 text-right">Verification</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-slate-50">
+              {loading ? (
+                Array.from({ length: 5 }).map((_, i) => (
+                  <tr key={i} className="animate-pulse">
+                    <td colSpan={5} className="px-6 py-8 h-16 bg-slate-50/10" />
+                  </tr>
+                ))
+              ) : logs.length === 0 ? (
+                <tr>
+                  <td colSpan={5} className="px-6 py-12 text-center text-slate-400 font-medium">
+                    No security events matches your criteria.
+                  </td>
                 </tr>
-              </thead>
-              <tbody>
-                {loading ? (
-                  <tr>
-                    <td colSpan={6} className="p-8 text-center text-muted-foreground">
-                      Loading user activities...
+              ) : (
+                logs.map((log: any) => (
+                  <tr key={log.id} className="hover:bg-slate-50/50 transition-colors group">
+                    <td className="px-6 py-4">
+                      <div className="flex flex-col">
+                        <span className="text-xs font-bold text-slate-700">{format(new Date(log.createdAt), 'MMM d, HH:mm:ss')}</span>
+                        <span className="text-[10px] text-slate-400 font-mono tracking-tighter">{format(new Date(log.createdAt), 'yyyy')}</span>
+                      </div>
                     </td>
-                  </tr>
-                ) : logs.length === 0 ? (
-                  <tr>
-                    <td colSpan={6} className="p-8 text-center text-muted-foreground">
-                      No security events found
-                    </td>
-                  </tr>
-                ) : (
-                  logs.map((log: any) => (
-                    <tr key={log.id} className="border-b hover:bg-secondary/10 transition-colors">
-                      <td className="p-4 text-muted-foreground font-mono text-xs">
-                        {new Date(log.createdAt).toLocaleString('en-GB')}
-                      </td>
-                      <td className="p-4">
+                    <td className="px-6 py-4">
+                      <div className="flex items-center gap-3">
+                        <div className="w-8 h-8 rounded-full bg-slate-100 flex items-center justify-center text-slate-500 group-hover:bg-indigo-100 group-hover:text-indigo-600 transition-colors">
+                          <ShieldCheck className="w-4 h-4" />
+                        </div>
                         <div className="flex flex-col">
-                          <span className="font-medium text-[#2D3748]">
-                            {log.user?.email || log.user?.phoneNumber || 'Unknown User'}
+                          <span className="text-xs font-bold text-slate-700 leading-tight">
+                            {log.user?.email || log.user?.phoneNumber || 'Unknown Identity'}
                           </span>
-                          <span className="text-[10px] text-muted-foreground font-mono truncate max-w-[120px]">
+                          <span className="text-[10px] text-slate-400 font-mono truncate max-w-[150px]">
                             {log.userId}
                           </span>
                         </div>
-                      </td>
-                      <td className="p-4">
-                        <span
-                          className={`inline-flex items-center rounded-full px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider ${getEventColor(log.eventType)}`}
-                        >
-                          {log.eventType}
+                      </div>
+                    </td>
+                    <td className="px-6 py-4">
+                      <span className={`px-2 py-0.5 rounded-md text-[10px] font-black uppercase tracking-wider border ${getEventColor(log.eventType)}`}>
+                        {log.eventType}
+                      </span>
+                    </td>
+                    <td className="px-6 py-4">
+                      <div className="flex flex-col gap-1">
+                        <div className="flex items-center gap-1.5 text-[10px] text-slate-500 font-medium">
+                          <Lock className="w-3 h-3" />
+                          {log.metadata?.ipAddress || 'Internal Source'}
+                        </div>
+                        <span className="text-[10px] text-slate-400 italic truncate max-w-[200px]">
+                          {log.metadata?.userAgent || 'System Process'}
                         </span>
-                      </td>
-                      <td className="p-4 font-mono text-xs text-muted-foreground">
-                        {log.metadata?.ipAddress || 'N/A'}
-                      </td>
-                      <td className="p-4 max-w-[200px] truncate text-xs text-muted-foreground">
-                        {JSON.stringify(log.metadata)}
-                      </td>
-                      <td className="p-4 text-right">
-                        <Dialog>
-                          <DialogTrigger render={<Button variant="ghost" size="sm" onClick={() => setSelectedLog(log)} />}>
-                            Details
-                          </DialogTrigger>
-                          <DialogContent className="max-w-md">
-                            <DialogHeader>
-                              <DialogTitle>Event Details</DialogTitle>
-                              <DialogDescription>
-                                Full technical metadata for this security event.
-                              </DialogDescription>
-                            </DialogHeader>
-                            {selectedLog && (
-                              <div className="space-y-4">
-                                <div className="grid grid-cols-2 gap-x-4 gap-y-2 text-sm">
-                                  <div className="font-semibold text-slate-500">Timestamp</div>
-                                  <div>{new Date(selectedLog.createdAt).toLocaleString()}</div>
-                                  
-                                  <div className="font-semibold text-slate-500">User ID</div>
-                                  <div className="font-mono text-xs">{selectedLog.userId}</div>
-                                  
-                                  <div className="font-semibold text-slate-500">Event Type</div>
-                                  <div>{selectedLog.eventType}</div>
+                      </div>
+                    </td>
+                    <td className="px-6 py-4 text-right">
+                      <Dialog>
+                        <DialogTrigger render={
+                          <Button variant="outline" size="sm" onClick={() => setSelectedLog(log)} className="h-8 rounded-lg text-[10px] font-bold border-slate-200 hover:bg-slate-50">
+                            Inspect
+                          </Button>
+                        } />
+                        <DialogContent className="max-w-md bg-white rounded-2xl border-0 shadow-2xl">
+                          <DialogHeader>
+                            <DialogTitle className="text-xl font-bold flex items-center gap-2">
+                              <ShieldAlert className="w-5 h-5 text-indigo-600" />
+                              Technical Intel
+                            </DialogTitle>
+                            <DialogDescription className="text-xs">
+                              Detailed cryptographic and session metadata for this event.
+                            </DialogDescription>
+                          </DialogHeader>
+                          {selectedLog && (
+                            <div className="space-y-5 py-4">
+                              <div className="grid grid-cols-2 gap-y-4 text-xs">
+                                <div>
+                                  <p className="font-black text-slate-400 uppercase tracking-widest text-[9px] mb-1">Status Code</p>
+                                  <p className="font-bold text-slate-700">200 OK</p>
                                 </div>
-                                <div className="space-y-1">
-                                  <div className="font-semibold text-sm text-slate-500">Metadata (JSON)</div>
-                                  <pre className="p-3 bg-slate-900 text-slate-100 rounded-lg text-[10px] overflow-x-auto">
+                                <div>
+                                  <p className="font-black text-slate-400 uppercase tracking-widest text-[9px] mb-1">Identity Provider</p>
+                                  <p className="font-bold text-slate-700">Local Auth</p>
+                                </div>
+                              </div>
+                              <div className="space-y-2">
+                                <p className="font-black text-slate-400 uppercase tracking-widest text-[9px] ml-1">Event Payload</p>
+                                <div className="p-4 bg-slate-900 rounded-xl overflow-hidden">
+                                  <pre className="text-[10px] text-indigo-300 font-mono overflow-x-auto custom-scrollbar leading-relaxed">
                                     {JSON.stringify(selectedLog.metadata, null, 2)}
                                   </pre>
                                 </div>
                               </div>
-                            )}
-                          </DialogContent>
-                        </Dialog>
-                      </td>
-                    </tr>
-                  ))
-                )}
-              </tbody>
-            </table>
-          </div>
+                            </div>
+                          )}
+                        </DialogContent>
+                      </Dialog>
+                    </td>
+                  </tr>
+                ))
+              )}
+            </tbody>
+          </table>
+        </div>
 
-          {/* Pagination */}
-          {totalPages > 1 && (
-            <div className="flex items-center justify-between mt-4">
-              <p className="text-sm text-muted-foreground">
-                Page {page} of {totalPages} ({total} records)
-              </p>
-              <div className="flex gap-2">
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => setPage((p) => Math.max(1, p - 1))}
-                  disabled={page === 1}
-                >
-                  <ChevronLeft className="w-4 h-4" />
-                </Button>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
-                  disabled={page === totalPages}
-                >
-                  <ChevronRight className="w-4 h-4" />
-                </Button>
-              </div>
+        {/* Pagination UI */}
+        {totalPages > 0 && (
+          <div className="p-4 bg-white border-t border-slate-100 flex items-center justify-between">
+            <p className="text-xs text-slate-500 font-medium">
+              Showing page <strong className="text-slate-800">{page}</strong> of <strong className="text-slate-800">{totalPages}</strong> 
+              <span className="hidden sm:inline"> ({total} security events)</span>
+            </p>
+            <div className="flex gap-2">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setPage(page - 1)}
+                disabled={page === 1 || loading}
+                className="h-8 px-3 text-xs font-bold rounded-lg border-slate-200 text-slate-600"
+              >
+                <ChevronLeft className="w-4 h-4 mr-1" />
+                Prev
+              </Button>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setPage(page + 1)}
+                disabled={page === totalPages || loading}
+                className="h-8 px-3 text-xs font-bold rounded-lg border-slate-200 text-slate-600"
+              >
+                Next
+                <ChevronRight className="w-4 h-4 ml-1" />
+              </Button>
             </div>
-          )}
-        </CardContent>
+          </div>
+        )}
       </Card>
     </div>
   );
 }
+

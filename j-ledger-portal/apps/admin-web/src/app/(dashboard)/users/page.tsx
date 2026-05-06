@@ -3,7 +3,7 @@
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { WalletUsersTable } from '@/components/users/WalletUsersTable';
 import { userRequester } from '@/lib/requesters';
-import { WalletUser, AdminPaginatedResponse } from '@repo/dto';
+import { WalletUser } from '@repo/dto';
 import { useEffect, useState, useCallback } from 'react';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -15,15 +15,25 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { Button } from '@/components/ui/button';
-import { Search, X, ChevronLeft, ChevronRight, UserPlus } from 'lucide-react';
+import { Search, RotateCcw, Filter, ChevronLeft, ChevronRight, Users, UserCheck, UserPlus, History } from 'lucide-react';
 import { toast } from 'sonner';
 
 export default function UsersPage() {
   const [users, setUsers] = useState<WalletUser[]>([]);
+  const [stats, setStats] = useState({ total: 0, active: 0, pending: 0, blocked: 0 });
   const [loading, setLoading] = useState(true);
   const [total, setTotal] = useState(0);
   const [page, setPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
+
+  const fetchStats = useCallback(async () => {
+    try {
+      const response = await userRequester.getWalletUserStats();
+      setStats(response.data || response || { total: 0, active: 0, pending: 0, blocked: 0 });
+    } catch (error) {
+      console.error('[USERS_PAGE] Stats error:', error);
+    }
+  }, []);
 
   // Draft Filters (Values in inputs)
   const [email, setEmail] = useState('');
@@ -62,9 +72,11 @@ export default function UsersPage() {
 
   useEffect(() => {
     fetchUsers();
-  }, [fetchUsers]);
+    fetchStats();
+  }, [fetchUsers, fetchStats]);
 
-  const handleFilter = () => {
+  const handleFilter = (e?: React.FormEvent) => {
+    if (e) e.preventDefault();
     setPage(1);
     setFilters({
       email: email,
@@ -85,54 +97,84 @@ export default function UsersPage() {
     });
   };
 
+  const handlePageChange = (newPage: number) => {
+    if (newPage < 1 || newPage > totalPages) return;
+    setPage(newPage);
+  };
+
   return (
-    <div className="space-y-6 pb-10">
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-        <div>
-          <h2 className="text-3xl font-bold tracking-tight text-slate-900">User Registry</h2>
-          <p className="text-slate-500 mt-1">
-            Manage and monitor all wallet users within the J-Ledger ecosystem.
-          </p>
+    <div className="space-y-4 pb-10">
+      {/* Header & Title */}
+      <div>
+        <h2 className="text-2xl font-bold tracking-tight text-slate-900">User Registry</h2>
+        <p className="text-sm text-slate-500 mt-1">
+          Monitor and manage e-wallet participants across the ecosystem.
+        </p>
+      </div>
+
+      {/* Compact Overview Row */}
+      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 bg-white p-4 rounded-xl shadow-sm border border-slate-100">
+        <div className="flex items-center gap-2">
+          <History className="w-4 h-4 text-indigo-500" />
+          <span className="text-sm font-bold text-slate-700">Registry Snapshot</span>
+        </div>
+
+        <div className="flex items-center flex-wrap gap-4 md:gap-6 text-sm">
+          <div className="flex items-center gap-2">
+            <div className="w-2 h-2 rounded-full bg-indigo-500" />
+            <span className="text-slate-500 font-medium">Total Users: <strong className="text-slate-800">{stats.total}</strong></span>
+          </div>
+          <div className="flex items-center gap-2">
+            <div className="w-2 h-2 rounded-full bg-emerald-500" />
+            <span className="text-slate-500 font-medium">Active: <strong className="text-slate-800">{stats.active}</strong></span>
+          </div>
+          <div className="flex items-center gap-2">
+            <div className="w-2 h-2 rounded-full bg-amber-500" />
+            <span className="text-slate-500 font-medium">Pending: <strong className="text-slate-800">{stats.pending}</strong></span>
+          </div>
         </div>
       </div>
 
-      {/* Filters Section */}
-      <Card className="border-none shadow-sm ring-1 ring-slate-100 bg-white">
-        <CardContent className="pt-6">
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-4 items-end">
-            <div className="flex flex-col gap-2">
-              <Label htmlFor="email" className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">
+      <Card className="border-none shadow-sm ring-1 ring-slate-100 overflow-hidden bg-white">
+        {/* Filter Toolbar - KYC Style */}
+        <div className="p-3 bg-white border-b border-slate-100">
+          <form onSubmit={handleFilter} className="grid grid-cols-1 md:grid-cols-5 gap-4 items-end">
+            <div className="flex flex-col gap-1.5">
+              <Label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">
                 Email Address
               </Label>
-              <div className="relative">
-                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-300" />
-                <Input
-                  id="email"
-                  placeholder="search by email..."
+              <div className="relative w-full">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+                <Input 
+                  placeholder="search by email..." 
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
-                  className="bg-slate-50/50 border-slate-100 focus:bg-white pl-9 transition-all h-10 text-sm"
+                  className="pl-9 h-10 w-full text-xs border-slate-200 focus:ring-indigo-500 rounded-xl bg-white shadow-sm font-medium"
                 />
               </div>
             </div>
-            <div className="flex flex-col gap-2">
-              <Label htmlFor="phone" className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">
+
+            <div className="flex flex-col gap-1.5">
+              <Label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">
                 Phone Number
               </Label>
-              <Input
-                id="phone"
-                placeholder="search by phone..."
-                value={phone}
-                onChange={(e) => setPhone(e.target.value)}
-                className="bg-slate-50/50 border-slate-100 focus:bg-white transition-all h-10 text-sm"
-              />
+              <div className="relative w-full">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+                <Input 
+                  placeholder="search by phone..." 
+                  value={phone}
+                  onChange={(e) => setPhone(e.target.value)}
+                  className="pl-9 h-10 w-full text-xs border-slate-200 focus:ring-indigo-500 rounded-xl bg-white shadow-sm font-medium"
+                />
+              </div>
             </div>
-            <div className="flex flex-col gap-2">
-              <Label htmlFor="status" className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">
+
+            <div className="flex flex-col gap-1.5">
+              <Label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">
                 Account Status
               </Label>
               <Select value={status} onValueChange={(val) => setStatus(val || 'ALL')}>
-                <SelectTrigger id="status" className="bg-slate-50/50 border-slate-100 focus:bg-white !h-10 w-full text-sm flex items-center justify-between">
+                <SelectTrigger className="w-full bg-white border-slate-200 !h-10 shadow-sm rounded-xl font-bold text-xs">
                   <SelectValue placeholder="All Statuses" />
                 </SelectTrigger>
                 <SelectContent>
@@ -144,76 +186,63 @@ export default function UsersPage() {
                 </SelectContent>
               </Select>
             </div>
-            <div className="flex flex-col gap-2">
-              {/* Empty label to match height of other columns */}
-              <Label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest opacity-0 pointer-events-none block">
-                Actions
-              </Label>
-              <div className="flex items-center gap-2">
-                <Button 
-                  variant="ghost" 
-                  onClick={handleClearFilters}
-                  className="text-rose-500 hover:text-rose-600 hover:bg-rose-50 h-10 px-4 flex-shrink-0 font-bold text-xs uppercase tracking-wider"
-                >
-                  <X className="w-4 h-4 mr-2" />
-                  Clear
-                </Button>
-                <Button 
-                  onClick={handleFilter}
-                  className="bg-indigo-600 hover:bg-indigo-700 text-white flex-1 h-10 font-bold text-xs uppercase tracking-wider shadow-sm shadow-indigo-100"
-                >
-                  Apply
-                </Button>
-              </div>
-            </div>
-          </div>
-        </CardContent>
-      </Card>
 
-      <Card className="border-none shadow-sm ring-1 ring-slate-100 overflow-hidden bg-white">
-        <CardHeader className="border-b border-slate-50 bg-slate-50/30">
-          <div className="flex items-center justify-between">
-            <div>
-              <CardTitle className="text-lg font-bold text-slate-900">Wallet Users</CardTitle>
-              <CardDescription className="text-slate-500">
-                Found {total} registered users in the system.
-              </CardDescription>
+            <div className="md:col-span-2 flex gap-2 w-full h-10">
+              <Button 
+                type="button" 
+                variant="outline" 
+                size="sm" 
+                onClick={handleClearFilters}
+                className="flex-1 h-10 text-slate-500 hover:text-slate-700 hover:bg-slate-100 text-xs font-bold rounded-xl border-slate-200"
+              >
+                <RotateCcw className="w-4 h-4 mr-1" />
+                Reset
+              </Button>
+              <Button type="submit" size="sm" className="flex-[2] h-10 bg-indigo-600 hover:bg-indigo-700 text-xs font-bold rounded-xl shadow-lg shadow-indigo-200 text-white">
+                <Filter className="w-4 h-4 mr-1" />
+                Apply Filters
+              </Button>
             </div>
-          </div>
-        </CardHeader>
+          </form>
+        </div>
+
         <CardContent className="p-0">
           <WalletUsersTable users={users} loading={loading} />
           
-          {/* Pagination */}
-          <div className="flex items-center justify-between p-4 bg-slate-50/30 border-t border-slate-50">
-            <p className="text-sm font-medium text-slate-500">
-              Showing page <span className="text-slate-900">{page}</span> of <span className="text-slate-900">{totalPages}</span>
-            </p>
-            <div className="flex items-center gap-2">
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => setPage((p) => Math.max(1, p - 1))}
-                disabled={page === 1 || loading}
-                className="border-slate-200 text-slate-600 hover:bg-white"
-              >
-                <ChevronLeft className="w-4 h-4 mr-1" />
-                Previous
-              </Button>
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
-                disabled={page === totalPages || loading}
-                className="border-slate-200 text-slate-600 hover:bg-white"
-              >
-                Next
-                <ChevronRight className="w-4 h-4 ml-1" />
-              </Button>
+          {/* Pagination UI - KYC Style */}
+          {totalPages > 0 && (
+            <div className="p-4 bg-white border-t border-slate-100 flex items-center justify-between">
+              <p className="text-xs text-slate-500 font-medium">
+                Showing page <strong className="text-slate-800">{page}</strong> of <strong className="text-slate-800">{totalPages}</strong> 
+                <span className="hidden sm:inline"> ({total} total records)</span>
+              </p>
+              <div className="flex gap-2">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => handlePageChange(page - 1)}
+                  disabled={page === 1 || loading}
+                  className="h-8 px-3 text-xs font-bold rounded-lg border-slate-200 text-slate-600"
+                >
+                  <ChevronLeft className="w-4 h-4 mr-1" />
+                  Prev
+                </Button>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => handlePageChange(page + 1)}
+                  disabled={page === totalPages || loading}
+                  className="h-8 px-3 text-xs font-bold rounded-lg border-slate-200 text-slate-600"
+                >
+                  Next
+                  <ChevronRight className="w-4 h-4 ml-1" />
+                </Button>
+              </div>
             </div>
-          </div>
+          )}
         </CardContent>
       </Card>
     </div>
   );
 }
+
