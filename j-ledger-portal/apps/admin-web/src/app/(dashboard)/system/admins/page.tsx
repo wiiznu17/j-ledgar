@@ -33,7 +33,7 @@ import {
 import { UserPlus, Trash2, Eye, Search, Filter, RotateCcw, ChevronLeft, ChevronRight } from 'lucide-react';
 import { showConfirm, showSuccess, showError } from '@/lib/swal';
 import { AdminUser, AdminRole } from '@repo/dto';
-import { userRequester } from '@/lib/requesters';
+import { userRequester, authRequester } from '@/lib/requesters';
 import Link from 'next/link';
 import { FilterSearchInput, FilterSelect, FilterActions } from '@/components/common/FilterElements';
 
@@ -50,6 +50,7 @@ export default function UsersPage() {
   const [searchQuery, setSearchQuery] = useState('');
   const [filterRole, setFilterRole] = useState<string>('ALL');
   const [filterStatus, setFilterStatus] = useState<string>('ALL');
+  const [availableRoles, setAvailableRoles] = useState<any[]>([]);
 
   const [activeFilters, setActiveFilters] = useState({
     search: '',
@@ -57,6 +58,8 @@ export default function UsersPage() {
     status: 'ALL',
     page: 1,
   });
+
+  const [currentUser, setCurrentUser] = useState<AdminUser | null>(null);
 
   // New user form state
   const [newEmail, setNewEmail] = useState('');
@@ -95,8 +98,28 @@ export default function UsersPage() {
     }
   };
 
+  const fetchRoles = async () => {
+    try {
+      const data = await userRequester.getAllRoles();
+      setAvailableRoles(data);
+    } catch (error) {
+      console.error('Failed to fetch roles:', error);
+    }
+  };
+
+  const fetchCurrentUser = async () => {
+    try {
+      const data = await authRequester.getMe();
+      setCurrentUser(data);
+    } catch (error) {
+      console.error('Failed to fetch current user:', error);
+    }
+  };
+
   useEffect(() => {
     fetchUsers();
+    fetchRoles();
+    fetchCurrentUser();
   }, [activeFilters]);
 
   const handleApplyFilter = (e?: React.FormEvent) => {
@@ -235,9 +258,18 @@ export default function UsersPage() {
                       <SelectValue placeholder="Select a role" />
                     </SelectTrigger>
                     <SelectContent className="bg-white">
-                      <SelectItem value={AdminRole.SUPER_ADMIN}>Super Admin</SelectItem>
-                      <SelectItem value={AdminRole.AUDITOR}>Auditor</SelectItem>
-                      <SelectItem value={AdminRole.SUPPORT_AGENT}>Support Agent</SelectItem>
+                      {availableRoles.map((role) => (
+                        <SelectItem key={role.id} value={role.name}>
+                          {role.name}
+                        </SelectItem>
+                      ))}
+                      {availableRoles.length === 0 && (
+                        <>
+                          <SelectItem value={AdminRole.SUPER_ADMIN}>Super Admin</SelectItem>
+                          <SelectItem value={AdminRole.AUDITOR}>Auditor</SelectItem>
+                          <SelectItem value={AdminRole.SUPPORT_AGENT}>Support Agent</SelectItem>
+                        </>
+                      )}
                     </SelectContent>
                   </Select>
                 </div>
@@ -272,9 +304,12 @@ export default function UsersPage() {
               onValueChange={(val) => setFilterRole(val || 'ALL')}
               options={[
                 { label: 'ALL ROLES', value: 'ALL' },
-                { label: 'SUPER ADMIN', value: AdminRole.SUPER_ADMIN },
-                { label: 'AUDITOR', value: AdminRole.AUDITOR },
-                { label: 'SUPPORT AGENT', value: AdminRole.SUPPORT_AGENT },
+                ...availableRoles.map((r) => ({ label: r.name, value: r.name })),
+                ...(availableRoles.length === 0 ? [
+                  { label: 'SUPER ADMIN', value: AdminRole.SUPER_ADMIN },
+                  { label: 'AUDITOR', value: AdminRole.AUDITOR },
+                  { label: 'SUPPORT AGENT', value: AdminRole.SUPPORT_AGENT },
+                ] : [])
               ]}
             />
 
@@ -359,7 +394,7 @@ export default function UsersPage() {
                           <Eye className="h-4 w-4 mr-1" /> View
                         </Button>
                       </Link>
-                      {user.role !== AdminRole.SUPER_ADMIN && user.email !== 'admin@jledger.io' && (
+                      {user.role !== AdminRole.SUPER_ADMIN && user.email !== 'admin@jledger.io' && user.id !== currentUser?.id && (
                         <Button
                           variant="ghost"
                           size="icon"

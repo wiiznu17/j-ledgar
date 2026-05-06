@@ -1,5 +1,5 @@
 import { apiClient, RequestOptions } from '@/lib/api-client';
-import { LoginRequest, AuthResponse, RefreshTokenRequest } from '@repo/dto';
+import { LoginRequest, AuthResponse, RefreshTokenRequest, AdminUser } from '@repo/dto';
 
 export const authRequester = {
   login: async (data: LoginRequest) => apiClient.post<AuthResponse>('/api/admin/auth/login', data),
@@ -17,4 +17,8 @@ export const authRequester = {
     
   activateAccount: async (data: { token: string; password: string }) => 
     apiClient.post<{ success: boolean }>('/api/admin/auth/activate/confirm', data),
+
+  getMe: async () => apiClient.get<AdminUser>('/api/admin/auth/me'),
+  updateMe: async (data: { firstName?: string; lastName?: string }) => 
+    apiClient.put<AdminUser>('/api/admin/auth/me', data),
 };

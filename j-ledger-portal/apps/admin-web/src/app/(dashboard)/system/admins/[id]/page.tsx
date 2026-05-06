@@ -8,7 +8,7 @@ import { Badge } from '@/components/ui/badge';
 import { ShieldAlert, Mail, Activity, ArrowLeft, UserX, UserCheck, ChevronRight, RefreshCcw } from 'lucide-react';
 import { showConfirm, showSuccess, showError } from '@/lib/swal';
 import { AdminUser, AdminRole } from '@repo/dto';
-import { userRequester } from '@/lib/requesters';
+import { userRequester, authRequester } from '@/lib/requesters';
 import {
   Select,
   SelectContent,
@@ -25,6 +25,8 @@ export default function AdminDetailPage({ params }: { params: Promise<{ id: stri
   const [isEditingRole, setIsEditingRole] = useState(false);
   const [editedRole, setEditedRole] = useState<string>('');
   const [isUpdating, setIsUpdating] = useState(false);
+  const [availableRoles, setAvailableRoles] = useState<any[]>([]);
+  const [currentUser, setCurrentUser] = useState<AdminUser | null>(null);
   
   const isInvited = admin?.isInvited && admin?.isActive;
   const isExpired = isInvited && admin?.inviteExpiry && new Date(admin.inviteExpiry) < new Date();
@@ -41,8 +43,28 @@ export default function AdminDetailPage({ params }: { params: Promise<{ id: stri
     }
   };
 
+  const fetchRoles = async () => {
+    try {
+      const data = await userRequester.getAllRoles();
+      setAvailableRoles(data);
+    } catch (error) {
+      console.error('Failed to fetch roles:', error);
+    }
+  };
+
+  const fetchCurrentUser = async () => {
+    try {
+      const data = await authRequester.getMe();
+      setCurrentUser(data);
+    } catch (error) {
+      console.error('Failed to fetch current user:', error);
+    }
+  };
+
   useEffect(() => {
     fetchAdminData();
+    fetchRoles();
+    fetchCurrentUser();
   }, [id]);
 
   useEffect(() => {
@@ -209,10 +231,19 @@ export default function AdminDetailPage({ params }: { params: Promise<{ id: stri
                         <SelectValue placeholder="Select Role" />
                       </SelectTrigger>
                       <SelectContent className="bg-white">
-                        <SelectItem value={AdminRole.SUPER_ADMIN}>Super Admin</SelectItem>
-                        <SelectItem value={AdminRole.AUDITOR}>Auditor</SelectItem>
-                        <SelectItem value={AdminRole.SUPPORT_AGENT}>Support Agent</SelectItem>
-                        <SelectItem value={AdminRole.COMPLIANCE_OFFICER}>Compliance Officer</SelectItem>
+                        {availableRoles.map((role) => (
+                          <SelectItem key={role.id} value={role.name}>
+                            {role.name}
+                          </SelectItem>
+                        ))}
+                        {availableRoles.length === 0 && (
+                          <>
+                            <SelectItem value={AdminRole.SUPER_ADMIN}>Super Admin</SelectItem>
+                            <SelectItem value={AdminRole.AUDITOR}>Auditor</SelectItem>
+                            <SelectItem value={AdminRole.SUPPORT_AGENT}>Support Agent</SelectItem>
+                            <SelectItem value={AdminRole.COMPLIANCE_OFFICER}>Compliance Officer</SelectItem>
+                          </>
+                        )}
                       </SelectContent>
                     </Select>
                     <div className="flex gap-1">
@@ -275,7 +306,7 @@ export default function AdminDetailPage({ params }: { params: Promise<{ id: stri
                 {isInvited ? 'Resend Invitation' : 'Send Password Reset'}
               </Button>
 
-              {admin.email !== 'admin@jledger.io' && (
+              {admin.email !== 'admin@jledger.io' && currentUser?.id !== id && (
                 <Button
                   variant={admin.isActive ? "outline" : "default"}
                   className={`w-full justify-start ${admin.isActive ? 'text-destructive hover:text-destructive' : ''}`}

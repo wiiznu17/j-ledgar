@@ -8,6 +8,8 @@ import {
   UseGuards,
   Req,
   BadRequestException,
+  Get,
+  Put,
 } from '@nestjs/common';
 import { AdminService } from '../services/admin.service';
 import { JwtService } from '@nestjs/jwt';
@@ -158,4 +160,18 @@ export class AdminAuthController {
       throw new BadRequestException(e.message);
     }
   }
+  
+  @UseGuards(AdminJwtGuard)
+  @Get('me')
+  async getMe(@Req() req: any) {
+    return this.adminService.findById(req.user.sub);
+  }
+
+  @UseGuards(AdminJwtGuard)
+  @Put('me')
+  async updateMe(@Req() req: any, @Body() data: { firstName?: string; lastName?: string }) {
+    return this.adminService.updateStaff(req.user.sub, data);
+  }
+
+
 }
