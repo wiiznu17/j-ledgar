@@ -168,70 +168,68 @@ export default function SystemOutboxPage() {
         ))}
       </div>
 
-      {/* Filter Bar */}
-      <div className="bg-white p-3 rounded-2xl border border-slate-100 shadow-sm flex flex-wrap items-center justify-between gap-4">
-        <div className="flex items-center gap-3">
-          <div className="bg-slate-50 p-2 rounded-xl border border-slate-100">
-            <Filter className="w-4 h-4 text-slate-400" />
-          </div>
-          
-          <Select value={tempStatus} onValueChange={setTempStatus}>
-            <SelectTrigger className="w-[140px] h-9 rounded-xl text-xs font-bold bg-slate-50 border-transparent focus:ring-0">
-              <SelectValue placeholder="All Status" />
-            </SelectTrigger>
-            <SelectContent className="rounded-xl border-slate-100">
-              <SelectItem value="ALL" className="text-xs font-medium">All Status</SelectItem>
-              <SelectItem value="PENDING" className="text-xs font-medium">Pending</SelectItem>
-              <SelectItem value="PROCESSED" className="text-xs font-medium text-emerald-600">Processed</SelectItem>
-              <SelectItem value="FAILED" className="text-xs font-medium text-rose-600">Failed</SelectItem>
-            </SelectContent>
-          </Select>
-
-          <Select value={tempType} onValueChange={setTempType}>
-            <SelectTrigger className="w-[160px] h-9 rounded-xl text-xs font-bold bg-slate-50 border-transparent focus:ring-0">
-              <SelectValue placeholder="All Types" />
-            </SelectTrigger>
-            <SelectContent className="rounded-xl border-slate-100">
-              <SelectItem value="ALL" className="text-xs font-medium">All Types</SelectItem>
-              <SelectItem value="TRANSACTION" className="text-xs font-medium">Transactions</SelectItem>
-              <SelectItem value="SYSTEM" className="text-xs font-medium">System Events</SelectItem>
-            </SelectContent>
-          </Select>
-
-          <Button 
-            onClick={handleApplyFilter}
-            disabled={loading}
-            className="h-9 px-4 rounded-xl text-xs font-bold bg-indigo-600 hover:bg-indigo-700 text-white shadow-lg shadow-indigo-100 transition-all active:scale-95"
-          >
-            <Search className="w-3.5 h-3.5 mr-2" />
-            Apply Filter
-          </Button>
-
-          <Button 
-            variant="ghost"
-            onClick={handleClearFilter}
-            disabled={loading}
-            className="h-9 px-3 rounded-xl text-xs font-bold text-slate-500 hover:bg-slate-100 transition-all"
-          >
-            Clear
-          </Button>
-        </div>
-
-        <div className="flex items-center gap-2">
-          <Button 
-            variant="outline" 
-            size="sm" 
-            onClick={() => fetchOutbox()}
-            className="h-9 px-3 rounded-xl border-slate-100 text-slate-500 hover:bg-slate-50 transition-all shadow-sm"
-          >
-            <RefreshCw className={`w-3.5 h-3.5 mr-2 ${loading ? 'animate-spin' : ''}`} />
-            Refresh Data
-          </Button>
-        </div>
-      </div>
-
       {/* Main Table Container */}
       <Card className="border-none shadow-sm ring-1 ring-slate-100 overflow-hidden bg-white">
+        {/* Filter Toolbar */}
+        <div className="p-3 bg-white border-b border-slate-100">
+          <div className="grid grid-cols-1 md:grid-cols-5 gap-4 items-end">
+            <div className="flex flex-col gap-1.5">
+              <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">
+                Event Status
+              </label>
+              <Select value={tempStatus} onValueChange={setTempStatus}>
+                <SelectTrigger className="w-full bg-white border-slate-200 !h-10 shadow-sm rounded-xl font-bold text-xs">
+                  <SelectValue placeholder="All Status" />
+                </SelectTrigger>
+                <SelectContent className="rounded-xl border-slate-100">
+                  <SelectItem value="ALL" className="text-xs font-medium">ALL STATUS</SelectItem>
+                  <SelectItem value="PENDING" className="text-xs font-medium">PENDING</SelectItem>
+                  <SelectItem value="PROCESSED" className="text-xs font-medium text-emerald-600">PROCESSED</SelectItem>
+                  <SelectItem value="FAILED" className="text-xs font-medium text-rose-600">FAILED</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div className="flex flex-col gap-1.5">
+              <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">
+                Event Type
+              </label>
+              <Select value={tempType} onValueChange={setTempType}>
+                <SelectTrigger className="w-full bg-white border-slate-200 !h-10 shadow-sm rounded-xl font-bold text-xs">
+                  <SelectValue placeholder="All Types" />
+                </SelectTrigger>
+                <SelectContent className="rounded-xl border-slate-100">
+                  <SelectItem value="ALL" className="text-xs font-medium">ALL TYPES</SelectItem>
+                  <SelectItem value="TRANSACTION" className="text-xs font-medium">TRANSACTIONS</SelectItem>
+                  <SelectItem value="SYSTEM" className="text-xs font-medium">SYSTEM EVENTS</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+
+            {/* Empty space for grid alignment to match KYC if needed, or keep it compact */}
+            <div className="hidden md:block md:col-span-1"></div>
+
+            <div className="flex gap-2 w-full h-10 md:col-span-2">
+              <Button 
+                variant="outline" 
+                onClick={handleClearFilter}
+                className="flex-1 h-10 text-slate-500 hover:text-slate-700 hover:bg-slate-100 text-xs font-bold rounded-xl border-slate-200"
+              >
+                <RotateCcw className="w-4 h-4 mr-1" />
+                Reset
+              </Button>
+              <Button 
+                onClick={handleApplyFilter}
+                disabled={loading}
+                className="flex-[2] h-10 bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold rounded-xl shadow-lg shadow-indigo-200 transition-all active:scale-95"
+              >
+                <Search className="w-4 h-4 mr-1" />
+                Search
+              </Button>
+            </div>
+          </div>
+        </div>
+
         <div className="overflow-x-auto">
           <table className="w-full text-left">
             <thead>

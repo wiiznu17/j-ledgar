@@ -168,9 +168,9 @@ export default function AuditPage() {
         <div className="p-3 bg-white border-b border-slate-100">
           <form onSubmit={handleFilter} className="grid grid-cols-1 md:grid-cols-5 gap-4 items-end">
             <div className="flex flex-col gap-1.5">
-              <Label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">
+              <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">
                 Admin Identifier
-              </Label>
+              </label>
               <div className="relative w-full">
                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
                 <Input 
@@ -183,15 +183,15 @@ export default function AuditPage() {
             </div>
 
             <div className="flex flex-col gap-1.5">
-              <Label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">
+              <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">
                 Operation Action
-              </Label>
+              </label>
               <Select value={action} onValueChange={(val) => setAction(val || 'ALL')}>
                 <SelectTrigger className="w-full bg-white border-slate-200 !h-10 shadow-sm rounded-xl font-bold text-xs">
                   <SelectValue placeholder="All Actions" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="ALL">All Permissions</SelectItem>
+                  <SelectItem value="ALL">ALL PERMISSIONS</SelectItem>
                   <SelectItem value="CREATE_ADMINS">CREATE_ADMINS</SelectItem>
                   <SelectItem value="MANAGE_STAFF">MANAGE_STAFF</SelectItem>
                   <SelectItem value="DELETE_ADMINS">DELETE_ADMINS</SelectItem>
@@ -208,15 +208,15 @@ export default function AuditPage() {
             </div>
 
             <div className="flex flex-col gap-1.5">
-              <Label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">
+              <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">
                 Resource Type
-              </Label>
+              </label>
               <Select value={resourceType} onValueChange={(val) => setResourceType(val || 'ALL')}>
                 <SelectTrigger className="w-full bg-white border-slate-200 !h-10 shadow-sm rounded-xl font-bold text-xs">
                   <SelectValue placeholder="All Resources" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="ALL">All Resources</SelectItem>
+                  <SelectItem value="ALL">ALL RESOURCES</SelectItem>
                   <SelectItem value="USER">USER</SelectItem>
                   <SelectItem value="KYC_DOCUMENT">KYC_DOCUMENT</SelectItem>
                   <SelectItem value="ADMIN_USER">ADMIN_USER</SelectItem>
@@ -232,16 +232,15 @@ export default function AuditPage() {
               <Button 
                 type="button" 
                 variant="outline" 
-                size="sm" 
                 onClick={handleClearFilters}
                 className="flex-1 h-10 text-slate-500 hover:text-slate-700 hover:bg-slate-100 text-xs font-bold rounded-xl border-slate-200"
               >
                 <RotateCcw className="w-4 h-4 mr-1" />
                 Reset
               </Button>
-              <Button type="submit" size="sm" className="flex-[2] h-10 bg-indigo-600 hover:bg-indigo-700 text-xs font-bold rounded-xl shadow-lg shadow-indigo-200 text-white">
-                <Filter className="w-4 h-4 mr-1" />
-                Apply Filters
+              <Button type="submit" disabled={loading} className="flex-[2] h-10 bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold rounded-xl shadow-lg shadow-indigo-200 transition-all active:scale-95">
+                <Search className="w-4 h-4 mr-1" />
+                Search
               </Button>
             </div>
           </form>
