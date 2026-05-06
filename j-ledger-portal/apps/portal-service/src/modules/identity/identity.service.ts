@@ -936,7 +936,38 @@ export class IdentityService {
     this.logger.log(`[Register] Profile (sanitized) saved for user ${user.id}`);
 
     // Update Address if provided
-    if (dto.currentAddress) {
+    this.logger.log(`[Register] Processing address. useIdentityAddress: ${dto.useIdentityAddress}`);
+    
+    if (dto.useIdentityAddress) {
+      const registeredAddress = await this.prisma.address.findFirst({
+        where: { userId: user.id, type: 'REGISTERED' },
+      });
+
+      if (registeredAddress) {
+        this.logger.log(`[Register] Found registered address for user ${user.id}, merging with postal code: ${dto.currentAddress?.postalCode}`);
+        await this.updateAddress(
+          user.id,
+          'CURRENT',
+          {
+            line1: registeredAddress.line1 || undefined,
+            subdistrict: registeredAddress.subdistrict || undefined,
+            district: registeredAddress.district || undefined,
+            province: registeredAddress.province || undefined,
+            postalCode: dto.currentAddress?.postalCode || registeredAddress.postalCode || undefined,
+          },
+          'MANUAL',
+        );
+      } else {
+        this.logger.warn(`[Register] useIdentityAddress was true but no REGISTERED address found for user ${user.id}`);
+        if (dto.currentAddress && dto.currentAddress.line1) {
+          await this.updateAddress(user.id, 'CURRENT', dto.currentAddress, 'MANUAL');
+        } else {
+          this.logger.error(`[Register] Cannot set current address: No identity address and no full current address provided`);
+          // We don't throw yet, but this might cause issues if mandatory
+        }
+      }
+    } else if (dto.currentAddress) {
+      this.logger.log(`[Register] Using provided current address for user ${user.id}`);
       await this.updateAddress(user.id, 'CURRENT', dto.currentAddress, 'MANUAL');
     }
 

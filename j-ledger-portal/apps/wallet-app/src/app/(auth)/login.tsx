@@ -484,11 +484,11 @@ export default function LoginScreen() {
         </ScrollView>
 
         {/* Footer Versioning */}
-        <View className="absolute bottom-6 left-0 right-0 items-center pointer-events-none">
+        {/* <View className="absolute bottom-6 left-0 right-0 items-center pointer-events-none">
           <Text className="text-[9px] font-manrope font-black uppercase tracking-[0.4em] text-gray-300">
             J-Ledger Protocol V4
           </Text>
-        </View>
+        </View> */}
       </KeyboardAvoidingView>
     </SafeAreaView>
   );

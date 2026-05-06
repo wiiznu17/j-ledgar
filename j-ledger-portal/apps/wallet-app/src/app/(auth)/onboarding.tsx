@@ -14,6 +14,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import * as ImagePicker from 'expo-image-picker';
 import * as ImageManipulator from 'expo-image-manipulator';
+import * as SecureStore from 'expo-secure-store';
 import * as Onboarding from '@/components/onboarding';
 import { FaceLivenessScanner, IDCardScanner } from '@/components/onboarding';
 import { GlassPanel } from '@/components/common/GlassPanel';
@@ -88,8 +89,58 @@ export default function OnboardingScreen() {
   const [livenessSessionId, setLivenessSessionId] = useState<string | null>(null);
   const [isScanningID, setIsScanningID] = useState(false);
 
+  const [idCardAddress, setIdCardAddress] = useState<any>(null);
+  const [isDraftLoaded, setIsDraftLoaded] = useState(false);
+
   const router = useRouter();
   const { regToken, setRegToken, syncStatus, prefillData, reset, initialize } = useRegistrationStore();
+
+  // Load Persisted Form Data
+  useEffect(() => {
+    const loadDraft = async () => {
+      try {
+        const saved = await SecureStore.getItemAsync('onboarding_draft');
+        if (saved) {
+          const draft = JSON.parse(saved);
+          if (draft.phone) setPhone(draft.phone);
+          if (draft.address) setAddress(draft.address);
+          if (draft.occupation) setOccupation(draft.occupation);
+          if (draft.incomeRange) setIncomeRange(draft.incomeRange);
+          if (draft.sourceOfFunds) setSourceOfFunds(draft.sourceOfFunds);
+          if (draft.purpose) setPurpose(draft.purpose);
+          if (draft.idCardAddress) setIdCardAddress(draft.idCardAddress);
+        }
+      } catch (err) {
+        console.log('[Onboarding] Failed to load draft:', err);
+      } finally {
+        setIsDraftLoaded(true);
+      }
+    };
+    loadDraft();
+  }, []);
+
+  // Save Persisted Form Data
+  useEffect(() => {
+    if (!isDraftLoaded) return; // DON'T save until initial load is done
+
+    const saveDraft = async () => {
+      try {
+        const draft = {
+          phone,
+          address,
+          occupation,
+          incomeRange,
+          sourceOfFunds,
+          purpose,
+          idCardAddress,
+        };
+        await SecureStore.setItemAsync('onboarding_draft', JSON.stringify(draft));
+      } catch (err) {
+        console.log('[Onboarding] Failed to save draft:', err);
+      }
+    };
+    saveDraft();
+  }, [phone, address, occupation, incomeRange, sourceOfFunds, purpose, idCardAddress, isDraftLoaded]);
 
   // Initialize & Sync
   useEffect(() => {
@@ -295,13 +346,15 @@ export default function OnboardingScreen() {
       setReligion(extracted.religion || '');
       
       if (extracted.registeredAddress) {
-        setAddress((prev: any) => ({
-          ...prev,
+        const addr = {
           line1: extracted.registeredAddress,
-          subdistrict: extracted.subdistrict || prev.subdistrict,
-          district: extracted.district || prev.district,
-          province: extracted.province || prev.province,
-        }));
+          subdistrict: extracted.subdistrict || '',
+          district: extracted.district || '',
+          province: extracted.province || '',
+          postalCode: extracted.postalCode || '',
+        };
+        setAddress(addr);
+        setIdCardAddress(addr);
       }
       
       // If we have full text, log it for debugging
@@ -398,18 +451,28 @@ export default function OnboardingScreen() {
     }
   };
 
-  const handleProfileSubmit = async () => {
+  const handleProfileSubmit = async (useIdentityAddress: boolean) => {
     setIsLoading(true);
     try {
+      const profileData: any = {
+        occupation,
+        incomeRange,
+        sourceOfFunds,
+        purposeOfAccount: purpose,
+      };
+
+      if (useIdentityAddress) {
+        profileData.useIdentityAddress = true;
+        profileData.currentAddress = {
+          postalCode: address.postalCode,
+        };
+      } else {
+        profileData.currentAddress = address;
+      }
+
       const res = await api.post(
         '/identity/register/profile',
-        {
-          occupation,
-          incomeRange,
-          sourceOfFunds,
-          purposeOfAccount: purpose,
-          currentAddress: address,
-        },
+        profileData,
         {
           headers: { Authorization: `Bearer ${regToken}` },
         },
@@ -659,6 +722,7 @@ export default function OnboardingScreen() {
             <Onboarding.AdditionalInfoStep
               visible={step === 'ADDITIONAL_INFO'}
               data={{ address, occupation, incomeRange, sourceOfFunds, purpose }}
+              idCardAddress={idCardAddress}
               setData={updateProfileData}
               isLoading={isLoading}
               onSubmit={handleProfileSubmit}
@@ -706,6 +770,7 @@ export default function OnboardingScreen() {
                 setIsLoading(true);
                 try {
                   await reset(); // ล้าง registration_token
+                  await SecureStore.deleteItemAsync('onboarding_draft'); // ล้าง draft เมื่อสำเร็จ
                   // The RootLayout will automatically pick up the new auth state 
                   // and redirect to the appropriate screen (Pending Approval or Tabs)
                 } finally {
@@ -716,11 +781,11 @@ export default function OnboardingScreen() {
           </ScrollView>
 
           {/* Site Branding */}
-          <View className="py-8 items-center">
+          {/* <View className="py-8 items-center">
             <Text className="text-[10px] font-manrope font-extrabold uppercase tracking-[0.4em] text-on-surfaceVariant/30">
               J-Ledger Security Protocol V4
             </Text>
-          </View>
+          </View> */}
         </View>
       </KeyboardAvoidingView>
       </SafeAreaView>
