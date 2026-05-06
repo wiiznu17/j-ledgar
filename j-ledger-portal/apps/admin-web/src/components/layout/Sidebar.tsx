@@ -108,6 +108,7 @@ const navigationGroups: NavigationGroup[] = [
       { name: 'Approvals', href: '/system/approvals', icon: CheckSquare, requiredPermission: Permission.VIEW_DASHBOARD, isSoon: true },
       { name: 'Security Settings', href: '/system/security', icon: Lock, requiredPermission: Permission.VIEW_DASHBOARD, isSoon: true },
       { name: 'Admins', href: '/system/admins', icon: ShieldCheck, requiredPermission: Permission.CREATE_ADMINS },
+      { name: 'Roles & Permissions', href: '/system/roles', icon: Database, requiredPermission: Permission.MANAGE_SYSTEM_ROLES },
       { name: 'System Outbox', href: '/system/outbox', icon: Send, requiredPermission: Permission.VIEW_DASHBOARD },
     ]
   },

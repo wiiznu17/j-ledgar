@@ -17,4 +17,13 @@ export const userRequester = {
   getUserDetail: async (id: string) => apiClient.get<WalletUser>(`/api/admin/users/${id}`),
   getUserActivity: async (id: string) => apiClient.get<any>(`/admin/users/${id}/activity`),
   getUserAccount: async (userId: string) => apiClient.get<any>(`/admin/accounts/user/${userId}`),
+  
+  // Roles & Permissions
+  getAllRoles: async () => apiClient.get<any[]>('/api/admin/roles'),
+  getRoleDetail: async (id: string) => apiClient.get<any>(`/api/admin/roles/${id}`),
+  createRole: async (data: any) => apiClient.post<any>('/api/admin/roles', data),
+  updateRole: async (id: string, data: any) => apiClient.put<any>(`/api/admin/roles/${id}`, data),
+  getAllPermissions: async () => apiClient.get<any[]>('/api/admin/permissions'),
+  syncRolePermissions: async (roleId: string, permissionIds: string[]) => 
+    apiClient.put<any>(`/api/admin/roles/${roleId}/permissions`, { permissionIds }),
 };
