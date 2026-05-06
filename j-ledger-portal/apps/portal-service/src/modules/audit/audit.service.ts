@@ -7,6 +7,16 @@ export enum AuditAction {
   DELETE = 'DELETE',
   VIEW = 'VIEW',
   READ = 'READ',
+  LOGIN = 'LOGIN',
+  LOGOUT = 'LOGOUT',
+  ASSIGN = 'ASSIGN',
+  REMOVE = 'REMOVE',
+  ACTIVATE = 'ACTIVATE',
+  DEACTIVATE = 'DEACTIVATE',
+  RESET_PASSWORD = 'RESET_PASSWORD',
+  APPROVE = 'APPROVE',
+  REJECT = 'REJECT',
+  SYNC_PERMISSIONS = 'SYNC_PERMISSIONS',
 }
 
 export enum ResourceType {
@@ -18,6 +28,8 @@ export enum ResourceType {
   ADMIN_USER = 'ADMIN_USER',
   KYC_DOCUMENT = 'KYC_DOCUMENT',
   PII = 'PII',
+  ROLE = 'ROLE',
+  PERMISSION = 'PERMISSION',
 }
 
 export interface AuditLogData {
@@ -127,6 +139,50 @@ export class AuditService {
         total,
         totalPages: Math.ceil(total / limit),
       },
+    };
+  }
+
+  async getAuditStats() {
+    const [total, creations, updates, deletions] = await Promise.all([
+      this.prisma.auditLog.count(),
+      this.prisma.auditLog.count({ 
+        where: { 
+          OR: [
+            { action: { contains: 'CREATE' } },
+            { action: { contains: 'APPROVE' } },
+            { action: { contains: 'ACTIVATE' } },
+          ]
+        } 
+      }),
+      this.prisma.auditLog.count({ 
+        where: { 
+          OR: [
+            { action: { contains: 'UPDATE' } },
+            { action: { contains: 'MANAGE' } },
+            { action: { contains: 'SYNC' } },
+            { action: { contains: 'RESET' } },
+            { action: { contains: 'ASSIGN' } },
+            { action: { contains: 'FREEZE' } },
+          ]
+        } 
+      }),
+      this.prisma.auditLog.count({ 
+        where: { 
+          OR: [
+            { action: { contains: 'DELETE' } },
+            { action: { contains: 'REMOVE' } },
+            { action: { contains: 'REJECT' } },
+            { action: { contains: 'DEACTIVATE' } },
+          ]
+        } 
+      }),
+    ]);
+
+    return {
+      total,
+      creations,
+      updates,
+      deletions,
     };
   }
 }

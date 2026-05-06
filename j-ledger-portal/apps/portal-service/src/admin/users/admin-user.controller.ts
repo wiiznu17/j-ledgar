@@ -6,8 +6,10 @@ import { AdminJwtGuard } from '../guards/admin-jwt.guard';
 import { AdminRolesGuard } from '../guards/admin-roles.guard';
 import { AdminPermissionsGuard } from '../guards/admin-permissions.guard';
 import { Roles } from '../decorators/roles.decorator';
-import { Permissions } from '../decorators/permissions.decorator';
+import { Permissions as RequirePermissions } from '../decorators/permissions.decorator';
 import { AdminRole, Permission } from '@repo/dto';
+import { AuditLog } from '../decorators/audit.decorator';
+import { ResourceType } from '../../modules/audit/audit.service';
 
 @Controller('admin/users')
 @UseGuards(AdminJwtGuard, AdminRolesGuard, AdminPermissionsGuard)
@@ -26,13 +28,13 @@ export class AdminUserController {
   }
 
   @Get('wallet/stats')
-  @Permissions(Permission.VIEW_USERS)
+  @RequirePermissions(Permission.VIEW_USERS)
   async getWalletUserStats() {
     return this.identityService.getUserStats();
   }
 
   @Get('wallet')
-  @Permissions(Permission.VIEW_USERS)
+  @RequirePermissions(Permission.VIEW_USERS)
   async getWalletUsers(
     @Query('page') page: number = 1,
     @Query('limit') limit: number = 10,
@@ -48,13 +50,13 @@ export class AdminUserController {
   }
 
   @Get('search')
-  @Permissions(Permission.VIEW_USERS)
+  @RequirePermissions(Permission.VIEW_USERS)
   async searchUsers(@Query('q') query: string) {
     return this.identityService.searchUsers(query);
   }
 
   @Get(':id')
-  @Permissions(Permission.VIEW_USERS)
+  @RequirePermissions(Permission.VIEW_USERS)
   async getUserById(@Param('id') id: string) {
     return this.identityService.findById(id);
   }
@@ -65,25 +67,28 @@ export class AdminUserController {
   }
 
   @Put(':id/status')
-  @Permissions(Permission.FREEZE_USERS)
+  @RequirePermissions(Permission.FREEZE_USERS)
+  @AuditLog(null as any, ResourceType.USER, 'Updated user status')
   async updateUserStatus(@Param('id') id: string, @Body() body: { status: string }) {
     return this.identityService.updateUserStatus(id, body.status);
   }
 
   @Post(':id/block')
-  @Permissions(Permission.FREEZE_USERS)
+  @RequirePermissions(Permission.FREEZE_USERS)
+  @AuditLog(null as any, ResourceType.USER, 'Blocked user account')
   async blockUser(@Param('id') id: string, @Body() body?: { reason?: string }) {
     return this.identityService.blockUser(id, body?.reason);
   }
 
   @Post(':id/unblock')
-  @Permissions(Permission.UNFREEZE_USERS)
+  @RequirePermissions(Permission.UNFREEZE_USERS)
+  @AuditLog(null as any, ResourceType.USER, 'Unblocked user account')
   async unblockUser(@Param('id') id: string) {
     return this.identityService.unblockUser(id);
   }
 
   @Get('security-events')
-  @Permissions(Permission.VIEW_AUDIT_LOGS)
+  @RequirePermissions(Permission.VIEW_AUDIT_LOGS)
   async getSecurityEvents(
     @Query('page') page: number = 1,
     @Query('limit') limit: number = 10,
@@ -93,13 +98,15 @@ export class AdminUserController {
   }
 
   @Post(':id/suspend')
-  @Permissions(Permission.FREEZE_USERS)
+  @RequirePermissions(Permission.FREEZE_USERS)
+  @AuditLog(null as any, ResourceType.USER, 'Suspended user account')
   async suspendUser(@Param('id') id: string) {
     return this.identityService.updateUserStatus(id, 'SUSPENDED');
   }
 
   @Post(':id/unsuspend')
-  @Permissions(Permission.UNFREEZE_USERS)
+  @RequirePermissions(Permission.UNFREEZE_USERS)
+  @AuditLog(null as any, ResourceType.USER, 'Activated user account')
   async unsuspendUser(@Param('id') id: string) {
     return this.identityService.updateUserStatus(id, 'ACTIVE');
   }

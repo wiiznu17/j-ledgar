@@ -81,5 +81,6 @@ export const adminApi = {
   audit: {
     findAll: (query: any) =>
       apiClient.get<PaginatedResponse<any>>('/api/admin/audit/logs', { params: query }),
+    getStats: () => apiClient.get<any>('/api/admin/audit/stats'),
   },
 };

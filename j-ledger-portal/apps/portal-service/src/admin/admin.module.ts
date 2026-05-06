@@ -1,5 +1,7 @@
 import { Module } from '@nestjs/common';
+import { APP_INTERCEPTOR } from '@nestjs/core';
 import { AdminService } from './services/admin.service';
+import { AuditInterceptor } from './interceptors/audit.interceptor';
 import { MailService } from './services/mail.service';
 import { AdminStaffController } from './staff/admin-staff.controller';
 import { AdminCommonController } from './common/admin-common.controller';
@@ -55,7 +57,15 @@ import { AdminJwtStrategy } from './strategies/admin-jwt.strategy';
     AdminKycController,
     AdminDashboardController,
   ],
-  providers: [AdminService, AdminJwtStrategy, MailService],
+  providers: [
+    AdminService, 
+    AdminJwtStrategy, 
+    MailService,
+    {
+      provide: 'APP_INTERCEPTOR',
+      useClass: AuditInterceptor,
+    },
+  ],
   exports: [AdminService],
 })
 export class AdminModule {}

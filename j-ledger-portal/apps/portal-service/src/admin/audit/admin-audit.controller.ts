@@ -14,6 +14,12 @@ import { InternalAuthGuard } from '../../core/common/guards/internal-auth.guard'
 export class AdminAuditController {
   constructor(private readonly auditService: AuditService) {}
 
+  @Get('stats')
+  @Permissions(Permission.VIEW_AUDIT_LOGS)
+  async getStats() {
+    return this.auditService.getAuditStats();
+  }
+
   @Get('logs')
   @Permissions(Permission.VIEW_AUDIT_LOGS)
   async findAll(@Query() query: any): Promise<AdminPaginatedResponse<any>> {
