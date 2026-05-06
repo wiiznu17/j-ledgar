@@ -7,6 +7,7 @@ import {
   HttpStatus,
   UseGuards,
   Req,
+  BadRequestException,
 } from '@nestjs/common';
 import { AdminService } from '../services/admin.service';
 import { JwtService } from '@nestjs/jwt';
@@ -49,18 +50,21 @@ export class AdminAuthController {
 
     await this.adminService.updateRefreshTokenHash(staff.id, refreshToken);
 
+    const permissions = await this.adminService.getStaffPermissions(staff.id);
+
     return {
       token,
       refreshToken,
       userId: staff.id,
       role: payload.role,
+      permissions,
     };
   }
 
   @Post('refresh')
   @HttpCode(HttpStatus.OK)
   async refresh(@Body() dto: RefreshTokenRequest): Promise<AuthResponse> {
-    const staff = await this.adminService.findById(dto.userId);
+    const staff = await this.adminService.findByIdInternal(dto.userId);
     if (!staff || !staff.isActive || !staff.refreshTokenHash) {
       throw new UnauthorizedException('Invalid session');
     }
@@ -92,11 +96,14 @@ export class AdminAuthController {
 
       await this.adminService.updateRefreshTokenHash(staff.id, refreshToken);
 
+      const permissions = await this.adminService.getStaffPermissions(staff.id);
+
       return {
         token,
         refreshToken,
         userId: staff.id,
         role: payload.role,
+        permissions,
       };
     } catch (e) {
       console.error('[AdminAuth] Refresh failed:', e.message);
@@ -110,5 +117,45 @@ export class AdminAuthController {
   async logout(@Req() req: any) {
     await this.adminService.clearRefreshToken(req.user.sub);
     return { message: 'Logged out successfully' };
+  }
+
+  @Post('reset-password/validate')
+  @HttpCode(HttpStatus.OK)
+  async validateToken(@Body() body: { token: string }) {
+    const isValid = await this.adminService.validateResetToken(body.token);
+    if (!isValid) {
+      throw new BadRequestException('Invalid or expired token');
+    }
+    return { valid: true };
+  }
+
+  @Post('reset-password/confirm')
+  @HttpCode(HttpStatus.OK)
+  async confirmReset(@Body() body: { token: string; password: string }) {
+    try {
+      return await this.adminService.resetPasswordWithToken(body.token, body.password);
+    } catch (e) {
+      throw new BadRequestException(e.message);
+    }
+  }
+
+  @Post('activate/validate')
+  @HttpCode(HttpStatus.OK)
+  async validateInviteToken(@Body() body: { token: string }) {
+    const isValid = await this.adminService.validateResetToken(body.token);
+    if (!isValid) {
+      throw new BadRequestException('Invalid or expired invitation token');
+    }
+    return { valid: true };
+  }
+
+  @Post('activate/confirm')
+  @HttpCode(HttpStatus.OK)
+  async confirmActivation(@Body() body: { token: string; password: string }) {
+    try {
+      return await this.adminService.resetPasswordWithToken(body.token, body.password);
+    } catch (e) {
+      throw new BadRequestException(e.message);
+    }
   }
 }

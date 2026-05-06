@@ -28,6 +28,8 @@ export interface AdminUser {
   firstName: string;
   lastName: string;
   isActive: boolean;
+  isInvited?: boolean;
+  inviteExpiry?: Date | string | null;
   role: AdminRole;
   createdAt: Date | string;
   updatedAt?: Date | string;

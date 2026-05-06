@@ -4,31 +4,106 @@ const prisma = new PrismaClient();
 const bcrypt = require('bcryptjs');
 
 async function main() {
-  // Minimal, idempotent baseline seed.
+  console.log('🚀 Starting comprehensive RBAC seed...');
+
+  // 1. Define Permissions (Matching Permission enum in @repo/dto)
   const permissions = [
-    { name: 'admin:read', resource: 'admin', action: 'read', description: 'Read admin resources' },
-    { name: 'admin:write', resource: 'admin', action: 'write', description: 'Write admin resources' },
+    // Transaction Monitoring
+    { name: 'VIEW_TRANSACTIONS', resource: 'TRANSACTION', action: 'VIEW', description: 'View transaction logs' },
+    { name: 'VIEW_TRANSACTION_DETAILS', resource: 'TRANSACTION', action: 'VIEW_DETAIL', description: 'View granular transaction details' },
+    { name: 'VIEW_LEDGER_ENTRIES', resource: 'TRANSACTION', action: 'VIEW_LEDGER', description: 'View double-entry ledger records' },
+
+    // AML
+    { name: 'VIEW_SUSPICIOUS_ACTIVITIES', resource: 'AML', action: 'VIEW', description: 'View flagged suspicious activities' },
+    { name: 'REVIEW_SUSPICIOUS_ACTIVITIES', resource: 'AML', action: 'REVIEW', description: 'Update status of suspicious activities' },
+    { name: 'REPORT_TO_AMLO', resource: 'AML', action: 'REPORT', description: 'Send official report to AMLO' },
+
+    // Account Management
+    { name: 'VIEW_ACCOUNTS', resource: 'ACCOUNT', action: 'VIEW', description: 'View user wallets and accounts' },
+    { name: 'FREEZE_ACCOUNTS', resource: 'ACCOUNT', action: 'FREEZE', description: 'Freeze user wallets' },
+    { name: 'UNFREEZE_ACCOUNTS', resource: 'ACCOUNT', action: 'UNFREEZE', description: 'Unfreeze user wallets' },
+
+    // User Management
+    { name: 'VIEW_USERS', resource: 'USER', action: 'VIEW', description: 'View system users' },
+    { name: 'CREATE_ADMINS', resource: 'ADMIN', action: 'CREATE', description: 'Create new administrative staff' },
+    { name: 'DELETE_ADMINS', resource: 'ADMIN', action: 'DELETE', description: 'Remove administrative staff' },
+
+    // Audit & System
+    { name: 'VIEW_AUDIT_LOGS', resource: 'AUDIT', action: 'VIEW', description: 'View system audit logs' },
+    { name: 'VIEW_DASHBOARD', resource: 'DASHBOARD', action: 'VIEW', description: 'Access administrative dashboard' },
   ];
 
+  console.log('📦 Seeding permissions...');
   for (const p of permissions) {
     await prisma.permission.upsert({
       where: { name: p.name },
-      update: {
-        description: p.description,
-        resource: p.resource,
-        action: p.action,
-      },
+      update: p,
       create: p,
     });
   }
 
-  const superAdminRole = await prisma.role.upsert({
-    where: { name: 'SUPER_ADMIN' },
-    update: { description: 'Bootstrap super admin role' },
-    create: { name: 'SUPER_ADMIN', description: 'Bootstrap super admin role' },
-  });
+  // 2. Define Roles
+  const roles = [
+    { name: 'SUPER_ADMIN', description: 'Full system access' },
+    { name: 'AUDITOR', description: 'View-only access to financial and audit records' },
+    { name: 'SUPPORT_AGENT', description: 'Limited access to user management and transactions' },
+    { name: 'COMPLIANCE_OFFICER', description: 'Dedicated access to KYC and AML monitoring' },
+  ];
 
-  // Create default admin user
+  console.log('👑 Seeding roles...');
+  for (const role of roles) {
+    await prisma.role.upsert({
+      where: { name: role.name },
+      update: { description: role.description },
+      create: role,
+    });
+  }
+
+  // 3. Link Permissions to Roles (RolePermission)
+  const rolePermissionsMapping = {
+    SUPER_ADMIN: permissions.map(p => p.name), // Everything
+    AUDITOR: [
+      'VIEW_TRANSACTIONS',
+      'VIEW_TRANSACTION_DETAILS',
+      'VIEW_LEDGER_ENTRIES',
+      'VIEW_AUDIT_LOGS',
+      'VIEW_DASHBOARD'
+    ],
+    SUPPORT_AGENT: [
+      'VIEW_USERS',
+      'VIEW_ACCOUNTS',
+      'VIEW_TRANSACTIONS',
+      'VIEW_DASHBOARD'
+    ],
+    COMPLIANCE_OFFICER: [
+      'VIEW_SUSPICIOUS_ACTIVITIES',
+      'REVIEW_SUSPICIOUS_ACTIVITIES',
+      'REPORT_TO_AMLO',
+      'VIEW_USERS',
+      'VIEW_ACCOUNTS',
+      'VIEW_TRANSACTIONS'
+    ]
+  };
+
+  console.log('🔗 Linking permissions to roles...');
+  for (const [roleName, perms] of Object.entries(rolePermissionsMapping)) {
+    const role = await prisma.role.findUnique({ where: { name: roleName } });
+    
+    // Clear existing permissions for this role to ensure a clean sync
+    await prisma.rolePermission.deleteMany({ where: { roleId: role.id } });
+
+    for (const permName of perms) {
+      const permission = await prisma.permission.findUnique({ where: { name: permName } });
+      await prisma.rolePermission.create({
+        data: {
+          roleId: role.id,
+          permissionId: permission.id
+        }
+      });
+    }
+  }
+
+  // 4. Create/Update Default Admin User
   const adminPassword = await bcrypt.hash('password123', 10);
   const adminUser = await prisma.staff.upsert({
     where: { username: 'admin' },
@@ -36,147 +111,37 @@ async function main() {
     create: {
       username: 'admin',
       password: adminPassword,
-      email: 'admin@jledger.com',
+      email: 'admin@jledger.io',
       firstName: 'System',
       lastName: 'Admin',
       isActive: true,
     },
   });
 
-  // Assign role to admin
-  const existingRole = await prisma.staffRole.findFirst({
+  // Assign SUPER_ADMIN role to default admin
+  const superAdminRole = await prisma.role.findUnique({ where: { name: 'SUPER_ADMIN' } });
+  await prisma.staffRole.upsert({
     where: {
-      staffId: adminUser.id,
-      roleId: superAdminRole.id,
+      staffId_roleId: {
+        staffId: adminUser.id,
+        roleId: superAdminRole.id
+      }
     },
+    update: {},
+    create: {
+      staffId: adminUser.id,
+      roleId: superAdminRole.id
+    }
   });
 
-  if (!existingRole) {
-    await prisma.staffRole.create({
-      data: {
-        staffId: adminUser.id,
-        roleId: superAdminRole.id,
-      },
-    });
-  }
-
-  // ==================== Loyalty & Deals Seed ====================
-  
-  // 1. Categories
-  const categories = [
-    { name: 'Food & Beverage', description: 'Delicious deals for your tummy', order: 1 },
-    { name: 'Travel', description: 'Explore the world for less', order: 2 },
-    { name: 'Shopping', description: 'Shop till you drop', order: 3 },
-    { name: 'Entertainment', description: 'Movies, games, and more', order: 4 },
-  ];
-
-  const categoryMap = {};
-  for (const cat of categories) {
-    const result = await prisma.dealCategory.upsert({
-      where: { name: cat.name },
-      update: cat,
-      create: cat,
-    });
-    categoryMap[cat.name] = result.id;
-  }
-
-  // 2. Brands
-  const brands = [
-    { name: 'Starbucks', logoUrl: 'https://logo.clearbit.com/starbucks.com', description: 'Premium Coffee' },
-    { name: 'Grab', logoUrl: 'https://logo.clearbit.com/grab.com', description: 'Ride Hailing & Food' },
-    { name: '7-Eleven', logoUrl: 'https://logo.clearbit.com/7-eleven.com', description: 'Convenience Store' },
-  ];
-
-  const brandMap = {};
-  for (const b of brands) {
-    const existing = await prisma.brand.findFirst({ where: { name: b.name } });
-    let result;
-    if (existing) {
-      result = await prisma.brand.update({ where: { id: existing.id }, data: b });
-    } else {
-      result = await prisma.brand.create({ data: b });
-    }
-    brandMap[b.name] = result.id;
-  }
-
-  // 3. Deals
-  const deals = [
-    {
-      title: 'Free Starbucks Upsize',
-      description: 'Get a free upsize on any handcrafted beverage.',
-      pointsRequired: 100,
-      imageUrl: 'https://images.unsplash.com/photo-1544787210-2211d44b565a?w=800&q=80',
-      brandId: brandMap['Starbucks'],
-      categoryId: categoryMap['Food & Beverage'],
-      stock: 1000,
-      remainingStock: 1000,
-      limitPerUser: 2,
-      priority: 10,
-      termsCondition: '1. Valid at all branches.\n2. Cannot be used with other promotions.',
-    },
-    {
-      title: '฿50 GrabFood Discount',
-      description: 'Get 50 THB off your next GrabFood order.',
-      pointsRequired: 200,
-      imageUrl: 'https://images.unsplash.com/photo-1565299624946-b28f40a0ae38?w=800&q=80',
-      brandId: brandMap['Grab'],
-      categoryId: categoryMap['Food & Beverage'],
-      stock: 500,
-      remainingStock: 500,
-      limitPerUser: 1,
-      priority: 5,
-      termsCondition: '1. Minimum spend of 200 THB.\n2. For GrabFood only.',
-    },
-  ];
-
-  for (const d of deals) {
-    const existing = await prisma.deal.findFirst({ where: { title: d.title } });
-    if (existing) {
-      await prisma.deal.update({ where: { id: existing.id }, data: d });
-    } else {
-      await prisma.deal.create({ data: d });
-    }
-  }
-
-  // 4. Banners
-  const banners = [
-    {
-      title: 'Welcome Bonus!',
-      imageUrl: 'https://images.unsplash.com/photo-1557683316-973673baf926?w=1200&q=80',
-      actionPath: '/topup',
-      priority: 10,
-    },
-    {
-      title: 'Exclusive Deals for You',
-      imageUrl: 'https://images.unsplash.com/photo-1607082348824-0a96f2a4b9da?w=1200&q=80',
-      actionPath: '/(tabs)/deals',
-      priority: 5,
-    },
-  ];
-
-  for (const b of banners) {
-    const existing = await prisma.banner.findFirst({ where: { title: b.title } });
-    if (existing) {
-      await prisma.banner.update({ where: { id: existing.id }, data: b });
-    } else {
-      await prisma.banner.create({ data: b });
-    }
-  }
-
-  console.log('✅ Seed completed successfully!');
-  console.log(`- Created ${categories.length} Categories`);
-  console.log(`- Created ${brands.length} Brands`);
-  console.log(`- Created ${deals.length} Deals`);
-  console.log(`- Created ${banners.length} Banners`);
+  console.log('✅ RBAC Seed completed successfully!');
 }
 
 main()
   .catch((e) => {
-    // eslint-disable-next-line no-console
     console.error(e);
     process.exit(1);
   })
   .finally(async () => {
     await prisma.$disconnect();
   });
-

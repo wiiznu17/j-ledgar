@@ -1,10 +1,13 @@
 import { Controller, Get, Post, Put, Body, Param, Query, UseGuards } from '@nestjs/common';
 import { AdminJwtGuard } from '../guards/admin-jwt.guard';
+import { AdminRolesGuard } from '../guards/admin-roles.guard';
+import { Roles } from '../decorators/roles.decorator';
+import { AdminRole, AdminPaginatedResponse, PaginatedResponse, Account, Transaction, WalletDto } from '@repo/dto';
+
 import { IntegrationService } from '../../modules/integration/integration.service';
-import { AdminPaginatedResponse, PaginatedResponse, Account, Transaction, WalletDto } from '@repo/dto';
 
 @Controller('admin')
-@UseGuards(AdminJwtGuard)
+@UseGuards(AdminJwtGuard, AdminRolesGuard)
 export class AdminFinanceController {
   constructor(private readonly integrationService: IntegrationService) {}
 
@@ -45,6 +48,7 @@ export class AdminFinanceController {
   }
 
   @Put('accounts/:id/status')
+  @Roles(AdminRole.SUPER_ADMIN, AdminRole.AUDITOR)
   async updateAccountStatus(
     @Param('id') id: string,
     @Body('status') status: string,
@@ -84,6 +88,7 @@ export class AdminFinanceController {
   }
 
   @Post('wallets/:userId/freeze')
+  @Roles(AdminRole.SUPER_ADMIN, AdminRole.AUDITOR)
   async freezeWallet(@Param('userId') userId: string): Promise<void> {
     await this.integrationService.forwardToGateway(
       'post',
@@ -93,6 +98,7 @@ export class AdminFinanceController {
   }
 
   @Post('wallets/:userId/unfreeze')
+  @Roles(AdminRole.SUPER_ADMIN, AdminRole.AUDITOR)
   async unfreezeWallet(@Param('userId') userId: string): Promise<void> {
     await this.integrationService.forwardToGateway(
       'post',
@@ -191,6 +197,7 @@ export class AdminFinanceController {
   }
 
   @Put('aml/suspicious-activities/:id/status')
+  @Roles(AdminRole.SUPER_ADMIN, AdminRole.AUDITOR, AdminRole.COMPLIANCE_OFFICER)
   async updateSuspiciousActivityStatus(
     @Param('id') id: string,
     @Body() data: any,
