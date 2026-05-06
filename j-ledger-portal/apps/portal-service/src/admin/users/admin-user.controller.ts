@@ -25,6 +25,12 @@ export class AdminUserController {
     return this.adminService.findAllStaff(Number(page), Number(limit));
   }
 
+  @Get('wallet/stats')
+  @Permissions(Permission.VIEW_USERS)
+  async getWalletUserStats() {
+    return this.identityService.getUserStats();
+  }
+
   @Get('wallet')
   @Permissions(Permission.VIEW_USERS)
   async getWalletUsers(

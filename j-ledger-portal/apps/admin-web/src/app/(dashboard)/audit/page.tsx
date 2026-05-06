@@ -22,7 +22,8 @@ import {
 import { adminApi } from '@/lib/admin-api';
 import { useState, useEffect, useCallback } from 'react';
 import { useSearchParams } from 'next/navigation';
-import { ChevronLeft, ChevronRight, Search, X } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Search, RotateCcw, Filter, History, Eye, ShieldAlert, Cpu, Terminal, Calendar as CalendarIcon } from 'lucide-react';
+import { format } from 'date-fns';
 
 export default function AuditPage() {
   const [logs, setLogs] = useState<any[]>([]);
@@ -36,8 +37,8 @@ export default function AuditPage() {
 
   // Filters
   const [adminUserId, setAdminUserId] = useState(searchParams.get('adminUserId') || '');
-  const [action, setAction] = useState<string | null>(null);
-  const [resourceType, setResourceType] = useState<string | null>(null);
+  const [action, setAction] = useState<string>('ALL');
+  const [resourceType, setResourceType] = useState<string>('ALL');
   const [startDate, setStartDate] = useState('');
   const [endDate, setEndDate] = useState('');
 
@@ -50,8 +51,8 @@ export default function AuditPage() {
         page,
         limit,
         adminUserId: adminUserId || undefined,
-        action: action || undefined,
-        resourceType: resourceType || undefined,
+        action: action !== 'ALL' ? action : undefined,
+        resourceType: resourceType !== 'ALL' ? resourceType : undefined,
         startDate: startDate || undefined,
         endDate: endDate || undefined,
       });
@@ -69,70 +70,98 @@ export default function AuditPage() {
     fetchLogs();
   }, [fetchLogs]);
 
-  const handleFilter = () => {
+  const handleFilter = (e?: React.FormEvent) => {
+    if (e) e.preventDefault();
     setPage(1);
     fetchLogs();
   };
 
   const handleClearFilters = () => {
     setAdminUserId('');
-    setAction(null);
-    setResourceType(null);
+    setAction('ALL');
+    setResourceType('ALL');
     setStartDate('');
     setEndDate('');
     setPage(1);
-    fetchLogs();
   };
 
   const getActionColor = (act: string) => {
     switch (act) {
-      case 'DELETE':
-        return 'bg-red-100 text-red-800';
-      case 'UPDATE':
-        return 'bg-yellow-100 text-yellow-800';
-      case 'CREATE':
-        return 'bg-green-100 text-green-800';
-      default:
-        return 'bg-blue-100 text-blue-800';
+      case 'DELETE': return 'bg-rose-50 text-rose-600 border-rose-100';
+      case 'UPDATE': return 'bg-amber-50 text-amber-600 border-amber-100';
+      case 'CREATE': return 'bg-emerald-50 text-emerald-600 border-emerald-100';
+      default: return 'bg-slate-50 text-slate-600 border-slate-100';
     }
   };
 
   const getStatusColor = (status: number) => {
     return status >= 200 && status < 300
-      ? 'bg-green-100 text-green-800'
-      : 'bg-red-100 text-red-800';
+      ? 'text-emerald-600'
+      : 'text-rose-500';
   };
 
   return (
-    <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <h2 className="text-3xl font-bold tracking-tight text-[#2D3748]">Audit Logs</h2>
+    <div className="space-y-4 pb-10">
+      {/* Header */}
+      <div>
+        <h2 className="text-2xl font-bold tracking-tight text-slate-900">Audit Intelligence</h2>
+        <p className="text-sm text-slate-500 mt-1">
+          Traceable history of administrative operations and resource mutations.
+        </p>
       </div>
 
-      {/* Filters */}
-      <Card className="border-border shadow-sm">
-        <CardHeader>
-          <CardTitle>Filters</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
-            <div>
-              <Label htmlFor="adminUserId">Admin User ID</Label>
-              <Input
-                id="adminUserId"
-                value={adminUserId}
-                onChange={(e) => setAdminUserId(e.target.value)}
-                placeholder="Enter admin user ID"
-              />
+      {/* Audit Overview Row */}
+      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 bg-white p-4 rounded-xl shadow-sm border border-slate-100">
+        <div className="flex items-center gap-2">
+          <History className="w-4 h-4 text-indigo-500" />
+          <span className="text-sm font-bold text-slate-700">Audit Snapshot</span>
+        </div>
+
+        <div className="flex items-center flex-wrap gap-4 md:gap-6 text-sm">
+          <div className="flex items-center gap-2">
+            <div className="w-2 h-2 rounded-full bg-emerald-500" />
+            <span className="text-slate-500 font-medium">Creations: <strong className="text-slate-800">{logs.filter(l => l.action === 'CREATE').length}+</strong></span>
+          </div>
+          <div className="flex items-center gap-2">
+            <div className="w-2 h-2 rounded-full bg-amber-500" />
+            <span className="text-slate-500 font-medium">Updates: <strong className="text-slate-800">{logs.filter(l => l.action === 'UPDATE').length}+</strong></span>
+          </div>
+          <div className="flex items-center gap-2">
+            <div className="w-2 h-2 rounded-full bg-rose-500" />
+            <span className="text-slate-500 font-medium">Deletions: <strong className="text-slate-800">{logs.filter(l => l.action === 'DELETE').length}+</strong></span>
+          </div>
+        </div>
+      </div>
+
+      <Card className="border-none shadow-sm ring-1 ring-slate-100 overflow-hidden bg-white">
+        {/* Filter Toolbar */}
+        <div className="p-3 bg-white border-b border-slate-100">
+          <form onSubmit={handleFilter} className="grid grid-cols-1 md:grid-cols-5 gap-4 items-end">
+            <div className="flex flex-col gap-1.5">
+              <Label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">
+                Admin Identifier
+              </Label>
+              <div className="relative w-full">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+                <Input 
+                  placeholder="ID or Name..." 
+                  value={adminUserId}
+                  onChange={(e) => setAdminUserId(e.target.value)}
+                  className="pl-9 h-10 w-full text-xs border-slate-200 focus:ring-indigo-500 rounded-xl bg-white shadow-sm font-medium"
+                />
+              </div>
             </div>
-            <div>
-              <Label htmlFor="action">Action</Label>
-              <Select value={action} onValueChange={setAction}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Select action" />
+
+            <div className="flex flex-col gap-1.5">
+              <Label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">
+                Operation Action
+              </Label>
+              <Select value={action} onValueChange={(val) => setAction(val || 'ALL')}>
+                <SelectTrigger className="w-full bg-white border-slate-200 !h-10 shadow-sm rounded-xl font-bold text-xs">
+                  <SelectValue placeholder="All Actions" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="">All Actions</SelectItem>
+                  <SelectItem value="ALL">All Actions</SelectItem>
                   <SelectItem value="CREATE">CREATE</SelectItem>
                   <SelectItem value="UPDATE">UPDATE</SelectItem>
                   <SelectItem value="DELETE">DELETE</SelectItem>
@@ -140,233 +169,217 @@ export default function AuditPage() {
                 </SelectContent>
               </Select>
             </div>
-            <div>
-              <Label htmlFor="resourceType">Resource Type</Label>
-              <Select value={resourceType} onValueChange={setResourceType}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Select resource" />
+
+            <div className="flex flex-col gap-1.5">
+              <Label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">
+                Resource Type
+              </Label>
+              <Select value={resourceType} onValueChange={(val) => setResourceType(val || 'ALL')}>
+                <SelectTrigger className="w-full bg-white border-slate-200 !h-10 shadow-sm rounded-xl font-bold text-xs">
+                  <SelectValue placeholder="All Resources" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="">All Resources</SelectItem>
+                  <SelectItem value="ALL">All Resources</SelectItem>
                   <SelectItem value="ACCOUNT">ACCOUNT</SelectItem>
                   <SelectItem value="USER">USER</SelectItem>
                   <SelectItem value="ADMIN_USER">ADMIN_USER</SelectItem>
-                  <SelectItem value="SUSPICIOUS_ACTIVITY">SUSPICIOUS_ACTIVITY</SelectItem>
                   <SelectItem value="TRANSACTION">TRANSACTION</SelectItem>
                 </SelectContent>
               </Select>
             </div>
-            <div>
-              <Label htmlFor="startDate">Start Date</Label>
-              <Input
-                id="startDate"
-                type="date"
-                value={startDate}
-                onChange={(e) => setStartDate(e.target.value)}
-              />
-            </div>
-            <div>
-              <Label htmlFor="endDate">End Date</Label>
-              <Input
-                id="endDate"
-                type="date"
-                value={endDate}
-                onChange={(e) => setEndDate(e.target.value)}
-              />
-            </div>
-          </div>
-          <div className="flex gap-2 mt-4">
-            <Button onClick={handleFilter} className="flex items-center gap-2">
-              <Search className="w-4 h-4" />
-              Apply Filters
-            </Button>
-            <Button
-              onClick={handleClearFilters}
-              variant="outline"
-              className="flex items-center gap-2"
-            >
-              <X className="w-4 h-4" />
-              Clear
-            </Button>
-          </div>
-        </CardContent>
-      </Card>
 
-      {/* Audit Logs Table */}
-      <Card className="border-border shadow-sm">
-        <CardHeader>
-          <CardTitle>Admin Action History</CardTitle>
-          <CardDescription>
-            Complete audit trail of all administrative actions performed in the system. Total:{' '}
-            {total} records
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <div className="rounded-md border">
-            <table className="w-full">
-              <thead>
-                <tr className="border-b bg-muted/50">
-                  <th className="p-4 text-left font-medium">Timestamp</th>
-                  <th className="p-4 text-left font-medium">Admin User</th>
-                  <th className="p-4 text-left font-medium">Action</th>
-                  <th className="p-4 text-left font-medium">Resource Type</th>
-                  <th className="p-4 text-left font-medium">Resource ID</th>
-                  <th className="p-4 text-left font-medium">IP Address</th>
-                  <th className="p-4 text-left font-medium">Status</th>
-                  <th className="p-4 text-left font-medium">Details</th>
+            <div className="md:col-span-2 flex gap-2 w-full h-10">
+              <Button 
+                type="button" 
+                variant="outline" 
+                size="sm" 
+                onClick={handleClearFilters}
+                className="flex-1 h-10 text-slate-500 hover:text-slate-700 hover:bg-slate-100 text-xs font-bold rounded-xl border-slate-200"
+              >
+                <RotateCcw className="w-4 h-4 mr-1" />
+                Reset
+              </Button>
+              <Button type="submit" size="sm" className="flex-[2] h-10 bg-indigo-600 hover:bg-indigo-700 text-xs font-bold rounded-xl shadow-lg shadow-indigo-200 text-white">
+                <Filter className="w-4 h-4 mr-1" />
+                Apply Filters
+              </Button>
+            </div>
+          </form>
+        </div>
+
+        <div className="overflow-x-auto">
+          <table className="w-full text-left">
+            <thead>
+              <tr className="border-b border-slate-100 bg-slate-50/30 text-slate-400 text-[10px] uppercase font-bold tracking-widest">
+                <th className="px-6 py-4">Execution Time</th>
+                <th className="px-6 py-4">Actor</th>
+                <th className="px-6 py-4">Operation</th>
+                <th className="px-6 py-4">Target Resource</th>
+                <th className="px-6 py-4 text-right">Intel</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-slate-50">
+              {loading ? (
+                Array.from({ length: 5 }).map((_, i) => (
+                  <tr key={i} className="animate-pulse">
+                    <td colSpan={5} className="px-6 py-8 h-16 bg-slate-50/10" />
+                  </tr>
+                ))
+              ) : logs.length === 0 ? (
+                <tr>
+                  <td colSpan={5} className="px-6 py-12 text-center text-slate-400 font-medium">
+                    No audit records found matching your selection.
+                  </td>
                 </tr>
-              </thead>
-              <tbody>
-                {loading ? (
-                  <tr>
-                    <td colSpan={8} className="p-8 text-center text-muted-foreground">
-                      Loading...
+              ) : (
+                logs.map((log: any) => (
+                  <tr key={log.id} className="hover:bg-slate-50/50 transition-colors group">
+                    <td className="px-6 py-4">
+                      <div className="flex flex-col">
+                        <span className="text-xs font-bold text-slate-700">{format(new Date(log.createdAt), 'MMM d, HH:mm:ss')}</span>
+                        <span className="text-[10px] text-slate-400 font-mono tracking-tighter">{format(new Date(log.createdAt), 'yyyy')}</span>
+                      </div>
                     </td>
-                  </tr>
-                ) : logs.length === 0 ? (
-                  <tr>
-                    <td colSpan={8} className="p-8 text-center text-muted-foreground">
-                      No audit logs found
+                    <td className="px-6 py-4">
+                      <div className="flex items-center gap-3">
+                        <div className="w-8 h-8 rounded-full bg-slate-100 flex items-center justify-center text-slate-500 group-hover:bg-indigo-100 group-hover:text-indigo-600 transition-colors">
+                          <Cpu className="w-4 h-4" />
+                        </div>
+                        <div className="flex flex-col">
+                          <span className="text-xs font-bold text-slate-700 leading-tight">Admin System</span>
+                          <span className="text-[10px] text-slate-400 font-mono truncate max-w-[150px]">
+                            {log.adminUserId}
+                          </span>
+                        </div>
+                      </div>
                     </td>
-                  </tr>
-                ) : (
-                  logs.map((log: any) => (
-                    <tr key={log.id} className="border-b hover:bg-muted/50">
-                      <td className="p-4 text-sm">{new Date(log.createdAt).toLocaleString()}</td>
-                      <td className="p-4 text-sm font-medium">{log.adminUserId}</td>
-                      <td className="p-4">
-                        <span
-                          className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium ${getActionColor(log.action)}`}
-                        >
+                    <td className="px-6 py-4">
+                      <div className="flex flex-col gap-1.5">
+                        <span className={`px-2 py-0.5 w-fit rounded-md text-[10px] font-black uppercase tracking-wider border ${getActionColor(log.action)}`}>
                           {log.action}
                         </span>
-                      </td>
-                      <td className="p-4 text-sm">{log.resourceType}</td>
-                      <td className="p-4 text-sm font-mono text-xs">{log.resourceId}</td>
-                      <td className="p-4 text-sm font-mono text-xs">{log.ipAddress}</td>
-                      <td className="p-4">
-                        <span
-                          className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium ${getStatusColor(log.responseStatus)}`}
-                        >
-                          {log.responseStatus}
+                        <span className={`text-[10px] font-bold ${getStatusColor(log.responseStatus)}`}>
+                          Status: {log.responseStatus}
                         </span>
-                      </td>
-                      <td className="p-4">
-                        <Dialog>
-                          <DialogTrigger>
-                            <Button variant="ghost" size="sm" onClick={() => setSelectedLog(log)}>
-                              View
-                            </Button>
-                          </DialogTrigger>
-                          <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
-                            <DialogHeader>
-                              <DialogTitle>Audit Log Details</DialogTitle>
-                              <DialogDescription>
-                                Detailed information about this administrative action
-                              </DialogDescription>
-                            </DialogHeader>
-                            {selectedLog && (
-                              <div className="space-y-4">
-                                <div className="grid grid-cols-2 gap-4">
+                      </div>
+                    </td>
+                    <td className="px-6 py-4">
+                      <div className="flex flex-col gap-1">
+                        <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">{log.resourceType}</span>
+                        <span className="text-xs font-mono text-slate-700 tracking-tighter bg-slate-100 px-1.5 py-0.5 rounded w-fit">
+                          {log.resourceId || 'N/A'}
+                        </span>
+                      </div>
+                    </td>
+                    <td className="px-6 py-4 text-right">
+                      <Dialog>
+                        <DialogTrigger render={
+                          <Button variant="outline" size="sm" onClick={() => setSelectedLog(log)} className="h-8 rounded-lg text-[10px] font-bold border-slate-200 hover:bg-slate-50">
+                            Inspect
+                          </Button>
+                        } />
+                        <DialogContent className="max-w-2xl bg-white rounded-2xl border-0 shadow-2xl overflow-hidden">
+                          <DialogHeader className="bg-slate-50/50 p-6 border-b border-slate-100">
+                            <DialogTitle className="text-xl font-bold flex items-center gap-2">
+                              <Terminal className="w-5 h-5 text-indigo-600" />
+                              Audit Log Intel
+                            </DialogTitle>
+                            <DialogDescription className="text-xs">
+                              Complete trace of the administrative mutation and payload.
+                            </DialogDescription>
+                          </DialogHeader>
+                          {selectedLog && (
+                            <div className="p-6 space-y-6 max-h-[70vh] overflow-y-auto custom-scrollbar">
+                              <div className="grid grid-cols-1 md:grid-cols-2 gap-6 text-xs">
+                                <div className="space-y-4">
                                   <div>
-                                    <Label className="font-semibold">Timestamp</Label>
-                                    <p className="text-sm">
-                                      {new Date(selectedLog.createdAt).toLocaleString()}
-                                    </p>
-                                  </div>
-                                  <div>
-                                    <Label className="font-semibold">Admin User ID</Label>
-                                    <p className="text-sm">{selectedLog.adminUserId}</p>
-                                  </div>
-                                  <div>
-                                    <Label className="font-semibold">Action</Label>
-                                    <p className="text-sm">{selectedLog.action}</p>
-                                  </div>
-                                  <div>
-                                    <Label className="font-semibold">Resource Type</Label>
-                                    <p className="text-sm">{selectedLog.resourceType}</p>
-                                  </div>
-                                  <div>
-                                    <Label className="font-semibold">Resource ID</Label>
-                                    <p className="text-sm font-mono">{selectedLog.resourceId}</p>
-                                  </div>
-                                  <div>
-                                    <Label className="font-semibold">IP Address</Label>
-                                    <p className="text-sm font-mono">{selectedLog.ipAddress}</p>
-                                  </div>
-                                  <div>
-                                    <Label className="font-semibold">User Agent</Label>
-                                    <p className="text-sm break-all">{selectedLog.userAgent}</p>
-                                  </div>
-                                  <div>
-                                    <Label className="font-semibold">Response Status</Label>
-                                    <p className="text-sm">{selectedLog.responseStatus}</p>
+                                    <p className="font-black text-slate-400 uppercase tracking-widest text-[9px] mb-1">Request Intel</p>
+                                    <div className="space-y-1.5 font-bold text-slate-700">
+                                      <p className="flex justify-between border-b border-slate-50 pb-1">
+                                        <span>IP Address:</span>
+                                        <span className="font-mono text-indigo-600">{selectedLog.ipAddress}</span>
+                                      </p>
+                                      <p className="flex justify-between border-b border-slate-50 pb-1">
+                                        <span>Method:</span>
+                                        <span>{selectedLog.action}</span>
+                                      </p>
+                                    </div>
                                   </div>
                                 </div>
-                                {selectedLog.reason && (
-                                  <div>
-                                    <Label className="font-semibold">Reason</Label>
-                                    <p className="text-sm">{selectedLog.reason}</p>
-                                  </div>
-                                )}
-                                {selectedLog.requestPayload && (
-                                  <div>
-                                    <Label className="font-semibold">Request Payload</Label>
-                                    <pre className="mt-1 p-3 bg-muted rounded-md text-xs overflow-x-auto">
+                                <div>
+                                  <p className="font-black text-slate-400 uppercase tracking-widest text-[9px] mb-1">User Agent</p>
+                                  <p className="text-[10px] text-slate-500 italic bg-slate-50 p-2 rounded-lg border border-slate-100">
+                                    {selectedLog.userAgent}
+                                  </p>
+                                </div>
+                              </div>
+
+                              {selectedLog.requestPayload && (
+                                <div className="space-y-2">
+                                  <p className="font-black text-slate-400 uppercase tracking-widest text-[9px] ml-1">Request Payload</p>
+                                  <div className="p-4 bg-slate-900 rounded-xl overflow-hidden border border-slate-800">
+                                    <pre className="text-[10px] text-emerald-400 font-mono overflow-x-auto custom-scrollbar leading-relaxed">
                                       {JSON.stringify(selectedLog.requestPayload, null, 2)}
                                     </pre>
                                   </div>
-                                )}
-                                {selectedLog.changes && (
-                                  <div>
-                                    <Label className="font-semibold">Changes</Label>
-                                    <pre className="mt-1 p-3 bg-muted rounded-md text-xs overflow-x-auto">
+                                </div>
+                              )}
+
+                              {selectedLog.changes && (
+                                <div className="space-y-2">
+                                  <p className="font-black text-slate-400 uppercase tracking-widest text-[9px] ml-1 text-amber-500">Resource Mutation (Changes)</p>
+                                  <div className="p-4 bg-slate-900 rounded-xl overflow-hidden border border-slate-800">
+                                    <pre className="text-[10px] text-amber-400 font-mono overflow-x-auto custom-scrollbar leading-relaxed">
                                       {JSON.stringify(selectedLog.changes, null, 2)}
                                     </pre>
                                   </div>
-                                )}
-                              </div>
-                            )}
-                          </DialogContent>
-                        </Dialog>
-                      </td>
-                    </tr>
-                  ))
-                )}
-              </tbody>
-            </table>
-          </div>
+                                </div>
+                              )}
+                            </div>
+                          )}
+                        </DialogContent>
+                      </Dialog>
+                    </td>
+                  </tr>
+                ))
+              )}
+            </tbody>
+          </table>
+        </div>
 
-          {/* Pagination */}
-          {totalPages > 1 && (
-            <div className="flex items-center justify-between mt-4">
-              <p className="text-sm text-muted-foreground">
-                Page {page} of {totalPages} ({total} total records)
-              </p>
-              <div className="flex gap-2">
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => setPage((p) => Math.max(1, p - 1))}
-                  disabled={page === 1}
-                >
-                  <ChevronLeft className="w-4 h-4" />
-                  Previous
-                </Button>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
-                  disabled={page === totalPages}
-                >
-                  Next
-                  <ChevronRight className="w-4 h-4" />
-                </Button>
-              </div>
+        {/* Pagination UI */}
+        {totalPages > 0 && (
+          <div className="p-4 bg-white border-t border-slate-100 flex items-center justify-between">
+            <p className="text-xs text-slate-500 font-medium">
+              Showing page <strong className="text-slate-800">{page}</strong> of <strong className="text-slate-800">{totalPages}</strong> 
+              <span className="hidden sm:inline"> ({total} total audit records)</span>
+            </p>
+            <div className="flex gap-2">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setPage(page - 1)}
+                disabled={page === 1 || loading}
+                className="h-8 px-3 text-xs font-bold rounded-lg border-slate-200 text-slate-600"
+              >
+                <ChevronLeft className="w-4 h-4 mr-1" />
+                Prev
+              </Button>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setPage(page + 1)}
+                disabled={page === totalPages || loading}
+                className="h-8 px-3 text-xs font-bold rounded-lg border-slate-200 text-slate-600"
+              >
+                Next
+                <ChevronRight className="w-4 h-4 ml-1" />
+              </Button>
             </div>
-          )}
-        </CardContent>
+          </div>
+        )}
       </Card>
     </div>
   );
 }
+

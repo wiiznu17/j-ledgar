@@ -675,6 +675,22 @@ export class IdentityService {
     };
   }
 
+  async getUserStats() {
+    const [total, active, pending, blocked] = await Promise.all([
+      this.prisma.user.count(),
+      this.prisma.user.count({ where: { status: 'ACTIVE' } }),
+      this.prisma.user.count({ where: { status: 'PENDING_APPROVAL' } }),
+      this.prisma.user.count({ where: { status: 'BLOCKED' } }),
+    ]);
+
+    return {
+      total,
+      active,
+      pending,
+      blocked,
+    };
+  }
+
   async findAllSecurityEvents(page: number = 1, limit: number = 50, userId?: string) {
     const skip = (page - 1) * limit;
     const where: any = {};
