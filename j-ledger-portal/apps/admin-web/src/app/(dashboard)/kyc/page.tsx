@@ -12,6 +12,7 @@ import { Popover, PopoverTrigger, PopoverContent } from '@/components/ui/popover
 import { Calendar } from '@/components/ui/calendar';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { format } from 'date-fns';
+import { FilterSearchInput, FilterSelect, FilterActions, FilterDatePicker } from '@/components/common/FilterElements';
 
 interface KycDocument {
   id: string;
@@ -125,114 +126,54 @@ export default function KycListPage() {
         {/* Filter Toolbar */}
         <div className="p-3 bg-white border-b border-slate-100">
           <form onSubmit={handleApplyFilter} className="grid grid-cols-1 md:grid-cols-5 gap-4 items-end">
-            <div className="flex flex-col gap-1.5">
-              <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">
-                Verification Status
-              </label>
-              <Select value={status} onValueChange={(val: any) => setStatus(val)}>
-                <SelectTrigger className="w-full bg-white border-slate-200 !h-10 shadow-sm rounded-xl font-bold text-xs">
-                  <SelectValue placeholder="Select Status" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="PENDING_APPROVAL">PENDING</SelectItem>
-                  <SelectItem value="ACTIVE">ACTIVE</SelectItem>
-                  <SelectItem value="REJECTED">REJECTED</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
+            <FilterSelect 
+              label="Verification Status"
+              value={status}
+              onValueChange={(val: any) => setStatus(val)}
+              options={[
+                { label: 'PENDING', value: 'PENDING_APPROVAL' },
+                { label: 'ACTIVE', value: 'ACTIVE' },
+                { label: 'REJECTED', value: 'REJECTED' },
+              ]}
+            />
 
-            <div className="space-y-1.5">
-              <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">
-                Phone Number
-              </label>
-              <div className="relative w-full">
-                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
-                <Input 
-                  placeholder="08x-xxx-xxxx" 
-                  value={phoneNumber}
-                  onChange={(e) => setPhoneNumber(e.target.value)}
-                  className="pl-9 h-10 w-full text-xs border-slate-200 focus:ring-indigo-500 rounded-xl bg-white shadow-sm font-medium"
-                />
-              </div>
-            </div>
+            <FilterSearchInput 
+              label="Phone Number"
+              placeholder="08x-xxx-xxxx"
+              value={phoneNumber}
+              onChange={(e) => setPhoneNumber(e.target.value)}
+            />
 
-            <div className="space-y-1.5">
-              <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">
-                Date From
-              </label>
-              <Popover>
-                <PopoverTrigger 
-                  render={
-                    <Button variant="outline" className={`w-full h-10 justify-start text-left font-medium text-xs bg-white border-slate-200 rounded-xl shadow-sm ${!startDate && "text-muted-foreground"}`}>
-                      <CalendarIcon className="mr-2 h-4 w-4 text-slate-400 flex-shrink-0" />
-                      <span className="truncate">{startDate ? format(new Date(startDate), "PPP") : "Pick date"}</span>
-                    </Button>
-                  }
-                />
-                <PopoverContent className="w-auto p-0" align="start">
-                  <Calendar
-                    mode="single"
-                    selected={startDate ? new Date(startDate) : undefined}
-                    onSelect={(date: any) => setStartDate(date ? format(date, 'yyyy-MM-dd') : '')}
-                    initialFocus
-                  />
-                </PopoverContent>
-              </Popover>
-            </div>
+            <FilterDatePicker 
+              label="Date From"
+              value={startDate}
+              onChange={setStartDate}
+            />
 
-            <div className="space-y-1.5">
-              <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">
-                Date To
-              </label>
-              <Popover>
-                <PopoverTrigger 
-                  render={
-                    <Button variant="outline" className={`w-full h-10 justify-start text-left font-medium text-xs bg-white border-slate-200 rounded-xl shadow-sm ${!endDate && "text-muted-foreground"}`}>
-                      <CalendarIcon className="mr-2 h-4 w-4 text-slate-400 flex-shrink-0" />
-                      <span className="truncate">{endDate ? format(new Date(endDate), "PPP") : "Pick date"}</span>
-                    </Button>
-                  }
-                />
-                <PopoverContent className="w-auto p-0" align="start">
-                  <Calendar
-                    mode="single"
-                    selected={endDate ? new Date(endDate) : undefined}
-                    onSelect={(date: any) => setEndDate(date ? format(date, 'yyyy-MM-dd') : '')}
-                    initialFocus
-                  />
-                </PopoverContent>
-              </Popover>
-            </div>
+            <FilterDatePicker 
+              label="Date To"
+              value={endDate}
+              onChange={setEndDate}
+            />
 
-            <div className="flex gap-2 w-full h-10">
-              <Button 
-                type="button" 
-                variant="outline" 
-                size="sm" 
-                onClick={() => {
-                  setPhoneNumber('');
-                  setStartDate('');
-                  setEndDate('');
-                  setStatus('PENDING_APPROVAL');
-                  setActiveFilters({
-                    status: 'PENDING_APPROVAL',
-                    phoneNumber: '',
-                    startDate: '',
-                    endDate: '',
-                    page: 1
-                  });
-                  setCurrentPage(1);
-                }}
-                className="flex-1 h-10 text-slate-500 hover:text-slate-700 hover:bg-slate-100 text-xs font-bold rounded-xl border-slate-200"
-              >
-                <RotateCcw className="w-4 h-4 mr-1" />
-                Reset
-              </Button>
-              <Button type="submit" size="sm" className="flex-[2] h-10 bg-indigo-600 hover:bg-indigo-700 text-xs font-bold rounded-xl shadow-lg shadow-indigo-200">
-                <Filter className="w-4 h-4 mr-1" />
-                Apply
-              </Button>
-            </div>
+            <FilterActions 
+              searchLabel="Search"
+              isLoading={isLoading}
+              onReset={() => {
+                setPhoneNumber('');
+                setStartDate('');
+                setEndDate('');
+                setStatus('PENDING_APPROVAL');
+                setActiveFilters({
+                  status: 'PENDING_APPROVAL',
+                  phoneNumber: '',
+                  startDate: '',
+                  endDate: '',
+                  page: 1
+                });
+                setCurrentPage(1);
+              }}
+            />
           </form>
         </div>
 

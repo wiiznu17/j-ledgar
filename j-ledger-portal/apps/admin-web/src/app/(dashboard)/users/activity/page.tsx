@@ -24,6 +24,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { ChevronLeft, ChevronRight, Search, RotateCcw, Filter, ShieldAlert, Activity, Eye, ShieldCheck, Lock } from 'lucide-react';
 import { useSearchParams, useRouter } from 'next/navigation';
 import { format } from 'date-fns';
+import { FilterSearchInput, FilterSelect, FilterActions } from '@/components/common/FilterElements';
 
 export default function UserActivityPage() {
   const searchParams = useSearchParams();
@@ -128,55 +129,34 @@ export default function UserActivityPage() {
         {/* Filter Toolbar */}
         <div className="p-3 bg-white border-b border-slate-100">
           <form onSubmit={handleFilter} className="grid grid-cols-1 md:grid-cols-5 gap-4 items-end">
-            <div className="md:col-span-2 flex flex-col gap-1.5">
-              <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">
-                Wallet User Identifier
-              </label>
-              <div className="relative w-full">
-                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
-                <Input 
-                  placeholder="ID, Email, or Phone..." 
-                  value={userId}
-                  onChange={(e) => setUserId(e.target.value)}
-                  className="pl-9 h-10 w-full text-xs border-slate-200 focus:ring-indigo-500 rounded-xl bg-white shadow-sm font-medium"
-                />
-              </div>
-            </div>
+            <FilterSearchInput 
+              label="Wallet User Identifier"
+              placeholder="ID, Email, or Phone..."
+              value={userId}
+              onChange={(e) => setUserId(e.target.value)}
+              className="md:col-span-2"
+            />
 
-            <div className="flex flex-col gap-1.5">
-              <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">
-                Event Classification
-              </label>
-              <Select value={eventType} onValueChange={(val) => setEventType(val || 'ALL')}>
-                <SelectTrigger className="w-full bg-white border-slate-200 !h-10 shadow-sm rounded-xl font-bold text-xs">
-                  <SelectValue placeholder="All Categories" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="ALL">ALL CATEGORIES</SelectItem>
-                  <SelectItem value="LOGIN_SUCCESS">LOGIN SUCCESS</SelectItem>
-                  <SelectItem value="LOGIN_FAILURE">LOGIN FAILURE</SelectItem>
-                  <SelectItem value="PIN_LOCKED">PIN LOCKED</SelectItem>
-                  <SelectItem value="SUSPICIOUS_ACTIVITY">SUSPICIOUS ACTIVITY</SelectItem>
-                  <SelectItem value="DEVICE_REGISTERED">DEVICE REGISTERED</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
+            <FilterSelect 
+              label="Event Classification"
+              value={eventType}
+              onValueChange={(val) => setEventType(val || 'ALL')}
+              options={[
+                { label: 'ALL CATEGORIES', value: 'ALL' },
+                { label: 'LOGIN SUCCESS', value: 'LOGIN_SUCCESS' },
+                { label: 'LOGIN FAILURE', value: 'LOGIN_FAILURE' },
+                { label: 'PIN LOCKED', value: 'PIN_LOCKED' },
+                { label: 'SUSPICIOUS ACTIVITY', value: 'SUSPICIOUS_ACTIVITY' },
+                { label: 'DEVICE REGISTERED', value: 'DEVICE_REGISTERED' },
+              ]}
+            />
 
-            <div className="md:col-span-2 flex gap-2 w-full h-10">
-              <Button 
-                type="button" 
-                variant="outline" 
-                onClick={handleClearFilters}
-                className="flex-1 h-10 text-slate-500 hover:text-slate-700 hover:bg-slate-100 text-xs font-bold rounded-xl border-slate-200"
-              >
-                <RotateCcw className="w-4 h-4 mr-1" />
-                Reset
-              </Button>
-              <Button type="submit" disabled={loading} className="flex-[2] h-10 bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold rounded-xl shadow-lg shadow-indigo-200 transition-all active:scale-95">
-                <Search className="w-4 h-4 mr-1" />
-                Search
-              </Button>
-            </div>
+            <FilterActions 
+              searchLabel="Search"
+              isLoading={loading}
+              onReset={handleClearFilters}
+              className="md:col-span-2"
+            />
           </form>
         </div>
 

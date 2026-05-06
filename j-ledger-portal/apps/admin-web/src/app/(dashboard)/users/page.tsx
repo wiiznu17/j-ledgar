@@ -17,6 +17,7 @@ import {
 import { Button } from '@/components/ui/button';
 import { Search, RotateCcw, Filter, ChevronLeft, ChevronRight, Users, UserCheck, UserPlus, History } from 'lucide-react';
 import { toast } from 'sonner';
+import { FilterSearchInput, FilterSelect, FilterActions } from '@/components/common/FilterElements';
 
 export default function UsersPage() {
   const [users, setUsers] = useState<WalletUser[]>([]);
@@ -139,69 +140,39 @@ export default function UsersPage() {
         {/* Filter Toolbar - KYC Style */}
         <div className="p-3 bg-white border-b border-slate-100">
           <form onSubmit={handleFilter} className="grid grid-cols-1 md:grid-cols-5 gap-4 items-end">
-            <div className="flex flex-col gap-1.5">
-              <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">
-                Email Address
-              </label>
-              <div className="relative w-full">
-                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
-                <Input 
-                  placeholder="search by email..." 
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  className="pl-9 h-10 w-full text-xs border-slate-200 focus:ring-indigo-500 rounded-xl bg-white shadow-sm font-medium"
-                />
-              </div>
-            </div>
+            <FilterSearchInput 
+              label="Email Address"
+              placeholder="search by email..."
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+            />
 
-            <div className="flex flex-col gap-1.5">
-              <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">
-                Phone Number
-              </label>
-              <div className="relative w-full">
-                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
-                <Input 
-                  placeholder="search by phone..." 
-                  value={phone}
-                  onChange={(e) => setPhone(e.target.value)}
-                  className="pl-9 h-10 w-full text-xs border-slate-200 focus:ring-indigo-500 rounded-xl bg-white shadow-sm font-medium"
-                />
-              </div>
-            </div>
+            <FilterSearchInput 
+              label="Phone Number"
+              placeholder="search by phone..."
+              value={phone}
+              onChange={(e) => setPhone(e.target.value)}
+            />
 
-            <div className="flex flex-col gap-1.5">
-              <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">
-                Account Status
-              </label>
-              <Select value={status} onValueChange={(val) => setStatus(val || 'ALL')}>
-                <SelectTrigger className="w-full bg-white border-slate-200 !h-10 shadow-sm rounded-xl font-bold text-xs">
-                  <SelectValue placeholder="All Statuses" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="ALL">ALL STATUSES</SelectItem>
-                  <SelectItem value="ACTIVE">ACTIVE</SelectItem>
-                  <SelectItem value="PENDING_APPROVAL">PENDING APPROVAL</SelectItem>
-                  <SelectItem value="SUSPENDED">SUSPENDED</SelectItem>
-                  <SelectItem value="BLOCKED">BLOCKED</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
+            <FilterSelect 
+              label="Account Status"
+              value={status}
+              onValueChange={(val) => setStatus(val || 'ALL')}
+              options={[
+                { label: 'ALL STATUSES', value: 'ALL' },
+                { label: 'ACTIVE', value: 'ACTIVE' },
+                { label: 'PENDING APPROVAL', value: 'PENDING_APPROVAL' },
+                { label: 'SUSPENDED', value: 'SUSPENDED' },
+                { label: 'BLOCKED', value: 'BLOCKED' },
+              ]}
+            />
 
-            <div className="md:col-span-2 flex gap-2 w-full h-10">
-              <Button 
-                type="button" 
-                variant="outline" 
-                onClick={handleClearFilters}
-                className="flex-1 h-10 text-slate-500 hover:text-slate-700 hover:bg-slate-100 text-xs font-bold rounded-xl border-slate-200"
-              >
-                <RotateCcw className="w-4 h-4 mr-1" />
-                Reset
-              </Button>
-              <Button type="submit" disabled={loading} className="flex-[2] h-10 bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold rounded-xl shadow-lg shadow-indigo-200 transition-all active:scale-95">
-                <Search className="w-4 h-4 mr-1" />
-                Search
-              </Button>
-            </div>
+            <FilterActions 
+              searchLabel="Search"
+              isLoading={loading}
+              onReset={handleClearFilters}
+              className="md:col-span-2"
+            />
           </form>
         </div>
 

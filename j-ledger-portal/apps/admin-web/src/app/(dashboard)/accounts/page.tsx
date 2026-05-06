@@ -43,6 +43,7 @@ import { WalletDto } from '@repo/dto';
 import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
 import Link from 'next/link';
+import { FilterSearchInput, FilterSelect, FilterActions } from '@/components/common/FilterElements';
 import {
   Popover,
   PopoverContent,
@@ -172,56 +173,31 @@ export default function WalletAccountsPage() {
         {/* Filter Toolbar */}
         <div className="p-4 bg-white border-b border-slate-100">
           <form onSubmit={handleApplyFilter} className="grid grid-cols-1 md:grid-cols-4 gap-4 items-end">
-            <div className="flex flex-col gap-2">
-              <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest ml-1">
-                Search Wallet / User
-              </label>
-              <div className="relative w-full">
-                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-300" />
-                <Input 
-                  placeholder="W-XXXXXX or UUID" 
-                  value={searchInput}
-                  onChange={(e) => setSearchInput(e.target.value)}
-                  className="pl-9 !h-10 w-full text-sm border-slate-200 focus:ring-indigo-500 rounded-xl bg-slate-50/50 focus:bg-white transition-all"
-                />
-              </div>
-            </div>
+            <FilterSearchInput 
+              label="Search Wallet / User"
+              placeholder="W-XXXXXX or UUID"
+              value={searchInput}
+              onChange={(e) => setSearchInput(e.target.value)}
+            />
 
-            <div className="flex flex-col gap-2">
-              <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest ml-1">
-                Account Status
-              </label>
-              <Select value={statusInput} onValueChange={(v) => setStatusInput(v || 'ALL')}>
-                <SelectTrigger className="w-full bg-slate-50/50 border-slate-200 !h-10 rounded-xl font-medium text-sm focus:bg-white transition-all">
-                  <SelectValue placeholder="All Status" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="ALL">All Status</SelectItem>
-                  <SelectItem value="ACTIVE">ACTIVE</SelectItem>
-                  <SelectItem value="FROZEN">FROZEN</SelectItem>
-                  <SelectItem value="INACTIVE">INACTIVE</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
+            <FilterSelect 
+              label="Account Status"
+              value={statusInput}
+              onValueChange={(v) => setStatusInput(v || 'ALL')}
+              options={[
+                { label: 'ALL STATUS', value: 'ALL' },
+                { label: 'ACTIVE', value: 'ACTIVE' },
+                { label: 'FROZEN', value: 'FROZEN' },
+                { label: 'INACTIVE', value: 'INACTIVE' },
+              ]}
+            />
 
-            <div className="flex items-center gap-2 md:col-span-2">
-              <Button 
-                type="button"
-                variant="ghost" 
-                onClick={handleReset}
-                className="flex-1 !h-10 font-bold text-xs uppercase tracking-wider text-slate-400 hover:text-slate-600 hover:bg-slate-50 rounded-xl"
-              >
-                <RotateCcw className="w-3.5 h-3.5 mr-2" />
-                Reset
-              </Button>
-              <Button 
-                type="submit"
-                className="flex-[2] !h-10 font-bold text-xs uppercase tracking-wider bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl shadow-lg shadow-indigo-100"
-              >
-                <Filter className="w-3.5 h-3.5 mr-2" />
-                Apply Filters
-              </Button>
-            </div>
+            <FilterActions 
+              searchLabel="Apply Filters"
+              isLoading={loading}
+              onReset={handleReset}
+              className="md:col-span-2"
+            />
           </form>
         </div>
 
