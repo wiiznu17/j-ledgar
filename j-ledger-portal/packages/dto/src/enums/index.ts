@@ -66,6 +66,9 @@ export enum Permission {
 
   // Audit
   VIEW_AUDIT_LOGS = 'VIEW_AUDIT_LOGS',
+
+  // System
+  MANAGE_SYSTEM_ROLES = 'MANAGE_SYSTEM_ROLES',
 }
 
 export enum LedgerEntryType {

@@ -106,12 +106,10 @@ export class AdminStaffController {
     return this.adminService.updateRole(id, data);
   }
 
-  @Post('roles/:roleId/permissions/:permissionId')
-  async assignPermission(
-    @Param('roleId') roleId: string,
-    @Param('permissionId') permissionId: string,
-  ) {
-    return this.adminService.assignPermission(roleId, permissionId);
+  @Put('roles/:id/permissions')
+  @Roles(AdminRole.SUPER_ADMIN)
+  async syncPermissions(@Param('id') id: string, @Body() data: { permissionIds: string[] }) {
+    return this.adminService.syncRolePermissions(id, data.permissionIds);
   }
 
   @Delete('roles/:roleId/permissions/:permissionId')

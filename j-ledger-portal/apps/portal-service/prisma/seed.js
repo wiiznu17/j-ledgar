@@ -31,6 +31,7 @@ async function main() {
     // Audit & System
     { name: 'VIEW_AUDIT_LOGS', resource: 'AUDIT', action: 'VIEW', description: 'View system audit logs' },
     { name: 'VIEW_DASHBOARD', resource: 'DASHBOARD', action: 'VIEW', description: 'Access administrative dashboard' },
+    { name: 'MANAGE_SYSTEM_ROLES', resource: 'SYSTEM', action: 'MANAGE', description: 'Manage roles and permission mappings' },
   ];
 
   console.log('📦 Seeding permissions...');
@@ -44,17 +45,20 @@ async function main() {
 
   // 2. Define Roles
   const roles = [
-    { name: 'SUPER_ADMIN', description: 'Full system access' },
-    { name: 'AUDITOR', description: 'View-only access to financial and audit records' },
-    { name: 'SUPPORT_AGENT', description: 'Limited access to user management and transactions' },
-    { name: 'COMPLIANCE_OFFICER', description: 'Dedicated access to KYC and AML monitoring' },
+    { name: 'SUPER_ADMIN', description: 'Full system access', isSystem: true },
+    { name: 'AUDITOR', description: 'View-only access to financial and audit records', isSystem: true },
+    { name: 'SUPPORT_AGENT', description: 'Limited access to user management and transactions', isSystem: true },
+    { name: 'COMPLIANCE_OFFICER', description: 'Dedicated access to KYC and AML monitoring', isSystem: true },
   ];
 
   console.log('👑 Seeding roles...');
   for (const role of roles) {
     await prisma.role.upsert({
       where: { name: role.name },
-      update: { description: role.description },
+      update: { 
+        description: role.description,
+        isSystem: role.isSystem 
+      },
       create: role,
     });
   }
@@ -107,11 +111,14 @@ async function main() {
   const adminPassword = await bcrypt.hash('password123', 10);
   const adminUser = await prisma.staff.upsert({
     where: { username: 'admin' },
-    update: {},
+    update: {
+      email: 'admin@jledger.com',
+      password: adminPassword,
+    },
     create: {
       username: 'admin',
       password: adminPassword,
-      email: 'admin@jledger.io',
+      email: 'admin@jledger.com',
       firstName: 'System',
       lastName: 'Admin',
       isActive: true,

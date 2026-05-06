@@ -410,7 +410,7 @@ export class AdminService {
 
   async removeStaff(id: string) {
     const staff = await this.prisma.staff.findUnique({ where: { id } });
-    if (staff?.email === 'admin@jledger.io') {
+    if (staff?.email === 'admin@jledger.com') {
       throw new Error('Cannot delete primary system administrator');
     }
 
@@ -508,6 +508,10 @@ export class AdminService {
   }
 
   async updateRole(id: string, data: any) {
+    const role = await this.prisma.role.findUnique({ where: { id } });
+    if (role?.isSystem) {
+      throw new Error('Cannot modify system roles');
+    }
     return this.prisma.role.update({
       where: { id },
       data,
@@ -515,6 +519,10 @@ export class AdminService {
   }
 
   async assignPermission(roleId: string, permissionId: string) {
+    const role = await this.prisma.role.findUnique({ where: { id: roleId } });
+    if (role?.isSystem) {
+      throw new Error('Cannot modify permissions for system roles');
+    }
     return this.prisma.rolePermission.create({
       data: {
         roleId,
@@ -524,11 +532,39 @@ export class AdminService {
   }
 
   async removePermission(roleId: string, permissionId: string) {
+    const role = await this.prisma.role.findUnique({ where: { id: roleId } });
+    if (role?.isSystem) {
+      throw new Error('Cannot modify permissions for system roles');
+    }
     return this.prisma.rolePermission.deleteMany({
       where: {
         roleId,
         permissionId,
       },
+    });
+  }
+
+  async syncRolePermissions(roleId: string, permissionIds: string[]) {
+    const role = await this.prisma.role.findUnique({ where: { id: roleId } });
+    if (role?.isSystem) {
+      throw new Error('Cannot modify permissions for system roles');
+    }
+
+    return this.prisma.$transaction(async (tx) => {
+      // 1. Remove all current permissions
+      await tx.rolePermission.deleteMany({ where: { roleId } });
+
+      // 2. Add new permissions
+      if (permissionIds.length > 0) {
+        await tx.rolePermission.createMany({
+          data: permissionIds.map((pId) => ({
+            roleId,
+            permissionId: pId,
+          })),
+        });
+      }
+
+      return { success: true };
     });
   }
 
