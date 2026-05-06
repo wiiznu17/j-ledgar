@@ -61,7 +61,7 @@ export default function DealsPage() {
         </div>
         <Button 
           onClick={handleCreate}
-          className="bg-[#f48fb1] hover:bg-[#f06292] text-white rounded-xl shadow-md shadow-pink-100 transition-all active:scale-95"
+          className="bg-pink-500 hover:bg-pink-600 text-white rounded-lg shadow-md shadow-pink-100 transition-all active:scale-95"
         >
           <Plus className="mr-2 h-4 w-4" /> New Deal
         </Button>
