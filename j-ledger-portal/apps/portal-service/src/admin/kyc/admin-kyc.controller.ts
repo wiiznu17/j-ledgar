@@ -10,15 +10,16 @@ import {
   Logger,
 } from '@nestjs/common';
 import { KycService } from '../../modules/kyc/kyc.service';
-import { AuditService, AuditAction, ResourceType } from '../../modules/audit/audit.service';
+import { AuditService, ResourceType } from '../../modules/audit/audit.service';
 import { AdminJwtGuard } from '../guards/admin-jwt.guard';
 import { AdminRolesGuard } from '../guards/admin-roles.guard';
-import { Roles } from '../decorators/roles.decorator';
-import { AdminRole } from '@repo/dto';
-import { Request } from 'express';
+import { AdminPermissionsGuard } from '../guards/admin-permissions.guard';
+import { Permissions as RequirePermissions } from '../decorators/permissions.decorator';
+import { AuditLog } from '../decorators/audit.decorator';
+import { Permission } from '@repo/dto';
 
 @Controller('admin/kyc')
-@UseGuards(AdminJwtGuard, AdminRolesGuard)
+@UseGuards(AdminJwtGuard, AdminRolesGuard, AdminPermissionsGuard)
 export class AdminKycController {
   private readonly logger = new Logger(AdminKycController.name);
 
@@ -34,49 +35,19 @@ export class AdminKycController {
   }
 
   @Post('approve/:userId')
-  @Roles(AdminRole.COMPLIANCE_OFFICER, AdminRole.SUPER_ADMIN)
-  async approveKyc(@Param('userId') userId: string, @Req() req: any) {
+  @RequirePermissions(Permission.APPROVE_KYC)
+  @AuditLog(null as any, ResourceType.KYC_DOCUMENT, 'Approved user KYC document')
+  async approveKyc(@Param('userId') userId: string) {
     this.logger.log(`[AdminKyc] Approving KYC for user: ${userId}`);
-    const result = await this.kycService.approveKyc(userId);
-    
-    // Log Audit
-    await this.auditService.log({
-      adminUserId: req.user?.id || 'system',
-      action: AuditAction.UPDATE,
-      resourceType: ResourceType.KYC_DOCUMENT,
-      resourceId: userId,
-      ipAddress: req.ip || 'unknown',
-      userAgent: req.headers['user-agent'] || 'unknown',
-      requestPayload: { userId, action: 'APPROVE' },
-      responseStatus: 200,
-      reason: 'KYC Approved by Admin',
-    });
-
-    this.logger.log(`[AdminKyc] Approved result: ${JSON.stringify(result)}`);
-    return result;
+    return this.kycService.approveKyc(userId);
   }
 
   @Post('reject/:userId')
-  @Roles(AdminRole.COMPLIANCE_OFFICER, AdminRole.SUPER_ADMIN)
-  async rejectKyc(@Param('userId') userId: string, @Body('reason') reason: string, @Req() req: any) {
+  @RequirePermissions(Permission.REJECT_KYC)
+  @AuditLog(null as any, ResourceType.KYC_DOCUMENT, 'Rejected user KYC document')
+  async rejectKyc(@Param('userId') userId: string, @Body('reason') reason: string) {
     this.logger.log(`[AdminKyc] Rejecting KYC for user: ${userId}, Reason: ${reason}`);
-    const result = await this.kycService.rejectKyc(userId, reason);
-    
-    // Log Audit
-    await this.auditService.log({
-      adminUserId: req.user?.id || 'system',
-      action: AuditAction.UPDATE,
-      resourceType: ResourceType.KYC_DOCUMENT,
-      resourceId: userId,
-      ipAddress: req.ip || 'unknown',
-      userAgent: req.headers['user-agent'] || 'unknown',
-      requestPayload: { userId, action: 'REJECT', reason },
-      responseStatus: 200,
-      reason: `KYC Rejected: ${reason}`,
-    });
-
-    this.logger.log(`[AdminKyc] Rejected result: ${JSON.stringify(result)}`);
-    return result;
+    return this.kycService.rejectKyc(userId, reason);
   }
 
   @Get('pending')
