@@ -1,18 +1,53 @@
-import React from 'react';
-import { View, Text, TouchableOpacity, SafeAreaView, Alert } from 'react-native';
+import React, { useState } from 'react';
+import { View, Text, TouchableOpacity, SafeAreaView, Alert, ActivityIndicator } from 'react-native';
 import { useAuthStore } from '@/store/auth';
 import { router } from 'expo-router';
-import { Clock, LogOut, RefreshCcw } from 'lucide-react-native';
+import { Clock, LogOut, RefreshCcw, XCircle, ArrowRight } from 'lucide-react-native';
+import { api } from '@/lib/axios';
 
 export default function PendingApprovalScreen() {
   const { logout, user, refreshSession } = useAuthStore();
+  const [isRetrying, setIsRetrying] = useState(false);
+  const [isRefreshing, setIsRefreshing] = useState(false);
+
+  const isRejected = user?.status === 'REJECTED';
 
   const handleRefresh = async () => {
+    setIsRefreshing(true);
     console.log('[PendingApproval] Refreshing session...');
-    const success = await refreshSession();
-    if (success) {
-      console.log('[PendingApproval] Session refreshed');
+    try {
+      const success = await refreshSession();
+      if (success) {
+        console.log('[PendingApproval] Session refreshed');
+      }
+    } finally {
+      setIsRefreshing(false);
     }
+  };
+
+  const handleRetry = async () => {
+    Alert.alert(
+      'Retry Onboarding',
+      'This will allow you to re-submit your documents. Are you ready?',
+      [
+        { text: 'Cancel', style: 'cancel' },
+        { 
+          text: 'Start Again', 
+          onPress: async () => {
+            setIsRetrying(true);
+            try {
+              await api.post('/kyc/retry');
+              await refreshSession();
+              router.replace('/(auth)/onboarding');
+            } catch (err: any) {
+              Alert.alert('Error', err.response?.data?.message || 'Failed to initiate retry. Please try again later.');
+            } finally {
+              setIsRetrying(false);
+            }
+          }
+        },
+      ]
+    );
   };
 
   const handleLogout = () => {
@@ -40,46 +75,91 @@ export default function PendingApprovalScreen() {
           style={{ 
             width: 96, 
             height: 96, 
-            backgroundColor: '#fce4ec', 
+            backgroundColor: isRejected ? '#fee2e2' : '#fce4ec', 
             borderRadius: 48, 
             justifyContent: 'center', 
             alignItems: 'center', 
             marginBottom: 32 
           }}
         >
-          <Clock size={48} color="#f48fb1" />
+          {isRejected ? (
+            <XCircle size={48} color="#ef4444" />
+          ) : (
+            <Clock size={48} color="#f48fb1" />
+          )}
         </View>
 
         <Text style={{ fontSize: 32, fontWeight: '900', color: '#1f2937', textAlign: 'center', marginBottom: 16 }}>
-          Under Review
+          {isRejected ? 'KYC Rejected' : 'Under Review'}
         </Text>
         
-        <Text style={{ fontSize: 18, color: '#6b7280', textAlign: 'center', marginBottom: 48 }}>
-          Your account is currently being verified by our team. This usually takes 24-48 hours.
+        <Text style={{ fontSize: 18, color: '#6b7280', textAlign: 'center', marginBottom: 24 }}>
+          {isRejected 
+            ? 'We could not approve your identity verification. Please review the reason below.'
+            : 'Your account is currently being verified by our team. This usually takes 24-48 hours.'}
         </Text>
 
+        {isRejected && (
+          <View style={{ width: '100%', backgroundColor: '#f9fafb', padding: 16, borderRadius: 16, marginBottom: 48, borderWidth: 1, borderColor: '#fee2e2' }}>
+            <Text style={{ fontSize: 14, fontWeight: 'bold', color: '#ef4444', marginBottom: 4, textTransform: 'uppercase' }}>Reason from Admin:</Text>
+            <Text style={{ fontSize: 16, color: '#374151', fontStyle: 'italic' }}>
+              "{user?.reviewNote || 'No specific reason provided. Please ensure your documents are clear.'}"
+            </Text>
+          </View>
+        )}
+
         <View style={{ width: '100%' }}>
-          <TouchableOpacity 
-            onPress={handleRefresh}
-            style={{ 
-              width: '100%', 
-              backgroundColor: '#f48fb1', 
-              paddingVertical: 16, 
-              borderRadius: 20, 
-              flexDirection: 'row', 
-              justifyContent: 'center', 
-              alignItems: 'center',
-              marginBottom: 16,
-              shadowColor: '#f48fb1',
-              shadowOffset: { width: 0, height: 4 },
-              shadowOpacity: 0.3,
-              shadowRadius: 8,
-              elevation: 5
-            }}
-          >
-            <RefreshCcw size={20} color="white" />
-            <Text style={{ color: 'white', fontWeight: 'bold', fontSize: 18, marginLeft: 8 }}>Check Status</Text>
-          </TouchableOpacity>
+          {isRejected ? (
+            <TouchableOpacity 
+              onPress={handleRetry}
+              disabled={isRetrying}
+              style={{ 
+                width: '100%', 
+                backgroundColor: '#1f2937', 
+                paddingVertical: 16, 
+                borderRadius: 20, 
+                flexDirection: 'row', 
+                justifyContent: 'center', 
+                alignItems: 'center',
+                marginBottom: 16,
+                opacity: isRetrying ? 0.7 : 1
+              }}
+            >
+              {isRetrying ? (
+                <ActivityIndicator color="white" size="small" />
+              ) : (
+                <>
+                  <RefreshCcw size={20} color="white" />
+                  <Text style={{ color: 'white', fontWeight: 'bold', fontSize: 18, marginLeft: 8 }}>Retry Verification</Text>
+                </>
+              )}
+            </TouchableOpacity>
+          ) : (
+            <TouchableOpacity 
+              onPress={handleRefresh}
+              disabled={isRefreshing}
+              style={{ 
+                width: '100%', 
+                backgroundColor: '#f48fb1', 
+                paddingVertical: 16, 
+                borderRadius: 20, 
+                flexDirection: 'row', 
+                justifyContent: 'center', 
+                alignItems: 'center',
+                marginBottom: 16,
+                opacity: isRefreshing ? 0.7 : 1
+              }}
+            >
+              {isRefreshing ? (
+                <ActivityIndicator color="white" size="small" />
+              ) : (
+                <>
+                  <RefreshCcw size={20} color="white" />
+                  <Text style={{ color: 'white', fontWeight: 'bold', fontSize: 18, marginLeft: 8 }}>Check Status</Text>
+                </>
+              )}
+            </TouchableOpacity>
+          )}
 
           <TouchableOpacity 
             onPress={handleLogout}

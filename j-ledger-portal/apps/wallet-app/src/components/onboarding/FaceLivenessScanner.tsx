@@ -1,25 +1,31 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, ActivityIndicator, Dimensions } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, ActivityIndicator, Dimensions, Image } from 'react-native';
 import { Camera, CameraView, useCameraPermissions } from 'expo-camera';
 import { MotiView, MotiText } from 'moti';
 import { Ionicons } from '@expo/vector-icons';
 import { BlurView } from 'expo-blur';
+import Svg, { Path, G } from 'react-native-svg';
 
 interface FaceLivenessScannerProps {
   onComplete: (uri: string) => void;
   onError: (error: Error) => void;
   onCancel: () => void;
+  isLoading?: boolean;
 }
 
 export const FaceLivenessScanner: React.FC<FaceLivenessScannerProps> = ({
   onComplete,
   onError,
   onCancel,
+  isLoading,
 }) => {
   const [permission, requestPermission] = useCameraPermissions();
   const [isCapturing, setIsCapturing] = useState(false);
+  const [capturedUri, setCapturedUri] = useState<string | null>(null);
   const [status, setStatus] = useState('Position your face');
   const cameraRef = useRef<any>(null);
+
+  const processing = isLoading || isCapturing;
 
   useEffect(() => {
     requestPermission();
@@ -38,7 +44,7 @@ export const FaceLivenessScanner: React.FC<FaceLivenessScannerProps> = ({
   }
 
   const takePicture = async () => {
-    if (!cameraRef.current || isCapturing) return;
+    if (!cameraRef.current || processing) return;
     
     setIsCapturing(true);
     setStatus('Verifying...');
@@ -49,11 +55,10 @@ export const FaceLivenessScanner: React.FC<FaceLivenessScannerProps> = ({
         base64: true,
       });
       
-      // We pass the URI back to the parent to upload
+      setCapturedUri(photo.uri);
       onComplete(photo.uri);
     } catch (err: any) {
       onError(err);
-    } finally {
       setIsCapturing(false);
     }
   };
@@ -79,15 +84,45 @@ export const FaceLivenessScanner: React.FC<FaceLivenessScannerProps> = ({
               from={{ opacity: 0, scale: 0.8 }}
               animate={{ opacity: 1, scale: 1 }}
               transition={{ type: 'timing', duration: 1000 }}
-              style={styles.circleFrame}
+              style={styles.faceFrameContainer}
             >
-              <View style={styles.innerCircle} />
+              <Svg width={ellipseWidth} height={ellipseHeight} viewBox={`0 0 ${ellipseWidth} ${ellipseHeight}`}>
+                {/* Outer Glow/Border Path - Rounder Chin */}
+                <Path
+                  d={`
+                    M ${ellipseWidth / 2} 0
+                    C ${ellipseWidth * 0.85} 0, ${ellipseWidth} ${ellipseHeight * 0.3}, ${ellipseWidth} ${ellipseHeight * 0.5}
+                    C ${ellipseWidth} ${ellipseHeight * 0.85}, ${ellipseWidth * 0.75} ${ellipseHeight}, ${ellipseWidth / 2} ${ellipseHeight}
+                    C ${ellipseWidth * 0.25} ${ellipseHeight}, 0 ${ellipseHeight * 0.85}, 0 ${ellipseHeight * 0.5}
+                    C 0 ${ellipseHeight * 0.3}, ${ellipseWidth * 0.15} 0, ${ellipseWidth / 2} 0
+                  `}
+                  fill="none"
+                  stroke="#00E676"
+                  strokeWidth="4"
+                  strokeDasharray="8 6"
+                />
+                
+                {/* Subtle Face Silhouette Guide */}
+                <G opacity="0.2">
+                   <Path
+                    d={`
+                      M ${ellipseWidth * 0.3} ${ellipseHeight * 0.35} Q ${ellipseWidth * 0.35} ${ellipseHeight * 0.32} ${ellipseWidth * 0.4} ${ellipseHeight * 0.35}
+                      M ${ellipseWidth * 0.6} ${ellipseHeight * 0.35} Q ${ellipseWidth * 0.65} ${ellipseHeight * 0.32} ${ellipseWidth * 0.7} ${ellipseHeight * 0.35}
+                      M ${ellipseWidth * 0.5} ${ellipseHeight * 0.45} L ${ellipseWidth * 0.5} ${ellipseHeight * 0.6} L ${ellipseWidth * 0.45} ${ellipseHeight * 0.65}
+                      M ${ellipseWidth * 0.4} ${ellipseHeight * 0.75} Q ${ellipseWidth * 0.5} ${ellipseHeight * 0.8} ${ellipseWidth * 0.6} ${ellipseHeight * 0.75}
+                    `}
+                    stroke="white"
+                    strokeWidth="2"
+                    fill="none"
+                  />
+                </G>
+              </Svg>
             </MotiView>
             
             <MotiText
               from={{ opacity: 0, translateY: 10 }}
               animate={{ opacity: 1, translateY: 0 }}
-              className="text-white text-center mt-8 font-manrope font-bold text-lg"
+              className="text-white text-center mt-12 font-manrope font-bold text-lg"
             >
               {status}
             </MotiText>
@@ -96,23 +131,48 @@ export const FaceLivenessScanner: React.FC<FaceLivenessScannerProps> = ({
           <View style={styles.footer}>
             <TouchableOpacity
               onPress={takePicture}
-              disabled={isCapturing}
-              style={styles.captureButton}
+              disabled={processing}
+              style={[styles.captureButton, processing && { borderColor: 'gray' }]}
             >
-              <View style={styles.captureInner} />
+              <View style={[styles.captureInner, processing && { backgroundColor: 'gray' }]} />
             </TouchableOpacity>
             <Text className="text-white/60 text-center mt-4">
               Ensure your face is well-lit and fits inside the circle
             </Text>
           </View>
         </View>
+
+        {/* Processing Overlay with Captured Face */}
+        {processing && (
+          <View style={[StyleSheet.absoluteFill, { backgroundColor: 'black', zIndex: 999 }]}>
+            {capturedUri && (
+              <Image 
+                source={{ uri: capturedUri }} 
+                style={StyleSheet.absoluteFill}
+                resizeMode="cover"
+              />
+            )}
+            <BlurView intensity={20} style={StyleSheet.absoluteFill} tint="dark">
+              <View style={[StyleSheet.absoluteFill, { backgroundColor: 'rgba(0,0,0,0.4)', justifyContent: 'center', alignItems: 'center' }]}>
+                <ActivityIndicator size="large" color="#00E676" />
+                <Text className="text-white font-manrope font-bold text-xl mt-6">
+                  Verifying Identity...
+                </Text>
+                <Text className="text-white/60 text-sm mt-2">
+                  Please wait a moment
+                </Text>
+              </View>
+            </BlurView>
+          </View>
+        )}
       </CameraView>
     </View>
   );
 };
 
 const { width } = Dimensions.get('window');
-const circleSize = width * 0.7;
+const ellipseWidth = width * 0.65;
+const ellipseHeight = ellipseWidth * 1.3;
 
 const styles = StyleSheet.create({
   overlay: {
@@ -130,21 +190,11 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
-  circleFrame: {
-    width: circleSize,
-    height: circleSize,
-    borderRadius: circleSize / 2,
-    borderWidth: 4,
-    borderColor: '#00E676',
-    borderStyle: 'dashed',
+  faceFrameContainer: {
+    width: ellipseWidth,
+    height: ellipseHeight,
     alignItems: 'center',
     justifyContent: 'center',
-  },
-  innerCircle: {
-    width: circleSize - 10,
-    height: circleSize - 10,
-    borderRadius: (circleSize - 10) / 2,
-    backgroundColor: 'transparent',
   },
   footer: {
     paddingBottom: 60,

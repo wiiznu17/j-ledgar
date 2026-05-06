@@ -113,7 +113,7 @@ api.interceptors.request.use(
     }
 
     const token = await readToken();
-    if (token) {
+    if (token && !config.headers.Authorization) {
       config.headers.Authorization = `Bearer ${token}`;
     }
     return config;

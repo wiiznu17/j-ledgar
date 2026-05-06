@@ -465,9 +465,20 @@ export default function OnboardingScreen() {
         },
       );
 
+      // Save tokens returned from completeRegistration for seamless login
+      if (completeRes.data.accessToken && completeRes.data.refreshToken) {
+        console.log('[Onboarding] Registration complete, saving tokens for seamless experience');
+        const { useAuthStore } = await import('@/store/auth');
+        await useAuthStore.getState().setToken(completeRes.data.accessToken, completeRes.data.refreshToken);
+        if (completeRes.data.user) {
+          useAuthStore.getState().setUser(completeRes.data.user);
+        }
+      }
+
       setStep('SUCCESS');
     } catch (err: any) {
-      Alert.alert('Error', err.response?.data?.message || 'Failed to complete credentials setup');
+      console.error('[Onboarding] Pin setup/complete failed:', err.response?.data || err.message);
+      Alert.alert('Registration Failed', err.response?.data?.message || 'Could not complete registration. Please try again.');
     } finally {
       setIsLoading(false);
     }
@@ -635,6 +646,7 @@ export default function OnboardingScreen() {
 
             {step === 'FACE_SCAN' && (
               <FaceLivenessScanner
+                isLoading={isLoading}
                 onComplete={handleLivenessSuccess}
                 onError={(err) => {
                   Alert.alert('Liveness Error', 'Something went wrong during face scan.');
@@ -694,7 +706,8 @@ export default function OnboardingScreen() {
                 setIsLoading(true);
                 try {
                   await reset(); // ล้าง registration_token
-                  router.replace('/(auth)/login'); // กลับไปหน้า Login เพื่อเข้าใช้งานจริง
+                  // The RootLayout will automatically pick up the new auth state 
+                  // and redirect to the appropriate screen (Pending Approval or Tabs)
                 } finally {
                   setIsLoading(false);
                 }
