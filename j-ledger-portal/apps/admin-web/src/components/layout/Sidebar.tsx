@@ -33,12 +33,14 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
+import { Permission } from '@repo/dto';
 
 interface NavigationItem {
   name: string;
   href: string;
   icon: LucideIcon;
   roles?: string[];
+  requiredPermission?: Permission;
   isNew?: boolean;
   isSoon?: boolean;
 }
@@ -53,6 +55,7 @@ interface SidebarProps {
   onToggle?: () => void;
   isCollapsed?: boolean;
   userRole?: string;
+  permissions?: string[];
 }
 
 const navigationGroups: NavigationGroup[] = [
@@ -66,53 +69,53 @@ const navigationGroups: NavigationGroup[] = [
   {
     title: 'Finance & Accounting',
     items: [
-      { name: 'Treasury', href: '/finance/treasury', icon: Landmark, roles: ['SUPER_ADMIN', 'FINANCE_MANAGER'], isSoon: true },
-      { name: 'Settlement', href: '/finance/settlement', icon: Briefcase, roles: ['SUPER_ADMIN', 'FINANCE_MANAGER'], isSoon: true },
-      { name: 'Fees & Limits', href: '/finance/fees', icon: SlidersHorizontal, roles: ['SUPER_ADMIN', 'FINANCE_MANAGER'], isSoon: true },
-      { name: 'Ledger', href: '/accounts', icon: CreditCard, roles: ['SUPER_ADMIN', 'SUPPORT_STAFF'] },
-      { name: 'Reconcile', href: '/reconcile', icon: ShieldCheck, roles: ['SUPER_ADMIN', 'FINANCE_MANAGER'], isSoon: true },
+      { name: 'Treasury', href: '/finance/treasury', icon: Landmark, requiredPermission: Permission.VIEW_TRANSACTIONS, isSoon: true },
+      { name: 'Settlement', href: '/finance/settlement', icon: Briefcase, requiredPermission: Permission.VIEW_TRANSACTIONS, isSoon: true },
+      { name: 'Fees & Limits', href: '/finance/fees', icon: SlidersHorizontal, requiredPermission: Permission.VIEW_DASHBOARD, isSoon: true },
+      { name: 'Ledger', href: '/accounts', icon: CreditCard, requiredPermission: Permission.VIEW_LEDGER_ENTRIES },
+      { name: 'Reconcile', href: '/reconcile', icon: ShieldCheck, requiredPermission: Permission.RUN_RECONCILIATION, isSoon: true },
     ]
   },
   {
     title: 'Risk & Compliance',
     items: [
-      { name: 'KYC Verification', href: '/kyc', icon: ShieldCheck, roles: ['SUPER_ADMIN', 'SUPPORT_STAFF', 'COMPLIANCE_OFFICER'] },
-      { name: 'AML Monitor', href: '/aml', icon: AlertTriangle, roles: ['SUPER_ADMIN', 'COMPLIANCE_OFFICER'], isSoon: true },
-      { name: 'Fraud Mgmt', href: '/risk/fraud', icon: ShieldAlert, roles: ['SUPER_ADMIN', 'COMPLIANCE_OFFICER'], isSoon: true },
-      { name: 'Blacklist', href: '/risk/blacklist', icon: Ban, roles: ['SUPER_ADMIN', 'COMPLIANCE_OFFICER'], isSoon: true },
+      { name: 'KYC Verification', href: '/kyc', icon: ShieldCheck, requiredPermission: Permission.VIEW_USERS },
+      { name: 'AML Monitor', href: '/aml', icon: AlertTriangle, requiredPermission: Permission.VIEW_SUSPICIOUS_ACTIVITIES, isSoon: true },
+      { name: 'Fraud Mgmt', href: '/risk/fraud', icon: ShieldAlert, requiredPermission: Permission.VIEW_SUSPICIOUS_ACTIVITIES, isSoon: true },
+      { name: 'Blacklist', href: '/risk/blacklist', icon: Ban, requiredPermission: Permission.REPORT_TO_AMLO, isSoon: true },
     ]
   },
   {
     title: 'Promotions',
     items: [
-      { name: 'Deals', href: '/promotions/deals', icon: Ticket, isSoon: true },
-      { name: 'Banners', href: '/promotions/banners', icon: ImageIcon, isSoon: true },
-      { name: 'Redemptions', href: '/promotions/redemptions', icon: ClipboardList, isSoon: true },
+      { name: 'Deals', href: '/promotions/deals', icon: Ticket, requiredPermission: Permission.VIEW_DASHBOARD, isSoon: true },
+      { name: 'Banners', href: '/promotions/banners', icon: ImageIcon, requiredPermission: Permission.VIEW_DASHBOARD, isSoon: true },
+      { name: 'Redemptions', href: '/promotions/redemptions', icon: ClipboardList, requiredPermission: Permission.VIEW_DASHBOARD, isSoon: true },
     ]
   },
   {
     title: 'Support & Operations',
     items: [
-      { name: 'Users', href: '/users', icon: Users, roles: ['SUPER_ADMIN'] },
-      { name: 'User Activity', href: '/users/activity', icon: History, roles: ['SUPER_ADMIN', 'AUDITOR', 'SUPPORT_STAFF'] },
-      { name: 'User Devices', href: '/support/devices', icon: Smartphone, roles: ['SUPER_ADMIN', 'SUPPORT_STAFF', 'COMPLIANCE_OFFICER'], isSoon: true },
-      { name: 'Disputes', href: '/support/disputes', icon: HelpCircle, roles: ['SUPER_ADMIN', 'SUPPORT_STAFF'], isSoon: true },
+      { name: 'Users', href: '/users', icon: Users, requiredPermission: Permission.VIEW_USERS },
+      { name: 'User Activity', href: '/users/activity', icon: History, requiredPermission: Permission.VIEW_AUDIT_LOGS },
+      { name: 'User Devices', href: '/support/devices', icon: Smartphone, requiredPermission: Permission.VIEW_USERS, isSoon: true },
+      { name: 'Disputes', href: '/support/disputes', icon: HelpCircle, requiredPermission: Permission.VIEW_USERS, isSoon: true },
     ]
   },
   {
     title: 'System & Security',
     items: [
-      { name: 'Approvals', href: '/system/approvals', icon: CheckSquare, roles: ['SUPER_ADMIN', 'FINANCE_MANAGER', 'COMPLIANCE_OFFICER'], isSoon: true },
-      { name: 'Security Settings', href: '/system/security', icon: Lock, roles: ['SUPER_ADMIN'], isSoon: true },
-      { name: 'Admins', href: '/system/admins', icon: ShieldCheck, roles: ['SUPER_ADMIN'] },
-      { name: 'System Outbox', href: '/system/outbox', icon: Send },
+      { name: 'Approvals', href: '/system/approvals', icon: CheckSquare, requiredPermission: Permission.VIEW_DASHBOARD, isSoon: true },
+      { name: 'Security Settings', href: '/system/security', icon: Lock, requiredPermission: Permission.VIEW_DASHBOARD, isSoon: true },
+      { name: 'Admins', href: '/system/admins', icon: ShieldCheck, requiredPermission: Permission.CREATE_ADMINS },
+      { name: 'System Outbox', href: '/system/outbox', icon: Send, requiredPermission: Permission.VIEW_DASHBOARD },
     ]
   },
   {
     title: 'Reporting',
     items: [
-      { name: 'Audit Logs', href: '/audit', icon: FileText, roles: ['SUPER_ADMIN', 'AUDITOR'] },
-      { name: 'Reports', href: '/reports', icon: BarChart3, roles: ['SUPER_ADMIN', 'FINANCE_MANAGER', 'AUDITOR'], isSoon: true },
+      { name: 'Audit Logs', href: '/audit', icon: FileText, requiredPermission: Permission.VIEW_AUDIT_LOGS },
+      { name: 'Reports', href: '/reports', icon: BarChart3, requiredPermission: Permission.VIEW_DASHBOARD, isSoon: true },
     ]
   }
 ];
@@ -122,6 +125,7 @@ export function Sidebar({
   onToggle,
   isCollapsed = false,
   userRole = 'SUPPORT_STAFF',
+  permissions = [],
 }: SidebarProps) {
   const pathname = usePathname();
   
@@ -159,10 +163,12 @@ export function Sidebar({
 
       <nav className="flex-1 px-3 py-6 space-y-8 overflow-y-auto custom-scrollbar text-pretty">
         {navigationGroups.map((group) => {
-          // Filter items based on role
-          const filteredItems = group.items.filter(item => 
-            !item.roles || item.roles.includes(userRole)
-          );
+          // Filter items based on role and permissions
+          const filteredItems = group.items.filter(item => {
+            const rolePass = !item.roles || item.roles.includes(userRole);
+            const permissionPass = !item.requiredPermission || permissions.includes(item.requiredPermission);
+            return rolePass && permissionPass;
+          });
 
           if (filteredItems.length === 0) return null;
 

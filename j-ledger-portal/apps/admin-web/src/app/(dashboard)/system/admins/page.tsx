@@ -332,6 +332,7 @@ export default function UsersPage() {
                 <TableRow>
                   <TableHead>Staff</TableHead>
                   <TableHead>Role</TableHead>
+                  <TableHead>Status</TableHead>
                   <TableHead className="text-right">Actions</TableHead>
                 </TableRow>
               </TableHeader>
@@ -356,13 +357,37 @@ export default function UsersPage() {
                         {user.role}
                       </Badge>
                     </TableCell>
+                    <TableCell>
+                      {user.isInvited && user.isActive ? (
+                        new Date(user.inviteExpiry || 0) < new Date() ? (
+                          <Badge className="bg-rose-50 text-rose-700 border-rose-200 font-bold" variant="outline">
+                            EXPIRED INVITE
+                          </Badge>
+                        ) : (
+                          <Badge className="bg-amber-50 text-amber-700 border-amber-200 font-bold" variant="outline">
+                            PENDING INVITE
+                          </Badge>
+                        )
+                      ) : (
+                        <Badge
+                          className={
+                            user.isActive
+                              ? 'bg-emerald-50 text-emerald-700 border-emerald-200 font-bold'
+                              : 'bg-rose-50 text-rose-700 border-rose-200 font-bold'
+                          }
+                          variant="outline"
+                        >
+                          {user.isActive ? 'ACTIVE' : 'SUSPENDED'}
+                        </Badge>
+                      )}
+                    </TableCell>
                     <TableCell className="text-right flex justify-end gap-2">
                       <Link href={`/system/admins/${user.id}`}>
                         <Button variant="outline" size="sm" className="h-8">
                           <Eye className="h-4 w-4 mr-1" /> View
                         </Button>
                       </Link>
-                      {user.email !== 'admin@jledger.io' && (
+                      {user.role !== AdminRole.SUPER_ADMIN && user.email !== 'admin@jledger.io' && (
                         <Button
                           variant="ghost"
                           size="icon"
@@ -377,14 +402,14 @@ export default function UsersPage() {
                 ))}
                 {loading && users.length === 0 && (
                   <TableRow>
-                    <TableCell colSpan={3} className="h-24 text-center text-slate-400">
+                    <TableCell colSpan={4} className="h-24 text-center text-slate-400">
                       Loading directory...
                     </TableCell>
                   </TableRow>
                 )}
                 {!loading && users.length === 0 && (
                   <TableRow>
-                    <TableCell colSpan={3} className="h-32 text-center text-slate-400">
+                    <TableCell colSpan={4} className="h-32 text-center text-slate-400">
                       <div className="flex flex-col items-center justify-center gap-2">
                         <Search className="h-8 w-8 text-slate-200" />
                         <p>No admin users found.</p>

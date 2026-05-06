@@ -74,6 +74,14 @@ export async function login(formData: FormData) {
     });
     console.log('[admin-web] login - Set user_role cookie');
 
+    cookieStore.set('user_permissions', JSON.stringify(data.permissions), {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      maxAge: 60 * 60 * 24 * 7,
+      path: '/',
+    });
+    console.log('[admin-web] login - Set user_permissions cookie');
+
     // Log successful login
     await logLoginAttempt(data.userId, true, ipAddress, userAgent);
 
@@ -117,6 +125,7 @@ export async function logout() {
   cookieStore.delete('refresh_token');
   cookieStore.delete('user_id');
   cookieStore.delete('user_role');
+  cookieStore.delete('user_permissions');
   redirect('/login');
 }
 
@@ -146,6 +155,13 @@ export async function refreshSession() {
     });
 
     cookieStore.set('refresh_token', data.refreshToken, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      maxAge: 60 * 60 * 24 * 7,
+      path: '/',
+    });
+
+    cookieStore.set('user_permissions', JSON.stringify(data.permissions), {
       httpOnly: true,
       secure: process.env.NODE_ENV === 'production',
       maxAge: 60 * 60 * 24 * 7,

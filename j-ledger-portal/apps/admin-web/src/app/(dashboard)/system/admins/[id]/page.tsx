@@ -9,12 +9,25 @@ import { ShieldAlert, Mail, Activity, ArrowLeft, UserX, UserCheck, ChevronRight,
 import { showConfirm, showSuccess, showError } from '@/lib/swal';
 import { AdminUser, AdminRole } from '@repo/dto';
 import { userRequester } from '@/lib/requesters';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
 
 export default function AdminDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = use(params);
   const router = useRouter();
   const [admin, setAdmin] = useState<AdminUser | null>(null);
   const [loading, setLoading] = useState(true);
+  const [isEditingRole, setIsEditingRole] = useState(false);
+  const [editedRole, setEditedRole] = useState<string>('');
+  const [isUpdating, setIsUpdating] = useState(false);
+  
+  const isInvited = admin?.isInvited && admin?.isActive;
+  const isExpired = isInvited && admin?.inviteExpiry && new Date(admin.inviteExpiry) < new Date();
 
   const fetchAdminData = async () => {
     setLoading(true);
@@ -32,17 +45,34 @@ export default function AdminDetailPage({ params }: { params: Promise<{ id: stri
     fetchAdminData();
   }, [id]);
 
+  useEffect(() => {
+    if (admin) {
+      setEditedRole(admin.role);
+    }
+  }, [admin]);
+
   const handleResetPassword = async () => {
     const result = await showConfirm(
-      'Send Password Reset?',
-      `An email with a reset link will be sent to ${admin?.email}.`
+      isInvited ? 'Resend Invitation?' : 'Send Password Reset?',
+      isInvited
+        ? `A new invitation link will be sent to ${admin?.email}. This will invalidate the previous link.`
+        : `An email with a reset link will be sent to ${admin?.email}.`
     );
 
     if (!result.isConfirmed) return;
 
     try {
-      await userRequester.resetAdminPassword(id);
-      showSuccess('Email Sent', `A password reset link was sent to ${admin?.email}`);
+      if (isInvited) {
+        await userRequester.resendAdminInvite(id);
+      } else {
+        await userRequester.resetAdminPassword(id);
+      }
+      showSuccess(
+        isInvited ? 'Invitation Resent' : 'Email Sent', 
+        isInvited 
+          ? `A new invitation link has been sent to ${admin?.email}`
+          : `A password reset link was sent to ${admin?.email}`
+      );
     } catch (e) {
       showError('Failed', 'Could not send reset email. Please try again.');
     }
@@ -60,12 +90,6 @@ export default function AdminDetailPage({ params }: { params: Promise<{ id: stri
     if (!result.isConfirmed) return;
 
     try {
-      // Assuming you have an API to update status, we will mock the status update for now
-      // If we don't have a specific endpoint, we can use an existing update endpoint
-      // For MVP: Let's assume we use the update endpoint, but since we don't have it defined in requester, 
-      // I'll show a "Not Implemented" for toggle status unless we add it. 
-      // Actually, admin-staff.controller.ts HAS deactivateStaff and reactivateStaff endpoints!
-      // Let's add them to userRequester later or just use apiClient here for brevity.
       const { apiClient } = await import('@/lib/api-client');
       if (isCurrentlyActive) {
         await apiClient.post(`/api/admin/staff/${id}/deactivate`);
@@ -77,6 +101,27 @@ export default function AdminDetailPage({ params }: { params: Promise<{ id: stri
       fetchAdminData();
     } catch (e) {
       showError('Action Failed', 'Could not update admin status.');
+    }
+  };
+
+  const handleUpdateRole = async () => {
+    if (editedRole === admin?.role) {
+      setIsEditingRole(false);
+      return;
+    }
+
+    setIsUpdating(true);
+    try {
+      const { apiClient } = await import('@/lib/api-client');
+      await apiClient.put(`/api/admin/staff/${id}`, { role: editedRole });
+      
+      showSuccess('Updated', 'Administrator role has been updated.');
+      setIsEditingRole(false);
+      fetchAdminData();
+    } catch (e) {
+      showError('Update Failed', 'Could not update the role.');
+    } finally {
+      setIsUpdating(false);
     }
   };
 
@@ -130,26 +175,80 @@ export default function AdminDetailPage({ params }: { params: Promise<{ id: stri
                 <p className="text-slate-500">{admin.email}</p>
               </div>
               <Badge
-                variant={admin.isActive ? 'default' : 'destructive'}
-                className="text-sm px-3 py-1"
+                variant={isInvited ? 'outline' : (admin.isActive ? 'default' : 'destructive')}
+                className={`text-sm px-3 py-1 font-bold ${
+                  isInvited
+                    ? (isExpired ? 'bg-rose-50 text-rose-700 border-rose-200' : 'bg-amber-50 text-amber-700 border-amber-200')
+                    : ''
+                }`}
               >
-                {admin.isActive ? 'ACTIVE' : 'SUSPENDED'}
+                {isInvited 
+                  ? (isExpired ? 'EXPIRED INVITE' : 'PENDING INVITE') 
+                  : (admin.isActive ? 'ACTIVE' : 'SUSPENDED')}
               </Badge>
             </div>
 
             <div className="grid grid-cols-2 gap-4 pt-4 border-t">
               <div>
-                <p className="text-sm text-slate-500 mb-1">System Role</p>
-                <Badge
-                  variant="outline"
-                  className={
-                    admin.role === AdminRole.SUPER_ADMIN
-                      ? 'border-primary text-primary bg-primary/5'
-                      : 'text-slate-600'
-                  }
-                >
-                  {admin.role || 'N/A'}
-                </Badge>
+                <div className="flex items-center justify-between">
+                  <p className="text-sm text-slate-500 mb-1">System Role</p>
+                  {!isEditingRole && admin.email !== 'admin@jledger.io' && (
+                    <button 
+                      onClick={() => setIsEditingRole(true)}
+                      className="text-[10px] font-bold text-indigo-600 hover:text-indigo-700 uppercase tracking-wider"
+                    >
+                      Change Role
+                    </button>
+                  )}
+                </div>
+                
+                {isEditingRole ? (
+                  <div className="flex items-center gap-2 mt-1">
+                    <Select value={editedRole} onValueChange={(val) => val && setEditedRole(val)}>
+                      <SelectTrigger className="h-9 bg-white border-slate-200 rounded-lg text-xs font-semibold">
+                        <SelectValue placeholder="Select Role" />
+                      </SelectTrigger>
+                      <SelectContent className="bg-white">
+                        <SelectItem value={AdminRole.SUPER_ADMIN}>Super Admin</SelectItem>
+                        <SelectItem value={AdminRole.AUDITOR}>Auditor</SelectItem>
+                        <SelectItem value={AdminRole.SUPPORT_AGENT}>Support Agent</SelectItem>
+                        <SelectItem value={AdminRole.COMPLIANCE_OFFICER}>Compliance Officer</SelectItem>
+                      </SelectContent>
+                    </Select>
+                    <div className="flex gap-1">
+                      <Button 
+                        size="sm" 
+                        onClick={handleUpdateRole}
+                        disabled={isUpdating}
+                        className="h-9 bg-emerald-600 hover:bg-emerald-700 text-white px-3 text-xs font-bold"
+                      >
+                        {isUpdating ? '...' : 'Save'}
+                      </Button>
+                      <Button 
+                        size="sm" 
+                        variant="ghost"
+                        onClick={() => {
+                          setIsEditingRole(false);
+                          setEditedRole(admin.role);
+                        }}
+                        className="h-9 text-slate-400 hover:text-slate-600 px-3 text-xs font-bold"
+                      >
+                        Cancel
+                      </Button>
+                    </div>
+                  </div>
+                ) : (
+                  <Badge
+                    variant="outline"
+                    className={
+                      admin.role === AdminRole.SUPER_ADMIN
+                        ? 'border-primary text-primary bg-primary/5'
+                        : 'text-slate-600'
+                    }
+                  >
+                    {admin.role || 'N/A'}
+                  </Badge>
+                )}
               </div>
               <div>
                 <p className="text-sm text-slate-500 mb-1">Joined Date</p>
@@ -173,7 +272,7 @@ export default function AdminDetailPage({ params }: { params: Promise<{ id: stri
                 onClick={handleResetPassword}
               >
                 <Mail className="mr-2 h-4 w-4 text-blue-500" />
-                Send Password Reset
+                {isInvited ? 'Resend Invitation' : 'Send Password Reset'}
               </Button>
 
               {admin.email !== 'admin@jledger.io' && (

@@ -9,7 +9,8 @@ export class MailService {
    * In a real application, this would integrate with AWS SES, SendGrid, etc.
    */
   async sendAdminInvite(email: string, token: string): Promise<void> {
-    const resetLink = `http://localhost:3000/system/admins/reset-password?token=${token}&email=${encodeURIComponent(email)}`;
+    const adminWebUrl = process.env.ADMIN_WEB_URL || '';
+    const setupLink = `${adminWebUrl}/setup-account?token=${token}&email=${encodeURIComponent(email)}`;
     
     this.logger.log(`
 =========================================================
@@ -21,7 +22,7 @@ Subject: Welcome to J-Ledger Admin Portal!
 You have been invited to join the J-Ledger Admin team.
 Please click the link below to set up your password:
 
-🔗 ${resetLink}
+🔗 ${setupLink}
 
 This link will expire in 24 hours.
 =========================================================
@@ -32,7 +33,8 @@ This link will expire in 24 hours.
    * Mock sending a password reset email to an existing staff member.
    */
   async sendPasswordReset(email: string, token: string): Promise<void> {
-    const resetLink = `http://localhost:3000/system/admins/reset-password?token=${token}&email=${encodeURIComponent(email)}`;
+    const adminWebUrl = process.env.ADMIN_WEB_URL || 'http://localhost:3002';
+    const resetLink = `${adminWebUrl}/reset-password?token=${token}&email=${encodeURIComponent(email)}`;
     
     this.logger.log(`
 =========================================================

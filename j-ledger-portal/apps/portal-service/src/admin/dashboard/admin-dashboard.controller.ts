@@ -1,10 +1,11 @@
 import { Controller, Get, UseGuards, Logger } from '@nestjs/common';
 import { AdminJwtGuard } from '../guards/admin-jwt.guard';
+import { AdminRolesGuard } from '../guards/admin-roles.guard';
 import { IntegrationService } from '../../modules/integration/integration.service';
 import { KycService } from '../../modules/kyc/kyc.service';
 
 @Controller('admin/dashboard')
-@UseGuards(AdminJwtGuard)
+@UseGuards(AdminJwtGuard, AdminRolesGuard)
 export class AdminDashboardController {
   private readonly logger = new Logger(AdminDashboardController.name);
 

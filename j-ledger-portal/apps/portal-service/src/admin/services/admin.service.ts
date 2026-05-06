@@ -71,8 +71,57 @@ export class AdminService {
   }
 
   async findById(id: string) {
+    const staff = await this.prisma.staff.findUnique({
+      where: { id },
+      include: {
+        staffRoles: {
+          include: {
+            role: true
+          },
+        },
+      },
+    });
+
+    if (!staff) return null;
+
+    // Flatten role for frontend DTO consistency
+    const roleName = staff.staffRoles?.[0]?.role?.name || 'N/A';
+    
+    return {
+      id: staff.id,
+      username: staff.username,
+      email: staff.email,
+      firstName: staff.firstName,
+      lastName: staff.lastName,
+      isActive: staff.isActive,
+      isInvited: !!staff.resetToken,
+      inviteExpiry: staff.resetTokenExpiry,
+      role: roleName,
+      createdAt: staff.createdAt,
+      updatedAt: staff.updatedAt,
+    };
+  }
+
+  /**
+   * Internal use only: Returns raw prisma staff object with relations.
+   * Useful for authentication logic that needs refreshTokenHash, etc.
+   */
+  async findByIdInternal(id: string) {
     return this.prisma.staff.findUnique({
       where: { id },
+      include: {
+        staffRoles: {
+          include: {
+            role: true,
+          },
+        },
+      },
+    });
+  }
+
+  async getStaffPermissions(staffId: string): Promise<string[]> {
+    const staff = await this.prisma.staff.findUnique({
+      where: { id: staffId },
       include: {
         staffRoles: {
           include: {
@@ -89,6 +138,17 @@ export class AdminService {
         },
       },
     });
+
+    if (!staff) return [];
+
+    const permissions = new Set<string>();
+    staff.staffRoles.forEach((sr) => {
+      sr.role.rolePermissions.forEach((rp) => {
+        permissions.add(rp.permission.name);
+      });
+    });
+
+    return Array.from(permissions);
   }
 
   async createStaff(data: {
@@ -97,6 +157,7 @@ export class AdminService {
     email: string;
     firstName: string;
     lastName: string;
+    role?: string;
   }) {
     const token = crypto.randomBytes(32).toString('hex');
     const tokenExpiry = new Date(Date.now() + 24 * 60 * 60 * 1000); // 24 hours
@@ -114,7 +175,19 @@ export class AdminService {
         password: hashedPassword,
         resetToken: token,
         resetTokenExpiry: tokenExpiry,
+        staffRoles: data.role ? {
+          create: {
+            role: {
+              connect: { name: data.role }
+            }
+          }
+        } : undefined,
       },
+      include: {
+        staffRoles: {
+          include: { role: true }
+        }
+      }
     });
 
     await this.mailService.sendAdminInvite(staff.email, token);
@@ -122,7 +195,7 @@ export class AdminService {
     return staff;
   }
 
-  async requestPasswordReset(staffId: string) {
+  async requestPasswordReset(staffId: string, isInvite: boolean = false) {
     const staff = await this.prisma.staff.findUnique({ where: { id: staffId } });
     if (!staff) throw new Error('Staff not found');
 
@@ -137,18 +210,109 @@ export class AdminService {
       },
     });
 
-    await this.mailService.sendPasswordReset(staff.email, token);
+    if (isInvite) {
+      await this.mailService.sendAdminInvite(staff.email, token);
+    } else {
+      await this.mailService.sendPasswordReset(staff.email, token);
+    }
 
-    return { message: 'Password reset link sent to email' };
+    return { message: isInvite ? 'Invitation link resent' : 'Password reset link sent to email' };
+  }
+
+  private validatePasswordComplexity(password: string) {
+    const minLength = 8;
+    const hasUpperCase = /[A-Z]/.test(password);
+    const hasLowerCase = /[a-z]/.test(password);
+    const hasSpecialChar = /[!@#$%^&*(),.?":{}|<>]/.test(password);
+
+    if (password.length < minLength || !hasUpperCase || !hasLowerCase || !hasSpecialChar) {
+      throw new Error(
+        'Password must be at least 8 characters long and contain uppercase, lowercase, and at least one special character.'
+      );
+    }
+  }
+
+  async validateResetToken(token: string) {
+    const staff = await this.prisma.staff.findFirst({
+      where: {
+        resetToken: token,
+        isActive: true,
+        resetTokenExpiry: {
+          gt: new Date(),
+        },
+      },
+    });
+    return !!staff;
+  }
+
+  async resetPasswordWithToken(token: string, newPassword: string) {
+    const staff = await this.prisma.staff.findFirst({
+      where: {
+        resetToken: token,
+        isActive: true,
+        resetTokenExpiry: {
+          gt: new Date(),
+        },
+      },
+    });
+
+    if (!staff) {
+      throw new Error('Invalid or expired reset token');
+    }
+
+    this.validatePasswordComplexity(newPassword);
+
+    const hashedPassword = await bcrypt.hash(newPassword, 10);
+
+    await this.prisma.staff.update({
+      where: { id: staff.id },
+      data: {
+        password: hashedPassword,
+        resetToken: null,
+        resetTokenExpiry: null,
+        isActive: true, // Automatically activate if this was a new invitation
+      },
+    });
+
+    return { success: true };
   }
 
   async updateStaff(id: string, data: any) {
-    if (data.password) {
-      data.password = await bcrypt.hash(data.password, 10);
+    const { role, ...updateData } = data;
+    
+    if (updateData.password) {
+      this.validatePasswordComplexity(updateData.password);
+      updateData.password = await bcrypt.hash(updateData.password, 10);
     }
-    return this.prisma.staff.update({
-      where: { id },
-      data,
+
+    return this.prisma.$transaction(async (tx) => {
+      // 1. Update basic staff info
+      const staff = await tx.staff.update({
+        where: { id },
+        data: updateData,
+      });
+
+      // 2. Update role if provided
+      if (role) {
+        // Delete existing roles
+        await tx.staffRole.deleteMany({
+          where: { staffId: id },
+        });
+
+        // Create new role assignment
+        await tx.staffRole.create({
+          data: {
+            staff: {
+              connect: { id: id },
+            },
+            role: {
+              connect: { name: role },
+            },
+          },
+        });
+      }
+
+      return staff;
     });
   }
 
@@ -193,6 +357,8 @@ export class AdminService {
           firstName: true,
           lastName: true,
           isActive: true,
+          resetToken: true,
+          resetTokenExpiry: true,
           createdAt: true,
           updatedAt: true,
           staffRoles: {
@@ -223,6 +389,8 @@ export class AdminService {
         firstName: staff.firstName,
         lastName: staff.lastName,
         isActive: staff.isActive,
+        isInvited: !!staff.resetToken,
+        inviteExpiry: staff.resetTokenExpiry,
         role: roleName,
         createdAt: staff.createdAt,
         updatedAt: staff.updatedAt,
@@ -241,6 +409,11 @@ export class AdminService {
   }
 
   async removeStaff(id: string) {
+    const staff = await this.prisma.staff.findUnique({ where: { id } });
+    if (staff?.email === 'admin@jledger.io') {
+      throw new Error('Cannot delete primary system administrator');
+    }
+
     return this.prisma.staff.delete({
       where: { id },
     });
@@ -249,7 +422,10 @@ export class AdminService {
   async deactivateStaff(id: string) {
     return this.prisma.staff.update({
       where: { id },
-      data: { isActive: false },
+      data: { 
+        isActive: false,
+        refreshTokenHash: null 
+      } as any,
     });
   }
 

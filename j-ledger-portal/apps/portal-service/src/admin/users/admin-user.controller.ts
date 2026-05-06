@@ -3,9 +3,14 @@ import { IdentityService } from '../../modules/identity/identity.service';
 import { AdminService } from '../services/admin.service';
 import { AdminPaginatedResponse, PaginatedResponse, WalletUser } from '@repo/dto';
 import { AdminJwtGuard } from '../guards/admin-jwt.guard';
+import { AdminRolesGuard } from '../guards/admin-roles.guard';
+import { AdminPermissionsGuard } from '../guards/admin-permissions.guard';
+import { Roles } from '../decorators/roles.decorator';
+import { Permissions } from '../decorators/permissions.decorator';
+import { AdminRole, Permission } from '@repo/dto';
 
 @Controller('admin/users')
-@UseGuards(AdminJwtGuard)
+@UseGuards(AdminJwtGuard, AdminRolesGuard, AdminPermissionsGuard)
 export class AdminUserController {
   constructor(
     private readonly identityService: IdentityService,
@@ -21,6 +26,7 @@ export class AdminUserController {
   }
 
   @Get('wallet')
+  @Permissions(Permission.VIEW_USERS)
   async getWalletUsers(
     @Query('page') page: number = 1,
     @Query('limit') limit: number = 10,
@@ -36,11 +42,13 @@ export class AdminUserController {
   }
 
   @Get('search')
+  @Permissions(Permission.VIEW_USERS)
   async searchUsers(@Query('q') query: string) {
     return this.identityService.searchUsers(query);
   }
 
   @Get(':id')
+  @Permissions(Permission.VIEW_USERS)
   async getUserById(@Param('id') id: string) {
     return this.identityService.findById(id);
   }
@@ -51,21 +59,25 @@ export class AdminUserController {
   }
 
   @Put(':id/status')
+  @Permissions(Permission.FREEZE_USERS)
   async updateUserStatus(@Param('id') id: string, @Body() body: { status: string }) {
     return this.identityService.updateUserStatus(id, body.status);
   }
 
   @Post(':id/block')
+  @Permissions(Permission.FREEZE_USERS)
   async blockUser(@Param('id') id: string, @Body() body?: { reason?: string }) {
     return this.identityService.blockUser(id, body?.reason);
   }
 
   @Post(':id/unblock')
+  @Permissions(Permission.UNFREEZE_USERS)
   async unblockUser(@Param('id') id: string) {
     return this.identityService.unblockUser(id);
   }
 
   @Get('security-events')
+  @Permissions(Permission.VIEW_AUDIT_LOGS)
   async getSecurityEvents(
     @Query('page') page: number = 1,
     @Query('limit') limit: number = 10,
@@ -75,11 +87,13 @@ export class AdminUserController {
   }
 
   @Post(':id/suspend')
+  @Permissions(Permission.FREEZE_USERS)
   async suspendUser(@Param('id') id: string) {
     return this.identityService.updateUserStatus(id, 'SUSPENDED');
   }
 
   @Post(':id/unsuspend')
+  @Permissions(Permission.UNFREEZE_USERS)
   async unsuspendUser(@Param('id') id: string) {
     return this.identityService.updateUserStatus(id, 'ACTIVE');
   }

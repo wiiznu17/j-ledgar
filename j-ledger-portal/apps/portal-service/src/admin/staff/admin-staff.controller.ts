@@ -1,10 +1,12 @@
 import { Controller, Get, Post, Put, Delete, Body, Param, Query, UseGuards } from '@nestjs/common';
 import { AdminService } from '../services/admin.service';
 import { AdminJwtGuard } from '../guards/admin-jwt.guard';
-import { InternalAuthGuard } from '../../core/common/guards/internal-auth.guard';
+import { AdminRolesGuard } from '../guards/admin-roles.guard';
+import { Roles } from '../decorators/roles.decorator';
+import { AdminRole } from '@repo/dto';
 
 @Controller('admin')
-@UseGuards(AdminJwtGuard)
+@UseGuards(AdminJwtGuard, AdminRolesGuard)
 export class AdminStaffController {
   constructor(private readonly adminService: AdminService) {}
 
@@ -32,49 +34,51 @@ export class AdminStaffController {
   }
 
   @Post('staff')
-  @UseGuards(InternalAuthGuard)
+  @Roles(AdminRole.SUPER_ADMIN)
   async createStaff(@Body() data: any) {
     return this.adminService.createStaff(data);
   }
 
   @Put('staff/:id')
-  @UseGuards(InternalAuthGuard)
+  @Roles(AdminRole.SUPER_ADMIN)
   async updateStaff(@Param('id') id: string, @Body() data: any) {
     return this.adminService.updateStaff(id, data);
   }
 
   @Delete('staff/:id')
-  @UseGuards(InternalAuthGuard)
+  @Roles(AdminRole.SUPER_ADMIN)
   async removeStaff(@Param('id') id: string) {
     return this.adminService.removeStaff(id);
   }
 
   @Post('staff/:id/reset-password')
-  @UseGuards(InternalAuthGuard)
+  @Roles(AdminRole.SUPER_ADMIN)
   async resetPassword(@Param('id') id: string) {
-    return this.adminService.requestPasswordReset(id);
+    return this.adminService.requestPasswordReset(id, false);
+  }
+
+  @Post('staff/:id/resend-invite')
+  @Roles(AdminRole.SUPER_ADMIN)
+  async resendInvite(@Param('id') id: string) {
+    return this.adminService.requestPasswordReset(id, true);
   }
 
   @Post('staff/:id/deactivate')
-  @UseGuards(InternalAuthGuard)
   async deactivateStaff(@Param('id') id: string) {
     return this.adminService.deactivateStaff(id);
   }
 
   @Post('staff/:id/reactivate')
-  @UseGuards(InternalAuthGuard)
   async reactivateStaff(@Param('id') id: string) {
     return this.adminService.reactivateStaff(id);
   }
 
   @Post('staff/:staffId/roles/:roleId')
-  @UseGuards(InternalAuthGuard)
   async assignRole(@Param('staffId') staffId: string, @Param('roleId') roleId: string) {
     return this.adminService.assignRole(staffId, roleId);
   }
 
   @Delete('staff/:staffId/roles/:roleId')
-  @UseGuards(InternalAuthGuard)
   async removeRole(@Param('staffId') staffId: string, @Param('roleId') roleId: string) {
     return this.adminService.removeRole(staffId, roleId);
   }
@@ -92,19 +96,17 @@ export class AdminStaffController {
   }
 
   @Post('roles')
-  @UseGuards(InternalAuthGuard)
+  @Roles(AdminRole.SUPER_ADMIN)
   async createRole(@Body() data: any) {
     return this.adminService.createRole(data);
   }
 
   @Put('roles/:id')
-  @UseGuards(InternalAuthGuard)
   async updateRole(@Param('id') id: string, @Body() data: any) {
     return this.adminService.updateRole(id, data);
   }
 
   @Post('roles/:roleId/permissions/:permissionId')
-  @UseGuards(InternalAuthGuard)
   async assignPermission(
     @Param('roleId') roleId: string,
     @Param('permissionId') permissionId: string,
@@ -113,7 +115,6 @@ export class AdminStaffController {
   }
 
   @Delete('roles/:roleId/permissions/:permissionId')
-  @UseGuards(InternalAuthGuard)
   async removePermission(
     @Param('roleId') roleId: string,
     @Param('permissionId') permissionId: string,
@@ -134,13 +135,12 @@ export class AdminStaffController {
   }
 
   @Post('permissions')
-  @UseGuards(InternalAuthGuard)
+  @Roles(AdminRole.SUPER_ADMIN)
   async createPermission(@Body() data: any) {
     return this.adminService.createPermission(data);
   }
 
   @Put('permissions/:id')
-  @UseGuards(InternalAuthGuard)
   async updatePermission(@Param('id') id: string, @Body() data: any) {
     return this.adminService.updatePermission(id, data);
   }

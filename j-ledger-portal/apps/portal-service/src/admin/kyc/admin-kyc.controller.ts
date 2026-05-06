@@ -12,10 +12,13 @@ import {
 import { KycService } from '../../modules/kyc/kyc.service';
 import { AuditService, AuditAction, ResourceType } from '../../modules/audit/audit.service';
 import { AdminJwtGuard } from '../guards/admin-jwt.guard';
+import { AdminRolesGuard } from '../guards/admin-roles.guard';
+import { Roles } from '../decorators/roles.decorator';
+import { AdminRole } from '@repo/dto';
 import { Request } from 'express';
 
 @Controller('admin/kyc')
-@UseGuards(AdminJwtGuard)
+@UseGuards(AdminJwtGuard, AdminRolesGuard)
 export class AdminKycController {
   private readonly logger = new Logger(AdminKycController.name);
 
@@ -31,6 +34,7 @@ export class AdminKycController {
   }
 
   @Post('approve/:userId')
+  @Roles(AdminRole.COMPLIANCE_OFFICER, AdminRole.SUPER_ADMIN)
   async approveKyc(@Param('userId') userId: string, @Req() req: any) {
     this.logger.log(`[AdminKyc] Approving KYC for user: ${userId}`);
     const result = await this.kycService.approveKyc(userId);
@@ -53,6 +57,7 @@ export class AdminKycController {
   }
 
   @Post('reject/:userId')
+  @Roles(AdminRole.COMPLIANCE_OFFICER, AdminRole.SUPER_ADMIN)
   async rejectKyc(@Param('userId') userId: string, @Body('reason') reason: string, @Req() req: any) {
     this.logger.log(`[AdminKyc] Rejecting KYC for user: ${userId}, Reason: ${reason}`);
     const result = await this.kycService.rejectKyc(userId, reason);

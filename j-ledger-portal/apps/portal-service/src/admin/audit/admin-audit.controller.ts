@@ -2,14 +2,20 @@ import { Controller, Get, Post, Body, Query, UseGuards, Req } from '@nestjs/comm
 import { AuditService, AuditAction, ResourceType, AuditLogData } from '../../modules/audit/audit.service';
 import { AdminPaginatedResponse } from '@repo/dto';
 import { AdminJwtGuard } from '../guards/admin-jwt.guard';
+import { AdminRolesGuard } from '../guards/admin-roles.guard';
+import { AdminPermissionsGuard } from '../guards/admin-permissions.guard';
+import { Roles } from '../decorators/roles.decorator';
+import { Permissions } from '../decorators/permissions.decorator';
+import { AdminRole, Permission } from '@repo/dto';
 import { InternalAuthGuard } from '../../core/common/guards/internal-auth.guard';
 
 @Controller('admin/audit')
-@UseGuards(AdminJwtGuard)
+@UseGuards(AdminJwtGuard, AdminRolesGuard, AdminPermissionsGuard)
 export class AdminAuditController {
   constructor(private readonly auditService: AuditService) {}
 
   @Get('logs')
+  @Permissions(Permission.VIEW_AUDIT_LOGS)
   async findAll(@Query() query: any): Promise<AdminPaginatedResponse<any>> {
     const page = query.page ? Number(query.page) : 1;
     const limit = query.limit ? Number(query.limit) : 50;

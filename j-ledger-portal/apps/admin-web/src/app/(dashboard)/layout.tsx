@@ -14,10 +14,18 @@ export default async function DashboardLayout({ children }: { children: React.Re
 
   const payload = await verifyToken(token);
   const userRole = payload?.role || 'SUPPORT_STAFF';
+  
+  const permissionsCookie = cookieStore.get('user_permissions')?.value;
+  let permissions: string[] = [];
+  try {
+    permissions = permissionsCookie ? JSON.parse(permissionsCookie) : [];
+  } catch (e) {
+    console.error('Failed to parse permissions cookie', e);
+  }
 
   return (
     <>
-      <DashboardWrapper userRole={userRole}>{children}</DashboardWrapper>
+      <DashboardWrapper userRole={userRole} permissions={permissions}>{children}</DashboardWrapper>
       <Toaster position="top-right" />
     </>
   );

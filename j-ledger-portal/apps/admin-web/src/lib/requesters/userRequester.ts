@@ -13,6 +13,7 @@ export const userRequester = {
   deleteAdmin: async (id: string, options?: RequestOptions) => apiClient.delete<void>(`/api/admin/staff/${id}`, options),
   getAdminDetail: async (id: string, options?: RequestOptions) => apiClient.get<AdminUser>(`/api/admin/staff/${id}`, options),
   resetAdminPassword: async (id: string, options?: RequestOptions) => apiClient.post<void>(`/api/admin/staff/${id}/reset-password`, {}, options),
+  resendAdminInvite: async (id: string, options?: RequestOptions) => apiClient.post<void>(`/api/admin/staff/${id}/resend-invite`, {}, options),
   getUserDetail: async (id: string) => apiClient.get<WalletUser>(`/api/admin/users/${id}`),
   getUserActivity: async (id: string) => apiClient.get<any>(`/admin/users/${id}/activity`),
   getUserAccount: async (userId: string) => apiClient.get<any>(`/admin/accounts/user/${userId}`),
