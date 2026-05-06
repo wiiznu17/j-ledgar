@@ -29,9 +29,28 @@ public class SystemController {
     private final IntegrationOutboxRepository outboxRepository;
 
     @GetMapping("/outbox")
-    @Operation(summary = "List outbox items", description = "Returns all integration outbox records")
-    public ResponseEntity<List<IntegrationOutbox>> listOutbox() {
-        return ResponseEntity.ok(outboxRepository.findAll());
+    @Operation(summary = "List outbox items", description = "Returns all integration outbox records with optional filtering")
+    public ResponseEntity<List<IntegrationOutbox>> listOutbox(
+            @org.springframework.web.bind.annotation.RequestParam(required = false) String status,
+            @org.springframework.web.bind.annotation.RequestParam(required = false) String eventType) {
+        
+        if (status != null && eventType != null) {
+            return ResponseEntity.ok(outboxRepository.findByStatusAndEventTypeOrderByCreatedAtDesc(status, eventType));
+        } else if (status != null) {
+            return ResponseEntity.ok(outboxRepository.findByStatusOrderByCreatedAtDesc(status));
+        } else if (eventType != null) {
+            return ResponseEntity.ok(outboxRepository.findByEventTypeOrderByCreatedAtDesc(eventType));
+        } else {
+            return ResponseEntity.ok(outboxRepository.findAllByOrderByCreatedAtDesc());
+        }
+    }
+
+    @PostMapping("/outbox/{id}/retry")
+    @PreAuthorize("hasAnyRole('SUPER_ADMIN', 'INTERNAL')")
+    @Operation(summary = "Retry outbox event", description = "Resets a failed outbox event to PENDING status for re-processing")
+    public ResponseEntity<Void> retryOutbox(@org.springframework.web.bind.annotation.PathVariable java.util.UUID id) {
+        systemService.retryOutboxEvent(id);
+        return ResponseEntity.ok().build();
     }
 
     @PostMapping("/reconcile")

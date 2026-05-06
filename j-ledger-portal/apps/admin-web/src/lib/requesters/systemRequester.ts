@@ -5,8 +5,12 @@ export interface OutboxEvent {
   id: string;
   eventType: string;
   status: string;
+  payload: any;
+  metadata?: any;
+  lastError?: string | null;
+  retryCount: number;
   createdAt: string;
-  processedAt: string | null;
+  updatedAt: string | null;
 }
 
 export const systemRequester = {
@@ -14,7 +18,17 @@ export const systemRequester = {
    * Fetches the current system outbox events for Kafka integration monitoring.
    * Path: /api/admin/system/outbox
    */
-  getOutbox: async (options?: RequestOptions) => {
-    return apiClient.get<OutboxEvent[]>('/api/admin/system/outbox', options);
+  getOutbox: async (filters?: { status?: string; eventType?: string }, options?: RequestOptions) => {
+    return apiClient.get<OutboxEvent[]>('/api/admin/system/outbox', {
+      ...options,
+      params: {
+        ...options?.params,
+        ...filters,
+      },
+    });
+  },
+
+  retryOutbox: async (id: string, options?: RequestOptions) => {
+    return apiClient.post<void>(`/api/admin/system/outbox/${id}/retry`, {}, options);
   },
 };

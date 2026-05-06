@@ -23,4 +23,12 @@ public interface IntegrationOutboxRepository extends JpaRepository<IntegrationOu
         nativeQuery = true
     )
     List<IntegrationOutbox> findAndLockPendingEvents(@Param("status") String status);
+
+    List<IntegrationOutbox> findByStatusOrderByCreatedAtDesc(String status);
+    
+    List<IntegrationOutbox> findByEventTypeOrderByCreatedAtDesc(String eventType);
+    
+    List<IntegrationOutbox> findByStatusAndEventTypeOrderByCreatedAtDesc(String status, String eventType);
+
+    List<IntegrationOutbox> findAllByOrderByCreatedAtDesc();
 }
