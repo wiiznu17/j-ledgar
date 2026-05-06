@@ -31,7 +31,7 @@ export default async function ReconcilePage() {
       </div>
 
       <div className="grid gap-6">
-        <div className="bg-card p-6 rounded-xl border-2 border-primary/10 shadow-sm">
+        <div className="bg-card p-6 rounded-lg border-2 border-primary/10 shadow-sm">
           <h3 className="text-xl font-bold mb-4 flex items-center gap-2">
             Historical Audit Logs
             {reports.some((r) => r.status === ReconciliationStatus.DISCREPANCY) && (
@@ -42,7 +42,7 @@ export default async function ReconcilePage() {
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          <div className="p-6 bg-green-50 rounded-xl border border-green-200">
+          <div className="p-6 bg-green-50 rounded-lg border border-green-200">
             <h4 className="font-bold text-green-800 text-lg mb-2">Mathematical Core Invariant</h4>
             <p className="text-green-700 leading-relaxed text-sm">
               The system calculates reconciliation as follows:
@@ -53,7 +53,7 @@ export default async function ReconcilePage() {
               immediate investigation.
             </p>
           </div>
-          <div className="p-6 bg-slate-50 rounded-xl border border-slate-200">
+          <div className="p-6 bg-slate-50 rounded-lg border border-slate-200">
             <h4 className="font-bold text-slate-800 text-lg mb-2">Nightly Automation</h4>
             <p className="text-slate-700 leading-relaxed text-sm">
               While manual audits can be triggered at any time, the system automatically performs
