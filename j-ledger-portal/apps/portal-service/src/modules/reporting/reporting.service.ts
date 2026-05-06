@@ -175,7 +175,15 @@ export class ReportingService {
     return this.forwardToGateway<any>('post', '/api/v1/system/reconcile/trigger');
   }
 
-  async getOutbox() {
-    return this.forwardToGateway<any[]>('get', '/api/v1/system/outbox');
+  async getOutbox(query?: { status?: string; eventType?: string }) {
+    const params: Record<string, string> = {};
+    if (query?.status) params.status = query.status;
+    if (query?.eventType) params.eventType = query.eventType;
+    
+    return this.forwardToGateway<any[]>('get', '/api/v1/system/outbox', params);
+  }
+
+  async retryOutbox(id: string) {
+    return this.forwardToGateway<any>('post', `/api/v1/system/outbox/${id}/retry`);
   }
 }

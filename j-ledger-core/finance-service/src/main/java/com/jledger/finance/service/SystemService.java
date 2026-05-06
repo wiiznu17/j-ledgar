@@ -195,4 +195,16 @@ public class SystemService {
         cacheSettings(updated);
         return getLimitConfiguration();
     }
+    @Transactional
+    public void retryOutboxEvent(java.util.UUID id) {
+        IntegrationOutbox event = outboxRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Outbox event not found"));
+        
+        event.setStatus("PENDING");
+        event.setRetryCount(event.getRetryCount() + 1);
+        event.setLastError(null);
+        event.setUpdatedAt(java.time.ZonedDateTime.now());
+        
+        outboxRepository.save(event);
+    }
 }

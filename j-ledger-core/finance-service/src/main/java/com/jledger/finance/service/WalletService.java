@@ -254,7 +254,8 @@ public class WalletService {
         transaction.setDescription("Admin balance adjustment: " + reason);
         transaction.setMetadata("{\"reason\":\"" + reason + "\",\"adminAdjustment\":true}");
 
-        transactionRepository.save(transaction);
+        Transaction savedTransaction = transactionRepository.save(transaction);
+        publishTransactionEvent(wallet.getUserId(), savedTransaction, true);
 
         return updated;
     }
@@ -782,7 +783,10 @@ public class WalletService {
         transaction.setDescription("Utility bill payment to " + billerCode);
         transaction.setMetadata("{\"billersCode\":\"" + billerCode + "\",\"accountNumber\":\"" + accountNumber + "\"}");
 
-        return transactionRepository.save(transaction);
+        Transaction savedTransaction = transactionRepository.save(transaction);
+        publishTransactionEvent(userId, savedTransaction, false);
+
+        return savedTransaction;
     }
 
     @Transactional
@@ -810,7 +814,10 @@ public class WalletService {
         transaction.setDescription("Credit card payment for " + cardNumber);
         transaction.setMetadata("{\"cardNumber\":\"" + cardNumber + "\"}");
 
-        return transactionRepository.save(transaction);
+        Transaction savedTransaction = transactionRepository.save(transaction);
+        publishTransactionEvent(userId, savedTransaction, false);
+
+        return savedTransaction;
     }
 
     @Transactional
@@ -838,7 +845,10 @@ public class WalletService {
         transaction.setDescription("Mobile top-up for " + phoneNumber);
         transaction.setMetadata("{\"phoneNumber\":\"" + phoneNumber + "\"}");
 
-        return transactionRepository.save(transaction);
+        Transaction savedTransaction = transactionRepository.save(transaction);
+        publishTransactionEvent(userId, savedTransaction, false);
+
+        return savedTransaction;
     }
 
     // Admin methods
