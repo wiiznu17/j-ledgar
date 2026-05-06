@@ -1,11 +1,12 @@
 package com.jledger.finance.service;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
+import com.jledger.finance.domain.IntegrationOutbox;
 import com.jledger.finance.domain.SystemSettings;
 import com.jledger.finance.dto.ReconciliationSummary;
 import com.jledger.finance.repository.AccountRepository;
 import com.jledger.finance.repository.LedgerEntryRepository;
 import com.jledger.finance.repository.SystemSettingsRepository;
+import com.jledger.finance.repository.IntegrationOutboxRepository;
 import jakarta.annotation.PostConstruct;
 import java.math.BigDecimal;
 import java.util.HashMap;
@@ -24,8 +25,8 @@ public class SystemService {
     private final AccountRepository accountRepository;
     private final LedgerEntryRepository ledgerEntryRepository;
     private final SystemSettingsRepository systemSettingsRepository;
+    private final IntegrationOutboxRepository outboxRepository;
     private final RedissonClient redissonClient;
-    private final ObjectMapper objectMapper;
 
     private static final String SETTINGS_CACHE_KEY = "system:settings";
     private static final long CACHE_TTL_HOURS = 24;
@@ -138,6 +139,7 @@ public class SystemService {
     }
 
     @Transactional
+    @SuppressWarnings("unchecked")
     public Map<String, Object> updateFeeConfiguration(Map<String, Object> fees) {
         SystemSettings cachedSettings = getCachedSettings();
         if (fees.containsKey("transfer")) {
