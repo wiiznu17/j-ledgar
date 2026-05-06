@@ -20,6 +20,7 @@ import {
 } from "@/components/ui/select";
 import { useEffect, useState } from 'react';
 import { toast } from 'sonner';
+import { FilterSearchInput, FilterSelect, FilterActions } from '@/components/common/FilterElements';
 import { systemRequester, OutboxEvent } from '@/lib/requesters/systemRequester';
 import { 
   Radio, 
@@ -62,7 +63,7 @@ export default function SystemOutboxPage() {
       if (type !== 'ALL') filters.eventType = type;
 
       const response = await systemRequester.getOutbox(filters);
-      setData(Array.isArray(response) ? response : response.data);
+      setData(Array.isArray(response) ? response : (response as any).data || []);
     } catch (error) {
       console.error('[OUTBOX] Fetch error:', error);
       toast.error('Service temporarily unavailable.');
@@ -173,60 +174,37 @@ export default function SystemOutboxPage() {
         {/* Filter Toolbar */}
         <div className="p-3 bg-white border-b border-slate-100">
           <div className="grid grid-cols-1 md:grid-cols-5 gap-4 items-end">
-            <div className="flex flex-col gap-1.5">
-              <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">
-                Event Status
-              </label>
-              <Select value={tempStatus} onValueChange={setTempStatus}>
-                <SelectTrigger className="w-full bg-white border-slate-200 !h-10 shadow-sm rounded-xl font-bold text-xs">
-                  <SelectValue placeholder="All Status" />
-                </SelectTrigger>
-                <SelectContent className="rounded-xl border-slate-100">
-                  <SelectItem value="ALL" className="text-xs font-medium">ALL STATUS</SelectItem>
-                  <SelectItem value="PENDING" className="text-xs font-medium">PENDING</SelectItem>
-                  <SelectItem value="PROCESSED" className="text-xs font-medium text-emerald-600">PROCESSED</SelectItem>
-                  <SelectItem value="FAILED" className="text-xs font-medium text-rose-600">FAILED</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
+            <FilterSelect 
+              label="Event Status"
+              value={tempStatus}
+              onValueChange={setTempStatus}
+              options={[
+                { label: 'ALL STATUS', value: 'ALL' },
+                { label: 'PENDING', value: 'PENDING' },
+                { label: 'PROCESSED', value: 'PROCESSED', className: 'text-emerald-600' },
+                { label: 'FAILED', value: 'FAILED', className: 'text-rose-600' },
+              ]}
+            />
 
-            <div className="flex flex-col gap-1.5">
-              <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">
-                Event Type
-              </label>
-              <Select value={tempType} onValueChange={setTempType}>
-                <SelectTrigger className="w-full bg-white border-slate-200 !h-10 shadow-sm rounded-xl font-bold text-xs">
-                  <SelectValue placeholder="All Types" />
-                </SelectTrigger>
-                <SelectContent className="rounded-xl border-slate-100">
-                  <SelectItem value="ALL" className="text-xs font-medium">ALL TYPES</SelectItem>
-                  <SelectItem value="TRANSACTION" className="text-xs font-medium">TRANSACTIONS</SelectItem>
-                  <SelectItem value="SYSTEM" className="text-xs font-medium">SYSTEM EVENTS</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
+            <FilterSelect 
+              label="Event Type"
+              value={tempType}
+              onValueChange={setTempType}
+              options={[
+                { label: 'ALL TYPES', value: 'ALL' },
+                { label: 'TRANSACTIONS', value: 'TRANSACTION' },
+                { label: 'SYSTEM EVENTS', value: 'SYSTEM' },
+              ]}
+            />
 
-            {/* Empty space for grid alignment to match KYC if needed, or keep it compact */}
             <div className="hidden md:block md:col-span-1"></div>
 
-            <div className="flex gap-2 w-full h-10 md:col-span-2">
-              <Button 
-                variant="outline" 
-                onClick={handleClearFilter}
-                className="flex-1 h-10 text-slate-500 hover:text-slate-700 hover:bg-slate-100 text-xs font-bold rounded-xl border-slate-200"
-              >
-                <RotateCcw className="w-4 h-4 mr-1" />
-                Reset
-              </Button>
-              <Button 
-                onClick={handleApplyFilter}
-                disabled={loading}
-                className="flex-[2] h-10 bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold rounded-xl shadow-lg shadow-indigo-200 transition-all active:scale-95"
-              >
-                <Search className="w-4 h-4 mr-1" />
-                Search
-              </Button>
-            </div>
+            <FilterActions 
+              searchLabel="Search"
+              isLoading={loading}
+              onReset={handleClearFilter}
+              className="md:col-span-2"
+            />
           </div>
         </div>
 

@@ -30,6 +30,7 @@ import { format } from 'date-fns';
 import { transactionRequester } from '@/lib/requesters/transactionRequester';
 import { Transaction, TransactionStatus, TransactionType } from '@repo/dto';
 import { toast } from 'sonner';
+import { FilterSearchInput, FilterSelect, FilterActions, FilterField, FilterDatePicker } from '@/components/common/FilterElements';
 
 export default function TransactionsPage() {
   const [transactions, setTransactions] = useState<Transaction[]>([]);
@@ -129,125 +130,63 @@ export default function TransactionsPage() {
         {/* Filter Toolbar */}
         <div className="p-4 bg-white border-b border-slate-100">
           <form onSubmit={handleApplyFilter} className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-6 gap-4 items-end">
-            <div className="flex flex-col gap-1.5">
-              <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">
-                Reference ID
-              </label>
-              <div className="relative w-full">
-                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
-                <Input 
-                  placeholder="TXN-XXXXXX" 
-                  value={reference}
-                  onChange={(e) => setReference(e.target.value)}
-                  className="pl-9 h-10 w-full text-xs border-slate-200 focus:ring-indigo-500 rounded-xl bg-white shadow-sm font-medium"
-                />
-              </div>
-            </div>
+            <FilterSearchInput 
+              label="Reference ID"
+              placeholder="TXN-XXXXXX"
+              value={reference}
+              onChange={(e) => setReference(e.target.value)}
+            />
 
-            <div className="flex flex-col gap-1.5">
-              <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">
-                Transaction Status
-              </label>
-              <Select value={status} onValueChange={(val) => setStatus(val || 'ALL')}>
-                <SelectTrigger className="w-full bg-white border-slate-200 !h-10 shadow-sm rounded-xl font-bold text-xs">
-                  <SelectValue placeholder="All Status" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="ALL">ALL STATUS</SelectItem>
-                  <SelectItem value={TransactionStatus.SUCCESS}>SUCCESS</SelectItem>
-                  <SelectItem value={TransactionStatus.PENDING}>PENDING</SelectItem>
-                  <SelectItem value={TransactionStatus.FAILED}>FAILED</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
+            <FilterSelect 
+              label="Transaction Status"
+              value={status}
+              onValueChange={(val) => setStatus(val || 'ALL')}
+              options={[
+                { label: 'ALL STATUS', value: 'ALL' },
+                { label: 'SUCCESS', value: TransactionStatus.SUCCESS },
+                { label: 'PENDING', value: TransactionStatus.PENDING },
+                { label: 'FAILED', value: TransactionStatus.FAILED },
+              ]}
+            />
 
-            <div className="flex flex-col gap-1.5">
-              <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">
-                Transaction Type
-              </label>
-              <Select value={type} onValueChange={(val) => setType(val || 'ALL')}>
-                <SelectTrigger className="w-full bg-white border-slate-200 !h-10 shadow-sm rounded-xl font-bold text-xs">
-                  <SelectValue placeholder="All Types" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="ALL">ALL TYPES</SelectItem>
-                  <SelectItem value={TransactionType.TOPUP}>TOP-UP</SelectItem>
-                  <SelectItem value={TransactionType.WITHDRAW}>WITHDRAW</SelectItem>
-                  <SelectItem value={TransactionType.TRANSFER}>TRANSFER</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
+            <FilterSelect 
+              label="Transaction Type"
+              value={type}
+              onValueChange={(val) => setType(val || 'ALL')}
+              options={[
+                { label: 'ALL TYPES', value: 'ALL' },
+                { label: 'TOP-UP', value: TransactionType.TOPUP },
+                { label: 'WITHDRAW', value: TransactionType.WITHDRAW },
+                { label: 'TRANSFER', value: TransactionType.TRANSFER },
+              ]}
+            />
 
-            <div className="flex flex-col gap-1.5">
-              <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">
-                Date From
-              </label>
-              <Popover>
-                <PopoverTrigger 
-                  render={
-                    <Button variant="outline" className={`w-full h-10 justify-start text-left font-medium text-xs bg-white border-slate-200 rounded-xl shadow-sm ${!startDate && "text-slate-400"}`}>
-                      <CalendarIcon className="mr-2 h-4 w-4 text-slate-400" />
-                      <span className="truncate">{startDate ? format(new Date(startDate), "MMM d, yyyy") : "Start date"}</span>
-                    </Button>
-                  }
-                />
-                <PopoverContent className="w-auto p-0" align="start">
-                  <Calendar
-                    mode="single"
-                    selected={startDate ? new Date(startDate) : undefined}
-                    onSelect={(date) => setStartDate(date ? format(date, 'yyyy-MM-dd') : '')}
-                    initialFocus
-                  />
-                </PopoverContent>
-              </Popover>
-            </div>
+            <FilterDatePicker 
+              label="Date From"
+              value={startDate}
+              onChange={setStartDate}
+              placeholder="Start date"
+            />
 
-            <div className="flex flex-col gap-1.5">
-              <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">
-                Date To
-              </label>
-              <Popover>
-                <PopoverTrigger 
-                  render={
-                    <Button variant="outline" className={`w-full h-10 justify-start text-left font-medium text-xs bg-white border-slate-200 rounded-xl shadow-sm ${!endDate && "text-slate-400"}`}>
-                      <CalendarIcon className="mr-2 h-4 w-4 text-slate-400" />
-                      <span className="truncate">{endDate ? format(new Date(endDate), "MMM d, yyyy") : "End date"}</span>
-                    </Button>
-                  }
-                />
-                <PopoverContent className="w-auto p-0" align="start">
-                  <Calendar
-                    mode="single"
-                    selected={endDate ? new Date(endDate) : undefined}
-                    onSelect={(date) => setEndDate(date ? format(date, 'yyyy-MM-dd') : '')}
-                    initialFocus
-                  />
-                </PopoverContent>
-              </Popover>
-            </div>
+            <FilterDatePicker 
+              label="Date To"
+              value={endDate}
+              onChange={setEndDate}
+              placeholder="End date"
+            />
 
-            <div className="flex gap-2 h-10">
-              <Button 
-                type="button" 
-                variant="outline" 
-                onClick={() => {
-                  setReference('');
-                  setStartDate('');
-                  setEndDate('');
-                  setStatus('ALL');
-                  setType('ALL');
-                  handleApplyFilter();
-                }}
-                className="flex-1 h-10 text-slate-500 hover:text-slate-700 hover:bg-slate-100 text-xs font-bold rounded-xl border-slate-200"
-              >
-                <RotateCcw className="w-4 h-4 mr-1" />
-                Reset
-              </Button>
-              <Button type="submit" disabled={isLoading} className="flex-[2] h-10 bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold rounded-xl shadow-lg shadow-indigo-200 transition-all active:scale-95">
-                <Search className="w-4 h-4 mr-1" />
-                Search
-              </Button>
-            </div>
+            <FilterActions 
+              searchLabel="Search"
+              isLoading={isLoading}
+              onReset={() => {
+                setReference('');
+                setStartDate('');
+                setEndDate('');
+                setStatus('ALL');
+                setType('ALL');
+                handleApplyFilter();
+              }}
+            />
           </form>
         </div>
 

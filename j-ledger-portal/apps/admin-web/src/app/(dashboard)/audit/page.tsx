@@ -28,6 +28,7 @@ import {
   CreditCard, Wallet, Activity, Box, LockKeyhole 
 } from 'lucide-react';
 import { format } from 'date-fns';
+import { FilterSearchInput, FilterSelect, FilterActions } from '@/components/common/FilterElements';
 
 export default function AuditPage() {
   const [logs, setLogs] = useState<any[]>([]);
@@ -167,82 +168,55 @@ export default function AuditPage() {
         {/* Filter Toolbar */}
         <div className="p-3 bg-white border-b border-slate-100">
           <form onSubmit={handleFilter} className="grid grid-cols-1 md:grid-cols-5 gap-4 items-end">
-            <div className="flex flex-col gap-1.5">
-              <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">
-                Admin Identifier
-              </label>
-              <div className="relative w-full">
-                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
-                <Input 
-                  placeholder="ID or Name..." 
-                  value={adminUserId}
-                  onChange={(e) => setAdminUserId(e.target.value)}
-                  className="pl-9 h-10 w-full text-xs border-slate-200 focus:ring-indigo-500 rounded-xl bg-white shadow-sm font-medium"
-                />
-              </div>
-            </div>
+            <FilterSearchInput 
+              label="Admin Identifier"
+              placeholder="ID or Name..."
+              value={adminUserId}
+              onChange={(e) => setAdminUserId(e.target.value)}
+            />
 
-            <div className="flex flex-col gap-1.5">
-              <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">
-                Operation Action
-              </label>
-              <Select value={action} onValueChange={(val) => setAction(val || 'ALL')}>
-                <SelectTrigger className="w-full bg-white border-slate-200 !h-10 shadow-sm rounded-xl font-bold text-xs">
-                  <SelectValue placeholder="All Actions" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="ALL">ALL PERMISSIONS</SelectItem>
-                  <SelectItem value="CREATE_ADMINS">CREATE_ADMINS</SelectItem>
-                  <SelectItem value="MANAGE_STAFF">MANAGE_STAFF</SelectItem>
-                  <SelectItem value="DELETE_ADMINS">DELETE_ADMINS</SelectItem>
-                  <SelectItem value="APPROVE_KYC">APPROVE_KYC</SelectItem>
-                  <SelectItem value="REJECT_KYC">REJECT_KYC</SelectItem>
-                  <SelectItem value="MANAGE_SYSTEM_ROLES">MANAGE_SYSTEM_ROLES</SelectItem>
-                  <SelectItem value="MANAGE_SYSTEM_PERMISSIONS">MANAGE_SYSTEM_PERMISSIONS</SelectItem>
-                  <SelectItem value="ASSIGN_STAFF_ROLES">ASSIGN_STAFF_ROLES</SelectItem>
-                  <SelectItem value="FREEZE_USERS">FREEZE_USERS</SelectItem>
-                  <SelectItem value="UNFREEZE_USERS">UNFREEZE_USERS</SelectItem>
-                  <SelectItem value="RESET_STAFF_PASSWORD">RESET_STAFF_PASSWORD</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
+            <FilterSelect 
+              label="Operation Action"
+              value={action}
+              onValueChange={(val) => setAction(val || 'ALL')}
+              options={[
+                { label: 'ALL PERMISSIONS', value: 'ALL' },
+                { label: 'CREATE_ADMINS', value: 'CREATE_ADMINS' },
+                { label: 'MANAGE_STAFF', value: 'MANAGE_STAFF' },
+                { label: 'DELETE_ADMINS', value: 'DELETE_ADMINS' },
+                { label: 'APPROVE_KYC', value: 'APPROVE_KYC' },
+                { label: 'REJECT_KYC', value: 'REJECT_KYC' },
+                { label: 'MANAGE_SYSTEM_ROLES', value: 'MANAGE_SYSTEM_ROLES' },
+                { label: 'MANAGE_SYSTEM_PERMISSIONS', value: 'MANAGE_SYSTEM_PERMISSIONS' },
+                { label: 'ASSIGN_STAFF_ROLES', value: 'ASSIGN_STAFF_ROLES' },
+                { label: 'FREEZE_USERS', value: 'FREEZE_USERS' },
+                { label: 'UNFREEZE_USERS', value: 'UNFREEZE_USERS' },
+                { label: 'RESET_STAFF_PASSWORD', value: 'RESET_STAFF_PASSWORD' },
+              ]}
+            />
 
-            <div className="flex flex-col gap-1.5">
-              <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">
-                Resource Type
-              </label>
-              <Select value={resourceType} onValueChange={(val) => setResourceType(val || 'ALL')}>
-                <SelectTrigger className="w-full bg-white border-slate-200 !h-10 shadow-sm rounded-xl font-bold text-xs">
-                  <SelectValue placeholder="All Resources" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="ALL">ALL RESOURCES</SelectItem>
-                  <SelectItem value="USER">USER</SelectItem>
-                  <SelectItem value="KYC_DOCUMENT">KYC_DOCUMENT</SelectItem>
-                  <SelectItem value="ADMIN_USER">ADMIN_USER</SelectItem>
-                  <SelectItem value="ACCOUNT">ACCOUNT</SelectItem>
-                  <SelectItem value="TRANSACTION">TRANSACTION</SelectItem>
-                  <SelectItem value="PII">PII</SelectItem>
-                  <SelectItem value="RECONCILIATION_REPORT">RECONCILIATION</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
+            <FilterSelect 
+              label="Resource Type"
+              value={resourceType}
+              onValueChange={(val) => setResourceType(val || 'ALL')}
+              options={[
+                { label: 'ALL RESOURCES', value: 'ALL' },
+                { label: 'USER', value: 'USER' },
+                { label: 'KYC_DOCUMENT', value: 'KYC_DOCUMENT' },
+                { label: 'ADMIN_USER', value: 'ADMIN_USER' },
+                { label: 'ACCOUNT', value: 'ACCOUNT' },
+                { label: 'TRANSACTION', value: 'TRANSACTION' },
+                { label: 'PII', value: 'PII' },
+                { label: 'RECONCILIATION', value: 'RECONCILIATION_REPORT' },
+              ]}
+            />
 
-            <div className="md:col-span-2 flex gap-2 w-full h-10">
-              <Button 
-                type="button" 
-                variant="outline" 
-                onClick={handleClearFilters}
-                className="flex-1 h-10 text-slate-500 hover:text-slate-700 hover:bg-slate-100 text-xs font-bold rounded-xl border-slate-200"
-              >
-                <RotateCcw className="w-4 h-4 mr-1" />
-                Reset
-              </Button>
-              <Button type="submit" disabled={loading} className="flex-[2] h-10 bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold rounded-xl shadow-lg shadow-indigo-200 transition-all active:scale-95">
-                <Search className="w-4 h-4 mr-1" />
-                Search
-              </Button>
-            </div>
+            <FilterActions 
+              searchLabel="Search"
+              isLoading={loading}
+              onReset={handleClearFilters}
+              className="md:col-span-2"
+            />
           </form>
         </div>
 

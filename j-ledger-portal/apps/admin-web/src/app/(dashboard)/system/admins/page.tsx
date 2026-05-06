@@ -35,6 +35,7 @@ import { showConfirm, showSuccess, showError } from '@/lib/swal';
 import { AdminUser, AdminRole } from '@repo/dto';
 import { userRequester } from '@/lib/requesters';
 import Link from 'next/link';
+import { FilterSearchInput, FilterSelect, FilterActions } from '@/components/common/FilterElements';
 
 export default function UsersPage() {
   const [users, setUsers] = useState<AdminUser[]>([]);
@@ -258,69 +259,41 @@ export default function UsersPage() {
       <Card className="border-border shadow-sm overflow-hidden">
         <div className="p-4 bg-white border-b border-slate-100">
           <form onSubmit={handleApplyFilter} className="grid grid-cols-1 md:grid-cols-4 gap-4 items-end">
-            <div className="flex flex-col gap-1.5">
-              <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">
-                Staff Name / Email
-              </label>
-              <div className="relative w-full">
-                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
-                <Input 
-                  placeholder="Enter keyword..." 
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  className="pl-9 h-10 w-full text-xs border-slate-200 focus:ring-indigo-500 rounded-xl bg-white shadow-sm font-medium"
-                />
-              </div>
-            </div>
+            <FilterSearchInput 
+              label="Staff Name / Email"
+              placeholder="Enter keyword..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+            />
 
-            <div className="flex flex-col gap-1.5">
-              <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">
-                Role Assignment
-              </label>
-              <Select value={filterRole} onValueChange={(val) => val && setFilterRole(val)}>
-                <SelectTrigger className="w-full bg-white border-slate-200 !h-10 shadow-sm rounded-xl font-bold text-xs">
-                  <SelectValue placeholder="Select Role" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="ALL">ALL ROLES</SelectItem>
-                  <SelectItem value={AdminRole.SUPER_ADMIN}>SUPER ADMIN</SelectItem>
-                  <SelectItem value={AdminRole.AUDITOR}>AUDITOR</SelectItem>
-                  <SelectItem value={AdminRole.SUPPORT_AGENT}>SUPPORT AGENT</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
+            <FilterSelect 
+              label="Role Assignment"
+              value={filterRole}
+              onValueChange={(val) => setFilterRole(val || 'ALL')}
+              options={[
+                { label: 'ALL ROLES', value: 'ALL' },
+                { label: 'SUPER ADMIN', value: AdminRole.SUPER_ADMIN },
+                { label: 'AUDITOR', value: AdminRole.AUDITOR },
+                { label: 'SUPPORT AGENT', value: AdminRole.SUPPORT_AGENT },
+              ]}
+            />
 
-            <div className="flex flex-col gap-1.5">
-              <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">
-                Account Status
-              </label>
-              <Select value={filterStatus} onValueChange={(val) => val && setFilterStatus(val)}>
-                <SelectTrigger className="w-full bg-white border-slate-200 !h-10 shadow-sm rounded-xl font-bold text-xs">
-                  <SelectValue placeholder="Select Status" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="ALL">ALL STATUS</SelectItem>
-                  <SelectItem value="ACTIVE">ACTIVE</SelectItem>
-                  <SelectItem value="SUSPENDED">SUSPENDED</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
+            <FilterSelect 
+              label="Account Status"
+              value={filterStatus}
+              onValueChange={(val) => setFilterStatus(val || 'ALL')}
+              options={[
+                { label: 'ALL STATUS', value: 'ALL' },
+                { label: 'ACTIVE', value: 'ACTIVE' },
+                { label: 'SUSPENDED', value: 'SUSPENDED' },
+              ]}
+            />
 
-            <div className="flex gap-2 w-full h-10">
-              <Button 
-                type="button" 
-                variant="outline" 
-                onClick={handleResetFilter}
-                className="flex-1 h-10 text-slate-500 hover:text-slate-700 hover:bg-slate-100 text-xs font-bold rounded-xl border-slate-200"
-              >
-                <RotateCcw className="w-4 h-4 mr-1" />
-                Reset
-              </Button>
-              <Button type="submit" disabled={loading} className="flex-[2] h-10 bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold rounded-xl shadow-lg shadow-indigo-200 transition-all active:scale-95">
-                <Search className="w-4 h-4 mr-1" />
-                Search
-              </Button>
-            </div>
+            <FilterActions 
+              searchLabel="Search"
+              isLoading={loading}
+              onReset={handleResetFilter}
+            />
           </form>
         </div>
 
