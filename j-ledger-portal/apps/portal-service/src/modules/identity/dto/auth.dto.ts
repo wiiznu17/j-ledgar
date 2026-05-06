@@ -1,4 +1,5 @@
 import {
+  IsBoolean,
   IsEmail,
   IsEnum,
   IsNotEmpty,
@@ -126,6 +127,10 @@ export class RegisterProfileDto {
   @ValidateNested()
   @Type(() => UpdateAddressDto)
   currentAddress?: UpdateAddressDto;
+
+  @IsOptional()
+  @IsBoolean()
+  useIdentityAddress?: boolean;
 }
 
 export class RegisterCredentialsDto {
