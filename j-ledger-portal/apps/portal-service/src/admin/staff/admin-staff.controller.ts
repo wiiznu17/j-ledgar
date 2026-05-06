@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Put, Delete, Body, Param, Query, UseGuards } from '@nestjs/common';
+import { Controller, Get, Post, Put, Delete, Body, Param, Query, UseGuards, Req, BadRequestException } from '@nestjs/common';
 import { AdminService } from '../services/admin.service';
 import { AdminJwtGuard } from '../guards/admin-jwt.guard';
 import { AdminRolesGuard } from '../guards/admin-roles.guard';
@@ -56,7 +56,10 @@ export class AdminStaffController {
   @Roles(AdminRole.SUPER_ADMIN)
   @RequirePermissions(Permission.DELETE_ADMINS)
   @AuditLog(null as any, ResourceType.ADMIN_USER, 'Removed staff member')
-  async removeStaff(@Param('id') id: string) {
+  async removeStaff(@Param('id') id: string, @Req() req: any) {
+    if (req.user.sub === id) {
+      throw new BadRequestException('You cannot remove your own account');
+    }
     return this.adminService.removeStaff(id);
   }
 
@@ -79,7 +82,10 @@ export class AdminStaffController {
   @Post('staff/:id/deactivate')
   @RequirePermissions(Permission.DEACTIVATE_STAFF)
   @AuditLog(null as any, ResourceType.ADMIN_USER, 'Deactivated staff account')
-  async deactivateStaff(@Param('id') id: string) {
+  async deactivateStaff(@Param('id') id: string, @Req() req: any) {
+    if (req.user.sub === id) {
+      throw new BadRequestException('You cannot deactivate your own account');
+    }
     return this.adminService.deactivateStaff(id);
   }
 
