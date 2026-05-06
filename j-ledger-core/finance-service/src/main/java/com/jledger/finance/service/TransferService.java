@@ -1,11 +1,10 @@
 package com.jledger.finance.service;
 
-import com.jledger.finance.model.Transaction;
+import com.jledger.finance.domain.Transaction;
 import com.jledger.finance.dto.TransferRequest;
 import com.jledger.finance.exception.ConcurrentOperationException;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
-import java.util.UUID;
 import java.util.concurrent.TimeUnit;
 import lombok.RequiredArgsConstructor;
 import org.redisson.api.RLock;
@@ -39,14 +38,14 @@ public class TransferService {
         validateTransferRequest(request);
         BigDecimal normalizedAmount = normalizeAmount(request.amount());
 
-        RLock firstLock = redissonClient.getLock(ACCOUNT_LOCK_PREFIX + smallerUuidString(
-                request.fromAccountId(),
-                request.toAccountId()
-        ));
-        RLock secondLock = redissonClient.getLock(ACCOUNT_LOCK_PREFIX + largerUuidString(
-                request.fromAccountId(),
-                request.toAccountId()
-        ));
+        // Sort account IDs to prevent deadlocks
+        String firstAccountId = request.fromAccountId().compareTo(request.toAccountId()) <= 0 
+                ? request.fromAccountId() : request.toAccountId();
+        String secondAccountId = request.fromAccountId().compareTo(request.toAccountId()) <= 0 
+                ? request.toAccountId() : request.fromAccountId();
+
+        RLock firstLock = redissonClient.getLock(ACCOUNT_LOCK_PREFIX + firstAccountId);
+        RLock secondLock = redissonClient.getLock(ACCOUNT_LOCK_PREFIX + secondAccountId);
 
         boolean firstLocked = false;
         boolean secondLocked = false;
@@ -62,8 +61,8 @@ public class TransferService {
             }
 
             Transaction transaction = walletService.transferByWalletId(
-                request.fromAccountId().toString(),
-                request.toAccountId().toString(),
+                request.fromAccountId(),
+                request.toAccountId(),
                 normalizedAmount
             );
             return transaction;
@@ -90,10 +89,10 @@ public class TransferService {
         if (request == null) {
             throw new IllegalArgumentException("Transfer request is required");
         }
-        if (request.fromAccountId() == null) {
+        if (request.fromAccountId() == null || request.fromAccountId().isBlank()) {
             throw new IllegalArgumentException("Invalid sender account");
         }
-        if (request.toAccountId() == null) {
+        if (request.toAccountId() == null || request.toAccountId().isBlank()) {
             throw new IllegalArgumentException("Invalid receiver account");
         }
         if (request.amount() == null || request.amount().signum() <= 0) {
@@ -113,21 +112,5 @@ public class TransferService {
         } catch (ArithmeticException exception) {
             throw new IllegalArgumentException("Transfer amount must have up to 4 decimal places", exception);
         }
-    }
-
-    private static int compareUuids(UUID a, UUID b) {
-        return a.toString().compareTo(b.toString());
-    }
-
-    private String smallerUuidString(UUID firstAccountId, UUID secondAccountId) {
-        return compareUuids(firstAccountId, secondAccountId) <= 0
-                ? firstAccountId.toString()
-                : secondAccountId.toString();
-    }
-
-    private String largerUuidString(UUID firstAccountId, UUID secondAccountId) {
-        return compareUuids(firstAccountId, secondAccountId) <= 0
-                ? secondAccountId.toString()
-                : firstAccountId.toString();
     }
 }

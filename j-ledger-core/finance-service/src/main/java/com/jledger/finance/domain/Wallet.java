@@ -1,4 +1,4 @@
-package com.jledger.finance.model;
+package com.jledger.finance.domain;
 
 import jakarta.persistence.*;
 import java.math.BigDecimal;

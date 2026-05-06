@@ -1,7 +1,7 @@
 package com.jledger.finance.service;
 
 import com.jledger.finance.domain.RewardAccount;
-import com.jledger.finance.model.Transaction;
+import com.jledger.finance.domain.Transaction;
 import com.jledger.finance.dto.MerchantPayRequest;
 import com.jledger.finance.repository.RewardAccountRepository;
 import lombok.RequiredArgsConstructor;

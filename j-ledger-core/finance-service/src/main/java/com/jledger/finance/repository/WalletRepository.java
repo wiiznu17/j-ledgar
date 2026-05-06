@@ -1,6 +1,6 @@
 package com.jledger.finance.repository;
 
-import com.jledger.finance.model.Wallet;
+import com.jledger.finance.domain.Wallet;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 

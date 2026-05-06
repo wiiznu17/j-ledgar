@@ -1,37 +1,31 @@
 package com.jledger.finance.dto;
 
-import com.jledger.finance.domain.LedgerEntry;
 import com.jledger.finance.domain.Transaction;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
 import java.math.BigDecimal;
+import java.time.ZoneId;
 import java.time.ZonedDateTime;
+import java.util.ArrayList;
 import java.util.List;
-import java.util.UUID;
 
 /**
  * Transfer Response DTO
  * Returned to wallet-api after P2P transfer execution
- *
- * Contains:
- * - Transaction ID and status
- * - Ledger entries (immutable record of debit/credit)
- * - Amount and currency
- * - Timestamps
  */
 @Data
 @NoArgsConstructor
 public class TransferResponse {
 
-    private UUID id;
+    private String id; // transactionId
     private String idempotencyKey;
-    private UUID fromAccountId;
-    private UUID toAccountId;
+    private Long fromAccountId; // fromWalletId
+    private Long toAccountId; // toWalletId
     private BigDecimal amount;
     private String currency;
-    private String status; // SUCCESS, PENDING, FAILED
-    private List<LedgerEntryDto> ledgerEntries;
+    private String status;
+    private List<LedgerEntryDto> ledgerEntries = new ArrayList<>();
     private ZonedDateTime createdAt;
     private ZonedDateTime updatedAt;
 
@@ -39,47 +33,29 @@ public class TransferResponse {
      * Create response from Transaction domain model
      */
     public TransferResponse(Transaction transaction) {
-        this.id = transaction.getId();
-        this.idempotencyKey = transaction.getIdempotencyKey();
-        this.fromAccountId = transaction.getFromAccountId();
-        this.toAccountId = transaction.getToAccountId();
+        this.id = transaction.getTransactionId();
+        this.idempotencyKey = transaction.getTransactionId(); // Using transactionId as idempotency key for new system
+        this.fromAccountId = transaction.getFromWalletId();
+        this.toAccountId = transaction.getToWalletId();
         this.amount = transaction.getAmount();
-        this.currency = transaction.getCurrency();
-        this.status = transaction.getStatus();
-        this.createdAt = transaction.getCreatedAt();
-        this.updatedAt = transaction.getUpdatedAt();
-
-        // Map ledger entries
-        if (transaction.getLedgerEntries() != null) {
-            this.ledgerEntries = transaction.getLedgerEntries()
-                    .stream()
-                    .map(LedgerEntryDto::fromDomain)
-                    .toList();
+        this.currency = "THB"; // Default for J-Ledger
+        this.status = transaction.getStatus() != null ? transaction.getStatus().name() : null;
+        
+        if (transaction.getCreatedAt() != null) {
+            this.createdAt = transaction.getCreatedAt().atZone(ZoneId.systemDefault());
+        }
+        if (transaction.getUpdatedAt() != null) {
+            this.updatedAt = transaction.getUpdatedAt().atZone(ZoneId.systemDefault());
         }
     }
 
-    /**
-     * Ledger Entry DTO
-     * Immutable record of debit or credit
-     */
     @Data
     @NoArgsConstructor
     public static class LedgerEntryDto {
-        private UUID id;
-        private UUID accountId;
-        private String type; // DEBIT or CREDIT
+        private String id;
+        private String accountId;
+        private String type;
         private BigDecimal amount;
         private ZonedDateTime createdAt;
-
-        public static LedgerEntryDto fromDomain(LedgerEntry entry) {
-            LedgerEntryDto dto = new LedgerEntryDto();
-            dto.id = entry.getId();
-            dto.accountId = entry.getAccount() != null ? entry.getAccount().getId() : null;
-            dto.type = entry.getEntryType();
-            dto.amount = entry.getAmount();
-            dto.createdAt = entry.getCreatedAt();
-            return dto;
-        }
     }
 }
-
