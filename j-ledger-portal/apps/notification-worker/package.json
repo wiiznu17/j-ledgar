@@ -27,6 +27,7 @@
     "@nestjs/core": "^11.0.1",
     "@nestjs/platform-express": "^11.0.1",
     "@prisma/client": "^6.2.0",
+    "@repo/dto": "workspace:*",
     "expo-server-sdk": "^6.1.0",
     "kafkajs": "^2.2.4",
     "nodemailer": "^6.9.0",

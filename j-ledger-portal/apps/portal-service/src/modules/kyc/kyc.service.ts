@@ -16,6 +16,7 @@ import { GoogleVisionService } from './services/ocr.service';
 import { AwsRekognitionService } from './services/face.service';
 import { createHash, randomBytes, createCipheriv, createDecipheriv, randomUUID } from 'crypto';
 import { ConfirmOcrDto } from './dto/kyc.dto';
+import { KafkaTopic } from '@repo/dto';
 
 @Injectable()
 export class KycService {
@@ -88,7 +89,7 @@ export class KycService {
     }
 
     // Emit to Kafka for notification-worker
-    await this.kafkaProducer.emit('kyc-events', {
+    await this.kafkaProducer.emit(KafkaTopic.KYC_EVENTS, {
       userId: document.userId,
       documentId,
       status: 'APPROVED',
@@ -109,7 +110,7 @@ export class KycService {
     });
 
     // Emit to Kafka for notification-worker
-    await this.kafkaProducer.emit('kyc-events', {
+    await this.kafkaProducer.emit(KafkaTopic.KYC_EVENTS, {
       userId: updated.userId,
       documentId,
       status: 'REJECTED',
@@ -154,7 +155,7 @@ export class KycService {
     });
 
     // Emit event for notification
-    await this.kafkaProducer.emit('kyc-events', {
+    await this.kafkaProducer.emit(KafkaTopic.KYC_EVENTS, {
       userId,
       status: 'APPROVED',
       timestamp: new Date().toISOString(),
@@ -188,7 +189,7 @@ export class KycService {
     });
 
     // Emit event for notification
-    await this.kafkaProducer.emit('kyc-events', {
+    await this.kafkaProducer.emit(KafkaTopic.KYC_EVENTS, {
       userId,
       status: 'REJECTED',
       reason,
