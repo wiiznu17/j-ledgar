@@ -140,3 +140,56 @@ export enum DeviceTrustLevel {
   TRUSTED = 'TRUSTED',
   UNTRUSTED = 'UNTRUSTED',
 }
+
+export enum NotificationEventType {
+  // Onboarding
+  REGISTER_INIT_OTP = 'REGISTER_INIT_OTP',
+  REGISTER_OTP_VERIFIED = 'REGISTER_OTP_VERIFIED',
+  KYC_SUBMITTED = 'KYC_SUBMITTED',
+  REGISTRATION_COMPLETED = 'REGISTRATION_COMPLETED',
+
+  // KYC Status (from Admin)
+  KYC_APPROVED = 'APPROVED',
+  KYC_REJECTED = 'REJECTED',
+
+  // Security
+  LOGIN_SUCCESS = 'LOGIN_SUCCESS',
+  LOGIN_FAILURE = 'LOGIN_FAILURE',
+  PASSWORD_CHANGE = 'PASSWORD_CHANGE',
+  PASSWORD_SET = 'PASSWORD_SET',
+  PIN_SETUP = 'PIN_SETUP',
+  LOGOUT = 'LOGOUT',
+  LOGOUT_ALL = 'LOGOUT_ALL',
+
+  // Finance
+  TOPUP = 'TOPUP',
+  TRANSFER = 'TRANSFER',
+  WITHDRAW = 'WITHDRAW',
+  PAYMENT = 'PAYMENT',
+  REFUND = 'REFUND',
+  BILL_PAYMENT = 'BILL_PAYMENT',
+  FINANCE = 'FINANCE',
+}
+
+export enum KafkaTopic {
+  SECURITY_EVENTS = 'security-events',
+  KYC_EVENTS = 'kyc-events',
+  FINANCE_EVENTS = 'finance-events',
+  FINANCIAL_EVENTS_V1 = 'financial-events-v1',
+  TRANSACTION_EVENTS = 'transaction-events',
+  NOTIFICATION_EVENTS = 'notification-events',
+}
+
+export enum NotificationCategory {
+  FINANCE = 'FINANCE',
+  SYSTEM = 'SYSTEM',
+  PROMO = 'PROMO',
+  NEWS = 'NEWS',
+}
+
+export enum AppPath {
+  HOME = '/',
+  PROFILE_SECURITY = '/profile/security',
+  PROFILE_INFO = '/profile/information',
+  TRANSACTION_DETAIL = '/transaction',
+}

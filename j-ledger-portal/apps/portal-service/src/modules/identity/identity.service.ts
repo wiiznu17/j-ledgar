@@ -17,6 +17,7 @@ import { ISmsProvider } from '../integrations/interfaces/sms-provider.interface'
 import { FinanceService } from '../integration/finance.service';
 import { KafkaProducerService } from '../notification/kafka-producer.service';
 import { RegistrationState } from '@prisma/client';
+import { NotificationEventType, KafkaTopic, DeviceTrustLevel, UserStatus } from '@repo/dto';
 import {
   RegisterInitDto,
   RegisterVerifyOtpDto,
@@ -177,7 +178,7 @@ export class IdentityService {
     }
 
     const challenge = await this.createOtpChallenge(user.id, phoneNumber);
-    await this.logSecurityEvent(user.id, 'REGISTER_INIT_OTP', {
+    await this.logSecurityEvent(user.id, NotificationEventType.REGISTER_INIT_OTP, {
       ipAddress: context?.ip,
       userAgent: context?.userAgent,
     });
@@ -209,7 +210,7 @@ export class IdentityService {
       data: { registrationState: 'OTP_VERIFIED' },
     });
 
-    await this.logSecurityEvent(user.id, 'REGISTER_OTP_VERIFIED', {
+    await this.logSecurityEvent(user.id, NotificationEventType.REGISTER_OTP_VERIFIED, {
       ipAddress: context?.ip,
       userAgent: context?.userAgent,
     });
@@ -245,7 +246,7 @@ export class IdentityService {
       throw new UnauthorizedException('Invalid credentials');
     }
 
-    if (user.status !== 'ACTIVE' && user.status !== 'PENDING_APPROVAL' && user.status !== 'REJECTED') {
+    if (user.status !== UserStatus.ACTIVE && user.status !== 'PENDING_APPROVAL' && user.status !== 'REJECTED') {
       throw new UnauthorizedException('Account is not active');
     }
 
@@ -255,6 +256,11 @@ export class IdentityService {
 
     const isPasswordValid = await bcrypt.compare(dto.password, user.passwordHash);
     if (!isPasswordValid) {
+      await this.logSecurityEvent(user.id, NotificationEventType.LOGIN_FAILURE, {
+        ip: context?.ip,
+        userAgent: context?.userAgent,
+        deviceId: dto.deviceId,
+      });
       throw new UnauthorizedException('Invalid credentials');
     }
 
@@ -278,14 +284,14 @@ export class IdentityService {
       },
       update: {
         lastSeenAt: new Date(),
-        trustLevel: 'TRUSTED',
+        trustLevel: DeviceTrustLevel.TRUSTED,
         ...(dto.pushToken && { pushToken: dto.pushToken }),
       },
       create: {
         userId: user.id,
         deviceIdentifier: dto.deviceId,
         deviceName: dto.deviceName,
-        trustLevel: 'TRUSTED',
+        trustLevel: DeviceTrustLevel.TRUSTED,
         lastSeenAt: new Date(),
         ...(dto.pushToken && { pushToken: dto.pushToken }),
       },
@@ -307,7 +313,7 @@ export class IdentityService {
       },
     });
 
-    await this.logSecurityEvent(user.id, 'LOGIN_SUCCESS', {
+    await this.logSecurityEvent(user.id, NotificationEventType.LOGIN_SUCCESS, {
       ipAddress: context?.ip,
       userAgent: context?.userAgent,
     });
@@ -438,7 +444,7 @@ export class IdentityService {
       data: { revokedAt: new Date() },
     });
 
-    await this.logSecurityEvent(user.sub, 'LOGOUT');
+    await this.logSecurityEvent(user.sub, NotificationEventType.LOGOUT);
   }
 
   async logoutAll(userId: string, user: { sub: string }) {
@@ -450,7 +456,7 @@ export class IdentityService {
       data: { revokedAt: new Date() },
     });
 
-    await this.logSecurityEvent(user.sub, 'LOGOUT_ALL');
+    await this.logSecurityEvent(user.sub, NotificationEventType.LOGOUT_ALL);
   }
 
   // ==================== Token Signing ====================
@@ -586,7 +592,7 @@ export class IdentityService {
     });
 
     // Emit to Kafka for notification-worker
-    await this.kafkaProducer.emit('security-events', {
+    await this.kafkaProducer.emit(KafkaTopic.SECURITY_EVENTS, {
       userId,
       eventType,
       metadata: metadata || {},
@@ -1002,6 +1008,10 @@ export class IdentityService {
       },
     });
 
+    await this.logSecurityEvent(user.id, NotificationEventType.KYC_SUBMITTED, {
+      timestamp: new Date().toISOString(),
+    });
+
     this.logger.log(
       `[Register] STEP 4 Complete: State updated to ${nextState} for user ${user.id}`,
     );
@@ -1050,7 +1060,7 @@ export class IdentityService {
     });
     this.logger.log(`[Register] Password saved for user ${user.id}`);
 
-    await this.logSecurityEvent(user.id, 'PASSWORD_SET', {
+    await this.logSecurityEvent(user.id, NotificationEventType.PASSWORD_SET, {
       ipAddress: context?.ip,
       userAgent: context?.userAgent,
     });
@@ -1102,7 +1112,7 @@ export class IdentityService {
         userId: user.id,
         deviceIdentifier: dto.deviceId,
         deviceName: dto.deviceName,
-        trustLevel: 'TRUSTED',
+        trustLevel: DeviceTrustLevel.TRUSTED,
         ...(dto.pushToken && { pushToken: dto.pushToken }),
       },
       update: {
@@ -1119,7 +1129,7 @@ export class IdentityService {
     });
     this.logger.log(`[Register] PIN saved for user ${user.id}`);
 
-    await this.logSecurityEvent(user.id, 'PIN_SETUP', {
+    await this.logSecurityEvent(user.id, NotificationEventType.PIN_SETUP, {
       ipAddress: context?.ip,
       userAgent: context?.userAgent,
     });
@@ -1301,7 +1311,7 @@ export class IdentityService {
         },
       });
 
-      await this.logSecurityEvent(user.id, 'REGISTRATION_COMPLETED', {
+      await this.logSecurityEvent(user.id, NotificationEventType.REGISTRATION_COMPLETED, {
         walletId: walletId,
       });
 

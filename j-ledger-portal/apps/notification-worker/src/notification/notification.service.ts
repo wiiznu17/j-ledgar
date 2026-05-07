@@ -2,6 +2,7 @@ import { Injectable, Logger } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { EmailService } from '../email/email.service';
 import { PushService } from '../push/push.service';
+import { NotificationEventType, KafkaTopic, NotificationCategory, AppPath } from '@repo/dto';
 
 @Injectable()
 export class NotificationService {
@@ -68,7 +69,7 @@ export class NotificationService {
       });
 
       // 4. Routing Logic
-      const isSecurityEvent = topic === 'security-events';
+      const isSecurityEvent = topic === KafkaTopic.SECURITY_EVENTS;
       let pushAttempted = false;
       let pushSuccess = false;
 
@@ -116,12 +117,21 @@ export class NotificationService {
   }
 
   private generateTitle(topic: string, eventType: string, metadata: any): string {
-    if (topic === 'security-events') return 'Security Alert';
-    if (topic === 'kyc-events') return 'Identity Verification';
-    
     const type = eventType?.toUpperCase();
-    if (type === 'TOPUP') return 'Wallet Top-up';
-    if (type === 'TRANSFER') {
+
+    if (topic === KafkaTopic.SECURITY_EVENTS) {
+      if (type === NotificationEventType.LOGIN_FAILURE) return 'Security Alert: Failed Login';
+      if (type === NotificationEventType.PASSWORD_CHANGE) return 'Security Alert: Password Updated';
+      if (type === NotificationEventType.REGISTRATION_COMPLETED) return 'Welcome to J-Ledger!';
+      return 'Security Alert';
+    }
+    
+    if (topic === KafkaTopic.KYC_EVENTS || type === NotificationEventType.KYC_SUBMITTED) {
+      return 'Identity Verification';
+    }
+    
+    if (type === NotificationEventType.TOPUP) return 'Wallet Top-up';
+    if (type === NotificationEventType.TRANSFER) {
       // Check if user is receiver based on metadata
       return metadata?.isReceiver ? 'Money Received' : 'Payment Sent';
     }
@@ -139,20 +149,32 @@ export class NotificationService {
     const refText = ref && ref.length > 0 ? ` (Ref: ${ref.slice(-8).toUpperCase()})` : '';
 
     switch (eventType?.toUpperCase()) {
-      case 'LOGIN_SUCCESS':
+      case NotificationEventType.LOGIN_SUCCESS:
         return `Secure login detected from ${metadata?.deviceName || metadata?.ipAddress || 'a new device'}. If this wasn't you, please secure your account immediately.`;
       
-      case 'APPROVED':
+      case NotificationEventType.LOGIN_FAILURE:
+        return `A failed login attempt was detected for your account from ${metadata?.deviceName || 'an unknown device'}. If this wasn't you, we recommend monitoring your account.`;
+
+      case NotificationEventType.PASSWORD_CHANGE:
+        return `Your account password has been successfully updated. If you did not perform this change, please contact support immediately to secure your wallet.`;
+
+      case NotificationEventType.KYC_SUBMITTED:
+        return `We've received your identity documents! Our team is currently reviewing your application. This usually takes 1-3 business days.`;
+
+      case NotificationEventType.REGISTRATION_COMPLETED:
+        return `Welcome to the family! Your J-Ledger account is now fully active. You can now start managing your digital assets securely.`;
+
+      case NotificationEventType.KYC_APPROVED:
         return 'Congratulations! Your identity verification has been successfully approved. You now have full access to all features.';
       
-      case 'REJECTED':
+      case NotificationEventType.KYC_REJECTED:
         return `Identity verification was not successful. Reason: ${metadata?.reason || 'Document clarity issue'}. Please try again or contact support.`;
       
-      case 'TOPUP':
+      case NotificationEventType.TOPUP:
         const source = metadata?.source || metadata?.description?.split('via ')?.[1] || 'Bank Transfer';
         return `Your wallet has been successfully topped up with ฿${amount} via ${source}.${refText}`;
       
-      case 'TRANSFER':
+      case NotificationEventType.TRANSFER:
         if (metadata?.isReceiver) {
           console.log(metadata);
           const sender = metadata?.senderName || metadata?.senderPhone || 'a J-Ledger user';
@@ -182,30 +204,45 @@ export class NotificationService {
     const type = eventType?.toUpperCase();
     
     // Default Category Mapping
-    if (['TRANSFER', 'TOPUP', 'PAYMENT', 'FINANCE'].includes(type)) {
+    if ([
+      NotificationEventType.TRANSFER,
+      NotificationEventType.TOPUP,
+      NotificationEventType.WITHDRAW,
+      'PAYMENT',
+      'FINANCE',
+    ].includes(type)) {
       const transactionId = metadata?.transactionId || metadata?.referenceId;
       return { 
-        category: 'FINANCE', 
-        path: transactionId ? `/transaction/${transactionId}` : undefined 
+        category: NotificationCategory.FINANCE, 
+        path: transactionId ? `${AppPath.TRANSACTION_DETAIL}/${transactionId}` : undefined 
       };
     }
     
-    if (['SECURITY', 'LOGIN_SUCCESS', 'PASSWORD_CHANGE'].includes(type)) {
-      return { category: 'SYSTEM', path: '/profile/security' };
+    if (['SECURITY', NotificationEventType.LOGIN_SUCCESS, NotificationEventType.PASSWORD_CHANGE].includes(type)) {
+      return { category: NotificationCategory.SYSTEM, path: AppPath.PROFILE_SECURITY };
     }
     
-    if (['KYC_STATUS', 'APPROVED', 'REJECTED'].includes(type)) {
-      return { category: 'SYSTEM', path: '/profile/information' };
+    if ([
+      'KYC_STATUS',
+      NotificationEventType.KYC_APPROVED,
+      NotificationEventType.KYC_REJECTED,
+      NotificationEventType.KYC_SUBMITTED,
+    ].includes(type)) {
+      return { category: NotificationCategory.SYSTEM, path: AppPath.PROFILE_INFO };
+    }
+    
+    if (type === NotificationEventType.REGISTRATION_COMPLETED) {
+      return { category: NotificationCategory.SYSTEM, path: AppPath.HOME };
     }
     
     if (['PROMO', 'OFFER', 'CAMPAIGN'].includes(type)) {
-      return { category: 'PROMO' };
+      return { category: NotificationCategory.PROMO };
     }
     
     if (['NEWS', 'ANNOUNCEMENT'].includes(type)) {
-      return { category: 'NEWS' };
+      return { category: NotificationCategory.NEWS };
     }
     
-    return { category: 'SYSTEM' };
+    return { category: NotificationCategory.SYSTEM };
   }
 }
