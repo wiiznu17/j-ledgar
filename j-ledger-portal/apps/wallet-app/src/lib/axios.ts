@@ -158,11 +158,18 @@ api.interceptors.response.use(
             },
           );
 
-          const { accessToken, refreshToken: newRefreshToken } = response.data;
-
+          const { accessToken, refreshToken: newRefreshToken, regToken } = response.data;
+          
           // Store new tokens and update auth store
           await storeTokens(accessToken, newRefreshToken);
           useAuthStore.getState().setToken(accessToken, newRefreshToken);
+
+          // If a regToken was returned (incomplete registration), update the registration store
+          if (regToken) {
+            console.log('[Axios] Syncing regToken to RegistrationStore');
+            const { useRegistrationStore } = require('@/store/registration');
+            useRegistrationStore.getState().setRegToken(regToken);
+          }
 
           // Update Authorization header for original request
           originalRequest.headers.Authorization = `Bearer ${accessToken}`;

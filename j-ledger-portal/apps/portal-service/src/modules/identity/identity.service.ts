@@ -1,10 +1,12 @@
 import {
-  ConflictException,
   Injectable,
-  UnauthorizedException,
   Inject,
+  ConflictException,
+  UnauthorizedException,
   BadRequestException,
   Logger,
+  InternalServerErrorException,
+  ForbiddenException,
 } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import { ConfigService } from '@nestjs/config';
@@ -14,6 +16,7 @@ import Redis from 'ioredis';
 import { ISmsProvider } from '../integrations/interfaces/sms-provider.interface';
 import { FinanceService } from '../integration/finance.service';
 import { KafkaProducerService } from '../notification/kafka-producer.service';
+import { RegistrationState } from '@prisma/client';
 import {
   RegisterInitDto,
   RegisterVerifyOtpDto,
@@ -25,7 +28,7 @@ import {
   AcceptTermsDto,
 } from './dto/auth.dto';
 import * as bcrypt from 'bcryptjs';
-import { randomUUID } from 'crypto';
+import { randomUUID, createDecipheriv } from 'crypto';
 
 const ACCESS_TOKEN_TTL_SECONDS = 15 * 60;
 const REFRESH_TOKEN_TTL_SECONDS = 30 * 24 * 60 * 60;
@@ -151,20 +154,26 @@ export class IdentityService {
       this.logger.log(
         `[Register] Existing user found for ${phoneNumber}, current state: ${user.registrationState}`,
       );
-      // Reset registration state for fresh start
-      if (user.registrationState !== 'COMPLETED') {
-        this.logger.log(`[Register] Resetting registration state for ${phoneNumber}`);
-        await this.prisma.user.update({
-          where: { id: user.id },
-          data: { registrationState: 'PENDING_OTP' },
-        });
-        user.registrationState = 'PENDING_OTP';
-      }
-    }
 
-    if (user.registrationState === 'COMPLETED') {
-      this.logger.warn(`[Register] User ${phoneNumber} already registered`);
-      throw new ConflictException('User already registered');
+      // If user already has a password, they should use Login flow instead of Sign Up
+      if (user.passwordHash) {
+        this.logger.warn(`[Register] User ${phoneNumber} already has a password. Forcing login.`);
+        throw new ConflictException('User already has an account. Please log in.');
+      }
+
+      // If user is already completed, they must login
+      if (user.registrationState === 'COMPLETED') {
+        this.logger.warn(`[Register] User ${phoneNumber} already registered`);
+        throw new ConflictException('User already registered');
+      }
+
+      // Reset registration state for fresh start ONLY if they haven't set a password yet
+      this.logger.log(`[Register] Resetting registration state for ${phoneNumber}`);
+      await this.prisma.user.update({
+        where: { id: user.id },
+        data: { registrationState: 'PENDING_OTP' },
+      });
+      user.registrationState = 'PENDING_OTP';
     }
 
     const challenge = await this.createOtpChallenge(user.id, phoneNumber);
@@ -849,6 +858,8 @@ export class IdentityService {
 
     this.logger.log(`[Register] STEP 3: Accepting terms for user ${payload.sub}`);
 
+    await this.validateRegistrationState(payload.sub, ['OTP_VERIFIED', 'TC_ACCEPTED']);
+
     const user = await this.prisma.user.findUnique({
       where: { id: payload.sub },
     });
@@ -903,6 +914,8 @@ export class IdentityService {
     }
 
     this.logger.log(`[Register] STEP 4: Registering profile for user ${payload.sub}`);
+
+    await this.validateRegistrationState(payload.sub, ['KYC_VERIFIED', 'PROFILE_COMPLETED']);
 
     const user = await this.prisma.user.findUnique({
       where: { id: payload.sub },
@@ -972,16 +985,31 @@ export class IdentityService {
     }
 
     // Update state
+    // Smart Skip: If user already has password and PIN (Retry/Resume case), 
+    // skip directly to COMPLETED state.
+    let nextState: RegistrationState = 'PROFILE_COMPLETED';
+    if (user.passwordHash && user.pinHash) {
+      this.logger.log(`[Register] User ${user.id} already has password and PIN. Skipping to COMPLETED.`);
+      nextState = 'COMPLETED';
+    }
+
     await this.prisma.user.update({
       where: { id: user.id },
-      data: { registrationState: 'PROFILE_COMPLETED' },
+      data: { 
+        registrationState: nextState,
+        // If skipping to COMPLETED, ensure status is PENDING_APPROVAL so admin sees it for re-review
+        status: nextState === 'COMPLETED' ? 'PENDING_APPROVAL' : user.status
+      },
     });
 
     this.logger.log(
-      `[Register] STEP 4 Complete: State updated to PROFILE_COMPLETED for user ${user.id}`,
+      `[Register] STEP 4 Complete: State updated to ${nextState} for user ${user.id}`,
     );
 
-    return { success: true };
+    return { 
+      success: true,
+      nextState
+    };
   }
 
   async registerPassword(
@@ -1003,6 +1031,8 @@ export class IdentityService {
     }
 
     this.logger.log(`[Register] STEP 5: Setting password for user ${payload.sub}`);
+
+    await this.validateRegistrationState(payload.sub, ['PROFILE_COMPLETED', 'PASSWORD_SET']);
 
     const user = await this.prisma.user.findUnique({
       where: { id: payload.sub },
@@ -1047,6 +1077,8 @@ export class IdentityService {
     }
 
     this.logger.log(`[Register] STEP 6: Setting PIN for user ${payload.sub}`);
+
+    await this.validateRegistrationState(payload.sub, ['PASSWORD_SET', 'CREDENTIALS_SET']);
 
     const user = await this.prisma.user.findUnique({
       where: { id: payload.sub },
@@ -1122,12 +1154,23 @@ export class IdentityService {
 
     this.logger.log(`[Register] Getting registration status for user ${payload.sub}`);
 
-    const user = await this.prisma.user.findUnique({
-      where: { id: payload.sub },
-      include: {
-        userSettings: true,
-      },
-    });
+    const [user, addresses, kycData, piiData] = await Promise.all([
+      this.prisma.user.findUnique({
+        where: { id: payload.sub },
+        include: {
+          userSettings: true,
+        },
+      }),
+      this.prisma.address.findMany({
+        where: { userId: payload.sub, deletedAt: null },
+      }),
+      this.prisma.kYCData.findUnique({
+        where: { userId: payload.sub },
+      }),
+      this.prisma.pII.findMany({
+        where: { userId: payload.sub },
+      }),
+    ]);
 
     if (!user) {
       throw new BadRequestException('User not found');
@@ -1135,19 +1178,59 @@ export class IdentityService {
 
     this.logger.log(`[Register] Current state for user ${user.id}: ${user.registrationState}`);
 
+    // Extract raw address from PII
+    const rawAddressPii = (piiData as any[]).find((p) => p.field === 'raw_id_card_address');
+    const idCardAddress = rawAddressPii ? this.decryptPii(rawAddressPii.encryptedData) : null;
+
     // Extract profile data from settings
     const profileSetting = user.userSettings.find((s) => s.key === 'profile');
     const profileData = profileSetting ? JSON.parse(profileSetting.value) : null;
 
+    // Decrypt ID card number if available
+    let idNumber = null;
+    if (kycData?.idCardNumberEncrypted) {
+      try {
+        idNumber = this.decryptPii(kycData.idCardNumberEncrypted);
+      } catch (e) {
+        this.logger.warn(`Failed to decrypt ID number for status check: ${user.id}`);
+      }
+    }
+
     return {
       state: user.registrationState,
-      prefilledData: profileData
-        ? {
-            firstName: profileData.firstName,
-            lastName: profileData.lastName,
-            ...profileData,
-          }
-        : null,
+      status: user.status,
+      reviewNote: kycData?.reviewNote || null,
+      prefilledData: {
+        identity: kycData
+          ? {
+              idNumber,
+              idCardUrl: kycData.idCardImageUrl,
+              idCardAddress: idCardAddress,
+              firstNameTh: kycData.firstNameTh,
+              lastNameTh: kycData.lastNameTh,
+              prefixTh: kycData.prefix,
+              firstNameEn: kycData.firstNameEn,
+              lastNameEn: kycData.lastNameEn,
+              prefixEn: kycData.prefixEn,
+              dateOfBirth: kycData.dateOfBirth,
+              issueDate: kycData.idCardIssueDate,
+              expiryDate: kycData.idCardExpiryDate,
+              religion: kycData.religion,
+            }
+          : null,
+        addresses: {
+          registered: addresses.find((a) => a.type === 'REGISTERED') || null,
+          current: addresses.find((a) => a.type === 'CURRENT') || null,
+        },
+        profile: profileData
+          ? {
+              occupation: profileData.occupation,
+              incomeRange: profileData.incomeRange,
+              sourceOfFunds: profileData.sourceOfFunds,
+              purposeOfAccount: profileData.purposeOfAccount,
+            }
+          : null,
+      },
     };
   }
 
@@ -1167,6 +1250,8 @@ export class IdentityService {
 
     this.logger.log(`[Register] STEP 7: Completing registration for user ${payload.sub}`);
 
+    await this.validateRegistrationState(payload.sub, ['CREDENTIALS_SET', 'COMPLETED']);
+
     const user = await this.prisma.user.findUnique({
       where: { id: payload.sub },
     });
@@ -1175,9 +1260,11 @@ export class IdentityService {
       throw new BadRequestException('User not found');
     }
 
-    // Allow completion if status is PENDING_APPROVAL or REJECTED (for retries)
+    // Race Condition and Token Reuse Protection: 
+    // Allow completion only if status is PENDING_APPROVAL or REJECTED (for retries),
+    // but if already COMPLETED and ACTIVE, throw conflict.
     if (user.registrationState === 'COMPLETED' && user.status === 'ACTIVE') {
-      throw new ConflictException('Registration already completed and account is active');
+      throw new ConflictException('Registration already completed');
     }
 
     // Create wallet in finance service
@@ -1431,34 +1518,62 @@ export class IdentityService {
   async updateAddress(userId: string, type: any, dto: any, source?: any) {
     this.logger.log(`[Identity] Updating address ${type} for user ${userId}`);
 
-    // Manual find and update/create to ensure only one active record per type
-    const existing = await this.prisma.address.findFirst({
-      where: {
-        userId,
-        type: type as any,
-        deletedAt: null,
-      },
-    });
-
-    if (existing) {
-      return await this.prisma.address.update({
-        where: { id: existing.id },
-        data: {
-          ...dto,
-          verificationSource: source || undefined,
-          updatedAt: new Date(),
-        },
-      });
+    // Sanitize DTO to only include valid database fields
+    const allowedFields = [
+      'line1',
+      'line2',
+      'subdistrict',
+      'district',
+      'province',
+      'postalCode',
+      'label',
+      'countryCode',
+    ];
+    const sanitizedDto: any = {};
+    for (const key of allowedFields) {
+      if (dto && dto[key] !== undefined) {
+        sanitizedDto[key] = dto[key];
+      }
     }
 
-    return await this.prisma.address.create({
-      data: {
-        userId,
-        type: type as any,
-        ...dto,
-        verificationSource: source || undefined,
-      },
-    });
+    this.logger.log(`[Identity] Original Address DTO: ${JSON.stringify(dto)}`);
+    this.logger.log(`[Identity] Sanitized Address DTO: ${JSON.stringify(sanitizedDto)}`);
+
+    try {
+      // Manual find and update/create to ensure only one active record per type
+      const existing = await this.prisma.address.findFirst({
+        where: {
+          userId,
+          type: type as any,
+          deletedAt: null,
+        },
+      });
+
+      if (existing) {
+        this.logger.log(`[Identity] Updating existing address ${existing.id}`);
+        return await this.prisma.address.update({
+          where: { id: existing.id },
+          data: {
+            ...sanitizedDto,
+            verificationSource: source || undefined,
+            updatedAt: new Date(),
+          },
+        });
+      }
+
+      this.logger.log(`[Identity] Creating new address for user ${userId}`);
+      return await this.prisma.address.create({
+        data: {
+          userId,
+          type: type as any,
+          ...sanitizedDto,
+          verificationSource: source || undefined,
+        },
+      });
+    } catch (error) {
+      this.logger.error(`[Identity] FAILED to update/create address: ${error.message}`, error.stack);
+      throw error;
+    }
   }
 
   async updateProfile(userId: string, profileData: any) {
@@ -1512,5 +1627,60 @@ export class IdentityService {
   async reportSuspiciousActivityToAmlo(activityId: string, userId: string) {
     // TODO: Implement AMLO reporting logic
     return { success: true };
+  }
+
+  // ==================== Private Helpers ====================
+
+  public async validateRegistrationState(userId: string, allowedStates: string[]) {
+    const user = await this.prisma.user.findUnique({
+      where: { id: userId },
+      select: { registrationState: true, status: true },
+    });
+
+    if (!user) {
+      throw new BadRequestException('User not found');
+    }
+
+    // Allow REJECTED users to retry from any step they are at
+    if (user.status === 'REJECTED') {
+      this.logger.log(`[Register] User ${userId} is REJECTED, allowing state override.`);
+      return;
+    }
+
+    if (!allowedStates.includes(user.registrationState)) {
+      this.logger.warn(
+        `[Register] State mismatch for user ${userId}. Current: ${user.registrationState}, Allowed: ${allowedStates}`,
+      );
+      throw new ForbiddenException('Invalid registration sequence');
+    }
+  }
+
+  private decryptPii(encryptedData: string): string {
+    const encryptionKey = this.configService.get<string>('PII_ENCRYPTION_KEY');
+    if (!encryptionKey) {
+      throw new InternalServerErrorException('System missing PII decryption capabilities');
+    }
+
+    try {
+      const [ivHex, authTagHex, encryptedHex] = encryptedData.split(':');
+      if (!ivHex || !authTagHex || !encryptedHex) {
+        throw new Error('Invalid encrypted data format');
+      }
+
+      const iv = Buffer.from(ivHex, 'hex');
+      const authTag = Buffer.from(authTagHex, 'hex');
+      const key = Buffer.from(encryptionKey, 'hex');
+      const decipher = createDecipheriv('aes-256-gcm', key, iv);
+
+      decipher.setAuthTag(authTag);
+
+      let decrypted = decipher.update(encryptedHex, 'hex', 'utf8');
+      decrypted += decipher.final('utf8');
+
+      return decrypted;
+    } catch (error) {
+      this.logger.error(`Decryption failed: ${error.message}`);
+      throw new Error('Could not decrypt PII data');
+    }
   }
 }

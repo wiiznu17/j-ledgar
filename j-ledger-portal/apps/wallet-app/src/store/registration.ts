@@ -23,11 +23,34 @@ interface RegistrationStore {
   currentState: RegistrationState;
   isSyncing: boolean;
   prefillData: {
-    phoneNumber?: string;
-    firstName?: string;
-    lastName?: string;
-    dob?: string;
+    identity?: {
+      idNumber?: string;
+      idCardUrl?: string;
+      idCardAddress?: string;
+      firstNameTh?: string;
+      lastNameTh?: string;
+      prefixTh?: string;
+      firstNameEn?: string;
+      lastNameEn?: string;
+      prefixEn?: string;
+      dateOfBirth?: string;
+      issueDate?: string;
+      expiryDate?: string;
+      religion?: string;
+    } | null;
+    addresses?: {
+      registered?: any;
+      current?: any;
+    } | null;
+    profile?: {
+      occupation?: string;
+      incomeRange?: string;
+      sourceOfFunds?: string;
+      purposeOfAccount?: string;
+    } | null;
   } | null;
+  status: string | null;
+  reviewNote: string | null;
 
   setRegToken: (token: string | null) => Promise<void>;
   syncStatus: () => Promise<RegistrationState>;
@@ -53,6 +76,8 @@ export const useRegistrationStore = create<RegistrationStore>((set, get) => ({
   currentState: 'PENDING_OTP',
   isSyncing: false,
   prefillData: null,
+  status: null,
+  reviewNote: null,
 
   setRegToken: async (token: string | null) => {
     if (token) {
@@ -78,17 +103,14 @@ export const useRegistrationStore = create<RegistrationStore>((set, get) => ({
         },
       );
 
-      const { state, prefilledData } = response.data;
-      console.log(`[Registration] Status synced: ${state}`);
+      const { state, status, reviewNote, prefilledData } = response.data;
+      console.log(`[Registration] Status synced: ${state} (${status})`);
 
       set({
         currentState: state,
-        prefillData: prefilledData
-          ? {
-              firstName: prefilledData.firstName,
-              lastName: prefilledData.lastName,
-            }
-          : null,
+        status: status || null,
+        reviewNote: reviewNote || null,
+        prefillData: prefilledData || null,
       });
 
       return state;

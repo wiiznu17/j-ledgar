@@ -9,6 +9,7 @@ import {
   UploadedFile,
   Headers,
   Req,
+  UnauthorizedException,
 } from '@nestjs/common';
 import { KycService } from '../../modules/kyc/kyc.service';
 import { ConfirmOcrDto } from '../../modules/kyc/dto/kyc.dto';
@@ -62,20 +63,18 @@ export class KycController {
   @UseInterceptors(FileInterceptor('idCardImage'))
   async uploadIdCard(
     @UploadedFile() file: any,
-    @Body('userId') userId: string,
     @Req() request: Request,
   ) {
     if (!file) {
       throw new Error('No file uploaded');
     }
 
-    let targetUserId = userId;
-    if (!userId) {
-      const user = (request as any).user;
-      if (user && user.sub) targetUserId = user.sub;
+    const user = (request as any).user;
+    if (!user || !user.sub) {
+      throw new UnauthorizedException('User not found in token');
     }
 
-    return this.kycService.uploadIdCard(targetUserId, file.buffer);
+    return this.kycService.uploadIdCard(user.sub, file.buffer);
   }
 
   @Post('submit-selfie')
@@ -83,31 +82,27 @@ export class KycController {
   @UseInterceptors(FileInterceptor('selfieImage'))
   async submitSelfie(
     @UploadedFile() file: any,
-    @Body('userId') userId: string,
     @Req() request: Request,
   ) {
-    let targetUserId = userId;
-    if (!userId) {
-      const user = (request as any).user;
-      if (user && user.sub) targetUserId = user.sub;
+    const user = (request as any).user;
+    if (!user || !user.sub) {
+      throw new UnauthorizedException('User not found in token');
     }
 
-    return this.kycService.submitSelfie(targetUserId, file?.buffer);
+    return this.kycService.submitSelfie(user.sub, file?.buffer);
   }
 
   @Post('verify-liveness')
   @UseGuards(RegistrationAuthGuard)
   async verifyLiveness(
-    @Body('userId') userId: string,
     @Req() request: Request,
   ) {
-    let targetUserId = userId;
-    if (!userId) {
-      const user = (request as any).user;
-      if (user && user.sub) targetUserId = user.sub;
+    const user = (request as any).user;
+    if (!user || !user.sub) {
+      throw new UnauthorizedException('User not found in token');
     }
 
-    return this.kycService.submitSelfie(targetUserId);
+    return this.kycService.submitSelfie(user.sub);
   }
 
   @Post('upload-id-card/simple')
@@ -115,12 +110,11 @@ export class KycController {
   @UseInterceptors(FileInterceptor('idCardImage'))
   async uploadIdCardSimple(
     @UploadedFile() file: any,
-    @Body('userId') userId: string,
     @Headers('authorization') authorization: string,
     @Req() request: Request,
   ) {
     this.logger.log(
-      `[KYC Controller] uploadIdCardSimple called, userId from body: ${userId}, has file: ${!!file}`,
+      `[KYC Controller] uploadIdCardSimple called, has file: ${!!file}`,
     );
     this.logger.log(`[KYC Controller] Authorization header present: ${!!authorization}`);
 
@@ -133,38 +127,28 @@ export class KycController {
       `[KYC Controller] File size: ${file.buffer ? file.buffer.length : 'unknown'} bytes`,
     );
 
-    // Extract userId from token if not provided in body
-    let targetUserId = userId;
-    if (!userId) {
-      // Try to get userId from token payload
-      const user = (request as any).user;
-      if (user && user.sub) {
-        targetUserId = user.sub;
-        this.logger.log(`[KYC Controller] Using userId from token: ${targetUserId}`);
-      }
+    const user = (request as any).user;
+    if (!user || !user.sub) {
+      throw new UnauthorizedException('User not found in token');
     }
 
-    return this.kycService.uploadIdCardSimple(targetUserId, file.buffer);
+    return this.kycService.uploadIdCardSimple(user.sub, file.buffer);
   }
 
   @Post('confirm-ocr')
   @UseGuards(RegistrationAuthGuard)
   async confirmOcrData(
     @Body() dto: ConfirmOcrDto,
-    @Body('userId') userId: string,
     @Headers('authorization') authorization: string,
     @Req() request: Request,
   ) {
-    let targetUserId = userId;
-    if (!userId) {
-      const user = (request as any).user;
-      if (user && user.sub) {
-        targetUserId = user.sub;
-      }
+    const user = (request as any).user;
+    if (!user || !user.sub) {
+      throw new UnauthorizedException('User not found in token');
     }
     
-    this.logger.log(`[KYC Controller] confirmOcrData for user ${targetUserId}, Data: ${JSON.stringify(dto)}`);
-    return this.kycService.confirmOcrData(targetUserId, dto);
+    this.logger.log(`[KYC Controller] confirmOcrData for user ${user.sub}, Data: ${JSON.stringify(dto)}`);
+    return this.kycService.confirmOcrData(user.sub, dto);
   }
 
   @Post('submit-selfie/simple')
@@ -172,12 +156,11 @@ export class KycController {
   @UseInterceptors(FileInterceptor('selfieImage'))
   async submitSelfieSimple(
     @UploadedFile() file: any,
-    @Body('userId') userId: string,
     @Headers('authorization') authorization: string,
     @Req() request: Request,
   ) {
     this.logger.log(
-      `[KYC Controller] submitSelfieSimple called, userId from body: ${userId}, has file: ${!!file}`,
+      `[KYC Controller] submitSelfieSimple called, has file: ${!!file}`,
     );
     this.logger.log(`[KYC Controller] Authorization header present: ${!!authorization}`);
 
@@ -190,17 +173,11 @@ export class KycController {
       `[KYC Controller] File size: ${file.buffer ? file.buffer.length : 'unknown'} bytes`,
     );
 
-    // Extract userId from token if not provided in body
-    let targetUserId = userId;
-    if (!userId) {
-      // Try to get userId from token payload
-      const user = (request as any).user;
-      if (user && user.sub) {
-        targetUserId = user.sub;
-        this.logger.log(`[KYC Controller] Using userId from token: ${targetUserId}`);
-      }
+    const user = (request as any).user;
+    if (!user || !user.sub) {
+      throw new UnauthorizedException('User not found in token');
     }
 
-    return this.kycService.submitSelfieSimple(targetUserId, file.buffer);
+    return this.kycService.submitSelfieSimple(user.sub, file.buffer);
   }
 }
