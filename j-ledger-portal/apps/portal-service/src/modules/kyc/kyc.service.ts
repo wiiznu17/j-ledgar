@@ -213,7 +213,7 @@ export class KycService {
     await this.prisma.kYCData.update({
       where: { userId },
       data: {
-        verificationStatus: 'PENDING',
+        verificationStatus: 'REJECTED', // Keep as REJECTED until new documents are uploaded
         reviewNote: null,
         verifiedAt: null
       }
@@ -438,6 +438,7 @@ export class KycService {
   }
 
   async uploadIdCard(userId: string, idCardImage: Buffer) {
+    await this.identityService.validateRegistrationState(userId, ['TC_ACCEPTED', 'ID_CARD_UPLOADED']);
     const idCardHash = this.hashBuffer(idCardImage);
     const idCardKey = `kyc/${userId}/id-card.jpg`;
 
@@ -499,8 +500,31 @@ export class KycService {
           livenessSessionId,
           reviewNote,
           ocrConfidence: isLowConfidence ? 0.5 : 0.95,
+          prefix: extraction.prefixTh,
+          firstNameTh: extraction.firstNameTh,
+          lastNameTh: extraction.lastNameTh,
+          prefixEn: extraction.prefixEn,
+          firstNameEn: extraction.firstNameEn,
+          lastNameEn: extraction.lastNameEn,
+          dateOfBirth: this.parseDate(extraction.dateOfBirth),
+          idCardIssueDate: this.parseDate(extraction.idCardIssueDate),
+          idCardExpiryDate: this.parseDate(extraction.idCardExpiryDate),
+          religion: extraction.religion,
         },
       });
+
+      // Save raw address to PII for resumption if structured data isn't confirmed yet
+      if (extraction.registeredAddress) {
+        await tx.pII.upsert({
+          where: { userId_field: { userId, field: 'raw_id_card_address' } },
+          update: { encryptedData: this.encryptPii(extraction.registeredAddress) },
+          create: {
+            userId,
+            field: 'raw_id_card_address',
+            encryptedData: this.encryptPii(extraction.registeredAddress),
+          },
+        });
+      }
     });
 
     // Update user registration state
@@ -519,6 +543,7 @@ export class KycService {
   }
 
   async submitSelfie(userId: string, selfieImage?: Buffer) {
+    await this.identityService.validateRegistrationState(userId, ['ID_CARD_CONFIRMED', 'KYC_VERIFIED']);
     const kyc = await this.prisma.kYCData.findUnique({
       where: { userId },
     });
@@ -753,6 +778,7 @@ export class KycService {
   }
 
   async confirmOcrData(userId: string, dto: any) {
+    await this.identityService.validateRegistrationState(userId, ['ID_CARD_UPLOADED', 'ID_CARD_CONFIRMED']);
     this.logger.log(`[KYC] STEP 5.5: Confirming OCR data for user ${userId}`);
     
     // Encrypt sensitive fields

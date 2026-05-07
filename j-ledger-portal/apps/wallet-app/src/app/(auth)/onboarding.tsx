@@ -24,6 +24,7 @@ import { StepWrapper } from '@/components/common/StepWrapper';
 import { MotiView } from 'moti';
 import { api } from '@/lib/axios';
 import { useRegistrationStore, RegistrationState } from '@/store/registration';
+import { useAuthStore } from '@/store/auth';
 import { getStableDeviceId, getDeviceName } from '@/lib/device.utils';
 import { useScreenCaptureProtection } from '@/hooks/useScreenCaptureProtection';
 
@@ -93,7 +94,16 @@ export default function OnboardingScreen() {
   const [isDraftLoaded, setIsDraftLoaded] = useState(false);
 
   const router = useRouter();
-  const { regToken, setRegToken, syncStatus, prefillData, reset, initialize } = useRegistrationStore();
+  const { 
+    regToken, 
+    setRegToken, 
+    syncStatus, 
+    prefillData, 
+    reset, 
+    initialize,
+  } = useRegistrationStore();
+  
+  const { refreshSession } = useAuthStore();
 
   // Load Persisted Form Data
   useEffect(() => {
@@ -161,16 +171,96 @@ export default function OnboardingScreen() {
     initializeFlow();
   }, []);
 
-  // Update form when prefilled data arrives
+  // Update form when prefilled data arrives (Resume Flow)
   useEffect(() => {
     if (prefillData) {
-      if (prefillData.firstName) setFirstNameEn(prefillData.firstName);
-      if (prefillData.lastName) setLastNameEn(prefillData.lastName);
+      console.log('[Onboarding] Applying prefilled data from backend');
+      const { identity, addresses, profile } = prefillData;
+      
+      // Helper to format ISO date (YYYY-MM-DD) to Thai UI format (DD MMM YYYY)
+      const formatToThaiDate = (dateStr: string | null | undefined) => {
+        if (!dateStr) return '';
+        const datePart = (dateStr as string).split('T')[0] || '';
+        const parts = datePart.split('-');
+        if (parts.length === 3) {
+          const [y, m, d] = parts;
+          const THAI_MONTHS_SHORT = [
+            'ม.ค.', 'ก.พ.', 'มี.ค.', 'เม.ย.', 'พ.ค.', 'มิ.ย.',
+            'ก.ค.', 'ส.ค.', 'ก.ย.', 'ต.ค.', 'พ.ย.', 'ธ.ค.'
+          ];
+          const mIdx = parseInt(m as string) - 1;
+          return `${parseInt(d as string)} ${THAI_MONTHS_SHORT[mIdx]} ${parseInt(y as string) + 543}`;
+        }
+        return '';
+      };
+
+      if (identity) {
+        if (identity.idNumber) setIdNumber(identity.idNumber);
+        if (identity.prefixTh) setPrefixTh(identity.prefixTh);
+        if (identity.firstNameTh) setFirstNameTh(identity.firstNameTh);
+        if (identity.lastNameTh) setLastNameTh(identity.lastNameTh);
+        if (identity.prefixEn) setPrefixEn(identity.prefixEn);
+        if (identity.firstNameEn) setFirstNameEn(identity.firstNameEn);
+        if (identity.lastNameEn) setLastNameEn(identity.lastNameEn);
+        
+        // Format dates correctly for ThaiDatePickerModal (DD/MM/YYYY with B.E.)
+        if (identity.dateOfBirth) setDateOfBirth(formatToThaiDate(identity.dateOfBirth));
+        if (identity.issueDate) setIssueDate(formatToThaiDate(identity.issueDate));
+        if (identity.expiryDate) setExpiryDate(formatToThaiDate(identity.expiryDate));
+        
+        if (identity.religion) setReligion(identity.religion);
+        
+        // Restore ID card image from backend URL if local URI is missing
+        if (identity.idCardUrl && !idCardUri) {
+          console.log('[Onboarding] Restoring ID card image from backend URL');
+          setIdCardUri(identity.idCardUrl);
+        }
+
+        // Handle raw address string if we are at OCR_REVIEW and don't have structured data
+        if (identity.idCardAddress && !addresses?.registered && step === 'OCR_REVIEW') {
+          console.log('[Onboarding] Using raw ID card address string for review');
+          setAddress((prev: any) => ({
+            ...prev,
+            line1: identity.idCardAddress,
+          }));
+        }
+      }
+
+      if (addresses) {
+        if (addresses.registered) {
+          const regAddr = addresses.registered;
+          setIdCardAddress(regAddr);
+          
+          // Only use registered address if we are in OCR steps
+          if (step === 'OCR_REVIEW' || step === 'OCR_SCAN' || !addresses.current) {
+            setAddress({
+              line1: regAddr.line1 || '',
+              subdistrict: regAddr.subdistrict || '',
+              district: regAddr.district || '',
+              province: regAddr.province || '',
+              postalCode: regAddr.postalCode || '',
+            });
+          }
+        }
+        
+        // Only apply current address if we are at or past ADDITIONAL_INFO step
+        if (addresses.current && step !== 'OCR_REVIEW') {
+          setAddress(addresses.current);
+        }
+      }
+
+      if (profile && step !== 'OCR_REVIEW') {
+        if (profile.occupation) setOccupation(profile.occupation);
+        if (profile.incomeRange) setIncomeRange(profile.incomeRange);
+        if (profile.sourceOfFunds) setSourceOfFunds(profile.sourceOfFunds);
+        if (profile.purposeOfAccount) setPurpose(profile.purposeOfAccount);
+      }
     }
-  }, [prefillData]);
+  }, [prefillData, step]);
 
   const mapBackendStateToUI = (state: RegistrationState) => {
     console.log(`[Onboarding] Mapping backend state: ${state}`);
+
     switch (state) {
       case 'PENDING_OTP':
         setStep('WELCOME');
@@ -441,6 +531,11 @@ export default function OnboardingScreen() {
         headers: { Authorization: `Bearer ${regToken}` },
       });
       console.log('[Onboarding] OCR Data Confirmed Successfully');
+      
+      // Update idCardAddress with the data that was just confirmed
+      // This ensures "Same as ID Card" uses the corrected data, not the raw OCR.
+      setIdCardAddress(address);
+      
       setStep('FACE_GUIDE');
     } catch (err: any) {
       const errorMsg = err.response?.data?.message || err.message;
@@ -467,8 +562,13 @@ export default function OnboardingScreen() {
           postalCode: address.postalCode,
         };
       } else {
-        profileData.currentAddress = address;
+        // Sanitize address: only pick fields that the backend expects (UpdateAddressDto)
+        // This prevents validation errors like "id should not exist" during Retry flows
+        const { line1, subdistrict, district, province, postalCode, label } = address;
+        profileData.currentAddress = { line1, subdistrict, district, province, postalCode, label };
       }
+
+      console.log('[Onboarding] Submitting Profile Data:', JSON.stringify(profileData, null, 2));
 
       const res = await api.post(
         '/identity/register/profile',
@@ -478,10 +578,22 @@ export default function OnboardingScreen() {
         },
       );
       
+      console.log('[Onboarding] Profile Submit Response:', res.data);
+      
       if (res.data.regToken) await setRegToken(res.data.regToken);
-      setStep('SET_PASSWORD');
+      
+      if (res.data.nextState) {
+        if (res.data.nextState === 'COMPLETED') {
+          // If skipping to completion, refresh session first to get updated status and trigger guards
+          await refreshSession();
+        }
+        mapBackendStateToUI(res.data.nextState);
+      } else {
+        setStep('SET_PASSWORD');
+      }
     } catch (err: any) {
-      Alert.alert('Error', 'Failed to save profile');
+      console.error('[Onboarding] Profile Submit FAILED:', err.response?.data || err.message);
+      Alert.alert('Error', err.response?.data?.message || 'Failed to save profile');
     } finally {
       setIsLoading(false);
     }
@@ -536,6 +648,8 @@ export default function OnboardingScreen() {
         if (completeRes.data.user) {
           useAuthStore.getState().setUser(completeRes.data.user);
         }
+        // Force refresh to be absolutely sure we have the server-side status
+        await useAuthStore.getState().refreshSession();
       }
 
       setStep('SUCCESS');
