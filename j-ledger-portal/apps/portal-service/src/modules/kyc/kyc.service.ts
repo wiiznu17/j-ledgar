@@ -16,7 +16,7 @@ import { GoogleVisionService } from './services/ocr.service';
 import { AwsRekognitionService } from './services/face.service';
 import { createHash, randomBytes, createCipheriv, createDecipheriv, randomUUID } from 'crypto';
 import { ConfirmOcrDto } from './dto/kyc.dto';
-import { KafkaTopic } from '@repo/dto';
+import { KafkaTopic, NotificationEventType } from '@repo/dto';
 
 @Injectable()
 export class KycService {
@@ -89,13 +89,17 @@ export class KycService {
     }
 
     // Emit to Kafka for notification-worker
-    await this.kafkaProducer.emit(KafkaTopic.KYC_EVENTS, {
-      userId: document.userId,
-      documentId,
-      status: 'APPROVED',
-      timestamp: new Date().toISOString(),
-      referenceId: documentId,
-    });
+    try {
+      await this.kafkaProducer.emit(KafkaTopic.KYC_EVENTS, {
+        userId: document.userId,
+        documentId,
+        status: 'APPROVED',
+        timestamp: new Date().toISOString(),
+        referenceId: documentId,
+      });
+    } catch (error) {
+      this.logger.warn(`Failed to emit KYC_EVENTS (APPROVED) to Kafka for user ${document.userId}: ${error.message}`);
+    }
 
     return updated;
   }
@@ -110,14 +114,18 @@ export class KycService {
     });
 
     // Emit to Kafka for notification-worker
-    await this.kafkaProducer.emit(KafkaTopic.KYC_EVENTS, {
-      userId: updated.userId,
-      documentId,
-      status: 'REJECTED',
-      reason,
-      timestamp: new Date().toISOString(),
-      referenceId: documentId,
-    });
+    try {
+      await this.kafkaProducer.emit(KafkaTopic.KYC_EVENTS, {
+        userId: updated.userId,
+        documentId,
+        status: 'REJECTED',
+        reason,
+        timestamp: new Date().toISOString(),
+        referenceId: documentId,
+      });
+    } catch (error) {
+      this.logger.warn(`Failed to emit KYC_EVENTS (REJECTED) to Kafka for user ${updated.userId}: ${error.message}`);
+    }
 
     return updated;
   }
@@ -155,11 +163,17 @@ export class KycService {
     });
 
     // Emit event for notification
-    await this.kafkaProducer.emit(KafkaTopic.KYC_EVENTS, {
-      userId,
-      status: 'APPROVED',
-      timestamp: new Date().toISOString(),
-    });
+    try {
+      await this.kafkaProducer.emit(KafkaTopic.KYC_EVENTS, {
+        userId,
+        status: NotificationEventType.KYC_APPROVED,
+        timestamp: new Date().toISOString(),
+      });
+    } catch (error) {
+      this.logger.warn(`Failed to emit KYC_EVENTS (KYC_APPROVED) to Kafka for user ${userId}: ${error.message}`);
+    }
+
+    await this.identityService.logSecurityEvent(userId, NotificationEventType.KYC_APPROVED);
 
     return kyc;
   }
@@ -189,13 +203,19 @@ export class KycService {
     });
 
     // Emit event for notification
-    await this.kafkaProducer.emit(KafkaTopic.KYC_EVENTS, {
-      userId,
-      status: 'REJECTED',
-      reason,
-      timestamp: new Date().toISOString(),
-      metadata: { reason }
-    });
+    try {
+      await this.kafkaProducer.emit(KafkaTopic.KYC_EVENTS, {
+        userId,
+        status: NotificationEventType.KYC_REJECTED,
+        reason,
+        timestamp: new Date().toISOString(),
+        metadata: { reason }
+      });
+    } catch (error) {
+      this.logger.warn(`Failed to emit KYC_EVENTS (KYC_REJECTED) to Kafka for user ${userId}: ${error.message}`);
+    }
+
+    await this.identityService.logSecurityEvent(userId, NotificationEventType.KYC_REJECTED, { reason });
 
     return kyc;
   }
@@ -205,7 +225,8 @@ export class KycService {
     await this.prisma.user.update({
       where: { id: userId },
       data: { 
-        registrationState: 'TC_ACCEPTED' // Back to step before OCR, keep status as is (REJECTED)
+        registrationState: 'TC_ACCEPTED', // Back to step before OCR
+        status: 'REJECTED' as any        // Keep as REJECTED as requested
       }
     });
 
@@ -214,7 +235,7 @@ export class KycService {
     await this.prisma.kYCData.update({
       where: { userId },
       data: {
-        verificationStatus: 'REJECTED', // Keep as REJECTED until new documents are uploaded
+        verificationStatus: 'REJECTED', // Keep as REJECTED as requested
         reviewNote: null,
         verifiedAt: null
       }
@@ -254,7 +275,7 @@ export class KycService {
       this.prisma.user.count({ where }),
       this.prisma.user.findMany({
         where,
-        select: { id: true, email: true, phoneNumber: true },
+        select: { id: true, email: true, phoneNumber: true, status: true },
         orderBy: { createdAt: 'desc' },
         skip: (page - 1) * limit,
         take: limit,

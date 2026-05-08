@@ -98,11 +98,15 @@ export class GoogleVisionService {
     
     // Cleanup address if it still has common date suffixes or trailing Thai dates
     if (fullAddress) {
-      // Split by known labels
-      fullAddress = fullAddress.split(/(?:วันออกบัตร|Date of Iss|Date of Ite|เจ้าพนักงาน)/)[0].trim();
+      // 1. Split by known labels that definitely start AFTER the address
+      fullAddress = fullAddress.split(/(?:วันออกบัตร|Date of Iss|Date of Ite|เจ้าพนักงาน|วันบัตรหมดอายุ|Date of Exp)/i)[0].trim();
       
-      // Remove trailing Thai date pattern (e.g., "28 เม.ย. 2568")
-      fullAddress = fullAddress.replace(/\d{1,2}\s+[\u0E00-\u0E7F]{2,3}\.?\s+\d{4}$/, '').trim();
+      // 2. Remove trailing Thai date pattern more robustly
+      // Handles: "26 เม.ย. 2568", "26 เม.ย.2568", "26เม.ย.2568", "26 เม.ย. 2568 123" (noise)
+      fullAddress = fullAddress.replace(/\d{1,2}\s*[\u0E00-\u0E7F.]{2,8}\s*\d{4}.*$/, '').trim();
+
+      // 3. Final cleanup of any lingering symbols or partial labels at the end
+      fullAddress = fullAddress.replace(/[,.-]$/, '').trim();
     }
     
     let subdistrict = null;

@@ -24,6 +24,7 @@ interface KycDocument {
     id: string;
     email: string | null;
     phoneNumber: string | null;
+    status: string;
   } | null;
 }
 
@@ -127,7 +128,7 @@ export default function KycListPage() {
         <div className="p-3 bg-white border-b border-slate-100">
           <form onSubmit={handleApplyFilter} className="grid grid-cols-1 md:grid-cols-5 gap-4 items-end">
             <FilterSelect 
-              label="Verification Status"
+              label="Account Status (Filter)"
               value={status}
               onValueChange={(val: any) => setStatus(val)}
               options={[
@@ -183,7 +184,8 @@ export default function KycListPage() {
               <tr className="border-b border-slate-100 bg-slate-50/30 text-slate-400 text-[10px] uppercase font-bold tracking-widest">
                 <th className="px-6 py-4">User</th>
                 <th className="px-6 py-4">Type</th>
-                <th className="px-6 py-4">Status</th>
+                <th className="px-6 py-4">User Status</th>
+                <th className="px-6 py-4">KYC Status</th>
                 <th className="px-6 py-4">Date Submitted</th>
                 <th className="px-6 py-4 text-right">Actions</th>
               </tr>
@@ -222,6 +224,19 @@ export default function KycListPage() {
                     <td className="px-6 py-4">
                       <Badge variant="outline" className="bg-slate-100 text-slate-600 border-none font-bold text-[10px] uppercase">
                         {doc.documentType}
+                      </Badge>
+                    </td>
+                    <td className="px-6 py-4">
+                      <Badge 
+                        variant="outline" 
+                        className={`
+                          font-bold text-[10px] uppercase border-none
+                          ${doc.user?.status === 'ACTIVE' ? 'bg-emerald-100 text-emerald-700' : 
+                            doc.user?.status === 'REJECTED' ? 'bg-rose-100 text-rose-700' : 
+                            'bg-amber-100 text-amber-700'}
+                        `}
+                      >
+                        {doc.user?.status || 'UNKNOWN'}
                       </Badge>
                     </td>
                     <td className="px-6 py-4">
