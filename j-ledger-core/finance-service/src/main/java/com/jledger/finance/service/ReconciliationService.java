@@ -40,29 +40,39 @@ public class ReconciliationService {
 
     /**
      * Nightly reconciliation job runs daily at midnight.
-     * A Redisson distributed lock ensures that only one pod executes this
-     * in a multi-instance deployment. If another pod already holds the lock,
-     * this invocation skips silently to avoid duplicate reports and DB conflicts
-     * on the UNIQUE constraint of report_date.
      */
     @Scheduled(cron = "0 0 0 * * ?")
     public void runNightlyReconciliation() {
         LocalDate reportDate = LocalDate.now().minusDays(1);
-        RLock lock = redissonClient.getLock(RECONCILIATION_LOCK_KEY);
+        runLockedReconciliation(reportDate, "Nightly");
+    }
 
+    /**
+     * Manually triggers a reconciliation audit.
+     */
+    public ReconciliationReport runManualReconciliation(LocalDate reportDate) {
+        return runLockedReconciliation(reportDate, "Manual");
+    }
+
+    private ReconciliationReport runLockedReconciliation(LocalDate reportDate, String triggerSource) {
+        RLock lock = redissonClient.getLock(RECONCILIATION_LOCK_KEY);
         boolean acquired = false;
         try {
-            // Try to acquire lock immediately (0 wait). If another pod owns it, skip.
+            // Try to acquire lock immediately (0 wait). If another process owns it, skip/fail.
             acquired = lock.tryLock(0, 60, TimeUnit.SECONDS);
             if (!acquired) {
-                LOGGER.info("Nightly reconciliation for {} skipped — another pod is already running it.", reportDate);
-                return;
+                LOGGER.info("{} reconciliation for {} skipped — another process is already running it.", triggerSource, reportDate);
+                if ("Manual".equals(triggerSource)) {
+                    throw new IllegalStateException("A reconciliation process is already in progress.");
+                }
+                return null;
             }
-            LOGGER.info("Nightly reconciliation lock acquired. Starting for date: {}", reportDate);
-            executeReconciliation(reportDate);
+            LOGGER.info("{} reconciliation lock acquired. Starting for date: {}", triggerSource, reportDate);
+            return executeReconciliation(reportDate);
         } catch (InterruptedException ex) {
             Thread.currentThread().interrupt();
-            LOGGER.warn("Nightly reconciliation interrupted for date: {}", reportDate, ex);
+            LOGGER.warn("{} reconciliation interrupted for date: {}", triggerSource, reportDate, ex);
+            throw new RuntimeException("Reconciliation interrupted", ex);
         } finally {
             if (acquired && lock.isHeldByCurrentThread()) {
                 lock.unlock();
@@ -72,13 +82,6 @@ public class ReconciliationService {
 
     /**
      * Executes the mathematical reconciliation logic.
-     *
-     * <p>Double-entry invariant: System Assets + User Liabilities = 0.
-     * The System Bank Account balance is stored as a positive number representing
-     * the bank's real cash assets. User account balances are also positive,
-     * representing liabilities the system owes to users.
-     * In a perfectly balanced ledger: systemAssets = sum(userBalances),
-     * so systemAssets - sum(userBalances) = 0. Any deviation is a discrepancy.
      */
     @Transactional
     public ReconciliationReport executeReconciliation(LocalDate reportDate) {
