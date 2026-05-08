@@ -243,8 +243,8 @@ export default function OnboardingScreen() {
         setStep('SUCCESS');
         break;
       case 'COMPLETED':
-        console.log('[Onboarding] Flow already completed, redirecting to app...');
-        router.replace('/(tabs)');
+        console.log('[Onboarding] Flow completed, refreshing session to let RootLayout handle routing...');
+        refreshSession();
         break;
       default:
         setStep('WELCOME');

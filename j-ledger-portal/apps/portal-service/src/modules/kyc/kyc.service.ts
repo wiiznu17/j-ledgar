@@ -154,12 +154,27 @@ export class KycService {
     }
 
     // Update main user status and registration state
+    const user = await this.prisma.user.findUnique({
+      where: { id: userId },
+      select: { registrationState: true }
+    });
+
+    const updateData: any = { status: 'ACTIVE' };
+    
+    // List of states that are "before" KYC_VERIFIED
+    const statesBeforeKycVerified = [
+      'PENDING', 'PENDING_OTP', 'INITIATED', 'OTP_VERIFIED', 
+      'TC_ACCEPTED', 'ID_CARD_UPLOADED', 'ID_CARD_CONFIRMED'
+    ];
+
+    // Only set to KYC_VERIFIED if the user hasn't progressed further
+    if (user && statesBeforeKycVerified.includes(user.registrationState)) {
+      updateData.registrationState = 'KYC_VERIFIED';
+    }
+
     await this.prisma.user.update({
       where: { id: userId },
-      data: { 
-        registrationState: 'COMPLETED',
-        status: 'ACTIVE'
-      }
+      data: updateData
     });
 
     // Emit event for notification
