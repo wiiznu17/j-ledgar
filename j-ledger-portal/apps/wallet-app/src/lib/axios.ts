@@ -130,7 +130,13 @@ api.interceptors.response.use(
     const originalRequest = error.config;
 
     // If error is 401 and we haven't retried yet
-    if (error.response?.status === 401 && !originalRequest._retry) {
+    // Do NOT auto-lock or refresh if the request was to login, register or initial auth flows
+    const isAuthEndpoint = originalRequest.url?.includes('/identity/login') || 
+                          originalRequest.url?.includes('/identity/register') ||
+                          originalRequest.url?.includes('/identity/verify-otp') ||
+                          originalRequest.url?.includes('/identity/device/verify');
+
+    if (error.response?.status === 401 && !originalRequest._retry && !isAuthEndpoint) {
       originalRequest._retry = true;
 
       const refreshToken = await readRefreshToken();

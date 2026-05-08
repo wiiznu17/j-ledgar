@@ -91,7 +91,6 @@ export default function OnboardingScreen() {
   const [isScanningID, setIsScanningID] = useState(false);
 
   const [idCardAddress, setIdCardAddress] = useState<any>(null);
-  const [isDraftLoaded, setIsDraftLoaded] = useState(false);
 
   const router = useRouter();
   const { 
@@ -105,52 +104,6 @@ export default function OnboardingScreen() {
   
   const { refreshSession } = useAuthStore();
 
-  // Load Persisted Form Data
-  useEffect(() => {
-    const loadDraft = async () => {
-      try {
-        const saved = await SecureStore.getItemAsync('onboarding_draft');
-        if (saved) {
-          const draft = JSON.parse(saved);
-          if (draft.phone) setPhone(draft.phone);
-          if (draft.address) setAddress(draft.address);
-          if (draft.occupation) setOccupation(draft.occupation);
-          if (draft.incomeRange) setIncomeRange(draft.incomeRange);
-          if (draft.sourceOfFunds) setSourceOfFunds(draft.sourceOfFunds);
-          if (draft.purpose) setPurpose(draft.purpose);
-          if (draft.idCardAddress) setIdCardAddress(draft.idCardAddress);
-        }
-      } catch (err) {
-        console.log('[Onboarding] Failed to load draft:', err);
-      } finally {
-        setIsDraftLoaded(true);
-      }
-    };
-    loadDraft();
-  }, []);
-
-  // Save Persisted Form Data
-  useEffect(() => {
-    if (!isDraftLoaded) return; // DON'T save until initial load is done
-
-    const saveDraft = async () => {
-      try {
-        const draft = {
-          phone,
-          address,
-          occupation,
-          incomeRange,
-          sourceOfFunds,
-          purpose,
-          idCardAddress,
-        };
-        await SecureStore.setItemAsync('onboarding_draft', JSON.stringify(draft));
-      } catch (err) {
-        console.log('[Onboarding] Failed to save draft:', err);
-      }
-    };
-    saveDraft();
-  }, [phone, address, occupation, incomeRange, sourceOfFunds, purpose, idCardAddress, isDraftLoaded]);
 
   // Initialize & Sync
   useEffect(() => {
@@ -347,7 +300,11 @@ export default function OnboardingScreen() {
         otp: otpString,
       });
       await setRegToken(res.data.regToken);
-      setStep('TERMS');
+      
+      // Sync with backend to find the actual state to resume
+      console.log('[Onboarding] OTP Verified, syncing state to resume...');
+      const currentState = await syncStatus();
+      mapBackendStateToUI(currentState);
     } catch (err: any) {
       console.log('[Onboarding] Verification failed:', err.response?.data || err.message);
       // Clear OTP on error
@@ -884,7 +841,6 @@ export default function OnboardingScreen() {
                 setIsLoading(true);
                 try {
                   await reset(); // ล้าง registration_token
-                  await SecureStore.deleteItemAsync('onboarding_draft'); // ล้าง draft เมื่อสำเร็จ
                   // The RootLayout will automatically pick up the new auth state 
                   // and redirect to the appropriate screen (Pending Approval or Tabs)
                 } finally {

@@ -91,15 +91,24 @@ export const useRegistrationStore = create<RegistrationStore>((set, get) => ({
 
   syncStatus: async () => {
     const { regToken } = get();
-    if (!regToken) return 'PENDING_OTP';
-
     set({ isSyncing: true });
     try {
+      // Priority: 1. regToken (Onboarding), 2. accessToken (Authenticated User Retry)
+      let token = regToken;
+      if (!token) {
+        token = await SecureStore.getItemAsync('access_token');
+      }
+
+      if (!token) {
+        set({ isSyncing: false });
+        return 'PENDING_OTP';
+      }
+
       const response = await api.post(
         '/identity/register/status',
         {},
         {
-          headers: { Authorization: `Bearer ${regToken}` },
+          headers: { Authorization: `Bearer ${token}` },
         },
       );
 

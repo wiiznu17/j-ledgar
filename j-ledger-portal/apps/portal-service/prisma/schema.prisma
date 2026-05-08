@@ -15,7 +15,7 @@ model User {
   passwordHash      String?
   pinHash           String?
   biometricKey      String?
-  status            UserStatus              @default(PENDING_APPROVAL)
+  status            UserStatus              @default(INACTIVE)
   registrationState RegistrationState       @default(PENDING)
   pinAttempts       Int                     @default(0)
   pinLockedUntil    DateTime?
@@ -701,6 +701,16 @@ enum SecurityEventType {
   REGISTER_INIT_OTP
   REGISTER_OTP_VERIFIED
   REGISTRATION_COMPLETED
+  PIN_VERIFIED
+  PIN_FAILURE
+  KYC_SUBMITTED
+  KYC_APPROVED
+  KYC_REJECTED
+  PROFILE_UPDATED
+  ADDRESS_UPDATED
+  ACCOUNT_DELETION_REQUESTED
+  ACCOUNT_DELETED
+  CONSENT_WITHDRAWN
 
   @@schema("identity")
 }

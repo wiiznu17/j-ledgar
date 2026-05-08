@@ -57,7 +57,7 @@ export class AuditInterceptor implements NestInterceptor {
             
             // Extract Resource ID if path provided
             let resourceId = null;
-            if (metadata.resourceIdPath) {
+            if (metadata?.resourceIdPath) {
               resourceId = this.getValueByPath(request, metadata.resourceIdPath);
             } else if (params.id) {
               resourceId = params.id;

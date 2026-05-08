@@ -88,35 +88,44 @@ export default function RootLayout() {
     } else if (!isAuthenticated) {
       router.replace('/(auth)/login');
     } else if (user) {
-      // 1. Handle Account Status Guards
-      if (user.status === 'DELETED') {
-        console.log('[RootLayout] Redirecting to Login (DELETED)');
-        initializeAuth();
-        router.replace('/(auth)/login');
-      } else if (user.status === 'BLOCKED' || user.status === 'SUSPENDED' || user.status === 'INACTIVE') {
-        console.log('[RootLayout] Redirecting to Account Restricted');
-        router.replace('/(auth)/account-restricted');
-      } else if (user.status === 'PENDING_APPROVAL' || user.status === 'REJECTED') {
-        if (user.registrationState !== 'COMPLETED') {
-          // If not completed, must be in onboarding flow
-          if (segments[1] !== 'onboarding') {
-            console.log('[RootLayout] Redirecting to Onboarding for Pending/Rejected user');
-            router.replace('/(auth)/onboarding');
-          }
-        } else {
-          // If completed, must be in pending-approval screen
-          if (segments[1] !== 'pending-approval') {
-            console.log(`[RootLayout] Redirecting to Pending/Rejected Approval (Status: ${user.status})`);
-            router.replace('/(auth)/pending-approval');
-          }
-        }
-      } else if (user.status === 'ACTIVE') {
-        if (user.registrationState !== 'COMPLETED') {
+      // 1. Handle Incomplete Registration Flow (Highest Priority)
+      if (user.registrationState !== 'COMPLETED') {
+        if (segments[1] !== 'onboarding') {
           console.log('[RootLayout] Redirecting to Onboarding (Incomplete)');
           router.replace('/(auth)/onboarding');
-        } else {
-          console.log('[RootLayout] Access Granted to App');
         }
+        return;
+      }
+
+      // 2. Handle Account Status Guards (Only for COMPLETED users)
+      switch (user.status) {
+        case 'ACTIVE':
+          console.log('[RootLayout] Access Granted to App');
+          break;
+
+        case 'PENDING_APPROVAL':
+        case 'REJECTED':
+          if (segments[1] !== 'pending-approval') {
+            console.log(`[RootLayout] Redirecting to Pending/Rejected Screen (Status: ${user.status})`);
+            router.replace('/(auth)/pending-approval');
+          }
+          break;
+
+        case 'DELETED':
+          console.log('[RootLayout] Account DELETED, signing out');
+          initializeAuth(); // Clear local state
+          router.replace('/(auth)/login');
+          break;
+
+        case 'BLOCKED':
+        case 'SUSPENDED':
+        case 'INACTIVE':
+        default:
+          if (segments[1] !== 'account-restricted') {
+            console.log(`[RootLayout] Account ${user.status}, redirecting to restricted screen`);
+            router.replace('/(auth)/account-restricted');
+          }
+          break;
       }
     }
   }, [isAuthenticated, isAuthLoading, fontsLoaded, needsPinVerification, user?.status, user?.registrationState]);

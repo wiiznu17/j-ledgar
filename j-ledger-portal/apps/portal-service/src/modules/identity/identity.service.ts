@@ -168,13 +168,8 @@ export class IdentityService {
         throw new ConflictException('User already registered');
       }
 
-      // Reset registration state for fresh start ONLY if they haven't set a password yet
-      this.logger.log(`[Register] Resetting registration state for ${phoneNumber}`);
-      await this.prisma.user.update({
-        where: { id: user.id },
-        data: { registrationState: 'PENDING_OTP' },
-      });
-      user.registrationState = 'PENDING_OTP';
+      // Keep existing registration state to allow resumption
+      this.logger.log(`[Register] Resuming onboarding for ${phoneNumber} from state: ${user.registrationState}`);
     }
 
     const challenge = await this.createOtpChallenge(user.id, phoneNumber);
@@ -205,10 +200,16 @@ export class IdentityService {
       `[Register] OTP verified for user ${user.id}, current state: ${user.registrationState}`,
     );
 
-    await this.prisma.user.update({
-      where: { id: user.id },
-      data: { registrationState: 'OTP_VERIFIED' },
-    });
+    // Only update state if it's currently earlier than OTP_VERIFIED
+    if (user.registrationState === 'PENDING_OTP' || user.registrationState === 'PENDING') {
+      await this.prisma.user.update({
+        where: { id: user.id },
+        data: { registrationState: 'OTP_VERIFIED' },
+      });
+      this.logger.log(`[Register] State updated to OTP_VERIFIED for ${phoneNumber}`);
+    } else {
+      this.logger.log(`[Register] Keeping current state: ${user.registrationState} for ${phoneNumber}`);
+    }
 
     await this.logSecurityEvent(user.id, NotificationEventType.REGISTER_OTP_VERIFIED, {
       ipAddress: context?.ip,
@@ -217,9 +218,12 @@ export class IdentityService {
 
     this.logger.log(`[Register] STEP 2 Complete: State updated to OTP_VERIFIED for ${phoneNumber}`);
 
+    const finalUser = await this.prisma.user.findUnique({ where: { id: user.id } });
+    const finalState = finalUser?.registrationState || 'OTP_VERIFIED';
+
     return {
-      regToken: await this.signRegistrationToken(user.id, 'OTP_VERIFIED'),
-      nextState: 'OTP_VERIFIED',
+      regToken: await this.signRegistrationToken(user.id, finalState),
+      nextState: finalState,
     };
   }
 
@@ -246,7 +250,12 @@ export class IdentityService {
       throw new UnauthorizedException('Invalid credentials');
     }
 
-    if (user.status !== UserStatus.ACTIVE && user.status !== 'PENDING_APPROVAL' && user.status !== 'REJECTED') {
+    if (
+      user.status !== UserStatus.ACTIVE && 
+      user.status !== 'PENDING_APPROVAL' && 
+      user.status !== 'REJECTED' &&
+      user.status !== 'INACTIVE'
+    ) {
       throw new UnauthorizedException('Account is not active');
     }
 
@@ -275,7 +284,17 @@ export class IdentityService {
       },
     });
 
-    const device = await this.prisma.userDevice.upsert({
+    const device = await this.prisma.userDevice.findUnique({
+      where: {
+        userId_deviceIdentifier: {
+          userId: user.id,
+          deviceIdentifier: dto.deviceId,
+        },
+      },
+    });
+
+    const isNewDevice = !device;
+    const finalDevice = await this.prisma.userDevice.upsert({
       where: {
         userId_deviceIdentifier: {
           userId: user.id,
@@ -297,14 +316,22 @@ export class IdentityService {
       },
     });
 
+    if (isNewDevice) {
+      await this.logSecurityEvent(user.id, NotificationEventType.DEVICE_REGISTERED, {
+        deviceId: dto.deviceId,
+        deviceName: dto.deviceName,
+        ip: context?.ip,
+      });
+    }
+
     const sessionId = randomUUID();
-    const accessToken = await this.signAccessToken(user.id, sessionId, device.id);
-    const refreshToken = await this.signRefreshToken(user.id, sessionId, device.id);
+    const accessToken = await this.signAccessToken(user.id, sessionId, finalDevice.id);
+    const refreshToken = await this.signRefreshToken(user.id, sessionId, finalDevice.id);
 
     await this.prisma.refreshSession.create({
       data: {
         userId: user.id,
-        deviceId: device.id,
+        deviceId: finalDevice.id,
         tokenHash: await bcrypt.hash(refreshToken, 10),
         expiresAt: new Date(Date.now() + REFRESH_TOKEN_TTL_SECONDS * 1000),
         ipAddress: context?.ip,
@@ -582,7 +609,7 @@ export class IdentityService {
 
   // ==================== Security Events ====================
 
-  private async logSecurityEvent(userId: string, eventType: string, metadata?: any) {
+  public async logSecurityEvent(userId: string, eventType: NotificationEventType, metadata?: any) {
     await this.prisma.securityEvent.create({
       data: {
         userId,
@@ -592,13 +619,18 @@ export class IdentityService {
     });
 
     // Emit to Kafka for notification-worker
-    await this.kafkaProducer.emit(KafkaTopic.SECURITY_EVENTS, {
-      userId,
-      eventType,
-      metadata: metadata || {},
-      timestamp: new Date().toISOString(),
-      referenceId: new Date().getTime().toString(), // Using time as fallback reference
-    });
+    try {
+      await this.kafkaProducer.emit(KafkaTopic.SECURITY_EVENTS, {
+        userId,
+        eventType,
+        metadata: metadata || {},
+        timestamp: new Date().toISOString(),
+        referenceId: new Date().getTime().toString(), // Using time as fallback reference
+      });
+    } catch (error) {
+      this.logger.warn(`Failed to emit security event to Kafka for user ${userId}: ${error.message}`);
+      // Don't rethrow - we don't want notification failures to block core logic
+    }
   }
 
   // ==================== User Management ====================
@@ -999,14 +1031,25 @@ export class IdentityService {
       nextState = 'COMPLETED';
     }
 
+    // Only ACTIVE status is protected from being changed.
+    // REJECTED status will be reset to PENDING_APPROVAL so Admin can see the resubmission.
+    const updatedStatus = user.status === 'ACTIVE' ? 'ACTIVE' : 'PENDING_APPROVAL';
+    
     await this.prisma.user.update({
       where: { id: user.id },
       data: { 
         registrationState: nextState,
-        // If skipping to COMPLETED, ensure status is PENDING_APPROVAL so admin sees it for re-review
-        status: nextState === 'COMPLETED' ? 'PENDING_APPROVAL' : user.status
+        status: updatedStatus as any
       },
     });
+
+    // If we are setting to PENDING_APPROVAL, ensure KYC status is also PENDING
+    if (updatedStatus === 'PENDING_APPROVAL') {
+      await this.prisma.kYCData.updateMany({
+        where: { userId: user.id },
+        data: { verificationStatus: 'PENDING' }
+      });
+    }
 
     await this.logSecurityEvent(user.id, NotificationEventType.KYC_SUBMITTED, {
       timestamp: new Date().toISOString(),
@@ -1150,16 +1193,24 @@ export class IdentityService {
 
     let payload;
     try {
+      // 1. Try registration secret first
       payload = await this.jwtService.verifyAsync(token, {
         secret: this.registrationSecret,
       });
-    } catch (error: any) {
-      if (error.name === 'TokenExpiredError') {
-        this.logger.warn(`[Register] Token expired in getRegistrationStatus`);
-        throw new UnauthorizedException('Token expired');
+    } catch (regError: any) {
+      // 2. If registration secret fails, try the main JWT secret (for authenticated retry)
+      try {
+        payload = await this.jwtService.verifyAsync(token, {
+          secret: this.configService.get('JWT_SECRET'),
+        });
+      } catch (authError: any) {
+        if (regError.name === 'TokenExpiredError' || authError.name === 'TokenExpiredError') {
+          this.logger.warn(`[Register] Token expired in getRegistrationStatus`);
+          throw new UnauthorizedException('Token expired');
+        }
+        this.logger.warn(`[Register] Invalid token in getRegistrationStatus: ${authError.message}`);
+        throw new UnauthorizedException('Invalid token');
       }
-      this.logger.warn(`[Register] Invalid token in getRegistrationStatus: ${error.message}`);
-      throw new UnauthorizedException('Invalid token');
     }
 
     this.logger.log(`[Register] Getting registration status for user ${payload.sub}`);
@@ -1302,14 +1353,26 @@ export class IdentityService {
       }
 
       // Update user with wallet info and final state
+      // Only ACTIVE status is protected.
+      // REJECTED status will be reset to PENDING_APPROVAL when registration is completed.
+      const updatedStatus = user.status === 'ACTIVE' ? 'ACTIVE' : 'PENDING_APPROVAL';
+
       const updatedUser = await this.prisma.user.update({
         where: { id: user.id },
         data: {
           registrationState: 'COMPLETED',
-          status: 'PENDING_APPROVAL' as any,
+          status: updatedStatus as any,
           ledgerAccountId: walletId,
         },
       });
+
+      // Sync KYC status to PENDING if we are in approval mode
+      if (updatedStatus === 'PENDING_APPROVAL') {
+        await this.prisma.kYCData.updateMany({
+          where: { userId: user.id },
+          data: { verificationStatus: 'PENDING' }
+        });
+      }
 
       await this.logSecurityEvent(user.id, NotificationEventType.REGISTRATION_COMPLETED, {
         walletId: walletId,
@@ -1341,6 +1404,11 @@ export class IdentityService {
         `[Register] STEP 7 Complete: Registration completed for user ${user.id}, tokens issued`,
       );
 
+      // Fetch latest KYC data to get reviewNote if any
+      const kycData = await this.prisma.kYCData.findUnique({
+        where: { userId: user.id }
+      });
+
       return {
         success: true,
         accessToken,
@@ -1351,6 +1419,7 @@ export class IdentityService {
           email: updatedUser.email,
           status: updatedUser.status,
           registrationState: updatedUser.registrationState,
+          reviewNote: kycData?.reviewNote || null,
         }
       };
     } catch (error) {
@@ -1370,6 +1439,8 @@ export class IdentityService {
       where: { id: userId },
       data: { pinHash },
     });
+    
+    await this.logSecurityEvent(userId, NotificationEventType.PIN_SETUP);
     return { success: true };
   }
 
@@ -1393,8 +1464,15 @@ export class IdentityService {
     const isPinValid = await bcrypt.compare(dto.pin, user.pinHash);
     if (!isPinValid) {
       this.logger.warn(`[Identity] Invalid PIN attempt for user: ${userId}`);
+      await this.logSecurityEvent(userId, NotificationEventType.PIN_FAILURE, {
+        deviceId: dto.deviceId,
+      });
       throw new UnauthorizedException('Invalid PIN');
     }
+
+    await this.logSecurityEvent(userId, NotificationEventType.PIN_VERIFIED, {
+      deviceId: dto.deviceId,
+    });
 
     // Reset pin attempts on success
     await this.prisma.user.update({
@@ -1451,6 +1529,10 @@ export class IdentityService {
 
   async withdrawConsent(userId: string, consentType: string, context?: any) {
     // TODO: Implement consent withdrawal logic
+    await this.logSecurityEvent(userId, NotificationEventType.CONSENT_WITHDRAWN, {
+      consentType,
+      ip: context?.ip,
+    });
     return { success: true };
   }
 
@@ -1583,6 +1665,11 @@ export class IdentityService {
     } catch (error) {
       this.logger.error(`[Identity] FAILED to update/create address: ${error.message}`, error.stack);
       throw error;
+    } finally {
+      await this.logSecurityEvent(userId, NotificationEventType.ADDRESS_UPDATED, {
+        type,
+        source,
+      });
     }
   }
 
@@ -1616,16 +1703,26 @@ export class IdentityService {
 
     this.logger.log(`[Identity] Profile updated for user ${userId}`);
 
+    await this.logSecurityEvent(userId, NotificationEventType.PROFILE_UPDATED, {
+      fields: Object.keys(profileData),
+    });
+
     return { success: true };
   }
 
   async requestAccountDeletion(userId: string, context?: any) {
     // TODO: Implement account deletion request logic
+    await this.logSecurityEvent(userId, NotificationEventType.ACCOUNT_DELETION_REQUESTED, {
+      ip: context?.ip,
+    });
     return { success: true };
   }
 
   async confirmAccountDeletion(userId: string, context?: any) {
     // TODO: Implement account deletion confirmation logic
+    await this.logSecurityEvent(userId, NotificationEventType.ACCOUNT_DELETED, {
+      ip: context?.ip,
+    });
     return { success: true };
   }
 
