@@ -26,7 +26,7 @@ export default function HomeScreen() {
   const [error, setError] = useState('');
 
   // Dashboard data from API
-  const [userName, setUserName] = useState('J-Ledger User');
+  const [userName, setUserName] = useState('P-wallet User');
   const [kycStatus, setKycStatus] = useState('NOT_STARTED');
   const [balance, setBalance] = useState(0);
   const [points, setPoints] = useState(0);
@@ -44,7 +44,7 @@ export default function HomeScreen() {
       const data = res.data;
 
       // User info
-      setUserName(data.user?.name || 'J-Ledger User');
+      setUserName(data.user?.name || 'P-wallet User');
       setKycStatus(data.user?.kycStatus || 'NOT_STARTED');
       setPoints(data.user?.points || 0);
 

@@ -853,7 +853,7 @@ export default function OnboardingScreen() {
           {/* Site Branding */}
           {/* <View className="py-8 items-center">
             <Text className="text-[10px] font-manrope font-extrabold uppercase tracking-[0.4em] text-on-surfaceVariant/30">
-              J-Ledger Security Protocol V4
+              P-wallet Security Protocol V4
             </Text>
           </View> */}
         </View>

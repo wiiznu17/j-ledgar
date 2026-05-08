@@ -51,7 +51,7 @@ export default function TopupReviewScreen() {
       const intentData = intentRes.data || {};
 
       const initResult = await initPaymentSheet({
-        merchantDisplayName: 'J-Ledger',
+        merchantDisplayName: 'P-wallet',
         paymentIntentClientSecret: intentData.clientSecret,
         returnURL: 'walletapp://stripe-redirect',
         defaultBillingDetails: userEmail ? { email: userEmail } : undefined,
@@ -175,7 +175,7 @@ export default function TopupReviewScreen() {
                     To
                   </Text>
                   <Text className="text-sm font-manrope font-black text-gray-800">My E-Wallet</Text>
-                  <Text className="text-[10px] font-manrope font-bold text-gray-400 mt-0.5">J-Ledger Account</Text>
+                  <Text className="text-[10px] font-manrope font-bold text-gray-400 mt-0.5">P-wallet Account</Text>
                 </View>
               </View>
             </View>

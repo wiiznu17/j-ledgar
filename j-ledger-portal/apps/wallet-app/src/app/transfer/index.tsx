@@ -250,7 +250,7 @@ export default function TransferScreen() {
                     Recipient Not Found
                   </Text>
                   <Text className="text-[10px] font-manrope font-medium text-red-500 leading-relaxed">
-                    This phone number is not registered in J-Ledger. Please check the number or
+                    This phone number is not registered in P-wallet. Please check the number or
                     invite them to join.
                   </Text>
                 </View>
