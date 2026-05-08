@@ -16,7 +16,13 @@ import { GoogleVisionService } from './services/ocr.service';
 import { AwsRekognitionService } from './services/face.service';
 import { createHash, randomBytes, createCipheriv, createDecipheriv, randomUUID } from 'crypto';
 import { ConfirmOcrDto } from './dto/kyc.dto';
-import { KafkaTopic, NotificationEventType } from '@repo/dto';
+import {
+  KafkaTopic,
+  NotificationEventType,
+  UserStatus,
+  RegistrationState,
+  KYCVerificationStatus,
+} from '@repo/dto';
 
 @Injectable()
 export class KycService {
@@ -40,13 +46,13 @@ export class KycService {
       orderBy: { createdAt: 'desc' },
     });
 
-    const approvedCount = documents.filter((d) => d.status === 'APPROVED').length;
-    const pendingCount = documents.filter((d) => d.status === 'PENDING').length;
-    const rejectedCount = documents.filter((d) => d.status === 'REJECTED').length;
+    const approvedCount = documents.filter((d) => (d.status as KYCVerificationStatus) === KYCVerificationStatus.APPROVED).length;
+    const pendingCount = documents.filter((d) => (d.status as KYCVerificationStatus) === KYCVerificationStatus.PENDING).length;
+    const rejectedCount = documents.filter((d) => (d.status as KYCVerificationStatus) === KYCVerificationStatus.REJECTED).length;
 
     return {
       userId,
-      status: approvedCount >= 2 ? 'VERIFIED' : pendingCount > 0 ? 'PENDING' : 'NOT_STARTED',
+      status: approvedCount >= 2 ? KYCVerificationStatus.APPROVED : pendingCount > 0 ? KYCVerificationStatus.PENDING : KYCVerificationStatus.NOT_STARTED,
       documents,
       summary: {
         approved: approvedCount,
@@ -67,7 +73,7 @@ export class KycService {
 
     const updated = await this.prisma.kYCDocument.update({
       where: { id: documentId },
-      data: { status: 'APPROVED' },
+      data: { status: KYCVerificationStatus.APPROVED },
     });
 
     // Check if this is the second approved document (wallet activation trigger)
@@ -75,7 +81,7 @@ export class KycService {
       where: { userId: document.userId },
     });
 
-    const approvedCount = documents.filter((d) => d.status === 'APPROVED').length;
+    const approvedCount = documents.filter((d) => (d.status as KYCVerificationStatus) === KYCVerificationStatus.APPROVED).length;
 
     // Activate wallet when 2 documents are approved
     if (approvedCount >= 2) {
@@ -93,7 +99,7 @@ export class KycService {
       await this.kafkaProducer.emit(KafkaTopic.KYC_EVENTS, {
         userId: document.userId,
         documentId,
-        status: 'APPROVED',
+        status: KYCVerificationStatus.APPROVED,
         timestamp: new Date().toISOString(),
         referenceId: documentId,
       });
@@ -108,7 +114,7 @@ export class KycService {
     const updated = await this.prisma.kYCDocument.update({
       where: { id: documentId },
       data: {
-        status: 'REJECTED',
+        status: KYCVerificationStatus.REJECTED,
         metadata: { reason },
       },
     });
@@ -118,7 +124,7 @@ export class KycService {
       await this.kafkaProducer.emit(KafkaTopic.KYC_EVENTS, {
         userId: updated.userId,
         documentId,
-        status: 'REJECTED',
+        status: KYCVerificationStatus.REJECTED,
         reason,
         timestamp: new Date().toISOString(),
         referenceId: documentId,
@@ -133,14 +139,14 @@ export class KycService {
   async approveKyc(userId: string) {
     // Check current status
     const current = await this.prisma.kYCData.findUnique({ where: { userId } });
-    if (current?.verificationStatus === 'APPROVED') {
+    if ((current?.verificationStatus as KYCVerificationStatus) === KYCVerificationStatus.APPROVED) {
       throw new Error('KYC is already approved');
     }
 
     const kyc = await this.prisma.kYCData.update({
       where: { userId },
       data: { 
-        verificationStatus: 'APPROVED',
+        verificationStatus: KYCVerificationStatus.APPROVED,
         verifiedAt: new Date()
       },
     });
@@ -159,17 +165,17 @@ export class KycService {
       select: { registrationState: true }
     });
 
-    const updateData: any = { status: 'ACTIVE' };
+    const updateData: {status: UserStatus, registrationState?: RegistrationState} = { status: UserStatus.ACTIVE };
     
     // List of states that are "before" KYC_VERIFIED
     const statesBeforeKycVerified = [
-      'PENDING', 'PENDING_OTP', 'INITIATED', 'OTP_VERIFIED', 
-      'TC_ACCEPTED', 'ID_CARD_UPLOADED', 'ID_CARD_CONFIRMED'
+      RegistrationState.PENDING, RegistrationState.PENDING_OTP, RegistrationState.INITIATED, RegistrationState.OTP_VERIFIED, 
+      RegistrationState.TC_ACCEPTED, RegistrationState.ID_CARD_UPLOADED, RegistrationState.ID_CARD_CONFIRMED
     ];
 
     // Only set to KYC_VERIFIED if the user hasn't progressed further
-    if (user && statesBeforeKycVerified.includes(user.registrationState)) {
-      updateData.registrationState = 'KYC_VERIFIED';
+    if (user && statesBeforeKycVerified.includes(user.registrationState as RegistrationState)) {
+      updateData.registrationState = RegistrationState.KYC_VERIFIED;
     }
 
     await this.prisma.user.update({
@@ -196,17 +202,17 @@ export class KycService {
   async rejectKyc(userId: string, reason: string) {
     // Check current status
     const current = await this.prisma.kYCData.findUnique({ where: { userId } });
-    if (current?.verificationStatus === 'APPROVED') {
+    if ((current?.verificationStatus as KYCVerificationStatus) === KYCVerificationStatus.APPROVED) {
       throw new Error('Cannot reject an already approved KYC');
     }
-    if (current?.verificationStatus === 'REJECTED') {
+    if ((current?.verificationStatus as KYCVerificationStatus) === KYCVerificationStatus.REJECTED) {
       throw new Error('KYC is already rejected');
     }
 
     const kyc = await this.prisma.kYCData.update({
       where: { userId },
       data: { 
-        verificationStatus: 'REJECTED',
+        verificationStatus: KYCVerificationStatus.REJECTED,
         reviewNote: reason
       },
     });
@@ -214,7 +220,7 @@ export class KycService {
     // Update main user status to REJECTED
     await this.prisma.user.update({
       where: { id: userId },
-      data: { status: 'REJECTED' as any }
+      data: { status: UserStatus.REJECTED as UserStatus }
     });
 
     // Emit event for notification
@@ -240,8 +246,8 @@ export class KycService {
     await this.prisma.user.update({
       where: { id: userId },
       data: { 
-        registrationState: 'TC_ACCEPTED', // Back to step before OCR
-        status: 'REJECTED' as any        // Keep as REJECTED as requested
+        registrationState: RegistrationState.TC_ACCEPTED, // Back to step before OCR
+        status: UserStatus.REJECTED as UserStatus        // Keep as REJECTED as requested
       }
     });
 
@@ -250,7 +256,7 @@ export class KycService {
     await this.prisma.kYCData.update({
       where: { userId },
       data: {
-        verificationStatus: 'REJECTED', // Keep as REJECTED as requested
+        verificationStatus: KYCVerificationStatus.REJECTED, // Keep as REJECTED as requested
         reviewNote: null,
         verifiedAt: null
       }
@@ -260,7 +266,7 @@ export class KycService {
   }
 
   async getKYCList(
-    status: string = 'PENDING_APPROVAL', 
+    status: string = UserStatus.PENDING_APPROVAL, 
     phoneNumber?: string, 
     startDate?: string, 
     endDate?: string,
@@ -270,7 +276,7 @@ export class KycService {
     this.logger.log(`[KYC] Fetching KYC list - status: ${status}, phone: ${phoneNumber}, dates: ${startDate} to ${endDate}`);
 
     // 1. Build where clause for User
-    const where: any = { status: status as any };
+    const where: Record<string, any> = { status: status as UserStatus };
     
     if (phoneNumber) {
       where.phoneNumber = { contains: phoneNumber };
@@ -341,16 +347,16 @@ export class KycService {
     today.setHours(0, 0, 0, 0);
 
     const [pending, approvedToday, rejectedToday] = await Promise.all([
-      this.prisma.user.count({ where: { status: 'PENDING_APPROVAL' } }),
-      this.prisma.kYCData.count({ where: { verificationStatus: 'APPROVED', verifiedAt: { gte: today } } }),
-      this.prisma.kYCData.count({ where: { verificationStatus: 'REJECTED', updatedAt: { gte: today } } })
+      this.prisma.user.count({ where: { status: UserStatus.PENDING_APPROVAL } }),
+      this.prisma.kYCData.count({ where: { verificationStatus: KYCVerificationStatus.APPROVED, verifiedAt: { gte: today } } }),
+      this.prisma.kYCData.count({ where: { verificationStatus: KYCVerificationStatus.REJECTED, updatedAt: { gte: today } } })
     ]);
 
     return { pending, approvedToday, rejectedToday };
   }
 
   async getPendingKYCList() {
-    const list = await this.getKYCList('PENDING_APPROVAL');
+    const list = await this.getKYCList(UserStatus.PENDING_APPROVAL);
     return list.items;
   }
 
@@ -475,7 +481,7 @@ export class KycService {
   }
 
   async uploadIdCard(userId: string, idCardImage: Buffer) {
-    await this.identityService.validateRegistrationState(userId, ['TC_ACCEPTED', 'ID_CARD_UPLOADED']);
+    await this.identityService.validateRegistrationState(userId, [RegistrationState.TC_ACCEPTED, RegistrationState.ID_CARD_UPLOADED]);
     const idCardHash = this.hashBuffer(idCardImage);
     const idCardKey = `kyc/${userId}/id-card.jpg`;
 
@@ -525,11 +531,11 @@ export class KycService {
           livenessSessionId,
           reviewNote,
           ocrConfidence: isLowConfidence ? 0.5 : 0.95,
-          verificationStatus: 'PENDING',
+          verificationStatus: KYCVerificationStatus.PENDING,
         },
         create: {
           userId,
-          verificationStatus: 'PENDING',
+          verificationStatus: KYCVerificationStatus.PENDING,
           idCardNumberEncrypted: idCardNumber ? this.encryptPii(idCardNumber) : null,
           idCardToken,
           idCardImageUrl: idCardUrl,
@@ -567,7 +573,7 @@ export class KycService {
     // Update user registration state
     await this.prisma.user.update({
       where: { id: userId },
-      data: { registrationState: 'ID_CARD_UPLOADED' },
+      data: { registrationState: RegistrationState.ID_CARD_UPLOADED },
     });
 
     return {
@@ -580,7 +586,7 @@ export class KycService {
   }
 
   async submitSelfie(userId: string, selfieImage?: Buffer) {
-    await this.identityService.validateRegistrationState(userId, ['ID_CARD_CONFIRMED', 'KYC_VERIFIED']);
+    await this.identityService.validateRegistrationState(userId, [RegistrationState.ID_CARD_CONFIRMED, RegistrationState.KYC_VERIFIED]);
     const kyc = await this.prisma.kYCData.findUnique({
       where: { userId },
     });
@@ -666,7 +672,7 @@ export class KycService {
           selfieImageUrl: selfieUrl,
           selfieImageSha256: selfieHash,
           faceMatchScore: Math.round(similarity),
-          verificationStatus: 'PENDING',
+          verificationStatus: KYCVerificationStatus.PENDING,
           updatedAt: new Date()
         }
       });
@@ -674,13 +680,13 @@ export class KycService {
       // Update user registration state
       await tx.user.update({
         where: { id: userId },
-        data: { registrationState: 'KYC_VERIFIED' },
+        data: { registrationState: RegistrationState.KYC_VERIFIED },
       });
     });
 
     return {
       isMatch,
-      verificationStatus: isMatch ? 'APPROVED' : 'REJECTED',
+      verificationStatus: isMatch ? KYCVerificationStatus.APPROVED : KYCVerificationStatus.REJECTED,
     };
   }
 
@@ -747,12 +753,12 @@ export class KycService {
             religion: extraction.religion,
             idCardToken,
             livenessSessionId,
-            verificationStatus: 'PENDING',
+            verificationStatus: KYCVerificationStatus.PENDING,
             ocrConfidence: 0.95,
           },
           create: {
             userId,
-            verificationStatus: 'PENDING',
+            verificationStatus: KYCVerificationStatus.PENDING,
             idCardImageUrl: idCardUrl,
             idCardImageSha256: idCardHash,
             idCardNumberEncrypted: encryptedId,
@@ -782,7 +788,7 @@ export class KycService {
     try {
       await this.prisma.user.update({
         where: { id: userId },
-        data: { registrationState: 'ID_CARD_UPLOADED' },
+        data: { registrationState: RegistrationState.ID_CARD_UPLOADED },
       });
       this.logger.log(`[KYC] User state updated to ID_CARD_UPLOADED for user ${userId}`);
     } catch (error) {
@@ -815,7 +821,7 @@ export class KycService {
   }
 
   async confirmOcrData(userId: string, dto: any) {
-    await this.identityService.validateRegistrationState(userId, ['ID_CARD_UPLOADED', 'ID_CARD_CONFIRMED']);
+    await this.identityService.validateRegistrationState(userId, [RegistrationState.ID_CARD_UPLOADED, RegistrationState.ID_CARD_CONFIRMED]);
     this.logger.log(`[KYC] STEP 5.5: Confirming OCR data for user ${userId}`);
     
     // Encrypt sensitive fields
@@ -860,7 +866,7 @@ export class KycService {
       // Update user registration state to ID_CARD_CONFIRMED
       await this.prisma.user.update({
         where: { id: userId },
-        data: { registrationState: 'ID_CARD_CONFIRMED' },
+        data: { registrationState: RegistrationState.ID_CARD_CONFIRMED },
       });
 
       this.logger.log(`[KYC] OCR data confirmed and state updated to ID_CARD_CONFIRMED for user ${userId}`);
@@ -902,7 +908,7 @@ export class KycService {
           data: {
             selfieImageUrl: selfieUrl,
             selfieImageSha256: selfieHash,
-            verificationStatus: 'PENDING', // Wait for admin review even in simple mode
+            verificationStatus: KYCVerificationStatus.PENDING, // Wait for admin review even in simple mode
             verifiedAt: null,
           },
         });
@@ -917,7 +923,7 @@ export class KycService {
     try {
       await this.prisma.user.update({
         where: { id: userId },
-        data: { registrationState: 'KYC_VERIFIED' },
+        data: { registrationState: RegistrationState.KYC_VERIFIED },
       });
       this.logger.log(`[KYC] User state updated to KYC_VERIFIED for user ${userId}`);
     } catch (error) {
@@ -931,7 +937,7 @@ export class KycService {
 
     return {
       isMatch: true,
-      verificationStatus: 'PENDING',
+      verificationStatus: KYCVerificationStatus.PENDING,
     };
   }
 

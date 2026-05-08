@@ -5,6 +5,8 @@ import { router } from 'expo-router';
 import { ShieldAlert, LogOut, MessageCircle } from 'lucide-react-native';
 import { MotiView } from 'moti';
 
+import { UserStatus } from '@repo/dto';
+
 export default function AccountRestrictedScreen() {
   const { logout, user } = useAuthStore();
 
@@ -15,11 +17,11 @@ export default function AccountRestrictedScreen() {
 
   const getStatusMessage = () => {
     switch (user?.status) {
-      case 'BLOCKED':
+      case UserStatus.BLOCKED:
         return 'This account has been blocked due to a violation of our terms of service.';
-      case 'SUSPENDED':
+      case UserStatus.SUSPENDED:
         return 'Your account is temporarily suspended. Please contact support for more information.';
-      case 'INACTIVE':
+      case UserStatus.INACTIVE:
         return 'This account is currently inactive. Please contact your administrator to reactivate it.';
       default:
         return 'Access to this account is currently restricted.';

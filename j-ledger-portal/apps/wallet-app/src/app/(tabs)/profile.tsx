@@ -25,6 +25,7 @@ import { MotiView } from 'moti';
 import { useRouter } from 'expo-router';
 import { useAuthStore } from '@/store/auth';
 import { UserProfileService, UserProfile } from '@/lib/user-service';
+import { RegistrationState } from '@repo/dto';
 
 export default function SettingsScreen() {
   const { logout } = useAuthStore();
@@ -142,7 +143,7 @@ export default function SettingsScreen() {
             </Text>
             <View className="bg-pink-50 px-3 py-1.5 rounded-full mt-3 border border-pink-100">
               <Text className="text-[10px] font-black text-[#f48fb1] uppercase tracking-widest">
-                {userProfile?.registrationState === 'COMPLETED'
+                {userProfile?.registrationState === RegistrationState.COMPLETED
                   ? 'Premium Member'
                   : 'Standard Member'}
               </Text>

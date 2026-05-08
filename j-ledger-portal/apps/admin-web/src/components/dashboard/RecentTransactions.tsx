@@ -9,14 +9,16 @@ import { ArrowUpRight, ArrowDownLeft, CreditCard, ExternalLink } from 'lucide-re
 import { format } from 'date-fns';
 import Link from 'next/link';
 
+import { Transaction, TransactionType } from '@repo/dto';
+
 export function RecentTransactions({ className }: { className?: string }) {
-  const [transactions, setTransactions] = useState<any[]>([]);
+  const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     const fetchTransactions = async () => {
       try {
-        const response = await transactionRequester.getHistory(0, 10) as any;
+        const response = await transactionRequester.getHistory({ page: 0, limit: 10 });
         setTransactions(response.data || []);
       } catch (error) {
         console.error('Failed to fetch transactions', error);
@@ -76,10 +78,10 @@ export function RecentTransactions({ className }: { className?: string }) {
                 <TableRow key={tx.id} className="border-b border-slate-50 hover:bg-slate-50/30 transition-colors">
                   <TableCell className="pl-6 py-4">
                     <div className="flex items-center gap-2">
-                      <div className={`p-1.5 rounded-full ${tx.type === 'TOPUP' ? 'bg-emerald-50 text-emerald-600' : 'bg-blue-50 text-blue-600'}`}>
-                        {tx.type === 'TOPUP' ? <ArrowDownLeft size={14} /> : <ArrowUpRight size={14} />}
+                      <div className={`p-1.5 rounded-full ${tx.transactionType === TransactionType.TOPUP ? 'bg-emerald-50 text-emerald-600' : 'bg-blue-50 text-blue-600'}`}>
+                        {tx.transactionType === TransactionType.TOPUP ? <ArrowDownLeft size={14} /> : <ArrowUpRight size={14} />}
                       </div>
-                      <span className="text-xs font-bold text-slate-700">{tx.type}</span>
+                      <span className="text-xs font-bold text-slate-700">{tx.transactionType}</span>
                     </div>
                   </TableCell>
                   <TableCell className="py-4">
@@ -89,8 +91,8 @@ export function RecentTransactions({ className }: { className?: string }) {
                     </div>
                   </TableCell>
                   <TableCell className="py-4">
-                    <span className={`text-xs font-bold ${tx.type === 'TOPUP' ? 'text-emerald-600' : 'text-slate-800'}`}>
-                      {tx.type === 'TOPUP' ? '+' : '-'}{tx.amount} {tx.currency}
+                    <span className={`text-xs font-bold ${tx.transactionType === TransactionType.TOPUP ? 'text-emerald-600' : 'text-slate-800'}`}>
+                      {tx.transactionType === TransactionType.TOPUP ? '+' : '-'}{tx.amount} {tx.currency}
                     </span>
                   </TableCell>
                   <TableCell className="py-4">

@@ -38,6 +38,8 @@ export const unstable_settings = {
 
 import { BackgroundGradient } from '@/components/common/BackgroundGradient';
 
+import { UserStatus, RegistrationState } from '@repo/dto';
+
 export default function RootLayout() {
   const colorScheme = useColorScheme();
   useNotifications();
@@ -95,7 +97,7 @@ export default function RootLayout() {
       const isPendingApproval = segments[1] === 'pending-approval';
 
       // 1. Handle Incomplete Registration Flow (Highest Priority - Force finish steps 1-12)
-      if (user.registrationState !== 'COMPLETED') {
+      if (user.registrationState !== RegistrationState.COMPLETED) {
         if (!isOnboarding) {
           console.log('[RootLayout] Registration incomplete, forcing Onboarding flow');
           router.replace('/(auth)/onboarding');
@@ -103,32 +105,32 @@ export default function RootLayout() {
         return;
       }
 
-      // 2. Handle Final Account Status (Now we know registrationState === 'COMPLETED')
+      // 2. Handle Final Account Status (Now we know registrationState === RegistrationState.COMPLETED)
       switch (user.status) {
-        case 'ACTIVE':
+        case UserStatus.ACTIVE:
           if (isAuthGroup) {
             console.log('[RootLayout] Access Granted, entering App');
             router.replace('/(tabs)');
           }
           break;
 
-        case 'PENDING_APPROVAL':
-        case 'REJECTED':
+        case UserStatus.PENDING_APPROVAL:
+        case UserStatus.REJECTED:
           if (!isPendingApproval) {
             console.log(`[RootLayout] Registration complete but status is ${user.status}, showing status screen`);
             router.replace('/(auth)/pending-approval');
           }
           break;
 
-        case 'DELETED':
+        case UserStatus.DELETED:
           console.log('[RootLayout] Account DELETED, signing out');
           initializeAuth();
           router.replace('/(auth)/login');
           break;
 
-        case 'BLOCKED':
-        case 'SUSPENDED':
-        case 'INACTIVE':
+        case UserStatus.BLOCKED:
+        case UserStatus.SUSPENDED:
+        case UserStatus.INACTIVE:
         default:
           if (segments[1] !== 'account-restricted') {
             console.log(`[RootLayout] Account ${user.status}, redirecting to restricted screen`);

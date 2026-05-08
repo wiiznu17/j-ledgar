@@ -7,7 +7,7 @@ import { AdminRolesGuard } from '../guards/admin-roles.guard';
 import { AdminPermissionsGuard } from '../guards/admin-permissions.guard';
 import { Roles } from '../decorators/roles.decorator';
 import { Permissions as RequirePermissions } from '../decorators/permissions.decorator';
-import { AdminRole, Permission } from '@repo/dto';
+import { AdminRole, Permission, UserStatus } from '@repo/dto';
 import { AuditLog } from '../decorators/audit.decorator';
 import { ResourceType } from '../../modules/audit/audit.service';
 
@@ -101,13 +101,13 @@ export class AdminUserController {
   @RequirePermissions(Permission.FREEZE_USERS)
   @AuditLog(null as any, ResourceType.USER, 'Suspended user account')
   async suspendUser(@Param('id') id: string) {
-    return this.identityService.updateUserStatus(id, 'SUSPENDED');
+    return this.identityService.updateUserStatus(id, UserStatus.SUSPENDED);
   }
 
   @Post(':id/unsuspend')
   @RequirePermissions(Permission.UNFREEZE_USERS)
   @AuditLog(null as any, ResourceType.USER, 'Activated user account')
   async unsuspendUser(@Param('id') id: string) {
-    return this.identityService.updateUserStatus(id, 'ACTIVE');
+    return this.identityService.updateUserStatus(id, UserStatus.ACTIVE);
   }
 }

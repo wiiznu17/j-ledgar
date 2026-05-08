@@ -118,21 +118,50 @@ export enum SuspiciousActivityStatus {
 
 // Auth-related enums
 export enum UserStatus {
+  PENDING_APPROVAL = 'PENDING_APPROVAL',
   ACTIVE = 'ACTIVE',
   INACTIVE = 'INACTIVE',
   SUSPENDED = 'SUSPENDED',
   BLOCKED = 'BLOCKED',
   DELETED = 'DELETED',
+  REJECTED = 'REJECTED',
 }
 
 export enum RegistrationState {
   PENDING = 'PENDING',
+  PENDING_OTP = 'PENDING_OTP',
   INITIATED = 'INITIATED',
-  VERIFIED = 'VERIFIED',
+  OTP_VERIFIED = 'OTP_VERIFIED',
+  TC_ACCEPTED = 'TC_ACCEPTED',
+  ID_CARD_UPLOADED = 'ID_CARD_UPLOADED',
+  ID_CARD_CONFIRMED = 'ID_CARD_CONFIRMED',
+  KYC_VERIFIED = 'KYC_VERIFIED',
   PROFILE_COMPLETED = 'PROFILE_COMPLETED',
   PASSWORD_SET = 'PASSWORD_SET',
-  PIN_SET = 'PIN_SET',
+  CREDENTIALS_SET = 'CREDENTIALS_SET',
   COMPLETED = 'COMPLETED',
+}
+
+export enum KYCVerificationStatus {
+  PENDING = 'PENDING',
+  APPROVED = 'APPROVED',
+  REJECTED = 'REJECTED',
+  NOT_STARTED = 'NOT_STARTED', // Virtual status, not stored in DB
+}
+
+export enum AddressType {
+  REGISTERED = 'REGISTERED',
+  CURRENT = 'CURRENT',
+  WORK = 'WORK',
+  SHIPPING = 'SHIPPING',
+  BILLING = 'BILLING',
+}
+
+export enum AddressVerificationSource {
+  ID_CARD_OCR = 'ID_CARD_OCR',
+  MANUAL = 'MANUAL',
+  UTILITY_BILL = 'UTILITY_BILL',
+  BANK_STATEMENT = 'BANK_STATEMENT',
 }
 
 export enum DeviceTrustLevel {
@@ -175,6 +204,15 @@ export enum NotificationEventType {
   ACCOUNT_DELETION_REQUESTED = 'ACCOUNT_DELETION_REQUESTED',
   ACCOUNT_DELETED = 'ACCOUNT_DELETED',
   CONSENT_WITHDRAWN = 'CONSENT_WITHDRAWN',
+
+  // Generic & Marketing
+  SECURITY = 'SECURITY',
+  KYC_STATUS = 'KYC_STATUS',
+  SYSTEM = 'SYSTEM',
+  PROMO = 'PROMO',
+  OFFER = 'OFFER',
+  NEWS = 'NEWS',
+  ANNOUNCEMENT = 'ANNOUNCEMENT',
 }
 
 export enum KafkaTopic {
