@@ -23,34 +23,36 @@ import { AppTextInput } from '@/components/common/AppTextInput';
 import { StepWrapper } from '@/components/common/StepWrapper';
 import { MotiView } from 'moti';
 import { api } from '@/lib/axios';
-import { useRegistrationStore, RegistrationState } from '@/store/registration';
+import { RegistrationState } from '@repo/dto';
+import { useRegistrationStore } from '@/store/registration';
 import { useAuthStore } from '@/store/auth';
 import { getStableDeviceId, getDeviceName } from '@/lib/device.utils';
 import { useScreenCaptureProtection } from '@/hooks/useScreenCaptureProtection';
 
 // const { width, height } = Dimensions.get('window');
 
-type OnboardingStepUI =
-  | 'WELCOME'
-  | 'PHONE_INPUT'
-  | 'OTP'
-  | 'TERMS'
-  | 'OCR_GUIDE'
-  | 'OCR_SCAN'
-  | 'OCR_REVIEW'
-  | 'FACE_GUIDE'
-  | 'FACE_SCAN'
-  | 'ADDITIONAL_INFO'
-  | 'SET_PASSWORD'
-  | 'SET_PIN'
-  | 'CONFIRM_PIN'
-  | 'SUCCESS';
+export enum OnboardingStepUI {
+  WELCOME = 'WELCOME',
+  PHONE_INPUT = 'PHONE_INPUT',
+  OTP = 'OTP',
+  TERMS = 'TERMS',
+  OCR_GUIDE = 'OCR_GUIDE',
+  OCR_SCAN = 'OCR_SCAN',
+  OCR_REVIEW = 'OCR_REVIEW',
+  FACE_GUIDE = 'FACE_GUIDE',
+  FACE_SCAN = 'FACE_SCAN',
+  ADDITIONAL_INFO = 'ADDITIONAL_INFO',
+  SET_PASSWORD = 'SET_PASSWORD',
+  SET_PIN = 'SET_PIN',
+  CONFIRM_PIN = 'CONFIRM_PIN',
+  SUCCESS = 'SUCCESS',
+}
 
 export default function OnboardingScreen() {
   // Prevent screen capture during onboarding (sensitive data flow)
   useScreenCaptureProtection();
 
-  const [step, setStep] = useState<OnboardingStepUI>('WELCOME');
+  const [step, setStep] = useState<OnboardingStepUI>(OnboardingStepUI.WELCOME);
   const [isLoading, setIsLoading] = useState(false);
   const [phone, setPhone] = useState('');
   const [otp, setOtp] = useState(['', '', '', '', '', '']);
@@ -170,7 +172,7 @@ export default function OnboardingScreen() {
         }
 
         // Handle raw address string if we are at OCR_REVIEW and don't have structured data
-        if (identity.idCardAddress && !addresses?.registered && step === 'OCR_REVIEW') {
+        if (identity.idCardAddress && !addresses?.registered && step === OnboardingStepUI.OCR_REVIEW) {
           console.log('[Onboarding] Using raw ID card address string for review');
           setAddress((prev: any) => ({
             ...prev,
@@ -185,7 +187,7 @@ export default function OnboardingScreen() {
           setIdCardAddress(regAddr);
           
           // Only use registered address if we are in OCR steps
-          if (step === 'OCR_REVIEW' || step === 'OCR_SCAN' || !addresses.current) {
+          if (step === OnboardingStepUI.OCR_REVIEW || step === OnboardingStepUI.OCR_SCAN || !addresses.current) {
             setAddress({
               line1: regAddr.line1 || '',
               subdistrict: regAddr.subdistrict || '',
@@ -197,12 +199,12 @@ export default function OnboardingScreen() {
         }
         
         // Only apply current address if we are at or past ADDITIONAL_INFO step
-        if (addresses.current && step !== 'OCR_REVIEW') {
+        if (addresses.current && step !== OnboardingStepUI.OCR_REVIEW) {
           setAddress(addresses.current);
         }
       }
 
-      if (profile && step !== 'OCR_REVIEW') {
+      if (profile && step !== OnboardingStepUI.OCR_REVIEW) {
         if (profile.occupation) setOccupation(profile.occupation);
         if (profile.incomeRange) setIncomeRange(profile.incomeRange);
         if (profile.sourceOfFunds) setSourceOfFunds(profile.sourceOfFunds);
@@ -215,39 +217,39 @@ export default function OnboardingScreen() {
     console.log(`[Onboarding] Mapping backend state: ${state}`);
 
     switch (state) {
-      case 'PENDING_OTP':
-        setStep('WELCOME');
+      case RegistrationState.PENDING_OTP:
+        setStep(OnboardingStepUI.WELCOME);
         break;
-      case 'OTP_VERIFIED':
-        setStep('TERMS');
+      case RegistrationState.OTP_VERIFIED:
+        setStep(OnboardingStepUI.TERMS);
         break;
-      case 'TC_ACCEPTED':
-        setStep('OCR_GUIDE');
+      case RegistrationState.TC_ACCEPTED:
+        setStep(OnboardingStepUI.OCR_GUIDE);
         break;
-      case 'ID_CARD_UPLOADED':
-        setStep('OCR_REVIEW'); // แสดงหน้า Review ก่อนเสมอ
+      case RegistrationState.ID_CARD_UPLOADED:
+        setStep(OnboardingStepUI.OCR_REVIEW); // แสดงหน้า Review ก่อนเสมอ
         break;
-      case 'ID_CARD_CONFIRMED':
-        setStep('FACE_GUIDE'); // เมื่อยืนยันแล้วค่อยไปสแกนหน้า
+      case RegistrationState.ID_CARD_CONFIRMED:
+        setStep(OnboardingStepUI.FACE_GUIDE); // เมื่อยืนยันแล้วค่อยไปสแกนหน้า
         break;
-      case 'KYC_VERIFIED':
-        setStep('ADDITIONAL_INFO');
+      case RegistrationState.KYC_VERIFIED:
+        setStep(OnboardingStepUI.ADDITIONAL_INFO);
         break;
-      case 'PROFILE_COMPLETED':
-        setStep('SET_PASSWORD');
+      case RegistrationState.PROFILE_COMPLETED:
+        setStep(OnboardingStepUI.SET_PASSWORD);
         break;
-      case 'PASSWORD_SET':
-        setStep('SET_PIN');
+      case RegistrationState.PASSWORD_SET:
+        setStep(OnboardingStepUI.SET_PIN);
         break;
-      case 'CREDENTIALS_SET':
-        setStep('SUCCESS');
+      case RegistrationState.CREDENTIALS_SET:
+        setStep(OnboardingStepUI.SUCCESS);
         break;
-      case 'COMPLETED':
+      case RegistrationState.COMPLETED:
         console.log('[Onboarding] Flow completed, refreshing session to let RootLayout handle routing...');
         refreshSession();
         break;
       default:
-        setStep('WELCOME');
+        setStep(OnboardingStepUI.WELCOME);
     }
   };
 
@@ -259,7 +261,7 @@ export default function OnboardingScreen() {
   // Timer Effect
   useEffect(() => {
     let interval: any;
-    if (step === 'OTP' && timer > 0) {
+    if (step === OnboardingStepUI.OTP && timer > 0) {
       interval = setInterval(() => setTimer((t) => t - 1), 1000);
     }
     return () => clearInterval(interval);
@@ -279,7 +281,7 @@ export default function OnboardingScreen() {
     try {
       const res = await api.post('/identity/register/init', { phoneNumber: phone });
       setChallengeId(res.data.challengeId);
-      setStep('OTP');
+      setStep(OnboardingStepUI.OTP);
       setTimer(60);
     } catch (err: any) {
       Alert.alert('Error', err.response?.data?.message || 'Failed to send OTP');
@@ -326,7 +328,7 @@ export default function OnboardingScreen() {
         },
       );
       if (res.data.regToken) await setRegToken(res.data.regToken);
-      setStep('OCR_GUIDE');
+      setStep(OnboardingStepUI.OCR_GUIDE);
     } catch (err: any) {
       Alert.alert('Error', 'Failed to accept terms');
     } finally {
@@ -410,7 +412,7 @@ export default function OnboardingScreen() {
       }
 
       setIsScanningID(false); // Only close the scanner on success
-      setStep('OCR_REVIEW');
+      setStep(OnboardingStepUI.OCR_REVIEW);
     } catch (err: any) {
       const errorMsg = err.response?.data?.message || 'Could not process ID card. Please check your connection and try again.';
       console.log('[Onboarding] OCR Failed:', err.response?.data || err.message);
@@ -422,7 +424,7 @@ export default function OnboardingScreen() {
 
   const handleSelfieCapture = async () => {
     // Transition to the actual Liveness Scan step
-    setStep('FACE_SCAN');
+    setStep(OnboardingStepUI.FACE_SCAN);
   };
 
   const handleLivenessSuccess = async (uri: string) => {
@@ -451,10 +453,10 @@ export default function OnboardingScreen() {
       });
       
       if (res.data.regToken) await setRegToken(res.data.regToken);
-      setStep('ADDITIONAL_INFO');
+      setStep(OnboardingStepUI.ADDITIONAL_INFO);
     } catch (err: any) {
       Alert.alert('Verification Failed', 'Could not verify your identity. Please ensure you are the same person as on the ID card.');
-      setStep('FACE_GUIDE');
+      setStep(OnboardingStepUI.FACE_GUIDE);
     } finally {
       setIsLoading(false);
     }
@@ -493,7 +495,7 @@ export default function OnboardingScreen() {
       // This ensures "Same as ID Card" uses the corrected data, not the raw OCR.
       setIdCardAddress(address);
       
-      setStep('FACE_GUIDE');
+      setStep(OnboardingStepUI.FACE_GUIDE);
     } catch (err: any) {
       const errorMsg = err.response?.data?.message || err.message;
       console.error('[Onboarding] Confirm OCR Error details:', JSON.stringify(err.response?.data, null, 2) || err);
@@ -540,13 +542,13 @@ export default function OnboardingScreen() {
       if (res.data.regToken) await setRegToken(res.data.regToken);
       
       if (res.data.nextState) {
-        if (res.data.nextState === 'COMPLETED') {
+        if (res.data.nextState === RegistrationState.COMPLETED) {
           // If skipping to completion, refresh session first to get updated status and trigger guards
           await refreshSession();
         }
         mapBackendStateToUI(res.data.nextState);
       } else {
-        setStep('SET_PASSWORD');
+        setStep(OnboardingStepUI.SET_PASSWORD);
       }
     } catch (err: any) {
       console.error('[Onboarding] Profile Submit FAILED:', err.response?.data || err.message);
@@ -565,7 +567,7 @@ export default function OnboardingScreen() {
         { headers: { Authorization: `Bearer ${regToken}` } },
       );
       if (res.data.regToken) await setRegToken(res.data.regToken);
-      setStep('SET_PIN');
+      setStep(OnboardingStepUI.SET_PIN);
     } catch (err: any) {
       Alert.alert('Error', 'Failed to set password');
     } finally {
@@ -609,7 +611,7 @@ export default function OnboardingScreen() {
         await useAuthStore.getState().refreshSession();
       }
 
-      setStep('SUCCESS');
+      setStep(OnboardingStepUI.SUCCESS);
     } catch (err: any) {
       console.error('[Onboarding] Pin setup/complete failed:', err.response?.data || err.message);
       Alert.alert('Registration Failed', err.response?.data?.message || 'Could not complete registration. Please try again.');
@@ -709,22 +711,22 @@ export default function OnboardingScreen() {
             showsVerticalScrollIndicator={false}
           >
             <Onboarding.WelcomeStep
-              visible={step === 'WELCOME'}
-              onGetStarted={() => setStep('PHONE_INPUT')}
+              visible={step === OnboardingStepUI.WELCOME}
+              onGetStarted={() => setStep(OnboardingStepUI.PHONE_INPUT)}
               onBackToLogin={() => router.replace('/(auth)/login')}
             />
 
             <Onboarding.PhoneInputStep
-              visible={step === 'PHONE_INPUT'}
+              visible={step === OnboardingStepUI.PHONE_INPUT}
               phone={phone}
               isLoading={isLoading}
               onPhoneChange={setPhone}
               onSubmit={handlePhoneSubmit}
-              onBack={() => setStep('WELCOME')}
+              onBack={() => setStep(OnboardingStepUI.WELCOME)}
             />
 
             <Onboarding.OtpInputStep
-              visible={step === 'OTP'}
+              visible={step === OnboardingStepUI.OTP}
               otp={otp}
               phone={phone}
               isLoading={isLoading}
@@ -738,20 +740,20 @@ export default function OnboardingScreen() {
               }}
               onResend={handlePhoneSubmit}
               onSubmit={handleOtpVerify}
-              onBack={() => setStep('PHONE_INPUT')}
+              onBack={() => setStep(OnboardingStepUI.PHONE_INPUT)}
             />
 
             <Onboarding.TermsStep
-              visible={step === 'TERMS'}
+              visible={step === OnboardingStepUI.TERMS}
               isLoading={isLoading}
               onAccept={handleAcceptTerms}
-              onBack={() => setStep('OTP')}
+              onBack={() => setStep(OnboardingStepUI.OTP)}
             />
 
-            <Onboarding.OcrGuideStep visible={step === 'OCR_GUIDE'} onScan={handleIdCapture} />
+            <Onboarding.OcrGuideStep visible={step === OnboardingStepUI.OCR_GUIDE} onScan={handleIdCapture} />
 
             <Onboarding.OcrReviewStep
-              visible={step === 'OCR_REVIEW'}
+              visible={step === OnboardingStepUI.OCR_REVIEW}
               idCardUri={idCardUri}
               data={{
                 idNumber,
@@ -770,28 +772,28 @@ export default function OnboardingScreen() {
               setData={updateOcrData}
               isLoading={isLoading}
               onConfirm={handleConfirmOcr}
-              onRescan={() => setStep('OCR_GUIDE')}
+              onRescan={() => setStep(OnboardingStepUI.OCR_GUIDE)}
             />
 
             <Onboarding.FaceGuideStep
-              visible={step === 'FACE_GUIDE'}
+              visible={step === OnboardingStepUI.FACE_GUIDE}
               onScan={handleSelfieCapture}
             />
 
-            {step === 'FACE_SCAN' && (
+            {step === OnboardingStepUI.FACE_SCAN && (
               <FaceLivenessScanner
                 isLoading={isLoading}
                 onComplete={handleLivenessSuccess}
                 onError={(err) => {
                   Alert.alert('Liveness Error', 'Something went wrong during face scan.');
-                  setStep('FACE_GUIDE');
+                  setStep(OnboardingStepUI.FACE_GUIDE);
                 }}
-                onCancel={() => setStep('FACE_GUIDE')}
+                onCancel={() => setStep(OnboardingStepUI.FACE_GUIDE)}
               />
             )}
 
             <Onboarding.AdditionalInfoStep
-              visible={step === 'ADDITIONAL_INFO'}
+              visible={step === OnboardingStepUI.ADDITIONAL_INFO}
               data={{ address, occupation, incomeRange, sourceOfFunds, purpose }}
               idCardAddress={idCardAddress}
               setData={updateProfileData}
@@ -800,7 +802,7 @@ export default function OnboardingScreen() {
             />
 
             <Onboarding.SetPasswordStep
-              visible={step === 'SET_PASSWORD'}
+              visible={step === OnboardingStepUI.SET_PASSWORD}
               password={password}
               confirmPassword={confirmPassword}
               onPasswordChange={setPassword}
@@ -810,14 +812,14 @@ export default function OnboardingScreen() {
             />
 
             <Onboarding.SetPinStep
-              visible={step === 'SET_PIN'}
+              visible={step === OnboardingStepUI.SET_PIN}
               pin={pin}
               onPinChange={setPin}
-              onComplete={() => setStep('CONFIRM_PIN')}
+              onComplete={() => setStep(OnboardingStepUI.CONFIRM_PIN)}
             />
 
             <Onboarding.SetPinStep2
-              visible={step === 'CONFIRM_PIN'}
+              visible={step === OnboardingStepUI.CONFIRM_PIN}
               pin={confirmPin}
               onPinChange={setConfirmPin}
               onComplete={(completedPin) => {
@@ -831,12 +833,12 @@ export default function OnboardingScreen() {
               onBack={() => {
                 setPin('');
                 setConfirmPin('');
-                setStep('SET_PIN');
+                setStep(OnboardingStepUI.SET_PIN);
               }}
             />
 
             <Onboarding.SuccessStep
-              visible={step === 'SUCCESS'}
+              visible={step === OnboardingStepUI.SUCCESS}
               onEnterWallet={async () => {
                 setIsLoading(true);
                 try {

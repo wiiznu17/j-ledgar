@@ -5,12 +5,14 @@ import { router } from 'expo-router';
 import { Clock, LogOut, RefreshCcw, XCircle, ArrowRight } from 'lucide-react-native';
 import { api } from '@/lib/axios';
 
+import { UserStatus } from '@repo/dto';
+
 export default function PendingApprovalScreen() {
   const { logout, user, refreshSession } = useAuthStore();
   const [isRetrying, setIsRetrying] = useState(false);
   const [isRefreshing, setIsRefreshing] = useState(false);
 
-  const isRejected = user?.status === 'REJECTED';
+  const isRejected = user?.status === UserStatus.REJECTED;
 
   const handleRefresh = async () => {
     setIsRefreshing(true);

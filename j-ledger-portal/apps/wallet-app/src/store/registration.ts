@@ -3,20 +3,7 @@ import * as SecureStore from 'expo-secure-store';
 import { api } from '@/lib/axios';
 import axios from 'axios';
 
-// Align with Backend RegistrationState
-export type RegistrationState =
-  | 'PENDING'
-  | 'PENDING_OTP'
-  | 'INITIATED'
-  | 'OTP_VERIFIED'
-  | 'TC_ACCEPTED'
-  | 'ID_CARD_UPLOADED'
-  | 'ID_CARD_CONFIRMED'
-  | 'KYC_VERIFIED'
-  | 'PROFILE_COMPLETED'
-  | 'PASSWORD_SET'
-  | 'CREDENTIALS_SET'
-  | 'COMPLETED';
+import { RegistrationState } from '@repo/dto';
 
 interface RegistrationStore {
   regToken: string | null;
@@ -73,7 +60,7 @@ const loadPersistedToken = async (): Promise<string | null> => {
 
 export const useRegistrationStore = create<RegistrationStore>((set, get) => ({
   regToken: null,
-  currentState: 'PENDING_OTP',
+  currentState: RegistrationState.PENDING_OTP,
   isSyncing: false,
   prefillData: null,
   status: null,
@@ -85,7 +72,7 @@ export const useRegistrationStore = create<RegistrationStore>((set, get) => ({
       set({ regToken: token });
     } else {
       await SecureStore.deleteItemAsync(REG_TOKEN_KEY);
-      set({ regToken: null, prefillData: null, currentState: 'PENDING_OTP' });
+      set({ regToken: null, prefillData: null, currentState: RegistrationState.PENDING_OTP });
     }
   },
 
@@ -101,7 +88,7 @@ export const useRegistrationStore = create<RegistrationStore>((set, get) => ({
 
       if (!token) {
         set({ isSyncing: false });
-        return 'PENDING_OTP';
+        return RegistrationState.PENDING_OTP;
       }
 
       const response = await api.post(
@@ -128,11 +115,11 @@ export const useRegistrationStore = create<RegistrationStore>((set, get) => ({
       if (axios.isAxiosError(error) && error.response?.status === 401) {
         console.log('[RegistrationStore] Token invalid/expired, clearing');
         await get().reset();
-        return 'PENDING_OTP';
+        return RegistrationState.PENDING_OTP;
       }
       // Log only unexpected errors
       console.error('[RegistrationStore] Sync failed:', error);
-      return 'PENDING_OTP';
+      return RegistrationState.PENDING_OTP;
     } finally {
       set({ isSyncing: false });
     }
@@ -140,7 +127,7 @@ export const useRegistrationStore = create<RegistrationStore>((set, get) => ({
 
   reset: async () => {
     await SecureStore.deleteItemAsync(REG_TOKEN_KEY);
-    set({ regToken: null, currentState: 'PENDING_OTP', prefillData: null });
+    set({ regToken: null, currentState: RegistrationState.PENDING_OTP, prefillData: null });
   },
 
   initialize: async () => {

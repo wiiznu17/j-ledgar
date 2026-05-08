@@ -1,3 +1,4 @@
+import { SecurityEventType } from '@prisma/client';
 import {
   Injectable,
   Inject,
@@ -16,8 +17,16 @@ import Redis from 'ioredis';
 import { ISmsProvider } from '../integrations/interfaces/sms-provider.interface';
 import { FinanceService } from '../integration/finance.service';
 import { KafkaProducerService } from '../notification/kafka-producer.service';
-import { RegistrationState } from '@prisma/client';
-import { NotificationEventType, KafkaTopic, DeviceTrustLevel, UserStatus } from '@repo/dto';
+import {
+  NotificationEventType,
+  KafkaTopic,
+  DeviceTrustLevel,
+  UserStatus,
+  RegistrationState,
+  KYCVerificationStatus,
+  AddressType,
+  AddressVerificationSource,
+} from '@repo/dto';
 import {
   RegisterInitDto,
   RegisterVerifyOtpDto,
@@ -148,7 +157,7 @@ export class IdentityService {
       user = await this.prisma.user.create({
         data: {
           phoneNumber,
-          registrationState: 'PENDING_OTP',
+          registrationState: RegistrationState.PENDING_OTP,
         },
       });
     } else {
@@ -163,7 +172,7 @@ export class IdentityService {
       }
 
       // If user is already completed, they must login
-      if (user.registrationState === 'COMPLETED') {
+      if ((user.registrationState as RegistrationState) === RegistrationState.COMPLETED) {
         this.logger.warn(`[Register] User ${phoneNumber} already registered`);
         throw new ConflictException('User already registered');
       }
@@ -201,10 +210,10 @@ export class IdentityService {
     );
 
     // Only update state if it's currently earlier than OTP_VERIFIED
-    if (user.registrationState === 'PENDING_OTP' || user.registrationState === 'PENDING') {
+    if ((user.registrationState as RegistrationState) === RegistrationState.PENDING_OTP || (user.registrationState as RegistrationState) === RegistrationState.PENDING) {
       await this.prisma.user.update({
         where: { id: user.id },
-        data: { registrationState: 'OTP_VERIFIED' },
+        data: { registrationState: RegistrationState.OTP_VERIFIED },
       });
       this.logger.log(`[Register] State updated to OTP_VERIFIED for ${phoneNumber}`);
     } else {
@@ -219,7 +228,7 @@ export class IdentityService {
     this.logger.log(`[Register] STEP 2 Complete: State updated to OTP_VERIFIED for ${phoneNumber}`);
 
     const finalUser = await this.prisma.user.findUnique({ where: { id: user.id } });
-    const finalState = finalUser?.registrationState || 'OTP_VERIFIED';
+    const finalState = finalUser?.registrationState || RegistrationState.OTP_VERIFIED;
 
     return {
       regToken: await this.signRegistrationToken(user.id, finalState),
@@ -252,9 +261,9 @@ export class IdentityService {
 
     if (
       user.status !== UserStatus.ACTIVE && 
-      user.status !== 'PENDING_APPROVAL' && 
-      user.status !== 'REJECTED' &&
-      user.status !== 'INACTIVE'
+      user.status !== UserStatus.PENDING_APPROVAL && 
+      user.status !== UserStatus.REJECTED &&
+      user.status !== UserStatus.INACTIVE
     ) {
       throw new UnauthorizedException('Account is not active');
     }
@@ -347,7 +356,7 @@ export class IdentityService {
 
     // Fetch review note if rejected
     let reviewNote = null;
-    if (user.status === 'REJECTED') {
+    if ((user.status as UserStatus) === UserStatus.REJECTED) {
       const kyc = await this.prisma.kYCData.findUnique({
         where: { userId: user.id },
         select: { reviewNote: true }
@@ -357,8 +366,8 @@ export class IdentityService {
 
     // Include regToken if registration is not completed so the app can resume
     let regToken = null;
-    if (user.registrationState !== 'COMPLETED') {
-      regToken = await this.signRegistrationToken(user.id, user.registrationState);
+    if ((user.registrationState as RegistrationState) !== RegistrationState.COMPLETED) {
+      regToken = await this.signRegistrationToken(user.id, user.registrationState as RegistrationState);
     }
 
     return {
@@ -431,7 +440,7 @@ export class IdentityService {
 
       // Fetch review note if rejected
       let reviewNote = null;
-      if (user?.status === 'REJECTED') {
+      if ((user?.status as UserStatus) === UserStatus.REJECTED) {
         const kyc = await this.prisma.kYCData.findUnique({
           where: { userId: payload.sub },
           select: { reviewNote: true }
@@ -441,7 +450,7 @@ export class IdentityService {
 
       // Include regToken if registration is not completed so the app can resume
       let regToken = null;
-      if (user?.registrationState !== 'COMPLETED') {
+      if ((user?.registrationState as RegistrationState) !== RegistrationState.COMPLETED) {
         regToken = await this.signRegistrationToken(user.id, user.registrationState);
       }
 
@@ -613,7 +622,7 @@ export class IdentityService {
     await this.prisma.securityEvent.create({
       data: {
         userId,
-        eventType: eventType as any,
+        eventType: eventType as SecurityEventType,
         metadata: metadata || {},
       },
     });
@@ -763,9 +772,9 @@ export class IdentityService {
   async getUserStats() {
     const [total, active, pending, blocked] = await Promise.all([
       this.prisma.user.count(),
-      this.prisma.user.count({ where: { status: 'ACTIVE' } }),
-      this.prisma.user.count({ where: { status: 'PENDING_APPROVAL' } }),
-      this.prisma.user.count({ where: { status: 'BLOCKED' } }),
+      this.prisma.user.count({ where: { status: UserStatus.ACTIVE } }),
+      this.prisma.user.count({ where: { status: UserStatus.PENDING_APPROVAL } }),
+      this.prisma.user.count({ where: { status: UserStatus.BLOCKED } }),
     ]);
 
     return {
@@ -832,7 +841,7 @@ export class IdentityService {
   async updateUserStatus(id: string, status: string) {
     return this.prisma.user.update({
       where: { id },
-      data: { status: status as any },
+      data: { status: status as UserStatus },
     });
   }
 
@@ -846,7 +855,7 @@ export class IdentityService {
   async unblockUser(id: string) {
     return this.prisma.user.update({
       where: { id },
-      data: { status: 'ACTIVE' },
+      data: { status: UserStatus.ACTIVE },
     });
   }
 
@@ -896,7 +905,7 @@ export class IdentityService {
 
     this.logger.log(`[Register] STEP 3: Accepting terms for user ${payload.sub}`);
 
-    await this.validateRegistrationState(payload.sub, ['OTP_VERIFIED', 'TC_ACCEPTED']);
+    await this.validateRegistrationState(payload.sub, [RegistrationState.OTP_VERIFIED, RegistrationState.TC_ACCEPTED]);
 
     const user = await this.prisma.user.findUnique({
       where: { id: payload.sub },
@@ -929,7 +938,7 @@ export class IdentityService {
     // Update state
     await this.prisma.user.update({
       where: { id: user.id },
-      data: { registrationState: 'TC_ACCEPTED' },
+      data: { registrationState: RegistrationState.TC_ACCEPTED },
     });
 
     this.logger.log(`[Register] STEP 3 Complete: State updated to TC_ACCEPTED for user ${user.id}`);
@@ -953,7 +962,7 @@ export class IdentityService {
 
     this.logger.log(`[Register] STEP 4: Registering profile for user ${payload.sub}`);
 
-    await this.validateRegistrationState(payload.sub, ['KYC_VERIFIED', 'PROFILE_COMPLETED']);
+    await this.validateRegistrationState(payload.sub, [RegistrationState.KYC_VERIFIED, RegistrationState.PROFILE_COMPLETED]);
 
     const user = await this.prisma.user.findUnique({
       where: { id: payload.sub },
@@ -991,14 +1000,14 @@ export class IdentityService {
     
     if (dto.useIdentityAddress) {
       const registeredAddress = await this.prisma.address.findFirst({
-        where: { userId: user.id, type: 'REGISTERED' },
+        where: { userId: user.id, type: AddressType.REGISTERED },
       });
 
       if (registeredAddress) {
         this.logger.log(`[Register] Found registered address for user ${user.id}, merging with postal code: ${dto.currentAddress?.postalCode}`);
         await this.updateAddress(
           user.id,
-          'CURRENT',
+          AddressType.CURRENT,
           {
             line1: registeredAddress.line1 || undefined,
             subdistrict: registeredAddress.subdistrict || undefined,
@@ -1006,12 +1015,12 @@ export class IdentityService {
             province: registeredAddress.province || undefined,
             postalCode: dto.currentAddress?.postalCode || registeredAddress.postalCode || undefined,
           },
-          'MANUAL',
+          AddressVerificationSource.MANUAL,
         );
       } else {
         this.logger.warn(`[Register] useIdentityAddress was true but no REGISTERED address found for user ${user.id}`);
         if (dto.currentAddress && dto.currentAddress.line1) {
-          await this.updateAddress(user.id, 'CURRENT', dto.currentAddress, 'MANUAL');
+          await this.updateAddress(user.id, AddressType.CURRENT, dto.currentAddress, AddressVerificationSource.MANUAL);
         } else {
           this.logger.error(`[Register] Cannot set current address: No identity address and no full current address provided`);
           // We don't throw yet, but this might cause issues if mandatory
@@ -1019,35 +1028,35 @@ export class IdentityService {
       }
     } else if (dto.currentAddress) {
       this.logger.log(`[Register] Using provided current address for user ${user.id}`);
-      await this.updateAddress(user.id, 'CURRENT', dto.currentAddress, 'MANUAL');
+      await this.updateAddress(user.id, AddressType.CURRENT, dto.currentAddress, AddressVerificationSource.MANUAL);
     }
 
     // Update state
     // Smart Skip: If user already has password and PIN (Retry/Resume case), 
     // skip directly to COMPLETED state.
-    let nextState: RegistrationState = 'PROFILE_COMPLETED';
+    let nextState: RegistrationState = RegistrationState.PROFILE_COMPLETED;
     if (user.passwordHash && user.pinHash) {
       this.logger.log(`[Register] User ${user.id} already has password and PIN. Skipping to COMPLETED.`);
-      nextState = 'COMPLETED';
+      nextState = RegistrationState.COMPLETED;
     }
 
     // Status Protection: Only move to PENDING_APPROVAL if currently INACTIVE.
     // If user is already REJECTED, ACTIVE, or BLOCKED, we MUST preserve that status.
-    const updatedStatus = user.status === 'INACTIVE' ? 'PENDING_APPROVAL' : user.status;
+    const updatedStatus = (user.status as UserStatus) === UserStatus.INACTIVE ? UserStatus.PENDING_APPROVAL : (user.status as UserStatus);
     
     await this.prisma.user.update({
       where: { id: user.id },
       data: { 
         registrationState: nextState,
-        status: updatedStatus as any
+        status: updatedStatus as UserStatus
       },
     });
 
     // If we are setting to PENDING_APPROVAL, ensure KYC status is also PENDING
-    if (updatedStatus === 'PENDING_APPROVAL') {
+    if (updatedStatus === UserStatus.PENDING_APPROVAL) {
       await this.prisma.kYCData.updateMany({
         where: { userId: user.id },
-        data: { verificationStatus: 'PENDING' }
+        data: { verificationStatus: KYCVerificationStatus.PENDING }
       });
     }
 
@@ -1085,7 +1094,7 @@ export class IdentityService {
 
     this.logger.log(`[Register] STEP 5: Setting password for user ${payload.sub}`);
 
-    await this.validateRegistrationState(payload.sub, ['PROFILE_COMPLETED', 'PASSWORD_SET']);
+    await this.validateRegistrationState(payload.sub, [RegistrationState.PROFILE_COMPLETED, RegistrationState.PASSWORD_SET]);
 
     const user = await this.prisma.user.findUnique({
       where: { id: payload.sub },
@@ -1099,7 +1108,7 @@ export class IdentityService {
 
     await this.prisma.user.update({
       where: { id: user.id },
-      data: { passwordHash, registrationState: 'PASSWORD_SET' },
+      data: { passwordHash, registrationState: RegistrationState.PASSWORD_SET },
     });
     this.logger.log(`[Register] Password saved for user ${user.id}`);
 
@@ -1131,7 +1140,7 @@ export class IdentityService {
 
     this.logger.log(`[Register] STEP 6: Setting PIN for user ${payload.sub}`);
 
-    await this.validateRegistrationState(payload.sub, ['PASSWORD_SET', 'CREDENTIALS_SET']);
+    await this.validateRegistrationState(payload.sub, [RegistrationState.PASSWORD_SET, RegistrationState.CREDENTIALS_SET]);
 
     const user = await this.prisma.user.findUnique({
       where: { id: payload.sub },
@@ -1168,7 +1177,7 @@ export class IdentityService {
 
     await this.prisma.user.update({
       where: { id: user.id },
-      data: { pinHash, registrationState: 'CREDENTIALS_SET' },
+      data: { pinHash, registrationState: RegistrationState.CREDENTIALS_SET },
     });
     this.logger.log(`[Register] PIN saved for user ${user.id}`);
 
@@ -1240,7 +1249,7 @@ export class IdentityService {
     this.logger.log(`[Register] Current state for user ${user.id}: ${user.registrationState}`);
 
     // Extract raw address from PII
-    const rawAddressPii = (piiData as any[]).find((p) => p.field === 'raw_id_card_address');
+    const rawAddressPii = (piiData as Record<string, any>[]).find((p) => p.field === 'raw_id_card_address');
     const idCardAddress = rawAddressPii ? this.decryptPii(rawAddressPii.encryptedData) : null;
 
     // Extract profile data from settings
@@ -1280,8 +1289,8 @@ export class IdentityService {
             }
           : null,
         addresses: {
-          registered: addresses.find((a) => a.type === 'REGISTERED') || null,
-          current: addresses.find((a) => a.type === 'CURRENT') || null,
+          registered: addresses.find((a) => a.type === AddressType.REGISTERED) || null,
+          current: addresses.find((a) => a.type === AddressType.CURRENT) || null,
         },
         profile: profileData
           ? {
@@ -1311,7 +1320,7 @@ export class IdentityService {
 
     this.logger.log(`[Register] STEP 7: Completing registration for user ${payload.sub}`);
 
-    await this.validateRegistrationState(payload.sub, ['CREDENTIALS_SET', 'COMPLETED']);
+    await this.validateRegistrationState(payload.sub, [RegistrationState.CREDENTIALS_SET, RegistrationState.COMPLETED]);
 
     const user = await this.prisma.user.findUnique({
       where: { id: payload.sub },
@@ -1324,7 +1333,7 @@ export class IdentityService {
     // Race Condition and Token Reuse Protection: 
     // Allow completion only if status is PENDING_APPROVAL or REJECTED (for retries),
     // but if already COMPLETED and ACTIVE, throw conflict.
-    if (user.registrationState === 'COMPLETED' && user.status === 'ACTIVE') {
+    if ((user.registrationState as RegistrationState) === RegistrationState.COMPLETED && (user.status as UserStatus) === UserStatus.ACTIVE) {
       throw new ConflictException('Registration already completed');
     }
 
@@ -1355,22 +1364,22 @@ export class IdentityService {
       // Update user with wallet info and final state
       // Status Protection: Only move to PENDING_APPROVAL if currently INACTIVE.
       // If user is already REJECTED, ACTIVE, or BLOCKED, we MUST preserve that status.
-      const updatedStatus = user.status === 'INACTIVE' ? 'PENDING_APPROVAL' : user.status;
+      const updatedStatus = (user.status as UserStatus) === UserStatus.INACTIVE ? UserStatus.PENDING_APPROVAL : (user.status as UserStatus);
 
       const updatedUser = await this.prisma.user.update({
         where: { id: user.id },
         data: {
-          registrationState: 'COMPLETED',
-          status: updatedStatus as any,
+          registrationState: RegistrationState.COMPLETED,
+          status: updatedStatus as UserStatus,
           ledgerAccountId: walletId,
         },
       });
 
       // Sync KYC status to PENDING if we are in approval mode
-      if (updatedStatus === 'PENDING_APPROVAL') {
+      if (updatedStatus === UserStatus.PENDING_APPROVAL) {
         await this.prisma.kYCData.updateMany({
           where: { userId: user.id },
-          data: { verificationStatus: 'PENDING' }
+          data: { verificationStatus: KYCVerificationStatus.PENDING }
         });
       }
 
@@ -1636,7 +1645,7 @@ export class IdentityService {
       const existing = await this.prisma.address.findFirst({
         where: {
           userId,
-          type: type as any,
+          type: type as AddressType,
           deletedAt: null,
         },
       });
@@ -1657,7 +1666,7 @@ export class IdentityService {
       return await this.prisma.address.create({
         data: {
           userId,
-          type: type as any,
+          type: type as AddressType,
           ...sanitizedDto,
           verificationSource: source || undefined,
         },
@@ -1749,7 +1758,7 @@ export class IdentityService {
     }
 
     // Allow REJECTED users to retry from any step they are at
-    if (user.status === 'REJECTED') {
+    if ((user.status as UserStatus) === UserStatus.REJECTED) {
       this.logger.log(`[Register] User ${userId} is REJECTED, allowing state override.`);
       return;
     }

@@ -18,25 +18,40 @@ import { useRouter } from 'expo-router';
 import { MotiView } from 'moti';
 import { useInfiniteQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { api } from '@/lib/axios';
+import { NotificationEventType, NotificationCategory } from '@repo/dto';
 
 const { width } = Dimensions.get('window');
 
 const CATEGORIES = [
   { id: 'ALL', label: 'ทั้งหมด', icon: Bell },
-  { id: 'FINANCE', label: 'เงิน', icon: CreditCard },
-  { id: 'SYSTEM', label: 'ระบบ', icon: ShieldCheck },
-  { id: 'PROMO', label: 'สิทธิพิเศษ', icon: Tag },
-  { id: 'NEWS', label: 'ข่าวสาร', icon: Newspaper },
+  { id: NotificationCategory.FINANCE, label: 'เงิน', icon: CreditCard },
+  { id: NotificationCategory.SYSTEM, label: 'ระบบ', icon: ShieldCheck },
+  { id: NotificationCategory.PROMO, label: 'สิทธิพิเศษ', icon: Tag },
+  { id: NotificationCategory.NEWS, label: 'ข่าวสาร', icon: Newspaper },
 ];
+
 
 const getCategoryForType = (type: string, category?: string) => {
   if (category) return category;
   const t = type?.toUpperCase() || '';
-  if (t === 'TRANSFER' || t === 'TOPUP' || t === 'PAYMENT' || t === 'FINANCE') return 'FINANCE';
-  if (t === 'SECURITY' || t === 'KYC_STATUS' || t === 'SYSTEM') return 'SYSTEM';
-  if (t === 'PROMO' || t === 'OFFER') return 'PROMO';
-  if (t === 'NEWS' || t === 'ANNOUNCEMENT') return 'NEWS';
-  return 'SYSTEM';
+  if (
+    t === NotificationEventType.TRANSFER || 
+    t === NotificationEventType.TOPUP || 
+    t === NotificationEventType.PAYMENT || 
+    t === NotificationEventType.FINANCE
+  ) return NotificationCategory.FINANCE;
+  
+  if (
+    t === NotificationEventType.SECURITY || 
+    t === NotificationEventType.KYC_STATUS || 
+    t === NotificationEventType.SYSTEM ||
+    t === NotificationEventType.KYC_APPROVED ||
+    t === NotificationEventType.KYC_REJECTED
+  ) return NotificationCategory.SYSTEM;
+  
+  if (t === NotificationEventType.PROMO || t === NotificationEventType.OFFER) return NotificationCategory.PROMO;
+  if (t === NotificationEventType.NEWS || t === NotificationEventType.ANNOUNCEMENT) return NotificationCategory.NEWS;
+  return NotificationCategory.SYSTEM;
 };
 
 export default function NotificationsScreen() {
@@ -87,24 +102,29 @@ export default function NotificationsScreen() {
   const notifications = data?.pages.flatMap((page) => page.items) || [];
   const unreadCount = notifications.filter((n: any) => !n.isRead).length;
 
-  const getIcon = (type: string) => {
-    const t = type?.toLowerCase() || '';
-    if (t.includes('payment') || t.includes('transaction') || t === 'finance') return <CreditCard size={22} color="#4855a5" />;
-    if (t.includes('security') || t === 'system') return <ShieldCheck size={22} color="#ef4444" />;
-    if (t.includes('points')) return <Star size={22} color="#f48fb1" />;
-    if (t.includes('kyc')) return <ShieldCheck size={22} color="#4855a5" />;
-    if (t.includes('news') || t.includes('announcement')) return <Newspaper size={22} color="#4855a5" />;
-    if (t.includes('promo') || t.includes('offer')) return <Tag size={22} color="#f48fb1" />;
-    if (t.includes('error')) return <AlertCircle size={22} color="#ef4444" />;
+  const getIcon = (type: string, category?: string) => {
+    const cat = getCategoryForType(type, category);
+    
+    if (cat === NotificationCategory.FINANCE) return <CreditCard size={22} color="#4855a5" />;
+    if (cat === NotificationCategory.SYSTEM) return <ShieldCheck size={22} color="#4855a5" />;
+    if (cat === NotificationCategory.PROMO) return <Tag size={22} color="#f48fb1" />;
+    if (cat === NotificationCategory.NEWS) return <Newspaper size={22} color="#4855a5" />;
+    
+    // Specific overrides if needed
+    const t = type?.toUpperCase() || '';
+    if (t === NotificationEventType.SECURITY || t.includes('ERROR')) return <AlertCircle size={22} color="#ef4444" />;
+    
     return <Bell size={22} color="#4855a5" />;
   };
 
-  const getIconBg = (type: string) => {
-    const t = type?.toLowerCase() || '';
-    if (t.includes('security') || t.includes('error') || t === 'system') return 'bg-red-50';
-    if (t.includes('points') || t.includes('promo') || t.includes('offer')) return 'bg-primary/10';
-    if (t.includes('payment') || t.includes('transaction') || t === 'finance') return 'bg-blue-50';
-    if (t.includes('news')) return 'bg-indigo-50';
+  const getIconBg = (type: string, category?: string) => {
+    const cat = getCategoryForType(type, category);
+    
+    if (cat === NotificationCategory.FINANCE) return 'bg-blue-50';
+    if (cat === NotificationCategory.SYSTEM) return 'bg-red-50';
+    if (cat === NotificationCategory.PROMO) return 'bg-primary/10';
+    if (cat === NotificationCategory.NEWS) return 'bg-indigo-50';
+    
     return 'bg-[#eff0f7]';
   };
 
@@ -145,13 +165,25 @@ export default function NotificationsScreen() {
       path: notification.path
     });
 
-    if (id && (type === 'TRANSFER' || type === 'TOPUP' || type === 'PAYMENT')) {
+    if (
+      id && 
+      (type === NotificationEventType.TRANSFER || 
+       type === NotificationEventType.TOPUP || 
+       type === NotificationEventType.PAYMENT)
+    ) {
       const targetPath = `/transaction/${id}`;
       console.log(`[Notifications] Navigating to: ${targetPath}`);
       router.push(targetPath as any);
-    } else if (type === 'KYC_STATUS' || type === 'APPROVED' || type === 'REJECTED') {
+    } else if (
+      type === 'KYC_STATUS' || 
+      type === NotificationEventType.KYC_APPROVED || 
+      type === NotificationEventType.KYC_REJECTED
+    ) {
       router.push('/profile/information');
-    } else if (type === 'SECURITY' || type === 'LOGIN_SUCCESS') {
+    } else if (
+      type === 'SECURITY' || 
+      type === NotificationEventType.LOGIN_SUCCESS
+    ) {
       router.push('/profile/security' as any);
     }
   };
@@ -198,8 +230,8 @@ export default function NotificationsScreen() {
                     paddingVertical: 12,
                     borderRadius: 16,
                     borderWidth: 1,
-                    backgroundColor: isSelected ? '#4855a5' : '#ffffff',
-                    borderColor: isSelected ? '#4855a5' : 'rgba(72, 85, 165, 0.1)',
+                    backgroundColor: isSelected ? "#4855a5" : '#ffffff',
+                    borderColor: isSelected ? "#4855a5" : "rgba(72, 85, 165, 0.1)",
                     // Manual shadow-md implementation
                     shadowColor: '#000',
                     shadowOffset: { width: 0, height: 4 },
@@ -208,13 +240,13 @@ export default function NotificationsScreen() {
                     elevation: isSelected ? 5 : 1,
                   }}
                 >
-                  <Icon size={18} color={isSelected ? '#ffffff' : '#4855a5'} />
+                  <Icon size={18} color={isSelected ? '#ffffff' : "#4855a5"} />
                   <Text
                     style={{
                       marginLeft: 8,
                       fontFamily: 'Manrope_700Bold',
                       fontSize: 14,
-                      color: isSelected ? '#ffffff' : '#4855a5',
+                      color: isSelected ? '#ffffff' : "#4855a5",
                     }}
                   >
                     {cat.label}
@@ -290,7 +322,14 @@ export default function NotificationsScreen() {
   );
 }
 
-const NotificationItem = React.memo(({ item, index, onPress, getIcon, getIconBg, formatTime }: any) => (
+const NotificationItem = React.memo(({ item, index, onPress, getIcon, getIconBg, formatTime }: { 
+  item: any, 
+  index: number, 
+  onPress: (item: any) => void, 
+  getIcon: (type: string, category?: string) => React.ReactNode, 
+  getIconBg: (type: string, category?: string) => string, 
+  formatTime: (date: any) => string 
+}) => (
   <View className="mb-4">
     <TouchableOpacity
       onPress={() => onPress(item)}
@@ -301,9 +340,10 @@ const NotificationItem = React.memo(({ item, index, onPress, getIcon, getIconBg,
       <View
         className={`w-14 h-14 rounded-2xl ${getIconBg(
           item.type,
+          item.category
         )} items-center justify-center border border-outline-variant/5`}
       >
-        {getIcon(item.type)}
+        {getIcon(item.type, item.category)}
       </View>
       <View className="flex-1">
         <View className="flex-row justify-between items-center mb-1">
