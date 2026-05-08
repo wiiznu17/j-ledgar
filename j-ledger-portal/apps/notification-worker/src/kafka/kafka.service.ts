@@ -1,4 +1,4 @@
-import { Injectable, OnModuleInit, OnModuleDestroy } from '@nestjs/common';
+import { Injectable, OnModuleInit, OnModuleDestroy, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { Kafka, Consumer, EachMessagePayload } from 'kafkajs';
 import { NotificationService } from '../notification/notification.service';
@@ -6,6 +6,7 @@ import { KafkaTopic } from '@repo/dto';
 
 @Injectable()
 export class KafkaService implements OnModuleInit, OnModuleDestroy {
+  private readonly logger = new Logger(KafkaService.name);
   private kafka: Kafka;
   private consumer: Consumer;
 
@@ -43,7 +44,7 @@ export class KafkaService implements OnModuleInit, OnModuleDestroy {
             await this.handleMessage(topic, JSON.parse(value));
           }
         } catch (error) {
-          console.error(`[KafkaService] Error processing message on topic ${topic}:`, error);
+          this.logger.error(`Error processing message on topic ${topic}: ${error.message}`);
         }
       },
     });
@@ -54,6 +55,7 @@ export class KafkaService implements OnModuleInit, OnModuleDestroy {
   }
 
   private async handleMessage(topic: string, payload: any) {
+    this.logger.debug(`Received message on topic ${topic} for user ${payload.userId}`);
     await this.notificationService.handleEvent(topic, payload);
   }
 }

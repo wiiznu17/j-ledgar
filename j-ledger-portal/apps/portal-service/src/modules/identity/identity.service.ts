@@ -1031,9 +1031,9 @@ export class IdentityService {
       nextState = 'COMPLETED';
     }
 
-    // Only ACTIVE status is protected from being changed.
-    // REJECTED status will be reset to PENDING_APPROVAL so Admin can see the resubmission.
-    const updatedStatus = user.status === 'ACTIVE' ? 'ACTIVE' : 'PENDING_APPROVAL';
+    // Status Protection: Only move to PENDING_APPROVAL if currently INACTIVE.
+    // If user is already REJECTED, ACTIVE, or BLOCKED, we MUST preserve that status.
+    const updatedStatus = user.status === 'INACTIVE' ? 'PENDING_APPROVAL' : user.status;
     
     await this.prisma.user.update({
       where: { id: user.id },
@@ -1353,9 +1353,9 @@ export class IdentityService {
       }
 
       // Update user with wallet info and final state
-      // Only ACTIVE status is protected.
-      // REJECTED status will be reset to PENDING_APPROVAL when registration is completed.
-      const updatedStatus = user.status === 'ACTIVE' ? 'ACTIVE' : 'PENDING_APPROVAL';
+      // Status Protection: Only move to PENDING_APPROVAL if currently INACTIVE.
+      // If user is already REJECTED, ACTIVE, or BLOCKED, we MUST preserve that status.
+      const updatedStatus = user.status === 'INACTIVE' ? 'PENDING_APPROVAL' : user.status;
 
       const updatedUser = await this.prisma.user.update({
         where: { id: user.id },

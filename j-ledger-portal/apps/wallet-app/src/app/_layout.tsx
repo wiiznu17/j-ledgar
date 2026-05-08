@@ -86,34 +86,43 @@ export default function RootLayout() {
     if (needsPinVerification) {
       router.replace('/(auth)/login');
     } else if (!isAuthenticated) {
-      router.replace('/(auth)/login');
+      if (segments[0] !== '(auth)' || (segments[1] !== 'login' && segments[1] !== 'onboarding')) {
+        router.replace('/(auth)/login');
+      }
     } else if (user) {
-      // 1. Handle Incomplete Registration Flow (Highest Priority)
+      const isAuthGroup = segments[0] === '(auth)';
+      const isOnboarding = segments[1] === 'onboarding';
+      const isPendingApproval = segments[1] === 'pending-approval';
+
+      // 1. Handle Incomplete Registration Flow (Highest Priority - Force finish steps 1-12)
       if (user.registrationState !== 'COMPLETED') {
-        if (segments[1] !== 'onboarding') {
-          console.log('[RootLayout] Redirecting to Onboarding (Incomplete)');
+        if (!isOnboarding) {
+          console.log('[RootLayout] Registration incomplete, forcing Onboarding flow');
           router.replace('/(auth)/onboarding');
         }
         return;
       }
 
-      // 2. Handle Account Status Guards (Only for COMPLETED users)
+      // 2. Handle Final Account Status (Now we know registrationState === 'COMPLETED')
       switch (user.status) {
         case 'ACTIVE':
-          console.log('[RootLayout] Access Granted to App');
+          if (isAuthGroup) {
+            console.log('[RootLayout] Access Granted, entering App');
+            router.replace('/(tabs)');
+          }
           break;
 
         case 'PENDING_APPROVAL':
         case 'REJECTED':
-          if (segments[1] !== 'pending-approval') {
-            console.log(`[RootLayout] Redirecting to Pending/Rejected Screen (Status: ${user.status})`);
+          if (!isPendingApproval) {
+            console.log(`[RootLayout] Registration complete but status is ${user.status}, showing status screen`);
             router.replace('/(auth)/pending-approval');
           }
           break;
 
         case 'DELETED':
           console.log('[RootLayout] Account DELETED, signing out');
-          initializeAuth(); // Clear local state
+          initializeAuth();
           router.replace('/(auth)/login');
           break;
 

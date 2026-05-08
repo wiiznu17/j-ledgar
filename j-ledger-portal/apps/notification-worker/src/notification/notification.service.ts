@@ -29,10 +29,6 @@ export class NotificationService {
       const existing = await this.prisma.notification.findUnique({
         where: { idempotencyKey },
       });
-      if (existing) {
-        this.logger.debug(`Duplicate event ignored: ${idempotencyKey}`);
-        return;
-      }
 
       // 2. Fetch User Context
       const [user, prefs, devices] = await Promise.all([
@@ -50,23 +46,26 @@ export class NotificationService {
 
       const title = this.generateTitle(topic, actualEventType, metadata);
       const body = this.generateBody(topic, actualEventType, metadata);
-
       const { category, path } = this.getCategoryAndPath(actualEventType, metadata);
-
-      // 3. Persist to Inbox
-      await this.prisma.notification.create({
-        data: {
-          userId,
-          type: actualEventType,
-          title,
-          message: body,
-          category,
-          path,
-          metadata: metadata || {},
-          referenceId: actualReferenceId,
-          idempotencyKey,
-        },
-      });
+      
+      if (!existing) {
+        // 3. Persist to Inbox (Only if new)
+        await this.prisma.notification.create({
+          data: {
+            userId,
+            type: actualEventType,
+            title,
+            message: body,
+            category,
+            path,
+            metadata: metadata || {},
+            referenceId: actualReferenceId,
+            idempotencyKey,
+          },
+        });
+      } else {
+        this.logger.debug(`Duplicate event, skipping DB record but proceeding to push: ${idempotencyKey}`);
+      }
 
       // 4. Routing Logic
       const isSecurityEvent = topic === KafkaTopic.SECURITY_EVENTS;
