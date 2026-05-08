@@ -58,7 +58,7 @@ export function Topbar({ onLogout }: TopbarProps) {
   const getPageTitle = () => {
     if (routeTitles[pathname]) return routeTitles[pathname];
     const match = Object.keys(routeTitles).find(route => pathname.startsWith(route));
-    return match ? routeTitles[match] : 'J-Ledger Admin';
+    return match ? routeTitles[match] : 'P-wallet Admin';
   };
 
   return (

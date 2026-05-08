@@ -143,14 +143,22 @@ export function Sidebar({
       >
         {!isCollapsed ? (
           <div className="flex items-center">
-            <div className="w-8 h-8 rounded-lg bg-gradient-to-r from-[var(--color-magenta)] to-[var(--color-pink)] flex items-center justify-center shadow-md flex-shrink-0">
-              <ShieldCheck className="w-5 h-5 text-white" />
-            </div>
+            <img
+              src="/logo/logo.png"
+              alt="P-wallet"
+              className="h-8 w-auto object-contain"
+            />
             <span className="ml-3 text-xl font-bold text-slate-800 animate-in fade-in duration-500">
-              J-Ledger
+              P-wallet
             </span>
           </div>
-        ) : null}
+        ) : (
+          <img
+            src="/logo/logo.png"
+            alt="P-wallet"
+            className="h-8 w-8 object-contain"
+          />
+        )}
         
         <Button
           variant="ghost"

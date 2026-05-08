@@ -15,8 +15,8 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: 'J-Ledger Admin Portal',
-  description: 'Administrative interface for J-Ledger Operations',
+  title: 'P-wallet Admin Portal',
+  description: 'Administrative interface for P-wallet Operations',
 };
 
 export default function RootLayout({
