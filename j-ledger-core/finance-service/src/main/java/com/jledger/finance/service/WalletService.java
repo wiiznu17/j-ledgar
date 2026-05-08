@@ -7,6 +7,7 @@ import com.jledger.finance.domain.TransactionStatus;
 import com.jledger.finance.domain.TransactionType;
 import com.jledger.finance.domain.Wallet;
 import com.jledger.finance.domain.IntegrationOutbox;
+import com.jledger.finance.domain.NotificationEventType;
 import com.jledger.finance.repository.IntegrationOutboxRepository;
 import com.jledger.finance.repository.LinkedBankAccountRepository;
 import com.jledger.finance.repository.TransactionRepository;
@@ -1013,7 +1014,17 @@ public class WalletService {
         try {
             Map<String, Object> event = new HashMap<>();
             event.put("userId", userId);
-            event.put("eventType", transaction.getType().name());
+            
+            // Map TransactionType to NotificationEventType for the worker
+            NotificationEventType notificationType = switch (transaction.getType()) {
+                case TOPUP -> NotificationEventType.TOPUP;
+                case TRANSFER -> NotificationEventType.TRANSFER;
+                case WITHDRAWAL -> NotificationEventType.WITHDRAW;
+                case BILL_PAYMENT -> NotificationEventType.BILL_PAYMENT;
+                default -> NotificationEventType.FINANCE;
+            };
+            event.put("eventType", notificationType.name());
+            
             event.put("amount", transaction.getAmount());
             event.put("referenceId", transaction.getTransactionId() != null ? transaction.getTransactionId() : transaction.getId().toString());
             event.put("status", transaction.getStatus().name());
@@ -1047,7 +1058,7 @@ public class WalletService {
             event.put("metadata", metadata);
 
             IntegrationOutbox outbox = IntegrationOutbox.builder()
-                    .eventType("TRANSACTION")
+                    .eventType("FINANCE")
                     .payload(objectMapper.valueToTree(event))
                     .status("PENDING")
                     .build();

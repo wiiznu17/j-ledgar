@@ -35,6 +35,7 @@ public class ReconciliationController {
     @Operation(summary = "Trigger reconciliation", description = "Manually triggers a reconciliation audit for the current date.")
     public ResponseEntity<ReconciliationReport> triggerReconciliation() {
         // To ensure we can test easily, we reconcile for the current date when triggered manually
-        return ResponseEntity.ok(reconciliationService.executeReconciliation(LocalDate.now()));
+        // and we use the locked version to prevent concurrent runs.
+        return ResponseEntity.ok(reconciliationService.runManualReconciliation(LocalDate.now()));
     }
 }
