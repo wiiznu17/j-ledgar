@@ -51,7 +51,7 @@ export default function TransferSuccessScreen() {
   const onShare = async () => {
     try {
       await Share.share({
-        message: `J-Ledger Transfer Successful!\nAmount: ฿${formattedAmount}\nTo: ${displayRecipient}\nDate: ${dateStr} ${timeStr}\nRef: ${refId}`,
+        message: `P-wallet Transfer Successful!\nAmount: ฿${formattedAmount}\nTo: ${displayRecipient}\nDate: ${dateStr} ${timeStr}\nRef: ${refId}`,
       });
     } catch (error) {
       console.log(error);
@@ -126,7 +126,7 @@ export default function TransferSuccessScreen() {
                     {MOCK_MY_USER.name}
                   </Text>
                   <Text className="text-[10px] font-manrope font-bold text-gray-400 mt-0.5">
-                    J-Ledger Wallet
+                    P-wallet Wallet
                   </Text>
                 </View>
               </View>
@@ -150,7 +150,7 @@ export default function TransferSuccessScreen() {
                     {displayRecipient}
                   </Text>
                   <Text className="text-[10px] font-manrope font-bold text-gray-400 mt-0.5">
-                    {isMerchant ? 'PromptPay Merchant' : ((recipientMasked as string) || 'PromptPay / J-Ledger')}
+                    {isMerchant ? 'PromptPay Merchant' : ((recipientMasked as string) || 'PromptPay / P-wallet')}
                   </Text>
                 </View>
               </View>

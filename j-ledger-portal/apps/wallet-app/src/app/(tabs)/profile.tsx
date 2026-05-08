@@ -85,7 +85,7 @@ export default function SettingsScreen() {
     const lastName = userProfile?.profile?.lastName || '';
     const fullName = `${firstName} ${lastName}`.trim();
 
-    return fullName || userProfile?.phoneNumber || 'J-Ledger User';
+    return fullName || userProfile?.phoneNumber || 'P-wallet User';
   };
 
   if (isLoading) {
@@ -281,7 +281,7 @@ export default function SettingsScreen() {
         {/* Footer Versioning */}
         <View className="items-center space-y-1 py-4 opacity-60">
           <Text className="text-[10px] font-bold text-gray-400 uppercase tracking-widest italic">
-            J-Ledger Version 2.0.4-beta
+            P-wallet Version 2.0.4-beta
           </Text>
           <Text className="text-[8px] font-medium text-gray-300 uppercase tracking-[0.2em] mt-1">
             Built for World Class Experience

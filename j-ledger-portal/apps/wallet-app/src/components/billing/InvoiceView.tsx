@@ -42,7 +42,7 @@ export const InvoiceView: React.FC<InvoiceViewProps> = ({ invoice }) => {
           <Text style={styles.invoiceNumber}>{invoice.invoiceNumber}</Text>
         </View>
         <View style={styles.logoPlaceholder}>
-          <Text style={styles.logoText}>J-LEDGER</Text>
+          <Text style={styles.logoText}>P-WALLET</Text>
         </View>
       </View>
 
@@ -52,7 +52,7 @@ export const InvoiceView: React.FC<InvoiceViewProps> = ({ invoice }) => {
       <View style={styles.infoSection}>
         <View style={styles.infoBlock}>
           <Text style={styles.label}>FROM</Text>
-          <Text style={styles.infoValue}>{invoice.senderName || 'J-Ledger Platform'}</Text>
+          <Text style={styles.infoValue}>{invoice.senderName || 'P-wallet Platform'}</Text>
           {invoice.senderDetail && (
             <Text style={styles.infoSubValue}>{invoice.senderDetail}</Text>
           )}
@@ -109,7 +109,7 @@ export const InvoiceView: React.FC<InvoiceViewProps> = ({ invoice }) => {
       )}
 
       <View style={styles.footer}>
-        <Text style={styles.footerText}>Thank you for using J-Ledger</Text>
+        <Text style={styles.footerText}>Thank you for using P-wallet</Text>
         <Text style={styles.footerSubText}>This is an electronic receipt and does not require a signature.</Text>
       </View>
     </View>

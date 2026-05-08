@@ -310,7 +310,7 @@ export default function ReviewTransferScreen() {
               <ShieldCheck size={20} color="#22c55e" />
             </View>
             <Text className="text-[10px] font-manrope font-bold text-green-700/80 uppercase tracking-widest flex-1 leading-relaxed">
-              Guaranteed by J-Ledger Security Standard
+              Guaranteed by P-wallet Security Standard
             </Text>
           </View>
 

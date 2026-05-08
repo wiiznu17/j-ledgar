@@ -9,13 +9,13 @@ export const MOCK_USER = {
 
 export const TERMS_AND_CONDITIONS = `
 1. ACCEPTANCE OF TERMS
-By accessing and using J-Ledger Wallet, you agree to be bound by these Terms of Service. If you do not agree to all of these terms, do not use the application.
+By accessing and using P-wallet Wallet, you agree to be bound by these Terms of Service. If you do not agree to all of these terms, do not use the application.
 
 2. ELIGIBILITY
 You must be at least 18 years of age to create an account. By using the app, you represent that you have the legal capacity to enter into a binding agreement.
 
 3. SECURITY OF YOUR ACCOUNT
-You are responsible for maintaining the confidentiality of your account credentials, including your PIN and password. J-Ledger is not liable for any loss resulting from unauthorized access to your account due to your failure to secure your device or credentials.
+You are responsible for maintaining the confidentiality of your account credentials, including your PIN and password. P-wallet is not liable for any loss resulting from unauthorized access to your account due to your failure to secure your device or credentials.
 
 4. TRANSACTION POLICY
 All transactions are final once confirmed. Please ensure the recipient's information and the amount are correct before completing a transfer.

@@ -250,13 +250,13 @@ export default function LoginScreen() {
                 className="mb-4"
               >
                 <Image
-                  source={require('../../../assets/images/j_ledger_logo_1776536282920.png')}
+                  source={require('../../../assets/images/logo/logo.png')}
                   className="w-24 h-24"
                   resizeMode="contain"
                 />
               </MotiView>
               <Text className="text-3xl font-manrope font-black tracking-tight text-gray-800 mb-2">
-                J-Ledger
+                P-wallet
               </Text>
               <Text className="text-gray-400 font-manrope font-medium text-sm text-center px-4">
                 Securely manage your digital assets with advanced cryptography
@@ -353,7 +353,7 @@ export default function LoginScreen() {
               className="items-center"
             >
               <Text className="text-sm font-manrope font-bold text-gray-400">
-                New to J-Ledger?{' '}
+                New to P-wallet?{' '}
                 <Text className="text-[#f48fb1] font-black underline">Create a Wallet</Text>
               </Text>
             </TouchableOpacity>
@@ -490,7 +490,7 @@ export default function LoginScreen() {
         {/* Footer Versioning */}
         {/* <View className="absolute bottom-6 left-0 right-0 items-center pointer-events-none">
           <Text className="text-[9px] font-manrope font-black uppercase tracking-[0.4em] text-gray-300">
-            J-Ledger Protocol V4
+            P-wallet Protocol V4
           </Text>
         </View> */}
       </KeyboardAvoidingView>

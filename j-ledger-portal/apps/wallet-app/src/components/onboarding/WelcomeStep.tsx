@@ -21,12 +21,12 @@ export const WelcomeStep: React.FC<WelcomeStepProps> = ({
     <View style={{ minHeight: SCREEN_HEIGHT * 0.7 }} className="items-center justify-center">
       <View className="items-center mb-12">
         <Image
-          source={require('../../../assets/images/j_ledger_logo_1776536282920.png')}
+          source={require('../../../assets/images/logo/logo.png')}
           className="w-32 h-32 mb-8"
           resizeMode="contain"
         />
         <Text className="text-4xl font-manrope font-black tracking-tighter text-on-surface text-center mb-4">
-          Welcome to{'\n'}J-Ledger
+          Welcome to{'\n'}P-wallet
         </Text>
       </View>
 

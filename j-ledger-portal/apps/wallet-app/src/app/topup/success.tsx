@@ -47,7 +47,7 @@ export default function TopupSuccessScreen() {
   const onShare = async () => {
     try {
       await Share.share({
-        message: `J-Ledger Top Up Successful!\nAmount: ฿${formattedAmount}\nDate: ${dateStr} ${timeStr}\nRef: ${refId}`,
+        message: `P-wallet Top Up Successful!\nAmount: ฿${formattedAmount}\nDate: ${dateStr} ${timeStr}\nRef: ${refId}`,
       });
     } catch (error) {
       console.log(error);
@@ -131,7 +131,7 @@ export default function TopupSuccessScreen() {
                   </Text>
                   <Text className="text-sm font-manrope font-black text-gray-800">My E-Wallet</Text>
                   <Text className="text-[10px] font-manrope font-bold text-gray-400 mt-0.5">
-                    J-Ledger Account
+                    P-wallet Account
                   </Text>
                 </View>
               </View>
