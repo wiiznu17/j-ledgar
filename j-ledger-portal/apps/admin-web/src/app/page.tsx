@@ -18,7 +18,7 @@ export default function LandingPage() {
           <div className="w-10 h-10 rounded-xl bg-gradient-to-r from-[var(--color-magenta)] to-[var(--color-pink)] flex items-center justify-center shadow-lg shadow-magenta/20">
             <ShieldCheck className="w-6 h-6 text-white" />
           </div>
-          <span className="text-2xl font-bold tracking-tight text-[#2D3748]">J-Ledger</span>
+          <span className="text-2xl font-bold tracking-tight text-[#2D3748]">P-wallet</span>
         </div>
         <div className="hidden md:flex items-center gap-8 text-sm font-medium text-muted-foreground">
           <a href="#features" className="hover:text-foreground transition-colors">
@@ -184,7 +184,7 @@ export default function LandingPage() {
       {/* Footer */}
       <footer className="relative z-10 py-20 text-center">
         <p className="text-muted-foreground text-sm">
-          © 2026 J-Ledger Infrastructure. Built for the future of fintech.
+          © 2026 P-wallet Infrastructure. Built for the future of fintech.
         </p>
       </footer>
     </div>
