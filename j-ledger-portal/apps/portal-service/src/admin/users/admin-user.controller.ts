@@ -58,12 +58,14 @@ export class AdminUserController {
   @Get(':id')
   @RequirePermissions(Permission.VIEW_USERS)
   async getUserById(@Param('id') id: string) {
-    return this.identityService.findById(id);
+    const user = await this.identityService.findById(id);
+    return { data: user };
   }
 
   @Get(':id/activity')
   async getUserActivity(@Param('id') id: string) {
-    return this.identityService.getUserActivity(id);
+    const activity = await this.identityService.getUserActivity(id);
+    return { data: activity };
   }
 
   @Put(':id/status')

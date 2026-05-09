@@ -13,6 +13,7 @@ import {
 import { WalletUser } from '@repo/dto';
 import { UserControlActions } from './UserControlActions';
 import { cn } from '@/lib/utils';
+import { getUserStatusConfig } from '@/lib/status-utils';
 import { buttonVariants } from '@/components/ui/button';
 
 interface WalletUsersTableProps {
@@ -41,7 +42,7 @@ export function WalletUsersTable({ users, loading }: WalletUsersTableProps) {
               User Email
             </TableHead>
             <TableHead className="font-bold text-slate-500 uppercase text-[10px] tracking-widest hidden md:table-cell py-4">
-              Internal ID
+              Phone Number
             </TableHead>
             <TableHead className="font-bold text-slate-500 uppercase text-[10px] tracking-widest py-4">
               Status
@@ -71,22 +72,18 @@ export function WalletUsersTable({ users, loading }: WalletUsersTableProps) {
                   {user.email}
                 </a>
               </TableCell>
-              <TableCell className="font-mono text-[11px] text-slate-400 hidden md:table-cell">
-                {user.id}
+              <TableCell className="font-mono text-xs text-slate-600 hidden md:table-cell">
+                {user.phoneNumber}
               </TableCell>
               <TableCell>
                 <Badge
                   variant="outline"
-                  className={
-                    user.status === 'ACTIVE'
-                      ? 'border-emerald-200 text-emerald-700 bg-emerald-50 font-bold'
-                      : user.status === 'PENDING_APPROVAL'
-                        ? 'border-amber-200 text-amber-700 bg-amber-50 font-bold'
-                        : user.status === 'SUSPENDED'
-                          ? 'border-orange-200 text-orange-700 bg-orange-50 font-bold'
-                          : 'border-rose-200 text-rose-700 bg-rose-50 font-bold'
-                  }
+                  className={cn("font-bold uppercase text-[9px]", getUserStatusConfig(user.status).color)}
                 >
+                  {(() => {
+                    const Icon = getUserStatusConfig(user.status).icon;
+                    return <Icon className="w-3 h-3 mr-1" />;
+                  })()}
                   {user.status}
                 </Badge>
               </TableCell>

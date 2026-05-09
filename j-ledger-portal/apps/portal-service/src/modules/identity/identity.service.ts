@@ -907,6 +907,9 @@ export class IdentityService {
         userDevices: {
           select: {
             deviceIdentifier: true,
+            deviceName: true,
+            deviceType: true,
+            osVersion: true,
             trustLevel: true,
             lastSeenAt: true,
             createdAt: true,

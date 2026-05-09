@@ -50,11 +50,12 @@ export class AdminFinanceController {
   }
 
   @Get('accounts/user/:userId')
-  async getAccountByUserId(@Param('userId') userId: string): Promise<Account> {
-    return this.integrationService.forwardToGateway<Account>(
+  async getAccountByUserId(@Param('userId') userId: string): Promise<{ data: Account }> {
+    const account = await this.integrationService.forwardToGateway<Account>(
       'get',
-      INTERNAL_API_PATHS.FINANCE.ACCOUNTS.USER(userId),
+      `${INTERNAL_API_PATHS.FINANCE.WALLETS.BASE}/${userId}`,
     );
+    return { data: account };
   }
 
   @Put('accounts/:id/status')
@@ -118,11 +119,12 @@ export class AdminFinanceController {
   }
 
   @Get('wallets/:id')
-  async getWalletDetail(@Param('id') id: string): Promise<WalletDto> {
-    return this.integrationService.forwardToGateway<WalletDto>(
+  async getWalletDetail(@Param('id') id: string): Promise<{ data: WalletDto }> {
+    const wallet = await this.integrationService.forwardToGateway<WalletDto>(
       'get',
       INTERNAL_API_PATHS.FINANCE.WALLETS.ADMIN_DETAIL(id),
     );
+    return { data: wallet };
   }
 
   // ==================== Transaction Management ====================

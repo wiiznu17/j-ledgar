@@ -154,6 +154,7 @@ export function UserControlActions({ userId, email, status }: UserControlActions
       <PermissionGuard permissions={permissions} require={Permission.FREEZE_USERS}>
         <AlertDialog>
           <AlertDialogTrigger
+            disabled={loading || status !== 'ACTIVE'}
             render={
               <Button
                 variant="outline"
@@ -195,6 +196,7 @@ export function UserControlActions({ userId, email, status }: UserControlActions
       <PermissionGuard permissions={permissions} require={Permission.FREEZE_USERS}>
         <AlertDialog>
           <AlertDialogTrigger
+            disabled={loading || (status !== 'ACTIVE' && status !== 'SUSPENDED')}
             render={
               <Button
                 variant="destructive"
