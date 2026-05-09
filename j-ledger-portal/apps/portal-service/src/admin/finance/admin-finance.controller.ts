@@ -1,14 +1,16 @@
-import { Controller, Get, Post, Put, Body, Param, Query, UseGuards } from '@nestjs/common';
+import { Controller, Get, Post, Put, Body, Param, Query, UseGuards, Logger } from '@nestjs/common';
 import { AdminJwtGuard } from '../guards/admin-jwt.guard';
 import { AdminRolesGuard } from '../guards/admin-roles.guard';
 import { Roles } from '../decorators/roles.decorator';
-import { AdminRole, AdminPaginatedResponse, PaginatedResponse, Account, Transaction, WalletDto } from '@repo/dto';
+import { AdminRole, AdminPaginatedResponse, Account, Transaction, WalletDto, INTERNAL_API_PATHS } from '@repo/dto';
 
 import { IntegrationService } from '../../modules/integration/integration.service';
 
 @Controller('admin')
 @UseGuards(AdminJwtGuard, AdminRolesGuard)
 export class AdminFinanceController {
+  private readonly logger = new Logger(AdminFinanceController.name);
+
   constructor(private readonly integrationService: IntegrationService) {}
 
   // ==================== Account Management ====================
@@ -21,7 +23,7 @@ export class AdminFinanceController {
     // Proxy to finance-service
     const response = await this.integrationService.forwardToGateway<any>(
       'get',
-      `/api/v1/accounts?page=${page}&size=${size}`,
+      `${INTERNAL_API_PATHS.FINANCE.ACCOUNTS.BASE}?page=${page}&size=${size}`,
     );
     
     const content = Array.isArray(response) ? response : (response.content || []);
@@ -43,7 +45,7 @@ export class AdminFinanceController {
   async getAccountByUserId(@Param('userId') userId: string): Promise<Account> {
     return this.integrationService.forwardToGateway<Account>(
       'get',
-      `/api/v1/accounts/user/${userId}`,
+      INTERNAL_API_PATHS.FINANCE.ACCOUNTS.USER(userId),
     );
   }
 
@@ -53,9 +55,10 @@ export class AdminFinanceController {
     @Param('id') id: string,
     @Body('status') status: string,
   ): Promise<void> {
+    // WARNING: This endpoint might not exist in current finance-service version
     await this.integrationService.forwardToGateway(
       'put',
-      `/api/v1/accounts/${id}/status`,
+      INTERNAL_API_PATHS.FINANCE.ACCOUNTS.STATUS(id),
       { status },
     );
   }
@@ -69,7 +72,7 @@ export class AdminFinanceController {
   ): Promise<AdminPaginatedResponse<WalletDto>> {
     const response = await this.integrationService.forwardToGateway<any>(
       'get',
-      `/api/finance/wallets/admin/list?page=${page}&size=${size}`,
+      `${INTERNAL_API_PATHS.FINANCE.WALLETS.ADMIN_LIST}?page=${page}&size=${size}`,
     );
 
     const content = response.content || [];
@@ -92,7 +95,7 @@ export class AdminFinanceController {
   async freezeWallet(@Param('userId') userId: string): Promise<void> {
     await this.integrationService.forwardToGateway(
       'post',
-      `/api/finance/wallets/${userId}/freeze`,
+      INTERNAL_API_PATHS.FINANCE.WALLETS.FREEZE(userId),
       {},
     );
   }
@@ -102,7 +105,7 @@ export class AdminFinanceController {
   async unfreezeWallet(@Param('userId') userId: string): Promise<void> {
     await this.integrationService.forwardToGateway(
       'post',
-      `/api/finance/wallets/${userId}/unfreeze`,
+      INTERNAL_API_PATHS.FINANCE.WALLETS.UNFREEZE(userId),
       {},
     );
   }
@@ -111,7 +114,7 @@ export class AdminFinanceController {
   async getWalletDetail(@Param('id') id: string): Promise<WalletDto> {
     return this.integrationService.forwardToGateway<WalletDto>(
       'get',
-      `/api/finance/wallets/admin/${id}`,
+      INTERNAL_API_PATHS.FINANCE.WALLETS.ADMIN_DETAIL(id),
     );
   }
 
@@ -128,6 +131,7 @@ export class AdminFinanceController {
     @Query('endDate') endDate?: string,
   ): Promise<AdminPaginatedResponse<Transaction>> {
     // Build query params for gateway
+    // WARNING: current finance-service TransactionController only supports page/size
     const query = new URLSearchParams({
       page: page.toString(),
       size: size.toString(),
@@ -138,10 +142,14 @@ export class AdminFinanceController {
       ...(endDate && { endDate }),
     });
 
+    if (status || type || reference || startDate || endDate) {
+      this.logger.warn(`Filtering transactions by ${JSON.stringify({ status, type, reference, startDate, endDate })} is currently ignored by finance-service`);
+    }
+
     // Proxy to finance-service
     const response = await this.integrationService.forwardToGateway<any>(
       'get',
-      `/api/v1/transactions?${query.toString()}`,
+      `${INTERNAL_API_PATHS.FINANCE.TRANSACTIONS.BASE}?${query.toString()}`,
     );
     
     const content = Array.isArray(response) ? response : (response.content || []);
@@ -163,7 +171,7 @@ export class AdminFinanceController {
   async getTransactionDetails(@Param('id') id: string): Promise<Transaction> {
     return this.integrationService.forwardToGateway<Transaction>(
       'get',
-      `/api/v1/transactions/${id}`,
+      INTERNAL_API_PATHS.FINANCE.TRANSACTIONS.DETAIL(id),
     );
   }
 
@@ -174,10 +182,10 @@ export class AdminFinanceController {
     @Query('page') page: number = 0,
     @Query('size') size: number = 50,
   ): Promise<AdminPaginatedResponse<any>> {
-    // Proxy to finance-service
+    // WARNING: current finance-service AmlMonitoringController ignores pagination and returns flat List
     const response = await this.integrationService.forwardToGateway<any>(
       'get',
-      `/api/v1/aml/suspicious-activities?page=${page}&size=${size}`,
+      `${INTERNAL_API_PATHS.FINANCE.AML.SUSPICIOUS_ACTIVITIES}?page=${page}&size=${size}`,
     );
     
     // Format to match UI expectations (PaginatedResponse)
@@ -202,9 +210,10 @@ export class AdminFinanceController {
     @Param('id') id: string,
     @Body() data: any,
   ): Promise<void> {
+    // WARNING: This endpoint DOES NOT EXIST in current finance-service version
     await this.integrationService.forwardToGateway(
       'put',
-      `/api/v1/aml/suspicious-activities/${id}/status`,
+      INTERNAL_API_PATHS.FINANCE.AML.SUSPICIOUS_ACTIVITY_STATUS(id),
       data,
     );
   }

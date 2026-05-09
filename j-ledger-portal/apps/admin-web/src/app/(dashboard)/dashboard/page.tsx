@@ -29,7 +29,7 @@ export default function DashboardPage() {
           reconcileRequester.triggerManualAudit().catch(() => null),
           accountRequester.getAccounts({ page: 0, size: 1 }).catch(() => ({ pagination: { total: 0 } })),
           transactionRequester.getHistory({ page: 0, size: 1 }).catch(() => ({ pagination: { total: 0 } })),
-          dashboardRequester.getAggregatedStats().catch(() => null)
+          dashboardRequester.getStats().catch(() => null)
         ]);
 
         if (recData?.totalAccountBalances) {

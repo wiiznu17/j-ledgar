@@ -1,12 +1,13 @@
+import { API_PATHS } from '@repo/dto';
 import { apiClient } from '../api-client';
 
 export const kycRequester = {
   getStats: async () => {
-    return apiClient.get('/admin/kyc/stats');
+    return apiClient.get<any>(API_PATHS.ADMIN.KYC.STATS);
   },
   
   getPendingList: async () => {
-    return apiClient.get('/admin/kyc/pending');
+    return apiClient.get<any[]>(API_PATHS.ADMIN.KYC.PENDING);
   },
   
   getList: async (params: { 
@@ -17,22 +18,22 @@ export const kycRequester = {
     page?: number;
     limit?: number;
   }) => {
-    return apiClient.get('/admin/kyc/list', { params });
+    return apiClient.get<any>(API_PATHS.ADMIN.KYC.LIST, { params });
   },
   
   getDetails: async (userId: string) => {
-    return apiClient.get(`/admin/kyc/details/${userId}`);
+    return apiClient.get<any>(API_PATHS.ADMIN.KYC.DETAILS(userId));
   },
   
   approve: async (userId: string) => {
-    return apiClient.post(`/admin/kyc/approve/${userId}`);
+    return apiClient.post<void>(API_PATHS.ADMIN.KYC.APPROVE(userId));
   },
   
   reject: async (userId: string, reason: string) => {
-    return apiClient.post(`/admin/kyc/reject/${userId}`, { reason });
+    return apiClient.post<void>(API_PATHS.ADMIN.KYC.REJECT(userId), { reason });
   },
   
   getHistory: async (userId: string) => {
-    return apiClient.get(`/admin/kyc/history/${userId}`);
+    return apiClient.get<any[]>(API_PATHS.ADMIN.KYC.HISTORY(userId));
   }
 };

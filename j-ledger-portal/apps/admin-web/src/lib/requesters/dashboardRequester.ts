@@ -1,3 +1,4 @@
+import { API_PATHS } from '@repo/dto';
 import { apiClient } from '../api-client';
 
 export interface DashboardStats {
@@ -14,7 +15,7 @@ export interface DashboardStats {
 }
 
 export const dashboardRequester = {
-  getAggregatedStats: async () => {
-    return apiClient.get<DashboardStats>('/admin/dashboard/stats');
-  }
+  getStats: async () => {
+    return apiClient.get<DashboardStats>(API_PATHS.ADMIN.DASHBOARD.STATS);
+  },
 };

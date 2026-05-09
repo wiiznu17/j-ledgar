@@ -1,5 +1,5 @@
-// src/lib/requesters/systemRequester.ts
 import { apiClient, RequestOptions } from '@/lib/api-client';
+import { API_PATHS } from '@repo/dto';
 
 export interface OutboxEvent {
   id: string;
@@ -16,10 +16,9 @@ export interface OutboxEvent {
 export const systemRequester = {
   /**
    * Fetches the current system outbox events for Kafka integration monitoring.
-   * Path: /api/admin/system/outbox
    */
   getOutbox: async (filters?: { status?: string; eventType?: string }, options?: RequestOptions) => {
-    return apiClient.get<OutboxEvent[]>('/api/admin/system/outbox', {
+    return apiClient.get<OutboxEvent[]>(API_PATHS.ADMIN.SYSTEM.OUTBOX, {
       ...options,
       params: {
         ...options?.params,
@@ -29,6 +28,6 @@ export const systemRequester = {
   },
 
   retryOutbox: async (id: string, options?: RequestOptions) => {
-    return apiClient.post<void>(`/api/admin/system/outbox/${id}/retry`, {}, options);
+    return apiClient.post<void>(API_PATHS.ADMIN.SYSTEM.OUTBOX_RETRY(id), {}, options);
   },
 };

@@ -1,11 +1,13 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { HttpService } from '@nestjs/axios';
+import { INTERNAL_API_PATHS } from '@repo/dto';
 
 @Injectable()
 export class ReportingService {
   private readonly apiGatewayUrl: string;
   private readonly internalSecret: string;
+  private readonly logger = new Logger(ReportingService.name);
 
   constructor(
     private readonly httpService: HttpService,
@@ -44,7 +46,9 @@ export class ReportingService {
     const targetDate = date || new Date().toISOString().split('T')[0];
 
     // Get transactions from core-service for the specific date
-    const transactions = await this.forwardToGateway<any>('get', '/api/v1/transactions', {
+    // WARNING: current finance-service TransactionController ignores startDate/endDate filters
+    this.logger.warn(`Reporting daily for ${targetDate} - Note: finance-service currently ignores date filters and returns default page`);
+    const transactions = await this.forwardToGateway<any>('get', INTERNAL_API_PATHS.FINANCE.TRANSACTIONS.BASE, {
       startDate: targetDate,
       endDate: targetDate,
     });
@@ -89,7 +93,9 @@ export class ReportingService {
     const endDate = `${targetYear}-${String(targetMonth).padStart(2, '0')}-31`;
 
     // Get transactions from core-service for the month
-    const transactions = await this.forwardToGateway<any>('get', '/api/v1/transactions', {
+    // WARNING: current finance-service TransactionController ignores startDate/endDate filters
+    this.logger.warn(`Reporting monthly for ${targetYear}-${targetMonth} - Note: finance-service currently ignores date filters`);
+    const transactions = await this.forwardToGateway<any>('get', INTERNAL_API_PATHS.FINANCE.TRANSACTIONS.BASE, {
       startDate,
       endDate,
     });
@@ -164,15 +170,15 @@ export class ReportingService {
     if (query.reportDate) params.reportDate = query.reportDate;
     if (query.status) params.status = query.status;
 
-    return this.forwardToGateway<any>('get', '/api/v1/system/reconcile/reports', params);
+    return this.forwardToGateway<any>('get', INTERNAL_API_PATHS.FINANCE.SYSTEM.RECONCILE.REPORTS, params);
   }
 
   async getReconciliationReport(id: string) {
-    return this.forwardToGateway<any>('get', `/api/v1/system/reconcile/reports/${id}`);
+    return this.forwardToGateway<any>('get', INTERNAL_API_PATHS.FINANCE.SYSTEM.RECONCILE.DETAIL(id));
   }
 
   async runReconciliation() {
-    return this.forwardToGateway<any>('post', '/api/v1/system/reconcile/trigger');
+    return this.forwardToGateway<any>('post', INTERNAL_API_PATHS.FINANCE.SYSTEM.RECONCILE.TRIGGER);
   }
 
   async getOutbox(query?: { status?: string; eventType?: string }) {
@@ -180,10 +186,10 @@ export class ReportingService {
     if (query?.status) params.status = query.status;
     if (query?.eventType) params.eventType = query.eventType;
     
-    return this.forwardToGateway<any[]>('get', '/api/v1/system/outbox', params);
+    return this.forwardToGateway<any[]>('get', INTERNAL_API_PATHS.FINANCE.SYSTEM.OUTBOX.BASE, params);
   }
 
   async retryOutbox(id: string) {
-    return this.forwardToGateway<any>('post', `/api/v1/system/outbox/${id}/retry`);
+    return this.forwardToGateway<any>('post', INTERNAL_API_PATHS.FINANCE.SYSTEM.OUTBOX.RETRY(id));
   }
 }

@@ -18,7 +18,7 @@ import {
   ChevronRight
 } from 'lucide-react';
 import Link from 'next/link';
-import { apiClient } from '@/lib/api-client';
+import { kycRequester } from '@/lib/requesters';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -73,7 +73,7 @@ export default function KycDetailPage() {
   useEffect(() => {
     const fetchDetails = async () => {
       try {
-        const data = await apiClient.get<KycDetails>(`/api/admin/kyc/details/${userId}`);
+        const data = await kycRequester.getDetails(userId as string);
         setDetails(data);
       } catch (err) {
         console.error('Failed to fetch KYC details:', err);
@@ -96,7 +96,7 @@ export default function KycDetailPage() {
 
     if (result.isConfirmed) {
       try {
-        await apiClient.post(`/api/admin/kyc/approve/${userId}`);
+        await kycRequester.approve(userId as string);
         Swal.fire('Approved!', 'User identity has been verified.', 'success');
         router.push('/kyc');
       } catch (err) {
@@ -117,7 +117,7 @@ export default function KycDetailPage() {
 
     if (reason) {
       try {
-        await apiClient.post(`/api/admin/kyc/reject/${userId}`, { reason });
+        await kycRequester.reject(userId as string, reason);
         Swal.fire('Rejected', 'User has been notified.', 'info');
         router.push('/kyc');
       } catch (err) {

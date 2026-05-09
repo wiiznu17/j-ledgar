@@ -11,14 +11,14 @@ export const reconcileRequester = {
    * Path: /api/admin/system/reconcile/reports
    */
   getReports: async (options?: RequestOptions) => {
-    return apiClient.get<ReconciliationReport[]>(API_PATHS.ADMIN.SYSTEM.RECONCILE_REPORTS, options);
+    return apiClient.get<ReconciliationReport[]>(API_PATHS.ADMIN.RECONCILIATION.REPORTS, options);
   },
 
   /**
    * Manually triggers a reconciliation audit.
-   * Path: /api/admin/system/reconcile/trigger
+   * Path: /api/admin/reconciliation/run
    */
   triggerManualAudit: async (options?: RequestOptions) => {
-    return apiClient.post<ReconciliationSummary>(API_PATHS.ADMIN.SYSTEM.RECONCILE_TRIGGER, {}, options);
+    return apiClient.post<ReconciliationSummary>(API_PATHS.ADMIN.RECONCILIATION.RUN, {}, options);
   },
 };

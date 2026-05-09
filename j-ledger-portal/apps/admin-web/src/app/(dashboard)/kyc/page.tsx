@@ -3,7 +3,7 @@
 import React, { useEffect, useState } from 'react';
 import { ShieldCheck, User, Clock, CheckCircle2, XCircle, Eye, Search, Calendar as CalendarIcon, Filter, RotateCcw, ChevronLeft, ChevronRight } from 'lucide-react';
 import Link from 'next/link';
-import { apiClient } from '@/lib/api-client';
+import { kycRequester } from '@/lib/requesters';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Card } from '@/components/ui/card';
@@ -53,15 +53,15 @@ export default function KycListPage() {
   const fetchDocuments = async () => {
     setIsLoading(true);
     try {
-      const params = new URLSearchParams({
+      const res = await kycRequester.getList({
         status: activeFilters.status,
-        ...(activeFilters.phoneNumber && { phoneNumber: activeFilters.phoneNumber }),
-        ...(activeFilters.startDate && { startDate: activeFilters.startDate }),
-        ...(activeFilters.endDate && { endDate: activeFilters.endDate }),
-        page: activeFilters.page.toString(),
-        limit: '10'
+        phoneNumber: activeFilters.phoneNumber,
+        startDate: activeFilters.startDate,
+        endDate: activeFilters.endDate,
+        page: activeFilters.page,
+        limit: 10
       });
-      const res = await apiClient.get<{ items: KycDocument[], stats: any, meta: any }>(`/api/admin/kyc/list?${params.toString()}`);
+      
       setDocuments(res.items);
       setStats(res.stats);
       if (res.meta) {
