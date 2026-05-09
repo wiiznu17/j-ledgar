@@ -6,7 +6,12 @@ export class PushService {
   private readonly logger = new Logger(PushService.name);
   private expo = new Expo();
 
-  async sendPushNotification(pushToken: string, title: string, body: string, data?: any): Promise<boolean> {
+  async sendPushNotification(
+    pushToken: string,
+    title: string,
+    body: string,
+    data?: any,
+  ): Promise<boolean> {
     if (!Expo.isExpoPushToken(pushToken)) {
       this.logger.error(`Push token ${pushToken} is not a valid Expo push token`);
       return false;

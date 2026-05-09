@@ -39,7 +39,7 @@ export const AppSelector: React.FC<AppSelectorProps> = ({
       <Text className="text-[10px] font-manrope font-extrabold text-on-surfaceVariant/50 uppercase tracking-widest mb-2 ml-1">
         {label}
       </Text>
-      
+
       <TouchableOpacity
         activeOpacity={0.7}
         onPress={() => setIsVisible(true)}
@@ -57,9 +57,7 @@ export const AppSelector: React.FC<AppSelectorProps> = ({
         <ChevronDown size={18} color="#f48fb1" opacity={0.5} />
       </TouchableOpacity>
 
-      {error && (
-        <Text className="text-[10px] font-manrope text-error mt-1 ml-1">{error}</Text>
-      )}
+      {error && <Text className="text-[10px] font-manrope text-error mt-1 ml-1">{error}</Text>}
 
       <Modal
         visible={isVisible}
@@ -78,7 +76,7 @@ export const AppSelector: React.FC<AppSelectorProps> = ({
                 style={{ maxHeight: '70%' }}
               >
                 <View className="w-12 h-1.5 bg-on-surfaceVariant/10 rounded-full self-center mb-8" />
-                
+
                 <Text className="text-xl font-manrope font-extrabold text-on-surface mb-6">
                   Select {label}
                 </Text>
@@ -100,9 +98,7 @@ export const AppSelector: React.FC<AppSelectorProps> = ({
                     >
                       <Text
                         className={`text-base font-manrope ${
-                          item.value === value
-                            ? 'text-primary font-bold'
-                            : 'text-on-surfaceVariant'
+                          item.value === value ? 'text-primary font-bold' : 'text-on-surfaceVariant'
                         }`}
                       >
                         {item.label}

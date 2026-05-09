@@ -53,9 +53,7 @@ export const InvoiceView: React.FC<InvoiceViewProps> = ({ invoice }) => {
         <View style={styles.infoBlock}>
           <Text style={styles.label}>FROM</Text>
           <Text style={styles.infoValue}>{invoice.senderName || 'P-wallet Platform'}</Text>
-          {invoice.senderDetail && (
-            <Text style={styles.infoSubValue}>{invoice.senderDetail}</Text>
-          )}
+          {invoice.senderDetail && <Text style={styles.infoSubValue}>{invoice.senderDetail}</Text>}
         </View>
         <View style={[styles.infoBlock, { alignItems: 'flex-end' }]}>
           <Text style={styles.label}>DATE</Text>
@@ -110,7 +108,9 @@ export const InvoiceView: React.FC<InvoiceViewProps> = ({ invoice }) => {
 
       <View style={styles.footer}>
         <Text style={styles.footerText}>Thank you for using P-wallet</Text>
-        <Text style={styles.footerSubText}>This is an electronic receipt and does not require a signature.</Text>
+        <Text style={styles.footerSubText}>
+          This is an electronic receipt and does not require a signature.
+        </Text>
       </View>
     </View>
   );

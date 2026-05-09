@@ -1,42 +1,36 @@
 'use client';
 
 import { useEffect, useState, useCallback } from 'react';
-import { 
-  Card, 
-  CardContent, 
-  CardDescription, 
-  CardHeader, 
-  CardTitle 
-} from '@/components/ui/card';
-import { 
-  Table, 
-  TableBody, 
-  TableCell, 
-  TableHead, 
-  TableHeader, 
-  TableRow 
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
 } from '@/components/ui/table';
-import { 
-  Select, 
-  SelectContent, 
-  SelectItem, 
-  SelectTrigger, 
-  SelectValue 
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
 } from '@/components/ui/select';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { 
-  Search, 
-  Filter, 
-  RotateCcw, 
-  ChevronLeft, 
-  ChevronRight, 
-  Wallet, 
-  ShieldAlert, 
+import {
+  Search,
+  Filter,
+  RotateCcw,
+  ChevronLeft,
+  ChevronRight,
+  Wallet,
+  ShieldAlert,
   ShieldCheck,
   MoreHorizontal,
-  ArrowRight
+  ArrowRight,
 } from 'lucide-react';
 import { walletRequester } from '@/lib/requesters';
 import { WalletDto } from '@repo/dto';
@@ -44,11 +38,7 @@ import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
 import Link from 'next/link';
 import { FilterSearchInput, FilterSelect, FilterActions } from '@/components/common/FilterElements';
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from "@/components/ui/popover";
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 
 export default function WalletAccountsPage() {
   const [wallets, setWallets] = useState<WalletDto[]>([]);
@@ -79,20 +69,21 @@ export default function WalletAccountsPage() {
     try {
       const response = await walletRequester.getWallets({
         page: page - 1,
-        size: 10
+        size: 10,
       });
-      
+
       // Filter client-side if search is used (since Java search is simplified)
       let filteredData = response.data;
       if (appliedSearch) {
-        filteredData = filteredData.filter(w => 
-          w.walletId.toLowerCase().includes(appliedSearch.toLowerCase()) || 
-          w.userId.toLowerCase().includes(appliedSearch.toLowerCase())
+        filteredData = filteredData.filter(
+          (w) =>
+            w.walletId.toLowerCase().includes(appliedSearch.toLowerCase()) ||
+            w.userId.toLowerCase().includes(appliedSearch.toLowerCase()),
         );
       }
-      
+
       if (appliedStatus !== 'ALL') {
-        filteredData = filteredData.filter(w => w.status === appliedStatus);
+        filteredData = filteredData.filter((w) => w.status === appliedStatus);
       }
 
       setWallets(filteredData);
@@ -128,7 +119,7 @@ export default function WalletAccountsPage() {
   const handleToggleFreeze = async (wallet: WalletDto) => {
     const isFrozen = wallet.status === 'FROZEN';
     const action = isFrozen ? 'unfreeze' : 'freeze';
-    
+
     try {
       if (isFrozen) {
         await walletRequester.unfreezeWallet(wallet.userId);
@@ -136,7 +127,7 @@ export default function WalletAccountsPage() {
       } else {
         await walletRequester.freezeWallet(wallet.userId);
         toast.error(`Wallet ${wallet.walletId} has been frozen`, {
-          icon: <ShieldAlert className="w-4 h-4 text-rose-500" />
+          icon: <ShieldAlert className="w-4 h-4 text-rose-500" />,
         });
       }
       fetchWallets();
@@ -163,7 +154,10 @@ export default function WalletAccountsPage() {
           </p>
         </div>
         <div className="flex items-center gap-3">
-          <Badge variant="outline" className="bg-white border-slate-200 text-slate-500 px-3 py-1 text-[10px] font-bold uppercase tracking-wider">
+          <Badge
+            variant="outline"
+            className="bg-white border-slate-200 text-slate-500 px-3 py-1 text-[10px] font-bold uppercase tracking-wider"
+          >
             Total Wallets: {total}
           </Badge>
         </div>
@@ -172,15 +166,18 @@ export default function WalletAccountsPage() {
       <Card className="border-none shadow-sm ring-1 ring-slate-100 overflow-hidden bg-white">
         {/* Filter Toolbar */}
         <div className="p-4 bg-white border-b border-slate-100">
-          <form onSubmit={handleApplyFilter} className="grid grid-cols-1 md:grid-cols-4 gap-4 items-end">
-            <FilterSearchInput 
+          <form
+            onSubmit={handleApplyFilter}
+            className="grid grid-cols-1 md:grid-cols-4 gap-4 items-end"
+          >
+            <FilterSearchInput
               label="Search Wallet / User"
               placeholder="W-XXXXXX or UUID"
               value={searchInput}
               onChange={(e) => setSearchInput(e.target.value)}
             />
 
-            <FilterSelect 
+            <FilterSelect
               label="Account Status"
               value={statusInput}
               onValueChange={(v) => setStatusInput(v || 'ALL')}
@@ -192,7 +189,7 @@ export default function WalletAccountsPage() {
               ]}
             />
 
-            <FilterActions 
+            <FilterActions
               searchLabel="Apply Filters"
               isLoading={loading}
               onReset={handleReset}
@@ -207,12 +204,24 @@ export default function WalletAccountsPage() {
             <Table>
               <TableHeader className="bg-slate-50/50">
                 <TableRow className="border-slate-100 hover:bg-transparent">
-                  <TableHead className="w-[60px] text-[11px] font-bold text-slate-500 uppercase tracking-wider pl-6">No.</TableHead>
-                  <TableHead className="w-[180px] text-[11px] font-bold text-slate-500 uppercase tracking-wider">Wallet ID</TableHead>
-                  <TableHead className="text-[11px] font-bold text-slate-500 uppercase tracking-wider">Owner (User ID)</TableHead>
-                  <TableHead className="text-[11px] font-bold text-slate-500 uppercase tracking-wider text-right">Balance</TableHead>
-                  <TableHead className="text-[11px] font-bold text-slate-500 uppercase tracking-wider text-center">Status</TableHead>
-                  <TableHead className="text-[11px] font-bold text-slate-500 uppercase tracking-wider text-right">Last Updated</TableHead>
+                  <TableHead className="w-[60px] text-[11px] font-bold text-slate-500 uppercase tracking-wider pl-6">
+                    No.
+                  </TableHead>
+                  <TableHead className="w-[180px] text-[11px] font-bold text-slate-500 uppercase tracking-wider">
+                    Wallet ID
+                  </TableHead>
+                  <TableHead className="text-[11px] font-bold text-slate-500 uppercase tracking-wider">
+                    Owner (User ID)
+                  </TableHead>
+                  <TableHead className="text-[11px] font-bold text-slate-500 uppercase tracking-wider text-right">
+                    Balance
+                  </TableHead>
+                  <TableHead className="text-[11px] font-bold text-slate-500 uppercase tracking-wider text-center">
+                    Status
+                  </TableHead>
+                  <TableHead className="text-[11px] font-bold text-slate-500 uppercase tracking-wider text-right">
+                    Last Updated
+                  </TableHead>
                   <TableHead className="w-[80px]"></TableHead>
                 </TableRow>
               </TableHeader>
@@ -225,45 +234,68 @@ export default function WalletAccountsPage() {
                   ))
                 ) : wallets.length > 0 ? (
                   wallets.map((wallet, index) => (
-                    <TableRow key={wallet.id} className="border-slate-50 hover:bg-slate-50/30 transition-colors group">
+                    <TableRow
+                      key={wallet.id}
+                      className="border-slate-50 hover:bg-slate-50/30 transition-colors group"
+                    >
                       <TableCell className="pl-6 text-xs font-bold text-slate-400 tabular-nums">
                         {(page - 1) * 10 + index + 1}
                       </TableCell>
                       <TableCell className="font-mono text-xs font-bold text-indigo-600">
-                        <Link href={`/accounts/${wallet.id}`} className="hover:underline underline-offset-4">
+                        <Link
+                          href={`/accounts/${wallet.id}`}
+                          className="hover:underline underline-offset-4"
+                        >
                           {wallet.walletId}
                         </Link>
                       </TableCell>
                       <TableCell>
                         <div className="flex flex-col">
-                          <span className="text-xs font-mono text-slate-400 truncate w-40" title={wallet.userId}>
+                          <span
+                            className="text-xs font-mono text-slate-400 truncate w-40"
+                            title={wallet.userId}
+                          >
                             {wallet.userId}
                           </span>
                         </div>
                       </TableCell>
                       <TableCell className="text-right">
-                        <span className={cn(
-                          "font-bold tabular-nums",
-                          wallet.balance > 0 ? "text-emerald-600" : "text-slate-900"
-                        )}>
-                          {wallet.balance.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                        <span
+                          className={cn(
+                            'font-bold tabular-nums',
+                            wallet.balance > 0 ? 'text-emerald-600' : 'text-slate-900',
+                          )}
+                        >
+                          {wallet.balance.toLocaleString(undefined, {
+                            minimumFractionDigits: 2,
+                            maximumFractionDigits: 2,
+                          })}
                         </span>
-                        <span className="ml-1 text-[10px] font-bold text-slate-400">{wallet.currency}</span>
+                        <span className="ml-1 text-[10px] font-bold text-slate-400">
+                          {wallet.currency}
+                        </span>
                       </TableCell>
                       <TableCell className="text-center">
-                        <Badge 
+                        <Badge
                           className={cn(
-                            "rounded-lg px-2 py-0.5 text-[10px] font-bold border-none",
-                            wallet.status === 'ACTIVE' && "bg-emerald-50 text-emerald-600 hover:bg-emerald-50",
-                            wallet.status === 'FROZEN' && "bg-rose-50 text-rose-600 hover:bg-rose-50",
-                            wallet.status === 'INACTIVE' && "bg-slate-100 text-slate-500 hover:bg-slate-100"
+                            'rounded-lg px-2 py-0.5 text-[10px] font-bold border-none',
+                            wallet.status === 'ACTIVE' &&
+                              'bg-emerald-50 text-emerald-600 hover:bg-emerald-50',
+                            wallet.status === 'FROZEN' &&
+                              'bg-rose-50 text-rose-600 hover:bg-rose-50',
+                            wallet.status === 'INACTIVE' &&
+                              'bg-slate-100 text-slate-500 hover:bg-slate-100',
                           )}
                         >
                           {wallet.status}
                         </Badge>
                       </TableCell>
                       <TableCell className="text-right text-xs text-slate-400">
-                        {new Date(wallet.updatedAt).toLocaleDateString()} {new Date(wallet.updatedAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                        {new Date(wallet.updatedAt).toLocaleDateString()}{' '}
+                        {new Date(wallet.updatedAt).toLocaleTimeString([], {
+                          hour: '2-digit',
+                          minute: '2-digit',
+                        })}
                       </TableCell>
                       <TableCell>
                         <div className="flex justify-end">
@@ -271,30 +303,41 @@ export default function WalletAccountsPage() {
                             <PopoverTrigger className="h-8 w-8 inline-flex items-center justify-center rounded-lg hover:bg-slate-100 text-slate-400 transition-colors outline-none focus-visible:ring-2 focus-visible:ring-indigo-500">
                               <MoreHorizontal className="h-4 w-4" />
                             </PopoverTrigger>
-                            <PopoverContent align="end" className="w-48 p-2 rounded-xl border-slate-100 shadow-xl bg-white">
-                              <div className="text-[10px] font-bold text-slate-400 uppercase tracking-widest px-3 py-2">Management</div>
+                            <PopoverContent
+                              align="end"
+                              className="w-48 p-2 rounded-xl border-slate-100 shadow-xl bg-white"
+                            >
+                              <div className="text-[10px] font-bold text-slate-400 uppercase tracking-widest px-3 py-2">
+                                Management
+                              </div>
                               <div className="h-px bg-slate-50 my-1" />
-                              <Link 
+                              <Link
                                 href={`/accounts/${wallet.id}`}
                                 className="flex items-center w-full px-3 py-2 text-sm font-medium text-slate-600 hover:bg-slate-50 rounded-lg transition-colors"
                               >
                                 <Search className="w-4 h-4 mr-2 text-slate-400" /> View Detail
                               </Link>
-                              
+
                               {isSuperAdmin && (
                                 <>
                                   <div className="h-px bg-slate-50 my-1" />
-                                  <button 
+                                  <button
                                     className={cn(
-                                      "flex items-center w-full px-3 py-2 text-sm font-bold rounded-lg transition-colors",
-                                      wallet.status === 'FROZEN' ? "text-emerald-600 hover:bg-emerald-50" : "text-rose-600 hover:bg-rose-50"
+                                      'flex items-center w-full px-3 py-2 text-sm font-bold rounded-lg transition-colors',
+                                      wallet.status === 'FROZEN'
+                                        ? 'text-emerald-600 hover:bg-emerald-50'
+                                        : 'text-rose-600 hover:bg-rose-50',
                                     )}
                                     onClick={() => handleToggleFreeze(wallet)}
                                   >
                                     {wallet.status === 'FROZEN' ? (
-                                      <><ShieldCheck className="w-4 h-4 mr-2" /> Unfreeze Wallet</>
+                                      <>
+                                        <ShieldCheck className="w-4 h-4 mr-2" /> Unfreeze Wallet
+                                      </>
                                     ) : (
-                                      <><ShieldAlert className="w-4 h-4 mr-2" /> Freeze Wallet</>
+                                      <>
+                                        <ShieldAlert className="w-4 h-4 mr-2" /> Freeze Wallet
+                                      </>
                                     )}
                                   </button>
                                 </>
@@ -322,15 +365,16 @@ export default function WalletAccountsPage() {
           {/* Pagination */}
           <div className="p-4 border-t border-slate-100 bg-slate-50/30 flex flex-col md:flex-row items-center justify-between gap-4">
             <div className="text-xs font-medium text-slate-500">
-              Showing page <span className="text-slate-900">{page}</span> of <span className="text-slate-900">{totalPages}</span> 
-              <span className="mx-2 text-slate-200">|</span> 
+              Showing page <span className="text-slate-900">{page}</span> of{' '}
+              <span className="text-slate-900">{totalPages}</span>
+              <span className="mx-2 text-slate-200">|</span>
               Total <span className="text-slate-900">{total}</span> records
             </div>
             <div className="flex items-center gap-2">
               <Button
                 variant="outline"
                 size="sm"
-                onClick={() => setPage(p => Math.max(1, p - 1))}
+                onClick={() => setPage((p) => Math.max(1, p - 1))}
                 disabled={page === 1 || loading}
                 className="!h-9 rounded-xl border-slate-200 bg-white text-slate-600 hover:bg-slate-50 font-bold text-xs"
               >
@@ -347,8 +391,10 @@ export default function WalletAccountsPage() {
                       size="sm"
                       onClick={() => setPage(pageNum)}
                       className={cn(
-                        "w-9 h-9 rounded-xl text-xs font-bold",
-                        page === pageNum ? "bg-indigo-600 text-white shadow-md shadow-indigo-100" : "text-slate-400"
+                        'w-9 h-9 rounded-xl text-xs font-bold',
+                        page === pageNum
+                          ? 'bg-indigo-600 text-white shadow-md shadow-indigo-100'
+                          : 'text-slate-400',
                       )}
                     >
                       {pageNum}
@@ -359,7 +405,7 @@ export default function WalletAccountsPage() {
               <Button
                 variant="outline"
                 size="sm"
-                onClick={() => setPage(p => Math.min(totalPages, p + 1))}
+                onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
                 disabled={page === totalPages || loading}
                 className="!h-9 rounded-xl border-slate-200 bg-white text-slate-600 hover:bg-slate-50 font-bold text-xs"
               >

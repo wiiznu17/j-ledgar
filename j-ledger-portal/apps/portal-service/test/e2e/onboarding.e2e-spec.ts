@@ -33,7 +33,7 @@ describe('Onboarding Flow (e2e)', () => {
     dbHelper = new DbTestHelper(prisma);
     authHelper = new AuthTestHelper(
       moduleFixture.get<JwtService>(JwtService),
-      moduleFixture.get<ConfigService>(ConfigService)
+      moduleFixture.get<ConfigService>(ConfigService),
     );
   });
 
@@ -69,7 +69,7 @@ describe('Onboarding Flow (e2e)', () => {
         .send({ phoneNumber: '0811111111' });
 
       expect([200, 201]).toContain(response.status);
-      
+
       const updatedUser = await prisma.user.findUnique({ where: { id: user.id } });
       expect(updatedUser?.registrationState).toBe('PENDING_OTP');
     });
@@ -84,7 +84,7 @@ describe('Onboarding Flow (e2e)', () => {
       await request(app.getHttpServer())
         .post('/identity/register/init')
         .send({ phoneNumber: '0881112222' });
-      
+
       const newRegToken = await authHelper.generateRegistrationToken(user.id, 'PENDING_OTP');
 
       const statusRes = await request(app.getHttpServer())
@@ -107,7 +107,7 @@ describe('Onboarding Flow (e2e)', () => {
       });
 
       const regToken = await authHelper.generateRegistrationToken(user.id, 'PASSWORD_SET');
-      
+
       const response = await request(app.getHttpServer())
         .post('/identity/register/status')
         .set('Authorization', `Bearer ${regToken}`);
@@ -181,9 +181,9 @@ describe('Onboarding Flow (e2e)', () => {
         province: 'Bangkok',
         postalCode: '10330',
         label: 'Home',
-        id: 'some-random-id', 
-        userId: user.id,      
-        createdAt: new Date(), 
+        id: 'some-random-id',
+        userId: user.id,
+        createdAt: new Date(),
       };
 
       const { line1, subdistrict, district, province, postalCode, label } = dirtyAddress;
@@ -342,8 +342,12 @@ describe('Onboarding Flow (e2e)', () => {
 
   describe('TC-12: Token Hijacking Prevention (Security)', () => {
     it('should prevent User A from using their token to update User B profile', async () => {
-      const userA = await prisma.user.create({ data: { phoneNumber: '0885556666', registrationState: 'KYC_VERIFIED' } });
-      const userB = await prisma.user.create({ data: { phoneNumber: '0887778888', registrationState: 'KYC_VERIFIED' } });
+      const userA = await prisma.user.create({
+        data: { phoneNumber: '0885556666', registrationState: 'KYC_VERIFIED' },
+      });
+      const userB = await prisma.user.create({
+        data: { phoneNumber: '0887778888', registrationState: 'KYC_VERIFIED' },
+      });
 
       // Add a REGISTERED address for User A to avoid merging errors
       await prisma.address.create({
@@ -373,10 +377,10 @@ describe('Onboarding Flow (e2e)', () => {
         });
 
       expect([200, 201]).toContain(response.status);
-      
+
       const updatedUserB = await prisma.userSetting.findFirst({ where: { userId: userB.id } });
       expect(updatedUserB).toBeNull();
-      
+
       const updatedUserA = await prisma.userSetting.findFirst({ where: { userId: userA.id } });
       expect(updatedUserA).not.toBeNull();
     });

@@ -12,7 +12,7 @@ export interface UserHeaderCardProps {
 }
 
 export function UserHeaderCard({ nameTh, nameEn, avatar, phone, kycTier }: UserHeaderCardProps) {
-  console.log("User header card data = ", nameTh)
+  console.log('User header card data = ', nameTh);
   // Helper to mask phone: 0812345678 -> 081-XXX-XX78
   const maskPhone = (p: string) => {
     if (!p || p.length < 10) return p;

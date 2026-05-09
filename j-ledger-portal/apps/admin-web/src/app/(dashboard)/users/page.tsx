@@ -15,7 +15,17 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { Button } from '@/components/ui/button';
-import { Search, RotateCcw, Filter, ChevronLeft, ChevronRight, Users, UserCheck, UserPlus, History } from 'lucide-react';
+import {
+  Search,
+  RotateCcw,
+  Filter,
+  ChevronLeft,
+  ChevronRight,
+  Users,
+  UserCheck,
+  UserPlus,
+  History,
+} from 'lucide-react';
 import { toast } from 'sonner';
 import { FilterSearchInput, FilterSelect, FilterActions } from '@/components/common/FilterElements';
 
@@ -45,7 +55,7 @@ export default function UsersPage() {
   const [filters, setFilters] = useState({
     email: '',
     phone: '',
-    status: 'ALL'
+    status: 'ALL',
   });
 
   const fetchUsers = useCallback(async () => {
@@ -58,7 +68,7 @@ export default function UsersPage() {
           email: filters.email || undefined,
           phone: filters.phone || undefined,
           status: filters.status === 'ALL' ? undefined : filters.status,
-        }
+        },
       });
       setUsers(response.data);
       setTotal(response.pagination.total);
@@ -82,7 +92,7 @@ export default function UsersPage() {
     setFilters({
       email: email,
       phone: phone,
-      status: status
+      status: status,
     });
   };
 
@@ -94,7 +104,7 @@ export default function UsersPage() {
     setFilters({
       email: '',
       phone: '',
-      status: 'ALL'
+      status: 'ALL',
     });
   };
 
@@ -123,15 +133,21 @@ export default function UsersPage() {
         <div className="flex items-center flex-wrap gap-4 md:gap-6 text-sm">
           <div className="flex items-center gap-2">
             <div className="w-2 h-2 rounded-full bg-indigo-500" />
-            <span className="text-slate-500 font-medium">Total Users: <strong className="text-slate-800">{stats.total}</strong></span>
+            <span className="text-slate-500 font-medium">
+              Total Users: <strong className="text-slate-800">{stats.total}</strong>
+            </span>
           </div>
           <div className="flex items-center gap-2">
             <div className="w-2 h-2 rounded-full bg-emerald-500" />
-            <span className="text-slate-500 font-medium">Active: <strong className="text-slate-800">{stats.active}</strong></span>
+            <span className="text-slate-500 font-medium">
+              Active: <strong className="text-slate-800">{stats.active}</strong>
+            </span>
           </div>
           <div className="flex items-center gap-2">
             <div className="w-2 h-2 rounded-full bg-amber-500" />
-            <span className="text-slate-500 font-medium">Pending: <strong className="text-slate-800">{stats.pending}</strong></span>
+            <span className="text-slate-500 font-medium">
+              Pending: <strong className="text-slate-800">{stats.pending}</strong>
+            </span>
           </div>
         </div>
       </div>
@@ -140,21 +156,21 @@ export default function UsersPage() {
         {/* Filter Toolbar - KYC Style */}
         <div className="p-3 bg-white border-b border-slate-100">
           <form onSubmit={handleFilter} className="grid grid-cols-1 md:grid-cols-5 gap-4 items-end">
-            <FilterSearchInput 
+            <FilterSearchInput
               label="Email Address"
               placeholder="search by email..."
               value={email}
               onChange={(e) => setEmail(e.target.value)}
             />
 
-            <FilterSearchInput 
+            <FilterSearchInput
               label="Phone Number"
               placeholder="search by phone..."
               value={phone}
               onChange={(e) => setPhone(e.target.value)}
             />
 
-            <FilterSelect 
+            <FilterSelect
               label="Account Status"
               value={status}
               onValueChange={(val) => setStatus(val || 'ALL')}
@@ -167,7 +183,7 @@ export default function UsersPage() {
               ]}
             />
 
-            <FilterActions 
+            <FilterActions
               searchLabel="Search"
               isLoading={loading}
               onReset={handleClearFilters}
@@ -178,12 +194,13 @@ export default function UsersPage() {
 
         <CardContent className="p-0">
           <WalletUsersTable users={users} loading={loading} />
-          
+
           {/* Pagination UI - KYC Style */}
           {totalPages > 0 && (
             <div className="p-4 bg-white border-t border-slate-100 flex items-center justify-between">
               <p className="text-xs text-slate-500 font-medium">
-                Showing page <strong className="text-slate-800">{page}</strong> of <strong className="text-slate-800">{totalPages}</strong> 
+                Showing page <strong className="text-slate-800">{page}</strong> of{' '}
+                <strong className="text-slate-800">{totalPages}</strong>
                 <span className="hidden sm:inline"> ({total} total records)</span>
               </p>
               <div className="flex gap-2">
@@ -215,4 +232,3 @@ export default function UsersPage() {
     </div>
   );
 }
-

@@ -76,7 +76,7 @@ export class AdminService {
       include: {
         staffRoles: {
           include: {
-            role: true
+            role: true,
           },
         },
       },
@@ -86,7 +86,7 @@ export class AdminService {
 
     // Flatten role for frontend DTO consistency
     const roleName = staff.staffRoles?.[0]?.role?.name || 'N/A';
-    
+
     return {
       id: staff.id,
       username: staff.username,
@@ -175,19 +175,21 @@ export class AdminService {
         password: hashedPassword,
         resetToken: token,
         resetTokenExpiry: tokenExpiry,
-        staffRoles: data.role ? {
-          create: {
-            role: {
-              connect: { name: data.role }
+        staffRoles: data.role
+          ? {
+              create: {
+                role: {
+                  connect: { name: data.role },
+                },
+              },
             }
-          }
-        } : undefined,
+          : undefined,
       },
       include: {
         staffRoles: {
-          include: { role: true }
-        }
-      }
+          include: { role: true },
+        },
+      },
     });
 
     await this.mailService.sendAdminInvite(staff.email, token);
@@ -219,8 +221,6 @@ export class AdminService {
     return { message: isInvite ? 'Invitation link resent' : 'Password reset link sent to email' };
   }
 
-
-
   private validatePasswordComplexity(password: string) {
     const minLength = 8;
     const hasUpperCase = /[A-Z]/.test(password);
@@ -229,7 +229,7 @@ export class AdminService {
 
     if (password.length < minLength || !hasUpperCase || !hasLowerCase || !hasSpecialChar) {
       throw new Error(
-        'Password must be at least 8 characters long and contain uppercase, lowercase, and at least one special character.'
+        'Password must be at least 8 characters long and contain uppercase, lowercase, and at least one special character.',
       );
     }
   }
@@ -281,7 +281,7 @@ export class AdminService {
 
   async updateStaff(id: string, data: any) {
     const { role, ...updateData } = data;
-    
+
     if (updateData.password) {
       this.validatePasswordComplexity(updateData.password);
       updateData.password = await bcrypt.hash(updateData.password, 10);
@@ -321,7 +321,7 @@ export class AdminService {
   async findAllStaff(
     page: number = 1,
     limit: number = 10,
-    filters?: { search?: string; role?: string; status?: string }
+    filters?: { search?: string; role?: string; status?: string },
   ) {
     const skip = (page - 1) * limit;
     const where: any = {};
@@ -424,9 +424,9 @@ export class AdminService {
   async deactivateStaff(id: string) {
     return this.prisma.staff.update({
       where: { id },
-      data: { 
+      data: {
         isActive: false,
-        refreshTokenHash: null 
+        refreshTokenHash: null,
       } as any,
     });
   }

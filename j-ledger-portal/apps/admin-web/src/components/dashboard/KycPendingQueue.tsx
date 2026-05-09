@@ -17,7 +17,7 @@ export function KycPendingQueue() {
   useEffect(() => {
     const fetchPending = async () => {
       try {
-        const data = await kycRequester.getPendingList() as any[];
+        const data = (await kycRequester.getPendingList()) as any[];
         // Take latest 5
         setPendingUsers(data.slice(0, 5));
       } catch (error) {
@@ -65,8 +65,8 @@ export function KycPendingQueue() {
           <div className="divide-y divide-slate-50">
             {pendingUsers.length > 0 ? (
               pendingUsers.map((item) => (
-                <Link 
-                  key={item.userId} 
+                <Link
+                  key={item.userId}
                   href={`/kyc/${item.userId}`}
                   className="flex items-center gap-3 p-4 hover:bg-slate-50/50 transition-colors group"
                 >
@@ -96,7 +96,10 @@ export function KycPendingQueue() {
         </ScrollArea>
       </CardContent>
       <div className="p-3 bg-slate-50/50 border-t border-slate-50 mt-auto">
-        <Link href="/kyc" className="text-[11px] font-bold text-indigo-600 hover:text-indigo-700 flex items-center justify-center gap-1">
+        <Link
+          href="/kyc"
+          className="text-[11px] font-bold text-indigo-600 hover:text-indigo-700 flex items-center justify-center gap-1"
+        >
           View full list
           <ArrowRight className="w-3 h-3" />
         </Link>

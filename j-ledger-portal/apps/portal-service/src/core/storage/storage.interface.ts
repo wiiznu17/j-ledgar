@@ -5,9 +5,9 @@ export interface IStorageProvider {
     mimeType: string,
     folder?: string,
   ): Promise<{ url: string; key: string }>;
-  
+
   deleteFile(key: string): Promise<void>;
-  
+
   getSignedUrl?(key: string): Promise<string>;
 }
 

@@ -61,10 +61,7 @@ export class KycController {
   @Post('upload-id-card')
   @UseGuards(RegistrationAuthGuard)
   @UseInterceptors(FileInterceptor('idCardImage'))
-  async uploadIdCard(
-    @UploadedFile() file: any,
-    @Req() request: Request,
-  ) {
+  async uploadIdCard(@UploadedFile() file: any, @Req() request: Request) {
     if (!file) {
       throw new Error('No file uploaded');
     }
@@ -80,10 +77,7 @@ export class KycController {
   @Post('submit-selfie')
   @UseGuards(RegistrationAuthGuard)
   @UseInterceptors(FileInterceptor('selfieImage'))
-  async submitSelfie(
-    @UploadedFile() file: any,
-    @Req() request: Request,
-  ) {
+  async submitSelfie(@UploadedFile() file: any, @Req() request: Request) {
     const user = (request as any).user;
     if (!user || !user.sub) {
       throw new UnauthorizedException('User not found in token');
@@ -94,9 +88,7 @@ export class KycController {
 
   @Post('verify-liveness')
   @UseGuards(RegistrationAuthGuard)
-  async verifyLiveness(
-    @Req() request: Request,
-  ) {
+  async verifyLiveness(@Req() request: Request) {
     const user = (request as any).user;
     if (!user || !user.sub) {
       throw new UnauthorizedException('User not found in token');
@@ -113,9 +105,7 @@ export class KycController {
     @Headers('authorization') authorization: string,
     @Req() request: Request,
   ) {
-    this.logger.log(
-      `[KYC Controller] uploadIdCardSimple called, has file: ${!!file}`,
-    );
+    this.logger.log(`[KYC Controller] uploadIdCardSimple called, has file: ${!!file}`);
     this.logger.log(`[KYC Controller] Authorization header present: ${!!authorization}`);
 
     if (!file) {
@@ -146,8 +136,10 @@ export class KycController {
     if (!user || !user.sub) {
       throw new UnauthorizedException('User not found in token');
     }
-    
-    this.logger.log(`[KYC Controller] confirmOcrData for user ${user.sub}, Data: ${JSON.stringify(dto)}`);
+
+    this.logger.log(
+      `[KYC Controller] confirmOcrData for user ${user.sub}, Data: ${JSON.stringify(dto)}`,
+    );
     return this.kycService.confirmOcrData(user.sub, dto);
   }
 
@@ -159,9 +151,7 @@ export class KycController {
     @Headers('authorization') authorization: string,
     @Req() request: Request,
   ) {
-    this.logger.log(
-      `[KYC Controller] submitSelfieSimple called, has file: ${!!file}`,
-    );
+    this.logger.log(`[KYC Controller] submitSelfieSimple called, has file: ${!!file}`);
     this.logger.log(`[KYC Controller] Authorization header present: ${!!authorization}`);
 
     if (!file) {

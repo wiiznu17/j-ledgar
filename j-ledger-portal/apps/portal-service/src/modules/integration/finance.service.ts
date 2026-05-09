@@ -233,10 +233,7 @@ export class FinanceService {
 
   private logCompactError(operation: string, error: any) {
     const status = error?.response?.status ?? 'N/A';
-    const message =
-      error?.response?.data?.message ||
-      error?.message ||
-      'unknown error';
+    const message = error?.response?.data?.message || error?.message || 'unknown error';
     this.logger.error(`[FinanceService] ${operation} failed status=${status} message="${message}"`);
   }
 }

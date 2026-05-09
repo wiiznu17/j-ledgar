@@ -43,13 +43,13 @@ export default function AccountRestrictedScreen() {
         <Text className="text-3xl font-manrope font-black text-gray-800 text-center mb-4">
           Account Restricted
         </Text>
-        
+
         <Text className="text-gray-500 font-manrope font-medium text-center text-lg mb-12">
           {getStatusMessage()}
         </Text>
 
         <View className="w-full space-y-4">
-          <TouchableOpacity 
+          <TouchableOpacity
             className="w-full bg-gray-900 py-4 rounded-2xl flex-row justify-center items-center shadow-lg shadow-black/20"
             onPress={() => {
               // Placeholder for contact support
@@ -60,7 +60,7 @@ export default function AccountRestrictedScreen() {
             <Text className="text-white font-manrope font-black text-lg ml-2">Contact Support</Text>
           </TouchableOpacity>
 
-          <TouchableOpacity 
+          <TouchableOpacity
             onPress={handleLogout}
             className="w-full bg-gray-50 py-4 rounded-2xl flex-row justify-center items-center border border-gray-100"
           >

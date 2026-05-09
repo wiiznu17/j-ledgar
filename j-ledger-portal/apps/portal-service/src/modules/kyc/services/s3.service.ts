@@ -31,7 +31,7 @@ export class S3Service {
       });
 
       await this.client.send(command);
-      
+
       // Return the public URL or a internal reference
       return `https://${this.bucket}.s3.${this.configService.get('AWS_REGION')}.amazonaws.com/${key}`;
     } catch (error) {

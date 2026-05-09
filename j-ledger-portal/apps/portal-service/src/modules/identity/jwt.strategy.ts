@@ -13,13 +13,14 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
     super({
       jwtFromRequest: ExtractJwt.fromAuthHeaderAsBearerToken(),
       ignoreExpiration: false,
-      secretOrKey: configService.get<string>('CUSTOMER_JWT_SECRET') || 'jledger-customer-secret-dev-2024',
+      secretOrKey:
+        configService.get<string>('CUSTOMER_JWT_SECRET') || 'jledger-customer-secret-dev-2024',
     });
   }
 
   async validate(payload: any) {
     console.log(`[JwtStrategy] Validating payload for sub: ${payload.sub}, typ: ${payload.typ}`);
-    
+
     // Ensure user still exists
     const user = await this.prisma.user.findUnique({
       where: { id: payload.sub },

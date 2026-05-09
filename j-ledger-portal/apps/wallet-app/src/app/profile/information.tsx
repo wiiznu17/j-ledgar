@@ -99,7 +99,7 @@ export default function ProfileInformationScreen() {
   const fetchProfile = async () => {
     try {
       const profile: UserProfile = await UserProfileService.getProfile();
-      console.log("profile from backend = ", profile)
+      console.log('profile from backend = ', profile);
 
       // Map API response to form data
       setFormData({
@@ -114,34 +114,53 @@ export default function ProfileInformationScreen() {
             : `${profile.profile?.firstName || ''} ${profile.profile?.lastName || ''}`.trim(),
         phone: profile.phoneNumber || '',
         email: profile.email || '',
-        kycTier: profile.registrationState === RegistrationState.COMPLETED ? 'Premium Tier' : 'Standard Tier',
+        kycTier:
+          profile.registrationState === RegistrationState.COMPLETED
+            ? 'Premium Tier'
+            : 'Standard Tier',
         occupation: profile.profile?.occupation || '',
         sourceOfIncome: profile.profile?.sourceOfFunds || '',
         income: profile.profile?.incomeRange || '',
         purpose: profile.profile?.purposeOfAccount || '',
-        idAddress: profile.addresses?.find(a => a.type === AddressType.REGISTERED) ? {
-          street: profile.addresses.find(a => a.type === AddressType.REGISTERED)?.line1 || '',
-          subdistrict: profile.addresses.find(a => a.type === AddressType.REGISTERED)?.subdistrict || '',
-          district: profile.addresses.find(a => a.type === AddressType.REGISTERED)?.district || '',
-          province: profile.addresses.find(a => a.type === AddressType.REGISTERED)?.province || '',
-          postalCode: profile.addresses.find(a => a.type === AddressType.REGISTERED)?.postalCode || '',
-        } : DEFAULT_FORM_DATA.idAddress,
-        currentAddress: profile.addresses?.find(a => a.type === AddressType.CURRENT) ? {
-          street: profile.addresses.find(a => a.type === AddressType.CURRENT)?.line1 || '',
-          subdistrict: profile.addresses.find(a => a.type === AddressType.CURRENT)?.subdistrict || '',
-          district: profile.addresses.find(a => a.type === AddressType.CURRENT)?.district || '',
-          province: profile.addresses.find(a => a.type === AddressType.CURRENT)?.province || '',
-          postalCode: profile.addresses.find(a => a.type === AddressType.CURRENT)?.postalCode || '',
-        } : DEFAULT_FORM_DATA.currentAddress,
-        workAddress: profile.addresses?.find(a => a.type === AddressType.WORK) ? {
-          street: profile.addresses.find(a => a.type === AddressType.WORK)?.line1 || '',
-          subdistrict: profile.addresses.find(a => a.type === AddressType.WORK)?.subdistrict || '',
-          district: profile.addresses.find(a => a.type === AddressType.WORK)?.district || '',
-          province: profile.addresses.find(a => a.type === AddressType.WORK)?.province || '',
-          postalCode: profile.addresses.find(a => a.type === AddressType.WORK)?.postalCode || '',
-        } : DEFAULT_FORM_DATA.workAddress,
+        idAddress: profile.addresses?.find((a) => a.type === AddressType.REGISTERED)
+          ? {
+              street: profile.addresses.find((a) => a.type === AddressType.REGISTERED)?.line1 || '',
+              subdistrict:
+                profile.addresses.find((a) => a.type === AddressType.REGISTERED)?.subdistrict || '',
+              district:
+                profile.addresses.find((a) => a.type === AddressType.REGISTERED)?.district || '',
+              province:
+                profile.addresses.find((a) => a.type === AddressType.REGISTERED)?.province || '',
+              postalCode:
+                profile.addresses.find((a) => a.type === AddressType.REGISTERED)?.postalCode || '',
+            }
+          : DEFAULT_FORM_DATA.idAddress,
+        currentAddress: profile.addresses?.find((a) => a.type === AddressType.CURRENT)
+          ? {
+              street: profile.addresses.find((a) => a.type === AddressType.CURRENT)?.line1 || '',
+              subdistrict:
+                profile.addresses.find((a) => a.type === AddressType.CURRENT)?.subdistrict || '',
+              district:
+                profile.addresses.find((a) => a.type === AddressType.CURRENT)?.district || '',
+              province:
+                profile.addresses.find((a) => a.type === AddressType.CURRENT)?.province || '',
+              postalCode:
+                profile.addresses.find((a) => a.type === AddressType.CURRENT)?.postalCode || '',
+            }
+          : DEFAULT_FORM_DATA.currentAddress,
+        workAddress: profile.addresses?.find((a) => a.type === AddressType.WORK)
+          ? {
+              street: profile.addresses.find((a) => a.type === AddressType.WORK)?.line1 || '',
+              subdistrict:
+                profile.addresses.find((a) => a.type === AddressType.WORK)?.subdistrict || '',
+              district: profile.addresses.find((a) => a.type === AddressType.WORK)?.district || '',
+              province: profile.addresses.find((a) => a.type === AddressType.WORK)?.province || '',
+              postalCode:
+                profile.addresses.find((a) => a.type === AddressType.WORK)?.postalCode || '',
+            }
+          : DEFAULT_FORM_DATA.workAddress,
       });
-      console.log("profile data = ", formData)
+      console.log('profile data = ', formData);
     } catch (error) {
       console.error('[Profile Information] Failed to fetch profile:', error);
     } finally {
@@ -181,7 +200,7 @@ export default function ProfileInformationScreen() {
 
       // 1. Update Profile (JSON settings)
       await UserProfileService.updateProfile(updateData);
-      
+
       // 2. Update Address (Targeted model)
       if (activeModal === 'ADDRESS') {
         await UserProfileService.updateAddress('CURRENT', {
@@ -202,10 +221,10 @@ export default function ProfileInformationScreen() {
           postalCode: formData.workAddress.postalCode,
         });
       }
-      
+
       // Re-fetch profile data to sync UI
       await fetchProfile();
-      
+
       setActiveModal(null);
       Alert.alert('Success', 'Your profile has been updated successfully.');
     } catch (error) {

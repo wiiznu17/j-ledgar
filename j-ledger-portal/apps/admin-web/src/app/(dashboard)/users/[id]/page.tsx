@@ -2,19 +2,19 @@
 
 import { useEffect, useState } from 'react';
 import { useParams, useRouter } from 'next/navigation';
-import { 
-  User, 
-  Wallet, 
-  Activity, 
-  Shield, 
-  Clock, 
-  Smartphone, 
+import {
+  User,
+  Wallet,
+  Activity,
+  Shield,
+  Clock,
+  Smartphone,
   ArrowLeft,
   AlertCircle,
   CheckCircle2,
   Lock,
   Unlock,
-  AlertTriangle
+  AlertTriangle,
 } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -42,9 +42,9 @@ export default function UserDetailPage() {
         const [userData, accountData, activityData] = await Promise.all([
           userRequester.getUserDetail(userId),
           userRequester.getUserAccount(userId).catch(() => ({ data: null })),
-          userRequester.getUserActivity(userId).catch(() => ({ data: null }))
+          userRequester.getUserActivity(userId).catch(() => ({ data: null })),
         ]);
-        
+
         setUser((userData as any).data);
         setAccount((accountData as any)?.data);
         setActivity((activityData as any)?.data);
@@ -124,28 +124,42 @@ export default function UserDetailPage() {
                   <div>
                     <h3 className="text-2xl font-bold text-slate-900">{user.email}</h3>
                     <div className="flex items-center gap-3 mt-1">
-                      <Badge className={
-                        user.status === 'ACTIVE' ? 'bg-emerald-50 text-emerald-700 border-emerald-100' : 
-                        user.status === 'SUSPENDED' ? 'bg-orange-50 text-orange-700 border-orange-100' : 
-                        'bg-rose-50 text-rose-700 border-rose-100'
-                      }>
+                      <Badge
+                        className={
+                          user.status === 'ACTIVE'
+                            ? 'bg-emerald-50 text-emerald-700 border-emerald-100'
+                            : user.status === 'SUSPENDED'
+                              ? 'bg-orange-50 text-orange-700 border-orange-100'
+                              : 'bg-rose-50 text-rose-700 border-rose-100'
+                        }
+                      >
                         {user.status}
                       </Badge>
                       <span className="text-slate-400 text-sm">•</span>
-                      <span className="text-slate-500 text-sm font-medium">Joined {new Date(user.createdAt).toLocaleDateString()}</span>
+                      <span className="text-slate-500 text-sm font-medium">
+                        Joined {new Date(user.createdAt).toLocaleDateString()}
+                      </span>
                     </div>
                   </div>
                 </div>
                 <div className="flex items-center gap-3">
-                  <Button 
+                  <Button
                     variant={user.status === 'SUSPENDED' ? 'default' : 'outline'}
                     onClick={handleToggleStatus}
-                    className={user.status === 'SUSPENDED' ? 'bg-emerald-600 hover:bg-emerald-700' : 'text-orange-600 border-orange-200 hover:bg-orange-50'}
+                    className={
+                      user.status === 'SUSPENDED'
+                        ? 'bg-emerald-600 hover:bg-emerald-700'
+                        : 'text-orange-600 border-orange-200 hover:bg-orange-50'
+                    }
                   >
                     {user.status === 'SUSPENDED' ? (
-                      <><Unlock className="w-4 h-4 mr-2" /> Unsuspend User</>
+                      <>
+                        <Unlock className="w-4 h-4 mr-2" /> Unsuspend User
+                      </>
                     ) : (
-                      <><Lock className="w-4 h-4 mr-2" /> Suspend Account</>
+                      <>
+                        <Lock className="w-4 h-4 mr-2" /> Suspend Account
+                      </>
                     )}
                   </Button>
                 </div>
@@ -153,7 +167,9 @@ export default function UserDetailPage() {
             </CardHeader>
             <CardContent className="grid md:grid-cols-2 gap-8 p-8">
               <div className="space-y-4">
-                <h4 className="text-xs font-bold text-slate-400 uppercase tracking-widest">Contact Details</h4>
+                <h4 className="text-xs font-bold text-slate-400 uppercase tracking-widest">
+                  Contact Details
+                </h4>
                 <div className="space-y-3">
                   <div className="flex items-center justify-between py-2 border-b border-slate-50">
                     <span className="text-sm text-slate-500 font-medium">Phone Number</span>
@@ -165,25 +181,37 @@ export default function UserDetailPage() {
                   </div>
                   <div className="flex items-center justify-between py-2">
                     <span className="text-sm text-slate-500 font-medium">Registration State</span>
-                    <Badge variant="secondary" className="font-bold">{user.registrationState}</Badge>
+                    <Badge variant="secondary" className="font-bold">
+                      {user.registrationState}
+                    </Badge>
                   </div>
                 </div>
               </div>
 
               <div className="space-y-4">
-                <h4 className="text-xs font-bold text-slate-400 uppercase tracking-widest">Wallet Status</h4>
+                <h4 className="text-xs font-bold text-slate-400 uppercase tracking-widest">
+                  Wallet Status
+                </h4>
                 {account ? (
                   <div className="p-5 rounded-2xl bg-slate-50 ring-1 ring-slate-100 space-y-4">
                     <div className="flex items-center justify-between">
                       <div className="flex items-center gap-2">
                         <Wallet className="w-4 h-4 text-indigo-600" />
-                        <span className="text-xs font-bold text-slate-500 uppercase">Available Balance</span>
+                        <span className="text-xs font-bold text-slate-500 uppercase">
+                          Available Balance
+                        </span>
                       </div>
-                      <Badge variant="outline" className="bg-white border-slate-200">{account.status}</Badge>
+                      <Badge variant="outline" className="bg-white border-slate-200">
+                        {account.status}
+                      </Badge>
                     </div>
                     <div className="flex items-baseline gap-2">
-                      <span className="text-3xl font-black text-slate-900">{account.balance.toLocaleString()}</span>
-                      <span className="text-sm font-bold text-slate-500 uppercase tracking-wider">THB</span>
+                      <span className="text-3xl font-black text-slate-900">
+                        {account.balance.toLocaleString()}
+                      </span>
+                      <span className="text-sm font-bold text-slate-500 uppercase tracking-wider">
+                        THB
+                      </span>
                     </div>
                     <div className="text-[10px] font-mono text-slate-400">
                       LEDGER_ID: {account.id}
@@ -192,7 +220,9 @@ export default function UserDetailPage() {
                 ) : (
                   <div className="p-5 rounded-2xl bg-amber-50 ring-1 ring-amber-100 flex items-center gap-3">
                     <AlertCircle className="w-5 h-5 text-amber-500" />
-                    <p className="text-sm text-amber-700 font-medium">No ledger account linked to this user.</p>
+                    <p className="text-sm text-amber-700 font-medium">
+                      No ledger account linked to this user.
+                    </p>
                   </div>
                 )}
               </div>
@@ -206,33 +236,48 @@ export default function UserDetailPage() {
                   <Smartphone className="w-5 h-5 text-indigo-600" />
                   Authorized Devices
                 </CardTitle>
-                <Badge variant="outline" className="text-xs">{activity?.devices?.length || 0} Registered</Badge>
+                <Badge variant="outline" className="text-xs">
+                  {activity?.devices?.length || 0} Registered
+                </Badge>
               </div>
             </CardHeader>
             <CardContent className="p-0">
               <div className="divide-y divide-slate-50">
                 {activity?.devices?.map((device: any, idx: number) => (
-                  <div key={idx} className="p-4 flex items-center justify-between hover:bg-slate-50/50 transition-colors">
+                  <div
+                    key={idx}
+                    className="p-4 flex items-center justify-between hover:bg-slate-50/50 transition-colors"
+                  >
                     <div className="flex items-center gap-4">
                       <div className="w-10 h-10 rounded-xl bg-slate-100 flex items-center justify-center">
                         <Smartphone className="w-5 h-5 text-slate-400" />
                       </div>
                       <div>
-                        <p className="text-sm font-bold text-slate-900">{device.deviceName || 'Unknown Device'}</p>
-                        <p className="text-[10px] font-mono text-slate-400 uppercase tracking-tighter">{device.deviceIdentifier}</p>
+                        <p className="text-sm font-bold text-slate-900">
+                          {device.deviceName || 'Unknown Device'}
+                        </p>
+                        <p className="text-[10px] font-mono text-slate-400 uppercase tracking-tighter">
+                          {device.deviceIdentifier}
+                        </p>
                       </div>
                     </div>
                     <div className="text-right">
                       <div className="flex items-center gap-2 justify-end">
                         <CheckCircle2 className="w-3 h-3 text-emerald-500" />
-                        <span className="text-xs font-bold text-emerald-600">{device.trustLevel}</span>
+                        <span className="text-xs font-bold text-emerald-600">
+                          {device.trustLevel}
+                        </span>
                       </div>
-                      <p className="text-[10px] text-slate-400 mt-1">Last seen {new Date(device.lastSeenAt).toLocaleString()}</p>
+                      <p className="text-[10px] text-slate-400 mt-1">
+                        Last seen {new Date(device.lastSeenAt).toLocaleString()}
+                      </p>
                     </div>
                   </div>
                 ))}
                 {(!activity?.devices || activity.devices.length === 0) && (
-                  <div className="p-8 text-center text-slate-400">No devices registered for this user.</div>
+                  <div className="p-8 text-center text-slate-400">
+                    No devices registered for this user.
+                  </div>
                 )}
               </div>
             </CardContent>
@@ -249,13 +294,20 @@ export default function UserDetailPage() {
               </CardTitle>
             </CardHeader>
             <CardContent className="space-y-3">
-              <Button variant="outline" className="w-full justify-start text-slate-600 border-slate-100 hover:bg-slate-50" disabled>
+              <Button
+                variant="outline"
+                className="w-full justify-start text-slate-600 border-slate-100 hover:bg-slate-50"
+                disabled
+              >
                 <Shield className="w-4 h-4 mr-3" />
                 Trigger AML Review
               </Button>
-              <a 
+              <a
                 href={`/users/activity?userId=${user.id}`}
-                className={cn(buttonVariants({ variant: 'outline' }), "w-full justify-start text-slate-600 border-slate-100 hover:bg-slate-50")}
+                className={cn(
+                  buttonVariants({ variant: 'outline' }),
+                  'w-full justify-start text-slate-600 border-slate-100 hover:bg-slate-50',
+                )}
               >
                 <Activity className="w-4 h-4 mr-3" />
                 View Security Logs
@@ -271,17 +323,23 @@ export default function UserDetailPage() {
               <div className="p-4 rounded-xl bg-slate-50 space-y-3">
                 <div className="flex items-center justify-between">
                   <span className="text-xs font-bold text-slate-500 uppercase">First Seen</span>
-                  <span className="text-xs font-bold text-slate-900">{new Date(user.createdAt).toLocaleDateString()}</span>
+                  <span className="text-xs font-bold text-slate-900">
+                    {new Date(user.createdAt).toLocaleDateString()}
+                  </span>
                 </div>
                 <div className="flex items-center justify-between">
                   <span className="text-xs font-bold text-slate-500 uppercase">Last Activity</span>
                   <span className="text-xs font-bold text-slate-900">
-                    {activity?.lastLoginAt ? new Date(activity.lastLoginAt).toLocaleDateString() : 'Never'}
+                    {activity?.lastLoginAt
+                      ? new Date(activity.lastLoginAt).toLocaleDateString()
+                      : 'Never'}
                   </span>
                 </div>
                 <div className="flex items-center justify-between">
                   <span className="text-xs font-bold text-slate-500 uppercase">KYC Status</span>
-                  <Badge className="bg-emerald-500 text-white border-none text-[10px] font-black">VERIFIED</Badge>
+                  <Badge className="bg-emerald-500 text-white border-none text-[10px] font-black">
+                    VERIFIED
+                  </Badge>
                 </div>
               </div>
             </CardContent>

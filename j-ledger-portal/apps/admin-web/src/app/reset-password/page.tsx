@@ -8,7 +8,15 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { authRequester } from '@/lib/requesters';
 import { showSuccess, showError } from '@/lib/swal';
-import { ShieldCheck, Lock, AlertCircle, CheckCircle2, ArrowRight, Loader2, Circle } from 'lucide-react';
+import {
+  ShieldCheck,
+  Lock,
+  AlertCircle,
+  CheckCircle2,
+  ArrowRight,
+  Loader2,
+  Circle,
+} from 'lucide-react';
 
 export default function ResetPasswordPage() {
   const router = useRouter();
@@ -97,14 +105,17 @@ export default function ResetPasswordPage() {
             <div className="w-16 h-16 bg-rose-50 rounded-2xl flex items-center justify-center mx-auto mb-6">
               <AlertCircle className="w-8 h-8 text-rose-500" />
             </div>
-            <CardTitle className="text-2xl font-bold text-slate-900 tracking-tight">Invalid or Expired Link</CardTitle>
+            <CardTitle className="text-2xl font-bold text-slate-900 tracking-tight">
+              Invalid or Expired Link
+            </CardTitle>
             <CardDescription className="text-slate-500 mt-2 px-4">
-              This password reset link is no longer valid. Please request a new one from the administrator or your login page.
+              This password reset link is no longer valid. Please request a new one from the
+              administrator or your login page.
             </CardDescription>
           </CardHeader>
           <CardContent className="pb-10 px-8">
-            <Button 
-              variant="outline" 
+            <Button
+              variant="outline"
               className="w-full h-12 rounded-xl border-slate-200 font-bold text-slate-600"
               onClick={() => router.push('/login')}
             >
@@ -125,13 +136,16 @@ export default function ResetPasswordPage() {
             <div className="w-16 h-16 bg-emerald-50 rounded-2xl flex items-center justify-center mx-auto mb-6">
               <CheckCircle2 className="w-8 h-8 text-emerald-500" />
             </div>
-            <CardTitle className="text-2xl font-bold text-slate-900 tracking-tight">Password Updated</CardTitle>
+            <CardTitle className="text-2xl font-bold text-slate-900 tracking-tight">
+              Password Updated
+            </CardTitle>
             <CardDescription className="text-slate-500 mt-2 px-4">
-              Your security credentials have been successfully updated. You can now access your account with the new password.
+              Your security credentials have been successfully updated. You can now access your
+              account with the new password.
             </CardDescription>
           </CardHeader>
           <CardContent className="pb-10 px-8">
-            <Button 
+            <Button
               className="w-full h-12 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white font-bold shadow-lg shadow-indigo-200"
               onClick={() => router.push('/login')}
             >
@@ -146,7 +160,7 @@ export default function ResetPasswordPage() {
   return (
     <div className="min-h-screen bg-[#F7FAFC] flex items-center justify-center p-4">
       <div className="absolute top-0 left-0 w-full h-1/2 bg-gradient-to-b from-indigo-50/50 to-transparent pointer-events-none" />
-      
+
       <Card className="max-w-md w-full border-none shadow-2xl rounded-3xl overflow-hidden bg-white relative z-10">
         <div className="h-2 bg-indigo-600" />
         <CardHeader className="pt-10 pb-4 px-8">
@@ -154,7 +168,9 @@ export default function ResetPasswordPage() {
             <ShieldCheck className="w-6 h-6" />
             <span className="font-black text-sm uppercase tracking-widest">J-Ledger Secure</span>
           </div>
-          <CardTitle className="text-2xl font-bold text-slate-900 tracking-tight">Set Your Password</CardTitle>
+          <CardTitle className="text-2xl font-bold text-slate-900 tracking-tight">
+            Set Your Password
+          </CardTitle>
           <CardDescription className="text-slate-500">
             Please create a strong password to secure your administrator account.
           </CardDescription>
@@ -165,10 +181,10 @@ export default function ResetPasswordPage() {
               <Label htmlFor="password">New Password</Label>
               <div className="relative">
                 <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
-                <Input 
-                  id="password" 
-                  type="password" 
-                  placeholder="••••••••" 
+                <Input
+                  id="password"
+                  type="password"
+                  placeholder="••••••••"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   className="pl-10 h-12 border-slate-200 rounded-xl focus:ring-indigo-500 font-medium"
@@ -189,10 +205,10 @@ export default function ResetPasswordPage() {
               <Label htmlFor="confirmPassword">Confirm Password</Label>
               <div className="relative">
                 <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
-                <Input 
-                  id="confirmPassword" 
-                  type="password" 
-                  placeholder="••••••••" 
+                <Input
+                  id="confirmPassword"
+                  type="password"
+                  placeholder="••••••••"
                   value={confirmPassword}
                   onChange={(e) => setConfirmPassword(e.target.value)}
                   className="pl-10 h-12 border-slate-200 rounded-xl focus:ring-indigo-500 font-medium"
@@ -202,16 +218,12 @@ export default function ResetPasswordPage() {
             </div>
 
             <div className="pt-2">
-              <Button 
-                type="submit" 
+              <Button
+                type="submit"
                 disabled={isSubmitting}
                 className="w-full h-12 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white font-bold shadow-lg shadow-indigo-200 transition-all active:scale-[0.98]"
               >
-                {isSubmitting ? (
-                  <Loader2 className="w-4 h-4 animate-spin" />
-                ) : (
-                  'Update Password'
-                )}
+                {isSubmitting ? <Loader2 className="w-4 h-4 animate-spin" /> : 'Update Password'}
               </Button>
             </div>
           </form>
@@ -229,7 +241,9 @@ function RuleItem({ label, met }: { label: string; met: boolean }) {
       ) : (
         <Circle className="w-3 h-3 text-slate-300" />
       )}
-      <span className={`text-[10px] font-bold uppercase tracking-wider ${met ? 'text-emerald-600' : 'text-slate-400'}`}>
+      <span
+        className={`text-[10px] font-bold uppercase tracking-wider ${met ? 'text-emerald-600' : 'text-slate-400'}`}
+      >
         {label}
       </span>
     </div>

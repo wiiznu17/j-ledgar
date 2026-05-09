@@ -17,7 +17,7 @@ export class GoogleVisionService {
       this.client = new ImageAnnotatorClient({ credentials });
     } else if (credentialsPath) {
       this.logger.log(`Initializing Google Vision using key file: ${credentialsPath}`);
-      // When keyFilename is provided (or GOOGLE_APPLICATION_CREDENTIALS env is set), 
+      // When keyFilename is provided (or GOOGLE_APPLICATION_CREDENTIALS env is set),
       // the SDK handles it automatically.
       this.client = new ImageAnnotatorClient({ keyFilename: credentialsPath });
     } else {
@@ -27,7 +27,9 @@ export class GoogleVisionService {
 
   async extractIdCardData(imageBuffer: Buffer) {
     if (!this.client) {
-      this.logger.error('Google Cloud Vision client not initialised — missing GOOGLE_APPLICATION_CREDENTIALS_JSON');
+      this.logger.error(
+        'Google Cloud Vision client not initialised — missing GOOGLE_APPLICATION_CREDENTIALS_JSON',
+      );
       return null;
     }
 
@@ -42,7 +44,7 @@ export class GoogleVisionService {
       }
 
       this.logger.debug(`Detected text: ${fullText.replace(/\n/g, ' ')}`);
-      
+
       // Basic parsing logic (can be improved with specialized patterns)
       return this.parseThaiIdCard(fullText);
     } catch (error) {
@@ -55,11 +57,15 @@ export class GoogleVisionService {
     this.logger.debug(`[OCR] Parsing text: ${text}`);
 
     // 1. ID Number
-    const idNumberMatch = text.match(/(?:เลขประจำตัวประชาชน|Identification Number)\s*([\d\s-]{13,25})/i);
+    const idNumberMatch = text.match(
+      /(?:เลขประจำตัวประชาชน|Identification Number)\s*([\d\s-]{13,25})/i,
+    );
     const idNumber = idNumberMatch ? idNumberMatch[1].replace(/[^\d]/g, '').slice(0, 13) : null;
 
     // 2. Names (Thai)
-    const nameThMatch = text.match(/(?:ชื่อตัวและชื่อสกุล|Name)\s+(นาย|นาง|นางสาว|Mr\.|Mrs\.|Miss|Ms\.)\s*([\u0E00-\u0E7F\s]+)/i);
+    const nameThMatch = text.match(
+      /(?:ชื่อตัวและชื่อสกุล|Name)\s+(นาย|นาง|นางสาว|Mr\.|Mrs\.|Miss|Ms\.)\s*([\u0E00-\u0E7F\s]+)/i,
+    );
     let prefixTh = null;
     let firstNameTh = null;
     let lastNameTh = null;
@@ -80,27 +86,46 @@ export class GoogleVisionService {
 
     // 4. Dates - More robust patterns for typos
     const datePattern = /([\d]{1,2}\s+[\u0E00-\u0E7F A-Za-z.,]+\s+[\d\(\)]{4,5})/i;
-    
+
     // 4. Dates - Prioritize Thai B.E. years (handle both Label-Date and Date-Label directions)
-    const dobMatch = text.match(/(?:เกิดวันที่|Date of Birth)\s*([\d]{1,2}\s+[\u0E00-\u0E7F A-Za-z.]+\s+[\d]{4})/i) ||
-                     text.match(/([\d]{1,2}\s+[\u0E00-\u0E7F A-Za-z.]+\s+[\d]{4})\s*(?:เกิดวันที่|Date of Birth)/i);
-    
-    const issueDateMatch = text.match(/(?:วันออกบัตร|Date of Iss|Date of Ite|Issue Date)\s*([\d]{1,2}\s+[\u0E00-\u0E7F A-Za-z,.]+\s+[\d\sA-Za-z\(\)]{4,5})/i) ||
-                           text.match(/([\d]{1,2}\s+[\u0E00-\u0E7F A-Za-z,.]+\s+[\d\sA-Za-z\(\)]{4,5})\s*(?:วันออกบัตร|Date of Iss|Date of Ite|Issue Date)/i);
-    
-    const expiryDateMatch = text.match(/(?:วันบัตรหมดอายุ|Date of Exp|Expiry Date)\s*([\d]{1,2}\s+[\u0E00-\u0E7F A-Za-z,.]+\s+[\d]{4})/i) ||
-                            text.match(/([\d]{1,2}\s+[\u0E00-\u0E7F A-Za-z,.]+\s+[\d]{4})\s*(?:วันบัตรหมดอายุ|Date of Exp|Expiry Date)/i);
+    const dobMatch =
+      text.match(
+        /(?:เกิดวันที่|Date of Birth)\s*([\d]{1,2}\s+[\u0E00-\u0E7F A-Za-z.]+\s+[\d]{4})/i,
+      ) ||
+      text.match(
+        /([\d]{1,2}\s+[\u0E00-\u0E7F A-Za-z.]+\s+[\d]{4})\s*(?:เกิดวันที่|Date of Birth)/i,
+      );
+
+    const issueDateMatch =
+      text.match(
+        /(?:วันออกบัตร|Date of Iss|Date of Ite|Issue Date)\s*([\d]{1,2}\s+[\u0E00-\u0E7F A-Za-z,.]+\s+[\d\sA-Za-z\(\)]{4,5})/i,
+      ) ||
+      text.match(
+        /([\d]{1,2}\s+[\u0E00-\u0E7F A-Za-z,.]+\s+[\d\sA-Za-z\(\)]{4,5})\s*(?:วันออกบัตร|Date of Iss|Date of Ite|Issue Date)/i,
+      );
+
+    const expiryDateMatch =
+      text.match(
+        /(?:วันบัตรหมดอายุ|Date of Exp|Expiry Date)\s*([\d]{1,2}\s+[\u0E00-\u0E7F A-Za-z,.]+\s+[\d]{4})/i,
+      ) ||
+      text.match(
+        /([\d]{1,2}\s+[\u0E00-\u0E7F A-Za-z,.]+\s+[\d]{4})\s*(?:วันบัตรหมดอายุ|Date of Exp|Expiry Date)/i,
+      );
 
     // 5. Address (Multi-line + Sub-parsing)
     // Be more aggressive with labels that end the address
-    const addressMatch = text.match(/(?:ที่อยู่|Address)\s*([\s\S]+?)(?=\s*(?:วันออกบัตร|Date of Iss|Date of Ite|วันบัตรหมดอายุ|Date of Exp|เจ้าพนักงาน|[\d]{1,2}\s+[\u0E00-\u0E7F]{2,3}\.\s+[\d]{4}))/i);
+    const addressMatch = text.match(
+      /(?:ที่อยู่|Address)\s*([\s\S]+?)(?=\s*(?:วันออกบัตร|Date of Iss|Date of Ite|วันบัตรหมดอายุ|Date of Exp|เจ้าพนักงาน|[\d]{1,2}\s+[\u0E00-\u0E7F]{2,3}\.\s+[\d]{4}))/i,
+    );
     let fullAddress = addressMatch ? addressMatch[1].replace(/\n/g, ' ').trim() : null;
-    
+
     // Cleanup address if it still has common date suffixes or trailing Thai dates
     if (fullAddress) {
       // 1. Split by known labels that definitely start AFTER the address
-      fullAddress = fullAddress.split(/(?:วันออกบัตร|Date of Iss|Date of Ite|เจ้าพนักงาน|วันบัตรหมดอายุ|Date of Exp)/i)[0].trim();
-      
+      fullAddress = fullAddress
+        .split(/(?:วันออกบัตร|Date of Iss|Date of Ite|เจ้าพนักงาน|วันบัตรหมดอายุ|Date of Exp)/i)[0]
+        .trim();
+
       // 2. Remove trailing Thai date pattern more robustly
       // Handles: "26 เม.ย. 2568", "26 เม.ย.2568", "26เม.ย.2568", "26 เม.ย. 2568 123" (noise)
       fullAddress = fullAddress.replace(/\d{1,2}\s*[\u0E00-\u0E7F.]{2,8}\s*\d{4}.*$/, '').trim();
@@ -108,7 +133,7 @@ export class GoogleVisionService {
       // 3. Final cleanup of any lingering symbols or partial labels at the end
       fullAddress = fullAddress.replace(/[,.-]$/, '').trim();
     }
-    
+
     let subdistrict = null;
     let district = null;
     let province = null;
@@ -118,7 +143,7 @@ export class GoogleVisionService {
       const sdMatch = fullAddress.match(/(?:ต\.|แขวง)\s*([\u0E00-\u0E7F]+)/);
       const dMatch = fullAddress.match(/(?:อ\.|เขต)\s*([\u0E00-\u0E7F]+)/);
       const pMatch = fullAddress.match(/(?:จ\.)\s*([\u0E00-\u0E7F]+)/);
-      
+
       subdistrict = sdMatch ? sdMatch[1].trim() : null;
       district = dMatch ? dMatch[1].trim() : null;
       province = pMatch ? pMatch[1].trim() : null;

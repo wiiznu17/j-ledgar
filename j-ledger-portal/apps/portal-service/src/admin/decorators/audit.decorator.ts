@@ -10,5 +10,9 @@ export interface AuditMetadata {
   reason?: string;
 }
 
-export const AuditLog = (action: AuditAction, resourceType: ResourceType, reason?: string, resourceIdPath?: string) => 
-  SetMetadata(AUDIT_LOG_KEY, { action, resourceType, reason, resourceIdPath });
+export const AuditLog = (
+  action: AuditAction,
+  resourceType: ResourceType,
+  reason?: string,
+  resourceIdPath?: string,
+) => SetMetadata(AUDIT_LOG_KEY, { action, resourceType, reason, resourceIdPath });

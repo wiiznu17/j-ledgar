@@ -1,5 +1,12 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { ScrollView, Dimensions, ActivityIndicator, View, Text, RefreshControl } from 'react-native';
+import {
+  ScrollView,
+  Dimensions,
+  ActivityIndicator,
+  View,
+  Text,
+  RefreshControl,
+} from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { useFocusEffect } from '@react-navigation/native';
@@ -40,7 +47,7 @@ export default function HomeScreen() {
     try {
       // Uses `api` client which auto-refreshes token on 401
       const res = await api.get('/integration/dashboard');
-      
+
       const data = res.data;
 
       // User info
@@ -120,7 +127,9 @@ export default function HomeScreen() {
         }
       >
         {/* Welcome Section */}
-        <WelcomeHeader user={{ name: userName, avatar: require('../../../assets/images/mock_user_avatar.png') }} />
+        <WelcomeHeader
+          user={{ name: userName, avatar: require('../../../assets/images/mock_user_avatar.png') }}
+        />
 
         {/* Error Banner */}
         {error ? (
@@ -145,10 +154,7 @@ export default function HomeScreen() {
         <ServicesGrid onServicePress={(route) => route && router.push(route as any)} />
 
         {/* Promotional Banners */}
-        <PromoBanners 
-          banners={banners} 
-          onPromoPress={(path) => router.push(path as any)} 
-        />
+        <PromoBanners banners={banners} onPromoPress={(path) => router.push(path as any)} />
 
         {/* Recent Activity */}
         <RecentActivityList

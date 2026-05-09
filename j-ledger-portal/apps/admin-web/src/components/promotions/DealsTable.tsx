@@ -26,7 +26,7 @@ export function DealsTable({ deals, onEdit, onRefresh }: DealsTableProps) {
 
   const handleDelete = async (id: string) => {
     if (!confirm('Are you sure you want to delete this deal?')) return;
-    
+
     setDeletingId(id);
     try {
       await promotionsRequester.deleteDeal(id);
@@ -58,9 +58,9 @@ export function DealsTable({ deals, onEdit, onRefresh }: DealsTableProps) {
               <TableCell>
                 <div className="flex items-center gap-3">
                   <div className="w-10 h-10 rounded-lg overflow-hidden bg-slate-100 border border-slate-200">
-                    <img 
-                      src={deal.imageUrl} 
-                      alt={deal.title} 
+                    <img
+                      src={deal.imageUrl}
+                      alt={deal.title}
                       className="w-full h-full object-cover"
                       onError={(e) => {
                         (e.target as any).src = 'https://placehold.co/100x100?text=No+Image';
@@ -77,7 +77,10 @@ export function DealsTable({ deals, onEdit, onRefresh }: DealsTableProps) {
               </TableCell>
               <TableCell>
                 <div className="space-y-1">
-                  <Badge variant="outline" className="bg-blue-50 text-blue-600 border-blue-100 text-[10px]">
+                  <Badge
+                    variant="outline"
+                    className="bg-blue-50 text-blue-600 border-blue-100 text-[10px]"
+                  >
                     {deal.brand?.name || 'No Brand'}
                   </Badge>
                   <div className="text-[10px] text-muted-foreground ml-1">
@@ -87,7 +90,8 @@ export function DealsTable({ deals, onEdit, onRefresh }: DealsTableProps) {
               </TableCell>
               <TableCell>
                 <div className="flex items-center gap-1 font-bold text-pink-500">
-                  {deal.pointsRequired.toLocaleString()} <span className="text-[10px] text-muted-foreground">pts</span>
+                  {deal.pointsRequired.toLocaleString()}{' '}
+                  <span className="text-[10px] text-muted-foreground">pts</span>
                 </div>
               </TableCell>
               <TableCell>
@@ -96,8 +100,8 @@ export function DealsTable({ deals, onEdit, onRefresh }: DealsTableProps) {
                     {deal.remainingStock} / {deal.stock}
                   </div>
                   <div className="w-24 h-1 bg-slate-100 rounded-full overflow-hidden">
-                    <div 
-                      className={`h-full ${deal.remainingStock < 50 ? 'bg-orange-400' : 'bg-green-400'}`} 
+                    <div
+                      className={`h-full ${deal.remainingStock < 50 ? 'bg-orange-400' : 'bg-green-400'}`}
                       style={{ width: `${(deal.remainingStock / deal.stock) * 100}%` }}
                     />
                   </div>
@@ -110,22 +114,26 @@ export function DealsTable({ deals, onEdit, onRefresh }: DealsTableProps) {
               </TableCell>
               <TableCell className="text-right">
                 <div className="flex justify-end gap-1">
-                  <Button 
-                    variant="ghost" 
-                    size="icon" 
+                  <Button
+                    variant="ghost"
+                    size="icon"
                     className="h-8 w-8 text-slate-400 hover:text-blue-600"
                     onClick={() => onEdit(deal)}
                   >
                     <Edit2 size={14} />
                   </Button>
-                  <Button 
-                    variant="ghost" 
-                    size="icon" 
+                  <Button
+                    variant="ghost"
+                    size="icon"
                     className="h-8 w-8 text-slate-400 hover:text-red-600"
                     disabled={deletingId === deal.id}
                     onClick={() => handleDelete(deal.id)}
                   >
-                    {deletingId === deal.id ? <Loader2 size={14} className="animate-spin" /> : <Trash2 size={14} />}
+                    {deletingId === deal.id ? (
+                      <Loader2 size={14} className="animate-spin" />
+                    ) : (
+                      <Trash2 size={14} />
+                    )}
                   </Button>
                 </div>
               </TableCell>

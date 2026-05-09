@@ -22,10 +22,27 @@ import {
 import { adminApi } from '@/lib/admin-api';
 import { useState, useEffect, useCallback } from 'react';
 import { useSearchParams } from 'next/navigation';
-import { 
-  ChevronLeft, ChevronRight, Search, RotateCcw, Filter, History, Eye, ShieldAlert, Cpu, 
-  Terminal, Calendar as CalendarIcon, Users, ShieldCheck, FileText, Shield, 
-  CreditCard, Wallet, Activity, Box, LockKeyhole 
+import {
+  ChevronLeft,
+  ChevronRight,
+  Search,
+  RotateCcw,
+  Filter,
+  History,
+  Eye,
+  ShieldAlert,
+  Cpu,
+  Terminal,
+  Calendar as CalendarIcon,
+  Users,
+  ShieldCheck,
+  FileText,
+  Shield,
+  CreditCard,
+  Wallet,
+  Activity,
+  Box,
+  LockKeyhole,
 } from 'lucide-react';
 import { format } from 'date-fns';
 import { FilterSearchInput, FilterSelect, FilterActions } from '@/components/common/FilterElements';
@@ -104,11 +121,15 @@ export default function AuditPage() {
   const getActionColor = (action: string) => {
     const a = action.toUpperCase();
     if (a.includes('KYC')) return 'bg-cyan-50 text-cyan-600 border-cyan-100';
-    if (a.includes('STAFF') || a.includes('ADMIN')) return 'bg-indigo-50 text-indigo-600 border-indigo-100';
+    if (a.includes('STAFF') || a.includes('ADMIN'))
+      return 'bg-indigo-50 text-indigo-600 border-indigo-100';
     if (a.includes('USER')) return 'bg-blue-50 text-blue-600 border-blue-100';
-    if (a.includes('TRANSACTION') || a.includes('LEDGER') || a.includes('ACCOUNT')) return 'bg-emerald-50 text-emerald-600 border-emerald-100';
-    if (a.includes('ROLE') || a.includes('PERMISSION') || a.includes('SYSTEM')) return 'bg-orange-50 text-orange-600 border-orange-100';
-    if (a.includes('AUDIT') || a.includes('DASHBOARD')) return 'bg-slate-50 text-slate-600 border-slate-100';
+    if (a.includes('TRANSACTION') || a.includes('LEDGER') || a.includes('ACCOUNT'))
+      return 'bg-emerald-50 text-emerald-600 border-emerald-100';
+    if (a.includes('ROLE') || a.includes('PERMISSION') || a.includes('SYSTEM'))
+      return 'bg-orange-50 text-orange-600 border-orange-100';
+    if (a.includes('AUDIT') || a.includes('DASHBOARD'))
+      return 'bg-slate-50 text-slate-600 border-slate-100';
     return 'bg-amber-50 text-amber-600 border-amber-100';
   };
 
@@ -151,15 +172,21 @@ export default function AuditPage() {
         <div className="flex items-center flex-wrap gap-4 md:gap-6 text-sm">
           <div className="flex items-center gap-2">
             <div className="w-2 h-2 rounded-full bg-emerald-500" />
-            <span className="text-slate-500 font-medium">Creations: <strong className="text-slate-800">{stats.creations}</strong></span>
+            <span className="text-slate-500 font-medium">
+              Creations: <strong className="text-slate-800">{stats.creations}</strong>
+            </span>
           </div>
           <div className="flex items-center gap-2">
             <div className="w-2 h-2 rounded-full bg-amber-500" />
-            <span className="text-slate-500 font-medium">Updates: <strong className="text-slate-800">{stats.updates}</strong></span>
+            <span className="text-slate-500 font-medium">
+              Updates: <strong className="text-slate-800">{stats.updates}</strong>
+            </span>
           </div>
           <div className="flex items-center gap-2">
             <div className="w-2 h-2 rounded-full bg-rose-500" />
-            <span className="text-slate-500 font-medium">Deletions: <strong className="text-slate-800">{stats.deletions}</strong></span>
+            <span className="text-slate-500 font-medium">
+              Deletions: <strong className="text-slate-800">{stats.deletions}</strong>
+            </span>
           </div>
         </div>
       </div>
@@ -168,14 +195,14 @@ export default function AuditPage() {
         {/* Filter Toolbar */}
         <div className="p-3 bg-white border-b border-slate-100">
           <form onSubmit={handleFilter} className="grid grid-cols-1 md:grid-cols-5 gap-4 items-end">
-            <FilterSearchInput 
+            <FilterSearchInput
               label="Admin Identifier"
               placeholder="ID or Name..."
               value={adminUserId}
               onChange={(e) => setAdminUserId(e.target.value)}
             />
 
-            <FilterSelect 
+            <FilterSelect
               label="Operation Action"
               value={action}
               onValueChange={(val) => setAction(val || 'ALL')}
@@ -195,7 +222,7 @@ export default function AuditPage() {
               ]}
             />
 
-            <FilterSelect 
+            <FilterSelect
               label="Resource Type"
               value={resourceType}
               onValueChange={(val) => setResourceType(val || 'ALL')}
@@ -211,7 +238,7 @@ export default function AuditPage() {
               ]}
             />
 
-            <FilterActions 
+            <FilterActions
               searchLabel="Search"
               isLoading={loading}
               onReset={handleClearFilters}
@@ -224,11 +251,17 @@ export default function AuditPage() {
           <table className="w-full text-left">
             <thead>
               <tr className="border-b border-slate-100 bg-slate-50/30 text-slate-400 text-[10px] uppercase font-bold tracking-widest">
-                <th className="px-6 py-2.5 border-r border-slate-200/60 text-left">Execution Time</th>
+                <th className="px-6 py-2.5 border-r border-slate-200/60 text-left">
+                  Execution Time
+                </th>
                 <th className="px-6 py-2.5 text-center border-r border-slate-200/60">Actor</th>
                 <th className="px-6 py-2.5 text-center border-r border-slate-200/60">Action</th>
-                <th className="px-6 py-2.5 text-center border-r border-slate-200/60">Description</th>
-                <th className="px-6 py-2.5 text-center border-r border-slate-200/60">Target Resource</th>
+                <th className="px-6 py-2.5 text-center border-r border-slate-200/60">
+                  Description
+                </th>
+                <th className="px-6 py-2.5 text-center border-r border-slate-200/60">
+                  Target Resource
+                </th>
                 <th className="px-6 py-2.5 text-center">Intel</th>
               </tr>
             </thead>
@@ -250,8 +283,12 @@ export default function AuditPage() {
                   <tr key={log.id} className="hover:bg-slate-50/50 transition-colors group">
                     <td className="px-6 py-2 border-r border-slate-100">
                       <div className="flex flex-col">
-                        <span className="text-xs font-bold text-slate-700">{format(new Date(log.createdAt), 'MMM d, HH:mm:ss')}</span>
-                        <span className="text-[10px] text-slate-400 font-mono tracking-tighter">{format(new Date(log.createdAt), 'yyyy')}</span>
+                        <span className="text-xs font-bold text-slate-700">
+                          {format(new Date(log.createdAt), 'MMM d, HH:mm:ss')}
+                        </span>
+                        <span className="text-[10px] text-slate-400 font-mono tracking-tighter">
+                          {format(new Date(log.createdAt), 'yyyy')}
+                        </span>
                       </div>
                     </td>
                     <td className="px-6 py-2 border-r border-slate-100 text-center">
@@ -260,18 +297,26 @@ export default function AuditPage() {
                           <div className="w-7 h-7 rounded-full bg-slate-100 flex items-center justify-center text-slate-500 group-hover:bg-indigo-100 group-hover:text-indigo-600 transition-colors">
                             <Cpu className="w-3.5 h-3.5" />
                           </div>
-                          <span className="text-xs font-bold text-slate-700 leading-tight">Admin System</span>
+                          <span className="text-xs font-bold text-slate-700 leading-tight">
+                            Admin System
+                          </span>
                         </div>
                       </div>
                     </td>
                     <td className="px-6 py-2 border-r border-slate-100">
                       <div className="flex items-center justify-center gap-2">
-                        <span className={`px-2 py-0.5 w-fit rounded-md text-[9px] font-black uppercase tracking-wider border ${getActionColor(log.action)}`}>
+                        <span
+                          className={`px-2 py-0.5 w-fit rounded-md text-[9px] font-black uppercase tracking-wider border ${getActionColor(log.action)}`}
+                        >
                           {log.action}
                         </span>
                         <div className="flex items-center gap-1">
-                          <div className={`w-1 h-1 rounded-full ${log.responseStatus >= 400 ? 'bg-rose-400' : 'bg-emerald-400'}`} />
-                          <span className={`text-[9px] font-bold ${getStatusColor(log.responseStatus)}`}>
+                          <div
+                            className={`w-1 h-1 rounded-full ${log.responseStatus >= 400 ? 'bg-rose-400' : 'bg-emerald-400'}`}
+                          />
+                          <span
+                            className={`text-[9px] font-bold ${getStatusColor(log.responseStatus)}`}
+                          >
                             {log.responseStatus}
                           </span>
                         </div>
@@ -279,7 +324,10 @@ export default function AuditPage() {
                     </td>
                     <td className="px-6 py-2 border-r border-slate-100 text-center">
                       {log.reason && (
-                        <span className="text-[10px] font-bold text-slate-700 leading-tight block max-w-[150px] mx-auto" title={log.reason}>
+                        <span
+                          className="text-[10px] font-bold text-slate-700 leading-tight block max-w-[150px] mx-auto"
+                          title={log.reason}
+                        >
                           {log.reason}
                         </span>
                       )}
@@ -289,17 +337,26 @@ export default function AuditPage() {
                         <div className="p-1 bg-slate-50 rounded-lg text-slate-400 border border-slate-100">
                           {getResourceIcon(log.resourceType)}
                         </div>
-                        <span className="text-[9px] font-black text-slate-600 uppercase tracking-widest">{log.resourceType}</span>
+                        <span className="text-[9px] font-black text-slate-600 uppercase tracking-widest">
+                          {log.resourceType}
+                        </span>
                       </div>
                     </td>
                     <td className="px-6 py-2 text-center">
                       <Dialog>
-                        <DialogTrigger render={
-                          <Button variant="outline" size="sm" onClick={() => setSelectedLog(log)} className="h-7 px-3 rounded-lg text-[9px] font-bold border-slate-200 hover:bg-slate-50 hover:border-indigo-200 transition-all active:scale-95 group/btn">
-                            Inspect
-                            <ChevronRight className="w-3 h-3 ml-1 text-slate-300 group-hover/btn:text-indigo-400 transition-colors" />
-                          </Button>
-                        } />
+                        <DialogTrigger
+                          render={
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => setSelectedLog(log)}
+                              className="h-7 px-3 rounded-lg text-[9px] font-bold border-slate-200 hover:bg-slate-50 hover:border-indigo-200 transition-all active:scale-95 group/btn"
+                            >
+                              Inspect
+                              <ChevronRight className="w-3 h-3 ml-1 text-slate-300 group-hover/btn:text-indigo-400 transition-colors" />
+                            </Button>
+                          }
+                        />
                         <DialogContent className="sm:max-w-3xl bg-white rounded-2xl border-0 shadow-2xl overflow-hidden">
                           <DialogHeader className="bg-slate-50/50 p-6 border-b border-slate-100">
                             <DialogTitle className="text-xl font-bold flex items-center gap-2">
@@ -315,7 +372,9 @@ export default function AuditPage() {
                               <div className="grid grid-cols-1 md:grid-cols-2 gap-6 text-xs">
                                 <div className="space-y-4">
                                   <div>
-                                    <p className="font-black text-slate-400 uppercase tracking-widest text-[9px] mb-1">Request Intel</p>
+                                    <p className="font-black text-slate-400 uppercase tracking-widest text-[9px] mb-1">
+                                      Request Intel
+                                    </p>
                                     <div className="space-y-1.5 font-bold text-slate-700">
                                       <p className="flex justify-between border-b border-slate-50 pb-1">
                                         <span>Actor Name:</span>
@@ -323,11 +382,15 @@ export default function AuditPage() {
                                       </p>
                                       <p className="flex justify-between border-b border-slate-50 pb-1">
                                         <span>Actor ID:</span>
-                                        <span className="font-mono text-[10px] text-slate-400">{selectedLog.adminUserId}</span>
+                                        <span className="font-mono text-[10px] text-slate-400">
+                                          {selectedLog.adminUserId}
+                                        </span>
                                       </p>
                                       <p className="flex justify-between border-b border-slate-50 pb-1">
                                         <span>IP Address:</span>
-                                        <span className="font-mono text-indigo-600">{selectedLog.ipAddress}</span>
+                                        <span className="font-mono text-indigo-600">
+                                          {selectedLog.ipAddress}
+                                        </span>
                                       </p>
                                       <p className="flex justify-between border-b border-slate-50 pb-1">
                                         <span>Method:</span>
@@ -338,21 +401,29 @@ export default function AuditPage() {
                                 </div>
                                 <div className="space-y-4">
                                   <div>
-                                    <p className="font-black text-slate-400 uppercase tracking-widest text-[9px] mb-1">Target Context</p>
+                                    <p className="font-black text-slate-400 uppercase tracking-widest text-[9px] mb-1">
+                                      Target Context
+                                    </p>
                                     <div className="space-y-1.5 font-bold text-slate-700">
                                       <p className="flex justify-between border-b border-slate-50 pb-1">
                                         <span>Type:</span>
-                                        <span className="uppercase text-indigo-600">{selectedLog.resourceType}</span>
+                                        <span className="uppercase text-indigo-600">
+                                          {selectedLog.resourceType}
+                                        </span>
                                       </p>
                                       <p className="flex justify-between border-b border-slate-50 pb-1">
                                         <span>Identifier:</span>
-                                        <span className="font-mono text-slate-500">{selectedLog.resourceId || 'N/A'}</span>
+                                        <span className="font-mono text-slate-500">
+                                          {selectedLog.resourceId || 'N/A'}
+                                        </span>
                                       </p>
                                     </div>
                                   </div>
                                 </div>
                                 <div>
-                                  <p className="font-black text-slate-400 uppercase tracking-widest text-[9px] mb-1">User Agent</p>
+                                  <p className="font-black text-slate-400 uppercase tracking-widest text-[9px] mb-1">
+                                    User Agent
+                                  </p>
                                   <p className="text-[10px] text-slate-500 italic bg-slate-50 p-2 rounded-lg border border-slate-100">
                                     {selectedLog.userAgent}
                                   </p>
@@ -361,7 +432,9 @@ export default function AuditPage() {
 
                               {selectedLog.requestPayload && (
                                 <div className="space-y-2">
-                                  <p className="font-black text-slate-400 uppercase tracking-widest text-[9px] ml-1">Request Payload</p>
+                                  <p className="font-black text-slate-400 uppercase tracking-widest text-[9px] ml-1">
+                                    Request Payload
+                                  </p>
                                   <div className="p-4 bg-slate-900 rounded-xl overflow-hidden border border-slate-800">
                                     <pre className="text-[10px] text-emerald-400 font-mono overflow-x-auto custom-scrollbar leading-relaxed">
                                       {JSON.stringify(selectedLog.requestPayload, null, 2)}
@@ -372,7 +445,9 @@ export default function AuditPage() {
 
                               {selectedLog.changes && (
                                 <div className="space-y-2">
-                                  <p className="font-black text-slate-400 uppercase tracking-widest text-[9px] ml-1 text-amber-500">Resource Mutation (Changes)</p>
+                                  <p className="font-black text-slate-400 uppercase tracking-widest text-[9px] ml-1 text-amber-500">
+                                    Resource Mutation (Changes)
+                                  </p>
                                   <div className="p-4 bg-slate-900 rounded-xl overflow-hidden border border-slate-800">
                                     <pre className="text-[10px] text-amber-400 font-mono overflow-x-auto custom-scrollbar leading-relaxed">
                                       {JSON.stringify(selectedLog.changes, null, 2)}
@@ -396,7 +471,8 @@ export default function AuditPage() {
         {totalPages > 0 && (
           <div className="p-4 bg-white border-t border-slate-100 flex items-center justify-between">
             <p className="text-xs text-slate-500 font-medium">
-              Showing page <strong className="text-slate-800">{page}</strong> of <strong className="text-slate-800">{totalPages}</strong> 
+              Showing page <strong className="text-slate-800">{page}</strong> of{' '}
+              <strong className="text-slate-800">{totalPages}</strong>
               <span className="hidden sm:inline"> ({total} total audit records)</span>
             </p>
             <div className="flex gap-2">
@@ -427,4 +503,3 @@ export default function AuditPage() {
     </div>
   );
 }
-

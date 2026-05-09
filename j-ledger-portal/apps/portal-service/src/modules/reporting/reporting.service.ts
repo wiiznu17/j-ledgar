@@ -13,7 +13,10 @@ export class ReportingService {
     private readonly httpService: HttpService,
     private readonly configService: ConfigService,
   ) {
-    this.apiGatewayUrl = this.configService.get<string>('FINANCE_SERVICE_URL', 'http://localhost:8081');
+    this.apiGatewayUrl = this.configService.get<string>(
+      'FINANCE_SERVICE_URL',
+      'http://localhost:8081',
+    );
     this.internalSecret = this.configService.get<string>(
       'JLEDGER_INTERNAL_SECRET',
       'default-secret',
@@ -47,11 +50,17 @@ export class ReportingService {
 
     // Get transactions from core-service for the specific date
     // WARNING: current finance-service TransactionController ignores startDate/endDate filters
-    this.logger.warn(`Reporting daily for ${targetDate} - Note: finance-service currently ignores date filters and returns default page`);
-    const transactions = await this.forwardToGateway<any>('get', INTERNAL_API_PATHS.FINANCE.TRANSACTIONS.BASE, {
-      startDate: targetDate,
-      endDate: targetDate,
-    });
+    this.logger.warn(
+      `Reporting daily for ${targetDate} - Note: finance-service currently ignores date filters and returns default page`,
+    );
+    const transactions = await this.forwardToGateway<any>(
+      'get',
+      INTERNAL_API_PATHS.FINANCE.TRANSACTIONS.BASE,
+      {
+        startDate: targetDate,
+        endDate: targetDate,
+      },
+    );
 
     // Calculate metrics
     const totalTransactions = transactions.data?.length || 0;
@@ -94,11 +103,17 @@ export class ReportingService {
 
     // Get transactions from core-service for the month
     // WARNING: current finance-service TransactionController ignores startDate/endDate filters
-    this.logger.warn(`Reporting monthly for ${targetYear}-${targetMonth} - Note: finance-service currently ignores date filters`);
-    const transactions = await this.forwardToGateway<any>('get', INTERNAL_API_PATHS.FINANCE.TRANSACTIONS.BASE, {
-      startDate,
-      endDate,
-    });
+    this.logger.warn(
+      `Reporting monthly for ${targetYear}-${targetMonth} - Note: finance-service currently ignores date filters`,
+    );
+    const transactions = await this.forwardToGateway<any>(
+      'get',
+      INTERNAL_API_PATHS.FINANCE.TRANSACTIONS.BASE,
+      {
+        startDate,
+        endDate,
+      },
+    );
 
     // Calculate metrics
     const totalTransactions = transactions.data?.length || 0;
@@ -170,11 +185,18 @@ export class ReportingService {
     if (query.reportDate) params.reportDate = query.reportDate;
     if (query.status) params.status = query.status;
 
-    return this.forwardToGateway<any>('get', INTERNAL_API_PATHS.FINANCE.SYSTEM.RECONCILE.REPORTS, params);
+    return this.forwardToGateway<any>(
+      'get',
+      INTERNAL_API_PATHS.FINANCE.SYSTEM.RECONCILE.REPORTS,
+      params,
+    );
   }
 
   async getReconciliationReport(id: string) {
-    return this.forwardToGateway<any>('get', INTERNAL_API_PATHS.FINANCE.SYSTEM.RECONCILE.DETAIL(id));
+    return this.forwardToGateway<any>(
+      'get',
+      INTERNAL_API_PATHS.FINANCE.SYSTEM.RECONCILE.DETAIL(id),
+    );
   }
 
   async runReconciliation() {
@@ -185,8 +207,12 @@ export class ReportingService {
     const params: Record<string, string> = {};
     if (query?.status) params.status = query.status;
     if (query?.eventType) params.eventType = query.eventType;
-    
-    return this.forwardToGateway<any[]>('get', INTERNAL_API_PATHS.FINANCE.SYSTEM.OUTBOX.BASE, params);
+
+    return this.forwardToGateway<any[]>(
+      'get',
+      INTERNAL_API_PATHS.FINANCE.SYSTEM.OUTBOX.BASE,
+      params,
+    );
   }
 
   async retryOutbox(id: string) {

@@ -114,7 +114,9 @@ export default function TopupSuccessScreen() {
                   <Text className="text-[10px] font-manrope font-black text-gray-400 uppercase tracking-widest mb-0.5">
                     From
                   </Text>
-                  <Text className="text-sm font-manrope font-black text-gray-800">{displayBankName}</Text>
+                  <Text className="text-sm font-manrope font-black text-gray-800">
+                    {displayBankName}
+                  </Text>
                   <Text className="text-[10px] font-manrope font-bold text-gray-400 mt-0.5">
                     {displayAccountMask}
                   </Text>

@@ -1,22 +1,22 @@
 'use client';
 
 import React, { useEffect, useState, useCallback } from 'react';
-import { 
-  Activity, 
-  ArrowUpRight, 
-  ArrowDownLeft, 
-  Clock, 
-  CheckCircle2, 
-  XCircle, 
-  Eye, 
-  Search, 
-  Calendar as CalendarIcon, 
-  Filter, 
-  RotateCcw, 
-  ChevronLeft, 
+import {
+  Activity,
+  ArrowUpRight,
+  ArrowDownLeft,
+  Clock,
+  CheckCircle2,
+  XCircle,
+  Eye,
+  Search,
+  Calendar as CalendarIcon,
+  Filter,
+  RotateCcw,
+  ChevronLeft,
   ChevronRight,
   ArrowRightLeft,
-  DollarSign
+  DollarSign,
 } from 'lucide-react';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
@@ -25,24 +25,36 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Popover, PopoverTrigger, PopoverContent } from '@/components/ui/popover';
 import { Calendar } from '@/components/ui/calendar';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
 import { format } from 'date-fns';
 import { transactionRequester } from '@/lib/requesters/transactionRequester';
 import { Transaction, TransactionStatus, TransactionType } from '@repo/dto';
 import { toast } from 'sonner';
-import { FilterSearchInput, FilterSelect, FilterActions, FilterField, FilterDatePicker } from '@/components/common/FilterElements';
+import {
+  FilterSearchInput,
+  FilterSelect,
+  FilterActions,
+  FilterField,
+  FilterDatePicker,
+} from '@/components/common/FilterElements';
 
 export default function TransactionsPage() {
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [isLoading, setIsLoading] = useState(true);
-  
+
   // Filter States
   const [status, setStatus] = useState<string>('ALL');
   const [type, setType] = useState<string>('ALL');
   const [reference, setReference] = useState('');
   const [startDate, setStartDate] = useState('');
   const [endDate, setEndDate] = useState('');
-  
+
   // Pagination
   const [currentPage, setCurrentPage] = useState(0); // API uses 0-based index
   const [totalPages, setTotalPages] = useState(1);
@@ -55,7 +67,7 @@ export default function TransactionsPage() {
     reference: '',
     startDate: '',
     endDate: '',
-    page: 0
+    page: 0,
   });
 
   const fetchTransactions = useCallback(async () => {
@@ -70,7 +82,7 @@ export default function TransactionsPage() {
         ...(activeFilters.startDate && { startDate: activeFilters.startDate }),
         ...(activeFilters.endDate && { endDate: activeFilters.endDate }),
       };
-      
+
       const res = await transactionRequester.getHistory(params);
       setTransactions(res.data);
       setTotalPages(res.pagination.totalPages);
@@ -96,22 +108,26 @@ export default function TransactionsPage() {
       reference,
       startDate,
       endDate,
-      page: 0
+      page: 0,
     });
     setCurrentPage(0);
   };
 
   const handlePageChange = (newPage: number) => {
     if (newPage < 0 || newPage >= totalPages) return;
-    setActiveFilters(prev => ({ ...prev, page: newPage }));
+    setActiveFilters((prev) => ({ ...prev, page: newPage }));
   };
 
   const getTransactionIcon = (type: string) => {
     switch (type) {
-      case TransactionType.TOPUP: return <ArrowDownLeft className="w-4 h-4 text-emerald-500" />;
-      case TransactionType.WITHDRAW: return <ArrowUpRight className="w-4 h-4 text-rose-500" />;
-      case TransactionType.TRANSFER: return <ArrowRightLeft className="w-4 h-4 text-indigo-500" />;
-      default: return <DollarSign className="w-4 h-4 text-slate-400" />;
+      case TransactionType.TOPUP:
+        return <ArrowDownLeft className="w-4 h-4 text-emerald-500" />;
+      case TransactionType.WITHDRAW:
+        return <ArrowUpRight className="w-4 h-4 text-rose-500" />;
+      case TransactionType.TRANSFER:
+        return <ArrowRightLeft className="w-4 h-4 text-indigo-500" />;
+      default:
+        return <DollarSign className="w-4 h-4 text-slate-400" />;
     }
   };
 
@@ -129,15 +145,18 @@ export default function TransactionsPage() {
       <Card className="border-none shadow-sm ring-1 ring-slate-100 overflow-hidden bg-white">
         {/* Filter Toolbar */}
         <div className="p-4 bg-white border-b border-slate-100">
-          <form onSubmit={handleApplyFilter} className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-6 gap-4 items-end">
-            <FilterSearchInput 
+          <form
+            onSubmit={handleApplyFilter}
+            className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-6 gap-4 items-end"
+          >
+            <FilterSearchInput
               label="Reference ID"
               placeholder="TXN-XXXXXX"
               value={reference}
               onChange={(e) => setReference(e.target.value)}
             />
 
-            <FilterSelect 
+            <FilterSelect
               label="Transaction Status"
               value={status}
               onValueChange={(val) => setStatus(val || 'ALL')}
@@ -149,7 +168,7 @@ export default function TransactionsPage() {
               ]}
             />
 
-            <FilterSelect 
+            <FilterSelect
               label="Transaction Type"
               value={type}
               onValueChange={(val) => setType(val || 'ALL')}
@@ -161,21 +180,21 @@ export default function TransactionsPage() {
               ]}
             />
 
-            <FilterDatePicker 
+            <FilterDatePicker
               label="Date From"
               value={startDate}
               onChange={setStartDate}
               placeholder="Start date"
             />
 
-            <FilterDatePicker 
+            <FilterDatePicker
               label="Date To"
               value={endDate}
               onChange={setEndDate}
               placeholder="End date"
             />
 
-            <FilterActions 
+            <FilterActions
               searchLabel="Search"
               isLoading={isLoading}
               onReset={() => {
@@ -216,11 +235,31 @@ export default function TransactionsPage() {
                       <div className="w-16 h-16 rounded-full bg-slate-50 flex items-center justify-center">
                         <Activity className="w-8 h-8 text-slate-200" />
                       </div>
-                      <p className="text-slate-400 font-medium">No transactions found matching your criteria.</p>
-                      <Button variant="outline" size="sm" onClick={() => {
-                         setReference(''); setStatus('ALL'); setType('ALL'); setStartDate(''); setEndDate('');
-                         setActiveFilters({ status: 'ALL', type: 'ALL', reference: '', startDate: '', endDate: '', page: 0 });
-                      }} className="mt-2 text-xs rounded-lg">Clear All Filters</Button>
+                      <p className="text-slate-400 font-medium">
+                        No transactions found matching your criteria.
+                      </p>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => {
+                          setReference('');
+                          setStatus('ALL');
+                          setType('ALL');
+                          setStartDate('');
+                          setEndDate('');
+                          setActiveFilters({
+                            status: 'ALL',
+                            type: 'ALL',
+                            reference: '',
+                            startDate: '',
+                            endDate: '',
+                            page: 0,
+                          });
+                        }}
+                        className="mt-2 text-xs rounded-lg"
+                      >
+                        Clear All Filters
+                      </Button>
                     </div>
                   </td>
                 </tr>
@@ -239,10 +278,15 @@ export default function TransactionsPage() {
                     </td>
                     <td className="px-6 py-5">
                       <div className="flex items-center gap-2.5">
-                        <div className={`w-8 h-8 rounded-lg flex items-center justify-center ${
-                          txn.transactionType === TransactionType.TOPUP ? 'bg-emerald-50' : 
-                          txn.transactionType === TransactionType.WITHDRAW ? 'bg-rose-50' : 'bg-indigo-50'
-                        }`}>
+                        <div
+                          className={`w-8 h-8 rounded-lg flex items-center justify-center ${
+                            txn.transactionType === TransactionType.TOPUP
+                              ? 'bg-emerald-50'
+                              : txn.transactionType === TransactionType.WITHDRAW
+                                ? 'bg-rose-50'
+                                : 'bg-indigo-50'
+                          }`}
+                        >
                           {getTransactionIcon(txn.transactionType)}
                         </div>
                         <span className="text-xs font-bold text-slate-600 uppercase tracking-tight">
@@ -251,13 +295,24 @@ export default function TransactionsPage() {
                       </div>
                     </td>
                     <td className="px-6 py-5 text-right">
-                      <p className={`text-sm font-black tabular-nums ${
-                        txn.transactionType === TransactionType.TOPUP ? 'text-emerald-600' : 
-                        txn.transactionType === TransactionType.WITHDRAW ? 'text-rose-600' : 'text-slate-800'
-                      }`}>
-                        {txn.transactionType === TransactionType.TOPUP ? '+' : txn.transactionType === TransactionType.WITHDRAW ? '-' : ''}
+                      <p
+                        className={`text-sm font-black tabular-nums ${
+                          txn.transactionType === TransactionType.TOPUP
+                            ? 'text-emerald-600'
+                            : txn.transactionType === TransactionType.WITHDRAW
+                              ? 'text-rose-600'
+                              : 'text-slate-800'
+                        }`}
+                      >
+                        {txn.transactionType === TransactionType.TOPUP
+                          ? '+'
+                          : txn.transactionType === TransactionType.WITHDRAW
+                            ? '-'
+                            : ''}
                         {Number(txn.amount).toLocaleString(undefined, { minimumFractionDigits: 2 })}
-                        <span className="ml-1 text-[10px] font-bold opacity-70">{txn.currency}</span>
+                        <span className="ml-1 text-[10px] font-bold opacity-70">
+                          {txn.currency}
+                        </span>
                       </p>
                     </td>
                     <td className="px-6 py-5">
@@ -283,7 +338,11 @@ export default function TransactionsPage() {
                     </td>
                     <td className="px-6 py-5 text-right">
                       <Link href={`/transactions/${txn.id}`}>
-                        <Button size="sm" variant="ghost" className="h-8 text-indigo-600 hover:text-indigo-700 hover:bg-indigo-50 font-bold text-xs rounded-lg">
+                        <Button
+                          size="sm"
+                          variant="ghost"
+                          className="h-8 text-indigo-600 hover:text-indigo-700 hover:bg-indigo-50 font-bold text-xs rounded-lg"
+                        >
                           <Eye className="w-3.5 h-3.5 mr-1.5" />
                           Details
                         </Button>
@@ -300,7 +359,8 @@ export default function TransactionsPage() {
         {totalPages > 1 && (
           <div className="px-6 py-4 bg-white border-t border-slate-100 flex items-center justify-between">
             <p className="text-[11px] text-slate-400 font-bold uppercase tracking-wider">
-              Page <span className="text-slate-800">{currentPage + 1}</span> of <span className="text-slate-800">{totalPages}</span>
+              Page <span className="text-slate-800">{currentPage + 1}</span> of{' '}
+              <span className="text-slate-800">{totalPages}</span>
               <span className="ml-2 opacity-50">•</span>
               <span className="ml-2">{totalItems} Total Records</span>
             </p>

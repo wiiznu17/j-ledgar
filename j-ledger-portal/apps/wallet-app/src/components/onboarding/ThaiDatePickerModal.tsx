@@ -11,13 +11,33 @@ interface ThaiDatePickerModalProps {
 }
 
 const THAI_MONTHS = [
-  'มกราคม', 'กุมภาพันธ์', 'มีนาคม', 'เมษายน', 'พฤษภาคม', 'มิถุนายน',
-  'กรกฎาคม', 'สิงหาคม', 'กันยายน', 'ตุลาคม', 'พฤศจิกายน', 'ธันวาคม'
+  'มกราคม',
+  'กุมภาพันธ์',
+  'มีนาคม',
+  'เมษายน',
+  'พฤษภาคม',
+  'มิถุนายน',
+  'กรกฎาคม',
+  'สิงหาคม',
+  'กันยายน',
+  'ตุลาคม',
+  'พฤศจิกายน',
+  'ธันวาคม',
 ];
 
 const THAI_MONTHS_SHORT = [
-  'ม.ค.', 'ก.พ.', 'มี.ค.', 'เม.ย.', 'พ.ค.', 'มิ.ย.',
-  'ก.ค.', 'ส.ค.', 'ก.ย.', 'ต.ค.', 'พ.ย.', 'ธ.ค.'
+  'ม.ค.',
+  'ก.พ.',
+  'มี.ค.',
+  'เม.ย.',
+  'พ.ค.',
+  'มิ.ย.',
+  'ก.ค.',
+  'ส.ค.',
+  'ก.ย.',
+  'ต.ค.',
+  'พ.ย.',
+  'ธ.ค.',
 ];
 
 export const ThaiDatePickerModal: React.FC<ThaiDatePickerModalProps> = ({
@@ -25,7 +45,7 @@ export const ThaiDatePickerModal: React.FC<ThaiDatePickerModalProps> = ({
   onClose,
   onSelect,
   initialValue,
-  title
+  title,
 }) => {
   const [day, setDay] = useState(1);
   const [month, setMonth] = useState(0); // 0-indexed
@@ -44,14 +64,14 @@ export const ThaiDatePickerModal: React.FC<ThaiDatePickerModalProps> = ({
           const d = parseInt(dStr);
           if (!isNaN(d)) setDay(d);
         }
-        
+
         if (mStr) {
           // Month handling
-          let mIdx = THAI_MONTHS_SHORT.findIndex(m => mStr.includes(m));
-          if (mIdx === -1) mIdx = THAI_MONTHS.findIndex(m => mStr.includes(m));
+          let mIdx = THAI_MONTHS_SHORT.findIndex((m) => mStr.includes(m));
+          if (mIdx === -1) mIdx = THAI_MONTHS.findIndex((m) => mStr.includes(m));
           if (mIdx === -1) {
-              const mInt = parseInt(mStr);
-              if (!isNaN(mInt)) mIdx = mInt - 1;
+            const mInt = parseInt(mStr);
+            if (!isNaN(mInt)) mIdx = mInt - 1;
           }
           if (mIdx !== -1) setMonth(mIdx);
         }
@@ -94,13 +114,15 @@ export const ThaiDatePickerModal: React.FC<ThaiDatePickerModalProps> = ({
             <View className="flex-1">
               <Text className="text-center text-xs font-bold text-gray-400 mb-2">วัน</Text>
               <ScrollView showsVerticalScrollIndicator={false}>
-                {days.map(d => (
-                  <TouchableOpacity 
-                    key={d} 
+                {days.map((d) => (
+                  <TouchableOpacity
+                    key={d}
                     onPress={() => setDay(d)}
                     className={`py-3 items-center ${day === d ? 'bg-primary/10 rounded-xl' : ''}`}
                   >
-                    <Text className={`font-manrope ${day === d ? 'text-primary font-black text-lg' : 'text-gray-400'}`}>
+                    <Text
+                      className={`font-manrope ${day === d ? 'text-primary font-black text-lg' : 'text-gray-400'}`}
+                    >
                       {d}
                     </Text>
                   </TouchableOpacity>
@@ -113,12 +135,14 @@ export const ThaiDatePickerModal: React.FC<ThaiDatePickerModalProps> = ({
               <Text className="text-center text-xs font-bold text-gray-400 mb-2">เดือน</Text>
               <ScrollView showsVerticalScrollIndicator={false}>
                 {THAI_MONTHS.map((m, i) => (
-                  <TouchableOpacity 
-                    key={m} 
+                  <TouchableOpacity
+                    key={m}
                     onPress={() => setMonth(i)}
                     className={`py-3 items-center ${month === i ? 'bg-primary/10 rounded-xl' : ''}`}
                   >
-                    <Text className={`font-manrope ${month === i ? 'text-primary font-black text-lg' : 'text-gray-400'}`}>
+                    <Text
+                      className={`font-manrope ${month === i ? 'text-primary font-black text-lg' : 'text-gray-400'}`}
+                    >
                       {m}
                     </Text>
                   </TouchableOpacity>
@@ -130,13 +154,15 @@ export const ThaiDatePickerModal: React.FC<ThaiDatePickerModalProps> = ({
             <View className="flex-1">
               <Text className="text-center text-xs font-bold text-gray-400 mb-2">ปี พ.ศ.</Text>
               <ScrollView showsVerticalScrollIndicator={false}>
-                {years.map(y => (
-                  <TouchableOpacity 
-                    key={y} 
+                {years.map((y) => (
+                  <TouchableOpacity
+                    key={y}
                     onPress={() => setYear(y)}
                     className={`py-3 items-center ${year === y ? 'bg-primary/10 rounded-xl' : ''}`}
                   >
-                    <Text className={`font-manrope ${year === y ? 'text-primary font-black text-lg' : 'text-gray-400'}`}>
+                    <Text
+                      className={`font-manrope ${year === y ? 'text-primary font-black text-lg' : 'text-gray-400'}`}
+                    >
                       {y}
                     </Text>
                   </TouchableOpacity>
@@ -145,7 +171,7 @@ export const ThaiDatePickerModal: React.FC<ThaiDatePickerModalProps> = ({
             </View>
           </View>
 
-          <TouchableOpacity 
+          <TouchableOpacity
             onPress={handleConfirm}
             className="bg-primary py-4 rounded-2xl mt-8 shadow-lg shadow-primary/30"
           >

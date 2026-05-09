@@ -1,5 +1,13 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, ActivityIndicator, Dimensions, Image } from 'react-native';
+import {
+  View,
+  Text,
+  StyleSheet,
+  TouchableOpacity,
+  ActivityIndicator,
+  Dimensions,
+  Image,
+} from 'react-native';
 import { Camera, CameraView, useCameraPermissions } from 'expo-camera';
 import { MotiView, MotiText } from 'moti';
 import { Ionicons } from '@expo/vector-icons';
@@ -35,7 +43,9 @@ export const FaceLivenessScanner: React.FC<FaceLivenessScannerProps> = ({
   if (!permission.granted) {
     return (
       <View className="flex-1 bg-black items-center justify-center p-6">
-        <Text className="text-white text-center mb-6">Camera permission is required for face verification</Text>
+        <Text className="text-white text-center mb-6">
+          Camera permission is required for face verification
+        </Text>
         <TouchableOpacity onPress={requestPermission} className="bg-primary px-6 py-3 rounded-full">
           <Text className="text-white font-bold">Grant Permission</Text>
         </TouchableOpacity>
@@ -45,16 +55,16 @@ export const FaceLivenessScanner: React.FC<FaceLivenessScannerProps> = ({
 
   const takePicture = async () => {
     if (!cameraRef.current || processing) return;
-    
+
     setIsCapturing(true);
     setStatus('Verifying...');
-    
+
     try {
       const photo = await cameraRef.current.takePictureAsync({
         quality: 0.7,
         base64: true,
       });
-      
+
       setCapturedUri(photo.uri);
       onComplete(photo.uri);
     } catch (err: any) {
@@ -65,11 +75,7 @@ export const FaceLivenessScanner: React.FC<FaceLivenessScannerProps> = ({
 
   return (
     <View style={StyleSheet.absoluteFill} className="bg-black">
-      <CameraView
-        ref={cameraRef}
-        style={StyleSheet.absoluteFill}
-        facing="front"
-      >
+      <CameraView ref={cameraRef} style={StyleSheet.absoluteFill} facing="front">
         {/* Overlay with Circular Cutout */}
         <View style={styles.overlay}>
           <View style={styles.header}>
@@ -86,7 +92,11 @@ export const FaceLivenessScanner: React.FC<FaceLivenessScannerProps> = ({
               transition={{ type: 'timing', duration: 1000 }}
               style={styles.faceFrameContainer}
             >
-              <Svg width={ellipseWidth} height={ellipseHeight} viewBox={`0 0 ${ellipseWidth} ${ellipseHeight}`}>
+              <Svg
+                width={ellipseWidth}
+                height={ellipseHeight}
+                viewBox={`0 0 ${ellipseWidth} ${ellipseHeight}`}
+              >
                 {/* Outer Glow/Border Path - Rounder Chin */}
                 <Path
                   d={`
@@ -101,10 +111,10 @@ export const FaceLivenessScanner: React.FC<FaceLivenessScannerProps> = ({
                   strokeWidth="4"
                   strokeDasharray="8 6"
                 />
-                
+
                 {/* Subtle Face Silhouette Guide */}
                 <G opacity="0.2">
-                   <Path
+                  <Path
                     d={`
                       M ${ellipseWidth * 0.3} ${ellipseHeight * 0.35} Q ${ellipseWidth * 0.35} ${ellipseHeight * 0.32} ${ellipseWidth * 0.4} ${ellipseHeight * 0.35}
                       M ${ellipseWidth * 0.6} ${ellipseHeight * 0.35} Q ${ellipseWidth * 0.65} ${ellipseHeight * 0.32} ${ellipseWidth * 0.7} ${ellipseHeight * 0.35}
@@ -118,7 +128,7 @@ export const FaceLivenessScanner: React.FC<FaceLivenessScannerProps> = ({
                 </G>
               </Svg>
             </MotiView>
-            
+
             <MotiText
               from={{ opacity: 0, translateY: 10 }}
               animate={{ opacity: 1, translateY: 0 }}
@@ -146,21 +156,28 @@ export const FaceLivenessScanner: React.FC<FaceLivenessScannerProps> = ({
         {processing && (
           <View style={[StyleSheet.absoluteFill, { backgroundColor: 'black', zIndex: 999 }]}>
             {capturedUri && (
-              <Image 
-                source={{ uri: capturedUri }} 
+              <Image
+                source={{ uri: capturedUri }}
                 style={StyleSheet.absoluteFill}
                 resizeMode="cover"
               />
             )}
             <BlurView intensity={20} style={StyleSheet.absoluteFill} tint="dark">
-              <View style={[StyleSheet.absoluteFill, { backgroundColor: 'rgba(0,0,0,0.4)', justifyContent: 'center', alignItems: 'center' }]}>
+              <View
+                style={[
+                  StyleSheet.absoluteFill,
+                  {
+                    backgroundColor: 'rgba(0,0,0,0.4)',
+                    justifyContent: 'center',
+                    alignItems: 'center',
+                  },
+                ]}
+              >
                 <ActivityIndicator size="large" color="#00E676" />
                 <Text className="text-white font-manrope font-bold text-xl mt-6">
                   Verifying Identity...
                 </Text>
-                <Text className="text-white/60 text-sm mt-2">
-                  Please wait a moment
-                </Text>
+                <Text className="text-white/60 text-sm mt-2">Please wait a moment</Text>
               </View>
             </BlurView>
           </View>

@@ -5,7 +5,16 @@ import { useRouter } from 'next/navigation';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { ShieldAlert, Mail, Activity, ArrowLeft, UserX, UserCheck, ChevronRight, RefreshCcw } from 'lucide-react';
+import {
+  ShieldAlert,
+  Mail,
+  Activity,
+  ArrowLeft,
+  UserX,
+  UserCheck,
+  ChevronRight,
+  RefreshCcw,
+} from 'lucide-react';
 import { showConfirm, showSuccess, showError } from '@/lib/swal';
 import { AdminUser, AdminRole } from '@repo/dto';
 import { userRequester, authRequester } from '@/lib/requesters';
@@ -27,7 +36,7 @@ export default function AdminDetailPage({ params }: { params: Promise<{ id: stri
   const [isUpdating, setIsUpdating] = useState(false);
   const [availableRoles, setAvailableRoles] = useState<any[]>([]);
   const [currentUser, setCurrentUser] = useState<AdminUser | null>(null);
-  
+
   const isInvited = admin?.isInvited && admin?.isActive;
   const isExpired = isInvited && admin?.inviteExpiry && new Date(admin.inviteExpiry) < new Date();
 
@@ -78,7 +87,7 @@ export default function AdminDetailPage({ params }: { params: Promise<{ id: stri
       isInvited ? 'Resend Invitation?' : 'Send Password Reset?',
       isInvited
         ? `A new invitation link will be sent to ${admin?.email}. This will invalidate the previous link.`
-        : `An email with a reset link will be sent to ${admin?.email}.`
+        : `An email with a reset link will be sent to ${admin?.email}.`,
     );
 
     if (!result.isConfirmed) return;
@@ -90,10 +99,10 @@ export default function AdminDetailPage({ params }: { params: Promise<{ id: stri
         await userRequester.resetAdminPassword(id);
       }
       showSuccess(
-        isInvited ? 'Invitation Resent' : 'Email Sent', 
-        isInvited 
+        isInvited ? 'Invitation Resent' : 'Email Sent',
+        isInvited
           ? `A new invitation link has been sent to ${admin?.email}`
-          : `A password reset link was sent to ${admin?.email}`
+          : `A password reset link was sent to ${admin?.email}`,
       );
     } catch (e) {
       showError('Failed', 'Could not send reset email. Please try again.');
@@ -106,7 +115,7 @@ export default function AdminDetailPage({ params }: { params: Promise<{ id: stri
       isCurrentlyActive ? 'Suspend Admin?' : 'Activate Admin?',
       isCurrentlyActive
         ? 'This admin will lose access to the portal immediately.'
-        : 'This admin will regain access to the portal.'
+        : 'This admin will regain access to the portal.',
     );
 
     if (!result.isConfirmed) return;
@@ -134,7 +143,7 @@ export default function AdminDetailPage({ params }: { params: Promise<{ id: stri
     setIsUpdating(true);
     try {
       await userRequester.updateAdmin(id, { role: editedRole });
-      
+
       showSuccess('Updated', 'Administrator role has been updated.');
       setIsEditingRole(false);
       fetchAdminData();
@@ -158,7 +167,12 @@ export default function AdminDetailPage({ params }: { params: Promise<{ id: stri
       {/* Header with Breadcrumbs */}
       <div className="flex flex-col gap-3">
         <div className="flex items-center text-[10px] font-bold text-slate-400 uppercase tracking-widest gap-2">
-          <button onClick={() => router.back()} className="hover:text-indigo-600 transition-colors uppercase tracking-widest font-bold text-[10px]">Directory</button>
+          <button
+            onClick={() => router.back()}
+            className="hover:text-indigo-600 transition-colors uppercase tracking-widest font-bold text-[10px]"
+          >
+            Directory
+          </button>
           <ChevronRight className="w-3 h-3" />
           <span className="text-slate-900">Admin Profile</span>
         </div>
@@ -169,9 +183,9 @@ export default function AdminDetailPage({ params }: { params: Promise<{ id: stri
             </div>
           </div>
           <div className="flex items-center gap-2">
-            <Button 
+            <Button
               onClick={() => fetchAdminData()}
-              variant="outline" 
+              variant="outline"
               className="rounded-lg border-slate-200 font-semibold text-xs h-9 px-4 text-slate-600 hover:bg-slate-50"
             >
               <RefreshCcw className="w-3.5 h-3.5 mr-2" /> Sync Profile
@@ -195,16 +209,22 @@ export default function AdminDetailPage({ params }: { params: Promise<{ id: stri
                 <p className="text-slate-500">{admin.email}</p>
               </div>
               <Badge
-                variant={isInvited ? 'outline' : (admin.isActive ? 'default' : 'destructive')}
+                variant={isInvited ? 'outline' : admin.isActive ? 'default' : 'destructive'}
                 className={`text-sm px-3 py-1 font-bold ${
                   isInvited
-                    ? (isExpired ? 'bg-rose-50 text-rose-700 border-rose-200' : 'bg-amber-50 text-amber-700 border-amber-200')
+                    ? isExpired
+                      ? 'bg-rose-50 text-rose-700 border-rose-200'
+                      : 'bg-amber-50 text-amber-700 border-amber-200'
                     : ''
                 }`}
               >
-                {isInvited 
-                  ? (isExpired ? 'EXPIRED INVITE' : 'PENDING INVITE') 
-                  : (admin.isActive ? 'ACTIVE' : 'SUSPENDED')}
+                {isInvited
+                  ? isExpired
+                    ? 'EXPIRED INVITE'
+                    : 'PENDING INVITE'
+                  : admin.isActive
+                    ? 'ACTIVE'
+                    : 'SUSPENDED'}
               </Badge>
             </div>
 
@@ -213,7 +233,7 @@ export default function AdminDetailPage({ params }: { params: Promise<{ id: stri
                 <div className="flex items-center justify-between">
                   <p className="text-sm text-slate-500 mb-1">System Role</p>
                   {!isEditingRole && admin.email !== 'admin@jledger.io' && (
-                    <button 
+                    <button
                       onClick={() => setIsEditingRole(true)}
                       className="text-[10px] font-bold text-indigo-600 hover:text-indigo-700 uppercase tracking-wider"
                     >
@@ -221,7 +241,7 @@ export default function AdminDetailPage({ params }: { params: Promise<{ id: stri
                     </button>
                   )}
                 </div>
-                
+
                 {isEditingRole ? (
                   <div className="flex items-center gap-2 mt-1">
                     <Select value={editedRole} onValueChange={(val) => val && setEditedRole(val)}>
@@ -239,22 +259,24 @@ export default function AdminDetailPage({ params }: { params: Promise<{ id: stri
                             <SelectItem value={AdminRole.SUPER_ADMIN}>Super Admin</SelectItem>
                             <SelectItem value={AdminRole.AUDITOR}>Auditor</SelectItem>
                             <SelectItem value={AdminRole.SUPPORT_AGENT}>Support Agent</SelectItem>
-                            <SelectItem value={AdminRole.COMPLIANCE_OFFICER}>Compliance Officer</SelectItem>
+                            <SelectItem value={AdminRole.COMPLIANCE_OFFICER}>
+                              Compliance Officer
+                            </SelectItem>
                           </>
                         )}
                       </SelectContent>
                     </Select>
                     <div className="flex gap-1">
-                      <Button 
-                        size="sm" 
+                      <Button
+                        size="sm"
                         onClick={handleUpdateRole}
                         disabled={isUpdating}
                         className="h-9 bg-emerald-600 hover:bg-emerald-700 text-white px-3 text-xs font-bold"
                       >
                         {isUpdating ? '...' : 'Save'}
                       </Button>
-                      <Button 
-                        size="sm" 
+                      <Button
+                        size="sm"
                         variant="ghost"
                         onClick={() => {
                           setIsEditingRole(false);
@@ -306,7 +328,7 @@ export default function AdminDetailPage({ params }: { params: Promise<{ id: stri
 
               {admin.email !== 'admin@jledger.io' && currentUser?.id !== id && (
                 <Button
-                  variant={admin.isActive ? "outline" : "default"}
+                  variant={admin.isActive ? 'outline' : 'default'}
                   className={`w-full justify-start ${admin.isActive ? 'text-destructive hover:text-destructive' : ''}`}
                   onClick={handleToggleStatus}
                 >

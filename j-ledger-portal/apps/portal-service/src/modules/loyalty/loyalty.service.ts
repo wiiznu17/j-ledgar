@@ -62,7 +62,12 @@ export class LoyaltyService {
     });
   }
 
-  async redeemPoints(userId: string, pointsToRedeem: number, description: string, referenceId?: string) {
+  async redeemPoints(
+    userId: string,
+    pointsToRedeem: number,
+    description: string,
+    referenceId?: string,
+  ) {
     return this.prisma.$transaction(async (tx) => {
       // 1. Check balance
       const userPoint = await tx.userPoint.findUnique({

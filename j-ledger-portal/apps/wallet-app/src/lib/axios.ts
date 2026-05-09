@@ -131,10 +131,11 @@ api.interceptors.response.use(
 
     // If error is 401 and we haven't retried yet
     // Do NOT auto-lock or refresh if the request was to login, register or initial auth flows
-    const isAuthEndpoint = originalRequest.url?.includes('/identity/login') || 
-                          originalRequest.url?.includes('/identity/register') ||
-                          originalRequest.url?.includes('/identity/verify-otp') ||
-                          originalRequest.url?.includes('/identity/device/verify');
+    const isAuthEndpoint =
+      originalRequest.url?.includes('/identity/login') ||
+      originalRequest.url?.includes('/identity/register') ||
+      originalRequest.url?.includes('/identity/verify-otp') ||
+      originalRequest.url?.includes('/identity/device/verify');
 
     if (error.response?.status === 401 && !originalRequest._retry && !isAuthEndpoint) {
       originalRequest._retry = true;
@@ -165,7 +166,7 @@ api.interceptors.response.use(
           );
 
           const { accessToken, refreshToken: newRefreshToken, regToken } = response.data;
-          
+
           // Store new tokens and update auth store
           await storeTokens(accessToken, newRefreshToken);
           useAuthStore.getState().setToken(accessToken, newRefreshToken);
@@ -190,7 +191,7 @@ api.interceptors.response.use(
           // Refresh failed, instead of logout, lock the session
           // This allows user to unlock with PIN which might trigger another refresh
           useAuthStore.getState().lockSession();
-          
+
           refreshSubscribers.forEach((callback) => callback(''));
           refreshSubscribers = [];
           return Promise.reject(refreshError);

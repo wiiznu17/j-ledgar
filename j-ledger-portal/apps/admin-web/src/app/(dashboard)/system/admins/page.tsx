@@ -30,7 +30,16 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { UserPlus, Trash2, Eye, Search, Filter, RotateCcw, ChevronLeft, ChevronRight } from 'lucide-react';
+import {
+  UserPlus,
+  Trash2,
+  Eye,
+  Search,
+  Filter,
+  RotateCcw,
+  ChevronLeft,
+  ChevronRight,
+} from 'lucide-react';
 import { showConfirm, showSuccess, showError } from '@/lib/swal';
 import { AdminUser, AdminRole } from '@repo/dto';
 import { userRequester, authRequester } from '@/lib/requesters';
@@ -74,18 +83,18 @@ export default function UsersPage() {
         page: activeFilters.page,
         limit: 10,
       };
-      
+
       if (activeFilters.search) params.search = activeFilters.search;
       if (activeFilters.role !== 'ALL') params.role = activeFilters.role;
       if (activeFilters.status !== 'ALL') params.status = activeFilters.status;
 
       const response = await userRequester.getAdminUsers({ params });
-      
+
       // Support both structured {data, pagination} and direct array responses
       const staffList = response?.data || (Array.isArray(response) ? response : []);
       console.log('staffList', staffList);
       setUsers(staffList);
-      
+
       if (response?.pagination) {
         setTotalPages(response.pagination.totalPages);
         setTotalItems(response.pagination.total);
@@ -290,30 +299,35 @@ export default function UsersPage() {
 
       <Card className="border-border shadow-sm overflow-hidden">
         <div className="p-4 bg-white border-b border-slate-100">
-          <form onSubmit={handleApplyFilter} className="grid grid-cols-1 md:grid-cols-4 gap-4 items-end">
-            <FilterSearchInput 
+          <form
+            onSubmit={handleApplyFilter}
+            className="grid grid-cols-1 md:grid-cols-4 gap-4 items-end"
+          >
+            <FilterSearchInput
               label="Staff Name / Email"
               placeholder="Enter keyword..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
             />
 
-            <FilterSelect 
+            <FilterSelect
               label="Role Assignment"
               value={filterRole}
               onValueChange={(val) => setFilterRole(val || 'ALL')}
               options={[
                 { label: 'ALL ROLES', value: 'ALL' },
                 ...availableRoles.map((r) => ({ label: r.name, value: r.name })),
-                ...(availableRoles.length === 0 ? [
-                  { label: 'SUPER ADMIN', value: AdminRole.SUPER_ADMIN },
-                  { label: 'AUDITOR', value: AdminRole.AUDITOR },
-                  { label: 'SUPPORT AGENT', value: AdminRole.SUPPORT_AGENT },
-                ] : [])
+                ...(availableRoles.length === 0
+                  ? [
+                      { label: 'SUPER ADMIN', value: AdminRole.SUPER_ADMIN },
+                      { label: 'AUDITOR', value: AdminRole.AUDITOR },
+                      { label: 'SUPPORT AGENT', value: AdminRole.SUPPORT_AGENT },
+                    ]
+                  : []),
               ]}
             />
 
-            <FilterSelect 
+            <FilterSelect
               label="Account Status"
               value={filterStatus}
               onValueChange={(val) => setFilterStatus(val || 'ALL')}
@@ -324,11 +338,7 @@ export default function UsersPage() {
               ]}
             />
 
-            <FilterActions 
-              searchLabel="Search"
-              isLoading={loading}
-              onReset={handleResetFilter}
-            />
+            <FilterActions searchLabel="Search" isLoading={loading} onReset={handleResetFilter} />
           </form>
         </div>
 
@@ -344,69 +354,80 @@ export default function UsersPage() {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {Array.isArray(users) && users.map((user) => (
-                  <TableRow key={user.id} className="hover:bg-secondary/30 transition-colors">
-                    <TableCell>
-                      <div className="flex flex-col">
-                        <span className="font-medium">{user.firstName} {user.lastName}</span>
-                        <span className="text-xs text-muted-foreground">{user.email}</span>
-                      </div>
-                    </TableCell>
-                    <TableCell>
-                      <Badge
-                        variant="outline"
-                        className={
-                          user.role === AdminRole.SUPER_ADMIN
-                            ? 'border-primary text-primary bg-primary/5'
-                            : 'text-slate-600'
-                        }
-                      >
-                        {user.role}
-                      </Badge>
-                    </TableCell>
-                    <TableCell>
-                      {user.isInvited && user.isActive ? (
-                        new Date(user.inviteExpiry || 0) < new Date() ? (
-                          <Badge className="bg-rose-50 text-rose-700 border-rose-200 font-bold" variant="outline">
-                            EXPIRED INVITE
-                          </Badge>
-                        ) : (
-                          <Badge className="bg-amber-50 text-amber-700 border-amber-200 font-bold" variant="outline">
-                            PENDING INVITE
-                          </Badge>
-                        )
-                      ) : (
+                {Array.isArray(users) &&
+                  users.map((user) => (
+                    <TableRow key={user.id} className="hover:bg-secondary/30 transition-colors">
+                      <TableCell>
+                        <div className="flex flex-col">
+                          <span className="font-medium">
+                            {user.firstName} {user.lastName}
+                          </span>
+                          <span className="text-xs text-muted-foreground">{user.email}</span>
+                        </div>
+                      </TableCell>
+                      <TableCell>
                         <Badge
-                          className={
-                            user.isActive
-                              ? 'bg-emerald-50 text-emerald-700 border-emerald-200 font-bold'
-                              : 'bg-rose-50 text-rose-700 border-rose-200 font-bold'
-                          }
                           variant="outline"
+                          className={
+                            user.role === AdminRole.SUPER_ADMIN
+                              ? 'border-primary text-primary bg-primary/5'
+                              : 'text-slate-600'
+                          }
                         >
-                          {user.isActive ? 'ACTIVE' : 'SUSPENDED'}
+                          {user.role}
                         </Badge>
-                      )}
-                    </TableCell>
-                    <TableCell className="text-right flex justify-end gap-2">
-                      <Link href={`/system/admins/${user.id}`}>
-                        <Button variant="outline" size="sm" className="h-8">
-                          <Eye className="h-4 w-4 mr-1" /> View
-                        </Button>
-                      </Link>
-                      {user.role !== AdminRole.SUPER_ADMIN && user.email !== 'admin@jledger.io' && user.id !== currentUser?.id && (
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          onClick={() => handleDeleteUser(user.id)}
-                          className="text-destructive hover:bg-destructive/5 h-8 w-8"
-                        >
-                          <Trash2 className="h-4 w-4" />
-                        </Button>
-                      )}
-                    </TableCell>
-                  </TableRow>
-                ))}
+                      </TableCell>
+                      <TableCell>
+                        {user.isInvited && user.isActive ? (
+                          new Date(user.inviteExpiry || 0) < new Date() ? (
+                            <Badge
+                              className="bg-rose-50 text-rose-700 border-rose-200 font-bold"
+                              variant="outline"
+                            >
+                              EXPIRED INVITE
+                            </Badge>
+                          ) : (
+                            <Badge
+                              className="bg-amber-50 text-amber-700 border-amber-200 font-bold"
+                              variant="outline"
+                            >
+                              PENDING INVITE
+                            </Badge>
+                          )
+                        ) : (
+                          <Badge
+                            className={
+                              user.isActive
+                                ? 'bg-emerald-50 text-emerald-700 border-emerald-200 font-bold'
+                                : 'bg-rose-50 text-rose-700 border-rose-200 font-bold'
+                            }
+                            variant="outline"
+                          >
+                            {user.isActive ? 'ACTIVE' : 'SUSPENDED'}
+                          </Badge>
+                        )}
+                      </TableCell>
+                      <TableCell className="text-right flex justify-end gap-2">
+                        <Link href={`/system/admins/${user.id}`}>
+                          <Button variant="outline" size="sm" className="h-8">
+                            <Eye className="h-4 w-4 mr-1" /> View
+                          </Button>
+                        </Link>
+                        {user.role !== AdminRole.SUPER_ADMIN &&
+                          user.email !== 'admin@jledger.io' &&
+                          user.id !== currentUser?.id && (
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              onClick={() => handleDeleteUser(user.id)}
+                              className="text-destructive hover:bg-destructive/5 h-8 w-8"
+                            >
+                              <Trash2 className="h-4 w-4" />
+                            </Button>
+                          )}
+                      </TableCell>
+                    </TableRow>
+                  ))}
                 {loading && users.length === 0 && (
                   <TableRow>
                     <TableCell colSpan={4} className="h-24 text-center text-slate-400">
@@ -432,7 +453,8 @@ export default function UsersPage() {
           {totalPages > 0 && (
             <div className="p-4 bg-white border-t border-slate-100 flex items-center justify-between">
               <p className="text-xs text-slate-500 font-medium">
-                Showing page <strong className="text-slate-800">{currentPage}</strong> of <strong className="text-slate-800">{totalPages}</strong> 
+                Showing page <strong className="text-slate-800">{currentPage}</strong> of{' '}
+                <strong className="text-slate-800">{totalPages}</strong>
                 <span className="hidden sm:inline"> ({totalItems} total records)</span>
               </p>
               <div className="flex gap-2">

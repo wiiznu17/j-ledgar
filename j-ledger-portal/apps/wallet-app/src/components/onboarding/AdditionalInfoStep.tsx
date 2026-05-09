@@ -90,12 +90,11 @@ export const AdditionalInfoStep: React.FC<AdditionalInfoStepProps> = ({
   };
 
   const isValid =
-    (isSameAsId || (
-      data.address.line1?.trim().length! > 0 &&
-      data.address.subdistrict?.trim().length! > 0 &&
-      data.address.district?.trim().length! > 0 &&
-      data.address.province?.trim().length! > 0
-    )) &&
+    (isSameAsId ||
+      (data.address.line1?.trim().length! > 0 &&
+        data.address.subdistrict?.trim().length! > 0 &&
+        data.address.district?.trim().length! > 0 &&
+        data.address.province?.trim().length! > 0)) &&
     data.address.postalCode?.trim().length! > 0 &&
     data.occupation.trim().length > 0 &&
     (data.occupation !== 'OTHER' || otherOccupation.trim().length > 0) &&
@@ -117,14 +116,13 @@ export const AdditionalInfoStep: React.FC<AdditionalInfoStepProps> = ({
     <StepWrapper visible={visible}>
       <StepHeader title="More Details" subtitle="Tell us a bit more about yourself." />
       <View className="flex-col gap-y-5">
-        
         {/* Current Address Section */}
         <View className="mb-2">
           <View className="flex-row justify-between items-center mb-4">
             <Text className="text-sm font-manrope font-extrabold text-on-surface uppercase tracking-wider">
               Current Address
             </Text>
-            <TouchableOpacity 
+            <TouchableOpacity
               onPress={handleToggleSameAsId}
               className="flex-row items-center gap-2"
             >
@@ -201,8 +199,11 @@ export const AdditionalInfoStep: React.FC<AdditionalInfoStepProps> = ({
                 Using Address from ID Card
               </Text>
               <Text className="text-base font-manrope font-bold text-on-surface mb-5 leading-6">
-                {data.address?.line1 || 'No address data'}{'\n'}
-                {data.address?.subdistrict || ''}{data.address?.district ? `, ${data.address.district}` : ''}{data.address?.province ? `, ${data.address.province}` : ''}
+                {data.address?.line1 || 'No address data'}
+                {'\n'}
+                {data.address?.subdistrict || ''}
+                {data.address?.district ? `, ${data.address.district}` : ''}
+                {data.address?.province ? `, ${data.address.province}` : ''}
               </Text>
               <AppTextInput
                 label="POSTAL CODE"
@@ -256,7 +257,7 @@ export const AdditionalInfoStep: React.FC<AdditionalInfoStepProps> = ({
           options={SOURCE_OF_FUNDS_OPTIONS}
           onSelect={(v) => setData('sourceOfFunds', v)}
         />
-        
+
         {data.sourceOfFunds === 'OTHER' && (
           <AppTextInput
             label="Please specify source of funds"
@@ -283,11 +284,11 @@ export const AdditionalInfoStep: React.FC<AdditionalInfoStepProps> = ({
         )}
 
         <View className="pt-4">
-          <AppButton 
-            title="Next Step" 
-            loading={isLoading} 
-            disabled={!isValid} 
-            onPress={handleFinalSubmit} 
+          <AppButton
+            title="Next Step"
+            loading={isLoading}
+            disabled={!isValid}
+            onPress={handleFinalSubmit}
           />
         </View>
       </View>

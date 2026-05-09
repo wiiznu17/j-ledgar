@@ -43,8 +43,8 @@ import { AdminJwtStrategy } from './strategies/admin-jwt.strategy';
     }),
   ],
   controllers: [
-    AdminStaffController, 
-    AdminCommonController, 
+    AdminStaffController,
+    AdminCommonController,
     AdminAuthController,
     AdminSystemController,
     AdminReconciliationController,
@@ -58,8 +58,8 @@ import { AdminJwtStrategy } from './strategies/admin-jwt.strategy';
     AdminDashboardController,
   ],
   providers: [
-    AdminService, 
-    AdminJwtStrategy, 
+    AdminService,
+    AdminJwtStrategy,
     MailService,
     {
       provide: 'APP_INTERCEPTOR',

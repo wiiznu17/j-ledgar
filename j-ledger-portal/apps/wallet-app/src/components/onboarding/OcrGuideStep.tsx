@@ -17,10 +17,10 @@ export const OcrGuideStep: React.FC<OcrGuideStepProps> = ({ visible, onScan }) =
         title="ID Capture"
         subtitle="We need to scan the front of your National ID Card."
       />
-      
+
       <View className="w-full aspect-square bg-surfaceVariant/5 rounded-[40px] overflow-hidden my-8 items-center justify-center border border-on-surfaceVariant/5">
-        <Image 
-          source={require('../../../assets/images/register/id_scan_guide.png')} 
+        <Image
+          source={require('../../../assets/images/register/id_scan_guide.png')}
           className="w-full h-full"
           resizeMode="cover"
         />
@@ -31,21 +31,27 @@ export const OcrGuideStep: React.FC<OcrGuideStepProps> = ({ visible, onScan }) =
           <Lightbulb size={20} color="#f48fb1" />
           <View className="flex-1">
             <Text className="text-sm font-manrope font-bold text-on-surface">Good Lighting</Text>
-            <Text className="text-xs font-manrope text-on-surfaceVariant">Avoid glare and shadows on the card</Text>
+            <Text className="text-xs font-manrope text-on-surfaceVariant">
+              Avoid glare and shadows on the card
+            </Text>
           </View>
         </View>
 
         <View className="flex-row items-center gap-4 bg-primary/5 p-3 rounded-2xl border border-primary/10">
           <CheckCircle2 size={20} color="#f48fb1" />
           <View className="flex-1">
-            <Text className="text-sm font-manrope font-bold text-on-surface">Clear and Readable</Text>
-            <Text className="text-xs font-manrope text-on-surfaceVariant">Ensure all text and your photo are in focus</Text>
+            <Text className="text-sm font-manrope font-bold text-on-surface">
+              Clear and Readable
+            </Text>
+            <Text className="text-xs font-manrope text-on-surfaceVariant">
+              Ensure all text and your photo are in focus
+            </Text>
           </View>
         </View>
       </View>
 
       <AppButton title="Scan National ID" className="w-full" onPress={onScan} />
-      
+
       <Text className="text-[10px] font-manrope text-center mt-4 text-on-surfaceVariant/60">
         Your data is encrypted and stored securely according to PDPA standards.
       </Text>

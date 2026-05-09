@@ -65,9 +65,7 @@ export function TransactionTable({ data, onRowClick }: TransactionTableProps) {
               className="cursor-pointer hover:bg-secondary/30 transition-colors"
               onClick={() => onRowClick(tx.id)}
             >
-              <TableCell className="font-medium">
-                {getTypeBadge(tx.transactionType)}
-              </TableCell>
+              <TableCell className="font-medium">{getTypeBadge(tx.transactionType)}</TableCell>
               <TableCell className="font-mono text-xs text-muted-foreground hidden md:table-cell">
                 {tx.id}
               </TableCell>

@@ -27,13 +27,16 @@ export default async function ReconcilePage() {
             <div className="p-1.5 bg-indigo-50 rounded-lg">
               <ShieldCheck className="w-5 h-5 text-indigo-600" />
             </div>
-            <span className="text-[10px] font-black uppercase tracking-[0.2em] text-indigo-500">Financial Integrity</span>
+            <span className="text-[10px] font-black uppercase tracking-[0.2em] text-indigo-500">
+              Financial Integrity
+            </span>
           </div>
           <h2 className="text-3xl font-black tracking-tight text-slate-800">
             System Reconciliation
           </h2>
           <p className="text-slate-400 mt-1 text-sm font-medium max-w-xl">
-            Mathematical auditing of the double-entry ledger. Ensuring that every digital Baht in circulation is backed by real-world assets.
+            Mathematical auditing of the double-entry ledger. Ensuring that every digital Baht in
+            circulation is backed by real-world assets.
           </p>
         </div>
         <TriggerAuditButton />
@@ -47,13 +50,21 @@ export default async function ReconcilePage() {
               <div className="p-2 bg-emerald-50 rounded-xl">
                 <Landmark className="w-5 h-5 text-emerald-600" />
               </div>
-              <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Total Assets</span>
+              <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">
+                Total Assets
+              </span>
             </div>
             <div className="flex flex-col">
               <span className="text-2xl font-black text-slate-700 font-mono">
-                {latestReport ? new Intl.NumberFormat('th-TH', { style: 'currency', currency: 'THB' }).format(latestReport.totalSystemAssets) : '฿0.00'}
+                {latestReport
+                  ? new Intl.NumberFormat('th-TH', { style: 'currency', currency: 'THB' }).format(
+                      latestReport.totalSystemAssets,
+                    )
+                  : '฿0.00'}
               </span>
-              <span className="text-[10px] text-slate-400 font-bold mt-1 uppercase tracking-tight">System Bank Liquidity</span>
+              <span className="text-[10px] text-slate-400 font-bold mt-1 uppercase tracking-tight">
+                System Bank Liquidity
+              </span>
             </div>
           </CardContent>
         </Card>
@@ -64,31 +75,53 @@ export default async function ReconcilePage() {
               <div className="p-2 bg-amber-50 rounded-xl">
                 <Wallet className="w-5 h-5 text-amber-600" />
               </div>
-              <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">User Liabilities</span>
+              <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">
+                User Liabilities
+              </span>
             </div>
             <div className="flex flex-col">
               <span className="text-2xl font-black text-slate-700 font-mono">
-                {latestReport ? new Intl.NumberFormat('th-TH', { style: 'currency', currency: 'THB' }).format(latestReport.totalUserLiabilities) : '฿0.00'}
+                {latestReport
+                  ? new Intl.NumberFormat('th-TH', { style: 'currency', currency: 'THB' }).format(
+                      latestReport.totalUserLiabilities,
+                    )
+                  : '฿0.00'}
               </span>
-              <span className="text-[10px] text-slate-400 font-bold mt-1 uppercase tracking-tight">In-Circulation Wallets</span>
+              <span className="text-[10px] text-slate-400 font-bold mt-1 uppercase tracking-tight">
+                In-Circulation Wallets
+              </span>
             </div>
           </CardContent>
         </Card>
 
-        <Card className={`rounded-3xl shadow-sm overflow-hidden group transition-all border-2 ${latestReport?.status === ReconciliationStatus.DISCREPANCY ? 'border-rose-200 bg-rose-50/30' : 'border-emerald-100 bg-emerald-50/30'}`}>
+        <Card
+          className={`rounded-3xl shadow-sm overflow-hidden group transition-all border-2 ${latestReport?.status === ReconciliationStatus.DISCREPANCY ? 'border-rose-200 bg-rose-50/30' : 'border-emerald-100 bg-emerald-50/30'}`}
+        >
           <CardContent className="p-6">
             <div className="flex items-center justify-between mb-4">
-              <div className={`p-2 rounded-xl ${latestReport?.status === ReconciliationStatus.DISCREPANCY ? 'bg-rose-100' : 'bg-emerald-100'}`}>
-                <Activity className={`w-5 h-5 ${latestReport?.status === ReconciliationStatus.DISCREPANCY ? 'text-rose-600' : 'text-emerald-600'}`} />
+              <div
+                className={`p-2 rounded-xl ${latestReport?.status === ReconciliationStatus.DISCREPANCY ? 'bg-rose-100' : 'bg-emerald-100'}`}
+              >
+                <Activity
+                  className={`w-5 h-5 ${latestReport?.status === ReconciliationStatus.DISCREPANCY ? 'text-rose-600' : 'text-emerald-600'}`}
+                />
               </div>
-              <span className={`text-[10px] font-bold uppercase tracking-widest ${latestReport?.status === ReconciliationStatus.DISCREPANCY ? 'text-rose-500' : 'text-emerald-500'}`}>Current Status</span>
+              <span
+                className={`text-[10px] font-bold uppercase tracking-widest ${latestReport?.status === ReconciliationStatus.DISCREPANCY ? 'text-rose-500' : 'text-emerald-500'}`}
+              >
+                Current Status
+              </span>
             </div>
             <div className="flex flex-col">
-              <span className={`text-2xl font-black font-mono ${latestReport?.status === ReconciliationStatus.DISCREPANCY ? 'text-rose-700' : 'text-emerald-700'}`}>
+              <span
+                className={`text-2xl font-black font-mono ${latestReport?.status === ReconciliationStatus.DISCREPANCY ? 'text-rose-700' : 'text-emerald-700'}`}
+              >
                 {latestReport?.status || 'NO DATA'}
               </span>
               <span className="text-[10px] text-slate-400 font-bold mt-1 uppercase tracking-tight">
-                {latestReport?.status === ReconciliationStatus.DISCREPANCY ? 'Immediate Action Required' : 'Ledger Invariant Verified'}
+                {latestReport?.status === ReconciliationStatus.DISCREPANCY
+                  ? 'Immediate Action Required'
+                  : 'Ledger Invariant Verified'}
               </span>
             </div>
           </CardContent>
@@ -117,7 +150,8 @@ export default async function ReconcilePage() {
               Mathematical Core Invariant
             </h4>
             <p className="text-slate-400 leading-relaxed text-sm relative z-10">
-              The system enforces financial integrity by verifying the following invariant at each audit point:
+              The system enforces financial integrity by verifying the following invariant at each
+              audit point:
               <span className="block font-mono mt-4 bg-slate-800 p-4 rounded-2xl border border-slate-700 text-indigo-400 text-xs">
                 System Assets - Sum(User Liabilities) == 0
               </span>
@@ -129,13 +163,18 @@ export default async function ReconcilePage() {
           <div className="p-8 bg-white rounded-[2rem] border border-slate-100 shadow-sm">
             <h4 className="font-bold text-slate-800 text-lg mb-3">Nightly Automation</h4>
             <p className="text-slate-500 leading-relaxed text-sm">
-              While manual audits can be triggered at any time for real-time verification, the system automatically performs
-              this reconciliation nightly at <span className="font-black text-slate-700 underline decoration-indigo-200 decoration-2">00:00:00 UTC</span>.
+              While manual audits can be triggered at any time for real-time verification, the
+              system automatically performs this reconciliation nightly at{' '}
+              <span className="font-black text-slate-700 underline decoration-indigo-200 decoration-2">
+                00:00:00 UTC
+              </span>
+              .
             </p>
             <div className="mt-6 flex items-start gap-3 p-4 bg-amber-50 rounded-2xl border border-amber-100">
               <AlertCircle className="w-5 h-5 text-amber-500 shrink-0" />
               <p className="text-[11px] text-amber-700 font-medium">
-                If a discrepancy is detected, the system will automatically notify the treasury and security teams via the established incident response channels.
+                If a discrepancy is detected, the system will automatically notify the treasury and
+                security teams via the established incident response channels.
               </p>
             </div>
           </div>

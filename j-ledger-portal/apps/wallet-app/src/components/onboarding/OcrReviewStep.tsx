@@ -97,7 +97,7 @@ export const OcrReviewStep: React.FC<OcrReviewStepProps> = ({
             maxLength={13}
           />
           <View className="flex-row gap-4 mt-4">
-            <TouchableOpacity 
+            <TouchableOpacity
               onPress={() => openPicker('issueDate', 'เลือกวันออกบัตร', data.issueDate)}
               className="flex-1"
             >
@@ -113,7 +113,7 @@ export const OcrReviewStep: React.FC<OcrReviewStepProps> = ({
                 </View>
               </View>
             </TouchableOpacity>
-            <TouchableOpacity 
+            <TouchableOpacity
               onPress={() => openPicker('expiryDate', 'เลือกวันหมดอายุ', data.expiryDate)}
               className="flex-1"
             >
@@ -190,7 +190,7 @@ export const OcrReviewStep: React.FC<OcrReviewStepProps> = ({
           <Text className="text-xs font-manrope font-extrabold text-primary mb-3 uppercase">
             Additional Info
           </Text>
-          <TouchableOpacity 
+          <TouchableOpacity
             onPress={() => openPicker('dateOfBirth', 'เลือกวันเกิด', data.dateOfBirth)}
             className="mb-4"
           >
@@ -261,7 +261,7 @@ export const OcrReviewStep: React.FC<OcrReviewStepProps> = ({
         visible={pickerConfig.visible}
         title={pickerConfig.title}
         initialValue={pickerConfig.initialValue}
-        onClose={() => setPickerConfig(prev => ({ ...prev, visible: false }))}
+        onClose={() => setPickerConfig((prev) => ({ ...prev, visible: false }))}
         onSelect={handleDateSelect}
       />
     </StepWrapper>

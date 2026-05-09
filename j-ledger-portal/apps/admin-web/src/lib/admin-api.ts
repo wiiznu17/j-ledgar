@@ -38,7 +38,9 @@ export const adminApi = {
   // AML
   aml: {
     findAll: (query: any) =>
-      apiClient.get<PaginatedResponse<any>>('/api/admin/aml/suspicious-activities', { params: query }),
+      apiClient.get<PaginatedResponse<any>>('/api/admin/aml/suspicious-activities', {
+        params: query,
+      }),
     findOne: (id: string) => apiClient.get<any>(`/api/admin/aml/suspicious-activities/${id}`),
     updateStatus: (id: string, data: { status: string; notes?: string }) =>
       apiClient.put<any>(`/api/admin/aml/suspicious-activities/${id}/status`, data),

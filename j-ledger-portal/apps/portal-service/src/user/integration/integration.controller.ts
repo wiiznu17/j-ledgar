@@ -1,4 +1,15 @@
-import { Controller, Get, Post, Put, Delete, Body, Param, Query, UseGuards, Req } from '@nestjs/common';
+import {
+  Controller,
+  Get,
+  Post,
+  Put,
+  Delete,
+  Body,
+  Param,
+  Query,
+  UseGuards,
+  Req,
+} from '@nestjs/common';
 import { IntegrationService } from '../../modules/integration/integration.service';
 import { JwtAuthGuard } from '../../core/common/guards/jwt-auth.guard';
 
@@ -59,7 +70,11 @@ export class IntegrationController {
   @Post('topup/intent')
   async createTopupIntent(@Req() req: any, @Body() body: TopupIntentBody) {
     const userId = req.user?.sub;
-    return this.integrationService.createStripeTopupIntent(userId, body.amount, body.currency || 'THB');
+    return this.integrationService.createStripeTopupIntent(
+      userId,
+      body.amount,
+      body.currency || 'THB',
+    );
   }
 
   @Get('topup/:orderId')

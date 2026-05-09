@@ -1,10 +1,6 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
-import {
-  S3Client,
-  PutObjectCommand,
-  DeleteObjectCommand,
-} from '@aws-sdk/client-s3';
+import { S3Client, PutObjectCommand, DeleteObjectCommand } from '@aws-sdk/client-s3';
 import { Upload } from '@aws-sdk/lib-storage';
 import { IStorageProvider } from './storage.interface';
 
@@ -35,10 +31,10 @@ export class S3StorageProvider implements IStorageProvider {
     folder: string = 'uploads',
   ): Promise<{ url: string; key: string }> {
     const key = `${folder}/${Date.now()}-${fileName}`;
-    
+
     try {
       this.logger.log(`Uploading file to S3: ${key}`);
-      
+
       const upload = new Upload({
         client: this.s3Client,
         params: {
@@ -52,7 +48,7 @@ export class S3StorageProvider implements IStorageProvider {
       await upload.done();
 
       const url = `https://${this.bucket}.s3.${this.region}.amazonaws.com/${key}`;
-      
+
       return { url, key };
     } catch (error) {
       this.logger.error(`S3 upload failed: ${error.message}`);
@@ -63,7 +59,7 @@ export class S3StorageProvider implements IStorageProvider {
   async deleteFile(key: string): Promise<void> {
     try {
       this.logger.log(`Deleting file from S3: ${key}`);
-      
+
       const command = new DeleteObjectCommand({
         Bucket: this.bucket,
         Key: key,

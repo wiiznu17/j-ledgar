@@ -17,7 +17,10 @@ export const systemRequester = {
   /**
    * Fetches the current system outbox events for Kafka integration monitoring.
    */
-  getOutbox: async (filters?: { status?: string; eventType?: string }, options?: RequestOptions) => {
+  getOutbox: async (
+    filters?: { status?: string; eventType?: string },
+    options?: RequestOptions,
+  ) => {
     return apiClient.get<OutboxEvent[]>(API_PATHS.ADMIN.SYSTEM.OUTBOX, {
       ...options,
       params: {

@@ -26,7 +26,7 @@ export function BannersTable({ banners, onEdit, onRefresh }: BannersTableProps) 
 
   const handleDelete = async (id: string) => {
     if (!confirm('Are you sure you want to delete this banner?')) return;
-    
+
     setDeletingId(id);
     try {
       await promotionsRequester.deleteBanner(id);
@@ -56,9 +56,9 @@ export function BannersTable({ banners, onEdit, onRefresh }: BannersTableProps) 
             <TableRow key={banner.id} className="hover:bg-secondary/30 transition-colors">
               <TableCell>
                 <div className="w-32 h-16 rounded-lg overflow-hidden bg-slate-100 border border-slate-200">
-                  <img 
-                    src={banner.imageUrl} 
-                    alt={banner.title} 
+                  <img
+                    src={banner.imageUrl}
+                    alt={banner.title}
                     className="w-full h-full object-cover"
                     onError={(e) => {
                       (e.target as any).src = 'https://placehold.co/200x100?text=No+Image';
@@ -80,22 +80,26 @@ export function BannersTable({ banners, onEdit, onRefresh }: BannersTableProps) 
               </TableCell>
               <TableCell className="text-right">
                 <div className="flex justify-end gap-1">
-                  <Button 
-                    variant="ghost" 
-                    size="icon" 
+                  <Button
+                    variant="ghost"
+                    size="icon"
                     className="h-8 w-8 text-slate-400 hover:text-blue-600"
                     onClick={() => onEdit(banner)}
                   >
                     <Edit2 size={14} />
                   </Button>
-                  <Button 
-                    variant="ghost" 
-                    size="icon" 
+                  <Button
+                    variant="ghost"
+                    size="icon"
                     className="h-8 w-8 text-slate-400 hover:text-red-600"
                     disabled={deletingId === banner.id}
                     onClick={() => handleDelete(banner.id)}
                   >
-                    {deletingId === banner.id ? <Loader2 size={14} className="animate-spin" /> : <Trash2 size={14} />}
+                    {deletingId === banner.id ? (
+                      <Loader2 size={14} className="animate-spin" />
+                    ) : (
+                      <Trash2 size={14} />
+                    )}
                   </Button>
                 </div>
               </TableCell>

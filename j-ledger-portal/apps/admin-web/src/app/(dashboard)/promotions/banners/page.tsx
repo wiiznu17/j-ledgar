@@ -12,7 +12,7 @@ import {
   DialogDescription,
   DialogHeader,
   DialogTitle,
-} from "@/components/ui/dialog";
+} from '@/components/ui/dialog';
 import { BannerForm } from '@/components/promotions/BannerForm';
 
 export default function BannersPage() {
@@ -57,9 +57,11 @@ export default function BannersPage() {
       <div className="flex items-center justify-between">
         <div>
           <h2 className="text-3xl font-bold tracking-tight text-[#2D3748]">Home Banners</h2>
-          <p className="text-muted-foreground mt-1">Manage promotional carousels shown on the mobile app home screen.</p>
+          <p className="text-muted-foreground mt-1">
+            Manage promotional carousels shown on the mobile app home screen.
+          </p>
         </div>
-        <Button 
+        <Button
           onClick={handleCreate}
           className="bg-pink-500 hover:bg-pink-600 text-white rounded-lg shadow-md shadow-pink-100 transition-all active:scale-95"
         >
@@ -93,10 +95,10 @@ export default function BannersPage() {
               This banner will appear in the home screen carousel for all users.
             </DialogDescription>
           </DialogHeader>
-          <BannerForm 
-            initialData={editingBanner} 
-            onSuccess={handleSuccess} 
-            onCancel={() => setIsModalOpen(false)} 
+          <BannerForm
+            initialData={editingBanner}
+            onSuccess={handleSuccess}
+            onCancel={() => setIsModalOpen(false)}
           />
         </DialogContent>
       </Dialog>

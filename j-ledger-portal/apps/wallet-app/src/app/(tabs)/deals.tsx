@@ -31,7 +31,11 @@ export default function DealsScreen() {
   });
 
   // 3. Fetch Deals
-  const { data: deals, isLoading, isError } = useQuery({
+  const {
+    data: deals,
+    isLoading,
+    isError,
+  } = useQuery({
     queryKey: ['deals', selectedCategoryId],
     queryFn: async () => {
       const url = selectedCategoryId ? `/deals?categoryId=${selectedCategoryId}` : '/deals';
@@ -60,26 +64,30 @@ export default function DealsScreen() {
         </View>
 
         {/* Category Selector */}
-        <ScrollView 
-          horizontal 
+        <ScrollView
+          horizontal
           showsHorizontalScrollIndicator={false}
           contentContainerStyle={{ paddingHorizontal: 20, marginBottom: 24 }}
         >
-          <TouchableOpacity 
+          <TouchableOpacity
             onPress={() => setSelectedCategoryId(null)}
             className={`px-6 py-3 rounded-2xl mr-3 ${!selectedCategoryId ? 'bg-[#1a1a1a]' : 'bg-white border border-gray-100'}`}
           >
-            <Text className={`font-manrope font-black text-[10px] uppercase tracking-widest ${!selectedCategoryId ? 'text-white' : 'text-gray-400'}`}>
+            <Text
+              className={`font-manrope font-black text-[10px] uppercase tracking-widest ${!selectedCategoryId ? 'text-white' : 'text-gray-400'}`}
+            >
               All
             </Text>
           </TouchableOpacity>
           {categories?.map((cat: any) => (
-            <TouchableOpacity 
+            <TouchableOpacity
               key={cat.id}
               onPress={() => setSelectedCategoryId(cat.id)}
               className={`px-6 py-3 rounded-2xl mr-3 ${selectedCategoryId === cat.id ? 'bg-[#1a1a1a]' : 'bg-white border border-gray-100'}`}
             >
-              <Text className={`font-manrope font-black text-[10px] uppercase tracking-widest ${selectedCategoryId === cat.id ? 'text-white' : 'text-gray-400'}`}>
+              <Text
+                className={`font-manrope font-black text-[10px] uppercase tracking-widest ${selectedCategoryId === cat.id ? 'text-white' : 'text-gray-400'}`}
+              >
                 {cat.name}
               </Text>
             </TouchableOpacity>
@@ -94,9 +102,13 @@ export default function DealsScreen() {
           {isLoading ? (
             <ActivityIndicator color="#f48fb1" className="mt-10" />
           ) : isError ? (
-            <Text className="text-center text-gray-400 font-manrope font-bold mt-10">Failed to load deals</Text>
+            <Text className="text-center text-gray-400 font-manrope font-bold mt-10">
+              Failed to load deals
+            </Text>
           ) : deals?.length === 0 ? (
-            <Text className="text-center text-gray-400 font-manrope font-bold mt-10">No deals available in this category</Text>
+            <Text className="text-center text-gray-400 font-manrope font-bold mt-10">
+              No deals available in this category
+            </Text>
           ) : (
             <View className="gap-y-6">
               {deals?.map((deal: any, idx: number) => (

@@ -19,8 +19,8 @@ export const FaceGuideStep: React.FC<FaceGuideStepProps> = ({ visible, onScan })
       />
 
       <View className="w-full aspect-square bg-surfaceVariant/5 rounded-[40px] overflow-hidden my-2 items-center justify-center border border-on-surfaceVariant/5">
-        <Image 
-          source={require('../../../assets/images/register/face_scan_guide.png')} 
+        <Image
+          source={require('../../../assets/images/register/face_scan_guide.png')}
           className="w-full h-full"
           resizeMode="cover"
         />
@@ -31,15 +31,21 @@ export const FaceGuideStep: React.FC<FaceGuideStepProps> = ({ visible, onScan })
           <Sun size={20} color="#f48fb1" />
           <View className="flex-1">
             <Text className="text-sm font-manrope font-bold text-on-surface">Even Lighting</Text>
-            <Text className="text-xs font-manrope text-on-surfaceVariant">Make sure your face is well-lit and clearly visible</Text>
+            <Text className="text-xs font-manrope text-on-surfaceVariant">
+              Make sure your face is well-lit and clearly visible
+            </Text>
           </View>
         </View>
 
         <View className="flex-row items-center gap-4 bg-primary/5 p-3 rounded-2xl border border-primary/10">
           <UserCheck size={20} color="#f48fb1" />
           <View className="flex-1">
-            <Text className="text-sm font-manrope font-bold text-on-surface">Remove Accessories</Text>
-            <Text className="text-xs font-manrope text-on-surfaceVariant">Please remove glasses, hats, or masks</Text>
+            <Text className="text-sm font-manrope font-bold text-on-surface">
+              Remove Accessories
+            </Text>
+            <Text className="text-xs font-manrope text-on-surfaceVariant">
+              Please remove glasses, hats, or masks
+            </Text>
           </View>
         </View>
       </View>

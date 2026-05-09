@@ -9,9 +9,10 @@ import { REDIS_CLIENT } from '../common/constants';
     {
       provide: REDIS_CLIENT,
       useFactory: (configService: ConfigService) => {
-        const redisAddress = configService.get<string>('JLEDGER_REDIS_ADDRESS') || 'redis://localhost:6379';
+        const redisAddress =
+          configService.get<string>('JLEDGER_REDIS_ADDRESS') || 'redis://localhost:6379';
         const redisPassword = configService.get<string>('JLEDGER_REDIS_PASSWORD');
-        
+
         const redis = new Redis(redisAddress, {
           password: redisPassword || undefined,
         });

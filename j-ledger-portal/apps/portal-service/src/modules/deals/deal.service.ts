@@ -24,13 +24,8 @@ export class DealService {
   async getDeals(filters: { categoryId?: string; brandId?: string; search?: string }) {
     const where: any = {
       isActive: true,
-      OR: [
-        { startDate: null },
-        { startDate: { lte: new Date() } },
-      ],
-      AND: [
-        { OR: [{ endDate: null }, { endDate: { gte: new Date() } }] },
-      ],
+      OR: [{ startDate: null }, { startDate: { lte: new Date() } }],
+      AND: [{ OR: [{ endDate: null }, { endDate: { gte: new Date() } }] }],
     };
 
     if (filters.categoryId) where.categoryId = filters.categoryId;
@@ -104,8 +99,9 @@ export class DealService {
       }
 
       // 6. Create Redemption
-      const redemptionCode = `JL-${Math.random().toString(36).substring(2, 6)}-${Math.random().toString(36).substring(2, 6)}`.toUpperCase();
-      
+      const redemptionCode =
+        `JL-${Math.random().toString(36).substring(2, 6)}-${Math.random().toString(36).substring(2, 6)}`.toUpperCase();
+
       const redemption = await tx.dealRedemption.create({
         data: {
           userId,

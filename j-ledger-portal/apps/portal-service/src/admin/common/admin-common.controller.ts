@@ -30,7 +30,7 @@ export class AdminCommonController {
         file.mimetype,
         'promotions',
       );
-      
+
       return {
         url,
         key,

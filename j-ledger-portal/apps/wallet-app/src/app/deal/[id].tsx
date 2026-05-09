@@ -54,7 +54,7 @@ export default function DealDetailScreen() {
     onSuccess: () => {
       setShowConfirm(false);
       setIsSuccess(true);
-      
+
       // Invalidate queries to refresh balance and history
       queryClient.invalidateQueries({ queryKey: ['loyalty-balance'] });
       queryClient.invalidateQueries({ queryKey: ['deals'] });
@@ -91,11 +91,7 @@ export default function DealDetailScreen() {
       >
         {/* Full Image Header */}
         <View className="relative w-full h-[380px] bg-white rounded-b-[3rem] overflow-hidden shadow-sm">
-          <Image 
-            source={{ uri: deal.imageUrl }} 
-            className="w-full h-full" 
-            resizeMode="cover" 
-          />
+          <Image source={{ uri: deal.imageUrl }} className="w-full h-full" resizeMode="cover" />
           <View className="absolute top-0 left-0 right-0 h-32 bg-black/20" />
 
           {/* Back Button Floating */}

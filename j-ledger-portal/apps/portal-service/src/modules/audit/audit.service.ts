@@ -145,17 +145,17 @@ export class AuditService {
   async getAuditStats() {
     const [total, creations, updates, deletions] = await Promise.all([
       this.prisma.auditLog.count(),
-      this.prisma.auditLog.count({ 
-        where: { 
+      this.prisma.auditLog.count({
+        where: {
           OR: [
             { action: { contains: 'CREATE' } },
             { action: { contains: 'APPROVE' } },
             { action: { contains: 'ACTIVATE' } },
-          ]
-        } 
+          ],
+        },
       }),
-      this.prisma.auditLog.count({ 
-        where: { 
+      this.prisma.auditLog.count({
+        where: {
           OR: [
             { action: { contains: 'UPDATE' } },
             { action: { contains: 'MANAGE' } },
@@ -163,18 +163,18 @@ export class AuditService {
             { action: { contains: 'RESET' } },
             { action: { contains: 'ASSIGN' } },
             { action: { contains: 'FREEZE' } },
-          ]
-        } 
+          ],
+        },
       }),
-      this.prisma.auditLog.count({ 
-        where: { 
+      this.prisma.auditLog.count({
+        where: {
           OR: [
             { action: { contains: 'DELETE' } },
             { action: { contains: 'REMOVE' } },
             { action: { contains: 'REJECT' } },
             { action: { contains: 'DEACTIVATE' } },
-          ]
-        } 
+          ],
+        },
       }),
     ]);
 

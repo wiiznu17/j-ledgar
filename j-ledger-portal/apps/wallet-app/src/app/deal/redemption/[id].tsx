@@ -1,5 +1,14 @@
 import React from 'react';
-import { View, Text, ScrollView, TouchableOpacity, Image, ActivityIndicator, Alert, Dimensions } from 'react-native';
+import {
+  View,
+  Text,
+  ScrollView,
+  TouchableOpacity,
+  Image,
+  ActivityIndicator,
+  Alert,
+  Dimensions,
+} from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import { ChevronLeft, Info, CheckCircle2, Clock } from 'lucide-react-native';
@@ -14,7 +23,11 @@ export default function RedemptionDetailScreen() {
   const queryClient = useQueryClient();
 
   // 1. Fetch Redemption Detail
-  const { data: redemption, isLoading, isError } = useQuery({
+  const {
+    data: redemption,
+    isLoading,
+    isError,
+  } = useQuery({
     queryKey: ['redemption', id],
     queryFn: async () => {
       // In our API, we might need a specific endpoint or just find it in my-redemptions
@@ -62,21 +75,26 @@ export default function RedemptionDetailScreen() {
         >
           <ChevronLeft size={24} color="#1a1a1a" />
         </TouchableOpacity>
-        <Text className="text-lg font-manrope font-black text-gray-800 tracking-tight">Redeem Deal</Text>
+        <Text className="text-lg font-manrope font-black text-gray-800 tracking-tight">
+          Redeem Deal
+        </Text>
         <View className="w-10" />
       </View>
 
-      <ScrollView contentContainerStyle={{ padding: 20, paddingBottom: 100 }} showsVerticalScrollIndicator={false}>
+      <ScrollView
+        contentContainerStyle={{ padding: 20, paddingBottom: 100 }}
+        showsVerticalScrollIndicator={false}
+      >
         {/* Card Container */}
-        <MotiView 
+        <MotiView
           from={{ opacity: 0, scale: 0.9 }}
           animate={{ opacity: 1, scale: 1 }}
           className="bg-white rounded-[3rem] overflow-hidden shadow-sm border border-gray-50"
         >
-          <Image 
-            source={{ uri: redemption.deal?.imageUrl }} 
-            className="w-full h-48" 
-            resizeMode="cover" 
+          <Image
+            source={{ uri: redemption.deal?.imageUrl }}
+            className="w-full h-48"
+            resizeMode="cover"
           />
 
           <View className="p-8 items-center">
@@ -89,7 +107,7 @@ export default function RedemptionDetailScreen() {
             <Text className="text-2xl font-manrope font-black text-gray-800 text-center mb-2">
               {redemption.deal?.title}
             </Text>
-            
+
             <View className="flex-row items-center gap-2 mb-8">
               <Clock size={14} color="#9ca3af" />
               <Text className="text-xs font-manrope font-bold text-gray-400 uppercase tracking-widest">
@@ -98,24 +116,32 @@ export default function RedemptionDetailScreen() {
             </View>
 
             {/* Barcode Section */}
-            <View className={`w-full p-8 rounded-[2.5rem] items-center justify-center border-2 border-dashed ${isUsed ? 'bg-gray-50 border-gray-200' : 'bg-white border-pink-100'}`}>
+            <View
+              className={`w-full p-8 rounded-[2.5rem] items-center justify-center border-2 border-dashed ${isUsed ? 'bg-gray-50 border-gray-200' : 'bg-white border-pink-100'}`}
+            >
               {isUsed ? (
                 <View className="items-center py-6">
                   <CheckCircle2 size={48} color="#10b981" />
-                  <Text className="text-green-500 font-manrope font-black text-lg mt-4 uppercase tracking-widest">Already Used</Text>
-                  <Text className="text-gray-400 font-manrope font-bold text-xs mt-1">Used on {new Date(redemption.usedAt).toLocaleString()}</Text>
+                  <Text className="text-green-500 font-manrope font-black text-lg mt-4 uppercase tracking-widest">
+                    Already Used
+                  </Text>
+                  <Text className="text-gray-400 font-manrope font-bold text-xs mt-1">
+                    Used on {new Date(redemption.usedAt).toLocaleString()}
+                  </Text>
                 </View>
               ) : isExpired ? (
                 <View className="items-center py-6">
                   <Info size={48} color="#ef4444" />
-                  <Text className="text-red-500 font-manrope font-black text-lg mt-4 uppercase tracking-widest">Expired</Text>
+                  <Text className="text-red-500 font-manrope font-black text-lg mt-4 uppercase tracking-widest">
+                    Expired
+                  </Text>
                 </View>
               ) : (
                 <>
                   <View className="bg-white p-4 mb-6">
-                    <Barcode 
-                      value={redemption.redemptionCode} 
-                      format="CODE128" 
+                    <Barcode
+                      value={redemption.redemptionCode}
+                      format="CODE128"
                       maxWidth={Dimensions.get('window').width - 120}
                       height={80}
                     />
@@ -134,7 +160,8 @@ export default function RedemptionDetailScreen() {
             {!isUsed && !isExpired && (
               <View className="mt-10 px-4">
                 <Text className="text-[11px] font-manrope font-bold text-gray-400 text-center leading-relaxed">
-                  Please ask the merchant to scan this barcode or enter the code manually. Once used, please tap the button below to confirm.
+                  Please ask the merchant to scan this barcode or enter the code manually. Once
+                  used, please tap the button below to confirm.
                 </Text>
               </View>
             )}
@@ -152,8 +179,8 @@ export default function RedemptionDetailScreen() {
                 'Are you sure you want to mark this deal as used? This action cannot be undone.',
                 [
                   { text: 'Cancel', style: 'cancel' },
-                  { text: 'Confirm', onPress: () => confirmUseMutation.mutate() }
-                ]
+                  { text: 'Confirm', onPress: () => confirmUseMutation.mutate() },
+                ],
               );
             }}
             disabled={confirmUseMutation.isPending}

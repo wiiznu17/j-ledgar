@@ -12,14 +12,7 @@ import {
   AlertDialogTrigger,
 } from '@/components/ui/alert-dialog';
 import { Button } from '@/components/ui/button';
-import { 
-  ShieldAlert, 
-  Loader2, 
-  Ban, 
-  Unlock, 
-  UserCheck, 
-  MoreHorizontal 
-} from 'lucide-react';
+import { ShieldAlert, Loader2, Ban, Unlock, UserCheck, MoreHorizontal } from 'lucide-react';
 import { useState } from 'react';
 import { userRequester } from '@/lib/requesters';
 import { toast } from 'sonner';
@@ -46,7 +39,7 @@ export function UserControlActions({ userId, email, status }: UserControlActions
       if (action === 'unsuspend') await userRequester.unsuspendWalletUser(userId);
       if (action === 'block') await userRequester.blockWalletUser(userId);
       if (action === 'unblock') await userRequester.unblockWalletUser(userId);
-      
+
       toast.success(`Action ${action} for ${email} performed successfully`);
       router.refresh();
     } catch (error) {
@@ -70,7 +63,11 @@ export function UserControlActions({ userId, email, status }: UserControlActions
                 disabled={loading}
                 className="gap-2 border-orange-200 text-orange-600 hover:bg-orange-50"
               >
-                {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Unlock className="h-4 w-4" />}
+                {loading ? (
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                ) : (
+                  <Unlock className="h-4 w-4" />
+                )}
                 Unsuspend Account
               </Button>
             }
@@ -79,8 +76,8 @@ export function UserControlActions({ userId, email, status }: UserControlActions
             <AlertDialogHeader>
               <AlertDialogTitle>Restore account access?</AlertDialogTitle>
               <AlertDialogDescription>
-                This will re-activate the wallet account for <strong>{email}</strong>. 
-                The user will regain full access to their wallet and financial services.
+                This will re-activate the wallet account for <strong>{email}</strong>. The user will
+                regain full access to their wallet and financial services.
               </AlertDialogDescription>
             </AlertDialogHeader>
             <AlertDialogFooter>
@@ -115,7 +112,11 @@ export function UserControlActions({ userId, email, status }: UserControlActions
                 disabled={loading}
                 className="gap-2 border-red-200 text-red-600 hover:bg-red-50"
               >
-                {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : <UserCheck className="h-4 w-4" />}
+                {loading ? (
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                ) : (
+                  <UserCheck className="h-4 w-4" />
+                )}
                 Unblock Account
               </Button>
             }
@@ -124,8 +125,8 @@ export function UserControlActions({ userId, email, status }: UserControlActions
             <AlertDialogHeader>
               <AlertDialogTitle>Unblock this user?</AlertDialogTitle>
               <AlertDialogDescription>
-                You are about to restore access for <strong>{email}</strong>. 
-                Please ensure that the security issues leading to this block have been fully resolved.
+                You are about to restore access for <strong>{email}</strong>. Please ensure that the
+                security issues leading to this block have been fully resolved.
               </AlertDialogDescription>
             </AlertDialogHeader>
             <AlertDialogFooter>
@@ -154,7 +155,11 @@ export function UserControlActions({ userId, email, status }: UserControlActions
         <AlertDialog>
           <AlertDialogTrigger
             render={
-              <Button variant="outline" size="sm" className="gap-2 border-orange-200 text-orange-600 hover:bg-orange-50">
+              <Button
+                variant="outline"
+                size="sm"
+                className="gap-2 border-orange-200 text-orange-600 hover:bg-orange-50"
+              >
                 <ShieldAlert className="h-4 w-4" />
                 Suspend
               </Button>
@@ -164,8 +169,8 @@ export function UserControlActions({ userId, email, status }: UserControlActions
             <AlertDialogHeader>
               <AlertDialogTitle>Suspend wallet account?</AlertDialogTitle>
               <AlertDialogDescription>
-                This will temporarily disable <strong>{email}</strong>. 
-                The user will be unable to perform any financial transactions until unsuspended.
+                This will temporarily disable <strong>{email}</strong>. The user will be unable to
+                perform any financial transactions until unsuspended.
               </AlertDialogDescription>
             </AlertDialogHeader>
             <AlertDialogFooter>
@@ -200,8 +205,8 @@ export function UserControlActions({ userId, email, status }: UserControlActions
             <AlertDialogHeader>
               <AlertDialogTitle>Permanently block this user?</AlertDialogTitle>
               <AlertDialogDescription>
-                Blocking <strong>{email}</strong> is a severe action used for confirmed fraud. 
-                The user will lose all access to the platform.
+                Blocking <strong>{email}</strong> is a severe action used for confirmed fraud. The
+                user will lose all access to the platform.
               </AlertDialogDescription>
             </AlertDialogHeader>
             <AlertDialogFooter>

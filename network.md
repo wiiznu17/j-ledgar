@@ -49,7 +49,7 @@ cd j-ledger-portal/apps/wallet-app && npx expo start
 graph LR
     subgraph "Local Machine (Host)"
         direction TB
-        WEB["[admin-web]<br/>:3000"]
+        WEB["[admin-web]<br/>:3002"]
         APP["[wallet-app]<br/>Expo"]
         PORTAL["[portal-service]<br/>:3000<br/>(Monolith)"]
         FIN["[finance-service]<br/>:8081"]
@@ -120,7 +120,7 @@ graph LR
     subgraph "Docker Network (jledger-network)"
         direction TB
         subgraph "Application Services"
-            WEB["[admin-web]<br/>:3000"]
+            WEB["[admin-web]<br/>:3002"]
             PORTAL["[portal-service]<br/>:3000<br/>(Monolith)"]
             FIN["[finance-service]<br/>:8081"]
             WORK["[notification-worker]<br/>:3001"]
@@ -195,7 +195,7 @@ graph LR
     subgraph "Docker Network (jledger-network)"
         direction TB
         subgraph "Application Services"
-            WEB["[admin-web]<br/>:3000"]
+            WEB["[admin-web]<br/>:3002"]
             PORTAL["[portal-service]<br/>:3000<br/>(Monolith)"]
             FIN["[finance-service]<br/>:8081"]
             WORK["[notification-worker]<br/>:3001"]

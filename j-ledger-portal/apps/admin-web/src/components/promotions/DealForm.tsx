@@ -27,7 +27,7 @@ export function DealForm({ initialData, onSuccess, onCancel }: DealFormProps) {
   const [uploading, setUploading] = useState(false);
   const [brands, setBrands] = useState<any[]>([]);
   const [categories, setCategories] = useState<any[]>([]);
-  
+
   const [formData, setFormData] = useState({
     title: initialData?.title || '',
     description: initialData?.description || '',
@@ -229,7 +229,13 @@ export function DealForm({ initialData, onSuccess, onCancel }: DealFormProps) {
                   <span className="text-[10px] text-muted-foreground mt-1">Upload</span>
                 </>
               )}
-              <input type="file" className="hidden" accept="image/*" onChange={handleImageUpload} disabled={uploading} />
+              <input
+                type="file"
+                className="hidden"
+                accept="image/*"
+                onChange={handleImageUpload}
+                disabled={uploading}
+              />
             </label>
           )}
           <div className="flex-1">
@@ -257,7 +263,11 @@ export function DealForm({ initialData, onSuccess, onCancel }: DealFormProps) {
         <Button type="button" variant="ghost" onClick={onCancel}>
           Cancel
         </Button>
-        <Button type="submit" className="bg-[#f48fb1] hover:bg-[#f06292] text-white" disabled={loading || uploading}>
+        <Button
+          type="submit"
+          className="bg-[#f48fb1] hover:bg-[#f06292] text-white"
+          disabled={loading || uploading}
+        >
           {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
           {initialData?.id ? 'Update Deal' : 'Create Deal'}
         </Button>

@@ -18,20 +18,18 @@ export function DashboardWrapper({ children, userRole, permissions }: DashboardW
   return (
     <PermissionProvider role={userRole} permissions={permissions}>
       <div className="min-h-screen bg-slate-50 flex h-screen overflow-hidden">
-        <Sidebar 
-          onLogout={logout} 
-          isCollapsed={isCollapsed} 
+        <Sidebar
+          onLogout={logout}
+          isCollapsed={isCollapsed}
           onToggle={() => setIsCollapsed(!isCollapsed)}
-          userRole={userRole} 
+          userRole={userRole}
           permissions={permissions}
         />
 
         <div
           className={`flex-1 flex flex-col min-w-0 h-full transition-all duration-300 ease-in-out`}
         >
-          <Topbar
-            onLogout={logout}
-          />
+          <Topbar onLogout={logout} />
           <main className="flex-1 p-8 overflow-auto bg-white">{children}</main>
         </div>
       </div>
