@@ -319,7 +319,7 @@ export default function WalletDetailPage({ params }: { params: Promise<{ id: str
                             <div className="flex items-center gap-2 text-[10px] text-slate-400">
                               <span>{new Date(tx.createdAt).toLocaleDateString()}</span>
                               <span>•</span>
-                              <span className="font-mono">Ref: {tx.id.slice(-6)}</span>
+                              <span className="font-mono">Ref: {String(tx.transactionId || tx.id).slice(-8).toUpperCase()}</span>
                             </div>
                           </div>
                         </td>
@@ -341,7 +341,7 @@ export default function WalletDetailPage({ params }: { params: Promise<{ id: str
                             variant="outline"
                             className={cn(
                               'rounded-md px-2 py-0.5 text-[9px] font-bold uppercase border-none',
-                              tx.status === TransactionStatus.SUCCESS
+                              tx.status === TransactionStatus.COMPLETED
                                 ? 'bg-emerald-50 text-emerald-600'
                                 : 'bg-rose-50 text-rose-600',
                             )}

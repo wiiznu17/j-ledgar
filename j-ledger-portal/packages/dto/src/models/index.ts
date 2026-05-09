@@ -60,15 +60,22 @@ export interface LedgerEntry {
 }
 
 export interface Transaction {
-  id: string;
+  id: string | number;
+  transactionId?: string;
   transactionType: TransactionType;
   amount: number;
+  fee?: number;
   currency: string;
   status: TransactionStatus;
   createdAt: string;
+  updatedAt?: string;
+  completedAt?: string | null;
   description?: string;
   senderId?: string;
   receiverId?: string;
+  fromWalletId?: number | null;
+  toWalletId?: number | null;
+  metadata?: string | Record<string, any>;
 }
 
 export interface TransactionDetailsDto {

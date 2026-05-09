@@ -7,6 +7,25 @@ async function bootstrap() {
   const app = await NestFactory.create(AppModule, { rawBody: true });
 
   app.use(cookieParser());
+  
+  // Enhanced Request Logger with Colors & Time
+  app.use((req, res, next) => {
+    const start = Date.now();
+    res.on('finish', () => {
+      const duration = Date.now() - start;
+      const status = res.statusCode;
+      
+      // Status Color Logic
+      const sColor = status >= 500 ? '\x1b[31m' : status >= 400 ? '\x1b[33m' : status >= 300 ? '\x1b[36m' : '\x1b[32m';
+      const mColor = '\x1b[35m'; // Magenta for Method
+      const reset = '\x1b[0m';
+      
+      console.log(
+        `[${new Date().toLocaleTimeString()}] ${mColor}${req.method}${reset} ${req.url} ${sColor}${status}${reset} - ${duration}ms`
+      );
+    });
+    next();
+  });
 
   app.useGlobalPipes(
     new ValidationPipe({

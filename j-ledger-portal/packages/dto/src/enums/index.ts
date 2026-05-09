@@ -7,9 +7,10 @@ export enum TransactionType {
 }
 
 export enum TransactionStatus {
-  SUCCESS = 'SUCCESS',
   FAILED = 'FAILED',
   PENDING = 'PENDING',
+  COMPLETED = 'COMPLETED',
+  CANCELLED = 'CANCELLED',
 }
 
 export enum AccountStatus {
