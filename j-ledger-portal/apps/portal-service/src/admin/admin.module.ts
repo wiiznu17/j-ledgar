@@ -39,7 +39,7 @@ import { AdminJwtStrategy } from './strategies/admin-jwt.strategy';
     KycModule,
     JwtModule.register({
       secret: process.env.ADMIN_JWT_SECRET || 'jledger-admin-super-secret-2024-dev-key-32chars',
-      signOptions: { expiresIn: '1h' },
+      signOptions: { expiresIn: '8h' },
     }),
   ],
   controllers: [

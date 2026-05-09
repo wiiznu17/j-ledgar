@@ -857,17 +857,46 @@ export class IdentityService {
     });
   }
 
-  async blockUser(id: string, reason?: string) {
+  async suspendUser(id: string) {
+    const user = await this.prisma.user.findUnique({ where: { id } });
+    if (!user) throw new BadRequestException('User not found');
+
+    if (user.status !== UserStatus.ACTIVE) {
+      throw new ForbiddenException('Only ACTIVE users can be suspended');
+    }
+
     return this.prisma.user.update({
       where: { id },
-      data: { status: 'BLOCKED' },
+      data: { status: UserStatus.SUSPENDED },
     });
   }
 
-  async unblockUser(id: string) {
+  async activateUser(id: string) { // use for unsuspending and unblocking
+    const user = await this.prisma.user.findUnique({ where: { id } });
+    if (!user) throw new BadRequestException('User not found');
+
+    // Business Logic: Only allow activation (unsuspend/unblock) of SUSPENDED or BLOCKED users
+    if (user.status !== UserStatus.SUSPENDED && user.status !== UserStatus.BLOCKED) {
+      throw new ForbiddenException('Only SUSPENDED or BLOCKED users can be activated');
+    }
+
     return this.prisma.user.update({
       where: { id },
       data: { status: UserStatus.ACTIVE },
+    });
+  }
+
+  async blockUser(id: string, reason?: string) {
+    const user = await this.prisma.user.findUnique({ where: { id } });
+    if (!user) throw new BadRequestException('User not found');
+
+    if (user.status !== UserStatus.ACTIVE && user.status !== UserStatus.SUSPENDED) {
+      throw new ForbiddenException('User must be approved (ACTIVE/SUSPENDED) before being blocked');
+    }
+
+    return this.prisma.user.update({
+      where: { id },
+      data: { status: UserStatus.BLOCKED },
     });
   }
 

@@ -158,7 +158,8 @@ export function UserControlActions({ userId, email, status }: UserControlActions
               <Button
                 variant="outline"
                 size="sm"
-                className="gap-2 border-orange-200 text-orange-600 hover:bg-orange-50"
+                disabled={loading || status !== 'ACTIVE'}
+                className="gap-2 border-orange-200 text-orange-600 hover:bg-orange-50 disabled:opacity-40"
               >
                 <ShieldAlert className="h-4 w-4" />
                 Suspend
@@ -195,7 +196,12 @@ export function UserControlActions({ userId, email, status }: UserControlActions
         <AlertDialog>
           <AlertDialogTrigger
             render={
-              <Button variant="destructive" size="sm" className="gap-2">
+              <Button
+                variant="destructive"
+                size="sm"
+                className="gap-2 disabled:opacity-40"
+                disabled={loading || (status !== 'ACTIVE' && status !== 'SUSPENDED')}
+              >
                 <Ban className="h-4 w-4" />
                 Block
               </Button>
