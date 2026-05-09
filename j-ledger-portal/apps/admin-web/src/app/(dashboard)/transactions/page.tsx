@@ -162,9 +162,10 @@ export default function TransactionsPage() {
               onValueChange={(val) => setStatus(val || 'ALL')}
               options={[
                 { label: 'ALL STATUS', value: 'ALL' },
-                { label: 'SUCCESS', value: TransactionStatus.SUCCESS },
+                { label: 'COMPLETED', value: TransactionStatus.COMPLETED },
                 { label: 'PENDING', value: TransactionStatus.PENDING },
                 { label: 'FAILED', value: TransactionStatus.FAILED },
+                { label: 'CANCELLED', value: TransactionStatus.CANCELLED },
               ]}
             />
 
@@ -269,10 +270,10 @@ export default function TransactionsPage() {
                     <td className="px-6 py-5">
                       <div>
                         <p className="text-sm font-bold text-slate-800 tabular-nums">
-                          {txn.id.slice(0, 12).toUpperCase()}
+                          {String(txn.transactionId || txn.id).slice(0, 12).toUpperCase()}
                         </p>
                         <p className="text-[10px] text-slate-400 font-medium truncate max-w-[150px]">
-                          ID: {txn.id}
+                          Ref: {String(txn.transactionId || txn.id)}
                         </p>
                       </div>
                     </td>
@@ -316,10 +317,10 @@ export default function TransactionsPage() {
                       </p>
                     </td>
                     <td className="px-6 py-5">
-                      {txn.status === TransactionStatus.SUCCESS ? (
+                      {txn.status === TransactionStatus.COMPLETED ? (
                         <div className="inline-flex items-center px-2.5 py-0.5 rounded-full bg-emerald-50 text-emerald-600 text-[10px] font-black uppercase tracking-wider border border-emerald-100">
                           <CheckCircle2 className="w-3 h-3 mr-1" />
-                          Success
+                          Completed
                         </div>
                       ) : txn.status === TransactionStatus.FAILED ? (
                         <div className="inline-flex items-center px-2.5 py-0.5 rounded-full bg-rose-50 text-rose-600 text-[10px] font-black uppercase tracking-wider border border-rose-100">

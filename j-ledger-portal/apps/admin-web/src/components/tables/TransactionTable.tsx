@@ -63,11 +63,11 @@ export function TransactionTable({ data, onRowClick }: TransactionTableProps) {
             <TableRow
               key={tx.id}
               className="cursor-pointer hover:bg-secondary/30 transition-colors"
-              onClick={() => onRowClick(tx.id)}
+              onClick={() => onRowClick(String(tx.id))}
             >
               <TableCell className="font-medium">{getTypeBadge(tx.transactionType)}</TableCell>
               <TableCell className="font-mono text-xs text-muted-foreground hidden md:table-cell">
-                {tx.id}
+                <span className="font-mono">{String(tx.transactionId || tx.id).slice(-8).toUpperCase()}</span>
               </TableCell>
               <TableCell className="text-sm">
                 {new Date(tx.createdAt).toLocaleString('th-TH')}
@@ -82,7 +82,7 @@ export function TransactionTable({ data, onRowClick }: TransactionTableProps) {
                 <Badge
                   variant="outline"
                   className={
-                    tx.status === TransactionStatus.SUCCESS
+                    tx.status === TransactionStatus.COMPLETED
                       ? 'border-green-500 text-green-600 bg-green-50'
                       : tx.status === TransactionStatus.FAILED
                         ? 'border-red-500 text-red-600 bg-red-50'

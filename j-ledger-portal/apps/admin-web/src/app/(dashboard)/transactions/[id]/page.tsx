@@ -50,7 +50,7 @@ export default function TransactionDetailsPage() {
         <Badge
           variant="outline"
           className={
-            data.transaction.status === TransactionStatus.SUCCESS
+            data.transaction.status === TransactionStatus.COMPLETED
               ? 'border-green-500 text-green-600 bg-green-50'
               : data.transaction.status === TransactionStatus.FAILED
                 ? 'border-red-500 text-red-600 bg-red-50'

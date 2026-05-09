@@ -7,6 +7,7 @@ import {
   AdminPaginatedResponse,
   Account,
   Transaction,
+  TransactionDetailsDto,
   WalletDto,
   INTERNAL_API_PATHS,
 } from '@repo/dto';
@@ -151,7 +152,6 @@ export class AdminFinanceController {
       'get',
       `${INTERNAL_API_PATHS.FINANCE.TRANSACTIONS.BASE}?${query.toString()}`,
     );
-
     const content = Array.isArray(response) ? response : response.content || [];
     const totalElements = response.totalElements || content.length;
     const totalPages = response.totalPages || 1;
@@ -168,11 +168,21 @@ export class AdminFinanceController {
   }
 
   @Get('transactions/:id')
-  async getTransactionDetails(@Param('id') id: string): Promise<Transaction> {
-    return this.integrationService.forwardToGateway<Transaction>(
+  async getTransactionDetails(@Param('id') id: string): Promise<TransactionDetailsDto> {
+    const response = await this.integrationService.forwardToGateway<any>(
       'get',
       INTERNAL_API_PATHS.FINANCE.TRANSACTIONS.DETAIL(id),
     );
+
+    // Map Java fields to DTO fields
+    const transaction: Transaction = {
+      ...response
+    };
+
+    return {
+      transaction,
+      ledgerEntries: [], // Ledger entries not yet exposed by core
+    };
   }
 
   // ==================== AML Management ====================

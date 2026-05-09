@@ -204,9 +204,22 @@ export class DealService {
   }
 
   async getAllRedemptions() {
-    return this.prisma.dealRedemption.findMany({
-      include: { deal: true, user: { select: { phoneNumber: true, email: true } } },
+    const redemptions = await this.prisma.dealRedemption.findMany({
+      include: { deal: true },
       orderBy: { createdAt: 'desc' },
     });
+
+    const userIds = [...new Set(redemptions.map((r) => r.userId))];
+    const users = await this.prisma.user.findMany({
+      where: { id: { in: userIds } },
+      select: { id: true, phoneNumber: true, email: true },
+    });
+
+    const userMap = new Map(users.map((u) => [u.id, u]));
+
+    return redemptions.map((r) => ({
+      ...r,
+      user: userMap.get(r.userId) || null,
+    }));
   }
 }
