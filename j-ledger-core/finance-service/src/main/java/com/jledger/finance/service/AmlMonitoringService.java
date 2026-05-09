@@ -170,8 +170,24 @@ public class AmlMonitoringService {
         return suspiciousActivityRepository.findByUserIdOrderByCreatedAtDesc(userId);
     }
 
-    public List<SuspiciousActivity> getAllSuspiciousActivities() {
-        return suspiciousActivityRepository.findAll();
+    public org.springframework.data.domain.Page<SuspiciousActivity> getAllSuspiciousActivities(org.springframework.data.domain.Pageable pageable) {
+        return suspiciousActivityRepository.findAll(pageable);
+    }
+
+    @Transactional
+    public void updateSuspiciousActivityStatus(UUID activityId, SuspiciousActivityStatus status, String reviewedBy, String description) {
+        SuspiciousActivity activity = suspiciousActivityRepository.findById(activityId)
+            .orElseThrow(() -> new IllegalArgumentException("Suspicious activity not found"));
+
+        activity.setStatus(status);
+        activity.setReviewedAt(LocalDateTime.now());
+        activity.setReviewedBy(reviewedBy);
+        if (description != null) {
+            activity.setDescription(activity.getDescription() + " | Review: " + description);
+        }
+
+        suspiciousActivityRepository.save(activity);
+        log.info("Suspicious activity status updated: activityId={}, status={}", activityId, status);
     }
 
     /**

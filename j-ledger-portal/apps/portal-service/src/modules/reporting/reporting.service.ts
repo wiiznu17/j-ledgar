@@ -48,36 +48,34 @@ export class ReportingService {
   async getDailyReport(date?: string) {
     const targetDate = date || new Date().toISOString().split('T')[0];
 
-    // Get transactions from core-service for the specific date
-    // WARNING: current finance-service TransactionController ignores startDate/endDate filters
-    this.logger.warn(
-      `Reporting daily for ${targetDate} - Note: finance-service currently ignores date filters and returns default page`,
-    );
+    const query = new URLSearchParams({
+      startDate: `${targetDate}T00:00:00`,
+      endDate: `${targetDate}T23:59:59`,
+    });
+
     const transactions = await this.forwardToGateway<any>(
       'get',
-      INTERNAL_API_PATHS.FINANCE.TRANSACTIONS.BASE,
-      {
-        startDate: targetDate,
-        endDate: targetDate,
-      },
+      `${INTERNAL_API_PATHS.FINANCE.TRANSACTIONS.BASE}?${query.toString()}`,
     );
 
     // Calculate metrics
-    const totalTransactions = transactions.data?.length || 0;
+    const content = transactions.content || transactions.data || [];
+    const totalTransactions = content.length || 0;
     const totalAmount =
-      transactions.data?.reduce((sum: number, tx: any) => sum + Number(tx.amount), 0) || 0;
+      content.reduce((sum: number, tx: any) => sum + Number(tx.amount), 0) || 0;
     const avgAmount = totalTransactions > 0 ? totalAmount / totalTransactions : 0;
 
     // Breakdown by type
     const byType =
-      transactions.data?.reduce((acc: any, tx: any) => {
-        acc[tx.transactionType] = (acc[tx.transactionType] || 0) + 1;
+      content.reduce((acc: any, tx: any) => {
+        const type = tx.transactionType || tx.type;
+        acc[type] = (acc[type] || 0) + 1;
         return acc;
       }, {}) || {};
 
     // Breakdown by status
     const byStatus =
-      transactions.data?.reduce((acc: any, tx: any) => {
+      content.reduce((acc: any, tx: any) => {
         acc[tx.status] = (acc[tx.status] || 0) + 1;
         return acc;
       }, {}) || {};
@@ -102,35 +100,34 @@ export class ReportingService {
     const endDate = `${targetYear}-${String(targetMonth).padStart(2, '0')}-31`;
 
     // Get transactions from core-service for the month
-    // WARNING: current finance-service TransactionController ignores startDate/endDate filters
-    this.logger.warn(
-      `Reporting monthly for ${targetYear}-${targetMonth} - Note: finance-service currently ignores date filters`,
-    );
+    const query = new URLSearchParams({
+      startDate,
+      endDate,
+    });
+
     const transactions = await this.forwardToGateway<any>(
       'get',
-      INTERNAL_API_PATHS.FINANCE.TRANSACTIONS.BASE,
-      {
-        startDate,
-        endDate,
-      },
+      `${INTERNAL_API_PATHS.FINANCE.TRANSACTIONS.BASE}?${query.toString()}`,
     );
 
     // Calculate metrics
-    const totalTransactions = transactions.data?.length || 0;
+    const content = transactions.content || transactions.data || [];
+    const totalTransactions = content.length || 0;
     const totalAmount =
-      transactions.data?.reduce((sum: number, tx: any) => sum + Number(tx.amount), 0) || 0;
+      content.reduce((sum: number, tx: any) => sum + Number(tx.amount), 0) || 0;
     const avgAmount = totalTransactions > 0 ? totalAmount / totalTransactions : 0;
 
     // Breakdown by type
     const byType =
-      transactions.data?.reduce((acc: any, tx: any) => {
-        acc[tx.transactionType] = (acc[tx.transactionType] || 0) + 1;
+      content.reduce((acc: any, tx: any) => {
+        const type = tx.transactionType || tx.type;
+        acc[type] = (acc[type] || 0) + 1;
         return acc;
       }, {}) || {};
 
     // Breakdown by status
     const byStatus =
-      transactions.data?.reduce((acc: any, tx: any) => {
+      content.reduce((acc: any, tx: any) => {
         acc[tx.status] = (acc[tx.status] || 0) + 1;
         return acc;
       }, {}) || {};
