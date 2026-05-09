@@ -10,6 +10,7 @@ import { BillingService } from '../billing/billing.service';
 import { Inject, forwardRef } from '@nestjs/common';
 import { LoyaltyService } from '../loyalty/loyalty.service';
 import { BannerService } from '../banners/banner.service';
+import { INTERNAL_API_PATHS } from '@repo/dto';
 
 @Injectable()
 export class IntegrationService {
@@ -74,7 +75,7 @@ export class IntegrationService {
   }
 
   async getAccountByUserId(userId: string) {
-    const accounts = await this.forwardToGateway('get', `/api/v1/accounts/user/${userId}`);
+    const accounts = await this.forwardToGateway('get', INTERNAL_API_PATHS.FINANCE.ACCOUNTS.USER(userId));
     return { data: accounts[0] };
   }
 
@@ -197,7 +198,7 @@ export class IntegrationService {
         }
       }
       // 2. Fetch from Finance Gateway (Correct Path: /api/finance/wallets/transactions/:id)
-      const raw = await this.forwardToGateway('get', `/api/finance/wallets/transactions/${actualId}`);
+      const raw = await this.forwardToGateway('get', INTERNAL_API_PATHS.FINANCE.WALLETS.TRANSACTION_DETAIL(actualId));
       return this.mapWalletTransactionToHistoryItem(raw);
     } catch (error: any) {
       const errorMsg = error.response?.data?.message || error.message;

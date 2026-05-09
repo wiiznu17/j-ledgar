@@ -112,12 +112,11 @@ export default function AdminDetailPage({ params }: { params: Promise<{ id: stri
     if (!result.isConfirmed) return;
 
     try {
-      const { apiClient } = await import('@/lib/api-client');
       if (isCurrentlyActive) {
-        await apiClient.post(`/api/admin/staff/${id}/deactivate`);
+        await userRequester.deactivateAdmin(id);
         showSuccess('Suspended', 'Admin access has been suspended.');
       } else {
-        await apiClient.post(`/api/admin/staff/${id}/reactivate`);
+        await userRequester.reactivateAdmin(id);
         showSuccess('Activated', 'Admin access restored.');
       }
       fetchAdminData();
@@ -134,8 +133,7 @@ export default function AdminDetailPage({ params }: { params: Promise<{ id: stri
 
     setIsUpdating(true);
     try {
-      const { apiClient } = await import('@/lib/api-client');
-      await apiClient.put(`/api/admin/staff/${id}`, { role: editedRole });
+      await userRequester.updateAdmin(id, { role: editedRole });
       
       showSuccess('Updated', 'Administrator role has been updated.');
       setIsEditingRole(false);
