@@ -43,7 +43,7 @@ export async function login(formData: FormData) {
     cookieStore.set('admin_session', data.token, {
       httpOnly: true,
       secure: process.env.NODE_ENV === 'production',
-      maxAge: 60 * 15, // 15 minutes
+      maxAge: 60 * 60 * 8, // 8 hours
       path: '/',
     });
     console.log('[admin-web] login - Set admin_session cookie');
@@ -150,7 +150,7 @@ export async function refreshSession() {
     cookieStore.set('admin_session', data.token, {
       httpOnly: true,
       secure: process.env.NODE_ENV === 'production',
-      maxAge: 60 * 15,
+      maxAge: 60 * 60 * 8, // 8 hours
       path: '/',
     });
 

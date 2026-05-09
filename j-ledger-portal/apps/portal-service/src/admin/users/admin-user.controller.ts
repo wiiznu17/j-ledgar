@@ -84,7 +84,7 @@ export class AdminUserController {
   @RequirePermissions(Permission.UNFREEZE_USERS)
   @AuditLog(null as any, ResourceType.USER, 'Unblocked user account')
   async unblockUser(@Param('id') id: string) {
-    return this.identityService.unblockUser(id);
+    return this.identityService.activateUser(id);
   }
 
   @Get('security-events')
@@ -101,13 +101,13 @@ export class AdminUserController {
   @RequirePermissions(Permission.FREEZE_USERS)
   @AuditLog(null as any, ResourceType.USER, 'Suspended user account')
   async suspendUser(@Param('id') id: string) {
-    return this.identityService.updateUserStatus(id, UserStatus.SUSPENDED);
+    return this.identityService.suspendUser(id);
   }
 
   @Post(':id/unsuspend')
   @RequirePermissions(Permission.UNFREEZE_USERS)
   @AuditLog(null as any, ResourceType.USER, 'Activated user account')
   async unsuspendUser(@Param('id') id: string) {
-    return this.identityService.updateUserStatus(id, UserStatus.ACTIVE);
+    return this.identityService.activateUser(id);
   }
 }
