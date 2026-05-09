@@ -41,13 +41,14 @@ export default function WalletDetailPage({ params }: { params: Promise<{ id: str
   const fetchWalletData = async (isSync = false) => {
     if (!isSync) setLoading(true);
     try {
-      const walletData = await walletRequester.getWalletById(id);
+      const walletResponse = await walletRequester.getWalletById(id);
+      const walletData = (walletResponse as any).data;
       setWallet(walletData);
 
-      if (walletData.userId) {
+      if (walletData?.userId) {
         try {
-          const userData = await userRequester.getUserDetail(walletData.userId);
-          setUser(userData);
+          const userResponse = await userRequester.getUserDetail(walletData.userId);
+          setUser((userResponse as any).data);
         } catch (e) {
           console.error('Failed to fetch user info', e);
         }
@@ -83,8 +84,8 @@ export default function WalletDetailPage({ params }: { params: Promise<{ id: str
         await walletRequester.freezeWallet(wallet.userId);
         toast.error('Wallet frozen successfully');
       }
-      const updated = await walletRequester.getWalletById(id);
-      setWallet(updated);
+      const updatedResponse = await walletRequester.getWalletById(id);
+      setWallet((updatedResponse as any).data);
     } catch (error) {
       toast.error('Operation failed');
     }
