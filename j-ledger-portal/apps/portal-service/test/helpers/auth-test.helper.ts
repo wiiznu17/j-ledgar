@@ -5,7 +5,7 @@ import { v4 as uuidv4 } from 'uuid';
 export class AuthTestHelper {
   constructor(
     private jwtService: JwtService,
-    private configService: ConfigService
+    private configService: ConfigService,
   ) {}
 
   async generateRegistrationToken(userId: string, state: string) {

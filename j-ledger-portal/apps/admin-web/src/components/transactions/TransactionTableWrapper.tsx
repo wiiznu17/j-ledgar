@@ -11,9 +11,6 @@ interface TransactionTableWrapperProps {
 export function TransactionTableWrapper({ transactions }: TransactionTableWrapperProps) {
   const router = useRouter();
   return (
-    <TransactionTable
-      data={transactions}
-      onRowClick={(id) => router.push(`/transactions/${id}`)}
-    />
+    <TransactionTable data={transactions} onRowClick={(id) => router.push(`/transactions/${id}`)} />
   );
 }

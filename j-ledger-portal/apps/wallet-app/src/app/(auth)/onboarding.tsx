@@ -95,17 +95,10 @@ export default function OnboardingScreen() {
   const [idCardAddress, setIdCardAddress] = useState<any>(null);
 
   const router = useRouter();
-  const { 
-    regToken, 
-    setRegToken, 
-    syncStatus, 
-    prefillData, 
-    reset, 
-    initialize,
-  } = useRegistrationStore();
-  
-  const { refreshSession } = useAuthStore();
+  const { regToken, setRegToken, syncStatus, prefillData, reset, initialize } =
+    useRegistrationStore();
 
+  const { refreshSession } = useAuthStore();
 
   // Initialize & Sync
   useEffect(() => {
@@ -131,7 +124,7 @@ export default function OnboardingScreen() {
     if (prefillData) {
       console.log('[Onboarding] Applying prefilled data from backend');
       const { identity, addresses, profile } = prefillData;
-      
+
       // Helper to format ISO date (YYYY-MM-DD) to Thai UI format (DD MMM YYYY)
       const formatToThaiDate = (dateStr: string | null | undefined) => {
         if (!dateStr) return '';
@@ -140,8 +133,18 @@ export default function OnboardingScreen() {
         if (parts.length === 3) {
           const [y, m, d] = parts;
           const THAI_MONTHS_SHORT = [
-            'ม.ค.', 'ก.พ.', 'มี.ค.', 'เม.ย.', 'พ.ค.', 'มิ.ย.',
-            'ก.ค.', 'ส.ค.', 'ก.ย.', 'ต.ค.', 'พ.ย.', 'ธ.ค.'
+            'ม.ค.',
+            'ก.พ.',
+            'มี.ค.',
+            'เม.ย.',
+            'พ.ค.',
+            'มิ.ย.',
+            'ก.ค.',
+            'ส.ค.',
+            'ก.ย.',
+            'ต.ค.',
+            'พ.ย.',
+            'ธ.ค.',
           ];
           const mIdx = parseInt(m as string) - 1;
           return `${parseInt(d as string)} ${THAI_MONTHS_SHORT[mIdx]} ${parseInt(y as string) + 543}`;
@@ -157,14 +160,14 @@ export default function OnboardingScreen() {
         if (identity.prefixEn) setPrefixEn(identity.prefixEn);
         if (identity.firstNameEn) setFirstNameEn(identity.firstNameEn);
         if (identity.lastNameEn) setLastNameEn(identity.lastNameEn);
-        
+
         // Format dates correctly for ThaiDatePickerModal (DD/MM/YYYY with B.E.)
         if (identity.dateOfBirth) setDateOfBirth(formatToThaiDate(identity.dateOfBirth));
         if (identity.issueDate) setIssueDate(formatToThaiDate(identity.issueDate));
         if (identity.expiryDate) setExpiryDate(formatToThaiDate(identity.expiryDate));
-        
+
         if (identity.religion) setReligion(identity.religion);
-        
+
         // Restore ID card image from backend URL if local URI is missing
         if (identity.idCardUrl && !idCardUri) {
           console.log('[Onboarding] Restoring ID card image from backend URL');
@@ -172,7 +175,11 @@ export default function OnboardingScreen() {
         }
 
         // Handle raw address string if we are at OCR_REVIEW and don't have structured data
-        if (identity.idCardAddress && !addresses?.registered && step === OnboardingStepUI.OCR_REVIEW) {
+        if (
+          identity.idCardAddress &&
+          !addresses?.registered &&
+          step === OnboardingStepUI.OCR_REVIEW
+        ) {
           console.log('[Onboarding] Using raw ID card address string for review');
           setAddress((prev: any) => ({
             ...prev,
@@ -185,9 +192,13 @@ export default function OnboardingScreen() {
         if (addresses.registered) {
           const regAddr = addresses.registered;
           setIdCardAddress(regAddr);
-          
+
           // Only use registered address if we are in OCR steps
-          if (step === OnboardingStepUI.OCR_REVIEW || step === OnboardingStepUI.OCR_SCAN || !addresses.current) {
+          if (
+            step === OnboardingStepUI.OCR_REVIEW ||
+            step === OnboardingStepUI.OCR_SCAN ||
+            !addresses.current
+          ) {
             setAddress({
               line1: regAddr.line1 || '',
               subdistrict: regAddr.subdistrict || '',
@@ -197,7 +208,7 @@ export default function OnboardingScreen() {
             });
           }
         }
-        
+
         // Only apply current address if we are at or past ADDITIONAL_INFO step
         if (addresses.current && step !== OnboardingStepUI.OCR_REVIEW) {
           setAddress(addresses.current);
@@ -245,7 +256,9 @@ export default function OnboardingScreen() {
         setStep(OnboardingStepUI.SUCCESS);
         break;
       case RegistrationState.COMPLETED:
-        console.log('[Onboarding] Flow completed, refreshing session to let RootLayout handle routing...');
+        console.log(
+          '[Onboarding] Flow completed, refreshing session to let RootLayout handle routing...',
+        );
         refreshSession();
         break;
       default:
@@ -302,7 +315,7 @@ export default function OnboardingScreen() {
         otp: otpString,
       });
       await setRegToken(res.data.regToken);
-      
+
       // Sync with backend to find the actual state to resume
       console.log('[Onboarding] OTP Verified, syncing state to resume...');
       const currentState = await syncStatus();
@@ -341,16 +354,16 @@ export default function OnboardingScreen() {
   };
 
   const onIDScanned = async (uri: string) => {
-    // Note: Do NOT call setIsScanningID(false) here yet. 
+    // Note: Do NOT call setIsScanningID(false) here yet.
     // We want to keep the scanner visible while we process with the backend.
     setIdCardUri(uri);
 
     // Upload & OCR
     setIsLoading(true);
     try {
-    // IDCardScanner already cropped and compressed the image. 
-    // We can use the URI directly or just do a minimal check.
-    const finalUri = uri;
+      // IDCardScanner already cropped and compressed the image.
+      // We can use the URI directly or just do a minimal check.
+      const finalUri = uri;
 
       const formData = new FormData();
       formData.append('idCardImage', {
@@ -372,11 +385,17 @@ export default function OnboardingScreen() {
       const extracted = res.data.extractedData;
       console.log('[Onboarding] OCR Extracted Data:', JSON.stringify(extracted, null, 2));
 
-      if (!extracted || !extracted.idNumber || !extracted.firstNameTh || !extracted.lastNameTh || !extracted.idCardIssueDate) {
+      if (
+        !extracted ||
+        !extracted.idNumber ||
+        !extracted.firstNameTh ||
+        !extracted.lastNameTh ||
+        !extracted.idCardIssueDate
+      ) {
         Alert.alert(
           'Scanning Failed',
-          'We couldn\'t read some essential information (ID number, Name, or Issue Date). Please ensure the card is clear and well-lit, then try again.',
-          [{ text: 'OK' }]
+          "We couldn't read some essential information (ID number, Name, or Issue Date). Please ensure the card is clear and well-lit, then try again.",
+          [{ text: 'OK' }],
         );
         return;
       }
@@ -393,7 +412,7 @@ export default function OnboardingScreen() {
       setIssueDate(extracted.idCardIssueDate || '');
       setExpiryDate(extracted.idCardExpiryDate || '');
       setReligion(extracted.religion || '');
-      
+
       if (extracted.registeredAddress) {
         const addr = {
           line1: extracted.registeredAddress,
@@ -405,7 +424,7 @@ export default function OnboardingScreen() {
         setAddress(addr);
         setIdCardAddress(addr);
       }
-      
+
       // If we have full text, log it for debugging
       if (extracted.fullText) {
         console.log('[Onboarding] Full OCR Text Analysis Complete');
@@ -414,7 +433,9 @@ export default function OnboardingScreen() {
       setIsScanningID(false); // Only close the scanner on success
       setStep(OnboardingStepUI.OCR_REVIEW);
     } catch (err: any) {
-      const errorMsg = err.response?.data?.message || 'Could not process ID card. Please check your connection and try again.';
+      const errorMsg =
+        err.response?.data?.message ||
+        'Could not process ID card. Please check your connection and try again.';
       console.log('[Onboarding] OCR Failed:', err.response?.data || err.message);
       Alert.alert('Scanning Failed', errorMsg);
     } finally {
@@ -434,7 +455,7 @@ export default function OnboardingScreen() {
       const manipResult = await ImageManipulator.manipulateAsync(
         uri,
         [{ resize: { width: 800 } }],
-        { compress: 0.7, format: ImageManipulator.SaveFormat.JPEG }
+        { compress: 0.7, format: ImageManipulator.SaveFormat.JPEG },
       );
 
       const formData = new FormData();
@@ -446,16 +467,19 @@ export default function OnboardingScreen() {
 
       // After custom scan is successful, we upload to verify with ID card
       const res = await api.post('/kyc/submit-selfie', formData, {
-        headers: { 
+        headers: {
           Authorization: `Bearer ${regToken}`,
           'Content-Type': 'multipart/form-data',
-        }
+        },
       });
-      
+
       if (res.data.regToken) await setRegToken(res.data.regToken);
       setStep(OnboardingStepUI.ADDITIONAL_INFO);
     } catch (err: any) {
-      Alert.alert('Verification Failed', 'Could not verify your identity. Please ensure you are the same person as on the ID card.');
+      Alert.alert(
+        'Verification Failed',
+        'Could not verify your identity. Please ensure you are the same person as on the ID card.',
+      );
       setStep(OnboardingStepUI.FACE_GUIDE);
     } finally {
       setIsLoading(false);
@@ -464,10 +488,10 @@ export default function OnboardingScreen() {
 
   const handleConfirmOcr = async () => {
     setIsLoading(true);
-    
+
     // Clean address object: Remove label and postalCode (backend doesn't allow them here)
     const { label, postalCode, ...cleanAddress } = address;
-    
+
     const payload = {
       idNumber,
       issueDate,
@@ -490,15 +514,18 @@ export default function OnboardingScreen() {
         headers: { Authorization: `Bearer ${regToken}` },
       });
       console.log('[Onboarding] OCR Data Confirmed Successfully');
-      
+
       // Update idCardAddress with the data that was just confirmed
       // This ensures "Same as ID Card" uses the corrected data, not the raw OCR.
       setIdCardAddress(address);
-      
+
       setStep(OnboardingStepUI.FACE_GUIDE);
     } catch (err: any) {
       const errorMsg = err.response?.data?.message || err.message;
-      console.error('[Onboarding] Confirm OCR Error details:', JSON.stringify(err.response?.data, null, 2) || err);
+      console.error(
+        '[Onboarding] Confirm OCR Error details:',
+        JSON.stringify(err.response?.data, null, 2) || err,
+      );
       Alert.alert('Error', `Failed to save identity data: ${errorMsg}`);
     } finally {
       setIsLoading(false);
@@ -529,18 +556,14 @@ export default function OnboardingScreen() {
 
       console.log('[Onboarding] Submitting Profile Data:', JSON.stringify(profileData, null, 2));
 
-      const res = await api.post(
-        '/identity/register/profile',
-        profileData,
-        {
-          headers: { Authorization: `Bearer ${regToken}` },
-        },
-      );
-      
+      const res = await api.post('/identity/register/profile', profileData, {
+        headers: { Authorization: `Bearer ${regToken}` },
+      });
+
       console.log('[Onboarding] Profile Submit Response:', res.data);
-      
+
       if (res.data.regToken) await setRegToken(res.data.regToken);
-      
+
       if (res.data.nextState) {
         if (res.data.nextState === RegistrationState.COMPLETED) {
           // If skipping to completion, refresh session first to get updated status and trigger guards
@@ -603,7 +626,9 @@ export default function OnboardingScreen() {
       if (completeRes.data.accessToken && completeRes.data.refreshToken) {
         console.log('[Onboarding] Registration complete, saving tokens for seamless experience');
         const { useAuthStore } = await import('@/store/auth');
-        await useAuthStore.getState().setToken(completeRes.data.accessToken, completeRes.data.refreshToken);
+        await useAuthStore
+          .getState()
+          .setToken(completeRes.data.accessToken, completeRes.data.refreshToken);
         if (completeRes.data.user) {
           useAuthStore.getState().setUser(completeRes.data.user);
         }
@@ -614,7 +639,10 @@ export default function OnboardingScreen() {
       setStep(OnboardingStepUI.SUCCESS);
     } catch (err: any) {
       console.error('[Onboarding] Pin setup/complete failed:', err.response?.data || err.message);
-      Alert.alert('Registration Failed', err.response?.data?.message || 'Could not complete registration. Please try again.');
+      Alert.alert(
+        'Registration Failed',
+        err.response?.data?.message || 'Could not complete registration. Please try again.',
+      );
     } finally {
       setIsLoading(false);
     }
@@ -687,179 +715,182 @@ export default function OnboardingScreen() {
   return (
     <>
       <SafeAreaView className="flex-1 bg-transparent">
-      <KeyboardAvoidingView
-        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-        className="flex-1"
-      >
-        <View className="flex-1 px-6">
-          {/* Decorative Background */}
-          <View className="absolute top-0 left-0 right-0 bottom-0 pointer-events-none overflow-hidden">
-            <MotiView
-              from={{ scale: 0, opacity: 0 }}
-              animate={{ scale: 1, opacity: 0.1 }}
-              className="absolute top-[-100] left-[-100] w-[400] h-[400] bg-primary rounded-full"
-              style={{ filter: [{ blur: 100 }] }}
-            />
-          </View>
-
-          <ScrollView
-            contentContainerStyle={{
-              flexGrow: 1,
-              justifyContent: 'flex-start',
-              paddingVertical: 20,
-            }}
-            showsVerticalScrollIndicator={false}
-          >
-            <Onboarding.WelcomeStep
-              visible={step === OnboardingStepUI.WELCOME}
-              onGetStarted={() => setStep(OnboardingStepUI.PHONE_INPUT)}
-              onBackToLogin={() => router.replace('/(auth)/login')}
-            />
-
-            <Onboarding.PhoneInputStep
-              visible={step === OnboardingStepUI.PHONE_INPUT}
-              phone={phone}
-              isLoading={isLoading}
-              onPhoneChange={setPhone}
-              onSubmit={handlePhoneSubmit}
-              onBack={() => setStep(OnboardingStepUI.WELCOME)}
-            />
-
-            <Onboarding.OtpInputStep
-              visible={step === OnboardingStepUI.OTP}
-              otp={otp}
-              phone={phone}
-              isLoading={isLoading}
-              resendTimer={timer}
-              onOtpChange={(i, v) => {
-                setOtp((prev) => {
-                  const next = [...prev];
-                  next[i] = v;
-                  return next;
-                });
-              }}
-              onResend={handlePhoneSubmit}
-              onSubmit={handleOtpVerify}
-              onBack={() => setStep(OnboardingStepUI.PHONE_INPUT)}
-            />
-
-            <Onboarding.TermsStep
-              visible={step === OnboardingStepUI.TERMS}
-              isLoading={isLoading}
-              onAccept={handleAcceptTerms}
-              onBack={() => setStep(OnboardingStepUI.OTP)}
-            />
-
-            <Onboarding.OcrGuideStep visible={step === OnboardingStepUI.OCR_GUIDE} onScan={handleIdCapture} />
-
-            <Onboarding.OcrReviewStep
-              visible={step === OnboardingStepUI.OCR_REVIEW}
-              idCardUri={idCardUri}
-              data={{
-                idNumber,
-                issueDate,
-                expiryDate,
-                prefixTh,
-                firstNameTh,
-                lastNameTh,
-                prefixEn,
-                firstNameEn,
-                lastNameEn,
-                dateOfBirth,
-                religion,
-                registeredAddress: address,
-              }}
-              setData={updateOcrData}
-              isLoading={isLoading}
-              onConfirm={handleConfirmOcr}
-              onRescan={() => setStep(OnboardingStepUI.OCR_GUIDE)}
-            />
-
-            <Onboarding.FaceGuideStep
-              visible={step === OnboardingStepUI.FACE_GUIDE}
-              onScan={handleSelfieCapture}
-            />
-
-            {step === OnboardingStepUI.FACE_SCAN && (
-              <FaceLivenessScanner
-                isLoading={isLoading}
-                onComplete={handleLivenessSuccess}
-                onError={(err) => {
-                  Alert.alert('Liveness Error', 'Something went wrong during face scan.');
-                  setStep(OnboardingStepUI.FACE_GUIDE);
-                }}
-                onCancel={() => setStep(OnboardingStepUI.FACE_GUIDE)}
+        <KeyboardAvoidingView
+          behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+          className="flex-1"
+        >
+          <View className="flex-1 px-6">
+            {/* Decorative Background */}
+            <View className="absolute top-0 left-0 right-0 bottom-0 pointer-events-none overflow-hidden">
+              <MotiView
+                from={{ scale: 0, opacity: 0 }}
+                animate={{ scale: 1, opacity: 0.1 }}
+                className="absolute top-[-100] left-[-100] w-[400] h-[400] bg-primary rounded-full"
+                style={{ filter: [{ blur: 100 }] }}
               />
-            )}
+            </View>
 
-            <Onboarding.AdditionalInfoStep
-              visible={step === OnboardingStepUI.ADDITIONAL_INFO}
-              data={{ address, occupation, incomeRange, sourceOfFunds, purpose }}
-              idCardAddress={idCardAddress}
-              setData={updateProfileData}
-              isLoading={isLoading}
-              onSubmit={handleProfileSubmit}
-            />
+            <ScrollView
+              contentContainerStyle={{
+                flexGrow: 1,
+                justifyContent: 'flex-start',
+                paddingVertical: 20,
+              }}
+              showsVerticalScrollIndicator={false}
+            >
+              <Onboarding.WelcomeStep
+                visible={step === OnboardingStepUI.WELCOME}
+                onGetStarted={() => setStep(OnboardingStepUI.PHONE_INPUT)}
+                onBackToLogin={() => router.replace('/(auth)/login')}
+              />
 
-            <Onboarding.SetPasswordStep
-              visible={step === OnboardingStepUI.SET_PASSWORD}
-              password={password}
-              confirmPassword={confirmPassword}
-              onPasswordChange={setPassword}
-              onConfirmPasswordChange={setConfirmPassword}
-              isLoading={isLoading}
-              onSubmit={handlePasswordSubmit}
-            />
+              <Onboarding.PhoneInputStep
+                visible={step === OnboardingStepUI.PHONE_INPUT}
+                phone={phone}
+                isLoading={isLoading}
+                onPhoneChange={setPhone}
+                onSubmit={handlePhoneSubmit}
+                onBack={() => setStep(OnboardingStepUI.WELCOME)}
+              />
 
-            <Onboarding.SetPinStep
-              visible={step === OnboardingStepUI.SET_PIN}
-              pin={pin}
-              onPinChange={setPin}
-              onComplete={() => setStep(OnboardingStepUI.CONFIRM_PIN)}
-            />
+              <Onboarding.OtpInputStep
+                visible={step === OnboardingStepUI.OTP}
+                otp={otp}
+                phone={phone}
+                isLoading={isLoading}
+                resendTimer={timer}
+                onOtpChange={(i, v) => {
+                  setOtp((prev) => {
+                    const next = [...prev];
+                    next[i] = v;
+                    return next;
+                  });
+                }}
+                onResend={handlePhoneSubmit}
+                onSubmit={handleOtpVerify}
+                onBack={() => setStep(OnboardingStepUI.PHONE_INPUT)}
+              />
 
-            <Onboarding.SetPinStep2
-              visible={step === OnboardingStepUI.CONFIRM_PIN}
-              pin={confirmPin}
-              onPinChange={setConfirmPin}
-              onComplete={(completedPin) => {
-                if (completedPin === pin) {
-                  handlePinSubmit(completedPin);
-                } else {
-                  Alert.alert('PIN Mismatch', 'Codes do not match. Please try again.');
+              <Onboarding.TermsStep
+                visible={step === OnboardingStepUI.TERMS}
+                isLoading={isLoading}
+                onAccept={handleAcceptTerms}
+                onBack={() => setStep(OnboardingStepUI.OTP)}
+              />
+
+              <Onboarding.OcrGuideStep
+                visible={step === OnboardingStepUI.OCR_GUIDE}
+                onScan={handleIdCapture}
+              />
+
+              <Onboarding.OcrReviewStep
+                visible={step === OnboardingStepUI.OCR_REVIEW}
+                idCardUri={idCardUri}
+                data={{
+                  idNumber,
+                  issueDate,
+                  expiryDate,
+                  prefixTh,
+                  firstNameTh,
+                  lastNameTh,
+                  prefixEn,
+                  firstNameEn,
+                  lastNameEn,
+                  dateOfBirth,
+                  religion,
+                  registeredAddress: address,
+                }}
+                setData={updateOcrData}
+                isLoading={isLoading}
+                onConfirm={handleConfirmOcr}
+                onRescan={() => setStep(OnboardingStepUI.OCR_GUIDE)}
+              />
+
+              <Onboarding.FaceGuideStep
+                visible={step === OnboardingStepUI.FACE_GUIDE}
+                onScan={handleSelfieCapture}
+              />
+
+              {step === OnboardingStepUI.FACE_SCAN && (
+                <FaceLivenessScanner
+                  isLoading={isLoading}
+                  onComplete={handleLivenessSuccess}
+                  onError={(err) => {
+                    Alert.alert('Liveness Error', 'Something went wrong during face scan.');
+                    setStep(OnboardingStepUI.FACE_GUIDE);
+                  }}
+                  onCancel={() => setStep(OnboardingStepUI.FACE_GUIDE)}
+                />
+              )}
+
+              <Onboarding.AdditionalInfoStep
+                visible={step === OnboardingStepUI.ADDITIONAL_INFO}
+                data={{ address, occupation, incomeRange, sourceOfFunds, purpose }}
+                idCardAddress={idCardAddress}
+                setData={updateProfileData}
+                isLoading={isLoading}
+                onSubmit={handleProfileSubmit}
+              />
+
+              <Onboarding.SetPasswordStep
+                visible={step === OnboardingStepUI.SET_PASSWORD}
+                password={password}
+                confirmPassword={confirmPassword}
+                onPasswordChange={setPassword}
+                onConfirmPasswordChange={setConfirmPassword}
+                isLoading={isLoading}
+                onSubmit={handlePasswordSubmit}
+              />
+
+              <Onboarding.SetPinStep
+                visible={step === OnboardingStepUI.SET_PIN}
+                pin={pin}
+                onPinChange={setPin}
+                onComplete={() => setStep(OnboardingStepUI.CONFIRM_PIN)}
+              />
+
+              <Onboarding.SetPinStep2
+                visible={step === OnboardingStepUI.CONFIRM_PIN}
+                pin={confirmPin}
+                onPinChange={setConfirmPin}
+                onComplete={(completedPin) => {
+                  if (completedPin === pin) {
+                    handlePinSubmit(completedPin);
+                  } else {
+                    Alert.alert('PIN Mismatch', 'Codes do not match. Please try again.');
+                    setConfirmPin('');
+                  }
+                }}
+                onBack={() => {
+                  setPin('');
                   setConfirmPin('');
-                }
-              }}
-              onBack={() => {
-                setPin('');
-                setConfirmPin('');
-                setStep(OnboardingStepUI.SET_PIN);
-              }}
-            />
+                  setStep(OnboardingStepUI.SET_PIN);
+                }}
+              />
 
-            <Onboarding.SuccessStep
-              visible={step === OnboardingStepUI.SUCCESS}
-              onEnterWallet={async () => {
-                setIsLoading(true);
-                try {
-                  await reset(); // ล้าง registration_token
-                  // The RootLayout will automatically pick up the new auth state 
-                  // and redirect to the appropriate screen (Pending Approval or Tabs)
-                } finally {
-                  setIsLoading(false);
-                }
-              }}
-            />
-          </ScrollView>
+              <Onboarding.SuccessStep
+                visible={step === OnboardingStepUI.SUCCESS}
+                onEnterWallet={async () => {
+                  setIsLoading(true);
+                  try {
+                    await reset(); // ล้าง registration_token
+                    // The RootLayout will automatically pick up the new auth state
+                    // and redirect to the appropriate screen (Pending Approval or Tabs)
+                  } finally {
+                    setIsLoading(false);
+                  }
+                }}
+              />
+            </ScrollView>
 
-          {/* Site Branding */}
-          {/* <View className="py-8 items-center">
+            {/* Site Branding */}
+            {/* <View className="py-8 items-center">
             <Text className="text-[10px] font-manrope font-extrabold uppercase tracking-[0.4em] text-on-surfaceVariant/30">
               P-wallet Security Protocol V4
             </Text>
           </View> */}
-        </View>
-      </KeyboardAvoidingView>
+          </View>
+        </KeyboardAvoidingView>
       </SafeAreaView>
 
       {/* Full screen ID Card Scanner Overlay */}

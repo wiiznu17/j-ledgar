@@ -62,9 +62,7 @@ export const PINVerification: React.FC<PINVerificationProps> = ({
     setIsVerifying(true);
 
     try {
-      const isValid = useUnlock
-        ? await unlockWithPin(enteredPin)
-        : await verifyPin(enteredPin);
+      const isValid = useUnlock ? await unlockWithPin(enteredPin) : await verifyPin(enteredPin);
 
       if (isValid) {
         setIsVerifying(false);

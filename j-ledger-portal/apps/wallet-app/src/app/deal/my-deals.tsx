@@ -10,7 +10,11 @@ import { MyDealRow } from '@/components/deal/MyDealRow';
 export default function MyDealsScreen() {
   const router = useRouter();
 
-  const { data: redemptions, isLoading, isError } = useQuery({
+  const {
+    data: redemptions,
+    isLoading,
+    isError,
+  } = useQuery({
     queryKey: ['my-redemptions'],
     queryFn: async () => {
       const { data } = await api.get('/deals/my-redemptions');
@@ -20,10 +24,14 @@ export default function MyDealsScreen() {
 
   const getStatusText = (status: string) => {
     switch (status) {
-      case 'REDEEMED': return 'Ready to use';
-      case 'USED': return 'Used';
-      case 'EXPIRED': return 'Expired';
-      default: return status;
+      case 'REDEEMED':
+        return 'Ready to use';
+      case 'USED':
+        return 'Used';
+      case 'EXPIRED':
+        return 'Expired';
+      default:
+        return status;
     }
   };
 
@@ -38,7 +46,9 @@ export default function MyDealsScreen() {
         {isLoading ? (
           <ActivityIndicator color="#f48fb1" className="mt-20" />
         ) : isError ? (
-          <Text className="text-center text-gray-400 font-manrope font-bold mt-20">Failed to load your deals</Text>
+          <Text className="text-center text-gray-400 font-manrope font-bold mt-20">
+            Failed to load your deals
+          </Text>
         ) : redemptions?.length === 0 ? (
           <View className="items-center justify-center py-20">
             <Text className="text-gray-400 font-manrope font-bold text-sm">
@@ -52,7 +62,11 @@ export default function MyDealsScreen() {
                 key={redemption.id}
                 id={redemption.id}
                 title={redemption.deal?.title}
-                expire={redemption.status === 'USED' ? `Used on ${new Date(redemption.usedAt).toLocaleDateString()}` : `Expires: ${new Date(redemption.expiresAt).toLocaleDateString()}`}
+                expire={
+                  redemption.status === 'USED'
+                    ? `Used on ${new Date(redemption.usedAt).toLocaleDateString()}`
+                    : `Expires: ${new Date(redemption.expiresAt).toLocaleDateString()}`
+                }
                 image={redemption.deal?.imageUrl}
                 status={getStatusText(redemption.status)}
                 index={idx}

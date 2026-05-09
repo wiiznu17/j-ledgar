@@ -1,6 +1,11 @@
 import React from 'react';
 import { View, Text, TouchableOpacity } from 'react-native';
-import { formatCreatedAt, getAmountColor, getTypeMeta, type HistoryItem } from '@/features/history/presentation';
+import {
+  formatCreatedAt,
+  getAmountColor,
+  getTypeMeta,
+  type HistoryItem,
+} from '@/features/history/presentation';
 
 interface RecentActivityListProps {
   transactions: HistoryItem[];
@@ -28,7 +33,7 @@ export const RecentActivityList = ({
         {transactions.map((tx) => {
           const Icon = getTypeMeta(tx.type).icon;
           const amountColor = getAmountColor(tx.direction, tx.status);
-          
+
           return (
             <TouchableOpacity
               key={tx.id}
@@ -47,13 +52,13 @@ export const RecentActivityList = ({
                 </View>
               </View>
               <View className="items-end">
-                <Text
-                  className="font-manrope font-black text-base"
-                  style={{ color: amountColor }}
-                >
+                <Text className="font-manrope font-black text-base" style={{ color: amountColor }}>
                   {tx.direction === 'OUT' ? '-' : '+'}
                   {currency}
-                  {Number(tx.amount || 0).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                  {Number(tx.amount || 0).toLocaleString(undefined, {
+                    minimumFractionDigits: 2,
+                    maximumFractionDigits: 2,
+                  })}
                 </Text>
                 <Text className="font-manrope text-[9px] font-bold text-gray-400 mt-1">
                   {formatCreatedAt(tx.createdAt)}

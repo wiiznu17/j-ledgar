@@ -16,14 +16,11 @@ export const useAppLock = () => {
     const subscription = AppState.addEventListener('change', (nextAppState: AppStateStatus) => {
       console.log(`[AppLock] State changed: ${appState.current} -> ${nextAppState}`);
 
-      if (
-        appState.current.match(/inactive|background/) &&
-        nextAppState === 'active'
-      ) {
+      if (appState.current.match(/inactive|background/) && nextAppState === 'active') {
         // App has come to the foreground
         const now = Date.now();
         const elapsed = now - lastActiveAt;
-        
+
         console.log(`[AppLock] App returned from background. Elapsed: ${elapsed}ms`);
 
         if (isAuthenticated && !needsPinVerification && elapsed > LOCK_TIMEOUT_MS) {

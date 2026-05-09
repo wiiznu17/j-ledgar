@@ -33,6 +33,7 @@ J-Ledger is a high-performance, production-ready financial ledger system designe
 | **finance-service**     | 8081 | Java 21 / Spring Boot | Ledger, wallet, transfers, transactions, limits, settlement, fraud rules, fees, reporting |
 | **portal-service**      | 3000 | NestJS                | Identity, KYC, Admin, Integration, Audit, Reporting APIs (monolithic)                     |
 | **notification-worker** | 3001 | NestJS                | Kafka consumer, push notifications, email, SMS                                            |
+| **admin-web**           | 3002 | React / Next.js       | Admin Management Dashboard                                                                |
 
 ### Portal Service Modules
 
@@ -104,6 +105,17 @@ docker compose -f docker-compose.yml -f docker-compose.dev.yml down -v
 
 # For Mode 2 (Local Test)
 docker compose -f docker-compose.yml -f docker-compose.test.yml down -v
+
+### Manual Finance Schema Reset (Start Ledger Fresh)
+
+If you only want to wipe the **finance** ledger data (for testing reconciliation or clearing balances) without deleting users and other system data:
+
+```bash
+# Wipe finance schema and recreate it
+docker exec -e PGPASSWORD=ledger_password jledger-postgres psql -U ledger_admin -d jledger_db -c "DROP SCHEMA IF EXISTS finance CASCADE; CREATE SCHEMA finance; GRANT ALL ON SCHEMA finance TO ledger_admin;"
+
+# Rerun migrations to restore tables and seed system account
+docker compose -f docker-compose.yml -f docker-compose.dev.yml run --rm finance-migration
 ```
 
 **Warning:** This deletes all data including:
@@ -149,6 +161,22 @@ cd j-ledger-core/finance-service
 docker compose -f docker-compose.yml -f docker-compose.dev.yml run --rm finance-migration
 ```
 
+**Portal Service (Prisma - Node):**
+
+```bash
+# 1. เมื่อมีการแก้ไขไฟล์ schema.prisma และต้องการสร้าง Migration
+cd j-ledger-portal/apps/portal-service
+npx prisma migrate dev --name <migration_name>
+
+# 2. เมื่อต้องการ Reset Database และลงข้อมูลเริ่มต้นใหม่ (ล้างตารางทั้งหมด)
+npx prisma migrate reset
+
+# 3. เมื่อต้องการลงข้อมูลเริ่มต้น (Seed) อย่างเดียว (ไม่ล้างตาราง)
+node prisma/seed.js
+# หรือ
+npx prisma db seed
+```
+
 > **หมายเหตุสำหรับ Mode 2 (Local Test) และ Mode 3 (Production)**:
 >
 > - Migrations รันอัตโนมัติผ่าน Docker Compose containers
@@ -164,6 +192,14 @@ docker compose -f docker-compose.yml -f docker-compose.dev.yml run --rm finance-
 Run each service in its own terminal:
 
 **Portal Service (NestJS):**
+
+```bash
+lsof -ti:3000 | xargs kill -9  
+lsof -ti:3001 | xargs kill -9
+lsof -ti:3002 | xargs kill -9
+lsof -ti:8081 | xargs kill -9
+lsof -ti:19000 | xargs kill -9   
+```
 
 ```bash
 cd j-ledger-portal/apps/portal-service && npm run dev
@@ -319,6 +355,7 @@ _The system will automatically handle health checks, ensuring the DB and Kafka a
 - **Finance Service**: [http://localhost:8081/actuator/health](http://localhost:8081/actuator/health)
 - **Portal Service**: [http://localhost:3000/](http://localhost:3000/)
 - **Notification Worker**: [http://localhost:3001/](http://localhost:3001/)
+- **Admin Web**: [http://localhost:3002/](http://localhost:3002/)
 
 ---
 

@@ -1,4 +1,15 @@
-import { Controller, Get, Post, Put, Delete, Body, Param, Query, UseGuards, Req } from '@nestjs/common';
+import {
+  Controller,
+  Get,
+  Post,
+  Put,
+  Delete,
+  Body,
+  Param,
+  Query,
+  UseGuards,
+  Req,
+} from '@nestjs/common';
 import { IntegrationService } from '../../modules/integration/integration.service';
 import { AdminJwtGuard } from '../guards/admin-jwt.guard';
 import { InternalAuthGuard } from '../../core/common/guards/internal-auth.guard';

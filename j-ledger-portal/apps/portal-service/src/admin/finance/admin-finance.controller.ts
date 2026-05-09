@@ -2,7 +2,14 @@ import { Controller, Get, Post, Put, Body, Param, Query, UseGuards, Logger } fro
 import { AdminJwtGuard } from '../guards/admin-jwt.guard';
 import { AdminRolesGuard } from '../guards/admin-roles.guard';
 import { Roles } from '../decorators/roles.decorator';
-import { AdminRole, AdminPaginatedResponse, Account, Transaction, WalletDto, INTERNAL_API_PATHS } from '@repo/dto';
+import {
+  AdminRole,
+  AdminPaginatedResponse,
+  Account,
+  Transaction,
+  WalletDto,
+  INTERNAL_API_PATHS,
+} from '@repo/dto';
 
 import { IntegrationService } from '../../modules/integration/integration.service';
 
@@ -25,8 +32,8 @@ export class AdminFinanceController {
       'get',
       `${INTERNAL_API_PATHS.FINANCE.ACCOUNTS.BASE}?page=${page}&size=${size}`,
     );
-    
-    const content = Array.isArray(response) ? response : (response.content || []);
+
+    const content = Array.isArray(response) ? response : response.content || [];
     const totalElements = response.totalElements || content.length;
     const totalPages = response.totalPages || 1;
 
@@ -143,7 +150,9 @@ export class AdminFinanceController {
     });
 
     if (status || type || reference || startDate || endDate) {
-      this.logger.warn(`Filtering transactions by ${JSON.stringify({ status, type, reference, startDate, endDate })} is currently ignored by finance-service`);
+      this.logger.warn(
+        `Filtering transactions by ${JSON.stringify({ status, type, reference, startDate, endDate })} is currently ignored by finance-service`,
+      );
     }
 
     // Proxy to finance-service
@@ -151,8 +160,8 @@ export class AdminFinanceController {
       'get',
       `${INTERNAL_API_PATHS.FINANCE.TRANSACTIONS.BASE}?${query.toString()}`,
     );
-    
-    const content = Array.isArray(response) ? response : (response.content || []);
+
+    const content = Array.isArray(response) ? response : response.content || [];
     const totalElements = response.totalElements || content.length;
     const totalPages = response.totalPages || 1;
 
@@ -187,12 +196,12 @@ export class AdminFinanceController {
       'get',
       `${INTERNAL_API_PATHS.FINANCE.AML.SUSPICIOUS_ACTIVITIES}?page=${page}&size=${size}`,
     );
-    
+
     // Format to match UI expectations (PaginatedResponse)
-    const content = Array.isArray(response) ? response : (response.content || []);
+    const content = Array.isArray(response) ? response : response.content || [];
     const totalElements = response.totalElements || content.length;
     const totalPages = response.totalPages || 1;
-    
+
     return {
       data: content,
       pagination: {
@@ -206,10 +215,7 @@ export class AdminFinanceController {
 
   @Put('aml/suspicious-activities/:id/status')
   @Roles(AdminRole.SUPER_ADMIN, AdminRole.AUDITOR, AdminRole.COMPLIANCE_OFFICER)
-  async updateSuspiciousActivityStatus(
-    @Param('id') id: string,
-    @Body() data: any,
-  ): Promise<void> {
+  async updateSuspiciousActivityStatus(@Param('id') id: string, @Body() data: any): Promise<void> {
     // WARNING: This endpoint DOES NOT EXIST in current finance-service version
     await this.integrationService.forwardToGateway(
       'put',

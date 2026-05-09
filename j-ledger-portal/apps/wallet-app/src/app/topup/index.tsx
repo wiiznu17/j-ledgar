@@ -39,7 +39,10 @@ export default function TopupScreen() {
 
   return (
     <SafeAreaView className="flex-1 bg-transparent" edges={['top']}>
-      <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'} className="flex-1">
+      <KeyboardAvoidingView
+        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+        className="flex-1"
+      >
         <View className="flex-1 px-5">
           <View className="flex-row items-center justify-between pt-2 pb-4">
             <TouchableOpacity
@@ -48,13 +51,18 @@ export default function TopupScreen() {
             >
               <ChevronLeft size={24} color="#1a1a1a" />
             </TouchableOpacity>
-            <Text className="text-lg font-manrope font-black text-gray-800 tracking-tight">Top Up Wallet</Text>
+            <Text className="text-lg font-manrope font-black text-gray-800 tracking-tight">
+              Top Up Wallet
+            </Text>
             <TouchableOpacity className="w-10 h-10 rounded-2xl bg-white border border-gray-100 flex items-center justify-center shadow-sm">
               <Zap size={20} color="#f48fb1" />
             </TouchableOpacity>
           </View>
 
-          <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: 40 }}>
+          <ScrollView
+            showsVerticalScrollIndicator={false}
+            contentContainerStyle={{ paddingBottom: 40 }}
+          >
             <MotiView
               from={{ opacity: 0, translateY: 10 }}
               animate={{ opacity: 1, translateY: 0 }}

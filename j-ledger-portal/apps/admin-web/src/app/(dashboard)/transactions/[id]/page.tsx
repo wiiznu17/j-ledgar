@@ -23,7 +23,7 @@ export default function TransactionDetailsPage() {
 
   useEffect(() => {
     if (!id) return;
-    
+
     const fetchDetails = async () => {
       try {
         const d = await transactionRequester.getDetails(id);
@@ -108,7 +108,9 @@ export default function TransactionDetailsPage() {
                     <TableRow key={entry.id}>
                       <TableCell>
                         <Badge
-                          variant={entry.entryType === LedgerEntryType.CREDIT ? 'default' : 'destructive'}
+                          variant={
+                            entry.entryType === LedgerEntryType.CREDIT ? 'default' : 'destructive'
+                          }
                           className={
                             entry.entryType === LedgerEntryType.CREDIT
                               ? 'bg-chart-4 text-white hover:bg-chart-4/80 border-0'

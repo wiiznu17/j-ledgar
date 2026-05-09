@@ -1,5 +1,13 @@
 import React, { useState, useRef } from 'react';
-import { View, StyleSheet, Text, TouchableOpacity, Dimensions, Image, ActivityIndicator } from 'react-native';
+import {
+  View,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  Dimensions,
+  Image,
+  ActivityIndicator,
+} from 'react-native';
 import { CameraView, useCameraPermissions } from 'expo-camera';
 import * as ImageManipulator from 'expo-image-manipulator';
 import { Ionicons } from '@expo/vector-icons';
@@ -8,7 +16,7 @@ const { width, height } = Dimensions.get('window');
 
 // ขนาดของกรอบบัตร (อัตราส่วนมาตรฐาน ID Card คือประมาณ 1.6:1)
 const FRAME_WIDTH = width * 0.9;
-const FRAME_HEIGHT = FRAME_WIDTH / 1.58; 
+const FRAME_HEIGHT = FRAME_WIDTH / 1.58;
 
 interface IDCardScannerProps {
   onCapture: (uri: string) => void;
@@ -50,7 +58,7 @@ export const IDCardScanner: React.FC<IDCardScannerProps> = ({ onCapture, onClose
         // --- Improved Cropping Logic (Precision Fix) ---
         const photoWidth = photo.width;
         const photoHeight = photo.height;
-        
+
         // We assume the camera preview fills the screen width.
         // So the scale should be uniform based on width to avoid distortion.
         const scale = photoWidth / width;
@@ -58,7 +66,7 @@ export const IDCardScanner: React.FC<IDCardScannerProps> = ({ onCapture, onClose
         // Calculate crop dimensions using the uniform scale
         const cropWidth = FRAME_WIDTH * scale;
         const cropHeight = FRAME_HEIGHT * scale;
-        
+
         // Calculate crop position based on the center of the photo
         // (Assuming the camera preview is centered)
         const cropX = (photoWidth - cropWidth) / 2;
@@ -66,15 +74,17 @@ export const IDCardScanner: React.FC<IDCardScannerProps> = ({ onCapture, onClose
 
         const manipulated = await ImageManipulator.manipulateAsync(
           photo.uri,
-          [{
-            crop: {
-              originX: Math.max(0, Math.floor(cropX)),
-              originY: Math.max(0, Math.floor(cropY)),
-              width: Math.floor(cropWidth),
-              height: Math.floor(cropHeight),
+          [
+            {
+              crop: {
+                originX: Math.max(0, Math.floor(cropX)),
+                originY: Math.max(0, Math.floor(cropY)),
+                width: Math.floor(cropWidth),
+                height: Math.floor(cropHeight),
+              },
             },
-          }],
-          { compress: 0.9, format: ImageManipulator.SaveFormat.JPEG }
+          ],
+          { compress: 0.9, format: ImageManipulator.SaveFormat.JPEG },
         );
 
         setCapturedUri(manipulated.uri); // Update with cropped version
@@ -101,13 +111,13 @@ export const IDCardScanner: React.FC<IDCardScannerProps> = ({ onCapture, onClose
             <View style={styles.frame}>
               {/* Show captured image inside the frame when processing */}
               {processing && capturedUri && (
-                <Image 
-                  source={{ uri: capturedUri }} 
+                <Image
+                  source={{ uri: capturedUri }}
                   style={StyleSheet.absoluteFill}
                   resizeMode="cover"
                 />
               )}
-              
+
               <View style={[styles.corner, styles.topLeft]} />
               <View style={[styles.corner, styles.topRight]} />
               <View style={[styles.corner, styles.bottomLeft]} />
@@ -115,7 +125,16 @@ export const IDCardScanner: React.FC<IDCardScannerProps> = ({ onCapture, onClose
 
               {/* Internal Spinner inside frame */}
               {processing && (
-                <View style={[StyleSheet.absoluteFill, { backgroundColor: 'rgba(0,0,0,0.3)', justifyContent: 'center', alignItems: 'center' }]}>
+                <View
+                  style={[
+                    StyleSheet.absoluteFill,
+                    {
+                      backgroundColor: 'rgba(0,0,0,0.3)',
+                      justifyContent: 'center',
+                      alignItems: 'center',
+                    },
+                  ]}
+                >
                   <ActivityIndicator size="large" color="#00E676" />
                 </View>
               )}
@@ -131,23 +150,29 @@ export const IDCardScanner: React.FC<IDCardScannerProps> = ({ onCapture, onClose
 
         {/* Global Text Overlay (Optional, can keep or remove) */}
         {processing && (
-          <View style={[StyleSheet.absoluteFill, { backgroundColor: 'transparent', justifyContent: 'flex-end', alignItems: 'center', paddingBottom: 150 }]}>
-             <Text className="text-white font-manrope font-bold text-xl tracking-wider shadow-lg">
-                Scanning ID Card...
-             </Text>
+          <View
+            style={[
+              StyleSheet.absoluteFill,
+              {
+                backgroundColor: 'transparent',
+                justifyContent: 'flex-end',
+                alignItems: 'center',
+                paddingBottom: 150,
+              },
+            ]}
+          >
+            <Text className="text-white font-manrope font-bold text-xl tracking-wider shadow-lg">
+              Scanning ID Card...
+            </Text>
           </View>
         )}
       </CameraView>
       <View style={styles.controls}>
-        <TouchableOpacity 
-          onPress={onClose} 
-          style={styles.closeButton}
-          disabled={processing}
-        >
+        <TouchableOpacity onPress={onClose} style={styles.closeButton} disabled={processing}>
           <Ionicons name="close" size={32} color={processing ? 'gray' : 'white'} />
         </TouchableOpacity>
-        <TouchableOpacity 
-          onPress={takePicture} 
+        <TouchableOpacity
+          onPress={takePicture}
           style={[styles.captureButton, processing && { borderColor: 'gray' }]}
           disabled={processing}
         >
@@ -164,7 +189,12 @@ const styles = StyleSheet.create({
   camera: { flex: 1 },
   overlay: { flex: 1, backgroundColor: 'transparent' },
   topOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.6)' },
-  bottomOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.6)', alignItems: 'center', paddingTop: 20 },
+  bottomOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0,0,0,0.6)',
+    alignItems: 'center',
+    paddingTop: 20,
+  },
   middleContainer: { height: FRAME_HEIGHT, flexDirection: 'row' },
   sideOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.6)' },
   frame: {

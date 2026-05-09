@@ -19,7 +19,9 @@ export default async function RedemptionsPage() {
       <div className="flex items-center justify-between">
         <div>
           <h2 className="text-3xl font-bold tracking-tight text-[#2D3748]">Redemption History</h2>
-          <p className="text-muted-foreground mt-1">Monitor all user reward claims and usage status.</p>
+          <p className="text-muted-foreground mt-1">
+            Monitor all user reward claims and usage status.
+          </p>
         </div>
       </div>
 

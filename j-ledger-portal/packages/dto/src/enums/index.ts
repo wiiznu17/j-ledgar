@@ -194,7 +194,7 @@ export enum NotificationEventType {
   REFUND = 'REFUND',
   BILL_PAYMENT = 'BILL_PAYMENT',
   FINANCE = 'FINANCE',
-  
+
   // Additional Activity Logs
   PROFILE_UPDATED = 'PROFILE_UPDATED',
   ADDRESS_UPDATED = 'ADDRESS_UPDATED',

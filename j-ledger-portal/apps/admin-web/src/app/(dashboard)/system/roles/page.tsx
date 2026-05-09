@@ -80,16 +80,20 @@ export default function RolesPage() {
       <div className="flex items-center justify-between">
         <div>
           <h2 className="text-3xl font-bold tracking-tight text-[#2D3748]">Roles & Permissions</h2>
-          <p className="text-sm text-slate-500 mt-1">Manage administrative roles and their access levels across the system.</p>
+          <p className="text-sm text-slate-500 mt-1">
+            Manage administrative roles and their access levels across the system.
+          </p>
         </div>
 
         <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-          <DialogTrigger render={
-            <Button className="bg-gradient-to-r from-indigo-600 to-violet-600 text-white border-0 shadow-md hover:shadow-lg transition-all">
-              <Plus className="mr-2 h-4 w-4" />
-              Create New Role
-            </Button>
-          } />
+          <DialogTrigger
+            render={
+              <Button className="bg-gradient-to-r from-indigo-600 to-violet-600 text-white border-0 shadow-md hover:shadow-lg transition-all">
+                <Plus className="mr-2 h-4 w-4" />
+                Create New Role
+              </Button>
+            }
+          />
           <DialogContent className="sm:max-w-[425px] bg-white rounded-2xl border-0 shadow-2xl">
             <form onSubmit={handleCreateRole}>
               <DialogHeader>
@@ -100,7 +104,12 @@ export default function RolesPage() {
               </DialogHeader>
               <div className="grid gap-6 py-6">
                 <div className="grid gap-2">
-                  <Label htmlFor="name" className="text-xs font-black text-slate-400 uppercase tracking-widest ml-1">Role Name</Label>
+                  <Label
+                    htmlFor="name"
+                    className="text-xs font-black text-slate-400 uppercase tracking-widest ml-1"
+                  >
+                    Role Name
+                  </Label>
                   <Input
                     id="name"
                     placeholder="e.g. CUSTOMER_SUPPORT_LEAD"
@@ -109,10 +118,17 @@ export default function RolesPage() {
                     className="h-11 rounded-xl border-slate-200 focus:ring-indigo-500 bg-slate-50/50"
                     required
                   />
-                  <p className="text-[10px] text-slate-400 ml-1 italic">* Name will be converted to UPPER_SNAKE_CASE</p>
+                  <p className="text-[10px] text-slate-400 ml-1 italic">
+                    * Name will be converted to UPPER_SNAKE_CASE
+                  </p>
                 </div>
                 <div className="grid gap-2">
-                  <Label htmlFor="description" className="text-xs font-black text-slate-400 uppercase tracking-widest ml-1">Description</Label>
+                  <Label
+                    htmlFor="description"
+                    className="text-xs font-black text-slate-400 uppercase tracking-widest ml-1"
+                  >
+                    Description
+                  </Label>
                   <Textarea
                     id="description"
                     placeholder="Briefly describe the purpose of this role..."
@@ -143,18 +159,31 @@ export default function RolesPage() {
               <Table>
                 <TableHeader className="bg-slate-50/80">
                   <TableRow className="hover:bg-transparent border-b border-slate-100">
-                    <TableHead className="w-[300px] py-4 text-[11px] font-black text-slate-400 uppercase tracking-widest pl-6">Role Name</TableHead>
-                    <TableHead className="py-4 text-[11px] font-black text-slate-400 uppercase tracking-widest">Description</TableHead>
-                    <TableHead className="py-4 text-[11px] font-black text-slate-400 uppercase tracking-widest text-center w-[150px]">Security Status</TableHead>
-                    <TableHead className="text-right py-4 text-[11px] font-black text-slate-400 uppercase tracking-widest pr-6 w-[200px]">Management</TableHead>
+                    <TableHead className="w-[300px] py-4 text-[11px] font-black text-slate-400 uppercase tracking-widest pl-6">
+                      Role Name
+                    </TableHead>
+                    <TableHead className="py-4 text-[11px] font-black text-slate-400 uppercase tracking-widest">
+                      Description
+                    </TableHead>
+                    <TableHead className="py-4 text-[11px] font-black text-slate-400 uppercase tracking-widest text-center w-[150px]">
+                      Security Status
+                    </TableHead>
+                    <TableHead className="text-right py-4 text-[11px] font-black text-slate-400 uppercase tracking-widest pr-6 w-[200px]">
+                      Management
+                    </TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
                   {roles.map((role) => (
-                    <TableRow key={role.id} className="group hover:bg-slate-50/50 transition-colors border-b border-slate-50 last:border-0">
+                    <TableRow
+                      key={role.id}
+                      className="group hover:bg-slate-50/50 transition-colors border-b border-slate-50 last:border-0"
+                    >
                       <TableCell className="py-5 pl-6">
                         <div className="flex items-center gap-3">
-                          <div className={`p-2.5 rounded-xl ${role.isSystem ? 'bg-indigo-50 text-indigo-600' : 'bg-emerald-50 text-emerald-600'}`}>
+                          <div
+                            className={`p-2.5 rounded-xl ${role.isSystem ? 'bg-indigo-50 text-indigo-600' : 'bg-emerald-50 text-emerald-600'}`}
+                          >
                             <Shield className="w-5 h-5" />
                           </div>
                           <div>
@@ -185,15 +214,19 @@ export default function RolesPage() {
                       </TableCell>
                       <TableCell className="text-right py-5 pr-6">
                         <Link href={`/system/roles/${role.id}`}>
-                          <Button 
-                            variant="outline" 
-                            size="sm" 
+                          <Button
+                            variant="outline"
+                            size="sm"
                             className={`h-9 px-4 rounded-xl font-bold text-xs border-slate-200 hover:border-indigo-500 hover:text-indigo-600 transition-all ${role.isSystem ? 'bg-slate-50' : 'bg-white'}`}
                           >
                             {role.isSystem ? (
-                              <><Eye className="h-3.5 w-3.5 mr-2" /> View Scope</>
+                              <>
+                                <Eye className="h-3.5 w-3.5 mr-2" /> View Scope
+                              </>
                             ) : (
-                              <><Settings2 className="h-3.5 w-3.5 mr-2" /> Configure</>
+                              <>
+                                <Settings2 className="h-3.5 w-3.5 mr-2" /> Configure
+                              </>
                             )}
                           </Button>
                         </Link>
@@ -205,7 +238,9 @@ export default function RolesPage() {
                       <TableCell colSpan={4} className="h-32 text-center">
                         <div className="flex items-center justify-center gap-3 text-slate-400 animate-pulse">
                           <Shield className="w-5 h-5" />
-                          <span className="font-bold tracking-widest text-xs uppercase">Loading secure roles...</span>
+                          <span className="font-bold tracking-widest text-xs uppercase">
+                            Loading secure roles...
+                          </span>
                         </div>
                       </TableCell>
                     </TableRow>
@@ -225,8 +260,9 @@ export default function RolesPage() {
           <div>
             <h4 className="font-bold text-indigo-900">Security Note</h4>
             <p className="text-sm text-indigo-700/80 leading-relaxed mt-1">
-              System roles are core to the platform's stability and cannot be modified or deleted. 
-              If you need custom access levels, please create a new role and assign permissions manually.
+              System roles are core to the platform's stability and cannot be modified or deleted.
+              If you need custom access levels, please create a new role and assign permissions
+              manually.
             </p>
           </div>
         </div>

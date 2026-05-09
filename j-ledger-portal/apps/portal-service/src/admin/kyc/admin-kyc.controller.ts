@@ -1,14 +1,4 @@
-import {
-  Controller,
-  Get,
-  Post,
-  Param,
-  Body,
-  Query,
-  Req,
-  UseGuards,
-  Logger,
-} from '@nestjs/common';
+import { Controller, Get, Post, Param, Body, Query, Req, UseGuards, Logger } from '@nestjs/common';
 import { KycService } from '../../modules/kyc/kyc.service';
 import { AuditService, ResourceType } from '../../modules/audit/audit.service';
 import { AdminJwtGuard } from '../guards/admin-jwt.guard';
@@ -27,7 +17,7 @@ export class AdminKycController {
     private readonly kycService: KycService,
     private readonly auditService: AuditService,
   ) {}
-  
+
   @Get('stats')
   async getKYCStats() {
     this.logger.log('[AdminKyc] Fetching KYC stats for dashboard');
@@ -67,8 +57,17 @@ export class AdminKycController {
   ) {
     const pageNumber = parseInt(page || '1', 10);
     const limitNumber = parseInt(limit || '50', 10);
-    this.logger.log(`[AdminKyc] Fetching KYC list - status: ${status}, page: ${pageNumber}, limit: ${limitNumber}`);
-    return this.kycService.getKYCList(status, phoneNumber, startDate, endDate, pageNumber, limitNumber);
+    this.logger.log(
+      `[AdminKyc] Fetching KYC list - status: ${status}, page: ${pageNumber}, limit: ${limitNumber}`,
+    );
+    return this.kycService.getKYCList(
+      status,
+      phoneNumber,
+      startDate,
+      endDate,
+      pageNumber,
+      limitNumber,
+    );
   }
 
   @Get('details/:userId')

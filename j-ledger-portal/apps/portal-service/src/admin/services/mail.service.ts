@@ -11,7 +11,7 @@ export class MailService {
   async sendAdminInvite(email: string, token: string): Promise<void> {
     const adminWebUrl = process.env.ADMIN_WEB_URL || '';
     const setupLink = `${adminWebUrl}/setup-account?token=${token}&email=${encodeURIComponent(email)}`;
-    
+
     this.logger.log(`
 =========================================================
 📩 [MOCK EMAIL] ADMIN INVITATION
@@ -35,7 +35,7 @@ This link will expire in 24 hours.
   async sendPasswordReset(email: string, token: string): Promise<void> {
     const adminWebUrl = process.env.ADMIN_WEB_URL || 'http://localhost:3002';
     const resetLink = `${adminWebUrl}/reset-password?token=${token}&email=${encodeURIComponent(email)}`;
-    
+
     this.logger.log(`
 =========================================================
 📩 [MOCK EMAIL] PASSWORD RESET REQUEST

@@ -16,7 +16,7 @@ export class BillingController {
 
   @Get('invoices')
   findAll(@Request() req: any) {
-    const userId = req.user?.sub || req.user?.id || req.query?.userId; 
+    const userId = req.user?.sub || req.user?.id || req.query?.userId;
     return this.billingService.getInvoices(userId);
   }
 

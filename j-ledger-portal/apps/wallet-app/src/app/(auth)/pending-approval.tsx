@@ -33,8 +33,8 @@ export default function PendingApprovalScreen() {
       'This will allow you to re-submit your documents. Are you ready?',
       [
         { text: 'Cancel', style: 'cancel' },
-        { 
-          text: 'Start Again', 
+        {
+          text: 'Start Again',
           onPress: async () => {
             setIsRetrying(true);
             try {
@@ -42,89 +42,117 @@ export default function PendingApprovalScreen() {
               await refreshSession();
               router.replace('/(auth)/onboarding');
             } catch (err: any) {
-              Alert.alert('Error', err.response?.data?.message || 'Failed to initiate retry. Please try again later.');
+              Alert.alert(
+                'Error',
+                err.response?.data?.message || 'Failed to initiate retry. Please try again later.',
+              );
             } finally {
               setIsRetrying(false);
             }
-          }
+          },
         },
-      ]
+      ],
     );
   };
 
   const handleLogout = () => {
-    Alert.alert(
-      'Logout',
-      'Are you sure you want to logout?',
-      [
-        { text: 'Cancel', style: 'cancel' },
-        { 
-          text: 'Logout', 
-          style: 'destructive',
-          onPress: async () => {
-            await logout();
-            router.replace('/(auth)/login');
-          }
+    Alert.alert('Logout', 'Are you sure you want to logout?', [
+      { text: 'Cancel', style: 'cancel' },
+      {
+        text: 'Logout',
+        style: 'destructive',
+        onPress: async () => {
+          await logout();
+          router.replace('/(auth)/login');
         },
-      ]
-    );
+      },
+    ]);
   };
 
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: '#FFFFFF' }}>
-      <View style={{ flex: 1, paddingHorizontal: 32, justifyContent: 'center', alignItems: 'center' }}>
+      <View
+        style={{ flex: 1, paddingHorizontal: 32, justifyContent: 'center', alignItems: 'center' }}
+      >
         <View
-          style={{ 
-            width: 96, 
-            height: 96, 
-            backgroundColor: isRejected ? '#fee2e2' : '#fce4ec', 
-            borderRadius: 48, 
-            justifyContent: 'center', 
-            alignItems: 'center', 
-            marginBottom: 32 
+          style={{
+            width: 96,
+            height: 96,
+            backgroundColor: isRejected ? '#fee2e2' : '#fce4ec',
+            borderRadius: 48,
+            justifyContent: 'center',
+            alignItems: 'center',
+            marginBottom: 32,
           }}
         >
-          {isRejected ? (
-            <XCircle size={48} color="#ef4444" />
-          ) : (
-            <Clock size={48} color="#f48fb1" />
-          )}
+          {isRejected ? <XCircle size={48} color="#ef4444" /> : <Clock size={48} color="#f48fb1" />}
         </View>
 
-        <Text style={{ fontSize: 32, fontWeight: '900', color: '#1f2937', textAlign: 'center', marginBottom: 16 }}>
+        <Text
+          style={{
+            fontSize: 32,
+            fontWeight: '900',
+            color: '#1f2937',
+            textAlign: 'center',
+            marginBottom: 16,
+          }}
+        >
           {isRejected ? 'KYC Rejected' : 'Under Review'}
         </Text>
-        
+
         <Text style={{ fontSize: 18, color: '#6b7280', textAlign: 'center', marginBottom: 24 }}>
-          {isRejected 
+          {isRejected
             ? 'We could not approve your identity verification. Please review the reason below.'
             : 'Your account is currently being verified by our team. This usually takes 24-48 hours.'}
         </Text>
 
         {isRejected && (
-          <View style={{ width: '100%', backgroundColor: '#f9fafb', padding: 16, borderRadius: 16, marginBottom: 48, borderWidth: 1, borderColor: '#fee2e2' }}>
-            <Text style={{ fontSize: 14, fontWeight: 'bold', color: '#ef4444', marginBottom: 4, textTransform: 'uppercase' }}>Reason from Admin:</Text>
+          <View
+            style={{
+              width: '100%',
+              backgroundColor: '#f9fafb',
+              padding: 16,
+              borderRadius: 16,
+              marginBottom: 48,
+              borderWidth: 1,
+              borderColor: '#fee2e2',
+            }}
+          >
+            <Text
+              style={{
+                fontSize: 14,
+                fontWeight: 'bold',
+                color: '#ef4444',
+                marginBottom: 4,
+                textTransform: 'uppercase',
+              }}
+            >
+              Reason from Admin:
+            </Text>
             <Text style={{ fontSize: 16, color: '#374151', fontStyle: 'italic' }}>
-              "{user?.reviewNote || 'No specific reason provided. Please ensure your documents are clear.'}"
+              "
+              {user?.reviewNote ||
+                'No specific reason provided. Please ensure your documents are clear.'}
+              "
             </Text>
           </View>
         )}
 
         <View style={{ width: '100%' }}>
           {isRejected ? (
-            <TouchableOpacity 
+            <TouchableOpacity
               onPress={handleRetry}
               disabled={isRetrying}
-              style={{ 
-                width: '100%', 
-                backgroundColor: '#1f2937', 
-                paddingVertical: 16, 
-                borderRadius: 20, 
-                flexDirection: 'row', 
-                justifyContent: 'center', 
+              style={{
+                width: '100%',
+                backgroundColor: '#1f2937',
+                paddingVertical: 16,
+                borderRadius: 20,
+                flexDirection: 'row',
+                justifyContent: 'center',
                 alignItems: 'center',
                 marginBottom: 16,
-                opacity: isRetrying ? 0.7 : 1
+                opacity: isRetrying ? 0.7 : 1,
               }}
             >
               {isRetrying ? (
@@ -132,24 +160,26 @@ export default function PendingApprovalScreen() {
               ) : (
                 <>
                   <RefreshCcw size={20} color="white" />
-                  <Text style={{ color: 'white', fontWeight: 'bold', fontSize: 18, marginLeft: 8 }}>Retry Verification</Text>
+                  <Text style={{ color: 'white', fontWeight: 'bold', fontSize: 18, marginLeft: 8 }}>
+                    Retry Verification
+                  </Text>
                 </>
               )}
             </TouchableOpacity>
           ) : (
-            <TouchableOpacity 
+            <TouchableOpacity
               onPress={handleRefresh}
               disabled={isRefreshing}
-              style={{ 
-                width: '100%', 
-                backgroundColor: '#f48fb1', 
-                paddingVertical: 16, 
-                borderRadius: 20, 
-                flexDirection: 'row', 
-                justifyContent: 'center', 
+              style={{
+                width: '100%',
+                backgroundColor: '#f48fb1',
+                paddingVertical: 16,
+                borderRadius: 20,
+                flexDirection: 'row',
+                justifyContent: 'center',
                 alignItems: 'center',
                 marginBottom: 16,
-                opacity: isRefreshing ? 0.7 : 1
+                opacity: isRefreshing ? 0.7 : 1,
               }}
             >
               {isRefreshing ? (
@@ -157,28 +187,32 @@ export default function PendingApprovalScreen() {
               ) : (
                 <>
                   <RefreshCcw size={20} color="white" />
-                  <Text style={{ color: 'white', fontWeight: 'bold', fontSize: 18, marginLeft: 8 }}>Check Status</Text>
+                  <Text style={{ color: 'white', fontWeight: 'bold', fontSize: 18, marginLeft: 8 }}>
+                    Check Status
+                  </Text>
                 </>
               )}
             </TouchableOpacity>
           )}
 
-          <TouchableOpacity 
+          <TouchableOpacity
             onPress={handleLogout}
-            style={{ 
-              width: '100%', 
-              backgroundColor: '#f9fafb', 
-              paddingVertical: 16, 
-              borderRadius: 20, 
-              flexDirection: 'row', 
-              justifyContent: 'center', 
+            style={{
+              width: '100%',
+              backgroundColor: '#f9fafb',
+              paddingVertical: 16,
+              borderRadius: 20,
+              flexDirection: 'row',
+              justifyContent: 'center',
               alignItems: 'center',
               borderWidth: 1,
-              borderColor: '#f3f4f6'
+              borderColor: '#f3f4f6',
             }}
           >
             <LogOut size={20} color="#6b7280" />
-            <Text style={{ color: '#6b7280', fontWeight: 'bold', fontSize: 18, marginLeft: 8 }}>Logout</Text>
+            <Text style={{ color: '#6b7280', fontWeight: 'bold', fontSize: 18, marginLeft: 8 }}>
+              Logout
+            </Text>
           </TouchableOpacity>
         </View>
 

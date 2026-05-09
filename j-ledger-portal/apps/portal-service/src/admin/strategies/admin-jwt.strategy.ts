@@ -25,7 +25,9 @@ export class AdminJwtStrategy extends PassportStrategy(Strategy, 'admin-jwt') {
         },
       ]),
       ignoreExpiration: false,
-      secretOrKey: configService.get<string>('ADMIN_JWT_SECRET') || 'jledger-admin-super-secret-2024-dev-key-32chars',
+      secretOrKey:
+        configService.get<string>('ADMIN_JWT_SECRET') ||
+        'jledger-admin-super-secret-2024-dev-key-32chars',
     });
   }
 
@@ -40,7 +42,7 @@ export class AdminJwtStrategy extends PassportStrategy(Strategy, 'admin-jwt') {
       console.log('[AdminJwtStrategy] Staff not found for id:', payload.sub);
       throw new UnauthorizedException();
     }
-    
+
     if (!staff.isActive) {
       console.log('[AdminJwtStrategy] Staff is inactive:', payload.sub);
       throw new UnauthorizedException();

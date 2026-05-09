@@ -5,10 +5,7 @@ import { PrismaModule } from '../../core/prisma/prisma.module';
 import { IntegrationModule } from '../integration/integration.module';
 
 @Module({
-  imports: [
-    PrismaModule,
-    forwardRef(() => IntegrationModule),
-  ],
+  imports: [PrismaModule, forwardRef(() => IntegrationModule)],
   controllers: [BillingController],
   providers: [BillingService],
   exports: [BillingService],

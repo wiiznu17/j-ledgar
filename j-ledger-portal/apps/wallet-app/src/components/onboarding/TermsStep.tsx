@@ -24,11 +24,11 @@ export const TermsStep: React.FC<TermsStepProps> = ({ visible, isLoading, onAcce
       </ScrollView>
     </GlassPanel>
     <AppButton title="Accept and Continue" loading={isLoading} onPress={onAccept} />
-    <AppButton 
-      className="mt-4" 
-      title="Back" 
-      variant="ghost" 
-      onPress={onBack} 
+    <AppButton
+      className="mt-4"
+      title="Back"
+      variant="ghost"
+      onPress={onBack}
       disabled={isLoading}
     />
   </StepWrapper>

@@ -24,7 +24,15 @@ export const FilterLabel = ({ children }: { children: React.ReactNode }) => (
 /**
  * FilterField - Wrapper for a single filter field with a label
  */
-export const FilterField = ({ label, children, className = "" }: { label: string; children: React.ReactNode; className?: string }) => (
+export const FilterField = ({
+  label,
+  children,
+  className = '',
+}: {
+  label: string;
+  children: React.ReactNode;
+  className?: string;
+}) => (
   <div className={`flex flex-col ${className}`}>
     <FilterLabel>{label}</FilterLabel>
     {children}
@@ -43,7 +51,7 @@ export const FilterSearchInput = ({ label, ...props }: FilterSearchInputProps) =
     {label && <FilterLabel>{label}</FilterLabel>}
     <div className="relative w-full">
       <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
-      <Input 
+      <Input
         {...props}
         className={`pl-9 h-10 w-full text-xs border-slate-200 focus:ring-indigo-500 rounded-lg bg-white shadow-sm font-medium ${props.className || ''}`}
       />
@@ -63,7 +71,14 @@ interface FilterSelectProps {
   className?: string;
 }
 
-export const FilterSelect = ({ label, value, onValueChange, placeholder, options, className = "" }: FilterSelectProps) => (
+export const FilterSelect = ({
+  label,
+  value,
+  onValueChange,
+  placeholder,
+  options,
+  className = '',
+}: FilterSelectProps) => (
   <div className={`flex flex-col gap-1.5 ${className}`}>
     {label && <FilterLabel>{label}</FilterLabel>}
     <Select value={value} onValueChange={(val) => onValueChange(val || '')}>
@@ -72,9 +87,9 @@ export const FilterSelect = ({ label, value, onValueChange, placeholder, options
       </SelectTrigger>
       <SelectContent className="rounded-lg border-slate-100 shadow-xl">
         {options.map((opt) => (
-          <SelectItem 
-            key={opt.value} 
-            value={opt.value} 
+          <SelectItem
+            key={opt.value}
+            value={opt.value}
             className={`text-xs font-medium ${opt.className || ''}`}
           >
             {opt.label.toUpperCase()}
@@ -95,19 +110,24 @@ interface FilterActionsProps {
   className?: string;
 }
 
-export const FilterActions = ({ onReset, isLoading, searchLabel = "Search", className = "" }: FilterActionsProps) => (
+export const FilterActions = ({
+  onReset,
+  isLoading,
+  searchLabel = 'Search',
+  className = '',
+}: FilterActionsProps) => (
   <div className={`flex gap-2 w-full h-10 ${className}`}>
-    <Button 
-      type="button" 
-      variant="outline" 
+    <Button
+      type="button"
+      variant="outline"
       onClick={onReset}
       className="flex-1 h-10 text-slate-500 hover:text-slate-700 hover:bg-slate-100 text-xs font-bold rounded-lg border-slate-200 transition-all"
     >
       <RotateCcw className="w-4 h-4 mr-1" />
       Reset
     </Button>
-    <Button 
-      type="submit" 
+    <Button
+      type="submit"
       disabled={isLoading}
       className="flex-[2] h-10 bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold rounded-lg shadow-lg shadow-indigo-200 transition-all active:scale-95"
     >
@@ -120,10 +140,10 @@ export const FilterActions = ({ onReset, isLoading, searchLabel = "Search", clas
 /**
  * FilterDatePicker - Standardized Date Picker component for filters
  */
-import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { Calendar } from "@/components/ui/calendar";
-import { Calendar as CalendarIcon } from "lucide-react";
-import { format } from "date-fns";
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { Calendar } from '@/components/ui/calendar';
+import { Calendar as CalendarIcon } from 'lucide-react';
+import { format } from 'date-fns';
 
 interface FilterDatePickerProps {
   label: string;
@@ -133,14 +153,25 @@ interface FilterDatePickerProps {
   className?: string;
 }
 
-export const FilterDatePicker = ({ label, value, onChange, placeholder = "Pick date", className = "" }: FilterDatePickerProps) => (
+export const FilterDatePicker = ({
+  label,
+  value,
+  onChange,
+  placeholder = 'Pick date',
+  className = '',
+}: FilterDatePickerProps) => (
   <FilterField label={label} className={className}>
     <Popover>
-      <PopoverTrigger 
+      <PopoverTrigger
         render={
-          <Button variant="outline" className={`w-full h-10 justify-start text-left font-medium text-xs bg-white border-slate-200 rounded-lg shadow-sm ${!value && "text-slate-400"}`}>
+          <Button
+            variant="outline"
+            className={`w-full h-10 justify-start text-left font-medium text-xs bg-white border-slate-200 rounded-lg shadow-sm ${!value && 'text-slate-400'}`}
+          >
             <CalendarIcon className="mr-2 h-4 w-4 text-slate-400 flex-shrink-0" />
-            <span className="truncate">{value ? format(new Date(value), "MMM d, yyyy") : placeholder}</span>
+            <span className="truncate">
+              {value ? format(new Date(value), 'MMM d, yyyy') : placeholder}
+            </span>
           </Button>
         }
       />

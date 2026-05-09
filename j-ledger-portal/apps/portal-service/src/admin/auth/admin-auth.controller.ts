@@ -38,16 +38,18 @@ export class AdminAuthController {
       throw new UnauthorizedException('Invalid credentials');
     }
 
-    const payload = { 
-      sub: staff.id, 
-      email: staff.email, 
-      role: staff.staffRoles[0]?.role.name || 'SUPPORT_STAFF' 
+    const payload = {
+      sub: staff.id,
+      email: staff.email,
+      role: staff.staffRoles[0]?.role.name || 'SUPPORT_STAFF',
     };
 
     const token = this.jwtService.sign(payload);
-    const refreshToken = this.jwtService.sign(payload, { 
+    const refreshToken = this.jwtService.sign(payload, {
       expiresIn: '7d',
-      secret: process.env.ADMIN_REFRESH_SECRET || 'jledger-admin-refresh-super-secret-2024-dev-key-32chars'
+      secret:
+        process.env.ADMIN_REFRESH_SECRET ||
+        'jledger-admin-refresh-super-secret-2024-dev-key-32chars',
     });
 
     await this.adminService.updateRefreshTokenHash(staff.id, refreshToken);
@@ -84,16 +86,18 @@ export class AdminAuthController {
         throw new UnauthorizedException('Invalid session');
       }
 
-      const payload = { 
-        sub: staff.id, 
-        email: staff.email, 
-        role: staff.staffRoles[0]?.role.name || 'SUPPORT_STAFF' 
+      const payload = {
+        sub: staff.id,
+        email: staff.email,
+        role: staff.staffRoles[0]?.role.name || 'SUPPORT_STAFF',
       };
 
       const token = this.jwtService.sign(payload);
-      const refreshToken = this.jwtService.sign(payload, { 
+      const refreshToken = this.jwtService.sign(payload, {
         expiresIn: '7d',
-        secret: process.env.ADMIN_REFRESH_SECRET || 'jledger-admin-refresh-super-secret-2024-dev-key-32chars'
+        secret:
+          process.env.ADMIN_REFRESH_SECRET ||
+          'jledger-admin-refresh-super-secret-2024-dev-key-32chars',
       });
 
       await this.adminService.updateRefreshTokenHash(staff.id, refreshToken);
@@ -160,7 +164,7 @@ export class AdminAuthController {
       throw new BadRequestException(e.message);
     }
   }
-  
+
   @UseGuards(AdminJwtGuard)
   @Get('me')
   async getMe(@Req() req: any) {
@@ -172,6 +176,4 @@ export class AdminAuthController {
   async updateMe(@Req() req: any, @Body() data: { firstName?: string; lastName?: string }) {
     return this.adminService.updateStaff(req.user.sub, data);
   }
-
-
 }

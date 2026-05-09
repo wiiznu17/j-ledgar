@@ -220,6 +220,6 @@ export const INTERNAL_API_PATHS = {
         BASE: '/api/v1/system/outbox',
         RETRY: (id: string) => `/api/v1/system/outbox/${id}/retry`,
       },
-    }
-  }
+    },
+  },
 };

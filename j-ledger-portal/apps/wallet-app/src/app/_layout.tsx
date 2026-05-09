@@ -45,9 +45,9 @@ export default function RootLayout() {
   useNotifications();
   useAppLock();
 
-  const { 
-    initialize: initializeAuth, 
-    isAuthenticated, 
+  const {
+    initialize: initializeAuth,
+    isAuthenticated,
     isLoading: isAuthLoading,
     needsPinVerification,
     hasSession,
@@ -82,7 +82,7 @@ export default function RootLayout() {
       isAuthenticated,
       needsPinVerification,
       status: user?.status,
-      registrationState: user?.registrationState
+      registrationState: user?.registrationState,
     });
 
     if (needsPinVerification) {
@@ -117,7 +117,9 @@ export default function RootLayout() {
         case UserStatus.PENDING_APPROVAL:
         case UserStatus.REJECTED:
           if (!isPendingApproval) {
-            console.log(`[RootLayout] Registration complete but status is ${user.status}, showing status screen`);
+            console.log(
+              `[RootLayout] Registration complete but status is ${user.status}, showing status screen`,
+            );
             router.replace('/(auth)/pending-approval');
           }
           break;
@@ -139,7 +141,14 @@ export default function RootLayout() {
           break;
       }
     }
-  }, [isAuthenticated, isAuthLoading, fontsLoaded, needsPinVerification, user?.status, user?.registrationState]);
+  }, [
+    isAuthenticated,
+    isAuthLoading,
+    fontsLoaded,
+    needsPinVerification,
+    user?.status,
+    user?.registrationState,
+  ]);
 
   if ((!fontsLoaded && !fontError) || isAuthLoading) {
     return null;
@@ -166,11 +175,13 @@ export default function RootLayout() {
               <View style={StyleSheet.absoluteFill}>
                 <BackgroundGradient />
               </View>
-              
-              <Stack screenOptions={{ 
-                contentStyle: { backgroundColor: 'transparent' },
-                headerShown: false 
-              }}>
+
+              <Stack
+                screenOptions={{
+                  contentStyle: { backgroundColor: 'transparent' },
+                  headerShown: false,
+                }}
+              >
                 <Stack.Screen name="(tabs)" />
                 <Stack.Screen name="(auth)" />
                 <Stack.Screen name="(auth)/pending-approval" />

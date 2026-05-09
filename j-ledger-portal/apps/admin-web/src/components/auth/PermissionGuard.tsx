@@ -19,10 +19,11 @@ export function PermissionGuard({
   fallback = null,
 }: PermissionGuardProps) {
   const requirements = Array.isArray(require) ? require : [require];
-  
-  const hasPermission = mode === 'OR' 
-    ? requirements.some(p => permissions.includes(p))
-    : requirements.every(p => permissions.includes(p));
+
+  const hasPermission =
+    mode === 'OR'
+      ? requirements.some((p) => permissions.includes(p))
+      : requirements.every((p) => permissions.includes(p));
 
   if (!hasPermission) {
     return <>{fallback}</>;

@@ -37,19 +37,37 @@ export function WalletUsersTable({ users, loading }: WalletUsersTableProps) {
       <Table>
         <TableHeader className="bg-slate-50/50">
           <TableRow className="border-b border-slate-100">
-            <TableHead className="font-bold text-slate-500 uppercase text-[10px] tracking-widest py-4">User Email</TableHead>
-            <TableHead className="font-bold text-slate-500 uppercase text-[10px] tracking-widest hidden md:table-cell py-4">Internal ID</TableHead>
-            <TableHead className="font-bold text-slate-500 uppercase text-[10px] tracking-widest py-4">Status</TableHead>
-            <TableHead className="font-bold text-slate-500 uppercase text-[10px] tracking-widest py-4">Joined Date</TableHead>
-            <TableHead className="font-bold text-slate-500 uppercase text-[10px] tracking-widest py-4">Activity</TableHead>
-            <TableHead className="font-bold text-slate-500 uppercase text-[10px] tracking-widest text-right py-4">Fraud Control</TableHead>
+            <TableHead className="font-bold text-slate-500 uppercase text-[10px] tracking-widest py-4">
+              User Email
+            </TableHead>
+            <TableHead className="font-bold text-slate-500 uppercase text-[10px] tracking-widest hidden md:table-cell py-4">
+              Internal ID
+            </TableHead>
+            <TableHead className="font-bold text-slate-500 uppercase text-[10px] tracking-widest py-4">
+              Status
+            </TableHead>
+            <TableHead className="font-bold text-slate-500 uppercase text-[10px] tracking-widest py-4">
+              Joined Date
+            </TableHead>
+            <TableHead className="font-bold text-slate-500 uppercase text-[10px] tracking-widest py-4">
+              Activity
+            </TableHead>
+            <TableHead className="font-bold text-slate-500 uppercase text-[10px] tracking-widest text-right py-4">
+              Fraud Control
+            </TableHead>
           </TableRow>
         </TableHeader>
         <TableBody>
           {users.map((user) => (
-            <TableRow key={user.id} className="hover:bg-slate-50/50 transition-colors border-b border-slate-50 group">
+            <TableRow
+              key={user.id}
+              className="hover:bg-slate-50/50 transition-colors border-b border-slate-50 group"
+            >
               <TableCell className="font-semibold text-slate-900">
-                <a href={`/users/${user.id}`} className="hover:text-indigo-600 hover:underline transition-colors">
+                <a
+                  href={`/users/${user.id}`}
+                  className="hover:text-indigo-600 hover:underline transition-colors"
+                >
                   {user.email}
                 </a>
               </TableCell>
@@ -63,10 +81,10 @@ export function WalletUsersTable({ users, loading }: WalletUsersTableProps) {
                     user.status === 'ACTIVE'
                       ? 'border-emerald-200 text-emerald-700 bg-emerald-50 font-bold'
                       : user.status === 'PENDING_APPROVAL'
-                      ? 'border-amber-200 text-amber-700 bg-amber-50 font-bold'
-                      : user.status === 'SUSPENDED'
-                      ? 'border-orange-200 text-orange-700 bg-orange-50 font-bold'
-                      : 'border-rose-200 text-rose-700 bg-rose-50 font-bold'
+                        ? 'border-amber-200 text-amber-700 bg-amber-50 font-bold'
+                        : user.status === 'SUSPENDED'
+                          ? 'border-orange-200 text-orange-700 bg-orange-50 font-bold'
+                          : 'border-rose-200 text-rose-700 bg-rose-50 font-bold'
                   }
                 >
                   {user.status}
@@ -81,15 +99,21 @@ export function WalletUsersTable({ users, loading }: WalletUsersTableProps) {
               </TableCell>
               <TableCell>
                 <div className="flex items-center gap-2">
-                  <a 
+                  <a
                     href={`/users/${user.id}`}
-                    className={cn(buttonVariants({ variant: 'ghost', size: 'sm' }), "text-indigo-600 hover:text-indigo-700 hover:bg-indigo-50 font-bold text-xs")}
+                    className={cn(
+                      buttonVariants({ variant: 'ghost', size: 'sm' }),
+                      'text-indigo-600 hover:text-indigo-700 hover:bg-indigo-50 font-bold text-xs',
+                    )}
                   >
                     Manage
                   </a>
-                  <a 
+                  <a
                     href={`/users/activity?userId=${user.id}`}
-                    className={cn(buttonVariants({ variant: 'ghost', size: 'sm' }), "text-slate-400 hover:text-slate-600 hover:bg-slate-50 font-bold text-[10px] uppercase tracking-tighter")}
+                    className={cn(
+                      buttonVariants({ variant: 'ghost', size: 'sm' }),
+                      'text-slate-400 hover:text-slate-600 hover:bg-slate-50 font-bold text-[10px] uppercase tracking-tighter',
+                    )}
                   >
                     Logs
                   </a>

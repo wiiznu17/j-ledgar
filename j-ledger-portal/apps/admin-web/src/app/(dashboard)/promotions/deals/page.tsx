@@ -12,7 +12,7 @@ import {
   DialogDescription,
   DialogHeader,
   DialogTitle,
-} from "@/components/ui/dialog";
+} from '@/components/ui/dialog';
 import { DealForm } from '@/components/promotions/DealForm';
 
 export default function DealsPage() {
@@ -57,9 +57,11 @@ export default function DealsPage() {
       <div className="flex items-center justify-between">
         <div>
           <h2 className="text-3xl font-bold tracking-tight text-[#2D3748]">Deals & Rewards</h2>
-          <p className="text-muted-foreground mt-1">Manage points-based rewards and promotional offers.</p>
+          <p className="text-muted-foreground mt-1">
+            Manage points-based rewards and promotional offers.
+          </p>
         </div>
-        <Button 
+        <Button
           onClick={handleCreate}
           className="bg-pink-500 hover:bg-pink-600 text-white rounded-lg shadow-md shadow-pink-100 transition-all active:scale-95"
         >
@@ -93,10 +95,10 @@ export default function DealsPage() {
               Fill in the details below to publish a reward offer to the wallet app.
             </DialogDescription>
           </DialogHeader>
-          <DealForm 
-            initialData={editingDeal} 
-            onSuccess={handleSuccess} 
-            onCancel={() => setIsModalOpen(false)} 
+          <DealForm
+            initialData={editingDeal}
+            onSuccess={handleSuccess}
+            onCancel={() => setIsModalOpen(false)}
           />
         </DialogContent>
       </Dialog>

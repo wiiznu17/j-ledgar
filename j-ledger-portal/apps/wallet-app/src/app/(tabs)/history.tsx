@@ -9,7 +9,11 @@ import { HistoryHeader } from '@/components/history/HistoryHeader';
 import { HistorySearchBar } from '@/components/history/HistorySearchBar';
 import { HistoryCategoryTabs } from '@/components/history/HistoryCategoryTabs';
 import { HistoryTransactionList } from '@/components/history/HistoryTransactionList';
-import { HISTORY_FILTERS, type HistoryFilter, type HistoryItem } from '@/features/history/presentation';
+import {
+  HISTORY_FILTERS,
+  type HistoryFilter,
+  type HistoryItem,
+} from '@/features/history/presentation';
 
 export default function HistoryScreen() {
   const router = useRouter();
@@ -55,14 +59,17 @@ export default function HistoryScreen() {
     [search, selectedCategory],
   );
 
-  const refresh = useCallback((pullToRefresh = false) => {
-    if (pullToRefresh) {
-      setIsRefreshing(true);
-    } else {
-      setIsLoading(true);
-    }
-    fetchHistory(0, true).finally(() => setIsRefreshing(false));
-  }, [fetchHistory]);
+  const refresh = useCallback(
+    (pullToRefresh = false) => {
+      if (pullToRefresh) {
+        setIsRefreshing(true);
+      } else {
+        setIsLoading(true);
+      }
+      fetchHistory(0, true).finally(() => setIsRefreshing(false));
+    },
+    [fetchHistory],
+  );
 
   useEffect(() => {
     if (debounceRef.current) {
@@ -96,7 +103,9 @@ export default function HistoryScreen() {
     return (
       <SafeAreaView className="flex-1 bg-transparent items-center justify-center" edges={['top']}>
         <ActivityIndicator size="large" color="#f48fb1" />
-        <Text className="text-sm font-manrope font-bold text-gray-400 mt-4">Loading history...</Text>
+        <Text className="text-sm font-manrope font-bold text-gray-400 mt-4">
+          Loading history...
+        </Text>
       </SafeAreaView>
     );
   }

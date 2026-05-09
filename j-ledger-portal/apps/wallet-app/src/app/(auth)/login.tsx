@@ -140,7 +140,7 @@ export default function LoginScreen() {
         const { useRegistrationStore } = await import('@/store/registration');
         await useRegistrationStore.getState().setRegToken(res.data.regToken);
       }
-      
+
       // Force PIN verification state
       useAuthStore.getState().lockSession();
       setStep('PIN');
@@ -276,23 +276,23 @@ export default function LoginScreen() {
                   Mobile Number
                 </Text>
                 <View className="bg-gray-50 rounded-2xl">
-                    <AppTextInput
-                      placeholder="08X-XXX-XXXX"
-                      value={formatPhone(phone)}
-                      onChangeText={(val) => {
-                        // Remove everything except numbers
-                        const cleaned = val.replace(/\D/g, '');
-                        // Strictly only update if it's within 10 digits
-                        if (cleaned.length <= 10) {
-                          setPhone(cleaned);
-                        }
-                      }}
-                      maxLength={12} // 10 digits + 2 dashes
-                      keyboardType="phone-pad"
-                      containerClassName="bg-transparent border border-gray-100 h-14"
-                      className="font-manrope font-bold text-gray-800 text-base tracking-widest"
-                      leftElement={<Smartphone size={18} color="#9ca3af" />}
-                    />
+                  <AppTextInput
+                    placeholder="08X-XXX-XXXX"
+                    value={formatPhone(phone)}
+                    onChangeText={(val) => {
+                      // Remove everything except numbers
+                      const cleaned = val.replace(/\D/g, '');
+                      // Strictly only update if it's within 10 digits
+                      if (cleaned.length <= 10) {
+                        setPhone(cleaned);
+                      }
+                    }}
+                    maxLength={12} // 10 digits + 2 dashes
+                    keyboardType="phone-pad"
+                    containerClassName="bg-transparent border border-gray-100 h-14"
+                    className="font-manrope font-bold text-gray-800 text-base tracking-widest"
+                    leftElement={<Smartphone size={18} color="#9ca3af" />}
+                  />
                 </View>
               </View>
 

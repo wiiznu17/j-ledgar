@@ -15,14 +15,17 @@ export class NotificationService {
   ) {}
 
   async handleEvent(topic: string, payload: any) {
-    this.logger.debug(`[HandleEvent] topic=${topic} eventType=${payload.eventType || payload.status} userId=${payload.userId}`);
+    this.logger.debug(
+      `[HandleEvent] topic=${topic} eventType=${payload.eventType || payload.status} userId=${payload.userId}`,
+    );
     try {
       const { userId, eventType, referenceId, metadata, status } = payload;
-      
+
       // Map legacy status if coming from KYC events
       const actualEventType = eventType || payload.status || 'NOTIFICATION';
-      const actualReferenceId = referenceId || payload.documentId || payload.transactionId || Date.now().toString();
-      
+      const actualReferenceId =
+        referenceId || payload.documentId || payload.transactionId || Date.now().toString();
+
       const idempotencyKey = `${userId}:${actualEventType}:${actualReferenceId}`;
 
       // 1. Idempotency Check
@@ -47,7 +50,7 @@ export class NotificationService {
       const title = this.generateTitle(topic, actualEventType, metadata);
       const body = this.generateBody(topic, actualEventType, metadata);
       const { category, path } = this.getCategoryAndPath(actualEventType, metadata);
-      
+
       if (!existing) {
         // 3. Persist to Inbox (Only if new)
         await this.prisma.notification.create({
@@ -64,7 +67,9 @@ export class NotificationService {
           },
         });
       } else {
-        this.logger.debug(`Duplicate event, skipping DB record but proceeding to push: ${idempotencyKey}`);
+        this.logger.debug(
+          `Duplicate event, skipping DB record but proceeding to push: ${idempotencyKey}`,
+        );
       }
 
       // 4. Routing Logic
@@ -77,36 +82,29 @@ export class NotificationService {
         if (devices.length > 0) {
           pushAttempted = true;
           for (const device of devices) {
-            const ok = await this.pushService.sendPushNotification(
-              device.pushToken!,
-              title,
-              body,
-              { 
-                ...metadata, 
-                topic, 
-                eventType: actualEventType,
-                url: (actualEventType === 'TRANSFER' || actualEventType === 'TOPUP') && metadata?.transactionId
+            const ok = await this.pushService.sendPushNotification(device.pushToken!, title, body, {
+              ...metadata,
+              topic,
+              eventType: actualEventType,
+              url:
+                (actualEventType === 'TRANSFER' || actualEventType === 'TOPUP') &&
+                metadata?.transactionId
                   ? `/transaction/${metadata.transactionId}`
-                  : undefined
-              },
-            );
+                  : undefined,
+            });
             if (ok) pushSuccess = true;
           }
         }
       }
 
       // Email Strategy (Fallback or Forced)
-      const shouldSendEmail = 
-        isSecurityEvent || 
-        (pushAttempted && !pushSuccess && prefs?.emailEnabled !== false) || 
+      const shouldSendEmail =
+        isSecurityEvent ||
+        (pushAttempted && !pushSuccess && prefs?.emailEnabled !== false) ||
         (!pushAttempted && prefs?.emailEnabled !== false);
 
       if (shouldSendEmail && user.email) {
-        await this.emailService.sendEmail(
-          user.email,
-          title,
-          this.wrapEmailHtml(title, body),
-        );
+        await this.emailService.sendEmail(user.email, title, this.wrapEmailHtml(title, body));
       }
 
       this.logger.log(`Notification processed for user ${userId}: ${actualEventType}`);
@@ -124,17 +122,17 @@ export class NotificationService {
       if (type === NotificationEventType.REGISTRATION_COMPLETED) return 'Welcome to J-Ledger!';
       return 'Security Alert';
     }
-    
+
     if (topic === KafkaTopic.KYC_EVENTS || type === NotificationEventType.KYC_SUBMITTED) {
       return 'Identity Verification';
     }
-    
+
     if (type === NotificationEventType.TOPUP) return 'Wallet Top-up';
     if (type === NotificationEventType.TRANSFER) {
       // Check if user is receiver based on metadata
       return metadata?.isReceiver ? 'Money Received' : 'Payment Sent';
     }
-    
+
     return 'J-Ledger Notification';
   }
 
@@ -150,7 +148,7 @@ export class NotificationService {
     switch (eventType?.toUpperCase()) {
       case NotificationEventType.LOGIN_SUCCESS:
         return `Secure login detected from ${metadata?.deviceName || metadata?.ipAddress || 'a new device'}. If this wasn't you, please secure your account immediately.`;
-      
+
       case NotificationEventType.LOGIN_FAILURE:
         return `A failed login attempt was detected for your account from ${metadata?.deviceName || 'an unknown device'}. If this wasn't you, we recommend monitoring your account.`;
 
@@ -165,14 +163,15 @@ export class NotificationService {
 
       case NotificationEventType.KYC_APPROVED:
         return 'Congratulations! Your identity verification has been successfully approved. You now have full access to all features.';
-      
+
       case NotificationEventType.KYC_REJECTED:
         return `Identity verification was not successful. Reason: ${metadata?.reason || 'Document clarity issue'}. Please try again or contact support.`;
-      
+
       case NotificationEventType.TOPUP:
-        const source = metadata?.source || metadata?.description?.split('via ')?.[1] || 'Bank Transfer';
+        const source =
+          metadata?.source || metadata?.description?.split('via ')?.[1] || 'Bank Transfer';
         return `Your wallet has been successfully topped up with ฿${amount} via ${source}.${refText}`;
-      
+
       case NotificationEventType.TRANSFER:
         if (metadata?.isReceiver) {
           console.log(metadata);
@@ -198,50 +197,63 @@ export class NotificationService {
       </div>
     `;
   }
-  
-  private getCategoryAndPath(eventType: string, metadata: any): { category: string; path?: string } {
+
+  private getCategoryAndPath(
+    eventType: string,
+    metadata: any,
+  ): { category: string; path?: string } {
     const type = eventType?.toUpperCase();
-    
+
     // Default Category Mapping
-    if ([
-      NotificationEventType.TRANSFER,
-      NotificationEventType.TOPUP,
-      NotificationEventType.WITHDRAW,
-      'PAYMENT',
-      'FINANCE',
-    ].includes(type)) {
+    if (
+      [
+        NotificationEventType.TRANSFER,
+        NotificationEventType.TOPUP,
+        NotificationEventType.WITHDRAW,
+        'PAYMENT',
+        'FINANCE',
+      ].includes(type)
+    ) {
       const transactionId = metadata?.transactionId || metadata?.referenceId;
-      return { 
-        category: NotificationCategory.FINANCE, 
-        path: transactionId ? `${AppPath.TRANSACTION_DETAIL}/${transactionId}` : undefined 
+      return {
+        category: NotificationCategory.FINANCE,
+        path: transactionId ? `${AppPath.TRANSACTION_DETAIL}/${transactionId}` : undefined,
       };
     }
-    
-    if (['SECURITY', NotificationEventType.LOGIN_SUCCESS, NotificationEventType.PASSWORD_CHANGE].includes(type)) {
+
+    if (
+      [
+        'SECURITY',
+        NotificationEventType.LOGIN_SUCCESS,
+        NotificationEventType.PASSWORD_CHANGE,
+      ].includes(type)
+    ) {
       return { category: NotificationCategory.SYSTEM, path: AppPath.PROFILE_SECURITY };
     }
-    
-    if ([
-      'KYC_STATUS',
-      NotificationEventType.KYC_APPROVED,
-      NotificationEventType.KYC_REJECTED,
-      NotificationEventType.KYC_SUBMITTED,
-    ].includes(type)) {
+
+    if (
+      [
+        'KYC_STATUS',
+        NotificationEventType.KYC_APPROVED,
+        NotificationEventType.KYC_REJECTED,
+        NotificationEventType.KYC_SUBMITTED,
+      ].includes(type)
+    ) {
       return { category: NotificationCategory.SYSTEM, path: AppPath.PROFILE_INFO };
     }
-    
+
     if (type === NotificationEventType.REGISTRATION_COMPLETED) {
       return { category: NotificationCategory.SYSTEM, path: AppPath.HOME };
     }
-    
+
     if (['PROMO', 'OFFER', 'CAMPAIGN'].includes(type)) {
       return { category: NotificationCategory.PROMO };
     }
-    
+
     if (['NEWS', 'ANNOUNCEMENT'].includes(type)) {
       return { category: NotificationCategory.NEWS };
     }
-    
+
     return { category: NotificationCategory.SYSTEM };
   }
 }

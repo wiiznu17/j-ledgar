@@ -1,9 +1,9 @@
 import { Injectable, Logger } from '@nestjs/common';
-import { 
-  RekognitionClient, 
-  CompareFacesCommand, 
-  CreateFaceLivenessSessionCommand, 
-  GetFaceLivenessSessionResultsCommand 
+import {
+  RekognitionClient,
+  CompareFacesCommand,
+  CreateFaceLivenessSessionCommand,
+  GetFaceLivenessSessionResultsCommand,
 } from '@aws-sdk/client-rekognition';
 import { ConfigService } from '@nestjs/config';
 

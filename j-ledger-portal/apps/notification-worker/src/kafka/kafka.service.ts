@@ -27,13 +27,13 @@ export class KafkaService implements OnModuleInit, OnModuleDestroy {
     this.consumer = this.kafka.consumer({ groupId });
 
     await this.consumer.connect();
-    await this.consumer.subscribe({ 
+    await this.consumer.subscribe({
       topics: [
-        KafkaTopic.FINANCIAL_EVENTS_V1, 
-        KafkaTopic.TRANSACTION_EVENTS, 
-        KafkaTopic.KYC_EVENTS, 
-        KafkaTopic.SECURITY_EVENTS
-      ] 
+        KafkaTopic.FINANCIAL_EVENTS_V1,
+        KafkaTopic.TRANSACTION_EVENTS,
+        KafkaTopic.KYC_EVENTS,
+        KafkaTopic.SECURITY_EVENTS,
+      ],
     });
 
     await this.consumer.run({

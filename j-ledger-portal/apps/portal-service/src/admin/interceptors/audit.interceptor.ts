@@ -1,10 +1,4 @@
-import {
-  Injectable,
-  NestInterceptor,
-  ExecutionContext,
-  CallHandler,
-  Logger,
-} from '@nestjs/common';
+import { Injectable, NestInterceptor, ExecutionContext, CallHandler, Logger } from '@nestjs/common';
 import { Observable } from 'rxjs';
 import { tap } from 'rxjs/operators';
 import { Reflector } from '@nestjs/core';
@@ -54,7 +48,7 @@ export class AuditInterceptor implements NestInterceptor {
         next: async (data) => {
           try {
             const response = context.switchToHttp().getResponse();
-            
+
             // Extract Resource ID if path provided
             let resourceId = null;
             if (metadata?.resourceIdPath) {
@@ -76,7 +70,7 @@ export class AuditInterceptor implements NestInterceptor {
               requestPayload: {
                 body,
                 params,
-                query
+                query,
               },
               responseStatus: response.statusCode,
               reason: actionReason,
@@ -89,7 +83,7 @@ export class AuditInterceptor implements NestInterceptor {
         error: async (err) => {
           // Log failed attempts too if needed
           try {
-             await this.auditService.log({
+            await this.auditService.log({
               adminUserId: adminUser?.sub || adminUser?.id || 'SYSTEM',
               action: actionType,
               resourceType: resourceType,
@@ -98,12 +92,14 @@ export class AuditInterceptor implements NestInterceptor {
               userAgent: request.get('user-agent') || '',
               requestPayload: { body, params, query },
               responseStatus: err.status || 500,
-              reason: actionReason ? `${actionReason} (Failed: ${err.message})` : `Failed: ${err.message}`
+              reason: actionReason
+                ? `${actionReason} (Failed: ${err.message})`
+                : `Failed: ${err.message}`,
             });
           } catch (logError) {
             this.logger.error(`Failed to record failed audit log: ${logError.message}`);
           }
-        }
+        },
       }),
     );
   }

@@ -12,13 +12,13 @@ export class AdminRolesGuard implements CanActivate {
       context.getHandler(),
       context.getClass(),
     ]);
-    
+
     if (!requiredRoles) {
       return true;
     }
-    
+
     const { user } = context.switchToHttp().getRequest();
-    
+
     // Check if user has at least one of the required roles
     // user.role is set by the JWT Strategy
     return requiredRoles.includes(user.role);

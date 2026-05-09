@@ -2,7 +2,9 @@ import { NextResponse, NextRequest } from 'next/server';
 import { jwtVerify } from 'jose';
 import { verifyToken } from '@/lib/auth/jwt';
 
-const SECRET = new TextEncoder().encode(process.env.ADMIN_JWT_SECRET || 'jledger-admin-super-secret-2024-dev-key-32chars');
+const SECRET = new TextEncoder().encode(
+  process.env.ADMIN_JWT_SECRET || 'jledger-admin-super-secret-2024-dev-key-32chars',
+);
 
 export async function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl;
@@ -26,7 +28,7 @@ export async function proxy(request: NextRequest) {
 
   // Verify token and check expiration
   let payload = await verifyToken(token);
-  
+
   if (!payload) {
     const refreshToken = request.cookies.get('refresh_token')?.value;
     const userId = request.cookies.get('user_id')?.value;
@@ -43,7 +45,7 @@ export async function proxy(request: NextRequest) {
         if (refreshResponse.ok) {
           const data = await refreshResponse.json();
           console.log('[Proxy] Token refresh successful');
-          
+
           const response = NextResponse.next();
           response.cookies.set('admin_session', data.token, {
             httpOnly: true,

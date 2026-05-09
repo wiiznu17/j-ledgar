@@ -17,8 +17,10 @@ export const showConfirm = async (title: string, text: string) => {
       popup: 'rounded-xl border border-border bg-white',
       title: 'text-2xl font-bold text-[#2D3748]',
       htmlContainer: 'text-muted-foreground',
-      confirmButton: 'rounded-lg px-6 py-2 font-semibold text-white shadow-md transition-all hover:opacity-90',
-      cancelButton: 'rounded-lg px-6 py-2 font-semibold text-white shadow-md transition-all hover:bg-[#A0AEC0]',
+      confirmButton:
+        'rounded-lg px-6 py-2 font-semibold text-white shadow-md transition-all hover:opacity-90',
+      cancelButton:
+        'rounded-lg px-6 py-2 font-semibold text-white shadow-md transition-all hover:bg-[#A0AEC0]',
     },
   });
 };

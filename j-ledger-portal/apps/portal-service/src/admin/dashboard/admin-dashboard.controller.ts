@@ -20,14 +20,14 @@ export class AdminDashboardController {
 
     // 1. Fetch KYC Stats
     const kycStats = await this.kycService.getKYCStats();
-    
+
     // 2. Fetch Recent Transactions to calculate volume for chart
     // Note: Fetching top 50 transactions to build a basic volume chart
     const txResponse = await this.integrationService.forwardToGateway<any>(
       'get',
-      '/api/v1/transactions?page=0&size=100'
+      '/api/v1/transactions?page=0&size=100',
     );
-    const transactions = Array.isArray(txResponse) ? txResponse : (txResponse.content || []);
+    const transactions = Array.isArray(txResponse) ? txResponse : txResponse.content || [];
 
     // 3. Process Transaction Volume for Chart (Group by hour for the last 24h)
     const now = new Date();
@@ -43,14 +43,14 @@ export class AdminDashboardController {
       growth: {
         approvalRate,
         volumeGoal: 65, // This could be dynamic based on historical averages
-      }
+      },
     };
   }
 
   private processTransactionVolume(transactions: any[]) {
     // Basic grouping by hour for the chart
     const hoursMap: Record<string, number> = {};
-    
+
     // Initialize last 7 hours to match mock behavior if no data
     const now = new Date();
     for (let i = 6; i >= 0; i--) {
@@ -59,7 +59,7 @@ export class AdminDashboardController {
       hoursMap[label] = 0;
     }
 
-    transactions.forEach(tx => {
+    transactions.forEach((tx) => {
       const date = new Date(tx.createdAt);
       const label = `${String(date.getHours()).padStart(2, '0')}:00`;
       if (hoursMap[label] !== undefined) {
@@ -67,9 +67,11 @@ export class AdminDashboardController {
       }
     });
 
-    return Object.entries(hoursMap).map(([time, volume]) => ({
-      time,
-      volume
-    })).sort((a, b) => a.time.localeCompare(b.time));
+    return Object.entries(hoursMap)
+      .map(([time, volume]) => ({
+        time,
+        volume,
+      }))
+      .sort((a, b) => a.time.localeCompare(b.time));
   }
 }

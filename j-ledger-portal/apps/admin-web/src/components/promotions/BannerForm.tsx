@@ -17,7 +17,7 @@ interface BannerFormProps {
 export function BannerForm({ initialData, onSuccess, onCancel }: BannerFormProps) {
   const [loading, setLoading] = useState(false);
   const [uploading, setUploading] = useState(false);
-  
+
   const [formData, setFormData] = useState({
     title: initialData?.title || '',
     imageUrl: initialData?.imageUrl || '',
@@ -95,10 +95,18 @@ export function BannerForm({ initialData, onSuccess, onCancel }: BannerFormProps
               ) : (
                 <>
                   <Upload size={32} className="text-slate-300" />
-                  <span className="text-sm text-slate-400 mt-2 font-medium">Click to upload banner image</span>
+                  <span className="text-sm text-slate-400 mt-2 font-medium">
+                    Click to upload banner image
+                  </span>
                 </>
               )}
-              <input type="file" className="hidden" accept="image/*" onChange={handleImageUpload} disabled={uploading} />
+              <input
+                type="file"
+                className="hidden"
+                accept="image/*"
+                onChange={handleImageUpload}
+                disabled={uploading}
+              />
             </label>
           )}
           <Input
@@ -136,7 +144,11 @@ export function BannerForm({ initialData, onSuccess, onCancel }: BannerFormProps
         <Button type="button" variant="ghost" onClick={onCancel} className="rounded-xl">
           Cancel
         </Button>
-        <Button type="submit" className="bg-[#f48fb1] hover:bg-[#f06292] text-white rounded-xl px-8" disabled={loading || uploading}>
+        <Button
+          type="submit"
+          className="bg-[#f48fb1] hover:bg-[#f06292] text-white rounded-xl px-8"
+          disabled={loading || uploading}
+        >
           {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
           {initialData?.id ? 'Update Banner' : 'Publish Banner'}
         </Button>

@@ -1,5 +1,10 @@
 import { Controller, Get, Post, Body, Query, UseGuards, Req } from '@nestjs/common';
-import { AuditService, AuditAction, ResourceType, AuditLogData } from '../../modules/audit/audit.service';
+import {
+  AuditService,
+  AuditAction,
+  ResourceType,
+  AuditLogData,
+} from '../../modules/audit/audit.service';
 import { AdminPaginatedResponse } from '@repo/dto';
 import { AdminJwtGuard } from '../guards/admin-jwt.guard';
 import { AdminRolesGuard } from '../guards/admin-roles.guard';

@@ -1,7 +1,20 @@
 'use client';
 
 import React, { useEffect, useState } from 'react';
-import { ShieldCheck, User, Clock, CheckCircle2, XCircle, Eye, Search, Calendar as CalendarIcon, Filter, RotateCcw, ChevronLeft, ChevronRight } from 'lucide-react';
+import {
+  ShieldCheck,
+  User,
+  Clock,
+  CheckCircle2,
+  XCircle,
+  Eye,
+  Search,
+  Calendar as CalendarIcon,
+  Filter,
+  RotateCcw,
+  ChevronLeft,
+  ChevronRight,
+} from 'lucide-react';
 import Link from 'next/link';
 import { kycRequester } from '@/lib/requesters';
 import { Button } from '@/components/ui/button';
@@ -10,9 +23,20 @@ import { Card } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Popover, PopoverTrigger, PopoverContent } from '@/components/ui/popover';
 import { Calendar } from '@/components/ui/calendar';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
 import { format } from 'date-fns';
-import { FilterSearchInput, FilterSelect, FilterActions, FilterDatePicker } from '@/components/common/FilterElements';
+import {
+  FilterSearchInput,
+  FilterSelect,
+  FilterActions,
+  FilterDatePicker,
+} from '@/components/common/FilterElements';
 
 interface KycDocument {
   id: string;
@@ -31,7 +55,9 @@ interface KycDocument {
 export default function KycListPage() {
   const [documents, setDocuments] = useState<KycDocument[]>([]);
   const [isLoading, setIsLoading] = useState(true);
-  const [status, setStatus] = useState<'PENDING_APPROVAL' | 'ACTIVE' | 'REJECTED'>('PENDING_APPROVAL');
+  const [status, setStatus] = useState<'PENDING_APPROVAL' | 'ACTIVE' | 'REJECTED'>(
+    'PENDING_APPROVAL',
+  );
   const [stats, setStats] = useState<any>(null);
   const [phoneNumber, setPhoneNumber] = useState('');
   const [startDate, setStartDate] = useState('');
@@ -47,7 +73,7 @@ export default function KycListPage() {
     phoneNumber: '',
     startDate: '',
     endDate: '',
-    page: 1
+    page: 1,
   });
 
   const fetchDocuments = async () => {
@@ -59,9 +85,9 @@ export default function KycListPage() {
         startDate: activeFilters.startDate,
         endDate: activeFilters.endDate,
         page: activeFilters.page,
-        limit: 10
+        limit: 10,
       });
-      
+
       setDocuments(res.items);
       setStats(res.stats);
       if (res.meta) {
@@ -87,7 +113,7 @@ export default function KycListPage() {
       phoneNumber,
       startDate,
       endDate,
-      page: 1
+      page: 1,
     });
     setCurrentPage(1);
   };
@@ -95,7 +121,7 @@ export default function KycListPage() {
   const handlePageChange = (newPage: number) => {
     if (newPage < 1 || newPage > totalPages) return;
     setCurrentPage(newPage);
-    setActiveFilters(prev => ({ ...prev, page: newPage }));
+    setActiveFilters((prev) => ({ ...prev, page: newPage }));
   };
 
   return (
@@ -110,15 +136,23 @@ export default function KycListPage() {
         <div className="flex items-center flex-wrap gap-4 md:gap-6 text-sm">
           <div className="flex items-center gap-2">
             <div className="w-2 h-2 rounded-full bg-amber-500" />
-            <span className="text-slate-500 font-medium">Pending: <strong className="text-slate-800">{stats?.pending || 0}</strong></span>
+            <span className="text-slate-500 font-medium">
+              Pending: <strong className="text-slate-800">{stats?.pending || 0}</strong>
+            </span>
           </div>
           <div className="flex items-center gap-2">
             <div className="w-2 h-2 rounded-full bg-emerald-500" />
-            <span className="text-slate-500 font-medium">Approved Today: <strong className="text-slate-800">{stats?.approvedToday || 0}</strong></span>
+            <span className="text-slate-500 font-medium">
+              Approved Today:{' '}
+              <strong className="text-slate-800">{stats?.approvedToday || 0}</strong>
+            </span>
           </div>
           <div className="flex items-center gap-2">
             <div className="w-2 h-2 rounded-full bg-rose-500" />
-            <span className="text-slate-500 font-medium">Rejected Today: <strong className="text-slate-800">{stats?.rejectedToday || 0}</strong></span>
+            <span className="text-slate-500 font-medium">
+              Rejected Today:{' '}
+              <strong className="text-slate-800">{stats?.rejectedToday || 0}</strong>
+            </span>
           </div>
         </div>
       </div>
@@ -126,8 +160,11 @@ export default function KycListPage() {
       <Card className="border-none shadow-sm ring-1 ring-slate-100 overflow-hidden">
         {/* Filter Toolbar */}
         <div className="p-3 bg-white border-b border-slate-100">
-          <form onSubmit={handleApplyFilter} className="grid grid-cols-1 md:grid-cols-5 gap-4 items-end">
-            <FilterSelect 
+          <form
+            onSubmit={handleApplyFilter}
+            className="grid grid-cols-1 md:grid-cols-5 gap-4 items-end"
+          >
+            <FilterSelect
               label="Account Status (Filter)"
               value={status}
               onValueChange={(val: any) => setStatus(val)}
@@ -138,26 +175,18 @@ export default function KycListPage() {
               ]}
             />
 
-            <FilterSearchInput 
+            <FilterSearchInput
               label="Phone Number"
               placeholder="08x-xxx-xxxx"
               value={phoneNumber}
               onChange={(e) => setPhoneNumber(e.target.value)}
             />
 
-            <FilterDatePicker 
-              label="Date From"
-              value={startDate}
-              onChange={setStartDate}
-            />
+            <FilterDatePicker label="Date From" value={startDate} onChange={setStartDate} />
 
-            <FilterDatePicker 
-              label="Date To"
-              value={endDate}
-              onChange={setEndDate}
-            />
+            <FilterDatePicker label="Date To" value={endDate} onChange={setEndDate} />
 
-            <FilterActions 
+            <FilterActions
               searchLabel="Search"
               isLoading={isLoading}
               onReset={() => {
@@ -170,7 +199,7 @@ export default function KycListPage() {
                   phoneNumber: '',
                   startDate: '',
                   endDate: '',
-                  page: 1
+                  page: 1,
                 });
                 setCurrentPage(1);
               }}
@@ -222,18 +251,25 @@ export default function KycListPage() {
                       </div>
                     </td>
                     <td className="px-6 py-4">
-                      <Badge variant="outline" className="bg-slate-100 text-slate-600 border-none font-bold text-[10px] uppercase">
+                      <Badge
+                        variant="outline"
+                        className="bg-slate-100 text-slate-600 border-none font-bold text-[10px] uppercase"
+                      >
                         {doc.documentType}
                       </Badge>
                     </td>
                     <td className="px-6 py-4">
-                      <Badge 
-                        variant="outline" 
+                      <Badge
+                        variant="outline"
                         className={`
                           font-bold text-[10px] uppercase border-none
-                          ${doc.user?.status === 'ACTIVE' ? 'bg-emerald-100 text-emerald-700' : 
-                            doc.user?.status === 'REJECTED' ? 'bg-rose-100 text-rose-700' : 
-                            'bg-amber-100 text-amber-700'}
+                          ${
+                            doc.user?.status === 'ACTIVE'
+                              ? 'bg-emerald-100 text-emerald-700'
+                              : doc.user?.status === 'REJECTED'
+                                ? 'bg-rose-100 text-rose-700'
+                                : 'bg-amber-100 text-amber-700'
+                          }
                         `}
                       >
                         {doc.user?.status || 'UNKNOWN'}
@@ -262,7 +298,11 @@ export default function KycListPage() {
                     </td>
                     <td className="px-6 py-4 text-right">
                       <Link href={`/kyc/${doc.userId}`}>
-                        <Button size="sm" variant="ghost" className="text-indigo-600 hover:text-indigo-700 hover:bg-indigo-50">
+                        <Button
+                          size="sm"
+                          variant="ghost"
+                          className="text-indigo-600 hover:text-indigo-700 hover:bg-indigo-50"
+                        >
                           <Eye className="w-4 h-4 mr-2" />
                           Review
                         </Button>
@@ -279,7 +319,8 @@ export default function KycListPage() {
         {totalPages > 0 && (
           <div className="p-4 bg-white border-t border-slate-100 flex items-center justify-between">
             <p className="text-xs text-slate-500 font-medium">
-              Showing page <strong className="text-slate-800">{currentPage}</strong> of <strong className="text-slate-800">{totalPages}</strong> 
+              Showing page <strong className="text-slate-800">{currentPage}</strong> of{' '}
+              <strong className="text-slate-800">{totalPages}</strong>
               <span className="hidden sm:inline"> ({totalItems} total records)</span>
             </p>
             <div className="flex gap-2">

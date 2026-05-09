@@ -65,7 +65,12 @@ export const useAuthStore = create<AuthState>((set, get) => ({
           await SecureStore.setItemAsync(REFRESH_TOKEN_KEY, refreshToken);
         }
       }
-      set({ token, refreshToken: refreshToken || null, isAuthenticated: true, lastActiveAt: Date.now() });
+      set({
+        token,
+        refreshToken: refreshToken || null,
+        isAuthenticated: true,
+        lastActiveAt: Date.now(),
+      });
     } else {
       if (isWeb) {
         localStorage.removeItem('auth_token');
@@ -118,17 +123,17 @@ export const useAuthStore = create<AuthState>((set, get) => ({
       const deviceId = await require('@/lib/device.utils').getStableDeviceId();
       const deviceName = require('@/lib/device.utils').getDeviceName();
 
-      const res = await api.post('/identity/pin/verify', { 
+      const res = await api.post('/identity/pin/verify', {
         pin,
         deviceId,
-        deviceName
+        deviceName,
       });
 
       // If backend returns new tokens on PIN verify, use them!
       if (res.data.accessToken) {
         await get().setToken(res.data.accessToken, res.data.refreshToken);
       }
-      
+
       return true;
     } catch (error: any) {
       console.error('[Auth] PIN verification failed:', error.response?.data || error.message);
@@ -214,7 +219,14 @@ export const useAuthStore = create<AuthState>((set, get) => ({
 
       if (token && user) {
         console.log('[Auth] Restored session from storage');
-        set({ token, refreshToken, user, isAuthenticated: true, hasSession: true, biometricEnabled });
+        set({
+          token,
+          refreshToken,
+          user,
+          isAuthenticated: true,
+          hasSession: true,
+          biometricEnabled,
+        });
       } else if (refreshToken && user) {
         // Only require PIN if we actually have user data to go with the session
         console.log('[Auth] Session found but access token expired, PIN verification required');
@@ -235,7 +247,13 @@ export const useAuthStore = create<AuthState>((set, get) => ({
             await SecureStore.deleteItemAsync(REFRESH_TOKEN_KEY);
           }
         }
-        set({ hasSession: false, biometricEnabled, token: null, refreshToken: null, needsPinVerification: false });
+        set({
+          hasSession: false,
+          biometricEnabled,
+          token: null,
+          refreshToken: null,
+          needsPinVerification: false,
+        });
       }
 
       // PIN will be initialized during onboarding flow

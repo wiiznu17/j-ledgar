@@ -178,7 +178,9 @@ export class IdentityService {
       }
 
       // Keep existing registration state to allow resumption
-      this.logger.log(`[Register] Resuming onboarding for ${phoneNumber} from state: ${user.registrationState}`);
+      this.logger.log(
+        `[Register] Resuming onboarding for ${phoneNumber} from state: ${user.registrationState}`,
+      );
     }
 
     const challenge = await this.createOtpChallenge(user.id, phoneNumber);
@@ -210,14 +212,19 @@ export class IdentityService {
     );
 
     // Only update state if it's currently earlier than OTP_VERIFIED
-    if ((user.registrationState as RegistrationState) === RegistrationState.PENDING_OTP || (user.registrationState as RegistrationState) === RegistrationState.PENDING) {
+    if (
+      (user.registrationState as RegistrationState) === RegistrationState.PENDING_OTP ||
+      (user.registrationState as RegistrationState) === RegistrationState.PENDING
+    ) {
       await this.prisma.user.update({
         where: { id: user.id },
         data: { registrationState: RegistrationState.OTP_VERIFIED },
       });
       this.logger.log(`[Register] State updated to OTP_VERIFIED for ${phoneNumber}`);
     } else {
-      this.logger.log(`[Register] Keeping current state: ${user.registrationState} for ${phoneNumber}`);
+      this.logger.log(
+        `[Register] Keeping current state: ${user.registrationState} for ${phoneNumber}`,
+      );
     }
 
     await this.logSecurityEvent(user.id, NotificationEventType.REGISTER_OTP_VERIFIED, {
@@ -260,8 +267,8 @@ export class IdentityService {
     }
 
     if (
-      user.status !== UserStatus.ACTIVE && 
-      user.status !== UserStatus.PENDING_APPROVAL && 
+      user.status !== UserStatus.ACTIVE &&
+      user.status !== UserStatus.PENDING_APPROVAL &&
       user.status !== UserStatus.REJECTED &&
       user.status !== UserStatus.INACTIVE
     ) {
@@ -359,7 +366,7 @@ export class IdentityService {
     if ((user.status as UserStatus) === UserStatus.REJECTED) {
       const kyc = await this.prisma.kYCData.findUnique({
         where: { userId: user.id },
-        select: { reviewNote: true }
+        select: { reviewNote: true },
       });
       reviewNote = kyc?.reviewNote;
     }
@@ -367,7 +374,10 @@ export class IdentityService {
     // Include regToken if registration is not completed so the app can resume
     let regToken = null;
     if ((user.registrationState as RegistrationState) !== RegistrationState.COMPLETED) {
-      regToken = await this.signRegistrationToken(user.id, user.registrationState as RegistrationState);
+      regToken = await this.signRegistrationToken(
+        user.id,
+        user.registrationState as RegistrationState,
+      );
     }
 
     return {
@@ -381,8 +391,8 @@ export class IdentityService {
         email: user.email,
         status: user.status,
         registrationState: user.registrationState,
-        reviewNote
-      }
+        reviewNote,
+      },
     };
   }
 
@@ -435,7 +445,7 @@ export class IdentityService {
           email: true,
           status: true,
           registrationState: true,
-        }
+        },
       });
 
       // Fetch review note if rejected
@@ -443,7 +453,7 @@ export class IdentityService {
       if ((user?.status as UserStatus) === UserStatus.REJECTED) {
         const kyc = await this.prisma.kYCData.findUnique({
           where: { userId: payload.sub },
-          select: { reviewNote: true }
+          select: { reviewNote: true },
         });
         reviewNote = kyc?.reviewNote;
       }
@@ -461,8 +471,8 @@ export class IdentityService {
         expiresIn: ACCESS_TOKEN_TTL_SECONDS,
         user: {
           ...user,
-          reviewNote
-        }
+          reviewNote,
+        },
       };
     } catch (error) {
       throw new UnauthorizedException('Invalid refresh token');
@@ -637,7 +647,9 @@ export class IdentityService {
         referenceId: new Date().getTime().toString(), // Using time as fallback reference
       });
     } catch (error) {
-      this.logger.warn(`Failed to emit security event to Kafka for user ${userId}: ${error.message}`);
+      this.logger.warn(
+        `Failed to emit security event to Kafka for user ${userId}: ${error.message}`,
+      );
       // Don't rethrow - we don't want notification failures to block core logic
     }
   }
@@ -905,7 +917,10 @@ export class IdentityService {
 
     this.logger.log(`[Register] STEP 3: Accepting terms for user ${payload.sub}`);
 
-    await this.validateRegistrationState(payload.sub, [RegistrationState.OTP_VERIFIED, RegistrationState.TC_ACCEPTED]);
+    await this.validateRegistrationState(payload.sub, [
+      RegistrationState.OTP_VERIFIED,
+      RegistrationState.TC_ACCEPTED,
+    ]);
 
     const user = await this.prisma.user.findUnique({
       where: { id: payload.sub },
@@ -962,7 +977,10 @@ export class IdentityService {
 
     this.logger.log(`[Register] STEP 4: Registering profile for user ${payload.sub}`);
 
-    await this.validateRegistrationState(payload.sub, [RegistrationState.KYC_VERIFIED, RegistrationState.PROFILE_COMPLETED]);
+    await this.validateRegistrationState(payload.sub, [
+      RegistrationState.KYC_VERIFIED,
+      RegistrationState.PROFILE_COMPLETED,
+    ]);
 
     const user = await this.prisma.user.findUnique({
       where: { id: payload.sub },
@@ -997,14 +1015,16 @@ export class IdentityService {
 
     // Update Address if provided
     this.logger.log(`[Register] Processing address. useIdentityAddress: ${dto.useIdentityAddress}`);
-    
+
     if (dto.useIdentityAddress) {
       const registeredAddress = await this.prisma.address.findFirst({
         where: { userId: user.id, type: AddressType.REGISTERED },
       });
 
       if (registeredAddress) {
-        this.logger.log(`[Register] Found registered address for user ${user.id}, merging with postal code: ${dto.currentAddress?.postalCode}`);
+        this.logger.log(
+          `[Register] Found registered address for user ${user.id}, merging with postal code: ${dto.currentAddress?.postalCode}`,
+        );
         await this.updateAddress(
           user.id,
           AddressType.CURRENT,
@@ -1018,37 +1038,56 @@ export class IdentityService {
           AddressVerificationSource.MANUAL,
         );
       } else {
-        this.logger.warn(`[Register] useIdentityAddress was true but no REGISTERED address found for user ${user.id}`);
+        this.logger.warn(
+          `[Register] useIdentityAddress was true but no REGISTERED address found for user ${user.id}`,
+        );
         if (dto.currentAddress && dto.currentAddress.line1) {
-          await this.updateAddress(user.id, AddressType.CURRENT, dto.currentAddress, AddressVerificationSource.MANUAL);
+          await this.updateAddress(
+            user.id,
+            AddressType.CURRENT,
+            dto.currentAddress,
+            AddressVerificationSource.MANUAL,
+          );
         } else {
-          this.logger.error(`[Register] Cannot set current address: No identity address and no full current address provided`);
+          this.logger.error(
+            `[Register] Cannot set current address: No identity address and no full current address provided`,
+          );
           // We don't throw yet, but this might cause issues if mandatory
         }
       }
     } else if (dto.currentAddress) {
       this.logger.log(`[Register] Using provided current address for user ${user.id}`);
-      await this.updateAddress(user.id, AddressType.CURRENT, dto.currentAddress, AddressVerificationSource.MANUAL);
+      await this.updateAddress(
+        user.id,
+        AddressType.CURRENT,
+        dto.currentAddress,
+        AddressVerificationSource.MANUAL,
+      );
     }
 
     // Update state
-    // Smart Skip: If user already has password and PIN (Retry/Resume case), 
+    // Smart Skip: If user already has password and PIN (Retry/Resume case),
     // skip directly to COMPLETED state.
     let nextState: RegistrationState = RegistrationState.PROFILE_COMPLETED;
     if (user.passwordHash && user.pinHash) {
-      this.logger.log(`[Register] User ${user.id} already has password and PIN. Skipping to COMPLETED.`);
+      this.logger.log(
+        `[Register] User ${user.id} already has password and PIN. Skipping to COMPLETED.`,
+      );
       nextState = RegistrationState.COMPLETED;
     }
 
     // Status Protection: Only move to PENDING_APPROVAL if currently INACTIVE.
     // If user is already REJECTED, ACTIVE, or BLOCKED, we MUST preserve that status.
-    const updatedStatus = (user.status as UserStatus) === UserStatus.INACTIVE ? UserStatus.PENDING_APPROVAL : (user.status as UserStatus);
-    
+    const updatedStatus =
+      (user.status as UserStatus) === UserStatus.INACTIVE
+        ? UserStatus.PENDING_APPROVAL
+        : (user.status as UserStatus);
+
     await this.prisma.user.update({
       where: { id: user.id },
-      data: { 
+      data: {
         registrationState: nextState,
-        status: updatedStatus as UserStatus
+        status: updatedStatus as UserStatus,
       },
     });
 
@@ -1056,7 +1095,7 @@ export class IdentityService {
     if (updatedStatus === UserStatus.PENDING_APPROVAL) {
       await this.prisma.kYCData.updateMany({
         where: { userId: user.id },
-        data: { verificationStatus: KYCVerificationStatus.PENDING }
+        data: { verificationStatus: KYCVerificationStatus.PENDING },
       });
     }
 
@@ -1068,9 +1107,9 @@ export class IdentityService {
       `[Register] STEP 4 Complete: State updated to ${nextState} for user ${user.id}`,
     );
 
-    return { 
+    return {
       success: true,
-      nextState
+      nextState,
     };
   }
 
@@ -1094,7 +1133,10 @@ export class IdentityService {
 
     this.logger.log(`[Register] STEP 5: Setting password for user ${payload.sub}`);
 
-    await this.validateRegistrationState(payload.sub, [RegistrationState.PROFILE_COMPLETED, RegistrationState.PASSWORD_SET]);
+    await this.validateRegistrationState(payload.sub, [
+      RegistrationState.PROFILE_COMPLETED,
+      RegistrationState.PASSWORD_SET,
+    ]);
 
     const user = await this.prisma.user.findUnique({
       where: { id: payload.sub },
@@ -1140,7 +1182,10 @@ export class IdentityService {
 
     this.logger.log(`[Register] STEP 6: Setting PIN for user ${payload.sub}`);
 
-    await this.validateRegistrationState(payload.sub, [RegistrationState.PASSWORD_SET, RegistrationState.CREDENTIALS_SET]);
+    await this.validateRegistrationState(payload.sub, [
+      RegistrationState.PASSWORD_SET,
+      RegistrationState.CREDENTIALS_SET,
+    ]);
 
     const user = await this.prisma.user.findUnique({
       where: { id: payload.sub },
@@ -1249,7 +1294,9 @@ export class IdentityService {
     this.logger.log(`[Register] Current state for user ${user.id}: ${user.registrationState}`);
 
     // Extract raw address from PII
-    const rawAddressPii = (piiData as Record<string, any>[]).find((p) => p.field === 'raw_id_card_address');
+    const rawAddressPii = (piiData as Record<string, any>[]).find(
+      (p) => p.field === 'raw_id_card_address',
+    );
     const idCardAddress = rawAddressPii ? this.decryptPii(rawAddressPii.encryptedData) : null;
 
     // Extract profile data from settings
@@ -1320,7 +1367,10 @@ export class IdentityService {
 
     this.logger.log(`[Register] STEP 7: Completing registration for user ${payload.sub}`);
 
-    await this.validateRegistrationState(payload.sub, [RegistrationState.CREDENTIALS_SET, RegistrationState.COMPLETED]);
+    await this.validateRegistrationState(payload.sub, [
+      RegistrationState.CREDENTIALS_SET,
+      RegistrationState.COMPLETED,
+    ]);
 
     const user = await this.prisma.user.findUnique({
       where: { id: payload.sub },
@@ -1330,10 +1380,13 @@ export class IdentityService {
       throw new BadRequestException('User not found');
     }
 
-    // Race Condition and Token Reuse Protection: 
+    // Race Condition and Token Reuse Protection:
     // Allow completion only if status is PENDING_APPROVAL or REJECTED (for retries),
     // but if already COMPLETED and ACTIVE, throw conflict.
-    if ((user.registrationState as RegistrationState) === RegistrationState.COMPLETED && (user.status as UserStatus) === UserStatus.ACTIVE) {
+    if (
+      (user.registrationState as RegistrationState) === RegistrationState.COMPLETED &&
+      (user.status as UserStatus) === UserStatus.ACTIVE
+    ) {
       throw new ConflictException('Registration already completed');
     }
 
@@ -1350,7 +1403,9 @@ export class IdentityService {
         } catch (walletError: any) {
           // If wallet already exists, try to fetch it instead of failing
           if (walletError.message?.includes('already exists') || walletError.status === 409) {
-            this.logger.warn(`[Register] Wallet already exists for user ${user.id}, attempting to link existing one`);
+            this.logger.warn(
+              `[Register] Wallet already exists for user ${user.id}, attempting to link existing one`,
+            );
             // We can either fetch it from finance service or just assume it's there if we have a way to find it
             // For now, let's try to get status which might return the wallet info
             const existingWallet = await this.financeService.getWallet(user.id);
@@ -1364,7 +1419,10 @@ export class IdentityService {
       // Update user with wallet info and final state
       // Status Protection: Only move to PENDING_APPROVAL if currently INACTIVE.
       // If user is already REJECTED, ACTIVE, or BLOCKED, we MUST preserve that status.
-      const updatedStatus = (user.status as UserStatus) === UserStatus.INACTIVE ? UserStatus.PENDING_APPROVAL : (user.status as UserStatus);
+      const updatedStatus =
+        (user.status as UserStatus) === UserStatus.INACTIVE
+          ? UserStatus.PENDING_APPROVAL
+          : (user.status as UserStatus);
 
       const updatedUser = await this.prisma.user.update({
         where: { id: user.id },
@@ -1379,7 +1437,7 @@ export class IdentityService {
       if (updatedStatus === UserStatus.PENDING_APPROVAL) {
         await this.prisma.kYCData.updateMany({
           where: { userId: user.id },
-          data: { verificationStatus: KYCVerificationStatus.PENDING }
+          data: { verificationStatus: KYCVerificationStatus.PENDING },
         });
       }
 
@@ -1391,11 +1449,15 @@ export class IdentityService {
       const sessionId = randomUUID();
       const deviceId = context?.deviceId || 'UNKNOWN';
       const device = await this.prisma.userDevice.findFirst({
-        where: { userId: user.id, deviceIdentifier: deviceId }
+        where: { userId: user.id, deviceIdentifier: deviceId },
       });
-      
+
       const accessToken = await this.signAccessToken(user.id, sessionId, device?.id || 'UNKNOWN');
-      const refreshToken = await this.signRefreshToken(updatedUser.id, sessionId, device?.id || 'UNKNOWN');
+      const refreshToken = await this.signRefreshToken(
+        updatedUser.id,
+        sessionId,
+        device?.id || 'UNKNOWN',
+      );
 
       await this.prisma.refreshSession.create({
         data: {
@@ -1415,7 +1477,7 @@ export class IdentityService {
 
       // Fetch latest KYC data to get reviewNote if any
       const kycData = await this.prisma.kYCData.findUnique({
-        where: { userId: user.id }
+        where: { userId: user.id },
       });
 
       return {
@@ -1429,7 +1491,7 @@ export class IdentityService {
           status: updatedUser.status,
           registrationState: updatedUser.registrationState,
           reviewNote: kycData?.reviewNote || null,
-        }
+        },
       };
     } catch (error) {
       this.logger.error(`Failed to complete registration for user ${user.id}`, error);
@@ -1448,7 +1510,7 @@ export class IdentityService {
       where: { id: userId },
       data: { pinHash },
     });
-    
+
     await this.logSecurityEvent(userId, NotificationEventType.PIN_SETUP);
     return { success: true };
   }
@@ -1672,7 +1734,10 @@ export class IdentityService {
         },
       });
     } catch (error) {
-      this.logger.error(`[Identity] FAILED to update/create address: ${error.message}`, error.stack);
+      this.logger.error(
+        `[Identity] FAILED to update/create address: ${error.message}`,
+        error.stack,
+      );
       throw error;
     } finally {
       await this.logSecurityEvent(userId, NotificationEventType.ADDRESS_UPDATED, {

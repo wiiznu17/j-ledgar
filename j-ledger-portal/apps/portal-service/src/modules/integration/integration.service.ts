@@ -34,7 +34,10 @@ export class IntegrationService {
     private readonly loyaltyService: LoyaltyService,
     private readonly bannerService: BannerService,
   ) {
-    this.apiGatewayUrl = this.configService.get<string>('FINANCE_SERVICE_URL', 'http://localhost:8081');
+    this.apiGatewayUrl = this.configService.get<string>(
+      'FINANCE_SERVICE_URL',
+      'http://localhost:8081',
+    );
     this.internalSecret = this.configService.get<string>(
       'JLEDGER_INTERNAL_SECRET',
       'default-secret',
@@ -75,7 +78,10 @@ export class IntegrationService {
   }
 
   async getAccountByUserId(userId: string) {
-    const accounts = await this.forwardToGateway('get', INTERNAL_API_PATHS.FINANCE.ACCOUNTS.USER(userId));
+    const accounts = await this.forwardToGateway(
+      'get',
+      INTERNAL_API_PATHS.FINANCE.ACCOUNTS.USER(userId),
+    );
     return { data: accounts[0] };
   }
 
@@ -124,8 +130,6 @@ export class IntegrationService {
       const offset = page * size;
       const pagedItems = searched.slice(offset, offset + size);
 
-
-
       return {
         items: pagedItems,
         page,
@@ -143,12 +147,11 @@ export class IntegrationService {
     let actualId = transactionId;
     try {
       if (transactionId.startsWith('topup_') || transactionId.startsWith('p2p_')) {
-        
         // Strategy A: Check TopupOrder table
         if (transactionId.startsWith('topup_')) {
           const order = await this.prisma.topupOrder.findUnique({
             where: { idempotencyKey: transactionId },
-            select: { financeTransactionId: true }
+            select: { financeTransactionId: true },
           });
           if (order?.financeTransactionId) {
             actualId = order.financeTransactionId;
@@ -160,13 +163,13 @@ export class IntegrationService {
           const notifications = await this.prisma.notification.findMany({
             where: { referenceId: transactionId },
             select: { metadata: true },
-            orderBy: { createdAt: 'desc' }
+            orderBy: { createdAt: 'desc' },
           });
-          
+
           for (const notification of notifications) {
             const meta = notification?.metadata as any;
             let resolved = meta?.transactionId || meta?.financeTransactionId || meta?.id;
-            
+
             if (resolved !== undefined && resolved !== null) {
               const resolvedStr = String(resolved);
               if (resolvedStr && !resolvedStr.startsWith('p2p_')) {
@@ -183,8 +186,8 @@ export class IntegrationService {
             where: {
               OR: [
                 { requestPayload: { path: ['idempotencyKey'], equals: transactionId } },
-                { requestPayload: { path: ['body', 'idempotencyKey'], equals: transactionId } }
-              ]
+                { requestPayload: { path: ['body', 'idempotencyKey'], equals: transactionId } },
+              ],
             },
             select: { resourceId: true, changes: true },
             orderBy: { createdAt: 'desc' },
@@ -198,18 +201,23 @@ export class IntegrationService {
         }
       }
       // 2. Fetch from Finance Gateway (Correct Path: /api/finance/wallets/transactions/:id)
-      const raw = await this.forwardToGateway('get', INTERNAL_API_PATHS.FINANCE.WALLETS.TRANSACTION_DETAIL(actualId));
+      const raw = await this.forwardToGateway(
+        'get',
+        INTERNAL_API_PATHS.FINANCE.WALLETS.TRANSACTION_DETAIL(actualId),
+      );
       return this.mapWalletTransactionToHistoryItem(raw);
     } catch (error: any) {
       const errorMsg = error.response?.data?.message || error.message;
-      this.logger.error(`[TransactionDetails] Failed for ID ${transactionId} (actual: ${actualId}): ${errorMsg}`);
-      
+      this.logger.error(
+        `[TransactionDetails] Failed for ID ${transactionId} (actual: ${actualId}): ${errorMsg}`,
+      );
+
       throw new HttpException(
-        { 
+        {
           message: 'ไม่พบรายละเอียดธุรกรรม หรือรหัสอ้างอิงไม่ถูกต้อง',
-          debug: { originalId: transactionId, resolvedId: actualId, error: errorMsg }
+          debug: { originalId: transactionId, resolvedId: actualId, error: errorMsg },
         },
-        error?.response?.status || HttpStatus.INTERNAL_SERVER_ERROR
+        error?.response?.status || HttpStatus.INTERNAL_SERVER_ERROR,
       );
     }
   }
@@ -267,9 +275,9 @@ export class IntegrationService {
     ]);
 
     // Format recent transactions for the frontend using unified mapping
-    const recentTransactions = (transactions || []).slice(0, 10).map((tx: any) => 
-      this.mapWalletTransactionToHistoryItem(tx)
-    );
+    const recentTransactions = (transactions || [])
+      .slice(0, 10)
+      .map((tx: any) => this.mapWalletTransactionToHistoryItem(tx));
 
     return {
       user: {
@@ -508,17 +516,19 @@ export class IntegrationService {
       const finalTxId = tx?.transactionId || tx?.id?.toString();
 
       // Log to AuditLog for future resolution
-      await this.prisma.auditLog.create({
-        data: {
-          userId,
-          action: 'P2P_TRANSFER',
-          resourceType: 'TRANSACTION',
-          resourceId: finalTxId,
-          requestPayload: { ...body },
-          changes: { transactionId: finalTxId },
-          responseStatus: 200,
-        }
-      }).catch(err => this.logger.error(`[P2PTransfer] Audit logging failed: ${err.message}`));
+      await this.prisma.auditLog
+        .create({
+          data: {
+            userId,
+            action: 'P2P_TRANSFER',
+            resourceType: 'TRANSACTION',
+            resourceId: finalTxId,
+            requestPayload: { ...body },
+            changes: { transactionId: finalTxId },
+            responseStatus: 200,
+          },
+        })
+        .catch((err) => this.logger.error(`[P2PTransfer] Audit logging failed: ${err.message}`));
 
       this.logger.log(
         `[P2PTransfer] user=${userId} recipientHash=${this.hashPhone(recipientPhone)} amount=${amount.toFixed(2)} outcome=success txn=${finalTxId}`,
@@ -550,9 +560,9 @@ export class IntegrationService {
             {
               name: `P2P Transfer to ${recipientProfile?.idCardName || recipientPhone}`,
               quantity: 1,
-              unitPrice: amount
-            }
-          ]
+              unitPrice: amount,
+            },
+          ],
         });
       } catch (err) {
         this.logger.error(`[P2PTransfer] Invoice creation failed: ${err.message}`);
@@ -569,16 +579,18 @@ export class IntegrationService {
 
         if (pointsEarned) {
           // Send Notification about earned points
-          await this.prisma.notification.create({
-            data: {
-              userId,
-              title: 'Points Earned! 🏆',
-              message: `You earned ${Math.floor(amount * 0.04)} points from your transfer.`,
-              type: 'LOYALTY_EARN',
-              idempotencyKey: `points_earn_${finalTxId}`,
-              referenceId: finalTxId,
-            }
-          }).catch(() => {});
+          await this.prisma.notification
+            .create({
+              data: {
+                userId,
+                title: 'Points Earned! 🏆',
+                message: `You earned ${Math.floor(amount * 0.04)} points from your transfer.`,
+                type: 'LOYALTY_EARN',
+                idempotencyKey: `points_earn_${finalTxId}`,
+                referenceId: finalTxId,
+              },
+            })
+            .catch(() => {});
         }
       } catch (err) {
         this.logger.error(`[P2PTransfer] Point earning failed: ${err.message}`);
@@ -691,7 +703,9 @@ export class IntegrationService {
     });
 
     // Create Invoice after successful Top-up
-    this.logger.log(`[StripeWebhook] Triggering invoice creation for order=${order.id} user=${order.userId}`);
+    this.logger.log(
+      `[StripeWebhook] Triggering invoice creation for order=${order.id} user=${order.userId}`,
+    );
     try {
       await this.billingService.createInvoice({
         userId: order.userId,
@@ -702,9 +716,9 @@ export class IntegrationService {
           {
             name: `Wallet Top-up (${order.currency})`,
             quantity: 1,
-            unitPrice: Number(order.amount)
-          }
-        ]
+            unitPrice: Number(order.amount),
+          },
+        ],
       });
     } catch (err) {
       this.logger.error(`[StripeWebhook] Invoice creation failed: ${err.message}`);

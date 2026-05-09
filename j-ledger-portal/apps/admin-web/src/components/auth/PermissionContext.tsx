@@ -9,13 +9,13 @@ interface PermissionContextType {
 
 const PermissionContext = createContext<PermissionContextType | undefined>(undefined);
 
-export function PermissionProvider({ 
-  children, 
-  permissions, 
-  role 
-}: { 
-  children: ReactNode; 
-  permissions: string[]; 
+export function PermissionProvider({
+  children,
+  permissions,
+  role,
+}: {
+  children: ReactNode;
+  permissions: string[];
   role: string;
 }) {
   return (

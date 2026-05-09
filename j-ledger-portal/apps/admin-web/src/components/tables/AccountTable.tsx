@@ -69,7 +69,9 @@ export function AccountTable({
                     size="sm"
                     disabled={loading}
                     className={
-                      acc.status !== AccountStatus.ACTIVE ? 'bg-primary hover:bg-primary/90 text-white' : ''
+                      acc.status !== AccountStatus.ACTIVE
+                        ? 'bg-primary hover:bg-primary/90 text-white'
+                        : ''
                     }
                     onClick={() => onToggleStatus(acc.id, acc.status)}
                   >

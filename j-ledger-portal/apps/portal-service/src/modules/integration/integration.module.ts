@@ -8,11 +8,7 @@ import { BillingModule } from '../billing/billing.module';
 import { BannerModule } from '../banners/banner.module';
 
 @Module({
-  imports: [
-    HttpModule,
-    forwardRef(() => BillingModule),
-    BannerModule,
-  ],
+  imports: [HttpModule, forwardRef(() => BillingModule), BannerModule],
   providers: [FinanceService, IntegrationService],
   controllers: [IntegrationController, StripeWebhookController],
   exports: [FinanceService, IntegrationService],

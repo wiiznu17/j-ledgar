@@ -2,7 +2,12 @@ import React from 'react';
 import { View, Text, ScrollView, TouchableOpacity, RefreshControl } from 'react-native';
 import { MotiView } from 'moti';
 import { ArrowDownLeft, ArrowUpRight, Search } from 'lucide-react-native';
-import { formatCreatedAt, getAmountColor, getTypeMeta, type HistoryItem } from '@/features/history/presentation';
+import {
+  formatCreatedAt,
+  getAmountColor,
+  getTypeMeta,
+  type HistoryItem,
+} from '@/features/history/presentation';
 
 interface HistoryTransactionListProps {
   transactions: HistoryItem[];
@@ -79,8 +84,15 @@ export const HistoryTransactionList = ({
               </View>
 
               <View className="items-end">
-                <Text className="font-manrope font-black text-base" style={{ color: getAmountColor(tx.direction, tx.status) }}>
-                  {tx.direction === 'OUT' ? '-' : '+'}฿{Number(tx.amount || 0).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                <Text
+                  className="font-manrope font-black text-base"
+                  style={{ color: getAmountColor(tx.direction, tx.status) }}
+                >
+                  {tx.direction === 'OUT' ? '-' : '+'}฿
+                  {Number(tx.amount || 0).toLocaleString(undefined, {
+                    minimumFractionDigits: 2,
+                    maximumFractionDigits: 2,
+                  })}
                 </Text>
                 <Text className="text-[9px] font-manrope font-bold text-gray-400 mt-1">
                   {formatCreatedAt(tx.createdAt)}

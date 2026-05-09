@@ -115,7 +115,9 @@ export default function TopupReviewScreen() {
         >
           <ChevronLeft size={24} color="#1a1a1a" />
         </TouchableOpacity>
-        <Text className="text-lg font-manrope font-black text-gray-800 tracking-tight">Review Top Up</Text>
+        <Text className="text-lg font-manrope font-black text-gray-800 tracking-tight">
+          Review Top Up
+        </Text>
         <View className="w-10" />
       </View>
 
@@ -124,7 +126,11 @@ export default function TopupReviewScreen() {
         contentContainerStyle={{ paddingHorizontal: 20, paddingBottom: 120 }}
         showsVerticalScrollIndicator={false}
       >
-        <MotiView from={{ opacity: 0, translateY: 10 }} animate={{ opacity: 1, translateY: 0 }} className="mt-2">
+        <MotiView
+          from={{ opacity: 0, translateY: 10 }}
+          animate={{ opacity: 1, translateY: 0 }}
+          className="mt-2"
+        >
           <View className="bg-white rounded-[2.5rem] p-7 border border-gray-50 shadow-xl shadow-pink-100/40 relative overflow-hidden mb-6">
             <View className="absolute top-0 left-0 right-0 h-2 bg-[#f48fb1]" />
 
@@ -159,7 +165,9 @@ export default function TopupReviewScreen() {
                   <Text className="text-[10px] font-manrope font-black text-gray-400 uppercase tracking-widest mb-0.5">
                     Funding Source
                   </Text>
-                  <Text className="text-sm font-manrope font-black text-gray-800">Stripe Checkout</Text>
+                  <Text className="text-sm font-manrope font-black text-gray-800">
+                    Stripe Checkout
+                  </Text>
                   <Text className="text-[10px] font-manrope font-bold text-gray-400 mt-0.5">
                     Card or PromptPay
                   </Text>
@@ -175,7 +183,9 @@ export default function TopupReviewScreen() {
                     To
                   </Text>
                   <Text className="text-sm font-manrope font-black text-gray-800">My E-Wallet</Text>
-                  <Text className="text-[10px] font-manrope font-bold text-gray-400 mt-0.5">P-wallet Account</Text>
+                  <Text className="text-[10px] font-manrope font-bold text-gray-400 mt-0.5">
+                    P-wallet Account
+                  </Text>
                 </View>
               </View>
             </View>
@@ -197,7 +207,9 @@ export default function TopupReviewScreen() {
 
           {error ? (
             <View className="bg-red-50 border border-red-100 rounded-2xl p-4 mb-4">
-              <Text className="text-xs font-manrope font-bold text-red-500 text-center">{error}</Text>
+              <Text className="text-xs font-manrope font-bold text-red-500 text-center">
+                {error}
+              </Text>
             </View>
           ) : null}
 

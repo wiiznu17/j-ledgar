@@ -1,5 +1,8 @@
 import { Injectable } from '@nestjs/common';
-import { ISmsProvider, ISmsProvider as ISmsProviderSymbol } from '../interfaces/sms-provider.interface';
+import {
+  ISmsProvider,
+  ISmsProvider as ISmsProviderSymbol,
+} from '../interfaces/sms-provider.interface';
 
 @Injectable()
 export class SmsProviderMock implements ISmsProvider {

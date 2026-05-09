@@ -14,7 +14,7 @@ export async function logAuditEvent(event: AuditLog): Promise<void> {
   // In production, this would send to a logging service or database
   // For now, we'll log to console and could extend to send to admin-api
   console.log('[AUDIT]', JSON.stringify(event));
-  
+
   // TODO: Send to admin-api for persistent storage
   // Example:
   // try {
@@ -32,7 +32,7 @@ export async function logLoginAttempt(
   userId: string,
   success: boolean,
   ipAddress?: string,
-  userAgent?: string
+  userAgent?: string,
 ): Promise<void> {
   await logAuditEvent({
     userId,
@@ -48,7 +48,7 @@ export async function logLoginAttempt(
 export async function logLogoutAttempt(
   userId: string,
   ipAddress?: string,
-  userAgent?: string
+  userAgent?: string,
 ): Promise<void> {
   await logAuditEvent({
     userId,
@@ -66,7 +66,7 @@ export async function logAdminAction(
   action: string,
   resource?: string,
   resourceId?: string,
-  details?: string
+  details?: string,
 ): Promise<void> {
   await logAuditEvent({
     userId,

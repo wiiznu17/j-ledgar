@@ -17,27 +17,27 @@ import {
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from "@/components/ui/select";
+} from '@/components/ui/select';
 import { useEffect, useState } from 'react';
 import { toast } from 'sonner';
 import { FilterSearchInput, FilterSelect, FilterActions } from '@/components/common/FilterElements';
 import { systemRequester, OutboxEvent } from '@/lib/requesters/systemRequester';
-import { 
-  Radio, 
-  Activity, 
-  CheckCircle2, 
-  AlertCircle, 
-  Clock, 
-  ChevronRight, 
-  Terminal, 
-  Search, 
+import {
+  Radio,
+  Activity,
+  CheckCircle2,
+  AlertCircle,
+  Clock,
+  ChevronRight,
+  Terminal,
+  Search,
   RotateCcw,
   Box,
   Share2,
   Cpu,
   History,
   Filter,
-  RefreshCw
+  RefreshCw,
 } from 'lucide-react';
 import { format } from 'date-fns';
 
@@ -47,7 +47,7 @@ export default function SystemOutboxPage() {
   const [selectedEvent, setSelectedEvent] = useState<OutboxEvent | null>(null);
   const [filterStatus, setFilterStatus] = useState<string>('ALL');
   const [filterType, setFilterType] = useState<string>('ALL');
-  
+
   // Temporary states for filters before applying
   const [tempStatus, setTempStatus] = useState<string>('ALL');
   const [tempType, setTempType] = useState<string>('ALL');
@@ -94,31 +94,33 @@ export default function SystemOutboxPage() {
     switch (status.toUpperCase()) {
       case 'COMPLETED':
       case 'PROCESSED':
-        return { 
-          color: 'bg-emerald-50 text-emerald-600 border-emerald-100', 
+        return {
+          color: 'bg-emerald-50 text-emerald-600 border-emerald-100',
           dot: 'bg-emerald-500',
-          icon: <CheckCircle2 className="w-3 h-3" />
+          icon: <CheckCircle2 className="w-3 h-3" />,
         };
       case 'FAILED':
-        return { 
-          color: 'bg-rose-50 text-rose-600 border-rose-100', 
+        return {
+          color: 'bg-rose-50 text-rose-600 border-rose-100',
           dot: 'bg-rose-500',
-          icon: <AlertCircle className="w-3 h-3" />
+          icon: <AlertCircle className="w-3 h-3" />,
         };
       default:
-        return { 
-          color: 'bg-amber-50 text-amber-600 border-amber-100', 
+        return {
+          color: 'bg-amber-50 text-amber-600 border-amber-100',
           dot: 'bg-amber-500',
-          icon: <Clock className="w-3 h-3" />
+          icon: <Clock className="w-3 h-3" />,
         };
     }
   };
 
   const stats = {
     total: data.length,
-    processed: data.filter(e => e.status.toUpperCase() === 'COMPLETED' || e.status.toUpperCase() === 'PROCESSED').length,
-    failed: data.filter(e => e.status.toUpperCase() === 'FAILED').length,
-    pending: data.filter(e => e.status.toUpperCase() === 'PENDING').length,
+    processed: data.filter(
+      (e) => e.status.toUpperCase() === 'COMPLETED' || e.status.toUpperCase() === 'PROCESSED',
+    ).length,
+    failed: data.filter((e) => e.status.toUpperCase() === 'FAILED').length,
+    pending: data.filter((e) => e.status.toUpperCase() === 'PENDING').length,
   };
 
   const handleRetry = async (id: string) => {
@@ -143,17 +145,43 @@ export default function SystemOutboxPage() {
             </div>
             <h1 className="text-2xl font-black text-slate-800 tracking-tight">System Outbox</h1>
           </div>
-          <p className="text-sm text-slate-500 font-medium ml-1">Transactional event logs and Kafka integration stream.</p>
+          <p className="text-sm text-slate-500 font-medium ml-1">
+            Transactional event logs and Kafka integration stream.
+          </p>
         </div>
       </div>
 
       {/* Stats Snapshots */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
         {[
-          { label: 'Total Events', value: stats.total, icon: Activity, color: 'text-indigo-600', bg: 'bg-indigo-50' },
-          { label: 'Processed', value: stats.processed, icon: CheckCircle2, color: 'text-emerald-600', bg: 'bg-emerald-50' },
-          { label: 'Pending', value: stats.pending, icon: Clock, color: 'text-amber-600', bg: 'bg-amber-50' },
-          { label: 'Failed', value: stats.failed, icon: AlertCircle, color: 'text-rose-600', bg: 'bg-rose-50' },
+          {
+            label: 'Total Events',
+            value: stats.total,
+            icon: Activity,
+            color: 'text-indigo-600',
+            bg: 'bg-indigo-50',
+          },
+          {
+            label: 'Processed',
+            value: stats.processed,
+            icon: CheckCircle2,
+            color: 'text-emerald-600',
+            bg: 'bg-emerald-50',
+          },
+          {
+            label: 'Pending',
+            value: stats.pending,
+            icon: Clock,
+            color: 'text-amber-600',
+            bg: 'bg-amber-50',
+          },
+          {
+            label: 'Failed',
+            value: stats.failed,
+            icon: AlertCircle,
+            color: 'text-rose-600',
+            bg: 'bg-rose-50',
+          },
         ].map((s, i) => (
           <Card key={i} className="border-none shadow-sm ring-1 ring-slate-100 overflow-hidden">
             <CardContent className="p-4 flex items-center gap-3">
@@ -161,7 +189,9 @@ export default function SystemOutboxPage() {
                 <s.icon className="w-5 h-5" />
               </div>
               <div>
-                <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest leading-none mb-1">{s.label}</p>
+                <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest leading-none mb-1">
+                  {s.label}
+                </p>
                 <p className="text-xl font-black text-slate-800 leading-none">{s.value}</p>
               </div>
             </CardContent>
@@ -174,7 +204,7 @@ export default function SystemOutboxPage() {
         {/* Filter Toolbar */}
         <div className="p-3 bg-white border-b border-slate-100">
           <div className="grid grid-cols-1 md:grid-cols-5 gap-4 items-end">
-            <FilterSelect 
+            <FilterSelect
               label="Event Status"
               value={tempStatus}
               onValueChange={setTempStatus}
@@ -186,7 +216,7 @@ export default function SystemOutboxPage() {
               ]}
             />
 
-            <FilterSelect 
+            <FilterSelect
               label="Event Type"
               value={tempType}
               onValueChange={setTempType}
@@ -199,7 +229,7 @@ export default function SystemOutboxPage() {
 
             <div className="hidden md:block md:col-span-1"></div>
 
-            <FilterActions 
+            <FilterActions
               searchLabel="Search"
               isLoading={loading}
               onReset={handleClearFilter}
@@ -215,7 +245,9 @@ export default function SystemOutboxPage() {
                 <th className="px-6 py-2.5 border-r border-slate-200/60">Registration Time</th>
                 <th className="px-6 py-2.5 text-center border-r border-slate-200/60">Status</th>
                 <th className="px-6 py-2.5 text-center border-r border-slate-200/60">Event Type</th>
-                <th className="px-6 py-2.5 text-center border-r border-slate-200/60">Processing Details</th>
+                <th className="px-6 py-2.5 text-center border-r border-slate-200/60">
+                  Processing Details
+                </th>
                 <th className="px-6 py-2.5 text-center">Intel</th>
               </tr>
             </thead>
@@ -239,14 +271,20 @@ export default function SystemOutboxPage() {
                     <tr key={event.id} className="hover:bg-slate-50/50 transition-colors group">
                       <td className="px-6 py-2 border-r border-slate-100">
                         <div className="flex flex-col">
-                          <span className="text-xs font-bold text-slate-700">{format(new Date(event.createdAt), 'MMM d, HH:mm:ss')}</span>
-                          <span className="text-[9px] text-slate-400 font-mono tracking-tighter italic">ID: {event.id.split('-')[0]}...</span>
+                          <span className="text-xs font-bold text-slate-700">
+                            {format(new Date(event.createdAt), 'MMM d, HH:mm:ss')}
+                          </span>
+                          <span className="text-[9px] text-slate-400 font-mono tracking-tighter italic">
+                            ID: {event.id.split('-')[0]}...
+                          </span>
                         </div>
                       </td>
                       <td className="px-6 py-2 border-r border-slate-100">
                         <div className="flex items-center justify-center gap-2">
                           <div className={`w-1.5 h-1.5 rounded-full ${config.dot}`} />
-                          <span className={`px-2 py-0.5 rounded-md text-[9px] font-black uppercase tracking-wider border ${config.color}`}>
+                          <span
+                            className={`px-2 py-0.5 rounded-md text-[9px] font-black uppercase tracking-wider border ${config.color}`}
+                          >
                             {event.status}
                           </span>
                         </div>
@@ -260,14 +298,18 @@ export default function SystemOutboxPage() {
                       </td>
                       <td className="px-6 py-2 border-r border-slate-100 text-center text-xs">
                         <div className="flex flex-col items-center">
-                          {event.updatedAt && (event.status.toUpperCase() === 'COMPLETED' || event.status.toUpperCase() === 'PROCESSED') ? (
+                          {event.updatedAt &&
+                          (event.status.toUpperCase() === 'COMPLETED' ||
+                            event.status.toUpperCase() === 'PROCESSED') ? (
                             <span className="text-[10px] font-bold text-emerald-600 flex items-center gap-1">
                               <CheckCircle2 className="w-3 h-3" />
                               {format(new Date(event.updatedAt), 'HH:mm:ss')}
                             </span>
                           ) : (
                             <div className="flex flex-col items-center gap-0.5">
-                              <span className="text-[10px] font-bold text-slate-400 italic">Waiting...</span>
+                              <span className="text-[10px] font-bold text-slate-400 italic">
+                                Waiting...
+                              </span>
                               {event.retryCount > 0 && (
                                 <span className="text-[8px] font-black text-rose-400 uppercase tracking-tighter bg-rose-50 px-1 rounded">
                                   Retries: {event.retryCount}
@@ -279,17 +321,19 @@ export default function SystemOutboxPage() {
                       </td>
                       <td className="px-6 py-2 text-center">
                         <Dialog>
-                          <DialogTrigger render={
-                            <Button 
-                              variant="outline" 
-                              size="sm" 
-                              onClick={() => setSelectedEvent(event)} 
-                              className="h-7 px-3 rounded-lg text-[9px] font-bold border-slate-200 hover:bg-slate-50 hover:border-indigo-200 transition-all active:scale-95 group/btn"
-                            >
-                              Inspect
-                              <ChevronRight className="w-3 h-3 ml-1 text-slate-300 group-hover/btn:text-indigo-400 transition-colors" />
-                            </Button>
-                          } />
+                          <DialogTrigger
+                            render={
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={() => setSelectedEvent(event)}
+                                className="h-7 px-3 rounded-lg text-[9px] font-bold border-slate-200 hover:bg-slate-50 hover:border-indigo-200 transition-all active:scale-95 group/btn"
+                              >
+                                Inspect
+                                <ChevronRight className="w-3 h-3 ml-1 text-slate-300 group-hover/btn:text-indigo-400 transition-colors" />
+                              </Button>
+                            }
+                          />
                           <DialogContent className="sm:max-w-3xl bg-white rounded-2xl border-0 shadow-2xl overflow-hidden">
                             <DialogHeader className="bg-slate-50/50 p-6 border-b border-slate-100">
                               <DialogTitle className="text-xl font-bold flex items-center gap-2">
@@ -305,39 +349,59 @@ export default function SystemOutboxPage() {
                                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6 text-xs text-slate-700">
                                   <div className="space-y-4">
                                     <div>
-                                      <p className="font-black text-slate-400 uppercase tracking-widest text-[9px] mb-1">Event Identification</p>
+                                      <p className="font-black text-slate-400 uppercase tracking-widest text-[9px] mb-1">
+                                        Event Identification
+                                      </p>
                                       <div className="space-y-1.5 font-bold">
                                         <p className="flex justify-between border-b border-slate-50 pb-1 text-slate-500">
                                           <span>Internal ID:</span>
-                                          <span className="font-mono text-[10px]">{selectedEvent.id}</span>
+                                          <span className="font-mono text-[10px]">
+                                            {selectedEvent.id}
+                                          </span>
                                         </p>
                                         <p className="flex justify-between border-b border-slate-50 pb-1 text-slate-500">
                                           <span>Type:</span>
-                                          <span className="uppercase text-indigo-600">{selectedEvent.eventType}</span>
+                                          <span className="uppercase text-indigo-600">
+                                            {selectedEvent.eventType}
+                                          </span>
                                         </p>
                                         <p className="flex justify-between border-b border-slate-50 pb-1 text-slate-500">
                                           <span>Created:</span>
-                                          <span>{format(new Date(selectedEvent.createdAt), 'PPP p')}</span>
+                                          <span>
+                                            {format(new Date(selectedEvent.createdAt), 'PPP p')}
+                                          </span>
                                         </p>
                                       </div>
                                     </div>
                                   </div>
-                                  
+
                                   <div className="space-y-4">
                                     <div>
-                                      <p className="font-black text-slate-400 uppercase tracking-widest text-[9px] mb-1">Processing Status</p>
+                                      <p className="font-black text-slate-400 uppercase tracking-widest text-[9px] mb-1">
+                                        Processing Status
+                                      </p>
                                       <div className="space-y-1.5 font-bold">
                                         <p className="flex justify-between border-b border-slate-50 pb-1 text-slate-500">
                                           <span>Status:</span>
-                                          <span className={`uppercase ${config.color} px-2 rounded-sm border`}>{selectedEvent.status}</span>
+                                          <span
+                                            className={`uppercase ${config.color} px-2 rounded-sm border`}
+                                          >
+                                            {selectedEvent.status}
+                                          </span>
                                         </p>
                                         <p className="flex justify-between border-b border-slate-50 pb-1 text-slate-500">
                                           <span>Retry Count:</span>
-                                          <span className="font-mono text-indigo-600">{selectedEvent.retryCount}</span>
+                                          <span className="font-mono text-indigo-600">
+                                            {selectedEvent.retryCount}
+                                          </span>
                                         </p>
                                         <p className="flex justify-between border-b border-slate-50 pb-1 text-slate-500">
                                           <span>Last Updated:</span>
-                                          <span>{selectedEvent.updatedAt ? format(new Date(selectedEvent.updatedAt), 'PPP p') : '-'}</span>
+                                          <span>
+                                            {selectedEvent.updatedAt
+                                              ? format(new Date(selectedEvent.updatedAt), 'PPP p')
+                                              : '-'}
+                                          </span>
                                         </p>
                                       </div>
                                     </div>
@@ -388,14 +452,14 @@ export default function SystemOutboxPage() {
                               </div>
                             )}
                             <div className="bg-slate-50 p-4 border-t border-slate-100 flex justify-end gap-3">
-                              <Button 
-                                variant="outline" 
+                              <Button
+                                variant="outline"
                                 onClick={() => setSelectedEvent(null)}
                                 className="h-9 px-4 rounded-xl text-xs font-bold border-slate-200 bg-white"
                               >
                                 Close
                               </Button>
-                              <Button 
+                              <Button
                                 onClick={() => selectedEvent && handleRetry(selectedEvent.id)}
                                 className="h-9 px-4 rounded-xl text-xs font-bold bg-indigo-600 hover:bg-indigo-700 text-white shadow-lg shadow-indigo-100 transition-all active:scale-95"
                               >

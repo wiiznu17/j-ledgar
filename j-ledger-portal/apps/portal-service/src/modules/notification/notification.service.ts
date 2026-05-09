@@ -11,12 +11,7 @@ export class NotificationService {
     private readonly kafkaProducer: KafkaProducerService,
   ) {}
 
-  async getNotifications(
-    userId: string,
-    page: number = 1,
-    limit: number = 20,
-    category?: string,
-  ) {
+  async getNotifications(userId: string, page: number = 1, limit: number = 20, category?: string) {
     const skip = (page - 1) * limit;
 
     const where: any = { userId };
@@ -102,7 +97,10 @@ export class NotificationService {
     return result;
   }
 
-  async updatePreferences(userId: string, prefs: { pushEnabled?: boolean; emailEnabled?: boolean }) {
+  async updatePreferences(
+    userId: string,
+    prefs: { pushEnabled?: boolean; emailEnabled?: boolean },
+  ) {
     return this.prisma.notificationPreference.upsert({
       where: { userId },
       update: prefs,
