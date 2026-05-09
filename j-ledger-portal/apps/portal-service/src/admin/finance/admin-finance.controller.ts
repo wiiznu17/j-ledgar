@@ -62,7 +62,6 @@ export class AdminFinanceController {
     @Param('id') id: string,
     @Body('status') status: string,
   ): Promise<void> {
-    // WARNING: This endpoint might not exist in current finance-service version
     await this.integrationService.forwardToGateway(
       'put',
       INTERNAL_API_PATHS.FINANCE.ACCOUNTS.STATUS(id),
@@ -137,8 +136,6 @@ export class AdminFinanceController {
     @Query('startDate') startDate?: string,
     @Query('endDate') endDate?: string,
   ): Promise<AdminPaginatedResponse<Transaction>> {
-    // Build query params for gateway
-    // WARNING: current finance-service TransactionController only supports page/size
     const query = new URLSearchParams({
       page: page.toString(),
       size: size.toString(),
@@ -148,12 +145,6 @@ export class AdminFinanceController {
       ...(startDate && { startDate }),
       ...(endDate && { endDate }),
     });
-
-    if (status || type || reference || startDate || endDate) {
-      this.logger.warn(
-        `Filtering transactions by ${JSON.stringify({ status, type, reference, startDate, endDate })} is currently ignored by finance-service`,
-      );
-    }
 
     // Proxy to finance-service
     const response = await this.integrationService.forwardToGateway<any>(
@@ -191,7 +182,6 @@ export class AdminFinanceController {
     @Query('page') page: number = 0,
     @Query('size') size: number = 50,
   ): Promise<AdminPaginatedResponse<any>> {
-    // WARNING: current finance-service AmlMonitoringController ignores pagination and returns flat List
     const response = await this.integrationService.forwardToGateway<any>(
       'get',
       `${INTERNAL_API_PATHS.FINANCE.AML.SUSPICIOUS_ACTIVITIES}?page=${page}&size=${size}`,
@@ -216,7 +206,6 @@ export class AdminFinanceController {
   @Put('aml/suspicious-activities/:id/status')
   @Roles(AdminRole.SUPER_ADMIN, AdminRole.AUDITOR, AdminRole.COMPLIANCE_OFFICER)
   async updateSuspiciousActivityStatus(@Param('id') id: string, @Body() data: any): Promise<void> {
-    // WARNING: This endpoint DOES NOT EXIST in current finance-service version
     await this.integrationService.forwardToGateway(
       'put',
       INTERNAL_API_PATHS.FINANCE.AML.SUSPICIOUS_ACTIVITY_STATUS(id),

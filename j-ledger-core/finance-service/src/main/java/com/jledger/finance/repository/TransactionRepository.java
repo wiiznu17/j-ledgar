@@ -1,9 +1,12 @@
 package com.jledger.finance.repository;
 
 import com.jledger.finance.domain.Transaction;
+import com.jledger.finance.domain.TransactionStatus;
 import com.jledger.finance.domain.TransactionType;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
 import java.time.LocalDateTime;
@@ -58,6 +61,20 @@ public interface TransactionRepository extends JpaRepository<Transaction, Long> 
     );
     List<Transaction> findByToWalletIdAndType(Long toWalletId, TransactionType type);
     List<Transaction> findByToWalletIdAndTypeOrderByCreatedAtDesc(Long toWalletId, TransactionType type);
+    @Query("SELECT t FROM Transaction t WHERE " +
+           "(CAST(:status AS string) IS NULL OR t.status = :status) AND " +
+           "(CAST(:type AS string) IS NULL OR t.type = :type) AND " +
+           "(CAST(:startDate AS timestamp) IS NULL OR t.createdAt >= :startDate) AND " +
+           "(CAST(:endDate AS timestamp) IS NULL OR t.createdAt <= :endDate) " +
+           "ORDER BY t.createdAt DESC")
+    org.springframework.data.domain.Page<Transaction> findAllWithFilters(
+            @Param("status") TransactionStatus status,
+            @Param("type") TransactionType type,
+            @Param("startDate") LocalDateTime startDate,
+            @Param("endDate") LocalDateTime endDate,
+            Pageable pageable
+    );
+
     Optional<Transaction> findByTransactionId(String transactionId);
     
     // For AML monitoring
