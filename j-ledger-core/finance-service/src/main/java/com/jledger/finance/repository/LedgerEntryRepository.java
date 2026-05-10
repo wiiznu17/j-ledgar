@@ -1,6 +1,5 @@
 package com.jledger.finance.repository;
 
-import com.jledger.finance.domain.LedgerEntry;
 import java.util.UUID;
 import org.springframework.data.jpa.repository.JpaRepository;
 import java.util.List;
@@ -9,6 +8,9 @@ import java.math.BigDecimal;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.repository.query.Param;
+
+import com.jledger.finance.domain.entity.LedgerEntry;
+
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import java.time.ZonedDateTime;

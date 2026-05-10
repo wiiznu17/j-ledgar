@@ -1,6 +1,6 @@
 package com.jledger.finance.service;
 
-import com.jledger.finance.domain.Account;
+import com.jledger.finance.domain.entity.Account;
 import com.jledger.finance.repository.AccountRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;

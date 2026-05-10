@@ -1,6 +1,6 @@
 package com.jledger.finance.service;
 
-import com.jledger.finance.domain.Transaction;
+import com.jledger.finance.domain.entity.Transaction;
 import com.jledger.finance.dto.TransferRequest;
 import com.jledger.finance.exception.ConcurrentOperationException;
 import java.math.BigDecimal;

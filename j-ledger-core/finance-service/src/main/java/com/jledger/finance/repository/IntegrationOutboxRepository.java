@@ -1,11 +1,12 @@
 package com.jledger.finance.repository;
 
-import com.jledger.finance.domain.IntegrationOutbox;
 import java.util.List;
 import java.util.UUID;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
+
+import com.jledger.finance.domain.entity.IntegrationOutbox;
 
 public interface IntegrationOutboxRepository extends JpaRepository<IntegrationOutbox, UUID> {
 

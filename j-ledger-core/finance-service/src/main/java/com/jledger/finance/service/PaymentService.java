@@ -1,6 +1,6 @@
 package com.jledger.finance.service;
 
-import com.jledger.finance.domain.PaymentTransaction;
+import com.jledger.finance.domain.entity.PaymentTransaction;
 import com.jledger.finance.dto.PaymentWebhookRequest;
 import com.jledger.finance.dto.TransferRequest;
 import com.jledger.finance.repository.PaymentTransactionRepository;

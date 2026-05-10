@@ -1,6 +1,5 @@
 package com.jledger.finance.dto;
 
-import com.jledger.finance.domain.Transaction;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
@@ -9,6 +8,8 @@ import java.time.ZoneId;
 import java.time.ZonedDateTime;
 import java.util.ArrayList;
 import java.util.List;
+
+import com.jledger.finance.domain.entity.Transaction;
 
 /**
  * Transfer Response DTO

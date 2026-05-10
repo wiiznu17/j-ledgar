@@ -1,8 +1,9 @@
 package com.jledger.finance.repository;
 
-import com.jledger.finance.domain.LinkedBankAccount;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
+
+import com.jledger.finance.domain.entity.LinkedBankAccount;
 
 import java.util.List;
 import java.util.Optional;

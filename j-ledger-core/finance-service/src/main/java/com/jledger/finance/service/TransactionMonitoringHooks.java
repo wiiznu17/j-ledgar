@@ -1,8 +1,9 @@
 package com.jledger.finance.service;
 
-import com.jledger.finance.domain.Transaction;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
+
+import com.jledger.finance.domain.entity.Transaction;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;

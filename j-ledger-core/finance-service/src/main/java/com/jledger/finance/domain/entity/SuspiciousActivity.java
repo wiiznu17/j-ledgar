@@ -1,4 +1,4 @@
-package com.jledger.finance.domain;
+package com.jledger.finance.domain.entity;
 
 import jakarta.persistence.*;
 import java.math.BigDecimal;
@@ -11,6 +11,9 @@ import lombok.NoArgsConstructor;
 import lombok.Setter;
 import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.UpdateTimestamp;
+
+import com.jledger.finance.domain.SuspiciousActivityStatus;
+import com.jledger.finance.domain.SuspiciousActivityType;
 
 @Entity
 @Table(name = "suspicious_activities", schema = "finance")

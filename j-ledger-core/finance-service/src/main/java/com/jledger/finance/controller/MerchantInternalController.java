@@ -1,7 +1,7 @@
 package com.jledger.finance.controller;
 
+import com.jledger.finance.domain.entity.Transaction;
 import com.jledger.finance.dto.MerchantPayRequest;
-import com.jledger.finance.domain.Transaction;
 import com.jledger.finance.service.MerchantPaymentService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;

@@ -1,7 +1,7 @@
 package com.jledger.finance.controller;
 
-import com.jledger.finance.domain.TransactionLimit;
 import com.jledger.finance.domain.TransactionLimitType;
+import com.jledger.finance.domain.entity.TransactionLimit;
 import com.jledger.finance.service.TransactionLimitService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;

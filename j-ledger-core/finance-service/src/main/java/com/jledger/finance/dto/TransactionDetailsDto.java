@@ -1,7 +1,8 @@
 package com.jledger.finance.dto;
 
-import com.jledger.finance.domain.LedgerEntry;
-import com.jledger.finance.domain.Transaction;
+import com.jledger.finance.domain.entity.LedgerEntry;
+import com.jledger.finance.domain.entity.Transaction;
+
 import java.util.List;
 import lombok.AllArgsConstructor;
 import lombok.Builder;

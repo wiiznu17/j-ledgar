@@ -1,8 +1,11 @@
-package com.jledger.finance.domain;
+package com.jledger.finance.domain.entity;
 
 import jakarta.persistence.*;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
+
+import com.jledger.finance.domain.TransactionStatus;
+import com.jledger.finance.domain.TransactionType;
 
 @Entity
 @Table(name = "transactions", schema = "finance")
