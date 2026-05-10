@@ -17,7 +17,9 @@ import {
   ChevronRight,
   ArrowRightLeft,
   DollarSign,
+  X,
 } from 'lucide-react';
+import { useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -60,6 +62,9 @@ export default function TransactionsPage() {
   const [totalPages, setTotalPages] = useState(1);
   const [totalItems, setTotalItems] = useState(0);
 
+  const searchParams = useSearchParams();
+  const userIdParam = searchParams.get('userId');
+
   // Active Filters used for API call
   const [activeFilters, setActiveFilters] = useState({
     status: 'ALL',
@@ -67,6 +72,7 @@ export default function TransactionsPage() {
     reference: '',
     startDate: '',
     endDate: '',
+    userId: userIdParam || '',
     page: 0,
   });
 
@@ -81,6 +87,7 @@ export default function TransactionsPage() {
         ...(activeFilters.reference && { reference: activeFilters.reference }),
         ...(activeFilters.startDate && { startDate: activeFilters.startDate }),
         ...(activeFilters.endDate && { endDate: activeFilters.endDate }),
+        ...(activeFilters.userId && { userId: activeFilters.userId }),
       };
 
       const res = await transactionRequester.getHistory(params);
@@ -97,19 +104,30 @@ export default function TransactionsPage() {
   }, [activeFilters]);
 
   useEffect(() => {
+    if (userIdParam !== activeFilters.userId) {
+      setActiveFilters((prev) => ({
+        ...prev,
+        userId: userIdParam || '',
+        page: 0,
+      }));
+    }
+  }, [userIdParam]);
+
+  useEffect(() => {
     fetchTransactions();
   }, [fetchTransactions]);
 
   const handleApplyFilter = (e?: React.FormEvent) => {
     if (e) e.preventDefault();
-    setActiveFilters({
+    setActiveFilters((prev) => ({
       status,
       type,
       reference,
       startDate,
       endDate,
+      userId: prev.userId,
       page: 0,
-    });
+    }));
     setCurrentPage(0);
   };
 
@@ -133,14 +151,27 @@ export default function TransactionsPage() {
 
   return (
     <div className="space-y-6 pb-10">
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-        <div>
-          <h2 className="text-3xl font-bold tracking-tight text-slate-900">Transactions</h2>
-          <p className="text-slate-500 mt-1">
-            Monitor and manage all financial activities across the platform.
-          </p>
+        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+          <div className="flex-1">
+            <h2 className="text-3xl font-bold tracking-tight text-slate-900">Transactions</h2>
+            <div className="flex flex-wrap items-center gap-2 mt-1">
+              <p className="text-slate-500">
+                Monitor and manage all financial activities across the platform.
+              </p>
+              {activeFilters.userId && (
+                <Badge variant="secondary" className="bg-indigo-50 text-indigo-600 border-indigo-100 px-2 py-0.5 rounded-md flex items-center gap-1">
+                  Filtering by User: <span className="font-mono text-[10px]">{activeFilters.userId}</span>
+                  <button 
+                    onClick={() => setActiveFilters(prev => ({ ...prev, userId: '', page: 0 }))}
+                    className="ml-1 hover:text-indigo-800"
+                  >
+                    <X size={12} />
+                  </button>
+                </Badge>
+              )}
+            </div>
+          </div>
         </div>
-      </div>
 
       <Card className="border-none shadow-sm ring-1 ring-slate-100 overflow-hidden bg-white">
         {/* Filter Toolbar */}
@@ -254,6 +285,7 @@ export default function TransactionsPage() {
                             reference: '',
                             startDate: '',
                             endDate: '',
+                            userId: '',
                             page: 0,
                           });
                         }}

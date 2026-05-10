@@ -169,6 +169,19 @@ export class AdminFinanceController {
     return { data: wallet };
   }
 
+  @Get('wallets/user/:userId')
+  async getWalletByUserId(@Param('userId') userId: string): Promise<{ data: WalletDto | null }> {
+    try {
+      const wallet = await this.integrationService.forwardToGateway<WalletDto>(
+        'get',
+        INTERNAL_API_PATHS.FINANCE.WALLETS.GET(userId),
+      );
+      return { data: wallet };
+    } catch (error) {
+      return { data: null };
+    }
+  }
+
   // ==================== Transaction Management ====================
 
   @Get('transactions')
@@ -177,6 +190,7 @@ export class AdminFinanceController {
     @Query('size') size: number = 50,
     @Query('status') status?: string,
     @Query('type') type?: string,
+    @Query('userId') userId?: string,
     @Query('reference') reference?: string,
     @Query('startDate') startDate?: string,
     @Query('endDate') endDate?: string,
@@ -186,6 +200,7 @@ export class AdminFinanceController {
       size: size.toString(),
       ...(status && { status }),
       ...(type && { type }),
+      ...(userId && { userId }),
       ...(reference && { reference }),
       ...(startDate && { startDate }),
       ...(endDate && { endDate }),
@@ -218,13 +233,8 @@ export class AdminFinanceController {
       INTERNAL_API_PATHS.FINANCE.TRANSACTIONS.DETAIL(id),
     );
 
-    // Map Java fields to DTO fields
-    const transaction: Transaction = {
-      ...response
-    };
-
     return {
-      transaction,
+      transaction: response,
       ledgerEntries: [], // Ledger entries not yet exposed by core
     };
   }

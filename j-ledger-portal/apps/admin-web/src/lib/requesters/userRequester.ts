@@ -46,6 +46,8 @@ export const userRequester = {
   getUserActivity: async (id: string) => apiClient.get<any>(API_PATHS.ADMIN.USERS.ACTIVITY(id)),
   getUserAccount: async (userId: string) =>
     apiClient.get<any>(API_PATHS.ADMIN.ACCOUNTS.BY_USER(userId)),
+  getUserWallet: async (userId: string) =>
+    apiClient.get<any>(`/api/admin/wallets/user/${userId}`),
 
   // Roles & Permissions
   getAllRoles: async () => apiClient.get<any[]>(API_PATHS.ADMIN.ROLES.BASE),

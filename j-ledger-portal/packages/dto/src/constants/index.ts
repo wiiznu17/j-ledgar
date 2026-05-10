@@ -198,6 +198,7 @@ export const INTERNAL_API_PATHS = {
       BASE: '/api/finance/wallets',
       ADMIN_LIST: '/api/finance/wallets/admin/list',
       ADMIN_DETAIL: (id: string) => `/api/finance/wallets/admin/${id}`,
+      GET: (userId: string) => `/api/finance/wallets/${userId}`,
       FREEZE: (userId: string) => `/api/finance/wallets/${userId}/freeze`,
       UNFREEZE: (userId: string) => `/api/finance/wallets/${userId}/unfreeze`,
       TRANSACTIONS: (userId: string) => `/api/finance/wallets/${userId}/transactions`,
