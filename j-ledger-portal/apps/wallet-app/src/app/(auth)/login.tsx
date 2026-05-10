@@ -143,7 +143,7 @@ export default function LoginScreen() {
       }
 
       // Force PIN verification state
-      useAuthStore.getState().lockSession();
+      await useAuthStore.getState().lockSession();
       setStep('PIN');
     } catch (err: any) {
       console.error('[Login] Login failed:', {

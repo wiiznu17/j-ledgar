@@ -40,6 +40,7 @@ const isWeb = Platform.OS === 'web';
 const BIOMETRIC_ENABLED_KEY = 'biometric_enabled';
 const REFRESH_TOKEN_KEY = 'refresh_token';
 const LAST_ACTIVE_KEY = 'last_active_at';
+const SESSION_LOCKED_KEY = 'session_locked';
 
 export const useAuthStore = create<AuthState>((set, get) => ({
   token: null,
@@ -173,13 +174,23 @@ export const useAuthStore = create<AuthState>((set, get) => ({
     // PIN verification now also issues new tokens if needed
     const isValid = await get().verifyPin(pin);
     if (isValid) {
-      set({ needsPinVerification: false, lastActiveAt: Date.now() });
+      if (isWeb) {
+        localStorage.removeItem(SESSION_LOCKED_KEY);
+      } else {
+        await SecureStore.deleteItemAsync(SESSION_LOCKED_KEY);
+      }
+      set({ needsPinVerification: false, lastActiveAt: Date.now(), isAuthenticated: true });
     }
     return isValid;
   },
 
-  lockSession: () => {
+  lockSession: async () => {
     console.log('[Auth] Session locked, PIN required');
+    if (isWeb) {
+      localStorage.setItem(SESSION_LOCKED_KEY, 'true');
+    } else {
+      await SecureStore.setItemAsync(SESSION_LOCKED_KEY, 'true');
+    }
     set({ needsPinVerification: true, lastActiveAt: Date.now() });
   },
 
@@ -217,14 +228,19 @@ export const useAuthStore = create<AuthState>((set, get) => ({
         : await SecureStore.getItemAsync('wallet_user');
       const user = userJson ? JSON.parse(userJson) : null;
 
+      const isLocked = isWeb
+        ? localStorage.getItem(SESSION_LOCKED_KEY) === 'true'
+        : (await SecureStore.getItemAsync(SESSION_LOCKED_KEY)) === 'true';
+
       if (token && user) {
-        console.log('[Auth] Restored session from storage');
+        console.log('[Auth] Restored session from storage, isLocked:', isLocked);
         set({
           token,
           refreshToken,
           user,
-          isAuthenticated: true,
+          isAuthenticated: !isLocked,
           hasSession: true,
+          needsPinVerification: isLocked,
           biometricEnabled,
         });
       } else if (refreshToken && user) {
