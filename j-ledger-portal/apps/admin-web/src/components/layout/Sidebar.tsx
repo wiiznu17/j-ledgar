@@ -28,6 +28,7 @@ import {
   Search,
   Database,
   History,
+  Wallet,
 } from 'lucide-react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
@@ -91,9 +92,15 @@ const navigationGroups: NavigationGroup[] = [
         isSoon: true,
       },
       {
-        name: 'Ledger',
-        href: '/accounts',
-        icon: CreditCard,
+        name: 'Customer Wallets',
+        href: '/wallets',
+        icon: Wallet,
+        requiredPermission: Permission.VIEW_USERS,
+      },
+      {
+        name: 'Internal Ledger',
+        href: '/system/ledger',
+        icon: Landmark,
         requiredPermission: Permission.VIEW_LEDGER_ENTRIES,
       },
       {

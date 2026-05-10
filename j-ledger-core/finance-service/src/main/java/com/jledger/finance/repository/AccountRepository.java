@@ -17,4 +17,8 @@ public interface AccountRepository extends JpaRepository<Account, UUID> {
 
     @Query("SELECT COALESCE(SUM(a.balance), 0) FROM Account a WHERE a.id != :systemAccountId")
     BigDecimal getSumOfBalancesExcluding(@Param("systemAccountId") UUID systemAccountId);
+
+    @org.springframework.data.jpa.repository.Lock(jakarta.persistence.LockModeType.PESSIMISTIC_WRITE)
+    @Query("SELECT a FROM Account a WHERE a.id = :id")
+    java.util.Optional<Account> findByIdForUpdate(@Param("id") UUID id);
 }

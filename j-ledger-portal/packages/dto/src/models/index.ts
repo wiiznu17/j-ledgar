@@ -42,7 +42,8 @@ export interface Account {
   balance: number;
   currency: string;
   status: AccountStatus;
-  createdAt?: string;
+  createdAt: string;
+  updatedAt: string;
 }
 
 export interface LedgerEntry {

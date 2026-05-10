@@ -12,6 +12,8 @@ import com.jledger.finance.repository.IntegrationOutboxRepository;
 import com.jledger.finance.repository.LinkedBankAccountRepository;
 import com.jledger.finance.repository.TransactionRepository;
 import com.jledger.finance.repository.WalletRepository;
+import com.jledger.finance.repository.AccountRepository;
+import com.jledger.finance.domain.Account;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -22,6 +24,7 @@ import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import org.springframework.dao.DataIntegrityViolationException;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
@@ -29,11 +32,13 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.UUID;
 import java.util.concurrent.TimeUnit;
 
 @Service
 public class WalletService {
     private static final Logger logger = LoggerFactory.getLogger(WalletService.class);
+    private static final String SYSTEM_ACCOUNT_ID = "00000000-0000-0000-0000-000000000000";
 
     @Autowired
     private WalletRepository walletRepository;
@@ -52,6 +57,9 @@ public class WalletService {
 
     @Autowired
     private ObjectMapper objectMapper;
+
+    @Autowired
+    private AccountRepository accountRepository;
 
     @Autowired
     private JdbcTemplate jdbcTemplate;
@@ -337,40 +345,57 @@ public class WalletService {
             throw new IllegalArgumentException("externalRef is required");
         }
 
+        // 1. Idempotency Check (Soft check first)
         Optional<Transaction> existing = transactionRepository.findByTransactionId(externalRef);
         if (existing.isPresent()) {
             return existing.get();
         }
 
-        Wallet wallet = walletRepository.findByUserId(userId)
-                .orElseThrow(() -> new RuntimeException("Wallet not found"));
+        try {
+            // 2. Lock System Account & User Wallet
+            Account systemAccount = accountRepository.findByIdForUpdate(UUID.fromString(SYSTEM_ACCOUNT_ID))
+                    .orElseThrow(() -> new RuntimeException("System account not found"));
 
-        if (!wallet.getIsActive()) {
-            throw new RuntimeException("Wallet is inactive");
+            Wallet wallet = walletRepository.findByUserIdForUpdate(userId)
+                    .orElseThrow(() -> new RuntimeException("Wallet not found"));
+
+            if (!wallet.getIsActive()) {
+                throw new RuntimeException("Wallet is inactive");
+            }
+
+            if (currency != null && !currency.isBlank() && wallet.getCurrency() != null
+                    && !wallet.getCurrency().equalsIgnoreCase(currency)) {
+                throw new IllegalArgumentException("Currency mismatch");
+            }
+
+            // 3. Update Balances (Double-Entry)
+            systemAccount.setBalance(systemAccount.getBalance().subtract(amount));
+            wallet.setBalance(wallet.getBalance().add(amount));
+
+            accountRepository.save(systemAccount);
+            Wallet updatedWallet = walletRepository.save(wallet);
+            cacheWallet(updatedWallet);
+
+            // 4. Create Transaction Record
+            Transaction transaction = new Transaction();
+            transaction.setTransactionId(externalRef);
+            transaction.setType(TransactionType.TOPUP);
+            transaction.setAmount(amount);
+            transaction.setStatus(TransactionStatus.COMPLETED);
+            transaction.setFromWalletId(null);
+            transaction.setToWalletId(wallet.getId());
+            transaction.setDescription(String.format("%s top-up credit", provider == null ? "EXTERNAL" : provider));
+            transaction.setMetadata(metadataJson);
+
+            Transaction savedTransaction = transactionRepository.save(transaction);
+            publishTransactionEvent(userId, savedTransaction, true);
+            return savedTransaction;
+
+        } catch (DataIntegrityViolationException e) {
+            // 5. Hard Idempotency Check (DB level conflict handling)
+            return transactionRepository.findByTransactionId(externalRef)
+                    .orElseThrow(() -> new RuntimeException("Transaction conflict detected but record not found", e));
         }
-
-        if (currency != null && !currency.isBlank() && wallet.getCurrency() != null
-                && !wallet.getCurrency().equalsIgnoreCase(currency)) {
-            throw new IllegalArgumentException("Currency mismatch");
-        }
-
-        wallet.setBalance(wallet.getBalance().add(amount));
-        Wallet updatedWallet = walletRepository.save(wallet);
-        cacheWallet(updatedWallet);
-
-        Transaction transaction = new Transaction();
-        transaction.setTransactionId(externalRef);
-        transaction.setType(TransactionType.TOPUP);
-        transaction.setAmount(amount);
-        transaction.setStatus(TransactionStatus.COMPLETED);
-        transaction.setFromWalletId(null);
-        transaction.setToWalletId(wallet.getId());
-        transaction.setDescription(String.format("%s top-up credit", provider == null ? "EXTERNAL" : provider));
-        transaction.setMetadata(metadataJson);
-
-        Transaction savedTransaction = transactionRepository.save(transaction);
-        publishTransactionEvent(userId, savedTransaction, true);
-        return savedTransaction;
     }
 
     public List<LinkedBankAccount> listLinkedBankAccounts(String userId) {
@@ -645,51 +670,77 @@ public class WalletService {
         if (amount == null || amount.compareTo(BigDecimal.ZERO) <= 0) {
             throw new IllegalArgumentException("Transfer amount must be greater than zero");
         }
-
-        Wallet fromWallet = walletRepository.findByUserId(fromUserId)
-                .orElseThrow(() -> new RuntimeException("Source wallet not found"));
-        Wallet toWallet = walletRepository.findByUserId(recipientUserId)
-                .orElseThrow(() -> new RuntimeException("Recipient wallet not found"));
-
         if (fromUserId.equals(recipientUserId)) {
             throw new IllegalArgumentException("Cannot transfer to your own account");
         }
-        if (!fromWallet.getIsActive()) {
-            throw new RuntimeException("Source wallet is inactive");
-        }
-        if (!toWallet.getIsActive()) {
-            throw new RuntimeException("Recipient wallet is inactive");
-        }
-        if (fromWallet.getBalance().compareTo(amount) < 0) {
-            throw new RuntimeException("Insufficient balance");
-        }
 
-        fromWallet.setBalance(fromWallet.getBalance().subtract(amount));
-        toWallet.setBalance(toWallet.getBalance().add(amount));
-        Wallet updatedFrom = walletRepository.save(fromWallet);
-        Wallet updatedTo = walletRepository.save(toWallet);
-        cacheWallet(updatedFrom);
-        cacheWallet(updatedTo);
+        try {
+            // 1. Lock Wallets in consistent order to prevent Deadlocks
+            Wallet fromWallet, toWallet;
+            if (fromUserId.compareTo(recipientUserId) < 0) {
+                fromWallet = walletRepository.findByUserIdForUpdate(fromUserId)
+                        .orElseThrow(() -> new RuntimeException("Source wallet not found"));
+                toWallet = walletRepository.findByUserIdForUpdate(recipientUserId)
+                        .orElseThrow(() -> new RuntimeException("Recipient wallet not found"));
+            } else {
+                toWallet = walletRepository.findByUserIdForUpdate(recipientUserId)
+                        .orElseThrow(() -> new RuntimeException("Recipient wallet not found"));
+                fromWallet = walletRepository.findByUserIdForUpdate(fromUserId)
+                        .orElseThrow(() -> new RuntimeException("Source wallet not found"));
+            }
 
-        Transaction transaction = new Transaction();
-        if (idempotencyKey != null && !idempotencyKey.isBlank()) {
-            transaction.setTransactionId(idempotencyKey);
+            // 2. Validations
+            if (!fromWallet.getIsActive()) {
+                throw new RuntimeException("Source wallet is inactive");
+            }
+            if (!toWallet.getIsActive()) {
+                throw new RuntimeException("Recipient wallet is inactive");
+            }
+            if (fromWallet.getBalance().compareTo(amount) < 0) {
+                throw new RuntimeException("Insufficient balance");
+            }
+
+            // 3. Update Balances
+            fromWallet.setBalance(fromWallet.getBalance().subtract(amount));
+            toWallet.setBalance(toWallet.getBalance().add(amount));
+            
+            Wallet updatedFrom = walletRepository.save(fromWallet);
+            Wallet updatedTo = walletRepository.save(toWallet);
+            cacheWallet(updatedFrom);
+            cacheWallet(updatedTo);
+
+            // 4. Create Transaction Record
+            Transaction transaction = new Transaction();
+            if (idempotencyKey != null && !idempotencyKey.isBlank()) {
+                transaction.setTransactionId(idempotencyKey);
+            }
+            transaction.setType(TransactionType.TRANSFER);
+            transaction.setAmount(amount);
+            transaction.setStatus(TransactionStatus.COMPLETED);
+            transaction.setFromWalletId(fromWallet.getId());
+            transaction.setToWalletId(toWallet.getId());
+            transaction.setDescription("Transfer to phone " + normalizedPhone);
+            transaction.setMetadata(buildTransferMetadata(normalizedPhone, recipientUserId, note, idempotencyKey));
+            
+            Transaction savedTransaction = transactionRepository.save(transaction);
+
+            // 5. Notify
+            // Notify Sender
+            publishTransactionEvent(fromUserId, savedTransaction, false, recipientUserId);
+            
+            // Notify Receiver
+            publishTransactionEvent(recipientUserId, savedTransaction, true, fromUserId);
+
+            return savedTransaction;
+
+        } catch (DataIntegrityViolationException e) {
+            // 6. Handle DB level conflict
+            if (idempotencyKey != null) {
+                return transactionRepository.findByTransactionId(idempotencyKey)
+                        .orElseThrow(() -> new RuntimeException("Transaction conflict detected but record not found", e));
+            }
+            throw e;
         }
-        transaction.setType(TransactionType.TRANSFER);
-        transaction.setAmount(amount);
-        transaction.setStatus(TransactionStatus.COMPLETED);
-        transaction.setFromWalletId(fromWallet.getId());
-        transaction.setToWalletId(toWallet.getId());
-        transaction.setDescription("Transfer to phone " + normalizedPhone);
-        transaction.setMetadata(buildTransferMetadata(normalizedPhone, recipientUserId, note, idempotencyKey));
-        Transaction savedTransaction = transactionRepository.save(transaction);
-
-        // Notify Sender
-        publishTransactionEvent(fromUserId, savedTransaction, false);
-        // Notify Receiver
-        publishTransactionEvent(recipientUserId, savedTransaction, true);
-
-        return savedTransaction;
     }
 
     @Transactional
@@ -1011,6 +1062,10 @@ public class WalletService {
     }
 
     private void publishTransactionEvent(String userId, Transaction transaction, boolean isReceiver) {
+        publishTransactionEvent(userId, transaction, isReceiver, null);
+    }
+
+    private void publishTransactionEvent(String userId, Transaction transaction, boolean isReceiver, String otherPartyUserId) {
         try {
             Map<String, Object> event = new HashMap<>();
             event.put("userId", userId);
@@ -1037,6 +1092,15 @@ public class WalletService {
             metadata.put("amount", transaction.getAmount());
             metadata.put("description", transaction.getDescription());
             metadata.put("isReceiver", isReceiver);
+
+            // Add other party info if available
+            if (otherPartyUserId != null) {
+                if (isReceiver) {
+                    metadata.put("senderUserId", otherPartyUserId);
+                } else {
+                    metadata.put("recipientUserId", otherPartyUserId);
+                }
+            }
             
             // Extract info from existing metadata if available
             if (transaction.getMetadata() != null && !transaction.getMetadata().isBlank()) {

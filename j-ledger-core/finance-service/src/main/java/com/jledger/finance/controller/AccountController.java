@@ -31,6 +31,14 @@ public class AccountController {
         return ResponseEntity.ok(accounts);
     }
 
+    @GetMapping("/{id}")
+    @Operation(summary = "Get account by ID", description = "Returns a single account record")
+    public ResponseEntity<Account> getAccountById(@PathVariable UUID id) {
+        return accountRepository.findById(id)
+                .map(ResponseEntity::ok)
+                .orElse(ResponseEntity.notFound().build());
+    }
+
     @PutMapping("/{id}/status")
     @Operation(summary = "Update account status", description = "Updates the status of an internal account")
     public ResponseEntity<Account> updateStatus(

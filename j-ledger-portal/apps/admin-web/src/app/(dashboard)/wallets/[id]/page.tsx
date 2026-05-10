@@ -42,13 +42,13 @@ export default function WalletDetailPage({ params }: { params: Promise<{ id: str
     if (!isSync) setLoading(true);
     try {
       const walletResponse = await walletRequester.getWalletById(id);
-      const walletData = (walletResponse as any).data;
+      const walletData = walletResponse.data;
       setWallet(walletData);
 
       if (walletData?.userId) {
         try {
           const userResponse = await userRequester.getUserDetail(walletData.userId);
-          setUser((userResponse as any).data);
+          setUser(userResponse.data);
         } catch (e) {
           console.error('Failed to fetch user info', e);
         }
@@ -85,7 +85,7 @@ export default function WalletDetailPage({ params }: { params: Promise<{ id: str
         toast.error('Wallet frozen successfully');
       }
       const updatedResponse = await walletRequester.getWalletById(id);
-      setWallet((updatedResponse as any).data);
+      setWallet(updatedResponse.data);
     } catch (error) {
       toast.error('Operation failed');
     }
@@ -117,10 +117,10 @@ export default function WalletDetailPage({ params }: { params: Promise<{ id: str
       <div className="flex flex-col gap-3">
         <div className="flex items-center text-[10px] font-bold text-slate-400 uppercase tracking-widest gap-2">
           <button
-            onClick={() => router.back()}
+            onClick={() => router.push('/wallets')}
             className="hover:text-indigo-600 transition-colors uppercase tracking-widest font-bold text-[10px]"
           >
-            Ledger Accounts
+            Customer Wallets
           </button>
           <ChevronRight className="w-3 h-3" />
           <span className="text-slate-900">Wallet Details</span>

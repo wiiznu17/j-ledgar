@@ -36,6 +36,7 @@ export const API_PATHS = {
     },
     ACCOUNTS: {
       BASE: '/api/admin/accounts',
+      DETAIL: (id: string) => `/api/admin/accounts/${id}`,
       STATUS: (id: string) => `/api/admin/accounts/${id}/status`,
       BY_USER: (userId: string) => `/api/admin/accounts/user/${userId}`,
     },
@@ -191,6 +192,7 @@ export const INTERNAL_API_PATHS = {
       BASE: '/api/v1/accounts',
       USER: (userId: string) => `/api/v1/accounts/user/${userId}`,
       STATUS: (id: string) => `/api/v1/accounts/${id}/status`,
+      LEDGER_HISTORY: (id: string) => `/api/v1/ledger-entries/account/${id}`,
     },
     WALLETS: {
       BASE: '/api/finance/wallets',

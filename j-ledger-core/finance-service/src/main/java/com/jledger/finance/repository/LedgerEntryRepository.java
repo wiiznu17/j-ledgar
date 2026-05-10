@@ -15,26 +15,15 @@ import java.time.ZonedDateTime;
 
 public interface LedgerEntryRepository extends JpaRepository<LedgerEntry, UUID> {
 
-    // Legacy method - commented out during migration to wallet-based system
-    // List<LedgerEntry> findByTransactionId(UUID transactionId);
-
     @Query("SELECT COALESCE(SUM(l.amount), 0) FROM LedgerEntry l WHERE l.entryType = :entryType")
     BigDecimal sumAmountByEntryType(@Param("entryType") String entryType);
 
-    // Legacy query - commented out during migration to wallet-based system
-    // @Query(
-    //     value = "SELECT le FROM LedgerEntry le JOIN FETCH le.transaction t " +
-    //             "WHERE le.account.id = :accountId " +
-    //             "ORDER BY le.createdAt DESC",
-    //     countQuery = "SELECT COUNT(le) FROM LedgerEntry le WHERE le.account.id = :accountId"
-    // )
-    // Page<LedgerEntry> findHistoryByAccountId(@Param("accountId") UUID accountId, Pageable pageable);
+    @Query(
+        value = "SELECT le FROM LedgerEntry le " +
+                "WHERE le.account.id = :accountId " +
+                "ORDER BY le.createdAt DESC",
+        countQuery = "SELECT COUNT(le) FROM LedgerEntry le WHERE le.account.id = :accountId"
+    )
+    Page<LedgerEntry> findHistoryByAccountId(@Param("accountId") UUID accountId, Pageable pageable);
 
-    // Data retention methods - commented out during migration to wallet-based system
-    // @Query("SELECT le FROM LedgerEntry le WHERE le.transaction NOT IN (SELECT t FROM Transaction t)")
-    // List<LedgerEntry> findOrphanedEntries();
-
-    // @Modifying(flushAutomatically = true, clearAutomatically = true)
-    // @Query("DELETE FROM LedgerEntry le WHERE le.transaction NOT IN (SELECT t FROM Transaction t)")
-    // int deleteOrphanedEntries();
 }
