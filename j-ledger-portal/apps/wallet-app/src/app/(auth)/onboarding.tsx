@@ -716,7 +716,13 @@ export default function OnboardingScreen() {
     <>
       <SafeAreaView className="flex-1 bg-transparent">
         <KeyboardAvoidingView
-          behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+          behavior={
+            step === OnboardingStepUI.SET_PIN || step === OnboardingStepUI.CONFIRM_PIN
+              ? undefined
+              : Platform.OS === 'ios'
+                ? 'padding'
+                : 'height'
+          }
           className="flex-1"
         >
           <View className="flex-1 px-6">

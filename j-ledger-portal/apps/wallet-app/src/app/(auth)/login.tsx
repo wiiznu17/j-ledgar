@@ -9,6 +9,7 @@ import {
   Platform,
   Dimensions,
   ActivityIndicator,
+  Alert,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
@@ -228,14 +229,14 @@ export default function LoginScreen() {
   return (
     <SafeAreaView className="flex-1 bg-transparent" edges={['top', 'bottom']}>
       <KeyboardAvoidingView
-        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+        behavior={step === 'PIN' ? undefined : (Platform.OS === 'ios' ? 'padding' : 'height')}
         className="flex-1"
       >
         <ScrollView
           contentContainerStyle={{
             flexGrow: 1,
             paddingHorizontal: 24,
-            justifyContent: 'center',
+            justifyContent: step === 'PIN' ? 'flex-start' : 'center',
             paddingBottom: 60,
           }}
           showsVerticalScrollIndicator={false}
@@ -442,27 +443,27 @@ export default function LoginScreen() {
           {/* STEP 3: PIN VERIFICATION */}
           {/* ========================================= */}
           <StepWrapper visible={step === 'PIN'}>
-            <View className="py-6">
-              {needsPinVerification && (
-                <View className="items-center mb-4">
-                  <Text className="text-sm font-manrope font-bold text-gray-400">
-                    ยินดีต้อนรับกลับมา
-                  </Text>
-                </View>
-              )}
+            <View className={step === 'PIN' ? '' : 'py-6'}>
               <PINVerification
                 onSuccess={handlePinSuccess}
                 onFailure={handlePinFailure}
-                onCancel={needsPinVerification ? handleSwitchAccount : () => setStep('CREDENTIALS')}
-                useUnlock={needsPinVerification}
+                onCancel={() => setStep('CREDENTIALS')}
+                useUnlock={true}
+                headerCenterElement={
+                  <View className="flex-row items-center gap-2">
+                    <View className="w-8 h-8 bg-pink-50 rounded-lg items-center justify-center border border-pink-100 shadow-sm">
+                      <Image 
+                        source={require('../../../assets/images/icon.png')} 
+                        className="w-5 h-5"
+                        resizeMode="contain"
+                      />
+                    </View>
+                    <Text className="text-sm font-manrope font-black text-gray-800 tracking-tight">
+                      P-wallet
+                    </Text>
+                  </View>
+                }
               />
-              {needsPinVerification && (
-                <TouchableOpacity onPress={handleSwitchAccount} className="items-center mt-4">
-                  <Text className="text-xs font-manrope font-bold text-gray-400">
-                    เข้าสู่ระบบด้วยบัญชีอื่น
-                  </Text>
-                </TouchableOpacity>
-              )}
             </View>
           </StepWrapper>
 

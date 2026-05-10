@@ -1,53 +1,45 @@
 /**
- * Below are the colors that are used in the app. The colors are defined in the light and dark mode.
- * There are many other ways to style your app. For example, [Nativewind](https://www.nativewind.dev/), [Tamagui](https://tamagui.dev/), [unistyles](https://reactnativeunistyles.vercel.app), etc.
+ * Single source of truth for the app's color palette.
+ * These values are used in both tailwind.config.js and directly in components.
  */
 
-import { Platform } from 'react-native';
-
-const tintColorLight = '#0a7ea4';
-const tintColorDark = '#fff';
-
-export const Colors = {
-  light: {
-    text: '#11181C',
-    background: '#fff',
-    tint: tintColorLight,
-    icon: '#687076',
-    tabIconDefault: '#687076',
-    tabIconSelected: tintColorLight,
+export const Palette = {
+  primary: {
+    DEFAULT: "#f48fb1",
+    container: "#f8bbd0",
+    on: "#560027",
   },
-  dark: {
-    text: '#ECEDEE',
-    background: '#151718',
-    tint: tintColorDark,
-    icon: '#9BA1A6',
-    tabIconDefault: '#9BA1A6',
-    tabIconSelected: tintColorDark,
+  secondary: {
+    DEFAULT: "#4855a5",
+    container: "#c9cfff",
   },
+  tertiary: {
+    DEFAULT: "#73544b",
+    container: "#f8cec2",
+  },
+  background: "#f5f6fc",
+  surface: {
+    DEFAULT: "#f5f6fc",
+    container: {
+      lowest: "#ffffff",
+      low: "#eff0f7",
+      DEFAULT: "#e6e8ef",
+      high: "#e0e2ea",
+      highest: "#dadde5",
+    }
+  },
+  outline: {
+    variant: "rgba(171, 173, 179, 0.15)",
+  },
+  text: {
+    primary: "#2c2f33",
+    secondary: "#595b61",
+    muted: "#9ca3af",
+    error: "#ef4444",
+  }
 };
 
-export const Fonts = Platform.select({
-  ios: {
-    /** iOS `UIFontDescriptorSystemDesignDefault` */
-    sans: 'system-ui',
-    /** iOS `UIFontDescriptorSystemDesignSerif` */
-    serif: 'ui-serif',
-    /** iOS `UIFontDescriptorSystemDesignRounded` */
-    rounded: 'ui-rounded',
-    /** iOS `UIFontDescriptorSystemDesignMonospaced` */
-    mono: 'ui-monospace',
-  },
-  default: {
-    sans: 'normal',
-    serif: 'serif',
-    rounded: 'normal',
-    mono: 'monospace',
-  },
-  web: {
-    sans: "system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif",
-    serif: "Georgia, 'Times New Roman', serif",
-    rounded: "'SF Pro Rounded', 'Hiragino Maru Gothic ProN', Meiryo, 'MS PGothic', sans-serif",
-    mono: "SFMono-Regular, Menlo, Monaco, Consolas, 'Liberation Mono', 'Courier New', monospace",
-  },
-});
+export const Theme = {
+  colors: Palette,
+  // Add spacing, radii, etc. here if needed
+};
