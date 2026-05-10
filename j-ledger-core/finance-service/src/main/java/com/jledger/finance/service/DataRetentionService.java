@@ -24,7 +24,6 @@ public class DataRetentionService {
     private final TransactionRepository transactionRepository;
     private final LedgerEntryRepository ledgerEntryRepository;
     private final SuspiciousActivityRepository suspiciousActivityRepository;
-    // private final AuditLogService auditLogService; // TODO: Uncomment after AuditLogService refactor
 
     // AML requirement: 7 years retention for transaction records
     private static final int TRANSACTION_RETENTION_YEARS = 7;
@@ -52,27 +51,9 @@ public class DataRetentionService {
             int deletedCount = deleteArchivedTransactions(cutoffDate);
             log.info("Deleted {} archived transactions older than {}", deletedCount, cutoffDate);
 
-            // Clean up orphaned ledger entries - commented out during migration to wallet-based system
-            // int ledgerCleanupCount = cleanupOrphanedLedgerEntries();
-            // log.info("Cleaned up {} orphaned ledger entries", ledgerCleanupCount);
-
-            // TODO: Uncomment after AuditLogService refactor
-            // auditLogService.logDataRetentionCleanup(
-            //     "TRANSACTION_CLEANUP",
-            //     archivedCount,
-            //     deletedCount,
-            //     "SCHEDULED_JOB"
-            // );
 
         } catch (Exception e) {
             log.error("Failed to cleanup old transaction records", e);
-            // TODO: Uncomment after AuditLogService refactor
-            // auditLogService.logDataRetentionCleanup(
-            //     "TRANSACTION_CLEANUP",
-            //     0,
-            //     0,
-            //     "FAILED: " + e.getMessage()
-            // );
         }
     }
 
@@ -96,23 +77,8 @@ public class DataRetentionService {
             int deletedCount = deleteArchivedSuspiciousActivities(cutoffDate);
             log.info("Deleted {} archived suspicious activities older than {}", deletedCount, cutoffDate);
 
-            // TODO: Uncomment after AuditLogService refactor
-            // auditLogService.logDataRetentionCleanup(
-            //     "SUSPICIOUS_ACTIVITY_CLEANUP",
-            //     archivedCount,
-            //     deletedCount,
-            //     "SCHEDULED_JOB"
-            // );
-
         } catch (Exception e) {
             log.error("Failed to cleanup old suspicious activity records", e);
-            // TODO: Uncomment after AuditLogService refactor
-            // auditLogService.logDataRetentionCleanup(
-            //     "SUSPICIOUS_ACTIVITY_CLEANUP",
-            //     0,
-            //     0,
-            //     "FAILED: " + e.getMessage()
-            // );
         }
     }
 
@@ -137,14 +103,6 @@ public class DataRetentionService {
         return (int) transactionRepository.deleteByCreatedAtBefore(cutoffDate);
     }
 
-    /**
-     * Cleans up orphaned ledger entries (entries without a transaction).
-     * Legacy method - commented out during migration to wallet-based system
-     */
-    // private int cleanupOrphanedLedgerEntries() {
-    //     // Find and delete ledger entries where the transaction has been deleted
-    //     return ledgerEntryRepository.deleteOrphanedEntries();
-    // }
 
     /**
      * Archives old suspicious activities.

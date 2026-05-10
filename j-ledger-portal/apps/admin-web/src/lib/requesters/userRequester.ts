@@ -41,7 +41,8 @@ export const userRequester = {
   resendAdminInvite: async (id: string, options?: RequestOptions) =>
     apiClient.post<void>(API_PATHS.ADMIN.STAFF.RESEND_INVITE(id), {}, options),
 
-  getUserDetail: async (id: string) => apiClient.get<WalletUser>(API_PATHS.ADMIN.USERS.DETAIL(id)),
+  getUserDetail: async (id: string) =>
+    apiClient.get<{ data: WalletUser }>(API_PATHS.ADMIN.USERS.DETAIL(id)),
   getUserActivity: async (id: string) => apiClient.get<any>(API_PATHS.ADMIN.USERS.ACTIVITY(id)),
   getUserAccount: async (userId: string) =>
     apiClient.get<any>(API_PATHS.ADMIN.ACCOUNTS.BY_USER(userId)),

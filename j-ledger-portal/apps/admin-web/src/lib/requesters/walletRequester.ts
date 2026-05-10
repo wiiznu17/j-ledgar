@@ -15,6 +15,6 @@ export const walletRequester = {
     return apiClient.post<void>(API_PATHS.ADMIN.FINANCE.WALLET_UNFREEZE(userId), {});
   },
   getWalletById: async (id: string) => {
-    return apiClient.get<WalletDto>(API_PATHS.ADMIN.FINANCE.WALLET_DETAIL(id));
+    return apiClient.get<{ data: WalletDto }>(API_PATHS.ADMIN.FINANCE.WALLET_DETAIL(id));
   },
 };

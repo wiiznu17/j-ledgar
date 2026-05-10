@@ -65,6 +65,41 @@ export class AdminFinanceController {
     }
   }
 
+  @Get('accounts/:id')
+  async getAccountDetail(@Param('id') id: string): Promise<{ data: Account }> {
+    const account = await this.integrationService.forwardToGateway<Account>(
+      'get',
+      `${INTERNAL_API_PATHS.FINANCE.ACCOUNTS.BASE}/${id}`,
+    );
+    return { data: account };
+  }
+
+  @Get('accounts/:id/ledger-entries')
+  async getLedgerEntries(
+    @Param('id') id: string,
+    @Query('page') page: number = 0,
+    @Query('size') size: number = 50,
+  ): Promise<AdminPaginatedResponse<any>> {
+    const response = await this.integrationService.forwardToGateway<any>(
+      'get',
+      `${INTERNAL_API_PATHS.FINANCE.ACCOUNTS.LEDGER_HISTORY(id)}?page=${page}&size=${size}`,
+    );
+
+    const content = response.content || [];
+    const totalElements = response.totalElements || content.length;
+    const totalPages = response.totalPages || 1;
+
+    return {
+      data: content,
+      pagination: {
+        page: Number(page),
+        limit: Number(size),
+        total: totalElements,
+        totalPages: totalPages,
+      },
+    };
+  }
+
   @Put('accounts/:id/status')
   @Roles(AdminRole.SUPER_ADMIN, AdminRole.AUDITOR)
   async updateAccountStatus(

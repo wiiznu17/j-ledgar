@@ -47,8 +47,8 @@ export class NotificationService {
         return;
       }
 
-      const title = this.generateTitle(topic, actualEventType, metadata);
-      const body = this.generateBody(topic, actualEventType, metadata);
+      const title = await this.generateTitle(topic, actualEventType, metadata);
+      const body = await this.generateBody(topic, actualEventType, metadata);
       const { category, path } = this.getCategoryAndPath(actualEventType, metadata);
 
       if (!existing) {
@@ -113,7 +113,7 @@ export class NotificationService {
     }
   }
 
-  private generateTitle(topic: string, eventType: string, metadata: any): string {
+  private async generateTitle(topic: string, eventType: string, metadata: any): Promise<string> {
     const type = eventType?.toUpperCase();
 
     if (topic === KafkaTopic.SECURITY_EVENTS) {
@@ -136,7 +136,7 @@ export class NotificationService {
     return 'J-Ledger Notification';
   }
 
-  private generateBody(topic: string, eventType: string, metadata: any): string {
+  private async generateBody(topic: string, eventType: string, metadata: any): Promise<string> {
     const amount = Number(metadata?.amount || 0).toLocaleString(undefined, {
       minimumFractionDigits: 2,
       maximumFractionDigits: 2,
@@ -174,8 +174,20 @@ export class NotificationService {
 
       case NotificationEventType.TRANSFER:
         if (metadata?.isReceiver) {
-          console.log(metadata);
-          const sender = metadata?.senderName || metadata?.senderPhone || 'a J-Ledger user';
+          const senderId = metadata?.senderUserId;
+          let senderName = metadata?.senderName || metadata?.senderPhone;
+
+          // If we have senderUserId but no name, try to fetch it from DB
+          if (!senderName && senderId) {
+            const senderProfile = await this.prisma.kYCData
+              .findUnique({ where: { userId: senderId } })
+              .catch(() => null);
+            if (senderProfile?.idCardName) {
+              senderName = senderProfile.idCardName;
+            }
+          }
+
+          const sender = senderName || 'a J-Ledger user';
           return `You have received ฿${amount} from ${sender}.${refText}`;
         } else {
           const recipient = metadata?.recipientName || metadata?.recipientPhone || 'Recipient';

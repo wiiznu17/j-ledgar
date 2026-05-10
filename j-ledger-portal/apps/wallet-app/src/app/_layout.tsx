@@ -184,8 +184,6 @@ export default function RootLayout() {
               >
                 <Stack.Screen name="(tabs)" />
                 <Stack.Screen name="(auth)" />
-                <Stack.Screen name="(auth)/pending-approval" />
-                <Stack.Screen name="(auth)/account-restricted" />
                 <Stack.Screen name="transfer" />
                 <Stack.Screen name="topup" />
                 <Stack.Screen name="transaction" />

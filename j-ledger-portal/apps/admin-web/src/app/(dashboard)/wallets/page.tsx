@@ -32,7 +32,7 @@ import {
   MoreHorizontal,
   ArrowRight,
 } from 'lucide-react';
-import { walletRequester } from '@/lib/requesters';
+import { walletRequester } from '@/lib/requesters/walletRequester';
 import { WalletDto } from '@repo/dto';
 import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
@@ -76,14 +76,14 @@ export default function WalletAccountsPage() {
       let filteredData = response.data;
       if (appliedSearch) {
         filteredData = filteredData.filter(
-          (w) =>
+          (w: WalletDto) =>
             w.walletId.toLowerCase().includes(appliedSearch.toLowerCase()) ||
             w.userId.toLowerCase().includes(appliedSearch.toLowerCase()),
         );
       }
 
       if (appliedStatus !== 'ALL') {
-        filteredData = filteredData.filter((w) => w.status === appliedStatus);
+        filteredData = filteredData.filter((w: WalletDto) => w.status === appliedStatus);
       }
 
       setWallets(filteredData);
@@ -147,7 +147,7 @@ export default function WalletAccountsPage() {
             <div className="p-1.5 bg-indigo-50 rounded-lg">
               <Wallet className="w-5 h-5 text-indigo-600" />
             </div>
-            <h2 className="text-3xl font-bold tracking-tight text-slate-900">Wallet Accounts</h2>
+            <h2 className="text-3xl font-bold tracking-tight text-slate-900">Customer Wallets</h2>
           </div>
           <p className="text-slate-500">
             Monitor and manage all user wallets and their financial states.
@@ -180,7 +180,7 @@ export default function WalletAccountsPage() {
             <FilterSelect
               label="Account Status"
               value={statusInput}
-              onValueChange={(v) => setStatusInput(v || 'ALL')}
+              onValueChange={(v: string) => setStatusInput(v || 'ALL')}
               options={[
                 { label: 'ALL STATUS', value: 'ALL' },
                 { label: 'ACTIVE', value: 'ACTIVE' },
@@ -243,7 +243,7 @@ export default function WalletAccountsPage() {
                       </TableCell>
                       <TableCell className="font-mono text-xs font-bold text-indigo-600">
                         <Link
-                          href={`/accounts/${wallet.id}`}
+                          href={`/wallets/${wallet.id}`}
                           className="hover:underline underline-offset-4"
                         >
                           {wallet.walletId}
@@ -312,7 +312,7 @@ export default function WalletAccountsPage() {
                               </div>
                               <div className="h-px bg-slate-50 my-1" />
                               <Link
-                                href={`/accounts/${wallet.id}`}
+                                href={`/wallets/${wallet.id}`}
                                 className="flex items-center w-full px-3 py-2 text-sm font-medium text-slate-600 hover:bg-slate-50 rounded-lg transition-colors"
                               >
                                 <Search className="w-4 h-4 mr-2 text-slate-400" /> View Detail

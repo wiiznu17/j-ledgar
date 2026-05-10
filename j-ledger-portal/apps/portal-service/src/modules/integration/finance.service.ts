@@ -227,7 +227,19 @@ export class FinanceService {
 
   private rethrowAsHttpException(error: any, fallbackMessage: string): never {
     const status = error?.response?.status ?? HttpStatus.BAD_GATEWAY;
-    const message = error?.response?.data?.message || fallbackMessage;
+    let message = error?.response?.data?.message || fallbackMessage;
+
+    // Mapping Java errors to User-friendly messages
+    if (message.includes('Insufficient balance')) {
+      message = 'ยอดเงินในบัญชีไม่เพียงพอ';
+    } else if (message.includes('Transaction conflict') || message.includes('Unique index or primary key violation')) {
+      message = 'รายการนี้ถูกประมวลผลไปแล้ว';
+    } else if (message.includes('Lock wait timeout') || message.includes('PessimisticLockingFailureException')) {
+      message = 'ระบบไม่ว่างชั่วคราว กรุณาลองใหม่อีกครั้ง (Lock Timeout)';
+    } else if (message.includes('Wallet not found')) {
+      message = 'ไม่พบกระเป๋าเงินของผู้ใช้งาน';
+    }
+
     throw new HttpException({ message }, status);
   }
 
