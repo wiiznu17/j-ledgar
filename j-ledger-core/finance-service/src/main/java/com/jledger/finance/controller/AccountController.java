@@ -40,4 +40,14 @@ public class AccountController {
         Account updated = accountService.updateAccountStatus(id, status);
         return ResponseEntity.ok(updated);
     }
+
+    @GetMapping("/user/{userId}")
+    @Operation(summary = "Get account by user ID", description = "Returns the first account found for the given user ID")
+    public ResponseEntity<Account> getAccountByUserId(@PathVariable UUID userId) {
+        java.util.List<Account> accounts = accountRepository.findByUserId(userId);
+        if (accounts.isEmpty()) {
+            return ResponseEntity.notFound().build();
+        }
+        return ResponseEntity.ok(accounts.get(0));
+    }
 }

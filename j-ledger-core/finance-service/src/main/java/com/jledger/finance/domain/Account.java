@@ -21,7 +21,7 @@ import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.UpdateTimestamp;
 
 @Entity
-@Table(name = "accounts")
+@Table(name = "accounts", schema = "finance")
 @Getter
 @Setter
 @NoArgsConstructor

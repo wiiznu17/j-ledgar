@@ -50,12 +50,19 @@ export class AdminFinanceController {
   }
 
   @Get('accounts/user/:userId')
-  async getAccountByUserId(@Param('userId') userId: string): Promise<{ data: Account }> {
-    const account = await this.integrationService.forwardToGateway<Account>(
-      'get',
-      `${INTERNAL_API_PATHS.FINANCE.WALLETS.BASE}/${userId}`,
-    );
-    return { data: account };
+  async getAccountByUserId(@Param('userId') userId: string): Promise<{ data: Account | null }> {
+    try {
+      const account = await this.integrationService.forwardToGateway<Account>(
+        'get',
+        INTERNAL_API_PATHS.FINANCE.ACCOUNTS.USER(userId),
+      );
+      console.log(account);
+      return { data: account };
+    } catch (error) {
+      console.log(error);
+      // Return null if account not found or other errors
+      return { data: null };
+    }
   }
 
   @Put('accounts/:id/status')

@@ -7,11 +7,12 @@ import java.time.LocalDateTime;
 import java.util.UUID;
 
 @Entity
-@Table(name = "reward_accounts")
-@Data
-@Builder
+@Table(name = "reward_accounts", schema = "finance")
+@Getter
+@Setter
 @NoArgsConstructor
 @AllArgsConstructor
+@Builder
 public class RewardAccount {
 
     @Id

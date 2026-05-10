@@ -3,6 +3,7 @@
 -- This script initializes the entire 'finance' schema, verified against Java Entities.
 -- =============================================================================
 
+CREATE SCHEMA IF NOT EXISTS finance;
 SET search_path TO finance, public;
 
 -- -----------------------------------------------------------------------------
