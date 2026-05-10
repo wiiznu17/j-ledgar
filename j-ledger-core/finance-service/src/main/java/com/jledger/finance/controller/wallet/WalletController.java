@@ -210,9 +210,8 @@ public class WalletController {
 
     @GetMapping("/admin/{id}")
     public ResponseEntity<Wallet> getWalletById(@PathVariable Long id) {
-        Optional<Wallet> wallet = walletService.getWalletById(id);
-        return wallet.map(ResponseEntity::ok)
-                .orElse(ResponseEntity.notFound().build());
+        Wallet wallet = walletService.getWalletById(id);
+        return ResponseEntity.ok(wallet);
     }
 
     @PostMapping("/admin/{id}/adjust")

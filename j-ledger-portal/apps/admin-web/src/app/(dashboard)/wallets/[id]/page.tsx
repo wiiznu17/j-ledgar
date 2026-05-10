@@ -54,12 +54,13 @@ export default function WalletDetailPage({ params }: { params: Promise<{ id: str
         }
       }
 
-      const txResponse = await transactionRequester.getHistory({ size: 100 });
-      const filteredTx = txResponse.data.filter(
-        (tx: Transaction) =>
-          tx.senderId === walletData.userId || tx.receiverId === walletData.userId,
-      );
-      setTransactions(filteredTx.slice(0, 10));
+      const txResponse = await transactionRequester.getHistory({ 
+        size: 10, 
+        userId: walletData.userId 
+      });
+      
+      // AdminPaginatedResponse has a 'data' field containing the items array
+      setTransactions(txResponse.data || []);
 
       if (isSync) toast.success('Data synced successfully');
     } catch (error) {
@@ -261,13 +262,15 @@ export default function WalletDetailPage({ params }: { params: Promise<{ id: str
                   <History className="w-4 h-4 text-indigo-600" /> Transaction Logs
                 </CardTitle>
               </div>
-              <Button
-                variant="ghost"
-                size="sm"
-                className="h-8 text-xs font-medium text-indigo-600 hover:bg-indigo-50"
-              >
-                View All <ExternalLink className="w-3 h-3 ml-1.5" />
-              </Button>
+              <Link href={`/transactions?userId=${wallet.userId}`}>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="h-8 text-xs font-medium text-indigo-600 hover:bg-indigo-50"
+                >
+                  View All <ExternalLink className="w-3 h-3 ml-1.5" />
+                </Button>
+              </Link>
             </CardHeader>
             <CardContent className="p-0">
               <div className="overflow-x-auto">
@@ -289,54 +292,63 @@ export default function WalletDetailPage({ params }: { params: Promise<{ id: str
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-slate-100">
-                    {transactions.map((tx) => (
-                      <tr key={tx.id} className="hover:bg-slate-50/50 transition-colors group">
-                        <td className="px-5 py-3">
-                          {tx.receiverId === wallet.userId ? (
-                            <div className="flex items-center gap-2">
-                              <div className="w-7 h-7 rounded-lg bg-emerald-50 flex items-center justify-center text-emerald-600">
-                                <ArrowDownLeft className="w-3.5 h-3.5" />
+                    {transactions.map((tx) => {
+                      const description = (tx.description || '').toLowerCase();
+                      const isTopup = tx.transactionType === 'TOPUP' || description.includes('top-up') || description.includes('topup') || description.includes('credit');
+                      const isWithdraw = tx.transactionType === 'WITHDRAW' || description.includes('withdraw');
+                      
+                      // Check both UUID and numeric ID
+                      const isReceiver = tx.receiverId === wallet.userId || tx.toWalletId === wallet.id;
+                      
+                      // If it's a top-up keyword or we are the receiver, it's an IN
+                      const isIn = isTopup || (isReceiver && !isWithdraw);
+
+                      return (
+                        <tr key={tx.id} className="hover:bg-slate-50/50 transition-colors group">
+                          <td className="px-5 py-3">
+                            {isIn ? (
+                              <div className="flex items-center gap-2">
+                                <div className="w-7 h-7 rounded-lg bg-emerald-50 flex items-center justify-center text-emerald-600">
+                                  <ArrowDownLeft className="w-3.5 h-3.5" />
+                                </div>
+                                <span className="text-[10px] font-bold uppercase text-emerald-600">
+                                  In
+                                </span>
                               </div>
-                              <span className="text-[10px] font-bold uppercase text-emerald-600">
-                                In
-                              </span>
-                            </div>
-                          ) : (
-                            <div className="flex items-center gap-2">
-                              <div className="w-7 h-7 rounded-lg bg-rose-50 flex items-center justify-center text-rose-600">
-                                <ArrowUpRight className="w-3.5 h-3.5" />
+                            ) : (
+                              <div className="flex items-center gap-2">
+                                <div className="w-7 h-7 rounded-lg bg-rose-50 flex items-center justify-center text-rose-600">
+                                  <ArrowUpRight className="w-3.5 h-3.5" />
+                                </div>
+                                <span className="text-[10px] font-bold uppercase text-rose-600">
+                                  Out
+                                </span>
                               </div>
-                              <span className="text-[10px] font-bold uppercase text-rose-600">
-                                Out
-                              </span>
-                            </div>
-                          )}
-                        </td>
-                        <td className="px-5 py-3">
-                          <div className="space-y-0.5">
-                            <p className="text-xs font-semibold text-slate-700">
-                              {tx.description || 'System Transaction'}
-                            </p>
-                            <div className="flex items-center gap-2 text-[10px] text-slate-400">
-                              <span>{new Date(tx.createdAt).toLocaleDateString()}</span>
-                              <span>•</span>
-                              <span className="font-mono">Ref: {String(tx.transactionId || tx.id).slice(-8).toUpperCase()}</span>
-                            </div>
-                          </div>
-                        </td>
-                        <td className="px-5 py-3 text-right">
-                          <p
-                            className={cn(
-                              'text-sm font-bold tabular-nums',
-                              tx.receiverId === wallet.userId
-                                ? 'text-emerald-600'
-                                : 'text-slate-700',
                             )}
-                          >
-                            {tx.receiverId === wallet.userId ? '+' : '-'}
-                            {tx.amount.toLocaleString()}
-                          </p>
-                        </td>
+                          </td>
+                          <td className="px-5 py-3">
+                            <div className="space-y-0.5">
+                              <p className="text-xs font-semibold text-slate-700">
+                                {tx.description || (isTopup ? 'Wallet Top-up' : isWithdraw ? 'Wallet Withdrawal' : 'Transfer')}
+                              </p>
+                              <div className="flex items-center gap-2 text-[10px] text-slate-400">
+                                <span>{new Date(tx.createdAt).toLocaleDateString()}</span>
+                                <span>•</span>
+                                <span className="font-mono">Ref: {String(tx.transactionId || tx.id).slice(-8).toUpperCase()}</span>
+                              </div>
+                            </div>
+                          </td>
+                          <td className="px-5 py-3 text-right">
+                            <p
+                              className={cn(
+                                'text-sm font-bold tabular-nums',
+                                isIn ? 'text-emerald-600' : 'text-slate-700',
+                              )}
+                            >
+                              {isIn ? '+' : '-'}
+                              {tx.amount.toLocaleString()}
+                            </p>
+                          </td>
                         <td className="px-5 py-3 text-center">
                           <Badge
                             variant="outline"
@@ -351,7 +363,8 @@ export default function WalletDetailPage({ params }: { params: Promise<{ id: str
                           </Badge>
                         </td>
                       </tr>
-                    ))}
+                    );
+                  })}
                     {transactions.length === 0 && (
                       <tr>
                         <td colSpan={4} className="py-8 text-center text-slate-400 text-xs">

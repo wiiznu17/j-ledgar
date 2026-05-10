@@ -66,13 +66,15 @@ public interface TransactionRepository extends JpaRepository<Transaction, Long> 
            "(CAST(:status AS string) IS NULL OR t.status = :status) AND " +
            "(CAST(:type AS string) IS NULL OR t.type = :type) AND " +
            "(CAST(:startDate AS timestamp) IS NULL OR t.createdAt >= :startDate) AND " +
-           "(CAST(:endDate AS timestamp) IS NULL OR t.createdAt <= :endDate) " +
+           "(CAST(:endDate AS timestamp) IS NULL OR t.createdAt <= :endDate) AND " +
+           "(:userId IS NULL OR EXISTS (SELECT w FROM Wallet w WHERE w.userId = :userId AND (w.id = t.fromWalletId OR w.id = t.toWalletId))) " +
            "ORDER BY t.createdAt DESC")
     org.springframework.data.domain.Page<Transaction> findAllWithFilters(
             @Param("status") TransactionStatus status,
             @Param("type") TransactionType type,
             @Param("startDate") LocalDateTime startDate,
             @Param("endDate") LocalDateTime endDate,
+            @Param("userId") String userId,
             Pageable pageable
     );
 

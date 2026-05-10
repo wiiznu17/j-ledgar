@@ -25,6 +25,7 @@ public class Transaction {
 
     @Enumerated(EnumType.STRING)
     @Column(nullable = false, length = 50)
+    @com.fasterxml.jackson.annotation.JsonProperty("transactionType")
     private TransactionType type;
 
     @Column(nullable = false, precision = 19, scale = 4)

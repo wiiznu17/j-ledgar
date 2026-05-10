@@ -31,11 +31,12 @@ public class TransactionController {
             @RequestParam(defaultValue = "50") int size,
             @RequestParam(required = false) TransactionStatus status,
             @RequestParam(required = false) TransactionType type,
+            @RequestParam(required = false) String userId,
             @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime startDate,
             @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime endDate) {
         
         Page<Transaction> transactions = transactionRepository.findAllWithFilters(
-                status, type, startDate, endDate, PageRequest.of(page, size));
+                status, type, startDate, endDate, userId, PageRequest.of(page, size));
         return ResponseEntity.ok(transactions);
     }
 

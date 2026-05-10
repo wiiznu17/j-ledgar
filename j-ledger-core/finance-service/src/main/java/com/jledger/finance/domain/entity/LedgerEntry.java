@@ -45,6 +45,12 @@ public class LedgerEntry {
     @Column(nullable = false, precision = 20, scale = 4)
     private BigDecimal amount;
 
+    @Column(name = "transaction_id", length = 100)
+    private String transactionId;
+
+    @Column(length = 255)
+    private String description;
+
     @CreationTimestamp
     @Column(name = "created_at", updatable = false)
     private ZonedDateTime createdAt;

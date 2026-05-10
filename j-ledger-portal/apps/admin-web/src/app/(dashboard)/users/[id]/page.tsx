@@ -53,14 +53,14 @@ export default function UserDetailPage({ params }: { params: Promise<{ id: strin
   const fetchData = async () => {
     try {
       setLoading(true);
-      const [userData, accountData, activityData] = await Promise.all([
+      const [userData, walletData, activityData] = await Promise.all([
         userRequester.getUserDetail(userId),
-        userRequester.getUserAccount(userId).catch(() => ({ data: null })),
+        userRequester.getUserWallet(userId).catch(() => ({ data: null })),
         userRequester.getUserActivity(userId).catch(() => ({ data: null })),
       ]);
 
       setUser((userData as any).data);
-      setAccount((accountData as any)?.data);
+      setAccount((walletData as any)?.data);
       setActivity((activityData as any)?.data);
     } catch (error) {
       console.error('Error fetching user details', error);
@@ -232,10 +232,10 @@ export default function UserDetailPage({ params }: { params: Promise<{ id: strin
                       <span className="text-4xl font-black text-slate-900 tracking-tighter">
                         {account.balance.toLocaleString()}
                       </span>
-                      <span className="text-xs font-black text-slate-400 uppercase">THB</span>
+                      <span className="text-xs font-black text-slate-400 uppercase">{account.currency}</span>
                     </div>
-                    <Link href={`/accounts/${account.id}`} className="relative z-10 flex items-center gap-1.5 text-[10px] font-black text-indigo-600 uppercase hover:gap-2 transition-all">
-                       Explore Ledger <ArrowRight className="w-3 h-3" />
+                    <Link href={`/wallets/${account.id}`} className="relative z-10 flex items-center gap-1.5 text-[10px] font-black text-indigo-600 uppercase hover:gap-2 transition-all">
+                       View Wallet Details <ArrowRight className="w-3 h-3" />
                     </Link>
                   </div>
                 ) : (
