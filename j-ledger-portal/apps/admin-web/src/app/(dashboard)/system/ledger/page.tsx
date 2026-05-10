@@ -27,7 +27,6 @@ import { Account, AdminPaginatedResponse } from '@repo/dto';
 import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
 
-
 export default function InternalLedgerPage() {
   const router = useRouter();
   const [accounts, setAccounts] = useState<Account[]>([]);
@@ -61,15 +60,18 @@ export default function InternalLedgerPage() {
 
   // Identify special accounts for UI decoration
   const getAccountLabel = (userId: string) => {
-    if (userId === '00000000-0000-0000-0000-000000000000') return 'Master Treasury';
+    if (userId === '00000000-0000-0000-0000-000000000000')
+      return 'Master Treasury';
     if (userId.includes('reward')) return 'Reward Reserve';
     if (userId.includes('profit')) return 'Platform Revenue';
     return 'Internal Account';
   };
 
   const getAccountIcon = (userId: string) => {
-    if (userId === '00000000-0000-0000-0000-000000000000') return <Landmark className="w-5 h-5 text-indigo-600" />;
-    if (userId.includes('reward')) return <TrendingUp className="w-5 h-5 text-emerald-600" />;
+    if (userId === '00000000-0000-0000-0000-000000000000')
+      return <Landmark className="w-5 h-5 text-indigo-600" />;
+    if (userId.includes('reward'))
+      return <TrendingUp className="w-5 h-5 text-emerald-600" />;
     return <Database className="w-5 h-5 text-slate-600" />;
   };
 
@@ -82,7 +84,9 @@ export default function InternalLedgerPage() {
             <div className="p-1.5 bg-indigo-50 rounded-lg">
               <Landmark className="w-5 h-5 text-indigo-600" />
             </div>
-            <h2 className="text-3xl font-bold tracking-tight text-slate-900">Internal Ledger</h2>
+            <h2 className="text-3xl font-bold tracking-tight text-slate-900">
+              Internal Ledger
+            </h2>
           </div>
           <p className="text-slate-500">
             System-level accounting and master treasury management.
@@ -100,7 +104,9 @@ export default function InternalLedgerPage() {
 
       <Card className="border-none shadow-sm ring-1 ring-slate-100 overflow-hidden bg-white">
         <CardHeader className="bg-slate-50/30 border-b border-slate-100">
-          <CardTitle className="text-sm font-bold text-slate-600">Chart of Internal Accounts</CardTitle>
+          <CardTitle className="text-sm font-bold text-slate-600">
+            Chart of Internal Accounts
+          </CardTitle>
         </CardHeader>
         <CardContent className="p-0">
           <div className="overflow-x-auto">
@@ -136,14 +142,21 @@ export default function InternalLedgerPage() {
                     <TableRow
                       key={account.id}
                       className="border-slate-50 hover:bg-slate-50/30 transition-colors group cursor-pointer"
-                      onClick={() => router.push(`/system/ledger/${account.id}`)}
+                      onClick={() =>
+                        router.push(`/system/ledger/${account.id}`)
+                      }
                     >
                       <TableCell className="pl-6">
                         <div className="flex items-center gap-3">
-                          <div className={cn(
-                            "p-2 rounded-xl shadow-sm",
-                            account.userId === '00000000-0000-0000-0000-000000000000' ? "bg-indigo-50" : "bg-slate-50"
-                          )}>
+                          <div
+                            className={cn(
+                              'p-2 rounded-xl shadow-sm',
+                              account.userId ===
+                                '00000000-0000-0000-0000-000000000000'
+                                ? 'bg-indigo-50'
+                                : 'bg-slate-50',
+                            )}
+                          >
                             {getAccountIcon(account.userId)}
                           </div>
                           <div className="flex flex-col">
@@ -165,7 +178,9 @@ export default function InternalLedgerPage() {
                         <span
                           className={cn(
                             'text-lg font-black tabular-nums tracking-tight',
-                            account.balance < 0 ? 'text-rose-600' : 'text-slate-900',
+                            account.balance < 0
+                              ? 'text-rose-600'
+                              : 'text-slate-900',
                           )}
                         >
                           {account.balance.toLocaleString(undefined, {
@@ -201,7 +216,10 @@ export default function InternalLedgerPage() {
                   ))
                 ) : (
                   <TableRow>
-                    <TableCell colSpan={5} className="h-32 text-center text-slate-400">
+                    <TableCell
+                      colSpan={5}
+                      className="h-32 text-center text-slate-400"
+                    >
                       No internal accounts found
                     </TableCell>
                   </TableRow>
@@ -217,14 +235,14 @@ export default function InternalLedgerPage() {
             </div>
             <div className="flex gap-2">
               <button
-                onClick={() => setPage(p => Math.max(1, p - 1))}
+                onClick={() => setPage((p) => Math.max(1, p - 1))}
                 disabled={page === 1 || loading}
                 className="p-2 rounded-lg hover:bg-white border border-transparent hover:border-slate-200 disabled:opacity-30 transition-all"
               >
                 <ChevronLeft className="w-4 h-4" />
               </button>
               <button
-                onClick={() => setPage(p => Math.min(totalPages, p + 1))}
+                onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
                 disabled={page === totalPages || loading}
                 className="p-2 rounded-lg hover:bg-white border border-transparent hover:border-slate-200 disabled:opacity-30 transition-all"
               >
@@ -241,11 +259,14 @@ export default function InternalLedgerPage() {
           <ShieldCheck className="w-5 h-5 text-amber-600" />
         </div>
         <div>
-          <h4 className="text-sm font-bold text-amber-900 mb-1">Accounting Integrity Tip</h4>
+          <h4 className="text-sm font-bold text-amber-900 mb-1">
+            Accounting Integrity Tip
+          </h4>
           <p className="text-xs text-amber-800 leading-relaxed">
-            In a healthy double-entry system, the negative balance of the <strong>Master Treasury</strong> account 
-            should equal the sum of all customer wallet balances. If there is a discrepancy, run a 
-            manual reconciliation to identify missing entries.
+            In a healthy double-entry system, the negative balance of the{' '}
+            <strong>Master Treasury</strong> account should equal the sum of all
+            customer wallet balances. If there is a discrepancy, run a manual
+            reconciliation to identify missing entries.
           </p>
         </div>
       </div>

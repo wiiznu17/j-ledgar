@@ -10,7 +10,10 @@ interface FaceGuideStepProps {
   onScan: () => void;
 }
 
-export const FaceGuideStep: React.FC<FaceGuideStepProps> = ({ visible, onScan }) => (
+export const FaceGuideStep: React.FC<FaceGuideStepProps> = ({
+  visible,
+  onScan,
+}) => (
   <StepWrapper visible={visible} direction="vertical">
     <View className="items-center">
       <StepHeader
@@ -30,7 +33,9 @@ export const FaceGuideStep: React.FC<FaceGuideStepProps> = ({ visible, onScan })
         <View className="flex-row items-center gap-4 bg-primary/5 p-3 rounded-2xl border border-primary/10">
           <Sun size={20} color="#f48fb1" />
           <View className="flex-1">
-            <Text className="text-sm font-manrope font-bold text-on-surface">Even Lighting</Text>
+            <Text className="text-sm font-manrope font-bold text-on-surface">
+              Even Lighting
+            </Text>
             <Text className="text-xs font-manrope text-on-surfaceVariant">
               Make sure your face is well-lit and clearly visible
             </Text>

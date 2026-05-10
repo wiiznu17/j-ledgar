@@ -54,7 +54,10 @@ export function DealsTable({ deals, onEdit, onRefresh }: DealsTableProps) {
         </TableHeader>
         <TableBody>
           {deals.map((deal) => (
-            <TableRow key={deal.id} className="hover:bg-secondary/30 transition-colors">
+            <TableRow
+              key={deal.id}
+              className="hover:bg-secondary/30 transition-colors"
+            >
               <TableCell>
                 <div className="flex items-center gap-3">
                   <div className="w-10 h-10 rounded-lg overflow-hidden bg-slate-100 border border-slate-200">
@@ -63,7 +66,8 @@ export function DealsTable({ deals, onEdit, onRefresh }: DealsTableProps) {
                       alt={deal.title}
                       className="w-full h-full object-cover"
                       onError={(e) => {
-                        (e.target as any).src = 'https://placehold.co/100x100?text=No+Image';
+                        (e.target as any).src =
+                          'https://placehold.co/100x100?text=No+Image';
                       }}
                     />
                   </div>
@@ -102,7 +106,9 @@ export function DealsTable({ deals, onEdit, onRefresh }: DealsTableProps) {
                   <div className="w-24 h-1 bg-slate-100 rounded-full overflow-hidden">
                     <div
                       className={`h-full ${deal.remainingStock < 50 ? 'bg-orange-400' : 'bg-green-400'}`}
-                      style={{ width: `${(deal.remainingStock / deal.stock) * 100}%` }}
+                      style={{
+                        width: `${(deal.remainingStock / deal.stock) * 100}%`,
+                      }}
                     />
                   </div>
                 </div>
@@ -141,7 +147,10 @@ export function DealsTable({ deals, onEdit, onRefresh }: DealsTableProps) {
           ))}
           {deals.length === 0 && (
             <TableRow>
-              <TableCell colSpan={6} className="h-24 text-center text-muted-foreground">
+              <TableCell
+                colSpan={6}
+                className="h-24 text-center text-muted-foreground"
+              >
                 No deals found. Create your first promotional offer!
               </TableCell>
             </TableRow>

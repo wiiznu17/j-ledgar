@@ -1,7 +1,13 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -54,7 +60,10 @@ export default function ProfilePage() {
     setIsUpdatingProfile(true);
     try {
       await authRequester.updateMe({ firstName, lastName });
-      showSuccess('Profile Updated', 'Your personal information has been saved.');
+      showSuccess(
+        'Profile Updated',
+        'Your personal information has been saved.',
+      );
       fetchProfile();
     } catch (e) {
       showError('Failed', 'Could not update profile.');
@@ -75,7 +84,9 @@ export default function ProfilePage() {
   return (
     <div className="space-y-6 pb-10">
       <div className="flex flex-col gap-1">
-        <h1 className="text-2xl font-bold tracking-tight text-slate-900">Personal Settings</h1>
+        <h1 className="text-2xl font-bold tracking-tight text-slate-900">
+          Personal Settings
+        </h1>
         <p className="text-sm text-slate-500">
           Manage your profile information and security preferences.
         </p>
@@ -125,7 +136,9 @@ export default function ProfilePage() {
                     <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">
                       Login ID
                     </p>
-                    <p className="text-xs font-bold text-slate-700 truncate">{admin?.username}</p>
+                    <p className="text-xs font-bold text-slate-700 truncate">
+                      {admin?.username}
+                    </p>
                   </div>
                 </div>
               </div>
@@ -171,13 +184,21 @@ export default function ProfilePage() {
           {/* Profile Form */}
           <Card className="border-border shadow-sm rounded-2xl overflow-hidden bg-white flex-1 flex flex-col">
             <CardHeader className="py-5 px-8 bg-slate-50/50 border-b border-slate-100">
-              <CardTitle className="text-base font-bold">Profile Details</CardTitle>
+              <CardTitle className="text-base font-bold">
+                Profile Details
+              </CardTitle>
             </CardHeader>
             <CardContent className="p-8 flex-1">
-              <form onSubmit={handleUpdateProfile} className="h-full flex flex-col space-y-6">
+              <form
+                onSubmit={handleUpdateProfile}
+                className="h-full flex flex-col space-y-6"
+              >
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   <div className="space-y-2">
-                    <Label htmlFor="firstName" className="text-sm font-semibold text-slate-700">
+                    <Label
+                      htmlFor="firstName"
+                      className="text-sm font-semibold text-slate-700"
+                    >
                       First Name
                     </Label>
                     <Input
@@ -189,7 +210,10 @@ export default function ProfilePage() {
                     />
                   </div>
                   <div className="space-y-2">
-                    <Label htmlFor="lastName" className="text-sm font-semibold text-slate-700">
+                    <Label
+                      htmlFor="lastName"
+                      className="text-sm font-semibold text-slate-700"
+                    >
                       Last Name
                     </Label>
                     <Input
@@ -202,7 +226,9 @@ export default function ProfilePage() {
                   </div>
                 </div>
                 <div className="space-y-2">
-                  <Label className="text-sm font-semibold text-slate-700">Email Address</Label>
+                  <Label className="text-sm font-semibold text-slate-700">
+                    Email Address
+                  </Label>
                   <Input
                     value={admin?.email}
                     disabled
@@ -215,9 +241,10 @@ export default function ProfilePage() {
                     <ShieldCheck className="w-3.5 h-3.5" /> Identity & Privacy
                   </h4>
                   <p className="text-xs text-indigo-700/70 leading-relaxed font-medium">
-                    Your profile information is visible to other system administrators. For security
-                    reasons, sensitive data like your email and system role can only be modified by
-                    a Super Administrator.
+                    Your profile information is visible to other system
+                    administrators. For security reasons, sensitive data like
+                    your email and system role can only be modified by a Super
+                    Administrator.
                   </p>
                 </div>
 

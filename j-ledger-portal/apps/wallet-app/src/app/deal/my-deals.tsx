@@ -70,7 +70,9 @@ export default function MyDealsScreen() {
                 image={redemption.deal?.imageUrl}
                 status={getStatusText(redemption.status)}
                 index={idx}
-                onPressQR={() => router.push(`/deal/redemption/${redemption.id}` as any)}
+                onPressQR={() =>
+                  router.push(`/deal/redemption/${redemption.id}` as any)
+                }
               />
             ))}
           </View>

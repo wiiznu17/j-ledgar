@@ -28,7 +28,8 @@ export const parseQRData = (data: string): ParsedQR => {
     return {
       type: 'UNSUPPORTED',
       recipient: '',
-      error: 'PromptPay QR is not supported yet. Please use JLEDGER QR codes only.',
+      error:
+        'PromptPay QR is not supported yet. Please use JLEDGER QR codes only.',
     };
   }
 

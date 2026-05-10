@@ -72,7 +72,11 @@ export const useRegistrationStore = create<RegistrationStore>((set, get) => ({
       set({ regToken: token });
     } else {
       await SecureStore.deleteItemAsync(REG_TOKEN_KEY);
-      set({ regToken: null, prefillData: null, currentState: RegistrationState.PENDING_OTP });
+      set({
+        regToken: null,
+        prefillData: null,
+        currentState: RegistrationState.PENDING_OTP,
+      });
     }
   },
 
@@ -127,7 +131,11 @@ export const useRegistrationStore = create<RegistrationStore>((set, get) => ({
 
   reset: async () => {
     await SecureStore.deleteItemAsync(REG_TOKEN_KEY);
-    set({ regToken: null, currentState: RegistrationState.PENDING_OTP, prefillData: null });
+    set({
+      regToken: null,
+      currentState: RegistrationState.PENDING_OTP,
+      prefillData: null,
+    });
   },
 
   initialize: async () => {

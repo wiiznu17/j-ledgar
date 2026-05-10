@@ -1,8 +1,21 @@
 import React, { useState } from 'react';
-import { View, Text, TouchableOpacity, SafeAreaView, Alert, ActivityIndicator } from 'react-native';
+import {
+  View,
+  Text,
+  TouchableOpacity,
+  SafeAreaView,
+  Alert,
+  ActivityIndicator,
+} from 'react-native';
 import { useAuthStore } from '@/store/auth';
 import { router } from 'expo-router';
-import { Clock, LogOut, RefreshCcw, XCircle, ArrowRight } from 'lucide-react-native';
+import {
+  Clock,
+  LogOut,
+  RefreshCcw,
+  XCircle,
+  ArrowRight,
+} from 'lucide-react-native';
 import { api } from '@/lib/axios';
 
 import { UserStatus } from '@repo/dto';
@@ -44,7 +57,8 @@ export default function PendingApprovalScreen() {
             } catch (err: any) {
               Alert.alert(
                 'Error',
-                err.response?.data?.message || 'Failed to initiate retry. Please try again later.',
+                err.response?.data?.message ||
+                  'Failed to initiate retry. Please try again later.',
               );
             } finally {
               setIsRetrying(false);
@@ -72,7 +86,12 @@ export default function PendingApprovalScreen() {
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: '#FFFFFF' }}>
       <View
-        style={{ flex: 1, paddingHorizontal: 32, justifyContent: 'center', alignItems: 'center' }}
+        style={{
+          flex: 1,
+          paddingHorizontal: 32,
+          justifyContent: 'center',
+          alignItems: 'center',
+        }}
       >
         <View
           style={{
@@ -85,7 +104,11 @@ export default function PendingApprovalScreen() {
             marginBottom: 32,
           }}
         >
-          {isRejected ? <XCircle size={48} color="#ef4444" /> : <Clock size={48} color="#f48fb1" />}
+          {isRejected ? (
+            <XCircle size={48} color="#ef4444" />
+          ) : (
+            <Clock size={48} color="#f48fb1" />
+          )}
         </View>
 
         <Text
@@ -100,7 +123,14 @@ export default function PendingApprovalScreen() {
           {isRejected ? 'KYC Rejected' : 'Under Review'}
         </Text>
 
-        <Text style={{ fontSize: 18, color: '#6b7280', textAlign: 'center', marginBottom: 24 }}>
+        <Text
+          style={{
+            fontSize: 18,
+            color: '#6b7280',
+            textAlign: 'center',
+            marginBottom: 24,
+          }}
+        >
           {isRejected
             ? 'We could not approve your identity verification. Please review the reason below.'
             : 'Your account is currently being verified by our team. This usually takes 24-48 hours.'}
@@ -129,7 +159,9 @@ export default function PendingApprovalScreen() {
             >
               Reason from Admin:
             </Text>
-            <Text style={{ fontSize: 16, color: '#374151', fontStyle: 'italic' }}>
+            <Text
+              style={{ fontSize: 16, color: '#374151', fontStyle: 'italic' }}
+            >
               "
               {user?.reviewNote ||
                 'No specific reason provided. Please ensure your documents are clear.'}
@@ -160,7 +192,14 @@ export default function PendingApprovalScreen() {
               ) : (
                 <>
                   <RefreshCcw size={20} color="white" />
-                  <Text style={{ color: 'white', fontWeight: 'bold', fontSize: 18, marginLeft: 8 }}>
+                  <Text
+                    style={{
+                      color: 'white',
+                      fontWeight: 'bold',
+                      fontSize: 18,
+                      marginLeft: 8,
+                    }}
+                  >
                     Retry Verification
                   </Text>
                 </>
@@ -187,7 +226,14 @@ export default function PendingApprovalScreen() {
               ) : (
                 <>
                   <RefreshCcw size={20} color="white" />
-                  <Text style={{ color: 'white', fontWeight: 'bold', fontSize: 18, marginLeft: 8 }}>
+                  <Text
+                    style={{
+                      color: 'white',
+                      fontWeight: 'bold',
+                      fontSize: 18,
+                      marginLeft: 8,
+                    }}
+                  >
                     Check Status
                   </Text>
                 </>
@@ -210,14 +256,28 @@ export default function PendingApprovalScreen() {
             }}
           >
             <LogOut size={20} color="#6b7280" />
-            <Text style={{ color: '#6b7280', fontWeight: 'bold', fontSize: 18, marginLeft: 8 }}>
+            <Text
+              style={{
+                color: '#6b7280',
+                fontWeight: 'bold',
+                fontSize: 18,
+                marginLeft: 8,
+              }}
+            >
               Logout
             </Text>
           </TouchableOpacity>
         </View>
 
         <View style={{ marginTop: 48 }}>
-          <Text style={{ color: '#9ca3af', fontWeight: 'bold', fontSize: 12, letterSpacing: 1 }}>
+          <Text
+            style={{
+              color: '#9ca3af',
+              fontWeight: 'bold',
+              fontSize: 12,
+              letterSpacing: 1,
+            }}
+          >
             IDENTITY ID: {user?.id?.slice(0, 8).toUpperCase()}...
           </Text>
         </View>

@@ -1,15 +1,15 @@
-import { 
-  CheckCircle2, 
-  Clock, 
-  AlertCircle, 
-  Lock, 
-  Shield, 
+import {
+  CheckCircle2,
+  Clock,
+  AlertCircle,
+  Lock,
+  Shield,
   AlertTriangle,
   XCircle,
   RefreshCcw,
   LucideIcon,
   Search,
-  FileCheck
+  FileCheck,
 } from 'lucide-react';
 
 export interface StatusConfig {
@@ -24,7 +24,9 @@ export interface StatusConfig {
  * Utility to get consistent styling and icons for different system statuses.
  */
 
-export const getUserStatusConfig = (status: string | null | undefined): StatusConfig => {
+export const getUserStatusConfig = (
+  status: string | null | undefined,
+): StatusConfig => {
   const s = status?.toUpperCase() || '';
   switch (s) {
     case 'ACTIVE':
@@ -33,7 +35,7 @@ export const getUserStatusConfig = (status: string | null | undefined): StatusCo
         icon: CheckCircle2,
         bgColor: 'bg-emerald-50',
         textColor: 'text-emerald-700',
-        borderColor: 'border-emerald-200'
+        borderColor: 'border-emerald-200',
       };
     case 'PENDING_APPROVAL':
     case 'PENDING':
@@ -42,7 +44,7 @@ export const getUserStatusConfig = (status: string | null | undefined): StatusCo
         icon: Clock,
         bgColor: 'bg-amber-50',
         textColor: 'text-amber-700',
-        borderColor: 'border-amber-200'
+        borderColor: 'border-amber-200',
       };
     case 'SUSPENDED':
       return {
@@ -50,7 +52,7 @@ export const getUserStatusConfig = (status: string | null | undefined): StatusCo
         icon: AlertCircle,
         bgColor: 'bg-orange-50',
         textColor: 'text-orange-700',
-        borderColor: 'border-orange-200'
+        borderColor: 'border-orange-200',
       };
     case 'BLOCKED':
     case 'REJECTED':
@@ -59,7 +61,7 @@ export const getUserStatusConfig = (status: string | null | undefined): StatusCo
         icon: Lock,
         bgColor: 'bg-rose-50',
         textColor: 'text-rose-700',
-        borderColor: 'border-rose-200'
+        borderColor: 'border-rose-200',
       };
     default:
       return {
@@ -67,12 +69,14 @@ export const getUserStatusConfig = (status: string | null | undefined): StatusCo
         icon: Shield,
         bgColor: 'bg-slate-50',
         textColor: 'text-slate-700',
-        borderColor: 'border-slate-200'
+        borderColor: 'border-slate-200',
       };
   }
 };
 
-export const getTransactionStatusConfig = (status: string | null | undefined): StatusConfig => {
+export const getTransactionStatusConfig = (
+  status: string | null | undefined,
+): StatusConfig => {
   const s = status?.toUpperCase() || '';
   switch (s) {
     case 'COMPLETED':
@@ -106,7 +110,9 @@ export const getTransactionStatusConfig = (status: string | null | undefined): S
   }
 };
 
-export const getKycStatusConfig = (status: string | null | undefined): StatusConfig => {
+export const getKycStatusConfig = (
+  status: string | null | undefined,
+): StatusConfig => {
   const s = status?.toUpperCase() || '';
   switch (s) {
     case 'APPROVED':

@@ -163,7 +163,8 @@ export class AdminService {
     const tokenExpiry = new Date(Date.now() + 24 * 60 * 60 * 1000); // 24 hours
 
     // Generate dummy password if none provided, since it's required in DB
-    const plainPassword = data.password || crypto.randomBytes(16).toString('hex');
+    const plainPassword =
+      data.password || crypto.randomBytes(16).toString('hex');
     const hashedPassword = await bcrypt.hash(plainPassword, 10);
 
     const staff = await this.prisma.staff.create({
@@ -198,7 +199,9 @@ export class AdminService {
   }
 
   async requestPasswordReset(staffId: string, isInvite: boolean = false) {
-    const staff = await this.prisma.staff.findUnique({ where: { id: staffId } });
+    const staff = await this.prisma.staff.findUnique({
+      where: { id: staffId },
+    });
     if (!staff) throw new Error('Staff not found');
 
     const token = crypto.randomBytes(32).toString('hex');
@@ -218,7 +221,11 @@ export class AdminService {
       await this.mailService.sendPasswordReset(staff.email, token);
     }
 
-    return { message: isInvite ? 'Invitation link resent' : 'Password reset link sent to email' };
+    return {
+      message: isInvite
+        ? 'Invitation link resent'
+        : 'Password reset link sent to email',
+    };
   }
 
   private validatePasswordComplexity(password: string) {
@@ -227,7 +234,12 @@ export class AdminService {
     const hasLowerCase = /[a-z]/.test(password);
     const hasSpecialChar = /[!@#$%^&*(),.?":{}|<>]/.test(password);
 
-    if (password.length < minLength || !hasUpperCase || !hasLowerCase || !hasSpecialChar) {
+    if (
+      password.length < minLength ||
+      !hasUpperCase ||
+      !hasLowerCase ||
+      !hasSpecialChar
+    ) {
       throw new Error(
         'Password must be at least 8 characters long and contain uppercase, lowercase, and at least one special character.',
       );

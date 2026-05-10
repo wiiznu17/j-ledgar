@@ -1,5 +1,9 @@
 import { Injectable, Logger } from '@nestjs/common';
-import { S3Client, PutObjectCommand, GetObjectCommand } from '@aws-sdk/client-s3';
+import {
+  S3Client,
+  PutObjectCommand,
+  GetObjectCommand,
+} from '@aws-sdk/client-s3';
 import { ConfigService } from '@nestjs/config';
 import { getSignedUrl } from '@aws-sdk/s3-request-presigner';
 
@@ -20,7 +24,11 @@ export class S3Service {
     this.bucket = this.configService.get('AWS_S3_BUCKET_NAME');
   }
 
-  async uploadFile(key: string, body: Buffer, contentType: string): Promise<string> {
+  async uploadFile(
+    key: string,
+    body: Buffer,
+    contentType: string,
+  ): Promise<string> {
     try {
       this.logger.debug(`Uploading file to S3: ${key}`);
       const command = new PutObjectCommand({

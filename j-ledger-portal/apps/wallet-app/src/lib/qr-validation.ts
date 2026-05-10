@@ -1,5 +1,9 @@
 import { parseQRData as parseRawQRData, ParsedQR } from './qr-parser';
-import { TransferParamsSchema, ValidationResult, QRScanLog } from '../types/transfer';
+import {
+  TransferParamsSchema,
+  ValidationResult,
+  QRScanLog,
+} from '../types/transfer';
 
 // In-memory log storage (will be cleared on app restart)
 // For production, consider integrating with backend logging service

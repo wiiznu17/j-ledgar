@@ -75,7 +75,9 @@ export default function TopupScreen() {
               </Text>
 
               <View className="flex-row items-center justify-center border-b-2 border-pink-100 pb-3 mb-8 w-full max-w-[260px]">
-                <Text className="text-3xl font-manrope font-black text-gray-400 mr-2 mt-1">฿</Text>
+                <Text className="text-3xl font-manrope font-black text-gray-400 mr-2 mt-1">
+                  ฿
+                </Text>
                 <TextInput
                   placeholder="0.00"
                   placeholderTextColor="#d1d5db"
@@ -108,7 +110,9 @@ export default function TopupScreen() {
                     onPress={() => setAmount(val.replace(',', ''))}
                     className="px-5 py-2.5 rounded-xl bg-pink-50 border border-pink-100 shadow-sm active:scale-95"
                   >
-                    <Text className="text-xs font-manrope font-black text-[#f48fb1]">{val}</Text>
+                    <Text className="text-xs font-manrope font-black text-[#f48fb1]">
+                      {val}
+                    </Text>
                   </TouchableOpacity>
                 ))}
               </View>

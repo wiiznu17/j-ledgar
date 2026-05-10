@@ -80,9 +80,14 @@ export const OcrReviewStep: React.FC<OcrReviewStepProps> = ({
 
   return (
     <StepWrapper visible={visible}>
-      <StepHeader title="Verify Details" subtitle="Check if your information is correct." />
+      <StepHeader
+        title="Verify Details"
+        subtitle="Check if your information is correct."
+      />
       <View className="w-full aspect-[1.58] bg-white rounded-3xl mb-8 overflow-hidden">
-        {idCardUri && <Image source={{ uri: idCardUri }} className="w-full h-full" />}
+        {idCardUri && (
+          <Image source={{ uri: idCardUri }} className="w-full h-full" />
+        )}
       </View>
       <ScrollView className="space-y-6" showsVerticalScrollIndicator={false}>
         <View className="mb-4">
@@ -98,7 +103,9 @@ export const OcrReviewStep: React.FC<OcrReviewStepProps> = ({
           />
           <View className="flex-row gap-4 mt-4">
             <TouchableOpacity
-              onPress={() => openPicker('issueDate', 'เลือกวันออกบัตร', data.issueDate)}
+              onPress={() =>
+                openPicker('issueDate', 'เลือกวันออกบัตร', data.issueDate)
+              }
               className="flex-1"
             >
               <View pointerEvents="none">
@@ -114,7 +121,9 @@ export const OcrReviewStep: React.FC<OcrReviewStepProps> = ({
               </View>
             </TouchableOpacity>
             <TouchableOpacity
-              onPress={() => openPicker('expiryDate', 'เลือกวันหมดอายุ', data.expiryDate)}
+              onPress={() =>
+                openPicker('expiryDate', 'เลือกวันหมดอายุ', data.expiryDate)
+              }
               className="flex-1"
             >
               <View pointerEvents="none">
@@ -191,7 +200,9 @@ export const OcrReviewStep: React.FC<OcrReviewStepProps> = ({
             Additional Info
           </Text>
           <TouchableOpacity
-            onPress={() => openPicker('dateOfBirth', 'เลือกวันเกิด', data.dateOfBirth)}
+            onPress={() =>
+              openPicker('dateOfBirth', 'เลือกวันเกิด', data.dateOfBirth)
+            }
             className="mb-4"
           >
             <View pointerEvents="none">
@@ -217,7 +228,9 @@ export const OcrReviewStep: React.FC<OcrReviewStepProps> = ({
             <AppTextInput
               label="HOUSE NO / STREET"
               value={data.registeredAddress.line1}
-              onChangeText={(v) => setData('addressField', { field: 'line1', text: v })}
+              onChangeText={(v) =>
+                setData('addressField', { field: 'line1', text: v })
+              }
             />
           </View>
           <View className="flex-row gap-4 mt-4">
@@ -225,14 +238,18 @@ export const OcrReviewStep: React.FC<OcrReviewStepProps> = ({
               <AppTextInput
                 label="SUB-DISTRICT"
                 value={data.registeredAddress.subdistrict}
-                onChangeText={(v) => setData('addressField', { field: 'subdistrict', text: v })}
+                onChangeText={(v) =>
+                  setData('addressField', { field: 'subdistrict', text: v })
+                }
               />
             </View>
             <View className="flex-1">
               <AppTextInput
                 label="DISTRICT"
                 value={data.registeredAddress.district}
-                onChangeText={(v) => setData('addressField', { field: 'district', text: v })}
+                onChangeText={(v) =>
+                  setData('addressField', { field: 'district', text: v })
+                }
               />
             </View>
           </View>
@@ -240,7 +257,9 @@ export const OcrReviewStep: React.FC<OcrReviewStepProps> = ({
             <AppTextInput
               label="PROVINCE"
               value={data.registeredAddress.province}
-              onChangeText={(v) => setData('addressField', { field: 'province', text: v })}
+              onChangeText={(v) =>
+                setData('addressField', { field: 'province', text: v })
+              }
             />
           </View>
         </View>

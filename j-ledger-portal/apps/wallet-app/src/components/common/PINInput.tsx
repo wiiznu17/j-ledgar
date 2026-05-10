@@ -1,5 +1,10 @@
 import React, { useRef, useEffect } from 'react';
-import { View, TextInput, TouchableWithoutFeedback, Keyboard } from 'react-native';
+import {
+  View,
+  TextInput,
+  TouchableWithoutFeedback,
+  Keyboard,
+} from 'react-native';
 import { MotiView } from 'moti';
 import { Palette } from '@/constants/theme';
 

@@ -105,8 +105,12 @@ export class KycController {
     @Headers('authorization') authorization: string,
     @Req() request: Request,
   ) {
-    this.logger.log(`[KYC Controller] uploadIdCardSimple called, has file: ${!!file}`);
-    this.logger.log(`[KYC Controller] Authorization header present: ${!!authorization}`);
+    this.logger.log(
+      `[KYC Controller] uploadIdCardSimple called, has file: ${!!file}`,
+    );
+    this.logger.log(
+      `[KYC Controller] Authorization header present: ${!!authorization}`,
+    );
 
     if (!file) {
       this.logger.error('[KYC Controller] No file uploaded');
@@ -151,8 +155,12 @@ export class KycController {
     @Headers('authorization') authorization: string,
     @Req() request: Request,
   ) {
-    this.logger.log(`[KYC Controller] submitSelfieSimple called, has file: ${!!file}`);
-    this.logger.log(`[KYC Controller] Authorization header present: ${!!authorization}`);
+    this.logger.log(
+      `[KYC Controller] submitSelfieSimple called, has file: ${!!file}`,
+    );
+    this.logger.log(
+      `[KYC Controller] Authorization header present: ${!!authorization}`,
+    );
 
     if (!file) {
       this.logger.error('[KYC Controller] No file uploaded');

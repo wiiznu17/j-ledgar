@@ -7,7 +7,9 @@ export const configureAmplify = () => {
   Amplify.configure({
     Auth: {
       Cognito: {
-        identityPoolId: process.env.EXPO_PUBLIC_AWS_IDENTITY_POOL_ID || 'us-east-1:placeholder-id',
+        identityPoolId:
+          process.env.EXPO_PUBLIC_AWS_IDENTITY_POOL_ID ||
+          'us-east-1:placeholder-id',
         allowGuestAccess: true,
         userPoolId: process.env.EXPO_PUBLIC_AWS_USER_POOL_ID,
         userPoolClientId: process.env.EXPO_PUBLIC_AWS_USER_POOL_CLIENT_ID,

@@ -66,7 +66,9 @@ export default function DealDetailScreen() {
       }, 1800);
     },
     onError: (error: any) => {
-      const message = error?.response?.data?.message || 'Failed to redeem deal. Please try again.';
+      const message =
+        error?.response?.data?.message ||
+        'Failed to redeem deal. Please try again.';
       Alert.alert('Error', message);
     },
   });
@@ -91,11 +93,18 @@ export default function DealDetailScreen() {
       >
         {/* Full Image Header */}
         <View className="relative w-full h-[380px] bg-white rounded-b-[3rem] overflow-hidden shadow-sm">
-          <Image source={{ uri: deal.imageUrl }} className="w-full h-full" resizeMode="cover" />
+          <Image
+            source={{ uri: deal.imageUrl }}
+            className="w-full h-full"
+            resizeMode="cover"
+          />
           <View className="absolute top-0 left-0 right-0 h-32 bg-black/20" />
 
           {/* Back Button Floating */}
-          <View className="absolute left-5" style={{ top: Math.max(insets.top, 20) }}>
+          <View
+            className="absolute left-5"
+            style={{ top: Math.max(insets.top, 20) }}
+          >
             <TouchableOpacity
               onPress={() => router.back()}
               className="w-11 h-11 bg-white/90 rounded-2xl items-center justify-center shadow-md active:scale-95"
@@ -142,7 +151,8 @@ export default function DealDetailScreen() {
                   Required Points
                 </Text>
                 <Text className="text-2xl font-manrope font-black text-[#f48fb1] tracking-tighter">
-                  {deal.pointsRequired.toLocaleString()} <Text className="text-sm">pts</Text>
+                  {deal.pointsRequired.toLocaleString()}{' '}
+                  <Text className="text-sm">pts</Text>
                 </Text>
               </View>
             </View>
@@ -151,7 +161,8 @@ export default function DealDetailScreen() {
                 My Balance
               </Text>
               <Text className="text-base font-manrope font-black text-gray-800 tracking-tighter">
-                {(balanceData?.balance || 0).toLocaleString()} <Text className="text-xs">pts</Text>
+                {(balanceData?.balance || 0).toLocaleString()}{' '}
+                <Text className="text-xs">pts</Text>
               </Text>
             </View>
           </View>
@@ -172,8 +183,8 @@ export default function DealDetailScreen() {
           <View className="bg-gray-50 p-5 rounded-[1.8rem] border border-gray-100 flex-row gap-4 mb-6">
             <Info size={20} color="#9ca3af" className="mt-0.5" />
             <Text className="flex-1 text-[11px] font-manrope font-bold text-gray-500 leading-relaxed">
-              Once redeemed, points cannot be refunded. The voucher will be available instantly in
-              your "My Deals" section.
+              Once redeemed, points cannot be refunded. The voucher will be
+              available instantly in your "My Deals" section.
             </Text>
           </View>
         </View>

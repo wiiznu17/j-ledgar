@@ -19,8 +19,12 @@ export default function LoginPage() {
           <div className="max-w-sm w-full mx-auto space-y-8">
             <div className="flex items-center justify-end gap-6 text-right">
               <div className="flex flex-col">
-                <h1 className="text-3xl font-bold text-foreground">Welcome Back</h1>
-                <p className="text-muted-foreground mt-1">Sign in to the P-wallet Admin Portal</p>
+                <h1 className="text-3xl font-bold text-foreground">
+                  Welcome Back
+                </h1>
+                <p className="text-muted-foreground mt-1">
+                  Sign in to the P-wallet Admin Portal
+                </p>
               </div>
               <img
                 src="/logo/logo-text.png"

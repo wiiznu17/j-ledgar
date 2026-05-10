@@ -49,7 +49,10 @@ const runTests = () => {
 
   // Test 6: Network error
   console.log('Test 6: Network error');
-  const error1 = parseBackendError({ message: 'Network Error', code: 'ECONNABORTED' });
+  const error1 = parseBackendError({
+    message: 'Network Error',
+    code: 'ECONNABORTED',
+  });
   console.log('Result:', error1);
   console.assert(error1.code === 'NETWORK_ERROR', 'Should be NETWORK_ERROR');
   console.log('✓ Pass\n');
@@ -63,7 +66,10 @@ const runTests = () => {
     },
   });
   console.log('Result:', error2);
-  console.assert(error2.code === 'INVALID_RECIPIENT', 'Should be INVALID_RECIPIENT');
+  console.assert(
+    error2.code === 'INVALID_RECIPIENT',
+    'Should be INVALID_RECIPIENT',
+  );
   console.log('✓ Pass\n');
 
   // Test 8: 500 error

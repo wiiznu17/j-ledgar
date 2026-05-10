@@ -9,14 +9,23 @@ import {
   Platform,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { ChevronLeft, ArrowRight, ShieldCheck, Wallet, UserCircle } from 'lucide-react-native';
+import {
+  ChevronLeft,
+  ArrowRight,
+  ShieldCheck,
+  Wallet,
+  UserCircle,
+} from 'lucide-react-native';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import { MotiView, AnimatePresence } from 'moti';
 import { useAuthStore } from '../../store/auth';
 import { BiometricAuth } from '../../components/auth/BiometricAuth';
 import { PINVerification } from '../../components/auth/PINVerification';
 import { ErrorRecovery } from '../../components/error/ErrorRecovery';
-import { isBiometricAvailable, isBiometricEnrolled } from '../../lib/biometric-auth';
+import {
+  isBiometricAvailable,
+  isBiometricEnrolled,
+} from '../../lib/biometric-auth';
 import {
   TransferError,
   logTransaction,
@@ -34,8 +43,14 @@ export default function ReviewTransferScreen() {
   useScreenCaptureProtection();
 
   const router = useRouter();
-  const { recipient, amount, note, merchantName, recipientName, recipientMasked } =
-    useLocalSearchParams();
+  const {
+    recipient,
+    amount,
+    note,
+    merchantName,
+    recipientName,
+    recipientMasked,
+  } = useLocalSearchParams();
   const [isProcessing, setIsProcessing] = useState(false);
   const [isConfirming, setIsConfirming] = useState(false);
 
@@ -141,7 +156,10 @@ export default function ReviewTransferScreen() {
 
       // Send success notification
       const recipientDisplay =
-        (Array.isArray(recipient) ? recipient[0] : recipient)?.replace(/-/g, '') || 'Recipient';
+        (Array.isArray(recipient) ? recipient[0] : recipient)?.replace(
+          /-/g,
+          '',
+        ) || 'Recipient';
       NotificationService.transferSuccess(recipientDisplay, amount as string);
 
       router.push({
@@ -154,7 +172,8 @@ export default function ReviewTransferScreen() {
           transactionId: transferData.transactionId,
           createdAt: transferData.createdAt,
           recipientName: transferData?.recipient?.displayName || recipientName,
-          recipientMasked: transferData?.recipient?.phoneMasked || recipientMasked,
+          recipientMasked:
+            transferData?.recipient?.phoneMasked || recipientMasked,
         },
       } as any);
     } catch (err: any) {
@@ -167,7 +186,9 @@ export default function ReviewTransferScreen() {
       transferError.recoveryAction = 'RETRY';
 
       // Send error notification
-      NotificationService.transferFailed(err.message || 'Unknown error occurred');
+      NotificationService.transferFailed(
+        err.message || 'Unknown error occurred',
+      );
 
       // Log failed transfer
       logTransaction({
@@ -238,7 +259,9 @@ export default function ReviewTransferScreen() {
                 Transfer Amount
               </Text>
               <View className="flex-row items-baseline w-full justify-center">
-                <Text className="text-2xl font-manrope font-black text-gray-400 mr-2">฿</Text>
+                <Text className="text-2xl font-manrope font-black text-gray-400 mr-2">
+                  ฿
+                </Text>
                 <Text
                   numberOfLines={1}
                   adjustsFontSizeToFit
@@ -267,7 +290,9 @@ export default function ReviewTransferScreen() {
                   <Text className="text-[10px] font-manrope font-black text-gray-400 uppercase tracking-widest mb-0.5">
                     From
                   </Text>
-                  <Text className="text-sm font-manrope font-black text-gray-800">My E-Wallet</Text>
+                  <Text className="text-sm font-manrope font-black text-gray-800">
+                    My E-Wallet
+                  </Text>
                 </View>
               </View>
 
@@ -280,7 +305,10 @@ export default function ReviewTransferScreen() {
                   <Text className="text-[10px] font-manrope font-black text-gray-400 uppercase tracking-widest mb-0.5">
                     To Recipient
                   </Text>
-                  <Text className="text-sm font-manrope font-black text-gray-800" numberOfLines={1}>
+                  <Text
+                    className="text-sm font-manrope font-black text-gray-800"
+                    numberOfLines={1}
+                  >
                     {recipient}
                   </Text>
                 </View>
@@ -298,7 +326,10 @@ export default function ReviewTransferScreen() {
                   Total Payment
                 </Text>
                 <Text className="text-xl font-manrope font-black text-[#f48fb1]">
-                  ฿{totalAmount.toLocaleString(undefined, { minimumFractionDigits: 2 })}
+                  ฿
+                  {totalAmount.toLocaleString(undefined, {
+                    minimumFractionDigits: 2,
+                  })}
                 </Text>
               </View>
             </View>
@@ -407,7 +438,8 @@ export default function ReviewTransferScreen() {
               Encrypting Transaction
             </Text>
             <Text className="text-sm font-manrope font-bold text-gray-400 mt-3 text-center leading-relaxed">
-              We're verifying your identities and securing the ledger connection...
+              We're verifying your identities and securing the ledger
+              connection...
             </Text>
           </MotiView>
         )}

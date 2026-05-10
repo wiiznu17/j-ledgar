@@ -13,7 +13,9 @@ export class PushService {
     data?: any,
   ): Promise<boolean> {
     if (!Expo.isExpoPushToken(pushToken)) {
-      this.logger.error(`Push token ${pushToken} is not a valid Expo push token`);
+      this.logger.error(
+        `Push token ${pushToken} is not a valid Expo push token`,
+      );
       return false;
     }
 
@@ -31,7 +33,9 @@ export class PushService {
       const chunks = this.expo.chunkPushNotifications(messages);
       for (const chunk of chunks) {
         const ticketChunk = await this.expo.sendPushNotificationsAsync(chunk);
-        this.logger.log(`Push notification sent: ${JSON.stringify(ticketChunk)}`);
+        this.logger.log(
+          `Push notification sent: ${JSON.stringify(ticketChunk)}`,
+        );
       }
       return true;
     } catch (error) {

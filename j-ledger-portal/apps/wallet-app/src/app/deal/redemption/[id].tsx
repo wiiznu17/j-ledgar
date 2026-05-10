@@ -50,7 +50,10 @@ export default function RedemptionDetailScreen() {
       Alert.alert('Success', 'Deal has been marked as used!');
     },
     onError: (error: any) => {
-      Alert.alert('Error', error?.response?.data?.message || 'Failed to update status');
+      Alert.alert(
+        'Error',
+        error?.response?.data?.message || 'Failed to update status',
+      );
     },
   });
 
@@ -160,8 +163,8 @@ export default function RedemptionDetailScreen() {
             {!isUsed && !isExpired && (
               <View className="mt-10 px-4">
                 <Text className="text-[11px] font-manrope font-bold text-gray-400 text-center leading-relaxed">
-                  Please ask the merchant to scan this barcode or enter the code manually. Once
-                  used, please tap the button below to confirm.
+                  Please ask the merchant to scan this barcode or enter the code
+                  manually. Once used, please tap the button below to confirm.
                 </Text>
               </View>
             )}
@@ -179,7 +182,10 @@ export default function RedemptionDetailScreen() {
                 'Are you sure you want to mark this deal as used? This action cannot be undone.',
                 [
                   { text: 'Cancel', style: 'cancel' },
-                  { text: 'Confirm', onPress: () => confirmUseMutation.mutate() },
+                  {
+                    text: 'Confirm',
+                    onPress: () => confirmUseMutation.mutate(),
+                  },
                 ],
               );
             }}

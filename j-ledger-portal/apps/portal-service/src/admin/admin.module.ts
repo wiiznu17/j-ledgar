@@ -38,7 +38,9 @@ import { AdminJwtStrategy } from './strategies/admin-jwt.strategy';
     AuditModule,
     KycModule,
     JwtModule.register({
-      secret: process.env.ADMIN_JWT_SECRET || 'jledger-admin-super-secret-2024-dev-key-32chars',
+      secret:
+        process.env.ADMIN_JWT_SECRET ||
+        'jledger-admin-super-secret-2024-dev-key-32chars',
       signOptions: { expiresIn: '8h' },
     }),
   ],

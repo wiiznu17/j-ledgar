@@ -70,85 +70,88 @@ export const getAvailableBiometricTypes = async (): Promise<string[]> => {
 /**
  * Authenticate user with biometric
  */
-export const authenticateWithBiometric = async (): Promise<BiometricAuthResult> => {
-  try {
-    // Check if biometric is available
-    const available = await isBiometricAvailable();
-    if (!available) {
-      return {
-        success: false,
-        error: {
-          code: 'NOT_AVAILABLE',
-          message: 'Biometric authentication is not available on this device',
-        },
-      };
-    }
-
-    // Check if user has enrolled
-    const enrolled = await isBiometricEnrolled();
-    if (!enrolled) {
-      return {
-        success: false,
-        error: {
-          code: 'NOT_ENROLLED',
-          message: 'No biometric data enrolled on this device',
-        },
-      };
-    }
-
-    // Perform authentication
-    const result = await LocalAuthentication.authenticateAsync({
-      disableDeviceFallback: false,
-      fallbackLabel: 'Use PIN instead',
-    });
-
-    if (result.success) {
-      console.log('[Biometric] Authentication successful');
-      return { success: true };
-    } else {
-      if (result.error === 'user_cancel') {
+export const authenticateWithBiometric =
+  async (): Promise<BiometricAuthResult> => {
+    try {
+      // Check if biometric is available
+      const available = await isBiometricAvailable();
+      if (!available) {
         return {
           success: false,
           error: {
-            code: 'USER_CANCEL',
-            message: 'Authentication cancelled',
-          },
-        };
-      }
-      if (result.error === 'lockout') {
-        return {
-          success: false,
-          error: {
-            code: 'LOCKOUT',
-            message: 'Too many failed attempts. Please try again later.',
+            code: 'NOT_AVAILABLE',
+            message: 'Biometric authentication is not available on this device',
           },
         };
       }
 
+      // Check if user has enrolled
+      const enrolled = await isBiometricEnrolled();
+      if (!enrolled) {
+        return {
+          success: false,
+          error: {
+            code: 'NOT_ENROLLED',
+            message: 'No biometric data enrolled on this device',
+          },
+        };
+      }
+
+      // Perform authentication
+      const result = await LocalAuthentication.authenticateAsync({
+        disableDeviceFallback: false,
+        fallbackLabel: 'Use PIN instead',
+      });
+
+      if (result.success) {
+        console.log('[Biometric] Authentication successful');
+        return { success: true };
+      } else {
+        if (result.error === 'user_cancel') {
+          return {
+            success: false,
+            error: {
+              code: 'USER_CANCEL',
+              message: 'Authentication cancelled',
+            },
+          };
+        }
+        if (result.error === 'lockout') {
+          return {
+            success: false,
+            error: {
+              code: 'LOCKOUT',
+              message: 'Too many failed attempts. Please try again later.',
+            },
+          };
+        }
+
+        return {
+          success: false,
+          error: {
+            code: 'FAILED',
+            message: 'Biometric authentication failed. Please try again.',
+          },
+        };
+      }
+    } catch (error) {
+      console.error('[Biometric] Authentication error:', error);
       return {
         success: false,
         error: {
-          code: 'FAILED',
-          message: 'Biometric authentication failed. Please try again.',
+          code: 'UNKNOWN',
+          message: 'An error occurred during authentication',
         },
       };
     }
-  } catch (error) {
-    console.error('[Biometric] Authentication error:', error);
-    return {
-      success: false,
-      error: {
-        code: 'UNKNOWN',
-        message: 'An error occurred during authentication',
-      },
-    };
-  }
-};
+  };
 
 /**
  * Get user-friendly error message
  */
-export const getBiometricErrorMessage = (error: BiometricAuthResult['error']): string => {
+export const getBiometricErrorMessage = (
+  error: BiometricAuthResult['error'],
+): string => {
   if (!error) return 'An error occurred';
 
   switch (error.code) {

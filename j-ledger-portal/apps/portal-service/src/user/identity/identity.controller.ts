@@ -63,7 +63,10 @@ export class IdentityController {
   @Post('register/verify-otp')
   @HttpCode(HttpStatus.OK)
   @Throttle({ default: {}, regVerify: {} })
-  async registerVerifyOtp(@Body() body: RegisterVerifyOtpDto, @Req() req: Request) {
+  async registerVerifyOtp(
+    @Body() body: RegisterVerifyOtpDto,
+    @Req() req: Request,
+  ) {
     return this.identityService.registerVerifyOtp(body, {
       ip: req.ip,
       userAgent: this.singleHeader(req.headers['user-agent']),
@@ -124,7 +127,9 @@ export class IdentityController {
 
   @Post('register/status')
   @HttpCode(HttpStatus.OK)
-  async getRegisterStatus(@Headers('authorization') authorization: string | undefined) {
+  async getRegisterStatus(
+    @Headers('authorization') authorization: string | undefined,
+  ) {
     return this.identityService.getRegistrationStatus(authorization);
   }
 
@@ -217,7 +222,10 @@ export class IdentityController {
   @Post('pin/verify')
   @HttpCode(HttpStatus.OK)
   @Throttle({ default: {}, pinVerify: {} })
-  async verifyPin(@Body() body: PinVerifyDto, @Req() req: AuthenticatedRequest) {
+  async verifyPin(
+    @Body() body: PinVerifyDto,
+    @Req() req: AuthenticatedRequest,
+  ) {
     if (!req.user?.sub) {
       throw new UnauthorizedException('User is not authenticated');
     }
@@ -239,7 +247,10 @@ export class IdentityController {
   @Post('biometric/verify')
   @HttpCode(HttpStatus.OK)
   @Throttle({ default: {}, biometricVerify: {} })
-  async verifyBiometric(@Body() body: BiometricVerifyDto, @Req() req: AuthenticatedRequest) {
+  async verifyBiometric(
+    @Body() body: BiometricVerifyDto,
+    @Req() req: AuthenticatedRequest,
+  ) {
     if (!req.user?.sub) {
       throw new UnauthorizedException('User is not authenticated');
     }
@@ -261,14 +272,21 @@ export class IdentityController {
   @UseGuards(JwtAuthGuard)
   @Post('consents/withdraw')
   @HttpCode(HttpStatus.OK)
-  async withdrawConsent(@Body() body: WithdrawConsentDto, @Req() req: AuthenticatedRequest) {
+  async withdrawConsent(
+    @Body() body: WithdrawConsentDto,
+    @Req() req: AuthenticatedRequest,
+  ) {
     if (!req.user?.sub) {
       throw new UnauthorizedException('User is not authenticated');
     }
-    return this.identityService.withdrawConsent(req.user.sub, body.consentType, {
-      ip: req.ip,
-      userAgent: this.singleHeader(req.headers['user-agent']),
-    });
+    return this.identityService.withdrawConsent(
+      req.user.sub,
+      body.consentType,
+      {
+        ip: req.ip,
+        userAgent: this.singleHeader(req.headers['user-agent']),
+      },
+    );
   }
 
   @UseGuards(JwtAuthGuard)
@@ -357,7 +375,10 @@ export class IdentityController {
     if (!req.user?.sub) {
       throw new UnauthorizedException('User is not authenticated');
     }
-    return this.identityService.reportSuspiciousActivityToAmlo(body.activityId, req.user.sub);
+    return this.identityService.reportSuspiciousActivityToAmlo(
+      body.activityId,
+      req.user.sub,
+    );
   }
 
   private singleHeader(value: string | string[] | undefined) {

@@ -28,7 +28,7 @@ export const PINLayout: React.FC<PINLayoutProps> = ({
         <View className="w-12 h-12 items-center justify-center">
           {leftElement}
         </View>
-        
+
         <View className="flex-1 items-center justify-center">
           {centerElement}
         </View>
@@ -41,23 +41,23 @@ export const PINLayout: React.FC<PINLayoutProps> = ({
       {/* Title Section */}
       <View className="items-center mt-2 mb-4">
         {iconElement && (
-          <View 
+          <View
             style={{ backgroundColor: Palette.primary.container + '40' }} // 40 is hex for 25% opacity
             className="w-16 h-16 rounded-[1.5rem] items-center justify-center mb-4 border border-pink-100 shadow-sm"
           >
             {iconElement}
           </View>
         )}
-        
-        <Text 
+
+        <Text
           style={{ color: Palette.text.primary }}
           className="text-2xl font-manrope font-black text-center px-6"
         >
           {title}
         </Text>
-        
+
         {subtitle && (
-          <Text 
+          <Text
             style={{ color: Palette.text.secondary }}
             className="text-sm font-manrope font-bold text-center px-10 mt-1 leading-relaxed"
           >
@@ -67,16 +67,16 @@ export const PINLayout: React.FC<PINLayoutProps> = ({
       </View>
 
       {/* PIN Input / Children Area */}
-      <View className="mt-2">
-        {children}
-      </View>
+      <View className="mt-2">{children}</View>
     </View>
   );
 };
 
 // Export a standard BackButton to be used in leftElement
-export const PINBackButton: React.FC<{ onPress: () => void }> = ({ onPress }) => (
-  <TouchableOpacity 
+export const PINBackButton: React.FC<{ onPress: () => void }> = ({
+  onPress,
+}) => (
+  <TouchableOpacity
     onPress={onPress}
     className="w-10 h-10 bg-gray-50 rounded-full items-center justify-center active:bg-gray-100"
   >

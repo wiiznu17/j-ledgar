@@ -1,7 +1,22 @@
 import React, { useEffect, useRef } from 'react';
-import { View, Text, TouchableOpacity, ScrollView, Dimensions, Share, Image } from 'react-native';
+import {
+  View,
+  Text,
+  TouchableOpacity,
+  ScrollView,
+  Dimensions,
+  Share,
+  Image,
+} from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { CheckCircle2, Share2, Home, Download, ArrowDown, QrCode } from 'lucide-react-native';
+import {
+  CheckCircle2,
+  Share2,
+  Home,
+  Download,
+  ArrowDown,
+  QrCode,
+} from 'lucide-react-native';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import { MotiView } from 'moti';
 import * as Haptics from 'expo-haptics';
@@ -15,7 +30,9 @@ const MOCK_MY_USER = {
   avatar: require('../../../assets/images/mock_user_avatar.png'), // ใช้รูป Profile ตัวเอง
 };
 
-const MOCK_RECIPIENT_AVATAR = { uri: 'https://randomuser.me/api/portraits/men/55.jpg' };
+const MOCK_RECIPIENT_AVATAR = {
+  uri: 'https://randomuser.me/api/portraits/men/55.jpg',
+};
 
 export default function TransferSuccessScreen() {
   const router = useRouter();
@@ -33,7 +50,9 @@ export default function TransferSuccessScreen() {
 
   const isMerchant = !!merchantName;
   const displayRecipient =
-    (recipientName as string) || (merchantName as string) || (recipient as string);
+    (recipientName as string) ||
+    (merchantName as string) ||
+    (recipient as string);
   const refId = (transactionId as string) || '-';
   const now = createdAt ? new Date(createdAt as string) : new Date();
   const dateStr = now.toLocaleDateString('en-GB', {
@@ -70,7 +89,10 @@ export default function TransferSuccessScreen() {
 
   return (
     <SafeAreaView className="flex-1 bg-transparent" edges={['top']}>
-      <ScrollView contentContainerStyle={{ flexGrow: 1 }} showsVerticalScrollIndicator={false}>
+      <ScrollView
+        contentContainerStyle={{ flexGrow: 1 }}
+        showsVerticalScrollIndicator={false}
+      >
         {/* Success Header Area */}
         <View className="items-center justify-center pt-8 pb-4">
           <MotiView
@@ -126,7 +148,10 @@ export default function TransferSuccessScreen() {
               {/* From (Sender) */}
               <View className="flex-row items-center mb-6 relative z-10">
                 <View className="p-1 border border-gray-100 rounded-[1.2rem] bg-white">
-                  <Image source={MOCK_MY_USER.avatar} className="w-12 h-12 rounded-xl" />
+                  <Image
+                    source={MOCK_MY_USER.avatar}
+                    className="w-12 h-12 rounded-xl"
+                  />
                 </View>
                 <View className="ml-4 flex-1">
                   <Text className="text-[10px] font-manrope font-black text-gray-400 uppercase tracking-widest mb-0.5">
@@ -149,14 +174,20 @@ export default function TransferSuccessScreen() {
                       <QrCode size={24} color="#f48fb1" />
                     </View>
                   ) : (
-                    <Image source={MOCK_RECIPIENT_AVATAR} className="w-12 h-12 rounded-xl" />
+                    <Image
+                      source={MOCK_RECIPIENT_AVATAR}
+                      className="w-12 h-12 rounded-xl"
+                    />
                   )}
                 </View>
                 <View className="ml-4 flex-1">
                   <Text className="text-[10px] font-manrope font-black text-gray-400 uppercase tracking-widest mb-0.5">
                     To {isMerchant ? 'Merchant' : 'Recipient'}
                   </Text>
-                  <Text className="text-sm font-manrope font-black text-gray-800" numberOfLines={1}>
+                  <Text
+                    className="text-sm font-manrope font-black text-gray-800"
+                    numberOfLines={1}
+                  >
                     {displayRecipient}
                   </Text>
                   <Text className="text-[10px] font-manrope font-bold text-gray-400 mt-0.5">
@@ -174,7 +205,9 @@ export default function TransferSuccessScreen() {
                 Amount
               </Text>
               <View className="flex-row items-baseline">
-                <Text className="text-2xl font-manrope font-black text-[#f48fb1] mr-1">฿</Text>
+                <Text className="text-2xl font-manrope font-black text-[#f48fb1] mr-1">
+                  ฿
+                </Text>
                 <Text className="text-4xl font-manrope font-black text-[#f48fb1] tracking-tighter">
                   {formattedAmount}
                 </Text>
@@ -187,7 +220,9 @@ export default function TransferSuccessScreen() {
                 <Text className="text-[10px] font-manrope font-black text-gray-400 uppercase tracking-widest mb-1">
                   Memo
                 </Text>
-                <Text className="text-xs font-manrope font-bold text-gray-800">{note}</Text>
+                <Text className="text-xs font-manrope font-bold text-gray-800">
+                  {note}
+                </Text>
               </View>
             ) : (
               <View className="h-4" /> // Spacer
@@ -218,7 +253,9 @@ export default function TransferSuccessScreen() {
             onPress={() => router.push(`/billing/${refId}` as any)}
             className="w-full h-16 bg-white border-2 border-[#f48fb1] rounded-2xl flex-row items-center justify-center gap-2 mt-6 active:scale-95"
           >
-            <Text className="text-sm font-manrope font-black text-[#f48fb1]">View Receipt</Text>
+            <Text className="text-sm font-manrope font-black text-[#f48fb1]">
+              View Receipt
+            </Text>
           </TouchableOpacity>
 
           {/* Back to Home Button */}
@@ -227,7 +264,9 @@ export default function TransferSuccessScreen() {
             className="w-full h-16 bg-[#f48fb1] rounded-2xl flex-row items-center justify-center gap-2 shadow-lg shadow-pink-200 mt-4 active:scale-95"
           >
             <Home size={20} color="white" />
-            <Text className="text-sm font-manrope font-black text-white">Back to Home</Text>
+            <Text className="text-sm font-manrope font-black text-white">
+              Back to Home
+            </Text>
           </TouchableOpacity>
         </MotiView>
       </ScrollView>

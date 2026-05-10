@@ -1,5 +1,11 @@
 import React, { useState } from 'react';
-import { View, Text, ScrollView, ActivityIndicator, TouchableOpacity } from 'react-native';
+import {
+  View,
+  Text,
+  ScrollView,
+  ActivityIndicator,
+  TouchableOpacity,
+} from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { useQuery } from '@tanstack/react-query';
@@ -10,7 +16,9 @@ import { DealCard } from '@/components/deal/DealCard';
 
 export default function DealsScreen() {
   const router = useRouter();
-  const [selectedCategoryId, setSelectedCategoryId] = useState<string | null>(null);
+  const [selectedCategoryId, setSelectedCategoryId] = useState<string | null>(
+    null,
+  );
 
   // 1. Fetch Points Balance
   const { data: balanceData } = useQuery({
@@ -38,7 +46,9 @@ export default function DealsScreen() {
   } = useQuery({
     queryKey: ['deals', selectedCategoryId],
     queryFn: async () => {
-      const url = selectedCategoryId ? `/deals?categoryId=${selectedCategoryId}` : '/deals';
+      const url = selectedCategoryId
+        ? `/deals?categoryId=${selectedCategoryId}`
+        : '/deals';
       const { data } = await api.get(url);
       return data;
     },

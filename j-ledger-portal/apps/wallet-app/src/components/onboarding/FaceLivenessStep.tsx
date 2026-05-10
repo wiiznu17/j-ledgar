@@ -101,7 +101,9 @@ export const FaceLivenessStep: React.FC<FaceLivenessStepProps> = ({
     >
       <View style={styles.header}>
         <Text style={styles.title}>สแกนใบหน้า</Text>
-        <Text style={styles.subtitle}>กรุณาวางใบหน้าให้อยู่ในกรอบ และทำตามคำแนะนำบนหน้าจอ</Text>
+        <Text style={styles.subtitle}>
+          กรุณาวางใบหน้าให้อยู่ในกรอบ และทำตามคำแนะนำบนหน้าจอ
+        </Text>
       </View>
 
       <View style={styles.webviewContainer}>

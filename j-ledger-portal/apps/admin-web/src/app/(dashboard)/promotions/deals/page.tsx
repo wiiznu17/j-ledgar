@@ -1,7 +1,13 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Plus, Loader2 } from 'lucide-react';
 import { promotionsRequester } from '@/lib/requesters';
@@ -56,7 +62,9 @@ export default function DealsPage() {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h2 className="text-3xl font-bold tracking-tight text-[#2D3748]">Deals & Rewards</h2>
+          <h2 className="text-3xl font-bold tracking-tight text-[#2D3748]">
+            Deals & Rewards
+          </h2>
           <p className="text-muted-foreground mt-1">
             Manage points-based rewards and promotional offers.
           </p>
@@ -82,7 +90,11 @@ export default function DealsPage() {
               <Loader2 className="h-8 w-8 animate-spin text-pink-300" />
             </div>
           ) : (
-            <DealsTable deals={deals} onEdit={handleEdit} onRefresh={fetchDeals} />
+            <DealsTable
+              deals={deals}
+              onEdit={handleEdit}
+              onRefresh={fetchDeals}
+            />
           )}
         </CardContent>
       </Card>
@@ -90,9 +102,12 @@ export default function DealsPage() {
       <Dialog open={isModalOpen} onOpenChange={setIsModalOpen}>
         <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
-            <DialogTitle>{editingDeal ? 'Edit Deal' : 'Create New Deal'}</DialogTitle>
+            <DialogTitle>
+              {editingDeal ? 'Edit Deal' : 'Create New Deal'}
+            </DialogTitle>
             <DialogDescription>
-              Fill in the details below to publish a reward offer to the wallet app.
+              Fill in the details below to publish a reward offer to the wallet
+              app.
             </DialogDescription>
           </DialogHeader>
           <DealForm

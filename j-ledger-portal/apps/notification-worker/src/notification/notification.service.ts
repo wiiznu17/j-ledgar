@@ -2,7 +2,12 @@ import { Injectable, Logger } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { EmailService } from '../email/email.service';
 import { PushService } from '../push/push.service';
-import { NotificationEventType, KafkaTopic, NotificationCategory, AppPath } from '@repo/dto';
+import {
+  NotificationEventType,
+  KafkaTopic,
+  NotificationCategory,
+  AppPath,
+} from '@repo/dto';
 
 @Injectable()
 export class NotificationService {
@@ -24,7 +29,10 @@ export class NotificationService {
       // Map legacy status if coming from KYC events
       const actualEventType = eventType || payload.status || 'NOTIFICATION';
       const actualReferenceId =
-        referenceId || payload.documentId || payload.transactionId || Date.now().toString();
+        referenceId ||
+        payload.documentId ||
+        payload.transactionId ||
+        Date.now().toString();
 
       const idempotencyKey = `${userId}:${actualEventType}:${actualReferenceId}`;
 
@@ -49,7 +57,10 @@ export class NotificationService {
 
       const title = await this.generateTitle(topic, actualEventType, metadata);
       const body = await this.generateBody(topic, actualEventType, metadata);
-      const { category, path } = this.getCategoryAndPath(actualEventType, metadata);
+      const { category, path } = this.getCategoryAndPath(
+        actualEventType,
+        metadata,
+      );
 
       if (!existing) {
         // 3. Persist to Inbox (Only if new)
@@ -82,16 +93,22 @@ export class NotificationService {
         if (devices.length > 0) {
           pushAttempted = true;
           for (const device of devices) {
-            const ok = await this.pushService.sendPushNotification(device.pushToken!, title, body, {
-              ...metadata,
-              topic,
-              eventType: actualEventType,
-              url:
-                (actualEventType === 'TRANSFER' || actualEventType === 'TOPUP') &&
-                metadata?.transactionId
-                  ? `/transaction/${metadata.transactionId}`
-                  : undefined,
-            });
+            const ok = await this.pushService.sendPushNotification(
+              device.pushToken!,
+              title,
+              body,
+              {
+                ...metadata,
+                topic,
+                eventType: actualEventType,
+                url:
+                  (actualEventType === 'TRANSFER' ||
+                    actualEventType === 'TOPUP') &&
+                  metadata?.transactionId
+                    ? `/transaction/${metadata.transactionId}`
+                    : undefined,
+              },
+            );
             if (ok) pushSuccess = true;
           }
         }
@@ -104,26 +121,42 @@ export class NotificationService {
         (!pushAttempted && prefs?.emailEnabled !== false);
 
       if (shouldSendEmail && user.email) {
-        await this.emailService.sendEmail(user.email, title, this.wrapEmailHtml(title, body));
+        await this.emailService.sendEmail(
+          user.email,
+          title,
+          this.wrapEmailHtml(title, body),
+        );
       }
 
-      this.logger.log(`Notification processed for user ${userId}: ${actualEventType}`);
+      this.logger.log(
+        `Notification processed for user ${userId}: ${actualEventType}`,
+      );
     } catch (error) {
       this.logger.error(`Failed to handle notification event`, error);
     }
   }
 
-  private async generateTitle(topic: string, eventType: string, metadata: any): Promise<string> {
+  private async generateTitle(
+    topic: string,
+    eventType: string,
+    metadata: any,
+  ): Promise<string> {
     const type = eventType?.toUpperCase();
 
     if (topic === KafkaTopic.SECURITY_EVENTS) {
-      if (type === NotificationEventType.LOGIN_FAILURE) return 'Security Alert: Failed Login';
-      if (type === NotificationEventType.PASSWORD_CHANGE) return 'Security Alert: Password Updated';
-      if (type === NotificationEventType.REGISTRATION_COMPLETED) return 'Welcome to J-Ledger!';
+      if (type === NotificationEventType.LOGIN_FAILURE)
+        return 'Security Alert: Failed Login';
+      if (type === NotificationEventType.PASSWORD_CHANGE)
+        return 'Security Alert: Password Updated';
+      if (type === NotificationEventType.REGISTRATION_COMPLETED)
+        return 'Welcome to J-Ledger!';
       return 'Security Alert';
     }
 
-    if (topic === KafkaTopic.KYC_EVENTS || type === NotificationEventType.KYC_SUBMITTED) {
+    if (
+      topic === KafkaTopic.KYC_EVENTS ||
+      type === NotificationEventType.KYC_SUBMITTED
+    ) {
       return 'Identity Verification';
     }
 
@@ -136,14 +169,19 @@ export class NotificationService {
     return 'J-Ledger Notification';
   }
 
-  private async generateBody(topic: string, eventType: string, metadata: any): Promise<string> {
+  private async generateBody(
+    topic: string,
+    eventType: string,
+    metadata: any,
+  ): Promise<string> {
     const amount = Number(metadata?.amount || 0).toLocaleString(undefined, {
       minimumFractionDigits: 2,
       maximumFractionDigits: 2,
     });
     const rawRef = metadata?.transactionId || metadata?.referenceId || '';
     const ref = String(rawRef);
-    const refText = ref && ref.length > 0 ? ` (Ref: ${ref.slice(-8).toUpperCase()})` : '';
+    const refText =
+      ref && ref.length > 0 ? ` (Ref: ${ref.slice(-8).toUpperCase()})` : '';
 
     switch (eventType?.toUpperCase()) {
       case NotificationEventType.LOGIN_SUCCESS:
@@ -169,7 +207,9 @@ export class NotificationService {
 
       case NotificationEventType.TOPUP:
         const source =
-          metadata?.source || metadata?.description?.split('via ')?.[1] || 'Bank Transfer';
+          metadata?.source ||
+          metadata?.description?.split('via ')?.[1] ||
+          'Bank Transfer';
         return `Your wallet has been successfully topped up with ฿${amount} via ${source}.${refText}`;
 
       case NotificationEventType.TRANSFER:
@@ -190,7 +230,8 @@ export class NotificationService {
           const sender = senderName || 'a J-Ledger user';
           return `You have received ฿${amount} from ${sender}.${refText}`;
         } else {
-          const recipient = metadata?.recipientName || metadata?.recipientPhone || 'Recipient';
+          const recipient =
+            metadata?.recipientName || metadata?.recipientPhone || 'Recipient';
           return `Payment of ฿${amount} to ${recipient} has been processed successfully.${refText}`;
         }
 
@@ -229,7 +270,9 @@ export class NotificationService {
       const transactionId = metadata?.transactionId || metadata?.referenceId;
       return {
         category: NotificationCategory.FINANCE,
-        path: transactionId ? `${AppPath.TRANSACTION_DETAIL}/${transactionId}` : undefined,
+        path: transactionId
+          ? `${AppPath.TRANSACTION_DETAIL}/${transactionId}`
+          : undefined,
       };
     }
 
@@ -240,7 +283,10 @@ export class NotificationService {
         NotificationEventType.PASSWORD_CHANGE,
       ].includes(type)
     ) {
-      return { category: NotificationCategory.SYSTEM, path: AppPath.PROFILE_SECURITY };
+      return {
+        category: NotificationCategory.SYSTEM,
+        path: AppPath.PROFILE_SECURITY,
+      };
     }
 
     if (
@@ -251,7 +297,10 @@ export class NotificationService {
         NotificationEventType.KYC_SUBMITTED,
       ].includes(type)
     ) {
-      return { category: NotificationCategory.SYSTEM, path: AppPath.PROFILE_INFO };
+      return {
+        category: NotificationCategory.SYSTEM,
+        path: AppPath.PROFILE_INFO,
+      };
     }
 
     if (type === NotificationEventType.REGISTRATION_COMPLETED) {

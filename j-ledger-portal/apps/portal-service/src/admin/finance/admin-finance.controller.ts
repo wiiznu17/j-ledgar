@@ -1,4 +1,14 @@
-import { Controller, Get, Post, Put, Body, Param, Query, UseGuards, Logger } from '@nestjs/common';
+import {
+  Controller,
+  Get,
+  Post,
+  Put,
+  Body,
+  Param,
+  Query,
+  UseGuards,
+  Logger,
+} from '@nestjs/common';
 import { AdminJwtGuard } from '../guards/admin-jwt.guard';
 import { AdminRolesGuard } from '../guards/admin-roles.guard';
 import { Roles } from '../decorators/roles.decorator';
@@ -50,7 +60,9 @@ export class AdminFinanceController {
   }
 
   @Get('accounts/user/:userId')
-  async getAccountByUserId(@Param('userId') userId: string): Promise<{ data: Account | null }> {
+  async getAccountByUserId(
+    @Param('userId') userId: string,
+  ): Promise<{ data: Account | null }> {
     try {
       const account = await this.integrationService.forwardToGateway<Account>(
         'get',
@@ -170,7 +182,9 @@ export class AdminFinanceController {
   }
 
   @Get('wallets/user/:userId')
-  async getWalletByUserId(@Param('userId') userId: string): Promise<{ data: WalletDto | null }> {
+  async getWalletByUserId(
+    @Param('userId') userId: string,
+  ): Promise<{ data: WalletDto | null }> {
     try {
       const wallet = await this.integrationService.forwardToGateway<WalletDto>(
         'get',
@@ -227,7 +241,9 @@ export class AdminFinanceController {
   }
 
   @Get('transactions/:id')
-  async getTransactionDetails(@Param('id') id: string): Promise<TransactionDetailsDto> {
+  async getTransactionDetails(
+    @Param('id') id: string,
+  ): Promise<TransactionDetailsDto> {
     const response = await this.integrationService.forwardToGateway<any>(
       'get',
       INTERNAL_API_PATHS.FINANCE.TRANSACTIONS.DETAIL(id),
@@ -269,7 +285,10 @@ export class AdminFinanceController {
 
   @Put('aml/suspicious-activities/:id/status')
   @Roles(AdminRole.SUPER_ADMIN, AdminRole.AUDITOR, AdminRole.COMPLIANCE_OFFICER)
-  async updateSuspiciousActivityStatus(@Param('id') id: string, @Body() data: any): Promise<void> {
+  async updateSuspiciousActivityStatus(
+    @Param('id') id: string,
+    @Body() data: any,
+  ): Promise<void> {
     await this.integrationService.forwardToGateway(
       'put',
       INTERNAL_API_PATHS.FINANCE.AML.SUSPICIOUS_ACTIVITY_STATUS(id),

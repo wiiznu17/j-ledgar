@@ -18,13 +18,21 @@ export default function LandingPage() {
           <div className="w-10 h-10 rounded-xl bg-gradient-to-r from-[var(--color-magenta)] to-[var(--color-pink)] flex items-center justify-center shadow-lg shadow-magenta/20">
             <ShieldCheck className="w-6 h-6 text-white" />
           </div>
-          <span className="text-2xl font-bold tracking-tight text-[#2D3748]">P-wallet</span>
+          <span className="text-2xl font-bold tracking-tight text-[#2D3748]">
+            P-wallet
+          </span>
         </div>
         <div className="hidden md:flex items-center gap-8 text-sm font-medium text-muted-foreground">
-          <a href="#features" className="hover:text-foreground transition-colors">
+          <a
+            href="#features"
+            className="hover:text-foreground transition-colors"
+          >
             Features
           </a>
-          <a href="#architecture" className="hover:text-foreground transition-colors">
+          <a
+            href="#architecture"
+            className="hover:text-foreground transition-colors"
+          >
             Architecture
           </a>
           <Link
@@ -51,8 +59,9 @@ export default function LandingPage() {
         </h1>
 
         <p className="text-xl text-muted-foreground max-w-2xl mb-12 leading-relaxed">
-          The ultimate engine for high-frequency financial operations. Built with double-entry
-          integrity, cloud-native scalability, and developer-first simplicity.
+          The ultimate engine for high-frequency financial operations. Built
+          with double-entry integrity, cloud-native scalability, and
+          developer-first simplicity.
         </p>
 
         <div className="flex flex-col sm:flex-row items-center gap-4">
@@ -87,8 +96,8 @@ export default function LandingPage() {
             </div>
             <h3 className="text-xl font-bold">Double-Entry Core</h3>
             <p className="text-muted-foreground leading-relaxed">
-              Every transaction is verified with immutable double-entry records, ensuring zero
-              discrepancy across your entire system.
+              Every transaction is verified with immutable double-entry records,
+              ensuring zero discrepancy across your entire system.
             </p>
           </div>
 
@@ -98,8 +107,8 @@ export default function LandingPage() {
             </div>
             <h3 className="text-xl font-bold">Cloud-Native Scale</h3>
             <p className="text-muted-foreground leading-relaxed">
-              Engineered with Spring Boot, Kafka, and Redis to handle millions of transactions per
-              second with low latency.
+              Engineered with Spring Boot, Kafka, and Redis to handle millions
+              of transactions per second with low latency.
             </p>
           </div>
 
@@ -109,8 +118,8 @@ export default function LandingPage() {
             </div>
             <h3 className="text-xl font-bold">Real-time Insights</h3>
             <p className="text-muted-foreground leading-relaxed">
-              Comprehensive admin dashboard with live charts, reconciliation reports, and deep dives
-              into every ledger entry.
+              Comprehensive admin dashboard with live charts, reconciliation
+              reports, and deep dives into every ledger entry.
             </p>
           </div>
         </div>
@@ -140,7 +149,9 @@ export default function LandingPage() {
                   <div className="w-6 h-6 rounded-full bg-white border border-border flex items-center justify-center mt-1">
                     <div className="w-2 h-2 rounded-full bg-[var(--color-magenta)]"></div>
                   </div>
-                  <span className="text-lg font-medium text-muted-foreground">{text}</span>
+                  <span className="text-lg font-medium text-muted-foreground">
+                    {text}
+                  </span>
                 </div>
               ))}
             </div>

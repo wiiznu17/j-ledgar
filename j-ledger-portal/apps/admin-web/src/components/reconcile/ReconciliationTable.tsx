@@ -39,7 +39,9 @@ export function ReconciliationTable({ reports }: ReconciliationTableProps) {
   if (!reports || reports.length === 0) {
     return (
       <div className="flex flex-col items-center justify-center p-12 border-2 border-dashed rounded-lg bg-muted/50">
-        <p className="text-muted-foreground font-medium">No reconciliation reports found.</p>
+        <p className="text-muted-foreground font-medium">
+          No reconciliation reports found.
+        </p>
         <p className="text-sm text-muted-foreground">
           Manual audits will appear here once triggered.
         </p>
@@ -80,7 +82,9 @@ export function ReconciliationTable({ reports }: ReconciliationTableProps) {
                   <span className="text-sm font-bold text-slate-700">
                     {format(new Date(report.reportDate), 'dd MMM yyyy')}
                   </span>
-                  <span className="text-[10px] text-slate-400 font-medium">Daily Audit</span>
+                  <span className="text-[10px] text-slate-400 font-medium">
+                    Daily Audit
+                  </span>
                 </div>
               </TableCell>
               <TableCell className="text-right py-4 px-6 font-mono text-sm font-medium text-slate-600">

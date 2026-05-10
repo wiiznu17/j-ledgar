@@ -58,7 +58,9 @@ export default function HomeScreen() {
       // Wallet info
       if (data.wallet) {
         setBalance(data.wallet.balance || 0);
-        setCurrency(data.wallet.currency === 'THB' ? '฿' : data.wallet.currency);
+        setCurrency(
+          data.wallet.currency === 'THB' ? '฿' : data.wallet.currency,
+        );
       }
 
       // Banners
@@ -68,7 +70,10 @@ export default function HomeScreen() {
       setRecentTransactions(data.recentTransactions || []);
       setError('');
     } catch (err: any) {
-      console.error('[Dashboard] Failed to fetch:', err.response?.data || err.message);
+      console.error(
+        '[Dashboard] Failed to fetch:',
+        err.response?.data || err.message,
+      );
 
       // If token is expired or invalid, force re-login
       if (err.response?.status === 401) {
@@ -105,7 +110,10 @@ export default function HomeScreen() {
 
   if (isLoading) {
     return (
-      <SafeAreaView className="flex-1 bg-transparent items-center justify-center" edges={['top']}>
+      <SafeAreaView
+        className="flex-1 bg-transparent items-center justify-center"
+        edges={['top']}
+      >
         <ActivityIndicator size="large" color="#f48fb1" />
         <Text className="text-sm font-manrope font-bold text-gray-400 mt-4">
           กำลังโหลดข้อมูล...
@@ -120,21 +128,34 @@ export default function HomeScreen() {
       <HomeHeader />
 
       <ScrollView
-        contentContainerStyle={{ paddingHorizontal: 20, paddingBottom: 160, paddingTop: 10 }}
+        contentContainerStyle={{
+          paddingHorizontal: 20,
+          paddingBottom: 160,
+          paddingTop: 10,
+        }}
         showsVerticalScrollIndicator={false}
         refreshControl={
-          <RefreshControl refreshing={isRefreshing} onRefresh={onRefresh} tintColor="#f48fb1" />
+          <RefreshControl
+            refreshing={isRefreshing}
+            onRefresh={onRefresh}
+            tintColor="#f48fb1"
+          />
         }
       >
         {/* Welcome Section */}
         <WelcomeHeader
-          user={{ name: userName, avatar: require('../../../assets/images/mock_user_avatar.png') }}
+          user={{
+            name: userName,
+            avatar: require('../../../assets/images/mock_user_avatar.png'),
+          }}
         />
 
         {/* Error Banner */}
         {error ? (
           <View className="bg-red-50 border border-red-100 rounded-2xl p-4 mb-4">
-            <Text className="text-xs font-manrope font-bold text-red-500 text-center">{error}</Text>
+            <Text className="text-xs font-manrope font-bold text-red-500 text-center">
+              {error}
+            </Text>
           </View>
         ) : null}
 
@@ -151,10 +172,15 @@ export default function HomeScreen() {
         />
 
         {/* Services Section */}
-        <ServicesGrid onServicePress={(route) => route && router.push(route as any)} />
+        <ServicesGrid
+          onServicePress={(route) => route && router.push(route as any)}
+        />
 
         {/* Promotional Banners */}
-        <PromoBanners banners={banners} onPromoPress={(path) => router.push(path as any)} />
+        <PromoBanners
+          banners={banners}
+          onPromoPress={(path) => router.push(path as any)}
+        />
 
         {/* Recent Activity */}
         <RecentActivityList

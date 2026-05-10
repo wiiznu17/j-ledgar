@@ -46,7 +46,10 @@ interface FilterSearchInputProps extends React.InputHTMLAttributes<HTMLInputElem
   label?: string;
 }
 
-export const FilterSearchInput = ({ label, ...props }: FilterSearchInputProps) => (
+export const FilterSearchInput = ({
+  label,
+  ...props
+}: FilterSearchInputProps) => (
   <div className="flex flex-col gap-1.5">
     {label && <FilterLabel>{label}</FilterLabel>}
     <div className="relative w-full">
@@ -140,7 +143,11 @@ export const FilterActions = ({
 /**
  * FilterDatePicker - Standardized Date Picker component for filters
  */
-import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from '@/components/ui/popover';
 import { Calendar } from '@/components/ui/calendar';
 import { Calendar as CalendarIcon } from 'lucide-react';
 import { format } from 'date-fns';

@@ -9,12 +9,20 @@ export const walletRequester = {
     );
   },
   freezeWallet: async (userId: string) => {
-    return apiClient.post<void>(API_PATHS.ADMIN.FINANCE.WALLET_FREEZE(userId), {});
+    return apiClient.post<void>(
+      API_PATHS.ADMIN.FINANCE.WALLET_FREEZE(userId),
+      {},
+    );
   },
   unfreezeWallet: async (userId: string) => {
-    return apiClient.post<void>(API_PATHS.ADMIN.FINANCE.WALLET_UNFREEZE(userId), {});
+    return apiClient.post<void>(
+      API_PATHS.ADMIN.FINANCE.WALLET_UNFREEZE(userId),
+      {},
+    );
   },
   getWalletById: async (id: string) => {
-    return apiClient.get<{ data: WalletDto }>(API_PATHS.ADMIN.FINANCE.WALLET_DETAIL(id));
+    return apiClient.get<{ data: WalletDto }>(
+      API_PATHS.ADMIN.FINANCE.WALLET_DETAIL(id),
+    );
   },
 };

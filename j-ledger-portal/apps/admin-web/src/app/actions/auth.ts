@@ -22,7 +22,10 @@ export async function login(formData: FormData) {
 
   // Get IP and user agent for audit logging
   const headersList = await headers();
-  const ipAddress = headersList.get('x-forwarded-for') || headersList.get('x-real-ip') || 'unknown';
+  const ipAddress =
+    headersList.get('x-forwarded-for') ||
+    headersList.get('x-real-ip') ||
+    'unknown';
   const userAgent = headersList.get('user-agent') || 'unknown';
 
   // Check rate limit based on IP
@@ -35,7 +38,10 @@ export async function login(formData: FormData) {
   try {
     console.log('[admin-web] login - Calling authRequester.login');
     const data = await authRequester.login(loginData);
-    console.log('[admin-web] login - Received data:', { userId: data.userId, role: data.role });
+    console.log('[admin-web] login - Received data:', {
+      userId: data.userId,
+      role: data.role,
+    });
 
     const cookieStore = await cookies();
 
@@ -94,7 +100,8 @@ export async function login(formData: FormData) {
     }
 
     console.error('Login error:', error);
-    const errorMessage = error instanceof Error ? error.message : 'Login failed';
+    const errorMessage =
+      error instanceof Error ? error.message : 'Login failed';
 
     // Log failed login attempt (use email as userId placeholder)
     await logLoginAttempt(email as string, false, ipAddress, userAgent);
@@ -109,7 +116,10 @@ export async function logout() {
 
   // Get IP and user agent for audit logging
   const headersList = await headers();
-  const ipAddress = headersList.get('x-forwarded-for') || headersList.get('x-real-ip') || 'unknown';
+  const ipAddress =
+    headersList.get('x-forwarded-for') ||
+    headersList.get('x-real-ip') ||
+    'unknown';
   const userAgent = headersList.get('user-agent') || 'unknown';
 
   try {

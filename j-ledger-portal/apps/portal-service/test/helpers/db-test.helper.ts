@@ -27,7 +27,8 @@ export class DbTestHelper {
     try {
       // Clear in order to respect foreign key constraints
       for (const tableName of tableNames) {
-        const prismaModelName = tableName.charAt(0).toLowerCase() + tableName.slice(1);
+        const prismaModelName =
+          tableName.charAt(0).toLowerCase() + tableName.slice(1);
         if (this.prisma[prismaModelName]) {
           await this.prisma[prismaModelName].deleteMany();
         }

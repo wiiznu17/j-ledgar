@@ -1,4 +1,9 @@
-import { Injectable, UnauthorizedException, Logger, ExecutionContext } from '@nestjs/common';
+import {
+  Injectable,
+  UnauthorizedException,
+  Logger,
+  ExecutionContext,
+} from '@nestjs/common';
 import { CanActivate } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import { ConfigService } from '@nestjs/config';
@@ -24,7 +29,9 @@ export class RegistrationAuthGuard implements CanActivate {
 
     try {
       // Try to verify as access token first
-      const accessSecret = this.configService.get<string>('CUSTOMER_JWT_SECRET');
+      const accessSecret = this.configService.get<string>(
+        'CUSTOMER_JWT_SECRET',
+      );
       const payload = await this.jwtService.verifyAsync(token, {
         secret: accessSecret,
       });
@@ -33,7 +40,9 @@ export class RegistrationAuthGuard implements CanActivate {
     } catch (accessError) {
       // If access token fails, try as registration token
       try {
-        const registrationSecret = this.configService.get<string>('CUSTOMER_REGISTRATION_SECRET');
+        const registrationSecret = this.configService.get<string>(
+          'CUSTOMER_REGISTRATION_SECRET',
+        );
         const payload = await this.jwtService.verifyAsync(token, {
           secret: registrationSecret,
         });
@@ -48,10 +57,14 @@ export class RegistrationAuthGuard implements CanActivate {
       } catch (regError) {
         // Log the error for debugging
         if (regError.name === 'TokenExpiredError') {
-          this.logger.warn(`[RegistrationAuthGuard] Token expired: ${regError.message}`);
+          this.logger.warn(
+            `[RegistrationAuthGuard] Token expired: ${regError.message}`,
+          );
           throw new UnauthorizedException('Token expired');
         }
-        this.logger.warn(`[RegistrationAuthGuard] Invalid token: ${regError.message}`);
+        this.logger.warn(
+          `[RegistrationAuthGuard] Invalid token: ${regError.message}`,
+        );
         throw new UnauthorizedException('Invalid token');
       }
     }

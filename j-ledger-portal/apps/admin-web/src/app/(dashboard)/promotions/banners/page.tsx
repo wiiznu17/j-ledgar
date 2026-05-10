@@ -1,7 +1,13 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Plus, Loader2 } from 'lucide-react';
 import { promotionsRequester } from '@/lib/requesters';
@@ -56,7 +62,9 @@ export default function BannersPage() {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h2 className="text-3xl font-bold tracking-tight text-[#2D3748]">Home Banners</h2>
+          <h2 className="text-3xl font-bold tracking-tight text-[#2D3748]">
+            Home Banners
+          </h2>
           <p className="text-muted-foreground mt-1">
             Manage promotional carousels shown on the mobile app home screen.
           </p>
@@ -73,7 +81,8 @@ export default function BannersPage() {
         <CardHeader>
           <CardTitle>Active Banners</CardTitle>
           <CardDescription>
-            These banners are currently visible to users. Higher priority items appear first.
+            These banners are currently visible to users. Higher priority items
+            appear first.
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -82,7 +91,11 @@ export default function BannersPage() {
               <Loader2 className="h-8 w-8 animate-spin text-pink-300" />
             </div>
           ) : (
-            <BannersTable banners={banners} onEdit={handleEdit} onRefresh={fetchBanners} />
+            <BannersTable
+              banners={banners}
+              onEdit={handleEdit}
+              onRefresh={fetchBanners}
+            />
           )}
         </CardContent>
       </Card>
@@ -90,7 +103,9 @@ export default function BannersPage() {
       <Dialog open={isModalOpen} onOpenChange={setIsModalOpen}>
         <DialogContent className="max-w-xl">
           <DialogHeader>
-            <DialogTitle>{editingBanner ? 'Edit Banner' : 'Create New Banner'}</DialogTitle>
+            <DialogTitle>
+              {editingBanner ? 'Edit Banner' : 'Create New Banner'}
+            </DialogTitle>
             <DialogDescription>
               This banner will appear in the home screen carousel for all users.
             </DialogDescription>

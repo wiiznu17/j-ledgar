@@ -135,7 +135,10 @@ export class IdentityService {
 
   // ==================== Registration ====================
 
-  async registerInit(dto: RegisterInitDto, context?: { ip?: string; userAgent?: string }) {
+  async registerInit(
+    dto: RegisterInitDto,
+    context?: { ip?: string; userAgent?: string },
+  ) {
     // Validate phone number format BEFORE normalization (Thai numbers must be 10 digits and start with 0)
     const inputDigits = (dto.phoneNumber || '').replace(/\D/g, '');
     if (inputDigits.length !== 10) {
@@ -146,7 +149,9 @@ export class IdentityService {
     }
 
     const phoneNumber = this.normalizePhone(dto.phoneNumber);
-    this.logger.log(`[Register] STEP 1: Initiating registration for ${phoneNumber}`);
+    this.logger.log(
+      `[Register] STEP 1: Initiating registration for ${phoneNumber}`,
+    );
 
     let user = await this.prisma.user.findFirst({
       where: { phoneNumber: { in: this.getPhoneCandidates(phoneNumber) } },
@@ -167,12 +172,19 @@ export class IdentityService {
 
       // If user already has a password, they should use Login flow instead of Sign Up
       if (user.passwordHash) {
-        this.logger.warn(`[Register] User ${phoneNumber} already has a password. Forcing login.`);
-        throw new ConflictException('User already has an account. Please log in.');
+        this.logger.warn(
+          `[Register] User ${phoneNumber} already has a password. Forcing login.`,
+        );
+        throw new ConflictException(
+          'User already has an account. Please log in.',
+        );
       }
 
       // If user is already completed, they must login
-      if ((user.registrationState as RegistrationState) === RegistrationState.COMPLETED) {
+      if (
+        (user.registrationState as RegistrationState) ===
+        RegistrationState.COMPLETED
+      ) {
         this.logger.warn(`[Register] User ${phoneNumber} already registered`);
         throw new ConflictException('User already registered');
       }
@@ -184,10 +196,14 @@ export class IdentityService {
     }
 
     const challenge = await this.createOtpChallenge(user.id, phoneNumber);
-    await this.logSecurityEvent(user.id, NotificationEventType.REGISTER_INIT_OTP, {
-      ipAddress: context?.ip,
-      userAgent: context?.userAgent,
-    });
+    await this.logSecurityEvent(
+      user.id,
+      NotificationEventType.REGISTER_INIT_OTP,
+      {
+        ipAddress: context?.ip,
+        userAgent: context?.userAgent,
+      },
+    );
 
     this.logger.log(
       `[Register] STEP 1 Complete: OTP challenge created for ${phoneNumber}, state: PENDING_OTP`,
@@ -206,36 +222,53 @@ export class IdentityService {
     const phoneNumber = this.normalizePhone(dto.phoneNumber);
     this.logger.log(`[Register] STEP 2: Verifying OTP for ${phoneNumber}`);
 
-    const user = await this.verifyOtpChallenge(dto.challengeId, phoneNumber, dto.otp);
+    const user = await this.verifyOtpChallenge(
+      dto.challengeId,
+      phoneNumber,
+      dto.otp,
+    );
     this.logger.log(
       `[Register] OTP verified for user ${user.id}, current state: ${user.registrationState}`,
     );
 
     // Only update state if it's currently earlier than OTP_VERIFIED
     if (
-      (user.registrationState as RegistrationState) === RegistrationState.PENDING_OTP ||
-      (user.registrationState as RegistrationState) === RegistrationState.PENDING
+      (user.registrationState as RegistrationState) ===
+        RegistrationState.PENDING_OTP ||
+      (user.registrationState as RegistrationState) ===
+        RegistrationState.PENDING
     ) {
       await this.prisma.user.update({
         where: { id: user.id },
         data: { registrationState: RegistrationState.OTP_VERIFIED },
       });
-      this.logger.log(`[Register] State updated to OTP_VERIFIED for ${phoneNumber}`);
+      this.logger.log(
+        `[Register] State updated to OTP_VERIFIED for ${phoneNumber}`,
+      );
     } else {
       this.logger.log(
         `[Register] Keeping current state: ${user.registrationState} for ${phoneNumber}`,
       );
     }
 
-    await this.logSecurityEvent(user.id, NotificationEventType.REGISTER_OTP_VERIFIED, {
-      ipAddress: context?.ip,
-      userAgent: context?.userAgent,
+    await this.logSecurityEvent(
+      user.id,
+      NotificationEventType.REGISTER_OTP_VERIFIED,
+      {
+        ipAddress: context?.ip,
+        userAgent: context?.userAgent,
+      },
+    );
+
+    this.logger.log(
+      `[Register] STEP 2 Complete: State updated to OTP_VERIFIED for ${phoneNumber}`,
+    );
+
+    const finalUser = await this.prisma.user.findUnique({
+      where: { id: user.id },
     });
-
-    this.logger.log(`[Register] STEP 2 Complete: State updated to OTP_VERIFIED for ${phoneNumber}`);
-
-    const finalUser = await this.prisma.user.findUnique({ where: { id: user.id } });
-    const finalState = finalUser?.registrationState || RegistrationState.OTP_VERIFIED;
+    const finalState =
+      finalUser?.registrationState || RegistrationState.OTP_VERIFIED;
 
     return {
       regToken: await this.signRegistrationToken(user.id, finalState),
@@ -279,13 +312,20 @@ export class IdentityService {
       throw new BadRequestException('Password not set');
     }
 
-    const isPasswordValid = await bcrypt.compare(dto.password, user.passwordHash);
+    const isPasswordValid = await bcrypt.compare(
+      dto.password,
+      user.passwordHash,
+    );
     if (!isPasswordValid) {
-      await this.logSecurityEvent(user.id, NotificationEventType.LOGIN_FAILURE, {
-        ip: context?.ip,
-        userAgent: context?.userAgent,
-        deviceId: dto.deviceId,
-      });
+      await this.logSecurityEvent(
+        user.id,
+        NotificationEventType.LOGIN_FAILURE,
+        {
+          ip: context?.ip,
+          userAgent: context?.userAgent,
+          deviceId: dto.deviceId,
+        },
+      );
       throw new UnauthorizedException('Invalid credentials');
     }
 
@@ -333,16 +373,28 @@ export class IdentityService {
     });
 
     if (isNewDevice) {
-      await this.logSecurityEvent(user.id, NotificationEventType.DEVICE_REGISTERED, {
-        deviceId: dto.deviceId,
-        deviceName: dto.deviceName,
-        ip: context?.ip,
-      });
+      await this.logSecurityEvent(
+        user.id,
+        NotificationEventType.DEVICE_REGISTERED,
+        {
+          deviceId: dto.deviceId,
+          deviceName: dto.deviceName,
+          ip: context?.ip,
+        },
+      );
     }
 
     const sessionId = randomUUID();
-    const accessToken = await this.signAccessToken(user.id, sessionId, finalDevice.id);
-    const refreshToken = await this.signRefreshToken(user.id, sessionId, finalDevice.id);
+    const accessToken = await this.signAccessToken(
+      user.id,
+      sessionId,
+      finalDevice.id,
+    );
+    const refreshToken = await this.signRefreshToken(
+      user.id,
+      sessionId,
+      finalDevice.id,
+    );
 
     await this.prisma.refreshSession.create({
       data: {
@@ -373,7 +425,10 @@ export class IdentityService {
 
     // Include regToken if registration is not completed so the app can resume
     let regToken = null;
-    if ((user.registrationState as RegistrationState) !== RegistrationState.COMPLETED) {
+    if (
+      (user.registrationState as RegistrationState) !==
+      RegistrationState.COMPLETED
+    ) {
       regToken = await this.signRegistrationToken(
         user.id,
         user.registrationState as RegistrationState,
@@ -398,11 +453,17 @@ export class IdentityService {
 
   // ==================== Refresh Token ====================
 
-  async refresh(dto: RefreshTokenDto, context?: { ip?: string; userAgent?: string }) {
+  async refresh(
+    dto: RefreshTokenDto,
+    context?: { ip?: string; userAgent?: string },
+  ) {
     try {
-      const payload = await this.jwtService.verifyAsync<RefreshTokenPayload>(dto.refreshToken, {
-        secret: this.refreshSecret,
-      });
+      const payload = await this.jwtService.verifyAsync<RefreshTokenPayload>(
+        dto.refreshToken,
+        {
+          secret: this.refreshSecret,
+        },
+      );
 
       const session = await this.prisma.refreshSession.findFirst({
         where: {
@@ -417,14 +478,25 @@ export class IdentityService {
         throw new UnauthorizedException('Invalid refresh token');
       }
 
-      const isTokenValid = await bcrypt.compare(dto.refreshToken, session.tokenHash);
+      const isTokenValid = await bcrypt.compare(
+        dto.refreshToken,
+        session.tokenHash,
+      );
       if (!isTokenValid) {
         throw new UnauthorizedException('Invalid refresh token');
       }
 
       const newSessionId = randomUUID();
-      const accessToken = await this.signAccessToken(payload.sub, newSessionId, payload.did);
-      const newRefreshToken = await this.signRefreshToken(payload.sub, newSessionId, payload.did);
+      const accessToken = await this.signAccessToken(
+        payload.sub,
+        newSessionId,
+        payload.did,
+      );
+      const newRefreshToken = await this.signRefreshToken(
+        payload.sub,
+        newSessionId,
+        payload.did,
+      );
 
       await this.prisma.refreshSession.update({
         where: { id: session.id },
@@ -460,8 +532,14 @@ export class IdentityService {
 
       // Include regToken if registration is not completed so the app can resume
       let regToken = null;
-      if ((user?.registrationState as RegistrationState) !== RegistrationState.COMPLETED) {
-        regToken = await this.signRegistrationToken(user.id, user.registrationState);
+      if (
+        (user?.registrationState as RegistrationState) !==
+        RegistrationState.COMPLETED
+      ) {
+        regToken = await this.signRegistrationToken(
+          user.id,
+          user.registrationState,
+        );
       }
 
       return {
@@ -546,7 +624,10 @@ export class IdentityService {
     });
   }
 
-  private async signRegistrationToken(userId: string, state: string): Promise<string> {
+  private async signRegistrationToken(
+    userId: string,
+    state: string,
+  ): Promise<string> {
     const payload: RegistrationTokenPayload = {
       sub: userId,
       state,
@@ -575,12 +656,19 @@ export class IdentityService {
       },
     });
 
-    await this.smsProvider.sendMessage(phoneNumber, `Your J-Ledger verification code is: ${code}`);
+    await this.smsProvider.sendMessage(
+      phoneNumber,
+      `Your J-Ledger verification code is: ${code}`,
+    );
 
     return challenge;
   }
 
-  private async verifyOtpChallenge(challengeId: string, phoneNumber: string, otp: string) {
+  private async verifyOtpChallenge(
+    challengeId: string,
+    phoneNumber: string,
+    otp: string,
+  ) {
     const challenge = await this.prisma.otpChallenge.findUnique({
       where: { id: challengeId },
     });
@@ -628,7 +716,11 @@ export class IdentityService {
 
   // ==================== Security Events ====================
 
-  public async logSecurityEvent(userId: string, eventType: NotificationEventType, metadata?: any) {
+  public async logSecurityEvent(
+    userId: string,
+    eventType: NotificationEventType,
+    metadata?: any,
+  ) {
     await this.prisma.securityEvent.create({
       data: {
         userId,
@@ -685,7 +777,10 @@ export class IdentityService {
     });
   }
 
-  async getTrustedDeviceIdByIdentifier(userId: string, deviceIdentifier: string) {
+  async getTrustedDeviceIdByIdentifier(
+    userId: string,
+    deviceIdentifier: string,
+  ) {
     const device = await this.prisma.userDevice.findUnique({
       where: {
         userId_deviceIdentifier: {
@@ -785,7 +880,9 @@ export class IdentityService {
     const [total, active, pending, blocked] = await Promise.all([
       this.prisma.user.count(),
       this.prisma.user.count({ where: { status: UserStatus.ACTIVE } }),
-      this.prisma.user.count({ where: { status: UserStatus.PENDING_APPROVAL } }),
+      this.prisma.user.count({
+        where: { status: UserStatus.PENDING_APPROVAL },
+      }),
       this.prisma.user.count({ where: { status: UserStatus.BLOCKED } }),
     ]);
 
@@ -797,7 +894,11 @@ export class IdentityService {
     };
   }
 
-  async findAllSecurityEvents(page: number = 1, limit: number = 50, userId?: string) {
+  async findAllSecurityEvents(
+    page: number = 1,
+    limit: number = 50,
+    userId?: string,
+  ) {
     const skip = (page - 1) * limit;
     const where: any = {};
     if (userId) where.userId = userId;
@@ -871,13 +972,19 @@ export class IdentityService {
     });
   }
 
-  async activateUser(id: string) { // use for unsuspending and unblocking
+  async activateUser(id: string) {
+    // use for unsuspending and unblocking
     const user = await this.prisma.user.findUnique({ where: { id } });
     if (!user) throw new BadRequestException('User not found');
 
     // Business Logic: Only allow activation (unsuspend/unblock) of SUSPENDED or BLOCKED users
-    if (user.status !== UserStatus.SUSPENDED && user.status !== UserStatus.BLOCKED) {
-      throw new ForbiddenException('Only SUSPENDED or BLOCKED users can be activated');
+    if (
+      user.status !== UserStatus.SUSPENDED &&
+      user.status !== UserStatus.BLOCKED
+    ) {
+      throw new ForbiddenException(
+        'Only SUSPENDED or BLOCKED users can be activated',
+      );
     }
 
     return this.prisma.user.update({
@@ -890,8 +997,13 @@ export class IdentityService {
     const user = await this.prisma.user.findUnique({ where: { id } });
     if (!user) throw new BadRequestException('User not found');
 
-    if (user.status !== UserStatus.ACTIVE && user.status !== UserStatus.SUSPENDED) {
-      throw new ForbiddenException('User must be approved (ACTIVE/SUSPENDED) before being blocked');
+    if (
+      user.status !== UserStatus.ACTIVE &&
+      user.status !== UserStatus.SUSPENDED
+    ) {
+      throw new ForbiddenException(
+        'User must be approved (ACTIVE/SUSPENDED) before being blocked',
+      );
     }
 
     return this.prisma.user.update({
@@ -933,7 +1045,11 @@ export class IdentityService {
 
   // ==================== Placeholder Methods ====================
 
-  async acceptTerms(authorization: string | undefined, dto: AcceptTermsDto, context?: any) {
+  async acceptTerms(
+    authorization: string | undefined,
+    dto: AcceptTermsDto,
+    context?: any,
+  ) {
     if (!authorization) {
       throw new UnauthorizedException('Authorization header required');
     }
@@ -947,7 +1063,9 @@ export class IdentityService {
       throw new UnauthorizedException('Invalid token type');
     }
 
-    this.logger.log(`[Register] STEP 3: Accepting terms for user ${payload.sub}`);
+    this.logger.log(
+      `[Register] STEP 3: Accepting terms for user ${payload.sub}`,
+    );
 
     await this.validateRegistrationState(payload.sub, [
       RegistrationState.OTP_VERIFIED,
@@ -988,12 +1106,18 @@ export class IdentityService {
       data: { registrationState: RegistrationState.TC_ACCEPTED },
     });
 
-    this.logger.log(`[Register] STEP 3 Complete: State updated to TC_ACCEPTED for user ${user.id}`);
+    this.logger.log(
+      `[Register] STEP 3 Complete: State updated to TC_ACCEPTED for user ${user.id}`,
+    );
 
     return { success: true };
   }
 
-  async registerProfile(authorization: string | undefined, dto: RegisterProfileDto, context?: any) {
+  async registerProfile(
+    authorization: string | undefined,
+    dto: RegisterProfileDto,
+    context?: any,
+  ) {
     if (!authorization) {
       throw new UnauthorizedException('Authorization header required');
     }
@@ -1007,7 +1131,9 @@ export class IdentityService {
       throw new UnauthorizedException('Invalid token type');
     }
 
-    this.logger.log(`[Register] STEP 4: Registering profile for user ${payload.sub}`);
+    this.logger.log(
+      `[Register] STEP 4: Registering profile for user ${payload.sub}`,
+    );
 
     await this.validateRegistrationState(payload.sub, [
       RegistrationState.KYC_VERIFIED,
@@ -1046,7 +1172,9 @@ export class IdentityService {
     this.logger.log(`[Register] Profile (sanitized) saved for user ${user.id}`);
 
     // Update Address if provided
-    this.logger.log(`[Register] Processing address. useIdentityAddress: ${dto.useIdentityAddress}`);
+    this.logger.log(
+      `[Register] Processing address. useIdentityAddress: ${dto.useIdentityAddress}`,
+    );
 
     if (dto.useIdentityAddress) {
       const registeredAddress = await this.prisma.address.findFirst({
@@ -1065,7 +1193,10 @@ export class IdentityService {
             subdistrict: registeredAddress.subdistrict || undefined,
             district: registeredAddress.district || undefined,
             province: registeredAddress.province || undefined,
-            postalCode: dto.currentAddress?.postalCode || registeredAddress.postalCode || undefined,
+            postalCode:
+              dto.currentAddress?.postalCode ||
+              registeredAddress.postalCode ||
+              undefined,
           },
           AddressVerificationSource.MANUAL,
         );
@@ -1088,7 +1219,9 @@ export class IdentityService {
         }
       }
     } else if (dto.currentAddress) {
-      this.logger.log(`[Register] Using provided current address for user ${user.id}`);
+      this.logger.log(
+        `[Register] Using provided current address for user ${user.id}`,
+      );
       await this.updateAddress(
         user.id,
         AddressType.CURRENT,
@@ -1163,7 +1296,9 @@ export class IdentityService {
       throw new UnauthorizedException('Invalid token type');
     }
 
-    this.logger.log(`[Register] STEP 5: Setting password for user ${payload.sub}`);
+    this.logger.log(
+      `[Register] STEP 5: Setting password for user ${payload.sub}`,
+    );
 
     await this.validateRegistrationState(payload.sub, [
       RegistrationState.PROFILE_COMPLETED,
@@ -1198,7 +1333,11 @@ export class IdentityService {
     return { success: true };
   }
 
-  async registerPin(authorization: string | undefined, dto: RegisterPinDto, context?: any) {
+  async registerPin(
+    authorization: string | undefined,
+    dto: RegisterPinDto,
+    context?: any,
+  ) {
     if (!authorization) {
       throw new UnauthorizedException('Authorization header required');
     }
@@ -1290,16 +1429,23 @@ export class IdentityService {
           secret: this.configService.get('JWT_SECRET'),
         });
       } catch (authError: any) {
-        if (regError.name === 'TokenExpiredError' || authError.name === 'TokenExpiredError') {
+        if (
+          regError.name === 'TokenExpiredError' ||
+          authError.name === 'TokenExpiredError'
+        ) {
           this.logger.warn(`[Register] Token expired in getRegistrationStatus`);
           throw new UnauthorizedException('Token expired');
         }
-        this.logger.warn(`[Register] Invalid token in getRegistrationStatus: ${authError.message}`);
+        this.logger.warn(
+          `[Register] Invalid token in getRegistrationStatus: ${authError.message}`,
+        );
         throw new UnauthorizedException('Invalid token');
       }
     }
 
-    this.logger.log(`[Register] Getting registration status for user ${payload.sub}`);
+    this.logger.log(
+      `[Register] Getting registration status for user ${payload.sub}`,
+    );
 
     const [user, addresses, kycData, piiData] = await Promise.all([
       this.prisma.user.findUnique({
@@ -1323,17 +1469,23 @@ export class IdentityService {
       throw new BadRequestException('User not found');
     }
 
-    this.logger.log(`[Register] Current state for user ${user.id}: ${user.registrationState}`);
+    this.logger.log(
+      `[Register] Current state for user ${user.id}: ${user.registrationState}`,
+    );
 
     // Extract raw address from PII
     const rawAddressPii = (piiData as Record<string, any>[]).find(
       (p) => p.field === 'raw_id_card_address',
     );
-    const idCardAddress = rawAddressPii ? this.decryptPii(rawAddressPii.encryptedData) : null;
+    const idCardAddress = rawAddressPii
+      ? this.decryptPii(rawAddressPii.encryptedData)
+      : null;
 
     // Extract profile data from settings
     const profileSetting = user.userSettings.find((s) => s.key === 'profile');
-    const profileData = profileSetting ? JSON.parse(profileSetting.value) : null;
+    const profileData = profileSetting
+      ? JSON.parse(profileSetting.value)
+      : null;
 
     // Decrypt ID card number if available
     let idNumber = null;
@@ -1341,7 +1493,9 @@ export class IdentityService {
       try {
         idNumber = this.decryptPii(kycData.idCardNumberEncrypted);
       } catch (e) {
-        this.logger.warn(`Failed to decrypt ID number for status check: ${user.id}`);
+        this.logger.warn(
+          `Failed to decrypt ID number for status check: ${user.id}`,
+        );
       }
     }
 
@@ -1368,8 +1522,10 @@ export class IdentityService {
             }
           : null,
         addresses: {
-          registered: addresses.find((a) => a.type === AddressType.REGISTERED) || null,
-          current: addresses.find((a) => a.type === AddressType.CURRENT) || null,
+          registered:
+            addresses.find((a) => a.type === AddressType.REGISTERED) || null,
+          current:
+            addresses.find((a) => a.type === AddressType.CURRENT) || null,
         },
         profile: profileData
           ? {
@@ -1397,7 +1553,9 @@ export class IdentityService {
       throw new UnauthorizedException('Invalid token type');
     }
 
-    this.logger.log(`[Register] STEP 7: Completing registration for user ${payload.sub}`);
+    this.logger.log(
+      `[Register] STEP 7: Completing registration for user ${payload.sub}`,
+    );
 
     await this.validateRegistrationState(payload.sub, [
       RegistrationState.CREDENTIALS_SET,
@@ -1416,7 +1574,8 @@ export class IdentityService {
     // Allow completion only if status is PENDING_APPROVAL or REJECTED (for retries),
     // but if already COMPLETED and ACTIVE, throw conflict.
     if (
-      (user.registrationState as RegistrationState) === RegistrationState.COMPLETED &&
+      (user.registrationState as RegistrationState) ===
+        RegistrationState.COMPLETED &&
       (user.status as UserStatus) === UserStatus.ACTIVE
     ) {
       throw new ConflictException('Registration already completed');
@@ -1431,10 +1590,15 @@ export class IdentityService {
         try {
           const wallet = await this.financeService.createWallet(user.id, 'THB');
           walletId = wallet.walletId;
-          this.logger.log(`[Register] New wallet created for user ${user.id}: ${walletId}`);
+          this.logger.log(
+            `[Register] New wallet created for user ${user.id}: ${walletId}`,
+          );
         } catch (walletError: any) {
           // If wallet already exists, try to fetch it instead of failing
-          if (walletError.message?.includes('already exists') || walletError.status === 409) {
+          if (
+            walletError.message?.includes('already exists') ||
+            walletError.status === 409
+          ) {
             this.logger.warn(
               `[Register] Wallet already exists for user ${user.id}, attempting to link existing one`,
             );
@@ -1473,9 +1637,13 @@ export class IdentityService {
         });
       }
 
-      await this.logSecurityEvent(user.id, NotificationEventType.REGISTRATION_COMPLETED, {
-        walletId: walletId,
-      });
+      await this.logSecurityEvent(
+        user.id,
+        NotificationEventType.REGISTRATION_COMPLETED,
+        {
+          walletId: walletId,
+        },
+      );
 
       // Issue tokens so user can be automatically logged in
       const sessionId = randomUUID();
@@ -1484,7 +1652,11 @@ export class IdentityService {
         where: { userId: user.id, deviceIdentifier: deviceId },
       });
 
-      const accessToken = await this.signAccessToken(user.id, sessionId, device?.id || 'UNKNOWN');
+      const accessToken = await this.signAccessToken(
+        user.id,
+        sessionId,
+        device?.id || 'UNKNOWN',
+      );
       const refreshToken = await this.signRefreshToken(
         updatedUser.id,
         sessionId,
@@ -1526,7 +1698,10 @@ export class IdentityService {
         },
       };
     } catch (error) {
-      this.logger.error(`Failed to complete registration for user ${user.id}`, error);
+      this.logger.error(
+        `Failed to complete registration for user ${user.id}`,
+        error,
+      );
       throw new BadRequestException('Failed to complete registration setup');
     }
   }
@@ -1591,10 +1766,22 @@ export class IdentityService {
     return this.generateAuthResponse(user, device?.id);
   }
 
-  private async generateAuthResponse(user: any, deviceId?: string, context?: any) {
+  private async generateAuthResponse(
+    user: any,
+    deviceId?: string,
+    context?: any,
+  ) {
     const sessionId = randomUUID();
-    const accessToken = await this.signAccessToken(user.id, sessionId, deviceId);
-    const refreshToken = await this.signRefreshToken(user.id, sessionId, deviceId);
+    const accessToken = await this.signAccessToken(
+      user.id,
+      sessionId,
+      deviceId,
+    );
+    const refreshToken = await this.signRefreshToken(
+      user.id,
+      sessionId,
+      deviceId,
+    );
 
     await this.prisma.refreshSession.create({
       data: {
@@ -1632,10 +1819,14 @@ export class IdentityService {
 
   async withdrawConsent(userId: string, consentType: string, context?: any) {
     // TODO: Implement consent withdrawal logic
-    await this.logSecurityEvent(userId, NotificationEventType.CONSENT_WITHDRAWN, {
-      consentType,
-      ip: context?.ip,
-    });
+    await this.logSecurityEvent(
+      userId,
+      NotificationEventType.CONSENT_WITHDRAWN,
+      {
+        consentType,
+        ip: context?.ip,
+      },
+    );
     return { success: true };
   }
 
@@ -1732,7 +1923,9 @@ export class IdentityService {
     }
 
     this.logger.log(`[Identity] Original Address DTO: ${JSON.stringify(dto)}`);
-    this.logger.log(`[Identity] Sanitized Address DTO: ${JSON.stringify(sanitizedDto)}`);
+    this.logger.log(
+      `[Identity] Sanitized Address DTO: ${JSON.stringify(sanitizedDto)}`,
+    );
 
     try {
       // Manual find and update/create to ensure only one active record per type
@@ -1772,10 +1965,14 @@ export class IdentityService {
       );
       throw error;
     } finally {
-      await this.logSecurityEvent(userId, NotificationEventType.ADDRESS_UPDATED, {
-        type,
-        source,
-      });
+      await this.logSecurityEvent(
+        userId,
+        NotificationEventType.ADDRESS_UPDATED,
+        {
+          type,
+          source,
+        },
+      );
     }
   }
 
@@ -1818,9 +2015,13 @@ export class IdentityService {
 
   async requestAccountDeletion(userId: string, context?: any) {
     // TODO: Implement account deletion request logic
-    await this.logSecurityEvent(userId, NotificationEventType.ACCOUNT_DELETION_REQUESTED, {
-      ip: context?.ip,
-    });
+    await this.logSecurityEvent(
+      userId,
+      NotificationEventType.ACCOUNT_DELETION_REQUESTED,
+      {
+        ip: context?.ip,
+      },
+    );
     return { success: true };
   }
 
@@ -1844,7 +2045,10 @@ export class IdentityService {
 
   // ==================== Private Helpers ====================
 
-  public async validateRegistrationState(userId: string, allowedStates: string[]) {
+  public async validateRegistrationState(
+    userId: string,
+    allowedStates: string[],
+  ) {
     const user = await this.prisma.user.findUnique({
       where: { id: userId },
       select: { registrationState: true, status: true },
@@ -1856,7 +2060,9 @@ export class IdentityService {
 
     // Allow REJECTED users to retry from any step they are at
     if ((user.status as UserStatus) === UserStatus.REJECTED) {
-      this.logger.log(`[Register] User ${userId} is REJECTED, allowing state override.`);
+      this.logger.log(
+        `[Register] User ${userId} is REJECTED, allowing state override.`,
+      );
       return;
     }
 
@@ -1871,7 +2077,9 @@ export class IdentityService {
   private decryptPii(encryptedData: string): string {
     const encryptionKey = this.configService.get<string>('PII_ENCRYPTION_KEY');
     if (!encryptionKey) {
-      throw new InternalServerErrorException('System missing PII decryption capabilities');
+      throw new InternalServerErrorException(
+        'System missing PII decryption capabilities',
+      );
     }
 
     try {

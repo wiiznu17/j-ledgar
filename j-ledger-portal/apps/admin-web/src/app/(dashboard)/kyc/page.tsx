@@ -21,7 +21,11 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Card } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
-import { Popover, PopoverTrigger, PopoverContent } from '@/components/ui/popover';
+import {
+  Popover,
+  PopoverTrigger,
+  PopoverContent,
+} from '@/components/ui/popover';
 import { Calendar } from '@/components/ui/calendar';
 import {
   Select,
@@ -55,9 +59,9 @@ interface KycDocument {
 export default function KycListPage() {
   const [documents, setDocuments] = useState<KycDocument[]>([]);
   const [isLoading, setIsLoading] = useState(true);
-  const [status, setStatus] = useState<'PENDING_APPROVAL' | 'ACTIVE' | 'REJECTED'>(
-    'PENDING_APPROVAL',
-  );
+  const [status, setStatus] = useState<
+    'PENDING_APPROVAL' | 'ACTIVE' | 'REJECTED'
+  >('PENDING_APPROVAL');
   const [stats, setStats] = useState<any>(null);
   const [phoneNumber, setPhoneNumber] = useState('');
   const [startDate, setStartDate] = useState('');
@@ -130,28 +134,35 @@ export default function KycListPage() {
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 bg-white p-4 rounded-xl shadow-sm border border-slate-100">
         <div className="flex items-center gap-2">
           <Clock className="w-4 h-4 text-indigo-500" />
-          <span className="text-sm font-bold text-slate-700">Today's Overview</span>
+          <span className="text-sm font-bold text-slate-700">
+            Today's Overview
+          </span>
         </div>
 
         <div className="flex items-center flex-wrap gap-4 md:gap-6 text-sm">
           <div className="flex items-center gap-2">
             <div className="w-2 h-2 rounded-full bg-amber-500" />
             <span className="text-slate-500 font-medium">
-              Pending: <strong className="text-slate-800">{stats?.pending || 0}</strong>
+              Pending:{' '}
+              <strong className="text-slate-800">{stats?.pending || 0}</strong>
             </span>
           </div>
           <div className="flex items-center gap-2">
             <div className="w-2 h-2 rounded-full bg-emerald-500" />
             <span className="text-slate-500 font-medium">
               Approved Today:{' '}
-              <strong className="text-slate-800">{stats?.approvedToday || 0}</strong>
+              <strong className="text-slate-800">
+                {stats?.approvedToday || 0}
+              </strong>
             </span>
           </div>
           <div className="flex items-center gap-2">
             <div className="w-2 h-2 rounded-full bg-rose-500" />
             <span className="text-slate-500 font-medium">
               Rejected Today:{' '}
-              <strong className="text-slate-800">{stats?.rejectedToday || 0}</strong>
+              <strong className="text-slate-800">
+                {stats?.rejectedToday || 0}
+              </strong>
             </span>
           </div>
         </div>
@@ -182,9 +193,17 @@ export default function KycListPage() {
               onChange={(e) => setPhoneNumber(e.target.value)}
             />
 
-            <FilterDatePicker label="Date From" value={startDate} onChange={setStartDate} />
+            <FilterDatePicker
+              label="Date From"
+              value={startDate}
+              onChange={setStartDate}
+            />
 
-            <FilterDatePicker label="Date To" value={endDate} onChange={setEndDate} />
+            <FilterDatePicker
+              label="Date To"
+              value={endDate}
+              onChange={setEndDate}
+            />
 
             <FilterActions
               searchLabel="Search"
@@ -228,7 +247,10 @@ export default function KycListPage() {
                 ))
               ) : documents.length === 0 ? (
                 <tr>
-                  <td colSpan={5} className="px-6 py-12 text-center text-slate-400">
+                  <td
+                    colSpan={5}
+                    className="px-6 py-12 text-center text-slate-400"
+                  >
                     <div className="flex flex-col items-center gap-2">
                       <CheckCircle2 className="w-12 h-12 text-slate-200" />
                       <span>No records found for this status.</span>
@@ -237,7 +259,10 @@ export default function KycListPage() {
                 </tr>
               ) : (
                 documents.map((doc) => (
-                  <tr key={doc.id} className="hover:bg-slate-50/50 transition-colors">
+                  <tr
+                    key={doc.id}
+                    className="hover:bg-slate-50/50 transition-colors"
+                  >
                     <td className="px-6 py-4">
                       <div className="flex items-center gap-3">
                         <div className="w-8 h-8 rounded-full bg-indigo-100 flex items-center justify-center">
@@ -245,7 +270,9 @@ export default function KycListPage() {
                         </div>
                         <div>
                           <p className="text-sm font-semibold text-slate-700">
-                            {doc.user?.email || doc.user?.phoneNumber || 'Unknown User'}
+                            {doc.user?.email ||
+                              doc.user?.phoneNumber ||
+                              'Unknown User'}
                           </p>
                         </div>
                       </div>
@@ -319,9 +346,13 @@ export default function KycListPage() {
         {totalPages > 0 && (
           <div className="p-4 bg-white border-t border-slate-100 flex items-center justify-between">
             <p className="text-xs text-slate-500 font-medium">
-              Showing page <strong className="text-slate-800">{currentPage}</strong> of{' '}
+              Showing page{' '}
+              <strong className="text-slate-800">{currentPage}</strong> of{' '}
               <strong className="text-slate-800">{totalPages}</strong>
-              <span className="hidden sm:inline"> ({totalItems} total records)</span>
+              <span className="hidden sm:inline">
+                {' '}
+                ({totalItems} total records)
+              </span>
             </p>
             <div className="flex gap-2">
               <Button

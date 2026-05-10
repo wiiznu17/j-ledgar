@@ -29,8 +29,14 @@ import {
   DialogHeader,
   DialogTitle,
   DialogTrigger,
-} from "@/components/ui/dialog";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+} from '@/components/ui/dialog';
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { userRequester } from '@/lib/requesters';
@@ -41,7 +47,11 @@ import { UserControlActions } from '@/components/users/UserControlActions';
 import Link from 'next/link';
 import { getUserStatusConfig } from '@/lib/status-utils';
 
-export default function UserDetailPage({ params }: { params: Promise<{ id: string }> }) {
+export default function UserDetailPage({
+  params,
+}: {
+  params: Promise<{ id: string }>;
+}) {
   const { id: userId } = use(params);
   const router = useRouter();
 
@@ -99,8 +109,15 @@ export default function UserDetailPage({ params }: { params: Promise<{ id: strin
           <AlertTriangle className="w-10 h-10 text-amber-500" />
         </div>
         <h2 className="text-2xl font-bold text-slate-900">User Not Found</h2>
-        <p className="text-slate-500 mt-2 max-w-xs">The user you are looking for might have been deleted or the ID is incorrect.</p>
-        <Button variant="outline" onClick={() => router.back()} className="mt-8 rounded-xl px-8 border-slate-200">
+        <p className="text-slate-500 mt-2 max-w-xs">
+          The user you are looking for might have been deleted or the ID is
+          incorrect.
+        </p>
+        <Button
+          variant="outline"
+          onClick={() => router.back()}
+          className="mt-8 rounded-xl px-8 border-slate-200"
+        >
           Go Back to List
         </Button>
       </div>
@@ -112,19 +129,28 @@ export default function UserDetailPage({ params }: { params: Promise<{ id: strin
       {/* Breadcrumbs & Header */}
       <div className="flex flex-col gap-3">
         <div className="flex items-center text-[10px] font-bold text-slate-400 uppercase tracking-widest gap-2">
-          <Link href="/users" className="hover:text-indigo-600 transition-colors font-bold">
+          <Link
+            href="/users"
+            className="hover:text-indigo-600 transition-colors font-bold"
+          >
             Users
           </Link>
           <ChevronRight className="w-3 h-3" />
           <span className="text-slate-900">Profile Details</span>
         </div>
-        
+
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-3">
           <div>
-            <h1 className="text-3xl font-black text-slate-900 tracking-tight">Identity Profile</h1>
+            <h1 className="text-3xl font-black text-slate-900 tracking-tight">
+              Identity Profile
+            </h1>
           </div>
           <div className="flex items-center gap-3">
-             <UserControlActions userId={user.id} email={user.email || ''} status={user.status || ''} />
+            <UserControlActions
+              userId={user.id}
+              email={user.email || ''}
+              status={user.status || ''}
+            />
           </div>
         </div>
       </div>
@@ -135,74 +161,99 @@ export default function UserDetailPage({ params }: { params: Promise<{ id: strin
           {/* USER HERO CARD */}
           <Card className="h-full border-none shadow-sm ring-1 ring-slate-100 bg-white overflow-hidden rounded-[2rem]">
             <div className="h-32 bg-gradient-to-r from-indigo-600 to-violet-600 relative overflow-hidden">
-               <div className="absolute top-0 right-0 w-64 h-64 bg-white/10 rounded-full blur-3xl -translate-y-1/2 translate-x-1/2" />
-               <div className="absolute bottom-0 left-0 w-48 h-48 bg-indigo-400/20 rounded-full blur-2xl translate-y-1/2 -translate-x-1/2" />
+              <div className="absolute top-0 right-0 w-64 h-64 bg-white/10 rounded-full blur-3xl -translate-y-1/2 translate-x-1/2" />
+              <div className="absolute bottom-0 left-0 w-48 h-48 bg-indigo-400/20 rounded-full blur-2xl translate-y-1/2 -translate-x-1/2" />
             </div>
             <CardHeader className="relative pb-0">
-               <div className="absolute -top-16 left-8 p-1.5 bg-white rounded-[2rem] shadow-xl">
-                 <div className="w-24 h-24 rounded-[1.6rem] bg-slate-900 flex items-center justify-center text-white overflow-hidden border-4 border-slate-900">
-                    <User className="w-12 h-12 text-slate-200" />
-                 </div>
-               </div>
-               <div className="pl-36 pt-2 pb-6 flex justify-between items-start">
-                  <div>
-                    <h3 className={cn("text-2xl font-black text-slate-900", !user.email && "text-slate-400 italic")}>
-                      {user.email || 'Email Not Set'}
-                    </h3>
-                    <div className="flex items-center flex-wrap gap-x-4 gap-y-2 mt-1.5">
-                      <Badge 
-                        className={cn(
-                          "px-2.5 py-0.5 rounded-lg text-[10px] font-black uppercase tracking-wider border-none flex items-center gap-1.5",
-                          getUserStatusConfig(user.status).color
-                        )}
-                      >
-                        {(() => {
-                           const config = getUserStatusConfig(user.status);
-                           const Icon = config.icon;
-                           return <Icon className="w-2.5 h-2.5" />;
-                        })()}
-                        {user.status}
-                      </Badge>
-                      
-                      <div className="flex items-center gap-1.5">
-                         <span className="text-[10px] font-bold text-slate-400 uppercase tracking-tight">KYC:</span>
-                         <Badge className="bg-emerald-50 text-emerald-600 border-none text-[10px] font-black rounded-lg px-2 py-0.5 uppercase tracking-tighter">
-                           Verified
-                         </Badge>
-                         <Link href={`/kyc/${user.id}`}>
-                            <Button variant="ghost" size="sm" className="h-5 w-5 p-0 text-slate-400 hover:text-indigo-600 hover:bg-indigo-50 rounded-md">
-                               <ExternalLink className="w-3 h-3" />
-                            </Button>
-                         </Link>
-                      </div>
+              <div className="absolute -top-16 left-8 p-1.5 bg-white rounded-[2rem] shadow-xl">
+                <div className="w-24 h-24 rounded-[1.6rem] bg-slate-900 flex items-center justify-center text-white overflow-hidden border-4 border-slate-900">
+                  <User className="w-12 h-12 text-slate-200" />
+                </div>
+              </div>
+              <div className="pl-36 pt-2 pb-6 flex justify-between items-start">
+                <div>
+                  <h3
+                    className={cn(
+                      'text-2xl font-black text-slate-900',
+                      !user.email && 'text-slate-400 italic',
+                    )}
+                  >
+                    {user.email || 'Email Not Set'}
+                  </h3>
+                  <div className="flex items-center flex-wrap gap-x-4 gap-y-2 mt-1.5">
+                    <Badge
+                      className={cn(
+                        'px-2.5 py-0.5 rounded-lg text-[10px] font-black uppercase tracking-wider border-none flex items-center gap-1.5',
+                        getUserStatusConfig(user.status).color,
+                      )}
+                    >
+                      {(() => {
+                        const config = getUserStatusConfig(user.status);
+                        const Icon = config.icon;
+                        return <Icon className="w-2.5 h-2.5" />;
+                      })()}
+                      {user.status}
+                    </Badge>
 
-                      <span className="text-[10px] font-bold text-slate-400 flex items-center gap-1.5 uppercase">
-                         <Calendar className="w-3 h-3" />
-                         Joined {new Date(user.createdAt).toLocaleDateString()}
+                    <div className="flex items-center gap-1.5">
+                      <span className="text-[10px] font-bold text-slate-400 uppercase tracking-tight">
+                        KYC:
                       </span>
+                      <Badge className="bg-emerald-50 text-emerald-600 border-none text-[10px] font-black rounded-lg px-2 py-0.5 uppercase tracking-tighter">
+                        Verified
+                      </Badge>
+                      <Link href={`/kyc/${user.id}`}>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          className="h-5 w-5 p-0 text-slate-400 hover:text-indigo-600 hover:bg-indigo-50 rounded-md"
+                        >
+                          <ExternalLink className="w-3 h-3" />
+                        </Button>
+                      </Link>
                     </div>
+
+                    <span className="text-[10px] font-bold text-slate-400 flex items-center gap-1.5 uppercase">
+                      <Calendar className="w-3 h-3" />
+                      Joined {new Date(user.createdAt).toLocaleDateString()}
+                    </span>
                   </div>
-               </div>
+                </div>
+              </div>
             </CardHeader>
             <CardContent className="grid md:grid-cols-2 gap-10 p-10 pt-6">
               <div className="space-y-6">
                 <h4 className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] flex items-center gap-2">
-                   <Phone className="w-3 h-3" /> Contact Verification
+                  <Phone className="w-3 h-3" /> Contact Verification
                 </h4>
                 <div className="space-y-4">
                   <div className="flex flex-col gap-1">
-                    <span className="text-[10px] font-bold text-slate-400 uppercase">Phone Number</span>
-                    <span className="text-lg font-bold text-slate-900 tracking-tight">{user.phoneNumber}</span>
+                    <span className="text-[10px] font-bold text-slate-400 uppercase">
+                      Phone Number
+                    </span>
+                    <span className="text-lg font-bold text-slate-900 tracking-tight">
+                      {user.phoneNumber}
+                    </span>
                   </div>
                   <div className="flex flex-col gap-1">
-                    <span className="text-[10px] font-bold text-slate-400 uppercase">Primary Email</span>
-                    <span className={cn("text-sm font-bold", user.email ? "text-slate-700" : "text-slate-400 italic")}>
+                    <span className="text-[10px] font-bold text-slate-400 uppercase">
+                      Primary Email
+                    </span>
+                    <span
+                      className={cn(
+                        'text-sm font-bold',
+                        user.email ? 'text-slate-700' : 'text-slate-400 italic',
+                      )}
+                    >
                       {user.email || 'not set'}
                     </span>
                   </div>
                   <div className="pt-2">
-                    <Badge variant="secondary" className="bg-slate-100 text-slate-600 font-bold text-[10px] rounded-lg px-2.5 py-1">
-                       STATE: {user.registrationState}
+                    <Badge
+                      variant="secondary"
+                      className="bg-slate-100 text-slate-600 font-bold text-[10px] rounded-lg px-2.5 py-1"
+                    >
+                      STATE: {user.registrationState}
                     </Badge>
                   </div>
                 </div>
@@ -210,7 +261,7 @@ export default function UserDetailPage({ params }: { params: Promise<{ id: strin
 
               <div className="space-y-6">
                 <h4 className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] flex items-center gap-2">
-                   <Wallet className="w-3 h-3" /> Linked Ledger
+                  <Wallet className="w-3 h-3" /> Linked Ledger
                 </h4>
                 {account ? (
                   <div className="p-6 rounded-[1.5rem] bg-slate-50 ring-1 ring-slate-100 space-y-4 relative group hover:ring-indigo-200 transition-all cursor-pointer overflow-hidden">
@@ -218,13 +269,16 @@ export default function UserDetailPage({ params }: { params: Promise<{ id: strin
                     <div className="flex items-center justify-between relative z-10">
                       <div className="flex items-center gap-2">
                         <div className="w-6 h-6 rounded-lg bg-indigo-100 flex items-center justify-center">
-                           <Wallet className="w-3 h-3 text-indigo-600" />
+                          <Wallet className="w-3 h-3 text-indigo-600" />
                         </div>
                         <span className="text-[10px] font-black text-slate-500 uppercase tracking-tight">
                           Balance Available
                         </span>
                       </div>
-                      <Badge variant="outline" className="bg-white border-slate-200 text-[9px] font-black text-slate-500 rounded-md">
+                      <Badge
+                        variant="outline"
+                        className="bg-white border-slate-200 text-[9px] font-black text-slate-500 rounded-md"
+                      >
                         {account.status}
                       </Badge>
                     </div>
@@ -232,10 +286,15 @@ export default function UserDetailPage({ params }: { params: Promise<{ id: strin
                       <span className="text-4xl font-black text-slate-900 tracking-tighter">
                         {account.balance.toLocaleString()}
                       </span>
-                      <span className="text-xs font-black text-slate-400 uppercase">{account.currency}</span>
+                      <span className="text-xs font-black text-slate-400 uppercase">
+                        {account.currency}
+                      </span>
                     </div>
-                    <Link href={`/wallets/${account.id}`} className="relative z-10 flex items-center gap-1.5 text-[10px] font-black text-indigo-600 uppercase hover:gap-2 transition-all">
-                       View Wallet Details <ArrowRight className="w-3 h-3" />
+                    <Link
+                      href={`/wallets/${account.id}`}
+                      className="relative z-10 flex items-center gap-1.5 text-[10px] font-black text-indigo-600 uppercase hover:gap-2 transition-all"
+                    >
+                      View Wallet Details <ArrowRight className="w-3 h-3" />
                     </Link>
                   </div>
                 ) : (
@@ -255,7 +314,9 @@ export default function UserDetailPage({ params }: { params: Promise<{ id: strin
         <div className="space-y-5">
           <Card className="border-none shadow-sm ring-1 ring-slate-100 bg-white rounded-[2rem] overflow-hidden">
             <CardHeader className="p-6 pb-2">
-              <CardTitle className="text-sm font-black uppercase tracking-widest text-slate-400">Identity Analytics</CardTitle>
+              <CardTitle className="text-sm font-black uppercase tracking-widest text-slate-400">
+                Identity Analytics
+              </CardTitle>
             </CardHeader>
             <CardContent className="p-6 pt-0 space-y-6">
               <div className="space-y-5">
@@ -265,10 +326,16 @@ export default function UserDetailPage({ params }: { params: Promise<{ id: strin
                       <Calendar className="w-4 h-4" />
                     </div>
                     <div>
-                      <p className="text-[10px] font-black text-slate-400 uppercase tracking-tight">Account Age</p>
+                      <p className="text-[10px] font-black text-slate-400 uppercase tracking-tight">
+                        Account Age
+                      </p>
                       <p className="text-sm font-bold text-slate-900">
                         {(() => {
-                          const days = Math.floor((new Date().getTime() - new Date(user.createdAt).getTime()) / (1000 * 60 * 60 * 24));
+                          const days = Math.floor(
+                            (new Date().getTime() -
+                              new Date(user.createdAt).getTime()) /
+                              (1000 * 60 * 60 * 24),
+                          );
                           return days === 0 ? 'Today' : `${days} Days`;
                         })()}
                       </p>
@@ -282,7 +349,9 @@ export default function UserDetailPage({ params }: { params: Promise<{ id: strin
                       <Shield className="w-4 h-4" />
                     </div>
                     <div>
-                      <p className="text-[10px] font-black text-slate-400 uppercase tracking-tight">Trust Summary</p>
+                      <p className="text-[10px] font-black text-slate-400 uppercase tracking-tight">
+                        Trust Summary
+                      </p>
                       <p className="text-sm font-bold text-slate-900">
                         {activity?.devices?.length || 0} Authorized Node(s)
                       </p>
@@ -296,24 +365,32 @@ export default function UserDetailPage({ params }: { params: Promise<{ id: strin
                       <Clock className="w-4 h-4" />
                     </div>
                     <div>
-                      <p className="text-[10px] font-black text-slate-400 uppercase tracking-tight">Activity Pulse</p>
+                      <p className="text-[10px] font-black text-slate-400 uppercase tracking-tight">
+                        Activity Pulse
+                      </p>
                       <p className="text-sm font-bold text-slate-900">
                         {activity?.lastLoginAt
-                          ? new Date(activity.lastLoginAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) + ' Today'
+                          ? new Date(activity.lastLoginAt).toLocaleTimeString(
+                              [],
+                              { hour: '2-digit', minute: '2-digit' },
+                            ) + ' Today'
                           : 'No recent activity'}
                       </p>
                     </div>
                   </div>
                 </div>
                 <div className="pt-4 border-t border-slate-50">
-                  <Link href={`/users/activity?userId=${user.id}`} className="block">
+                  <Link
+                    href={`/users/activity?userId=${user.id}`}
+                    className="block"
+                  >
                     <Button
                       variant="outline"
                       className="w-full justify-between h-10 rounded-xl text-slate-600 border-slate-100 hover:bg-slate-50 group font-bold text-[10px] uppercase tracking-wider"
                     >
                       <div className="flex items-center">
-                         <Activity className="w-3.5 h-3.5 mr-2 text-slate-400 group-hover:text-indigo-600" />
-                         View Security Activity
+                        <Activity className="w-3.5 h-3.5 mr-2 text-slate-400 group-hover:text-indigo-600" />
+                        View Security Activity
                       </div>
                       <ArrowRight className="w-3.5 h-3.5 text-slate-300" />
                     </Button>
@@ -325,7 +402,9 @@ export default function UserDetailPage({ params }: { params: Promise<{ id: strin
           <Card className="border-none shadow-sm ring-1 ring-slate-100 bg-white rounded-[2rem] overflow-hidden">
             <CardHeader className="p-6 pb-2">
               <div className="flex items-center justify-between">
-                <CardTitle className="text-sm font-black uppercase tracking-widest text-slate-400">Authorized Devices</CardTitle>
+                <CardTitle className="text-sm font-black uppercase tracking-widest text-slate-400">
+                  Authorized Devices
+                </CardTitle>
                 <Badge className="bg-slate-100 text-slate-500 border-none font-black text-[9px] rounded-lg">
                   {activity?.devices?.length || 0} SECURE
                 </Badge>
@@ -356,12 +435,12 @@ export default function UserDetailPage({ params }: { params: Promise<{ id: strin
                         {device.trustLevel}
                       </span>
                       <Dialog>
-                        <DialogTrigger 
+                        <DialogTrigger
                           render={
-                            <Button 
-                              variant="ghost" 
-                              size="sm" 
-                              className="h-6 w-6 p-0 text-slate-300 hover:text-indigo-600 hover:bg-indigo-50 rounded-md" 
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              className="h-6 w-6 p-0 text-slate-300 hover:text-indigo-600 hover:bg-indigo-50 rounded-md"
                             />
                           }
                         >
@@ -376,30 +455,50 @@ export default function UserDetailPage({ params }: { params: Promise<{ id: strin
                           </DialogHeader>
                           <div className="space-y-6 pt-4">
                             <div className="p-4 bg-slate-50 rounded-2xl space-y-3">
-                               <div className="flex flex-col gap-1">
-                                 <span className="text-[10px] font-black text-slate-400 uppercase">Hardware Model</span>
-                                 <span className="text-sm font-bold text-slate-900">{device.deviceName || 'Unknown Hardware'}</span>
-                               </div>
-                               <div className="flex flex-col gap-1">
-                                 <span className="text-[10px] font-black text-slate-400 uppercase">Platform / OS</span>
-                                 <span className="text-sm font-bold text-slate-700">{device.osVersion || 'Unknown OS'}</span>
-                               </div>
-                               <div className="flex flex-col gap-1">
-                                 <span className="text-[10px] font-black text-slate-400 uppercase">Device Identifier (UID)</span>
-                                 <span className="text-[10px] font-mono font-bold text-indigo-600 bg-indigo-50 p-2 rounded-lg break-all">
-                                   {device.deviceIdentifier}
-                                 </span>
-                               </div>
+                              <div className="flex flex-col gap-1">
+                                <span className="text-[10px] font-black text-slate-400 uppercase">
+                                  Hardware Model
+                                </span>
+                                <span className="text-sm font-bold text-slate-900">
+                                  {device.deviceName || 'Unknown Hardware'}
+                                </span>
+                              </div>
+                              <div className="flex flex-col gap-1">
+                                <span className="text-[10px] font-black text-slate-400 uppercase">
+                                  Platform / OS
+                                </span>
+                                <span className="text-sm font-bold text-slate-700">
+                                  {device.osVersion || 'Unknown OS'}
+                                </span>
+                              </div>
+                              <div className="flex flex-col gap-1">
+                                <span className="text-[10px] font-black text-slate-400 uppercase">
+                                  Device Identifier (UID)
+                                </span>
+                                <span className="text-[10px] font-mono font-bold text-indigo-600 bg-indigo-50 p-2 rounded-lg break-all">
+                                  {device.deviceIdentifier}
+                                </span>
+                              </div>
                             </div>
                             <div className="grid grid-cols-2 gap-4">
-                               <div className="p-3 border border-slate-100 rounded-xl">
-                                  <span className="text-[9px] font-black text-slate-400 uppercase block mb-1">Security Level</span>
-                                  <Badge className="bg-emerald-500 text-white border-none text-[9px] font-black rounded-md">{device.trustLevel}</Badge>
-                               </div>
-                               <div className="p-3 border border-slate-100 rounded-xl">
-                                  <span className="text-[9px] font-black text-slate-400 uppercase block mb-1">Last Seen</span>
-                                  <span className="text-[10px] font-bold text-slate-700">{new Date(device.lastSeenAt).toLocaleDateString()}</span>
-                                </div>
+                              <div className="p-3 border border-slate-100 rounded-xl">
+                                <span className="text-[9px] font-black text-slate-400 uppercase block mb-1">
+                                  Security Level
+                                </span>
+                                <Badge className="bg-emerald-500 text-white border-none text-[9px] font-black rounded-md">
+                                  {device.trustLevel}
+                                </Badge>
+                              </div>
+                              <div className="p-3 border border-slate-100 rounded-xl">
+                                <span className="text-[9px] font-black text-slate-400 uppercase block mb-1">
+                                  Last Seen
+                                </span>
+                                <span className="text-[10px] font-bold text-slate-700">
+                                  {new Date(
+                                    device.lastSeenAt,
+                                  ).toLocaleDateString()}
+                                </span>
+                              </div>
                             </div>
                           </div>
                         </DialogContent>
@@ -409,7 +508,9 @@ export default function UserDetailPage({ params }: { params: Promise<{ id: strin
                 ))}
                 {(!activity?.devices || activity.devices.length === 0) && (
                   <div className="p-10 text-center">
-                    <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">No active devices</p>
+                    <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">
+                      No active devices
+                    </p>
                   </div>
                 )}
               </div>

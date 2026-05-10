@@ -1,5 +1,11 @@
 import React from 'react';
-import { View, Text, TouchableOpacity, ActivityIndicator, Alert } from 'react-native';
+import {
+  View,
+  Text,
+  TouchableOpacity,
+  ActivityIndicator,
+  Alert,
+} from 'react-native';
 import { Share2, Download } from 'lucide-react-native';
 import * as Sharing from 'expo-sharing';
 import * as MediaLibrary from 'expo-media-library';
@@ -47,7 +53,10 @@ export function QRActionButtons({
           await MediaLibrary.createAssetAsync(uri);
           Alert.alert('Success', 'QR code saved to gallery');
         } else {
-          Alert.alert('Permission denied', 'Please grant permission to save photos');
+          Alert.alert(
+            'Permission denied',
+            'Please grant permission to save photos',
+          );
         }
       } else {
         Alert.alert('Error', 'Failed to capture QR code');

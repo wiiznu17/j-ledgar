@@ -27,7 +27,9 @@ export class AdminDashboardController {
       'get',
       '/api/v1/transactions?page=0&size=100',
     );
-    const transactions = Array.isArray(txResponse) ? txResponse : txResponse.content || [];
+    const transactions = Array.isArray(txResponse)
+      ? txResponse
+      : txResponse.content || [];
 
     // 3. Process Transaction Volume for Chart (Group by hour for the last 24h)
     const now = new Date();
@@ -35,7 +37,10 @@ export class AdminDashboardController {
 
     // 4. Calculate Growth Stats
     const totalKyc = kycStats.approvedToday + kycStats.rejectedToday;
-    const approvalRate = totalKyc > 0 ? Math.round((kycStats.approvedToday / totalKyc) * 100) : 100;
+    const approvalRate =
+      totalKyc > 0
+        ? Math.round((kycStats.approvedToday / totalKyc) * 100)
+        : 100;
 
     return {
       kyc: kycStats,

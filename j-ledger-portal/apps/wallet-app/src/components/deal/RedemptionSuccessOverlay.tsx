@@ -7,7 +7,9 @@ interface RedemptionSuccessOverlayProps {
   isVisible: boolean;
 }
 
-export const RedemptionSuccessOverlay = ({ isVisible }: RedemptionSuccessOverlayProps) => {
+export const RedemptionSuccessOverlay = ({
+  isVisible,
+}: RedemptionSuccessOverlayProps) => {
   return (
     <Modal visible={isVisible} transparent animationType="fade">
       <View className="flex-1 bg-white/95 items-center justify-center p-10">

@@ -1,7 +1,13 @@
 'use client';
 
 import { useEffect, useState, useCallback } from 'react';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from '@/components/ui/card';
 import {
   Table,
   TableBody,
@@ -37,8 +43,16 @@ import { WalletDto } from '@repo/dto';
 import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
 import Link from 'next/link';
-import { FilterSearchInput, FilterSelect, FilterActions } from '@/components/common/FilterElements';
-import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import {
+  FilterSearchInput,
+  FilterSelect,
+  FilterActions,
+} from '@/components/common/FilterElements';
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from '@/components/ui/popover';
 
 export default function WalletAccountsPage() {
   const [wallets, setWallets] = useState<WalletDto[]>([]);
@@ -83,7 +97,9 @@ export default function WalletAccountsPage() {
       }
 
       if (appliedStatus !== 'ALL') {
-        filteredData = filteredData.filter((w: WalletDto) => w.status === appliedStatus);
+        filteredData = filteredData.filter(
+          (w: WalletDto) => w.status === appliedStatus,
+        );
       }
 
       setWallets(filteredData);
@@ -147,7 +163,9 @@ export default function WalletAccountsPage() {
             <div className="p-1.5 bg-indigo-50 rounded-lg">
               <Wallet className="w-5 h-5 text-indigo-600" />
             </div>
-            <h2 className="text-3xl font-bold tracking-tight text-slate-900">Customer Wallets</h2>
+            <h2 className="text-3xl font-bold tracking-tight text-slate-900">
+              Customer Wallets
+            </h2>
           </div>
           <p className="text-slate-500">
             Monitor and manage all user wallets and their financial states.
@@ -263,7 +281,9 @@ export default function WalletAccountsPage() {
                         <span
                           className={cn(
                             'font-bold tabular-nums',
-                            wallet.balance > 0 ? 'text-emerald-600' : 'text-slate-900',
+                            wallet.balance > 0
+                              ? 'text-emerald-600'
+                              : 'text-slate-900',
                           )}
                         >
                           {wallet.balance.toLocaleString(undefined, {
@@ -315,7 +335,8 @@ export default function WalletAccountsPage() {
                                 href={`/wallets/${wallet.id}`}
                                 className="flex items-center w-full px-3 py-2 text-sm font-medium text-slate-600 hover:bg-slate-50 rounded-lg transition-colors"
                               >
-                                <Search className="w-4 h-4 mr-2 text-slate-400" /> View Detail
+                                <Search className="w-4 h-4 mr-2 text-slate-400" />{' '}
+                                View Detail
                               </Link>
 
                               {isSuperAdmin && (
@@ -332,11 +353,13 @@ export default function WalletAccountsPage() {
                                   >
                                     {wallet.status === 'FROZEN' ? (
                                       <>
-                                        <ShieldCheck className="w-4 h-4 mr-2" /> Unfreeze Wallet
+                                        <ShieldCheck className="w-4 h-4 mr-2" />{' '}
+                                        Unfreeze Wallet
                                       </>
                                     ) : (
                                       <>
-                                        <ShieldAlert className="w-4 h-4 mr-2" /> Freeze Wallet
+                                        <ShieldAlert className="w-4 h-4 mr-2" />{' '}
+                                        Freeze Wallet
                                       </>
                                     )}
                                   </button>
@@ -353,7 +376,9 @@ export default function WalletAccountsPage() {
                     <TableCell colSpan={6} className="h-32 text-center">
                       <div className="flex flex-col items-center justify-center text-slate-400">
                         <Wallet className="w-8 h-8 mb-2 opacity-20" />
-                        <p className="text-sm font-medium">No wallet accounts found</p>
+                        <p className="text-sm font-medium">
+                          No wallet accounts found
+                        </p>
                       </div>
                     </TableCell>
                   </TableRow>

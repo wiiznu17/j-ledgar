@@ -7,7 +7,10 @@ interface AmountTriggerButtonProps {
   onPress: () => void;
 }
 
-export function AmountTriggerButton({ amount, onPress }: AmountTriggerButtonProps) {
+export function AmountTriggerButton({
+  amount,
+  onPress,
+}: AmountTriggerButtonProps) {
   return (
     <TouchableOpacity
       onPress={onPress}
@@ -17,9 +20,13 @@ export function AmountTriggerButton({ amount, onPress }: AmountTriggerButtonProp
         <Coins size={20} color="#f48fb1" />
       </View>
       <View className="flex-1">
-        <Text className="text-sm font-manrope font-black text-gray-800">Specify Amount</Text>
+        <Text className="text-sm font-manrope font-black text-gray-800">
+          Specify Amount
+        </Text>
         <Text className="text-[10px] font-manrope font-bold text-gray-400">
-          {amount ? 'Tap to change amount' : 'Create a QR for a specific amount'}
+          {amount
+            ? 'Tap to change amount'
+            : 'Create a QR for a specific amount'}
         </Text>
       </View>
       <View className="bg-pink-50/50 px-3 py-1 rounded-lg">

@@ -24,13 +24,26 @@ import {
   ArrowUpRight,
   ArrowDownLeft,
 } from 'lucide-react';
-import { walletRequester, userRequester, transactionRequester } from '@/lib/requesters';
-import { WalletDto, WalletUser, Transaction, TransactionStatus } from '@repo/dto';
+import {
+  walletRequester,
+  userRequester,
+  transactionRequester,
+} from '@/lib/requesters';
+import {
+  WalletDto,
+  WalletUser,
+  Transaction,
+  TransactionStatus,
+} from '@repo/dto';
 import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
 import Link from 'next/link';
 
-export default function WalletDetailPage({ params }: { params: Promise<{ id: string }> }) {
+export default function WalletDetailPage({
+  params,
+}: {
+  params: Promise<{ id: string }>;
+}) {
   const { id } = use(params);
   const router = useRouter();
   const [wallet, setWallet] = useState<WalletDto | null>(null);
@@ -47,18 +60,20 @@ export default function WalletDetailPage({ params }: { params: Promise<{ id: str
 
       if (walletData?.userId) {
         try {
-          const userResponse = await userRequester.getUserDetail(walletData.userId);
+          const userResponse = await userRequester.getUserDetail(
+            walletData.userId,
+          );
           setUser(userResponse.data);
         } catch (e) {
           console.error('Failed to fetch user info', e);
         }
       }
 
-      const txResponse = await transactionRequester.getHistory({ 
-        size: 10, 
-        userId: walletData.userId 
+      const txResponse = await transactionRequester.getHistory({
+        size: 10,
+        userId: walletData.userId,
       });
-      
+
       // AdminPaginatedResponse has a 'data' field containing the items array
       setTransactions(txResponse.data || []);
 
@@ -110,7 +125,10 @@ export default function WalletDetailPage({ params }: { params: Promise<{ id: str
     );
   }
 
-  if (!wallet) return <div className="p-20 text-center text-slate-400">Wallet not found</div>;
+  if (!wallet)
+    return (
+      <div className="p-20 text-center text-slate-400">Wallet not found</div>
+    );
 
   return (
     <div className="space-y-4 max-w-6xl mx-auto pb-10">
@@ -137,7 +155,9 @@ export default function WalletDetailPage({ params }: { params: Promise<{ id: str
               <ArrowLeft className="w-4 h-4 text-slate-600" />
             </Button> */}
             <div>
-              <h1 className="text-2xl font-bold text-slate-900 tracking-tight">Account Detail</h1>
+              <h1 className="text-2xl font-bold text-slate-900 tracking-tight">
+                Account Detail
+              </h1>
               {/* <div className="flex items-center gap-2 mt-0.5">
                 <span className="text-xs text-slate-500 font-medium">
                   UUID: <span className="font-mono text-slate-400">{wallet.userId}</span>
@@ -158,7 +178,9 @@ export default function WalletDetailPage({ params }: { params: Promise<{ id: str
               variant={wallet.status === 'FROZEN' ? 'default' : 'destructive'}
               className={cn(
                 'rounded-lg font-semibold text-xs h-9 px-4 shadow-sm',
-                wallet.status === 'FROZEN' ? 'bg-emerald-600 hover:bg-emerald-700 text-white' : '',
+                wallet.status === 'FROZEN'
+                  ? 'bg-emerald-600 hover:bg-emerald-700 text-white'
+                  : '',
               )}
             >
               {wallet.status === 'FROZEN' ? (
@@ -192,9 +214,13 @@ export default function WalletDetailPage({ params }: { params: Promise<{ id: str
                 </div>
                 <div className="flex items-baseline gap-2">
                   <p className="text-3xl font-bold tracking-tight tabular-nums">
-                    {wallet.balance.toLocaleString(undefined, { minimumFractionDigits: 2 })}
+                    {wallet.balance.toLocaleString(undefined, {
+                      minimumFractionDigits: 2,
+                    })}
                   </p>
-                  <span className="text-sm text-indigo-300 font-medium">{wallet.currency}</span>
+                  <span className="text-sm text-indigo-300 font-medium">
+                    {wallet.currency}
+                  </span>
                 </div>
               </div>
               <div className="flex flex-col items-end gap-2">
@@ -224,7 +250,9 @@ export default function WalletDetailPage({ params }: { params: Promise<{ id: str
                 <p className="text-[9px] font-bold text-slate-400 uppercase tracking-widest">
                   Type
                 </p>
-                <p className="text-xs font-medium text-slate-200">Standard Savings</p>
+                <p className="text-xs font-medium text-slate-200">
+                  Standard Savings
+                </p>
               </div>
               <div className="space-y-1">
                 <p className="text-[9px] font-bold text-slate-400 uppercase tracking-widest">
@@ -248,7 +276,9 @@ export default function WalletDetailPage({ params }: { params: Promise<{ id: str
                 </p>
                 <div className="flex items-center gap-1.5">
                   <ShieldCheck className="w-3.5 h-3.5 text-emerald-400" />
-                  <p className="text-xs font-medium text-emerald-400">Encrypted</p>
+                  <p className="text-xs font-medium text-emerald-400">
+                    Encrypted
+                  </p>
                 </div>
               </div>
             </div>
@@ -259,7 +289,8 @@ export default function WalletDetailPage({ params }: { params: Promise<{ id: str
             <CardHeader className="p-5 border-b border-slate-100 flex flex-row items-center justify-between">
               <div>
                 <CardTitle className="text-sm font-bold text-slate-900 flex items-center gap-2">
-                  <History className="w-4 h-4 text-indigo-600" /> Transaction Logs
+                  <History className="w-4 h-4 text-indigo-600" /> Transaction
+                  Logs
                 </CardTitle>
               </div>
               <Link href={`/transactions?userId=${wallet.userId}`}>
@@ -294,17 +325,28 @@ export default function WalletDetailPage({ params }: { params: Promise<{ id: str
                   <tbody className="divide-y divide-slate-100">
                     {transactions.map((tx) => {
                       const description = (tx.description || '').toLowerCase();
-                      const isTopup = tx.transactionType === 'TOPUP' || description.includes('top-up') || description.includes('topup') || description.includes('credit');
-                      const isWithdraw = tx.transactionType === 'WITHDRAW' || description.includes('withdraw');
-                      
+                      const isTopup =
+                        tx.transactionType === 'TOPUP' ||
+                        description.includes('top-up') ||
+                        description.includes('topup') ||
+                        description.includes('credit');
+                      const isWithdraw =
+                        tx.transactionType === 'WITHDRAW' ||
+                        description.includes('withdraw');
+
                       // Check both UUID and numeric ID
-                      const isReceiver = tx.receiverId === wallet.userId || tx.toWalletId === wallet.id;
-                      
+                      const isReceiver =
+                        tx.receiverId === wallet.userId ||
+                        tx.toWalletId === wallet.id;
+
                       // If it's a top-up keyword or we are the receiver, it's an IN
                       const isIn = isTopup || (isReceiver && !isWithdraw);
 
                       return (
-                        <tr key={tx.id} className="hover:bg-slate-50/50 transition-colors group">
+                        <tr
+                          key={tx.id}
+                          className="hover:bg-slate-50/50 transition-colors group"
+                        >
                           <td className="px-5 py-3">
                             {isIn ? (
                               <div className="flex items-center gap-2">
@@ -329,12 +371,24 @@ export default function WalletDetailPage({ params }: { params: Promise<{ id: str
                           <td className="px-5 py-3">
                             <div className="space-y-0.5">
                               <p className="text-xs font-semibold text-slate-700">
-                                {tx.description || (isTopup ? 'Wallet Top-up' : isWithdraw ? 'Wallet Withdrawal' : 'Transfer')}
+                                {tx.description ||
+                                  (isTopup
+                                    ? 'Wallet Top-up'
+                                    : isWithdraw
+                                      ? 'Wallet Withdrawal'
+                                      : 'Transfer')}
                               </p>
                               <div className="flex items-center gap-2 text-[10px] text-slate-400">
-                                <span>{new Date(tx.createdAt).toLocaleDateString()}</span>
+                                <span>
+                                  {new Date(tx.createdAt).toLocaleDateString()}
+                                </span>
                                 <span>•</span>
-                                <span className="font-mono">Ref: {String(tx.transactionId || tx.id).slice(-8).toUpperCase()}</span>
+                                <span className="font-mono">
+                                  Ref:{' '}
+                                  {String(tx.transactionId || tx.id)
+                                    .slice(-8)
+                                    .toUpperCase()}
+                                </span>
                               </div>
                             </div>
                           </td>
@@ -349,25 +403,28 @@ export default function WalletDetailPage({ params }: { params: Promise<{ id: str
                               {tx.amount.toLocaleString()}
                             </p>
                           </td>
-                        <td className="px-5 py-3 text-center">
-                          <Badge
-                            variant="outline"
-                            className={cn(
-                              'rounded-md px-2 py-0.5 text-[9px] font-bold uppercase border-none',
-                              tx.status === TransactionStatus.COMPLETED
-                                ? 'bg-emerald-50 text-emerald-600'
-                                : 'bg-rose-50 text-rose-600',
-                            )}
-                          >
-                            {tx.status}
-                          </Badge>
-                        </td>
-                      </tr>
-                    );
-                  })}
+                          <td className="px-5 py-3 text-center">
+                            <Badge
+                              variant="outline"
+                              className={cn(
+                                'rounded-md px-2 py-0.5 text-[9px] font-bold uppercase border-none',
+                                tx.status === TransactionStatus.COMPLETED
+                                  ? 'bg-emerald-50 text-emerald-600'
+                                  : 'bg-rose-50 text-rose-600',
+                              )}
+                            >
+                              {tx.status}
+                            </Badge>
+                          </td>
+                        </tr>
+                      );
+                    })}
                     {transactions.length === 0 && (
                       <tr>
-                        <td colSpan={4} className="py-8 text-center text-slate-400 text-xs">
+                        <td
+                          colSpan={4}
+                          className="py-8 text-center text-slate-400 text-xs"
+                        >
                           No recent transactions found
                         </td>
                       </tr>
@@ -398,7 +455,9 @@ export default function WalletDetailPage({ params }: { params: Promise<{ id: str
                       </span>
                     </div>
                     <div>
-                      <p className="text-sm font-bold text-slate-900">{user.phoneNumber}</p>
+                      <p className="text-sm font-bold text-slate-900">
+                        {user.phoneNumber}
+                      </p>
                       <Badge
                         variant="outline"
                         className="rounded-md px-1.5 py-0 text-[9px] font-semibold border-indigo-100 text-indigo-600 uppercase mt-1"
@@ -410,31 +469,43 @@ export default function WalletDetailPage({ params }: { params: Promise<{ id: str
 
                   <div className="space-y-3 pt-3 border-t border-slate-100">
                     <div className="flex justify-between items-center">
-                      <span className="text-xs font-medium text-slate-500">Status</span>
-                      <span className="text-xs font-semibold text-slate-800">{user.status}</span>
+                      <span className="text-xs font-medium text-slate-500">
+                        Status
+                      </span>
+                      <span className="text-xs font-semibold text-slate-800">
+                        {user.status}
+                      </span>
                     </div>
                     <div className="flex justify-between items-center">
-                      <span className="text-xs font-medium text-slate-500">Joined</span>
+                      <span className="text-xs font-medium text-slate-500">
+                        Joined
+                      </span>
                       <span className="text-xs font-semibold text-slate-800">
                         {new Date(user.createdAt).toLocaleDateString()}
                       </span>
                     </div>
                   </div>
 
-                  <Link href={`/users?search=${user.id}`} className="block pt-2">
+                  <Link
+                    href={`/users?search=${user.id}`}
+                    className="block pt-2"
+                  >
                     <Button
                       variant="outline"
                       size="sm"
                       className="w-full h-8 rounded-lg text-xs font-semibold border-slate-200 text-slate-600 hover:bg-slate-50 hover:text-indigo-600"
                     >
-                      View User Profile <ChevronRight className="w-3 h-3 ml-1" />
+                      View User Profile{' '}
+                      <ChevronRight className="w-3 h-3 ml-1" />
                     </Button>
                   </Link>
                 </div>
               ) : (
                 <div className="text-center py-8 space-y-2">
                   <Info className="w-6 h-6 text-slate-300 mx-auto" />
-                  <p className="text-xs font-medium text-slate-500">Profile data unavailable</p>
+                  <p className="text-xs font-medium text-slate-500">
+                    Profile data unavailable
+                  </p>
                 </div>
               )}
             </CardContent>
@@ -444,7 +515,8 @@ export default function WalletDetailPage({ params }: { params: Promise<{ id: str
           <Card className="border-none shadow-sm ring-1 ring-slate-100 rounded-2xl bg-white relative overflow-hidden">
             <CardHeader className="p-5 border-b border-slate-100 flex flex-row items-center justify-between">
               <CardTitle className="text-sm font-bold text-slate-400 flex items-center gap-2">
-                <TrendingUp className="w-4 h-4 text-slate-300" /> Fund Management
+                <TrendingUp className="w-4 h-4 text-slate-300" /> Fund
+                Management
               </CardTitle>
               <Badge className="bg-slate-100 text-slate-400 border-none font-black text-[9px] uppercase">
                 Soon

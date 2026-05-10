@@ -10,7 +10,11 @@ export const promotionsRequester = {
   createDeal: async (data: any, options?: RequestOptions) =>
     apiClient.post<any>(API_PATHS.ADMIN.PROMOTIONS.DEALS, data, options),
   updateDeal: async (id: string, data: any, options?: RequestOptions) =>
-    apiClient.put<any>(API_PATHS.ADMIN.PROMOTIONS.DEAL_DETAIL(id), data, options),
+    apiClient.put<any>(
+      API_PATHS.ADMIN.PROMOTIONS.DEAL_DETAIL(id),
+      data,
+      options,
+    ),
   deleteDeal: async (id: string, options?: RequestOptions) =>
     apiClient.delete<void>(API_PATHS.ADMIN.PROMOTIONS.DEAL_DETAIL(id), options),
 
@@ -22,9 +26,16 @@ export const promotionsRequester = {
   createBanner: async (data: any, options?: RequestOptions) =>
     apiClient.post<any>(API_PATHS.ADMIN.PROMOTIONS.BANNERS, data, options),
   updateBanner: async (id: string, data: any, options?: RequestOptions) =>
-    apiClient.put<any>(API_PATHS.ADMIN.PROMOTIONS.BANNER_DETAIL(id), data, options),
+    apiClient.put<any>(
+      API_PATHS.ADMIN.PROMOTIONS.BANNER_DETAIL(id),
+      data,
+      options,
+    ),
   deleteBanner: async (id: string, options?: RequestOptions) =>
-    apiClient.delete<void>(API_PATHS.ADMIN.PROMOTIONS.BANNER_DETAIL(id), options),
+    apiClient.delete<void>(
+      API_PATHS.ADMIN.PROMOTIONS.BANNER_DETAIL(id),
+      options,
+    ),
 
   // Redemptions
   getRedemptions: async (options?: RequestOptions) =>

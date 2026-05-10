@@ -54,7 +54,11 @@ export function LoginForm({ action }: LoginFormProps) {
               onClick={() => setShowPassword(!showPassword)}
               className="absolute inset-y-0 right-0 pr-3 flex items-center text-muted-foreground hover:text-foreground transition-colors"
             >
-              {showPassword ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
+              {showPassword ? (
+                <EyeOff className="h-5 w-5" />
+              ) : (
+                <Eye className="h-5 w-5" />
+              )}
             </button>
           </div>
         </div>
@@ -68,7 +72,10 @@ export function LoginForm({ action }: LoginFormProps) {
             type="checkbox"
             className="h-4 w-4 rounded border-border text-primary focus:ring-ring"
           />
-          <label htmlFor="remember-me" className="ml-2 block text-sm text-foreground">
+          <label
+            htmlFor="remember-me"
+            className="ml-2 block text-sm text-foreground"
+          >
             Remember me
           </label>
         </div>

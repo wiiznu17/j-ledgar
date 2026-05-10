@@ -1,6 +1,12 @@
 'use client';
 
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -45,11 +51,20 @@ import {
   LockKeyhole,
 } from 'lucide-react';
 import { format } from 'date-fns';
-import { FilterSearchInput, FilterSelect, FilterActions } from '@/components/common/FilterElements';
+import {
+  FilterSearchInput,
+  FilterSelect,
+  FilterActions,
+} from '@/components/common/FilterElements';
 
 export default function AuditPage() {
   const [logs, setLogs] = useState<any[]>([]);
-  const [stats, setStats] = useState({ total: 0, creations: 0, updates: 0, deletions: 0 });
+  const [stats, setStats] = useState({
+    total: 0,
+    creations: 0,
+    updates: 0,
+    deletions: 0,
+  });
   const [loading, setLoading] = useState(false);
   const [page, setPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
@@ -59,7 +74,9 @@ export default function AuditPage() {
   const searchParams = useSearchParams();
 
   // Filters
-  const [adminUserId, setAdminUserId] = useState(searchParams.get('adminUserId') || '');
+  const [adminUserId, setAdminUserId] = useState(
+    searchParams.get('adminUserId') || '',
+  );
   const [action, setAction] = useState<string>('ALL');
   const [resourceType, setResourceType] = useState<string>('ALL');
   const [startDate, setStartDate] = useState('');
@@ -124,7 +141,11 @@ export default function AuditPage() {
     if (a.includes('STAFF') || a.includes('ADMIN'))
       return 'bg-indigo-50 text-indigo-600 border-indigo-100';
     if (a.includes('USER')) return 'bg-blue-50 text-blue-600 border-blue-100';
-    if (a.includes('TRANSACTION') || a.includes('LEDGER') || a.includes('ACCOUNT'))
+    if (
+      a.includes('TRANSACTION') ||
+      a.includes('LEDGER') ||
+      a.includes('ACCOUNT')
+    )
       return 'bg-emerald-50 text-emerald-600 border-emerald-100';
     if (a.includes('ROLE') || a.includes('PERMISSION') || a.includes('SYSTEM'))
       return 'bg-orange-50 text-orange-600 border-orange-100';
@@ -136,7 +157,8 @@ export default function AuditPage() {
   const getResourceIcon = (type: string) => {
     const t = (type || '').toUpperCase();
     if (t.includes('USER')) return <Users className="w-3 h-3" />;
-    if (t.includes('STAFF') || t.includes('ADMIN')) return <ShieldCheck className="w-3 h-3" />;
+    if (t.includes('STAFF') || t.includes('ADMIN'))
+      return <ShieldCheck className="w-3 h-3" />;
     if (t.includes('KYC')) return <FileText className="w-3 h-3" />;
     if (t.includes('ROLE')) return <Shield className="w-3 h-3" />;
     if (t.includes('PERMISSION')) return <LockKeyhole className="w-3 h-3" />;
@@ -156,7 +178,9 @@ export default function AuditPage() {
     <div className="space-y-4 pb-10">
       {/* Header */}
       <div>
-        <h2 className="text-2xl font-bold tracking-tight text-slate-900">Audit Intelligence</h2>
+        <h2 className="text-2xl font-bold tracking-tight text-slate-900">
+          Audit Intelligence
+        </h2>
         <p className="text-sm text-slate-500 mt-1">
           Traceable history of administrative operations and resource mutations.
         </p>
@@ -166,26 +190,31 @@ export default function AuditPage() {
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 bg-white p-4 rounded-xl shadow-sm border border-slate-100">
         <div className="flex items-center gap-2">
           <History className="w-4 h-4 text-indigo-500" />
-          <span className="text-sm font-bold text-slate-700">Audit Snapshot</span>
+          <span className="text-sm font-bold text-slate-700">
+            Audit Snapshot
+          </span>
         </div>
 
         <div className="flex items-center flex-wrap gap-4 md:gap-6 text-sm">
           <div className="flex items-center gap-2">
             <div className="w-2 h-2 rounded-full bg-emerald-500" />
             <span className="text-slate-500 font-medium">
-              Creations: <strong className="text-slate-800">{stats.creations}</strong>
+              Creations:{' '}
+              <strong className="text-slate-800">{stats.creations}</strong>
             </span>
           </div>
           <div className="flex items-center gap-2">
             <div className="w-2 h-2 rounded-full bg-amber-500" />
             <span className="text-slate-500 font-medium">
-              Updates: <strong className="text-slate-800">{stats.updates}</strong>
+              Updates:{' '}
+              <strong className="text-slate-800">{stats.updates}</strong>
             </span>
           </div>
           <div className="flex items-center gap-2">
             <div className="w-2 h-2 rounded-full bg-rose-500" />
             <span className="text-slate-500 font-medium">
-              Deletions: <strong className="text-slate-800">{stats.deletions}</strong>
+              Deletions:{' '}
+              <strong className="text-slate-800">{stats.deletions}</strong>
             </span>
           </div>
         </div>
@@ -194,7 +223,10 @@ export default function AuditPage() {
       <Card className="border-none shadow-sm ring-1 ring-slate-100 overflow-hidden bg-white">
         {/* Filter Toolbar */}
         <div className="p-3 bg-white border-b border-slate-100">
-          <form onSubmit={handleFilter} className="grid grid-cols-1 md:grid-cols-5 gap-4 items-end">
+          <form
+            onSubmit={handleFilter}
+            className="grid grid-cols-1 md:grid-cols-5 gap-4 items-end"
+          >
             <FilterSearchInput
               label="Admin Identifier"
               placeholder="ID or Name..."
@@ -214,11 +246,17 @@ export default function AuditPage() {
                 { label: 'APPROVE_KYC', value: 'APPROVE_KYC' },
                 { label: 'REJECT_KYC', value: 'REJECT_KYC' },
                 { label: 'MANAGE_SYSTEM_ROLES', value: 'MANAGE_SYSTEM_ROLES' },
-                { label: 'MANAGE_SYSTEM_PERMISSIONS', value: 'MANAGE_SYSTEM_PERMISSIONS' },
+                {
+                  label: 'MANAGE_SYSTEM_PERMISSIONS',
+                  value: 'MANAGE_SYSTEM_PERMISSIONS',
+                },
                 { label: 'ASSIGN_STAFF_ROLES', value: 'ASSIGN_STAFF_ROLES' },
                 { label: 'FREEZE_USERS', value: 'FREEZE_USERS' },
                 { label: 'UNFREEZE_USERS', value: 'UNFREEZE_USERS' },
-                { label: 'RESET_STAFF_PASSWORD', value: 'RESET_STAFF_PASSWORD' },
+                {
+                  label: 'RESET_STAFF_PASSWORD',
+                  value: 'RESET_STAFF_PASSWORD',
+                },
               ]}
             />
 
@@ -254,8 +292,12 @@ export default function AuditPage() {
                 <th className="px-6 py-2.5 border-r border-slate-200/60 text-left">
                   Execution Time
                 </th>
-                <th className="px-6 py-2.5 text-center border-r border-slate-200/60">Actor</th>
-                <th className="px-6 py-2.5 text-center border-r border-slate-200/60">Action</th>
+                <th className="px-6 py-2.5 text-center border-r border-slate-200/60">
+                  Actor
+                </th>
+                <th className="px-6 py-2.5 text-center border-r border-slate-200/60">
+                  Action
+                </th>
                 <th className="px-6 py-2.5 text-center border-r border-slate-200/60">
                   Description
                 </th>
@@ -274,13 +316,19 @@ export default function AuditPage() {
                 ))
               ) : logs.length === 0 ? (
                 <tr>
-                  <td colSpan={5} className="px-6 py-12 text-center text-slate-400 font-medium">
+                  <td
+                    colSpan={5}
+                    className="px-6 py-12 text-center text-slate-400 font-medium"
+                  >
                     No audit records found matching your selection.
                   </td>
                 </tr>
               ) : (
                 logs.map((log: any) => (
-                  <tr key={log.id} className="hover:bg-slate-50/50 transition-colors group">
+                  <tr
+                    key={log.id}
+                    className="hover:bg-slate-50/50 transition-colors group"
+                  >
                     <td className="px-6 py-2 border-r border-slate-100">
                       <div className="flex flex-col">
                         <span className="text-xs font-bold text-slate-700">
@@ -364,7 +412,8 @@ export default function AuditPage() {
                               Audit Log Intel
                             </DialogTitle>
                             <DialogDescription className="text-xs">
-                              Complete trace of the administrative mutation and payload.
+                              Complete trace of the administrative mutation and
+                              payload.
                             </DialogDescription>
                           </DialogHeader>
                           {selectedLog && (
@@ -437,7 +486,11 @@ export default function AuditPage() {
                                   </p>
                                   <div className="p-4 bg-slate-900 rounded-xl overflow-hidden border border-slate-800">
                                     <pre className="text-[10px] text-emerald-400 font-mono overflow-x-auto custom-scrollbar leading-relaxed">
-                                      {JSON.stringify(selectedLog.requestPayload, null, 2)}
+                                      {JSON.stringify(
+                                        selectedLog.requestPayload,
+                                        null,
+                                        2,
+                                      )}
                                     </pre>
                                   </div>
                                 </div>
@@ -450,7 +503,11 @@ export default function AuditPage() {
                                   </p>
                                   <div className="p-4 bg-slate-900 rounded-xl overflow-hidden border border-slate-800">
                                     <pre className="text-[10px] text-amber-400 font-mono overflow-x-auto custom-scrollbar leading-relaxed">
-                                      {JSON.stringify(selectedLog.changes, null, 2)}
+                                      {JSON.stringify(
+                                        selectedLog.changes,
+                                        null,
+                                        2,
+                                      )}
                                     </pre>
                                   </div>
                                 </div>
@@ -473,7 +530,10 @@ export default function AuditPage() {
             <p className="text-xs text-slate-500 font-medium">
               Showing page <strong className="text-slate-800">{page}</strong> of{' '}
               <strong className="text-slate-800">{totalPages}</strong>
-              <span className="hidden sm:inline"> ({total} total audit records)</span>
+              <span className="hidden sm:inline">
+                {' '}
+                ({total} total audit records)
+              </span>
             </p>
             <div className="flex gap-2">
               <Button

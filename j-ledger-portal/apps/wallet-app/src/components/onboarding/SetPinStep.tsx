@@ -22,11 +22,11 @@ export const SetPinStep: React.FC<SetPinStepProps> = ({
       title="Set Transaction PIN"
       subtitle="Create a 6-digit PIN to secure your wallet."
     >
-      <PINInput 
-        pin={pin} 
-        onPinChange={onPinChange} 
-        length={6} 
-        onComplete={onComplete} 
+      <PINInput
+        pin={pin}
+        onPinChange={onPinChange}
+        length={6}
+        onComplete={onComplete}
       />
     </PINLayout>
   </StepWrapper>

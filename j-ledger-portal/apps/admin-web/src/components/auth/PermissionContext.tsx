@@ -7,7 +7,9 @@ interface PermissionContextType {
   role: string;
 }
 
-const PermissionContext = createContext<PermissionContextType | undefined>(undefined);
+const PermissionContext = createContext<PermissionContextType | undefined>(
+  undefined,
+);
 
 export function PermissionProvider({
   children,

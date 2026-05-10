@@ -1,5 +1,11 @@
 import { RedemptionsTable } from '@/components/promotions/RedemptionsTable';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from '@/components/ui/card';
 import { promotionsRequester } from '@/lib/requesters';
 
 async function getRedemptions() {
@@ -18,7 +24,9 @@ export default async function RedemptionsPage() {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h2 className="text-3xl font-bold tracking-tight text-[#2D3748]">Redemption History</h2>
+          <h2 className="text-3xl font-bold tracking-tight text-[#2D3748]">
+            Redemption History
+          </h2>
           <p className="text-muted-foreground mt-1">
             Monitor all user reward claims and usage status.
           </p>
@@ -29,7 +37,8 @@ export default async function RedemptionsPage() {
         <CardHeader>
           <CardTitle>Global Usage Logs</CardTitle>
           <CardDescription>
-            Real-time feed of all deals redeemed by wallet users across the platform.
+            Real-time feed of all deals redeemed by wallet users across the
+            platform.
           </CardDescription>
         </CardHeader>
         <CardContent>

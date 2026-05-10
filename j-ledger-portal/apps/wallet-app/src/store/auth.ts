@@ -24,7 +24,10 @@ interface AuthState {
   user: WalletUser | null;
   biometricEnabled: boolean;
   lastActiveAt: number; // timestamp of last activity
-  setToken: (token: string | null, refreshToken?: string | null) => Promise<void>;
+  setToken: (
+    token: string | null,
+    refreshToken?: string | null,
+  ) => Promise<void>;
   setUser: (user: WalletUser | null) => void;
   setBiometricEnabled: (enabled: boolean) => Promise<void>;
   verifyPin: (pin: string) => Promise<boolean>;
@@ -137,7 +140,10 @@ export const useAuthStore = create<AuthState>((set, get) => ({
 
       return true;
     } catch (error: any) {
-      console.error('[Auth] PIN verification failed:', error.response?.data || error.message);
+      console.error(
+        '[Auth] PIN verification failed:',
+        error.response?.data || error.message,
+      );
       return false;
     }
   },
@@ -165,7 +171,10 @@ export const useAuthStore = create<AuthState>((set, get) => ({
       console.log('[Auth] Session refreshed successfully');
       return true;
     } catch (error: any) {
-      console.error('[Auth] Session refresh failed:', error.response?.data || error.message);
+      console.error(
+        '[Auth] Session refresh failed:',
+        error.response?.data || error.message,
+      );
       return false;
     }
   },
@@ -179,7 +188,11 @@ export const useAuthStore = create<AuthState>((set, get) => ({
       } else {
         await SecureStore.deleteItemAsync(SESSION_LOCKED_KEY);
       }
-      set({ needsPinVerification: false, lastActiveAt: Date.now(), isAuthenticated: true });
+      set({
+        needsPinVerification: false,
+        lastActiveAt: Date.now(),
+        isAuthenticated: true,
+      });
     }
     return isValid;
   },
@@ -233,7 +246,10 @@ export const useAuthStore = create<AuthState>((set, get) => ({
         : (await SecureStore.getItemAsync(SESSION_LOCKED_KEY)) === 'true';
 
       if (token && user) {
-        console.log('[Auth] Restored session from storage, isLocked:', isLocked);
+        console.log(
+          '[Auth] Restored session from storage, isLocked:',
+          isLocked,
+        );
         set({
           token,
           refreshToken,
@@ -245,7 +261,9 @@ export const useAuthStore = create<AuthState>((set, get) => ({
         });
       } else if (refreshToken && user) {
         // Only require PIN if we actually have user data to go with the session
-        console.log('[Auth] Session found but access token expired, PIN verification required');
+        console.log(
+          '[Auth] Session found but access token expired, PIN verification required',
+        );
         set({
           refreshToken,
           user,
@@ -286,7 +304,10 @@ export const useAuthStore = create<AuthState>((set, get) => ({
       const { useRegistrationStore } = require('./registration');
       await useRegistrationStore.getState().reset();
     } catch (err) {
-      console.warn('[Auth] Soft error resetting registration store on logout:', err);
+      console.warn(
+        '[Auth] Soft error resetting registration store on logout:',
+        err,
+      );
     }
 
     if (isWeb) {

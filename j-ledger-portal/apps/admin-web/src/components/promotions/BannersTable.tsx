@@ -21,7 +21,11 @@ interface BannersTableProps {
   onRefresh: () => void;
 }
 
-export function BannersTable({ banners, onEdit, onRefresh }: BannersTableProps) {
+export function BannersTable({
+  banners,
+  onEdit,
+  onRefresh,
+}: BannersTableProps) {
   const [deletingId, setDeletingId] = useState<string | null>(null);
 
   const handleDelete = async (id: string) => {
@@ -53,7 +57,10 @@ export function BannersTable({ banners, onEdit, onRefresh }: BannersTableProps) 
         </TableHeader>
         <TableBody>
           {banners.map((banner) => (
-            <TableRow key={banner.id} className="hover:bg-secondary/30 transition-colors">
+            <TableRow
+              key={banner.id}
+              className="hover:bg-secondary/30 transition-colors"
+            >
               <TableCell>
                 <div className="w-32 h-16 rounded-lg overflow-hidden bg-slate-100 border border-slate-200">
                   <img
@@ -61,7 +68,8 @@ export function BannersTable({ banners, onEdit, onRefresh }: BannersTableProps) 
                     alt={banner.title}
                     className="w-full h-full object-cover"
                     onError={(e) => {
-                      (e.target as any).src = 'https://placehold.co/200x100?text=No+Image';
+                      (e.target as any).src =
+                        'https://placehold.co/200x100?text=No+Image';
                     }}
                   />
                 </div>
@@ -74,7 +82,10 @@ export function BannersTable({ banners, onEdit, onRefresh }: BannersTableProps) 
                 </div>
               </TableCell>
               <TableCell>
-                <Badge variant="outline" className="bg-slate-50 border-slate-200">
+                <Badge
+                  variant="outline"
+                  className="bg-slate-50 border-slate-200"
+                >
                   P{banner.priority}
                 </Badge>
               </TableCell>
@@ -107,8 +118,12 @@ export function BannersTable({ banners, onEdit, onRefresh }: BannersTableProps) 
           ))}
           {banners.length === 0 && (
             <TableRow>
-              <TableCell colSpan={5} className="h-24 text-center text-muted-foreground">
-                No active banners found. Add a promotional carousel to engage users!
+              <TableCell
+                colSpan={5}
+                className="h-24 text-center text-muted-foreground"
+              >
+                No active banners found. Add a promotional carousel to engage
+                users!
               </TableCell>
             </TableRow>
           )}

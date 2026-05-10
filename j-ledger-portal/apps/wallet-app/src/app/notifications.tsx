@@ -26,7 +26,11 @@ import {
 } from 'lucide-react-native';
 import { useRouter } from 'expo-router';
 import { MotiView } from 'moti';
-import { useInfiniteQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import {
+  useInfiniteQuery,
+  useMutation,
+  useQueryClient,
+} from '@tanstack/react-query';
 import { api } from '@/lib/axios';
 import { NotificationEventType, NotificationCategory } from '@repo/dto';
 
@@ -62,7 +66,10 @@ const getCategoryForType = (type: string, category?: string) => {
 
   if (t === NotificationEventType.PROMO || t === NotificationEventType.OFFER)
     return NotificationCategory.PROMO;
-  if (t === NotificationEventType.NEWS || t === NotificationEventType.ANNOUNCEMENT)
+  if (
+    t === NotificationEventType.NEWS ||
+    t === NotificationEventType.ANNOUNCEMENT
+  )
     return NotificationCategory.NEWS;
   return NotificationCategory.SYSTEM;
 };
@@ -73,27 +80,34 @@ export default function NotificationsScreen() {
   const [selectedCategory, setSelectedCategory] = useState('ALL');
 
   // Fetch notifications using Infinite Query
-  const { data, fetchNextPage, hasNextPage, isFetchingNextPage, isLoading, isRefetching, refetch } =
-    useInfiniteQuery({
-      queryKey: ['notifications', selectedCategory],
-      queryFn: async ({ pageParam = 1 }) => {
-        const response = await api.get('/notifications', {
-          params: {
-            page: pageParam,
-            limit: 15,
-            category: selectedCategory,
-          },
-        });
-        return response.data;
-      },
-      getNextPageParam: (lastPage) => {
-        if (lastPage.meta.page < lastPage.meta.totalPages) {
-          return lastPage.meta.page + 1;
-        }
-        return undefined;
-      },
-      initialPageParam: 1,
-    });
+  const {
+    data,
+    fetchNextPage,
+    hasNextPage,
+    isFetchingNextPage,
+    isLoading,
+    isRefetching,
+    refetch,
+  } = useInfiniteQuery({
+    queryKey: ['notifications', selectedCategory],
+    queryFn: async ({ pageParam = 1 }) => {
+      const response = await api.get('/notifications', {
+        params: {
+          page: pageParam,
+          limit: 15,
+          category: selectedCategory,
+        },
+      });
+      return response.data;
+    },
+    getNextPageParam: (lastPage) => {
+      if (lastPage.meta.page < lastPage.meta.totalPages) {
+        return lastPage.meta.page + 1;
+      }
+      return undefined;
+    },
+    initialPageParam: 1,
+  });
 
   // Mark as read mutation
   const markAsReadMutation = useMutation({
@@ -111,10 +125,14 @@ export default function NotificationsScreen() {
   const getIcon = (type: string, category?: string) => {
     const cat = getCategoryForType(type, category);
 
-    if (cat === NotificationCategory.FINANCE) return <CreditCard size={22} color="#4855a5" />;
-    if (cat === NotificationCategory.SYSTEM) return <ShieldCheck size={22} color="#4855a5" />;
-    if (cat === NotificationCategory.PROMO) return <Tag size={22} color="#f48fb1" />;
-    if (cat === NotificationCategory.NEWS) return <Newspaper size={22} color="#4855a5" />;
+    if (cat === NotificationCategory.FINANCE)
+      return <CreditCard size={22} color="#4855a5" />;
+    if (cat === NotificationCategory.SYSTEM)
+      return <ShieldCheck size={22} color="#4855a5" />;
+    if (cat === NotificationCategory.PROMO)
+      return <Tag size={22} color="#f48fb1" />;
+    if (cat === NotificationCategory.NEWS)
+      return <Newspaper size={22} color="#4855a5" />;
 
     // Specific overrides if needed
     const t = type?.toUpperCase() || '';
@@ -187,7 +205,10 @@ export default function NotificationsScreen() {
       type === NotificationEventType.KYC_REJECTED
     ) {
       router.push('/profile/information');
-    } else if (type === 'SECURITY' || type === NotificationEventType.LOGIN_SUCCESS) {
+    } else if (
+      type === 'SECURITY' ||
+      type === NotificationEventType.LOGIN_SUCCESS
+    ) {
       router.push('/profile/security' as any);
     }
   };
@@ -211,7 +232,11 @@ export default function NotificationsScreen() {
         <ScrollView
           horizontal
           showsHorizontalScrollIndicator={false}
-          contentContainerStyle={{ paddingHorizontal: 24, gap: 12, paddingBottom: 8 }}
+          contentContainerStyle={{
+            paddingHorizontal: 24,
+            gap: 12,
+            paddingBottom: 8,
+          }}
         >
           {CATEGORIES.map((cat) => {
             const Icon = cat.icon;
@@ -234,7 +259,9 @@ export default function NotificationsScreen() {
                     borderRadius: 16,
                     borderWidth: 1,
                     backgroundColor: isSelected ? '#4855a5' : '#ffffff',
-                    borderColor: isSelected ? '#4855a5' : 'rgba(72, 85, 165, 0.1)',
+                    borderColor: isSelected
+                      ? '#4855a5'
+                      : 'rgba(72, 85, 165, 0.1)',
                     // Manual shadow-md implementation
                     shadowColor: '#000',
                     shadowOffset: { width: 0, height: 4 },
@@ -288,7 +315,11 @@ export default function NotificationsScreen() {
           }}
           onEndReachedThreshold={0.5}
           refreshControl={
-            <RefreshControl refreshing={isRefetching} onRefresh={refetch} tintColor="#4855a5" />
+            <RefreshControl
+              refreshing={isRefetching}
+              onRefresh={refetch}
+              tintColor="#4855a5"
+            />
           }
           ListHeaderComponent={
             notifications.length > 0 ? (
@@ -344,7 +375,9 @@ const NotificationItem = React.memo(
       <TouchableOpacity
         onPress={() => onPress(item)}
         className={`border rounded-[30] p-5 flex-row gap-5 shadow-md active:opacity-70 ${
-          item.isRead ? 'bg-white border-gray-100' : 'bg-blue-50 border-blue-100 shadow-blue-100'
+          item.isRead
+            ? 'bg-white border-gray-100'
+            : 'bg-blue-50 border-blue-100 shadow-blue-100'
         }`}
       >
         <View
@@ -360,7 +393,9 @@ const NotificationItem = React.memo(
             <Text
               numberOfLines={1}
               className={`text-base font-manrope tracking-tight flex-1 mr-2 ${
-                item.isRead ? 'font-bold text-on-surface' : 'font-black text-primary'
+                item.isRead
+                  ? 'font-bold text-on-surface'
+                  : 'font-black text-primary'
               }`}
             >
               {item.title}

@@ -10,12 +10,26 @@ export const accountRequester = {
     );
   },
   updateStatus: async (id: string, status: string, options?: RequestOptions) =>
-    apiClient.put<void>(API_PATHS.ADMIN.ACCOUNTS.STATUS(id), { status }, options),
+    apiClient.put<void>(
+      API_PATHS.ADMIN.ACCOUNTS.STATUS(id),
+      { status },
+      options,
+    ),
   getAccountByUserId: async (userId: string, options?: RequestOptions) =>
-    apiClient.get<{ data: Account | null }>(API_PATHS.ADMIN.ACCOUNTS.BY_USER(userId), options),
+    apiClient.get<{ data: Account | null }>(
+      API_PATHS.ADMIN.ACCOUNTS.BY_USER(userId),
+      options,
+    ),
   getAccountById: async (id: string, options?: RequestOptions) =>
-    apiClient.get<{ data: Account }>(`${API_PATHS.ADMIN.ACCOUNTS.BASE}/${id}`, options),
-  getLedgerEntries: async (id: string, params?: any, options?: RequestOptions) => {
+    apiClient.get<{ data: Account }>(
+      `${API_PATHS.ADMIN.ACCOUNTS.BASE}/${id}`,
+      options,
+    ),
+  getLedgerEntries: async (
+    id: string,
+    params?: any,
+    options?: RequestOptions,
+  ) => {
     const query = new URLSearchParams(params).toString();
     return apiClient.get<AdminPaginatedResponse<any>>(
       `${API_PATHS.ADMIN.ACCOUNTS.BASE}/${id}/ledger-entries?${query}`,

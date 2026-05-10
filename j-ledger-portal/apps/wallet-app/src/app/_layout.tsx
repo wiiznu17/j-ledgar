@@ -1,6 +1,10 @@
 import { useEffect } from 'react';
 import { View, StyleSheet } from 'react-native';
-import { DarkTheme, DefaultTheme, ThemeProvider } from '@react-navigation/native';
+import {
+  DarkTheme,
+  DefaultTheme,
+  ThemeProvider,
+} from '@react-navigation/native';
 import { router, Stack, SplashScreen, useSegments } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
@@ -88,7 +92,10 @@ export default function RootLayout() {
     if (needsPinVerification) {
       router.replace('/(auth)/login');
     } else if (!isAuthenticated) {
-      if (segments[0] !== '(auth)' || (segments[1] !== 'login' && segments[1] !== 'onboarding')) {
+      if (
+        segments[0] !== '(auth)' ||
+        (segments[1] !== 'login' && segments[1] !== 'onboarding')
+      ) {
         router.replace('/(auth)/login');
       }
     } else if (user) {
@@ -99,7 +106,9 @@ export default function RootLayout() {
       // 1. Handle Incomplete Registration Flow (Highest Priority - Force finish steps 1-12)
       if (user.registrationState !== RegistrationState.COMPLETED) {
         if (!isOnboarding) {
-          console.log('[RootLayout] Registration incomplete, forcing Onboarding flow');
+          console.log(
+            '[RootLayout] Registration incomplete, forcing Onboarding flow',
+          );
           router.replace('/(auth)/onboarding');
         }
         return;
@@ -135,7 +144,9 @@ export default function RootLayout() {
         case UserStatus.INACTIVE:
         default:
           if (segments[1] !== 'account-restricted') {
-            console.log(`[RootLayout] Account ${user.status}, redirecting to restricted screen`);
+            console.log(
+              `[RootLayout] Account ${user.status}, redirecting to restricted screen`,
+            );
             router.replace('/(auth)/account-restricted');
           }
           break;
@@ -164,7 +175,9 @@ export default function RootLayout() {
 
   return (
     <StripeProvider
-      publishableKey={process.env.EXPO_PUBLIC_STRIPE_PUBLISHABLE_KEY || 'pk_test_placeholder'}
+      publishableKey={
+        process.env.EXPO_PUBLIC_STRIPE_PUBLISHABLE_KEY || 'pk_test_placeholder'
+      }
       merchantIdentifier="merchant.com.jledger.app"
     >
       <QueryClientProvider client={queryClient}>

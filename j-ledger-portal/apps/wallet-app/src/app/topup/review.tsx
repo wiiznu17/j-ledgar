@@ -8,7 +8,13 @@ import {
   Platform,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { ChevronLeft, ArrowRight, ShieldCheck, Wallet, CreditCard } from 'lucide-react-native';
+import {
+  ChevronLeft,
+  ArrowRight,
+  ShieldCheck,
+  Wallet,
+  CreditCard,
+} from 'lucide-react-native';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import { MotiView, AnimatePresence } from 'moti';
 import { useScreenCaptureProtection } from '@/hooks/useScreenCaptureProtection';
@@ -99,7 +105,9 @@ export default function TopupReviewScreen() {
         },
       } as any);
     } catch (err: any) {
-      setError(err?.response?.data?.message || err?.message || 'เติมเงินไม่สำเร็จ');
+      setError(
+        err?.response?.data?.message || err?.message || 'เติมเงินไม่สำเร็จ',
+      );
     } finally {
       setIsProcessing(false);
       setProcessingText('Processing Payment');
@@ -139,7 +147,9 @@ export default function TopupReviewScreen() {
                 Top Up Amount
               </Text>
               <View className="flex-row items-baseline w-full justify-center">
-                <Text className="text-2xl font-manrope font-black text-gray-400 mr-2">฿</Text>
+                <Text className="text-2xl font-manrope font-black text-gray-400 mr-2">
+                  ฿
+                </Text>
                 <Text
                   numberOfLines={1}
                   adjustsFontSizeToFit
@@ -182,7 +192,9 @@ export default function TopupReviewScreen() {
                   <Text className="text-[10px] font-manrope font-black text-gray-400 uppercase tracking-widest mb-0.5">
                     To
                   </Text>
-                  <Text className="text-sm font-manrope font-black text-gray-800">My E-Wallet</Text>
+                  <Text className="text-sm font-manrope font-black text-gray-800">
+                    My E-Wallet
+                  </Text>
                   <Text className="text-[10px] font-manrope font-bold text-gray-400 mt-0.5">
                     P-wallet Account
                   </Text>
@@ -199,7 +211,10 @@ export default function TopupReviewScreen() {
                   Total Deduction
                 </Text>
                 <Text className="text-xl font-manrope font-black text-[#f48fb1]">
-                  ฿{totalAmount.toLocaleString(undefined, { minimumFractionDigits: 2 })}
+                  ฿
+                  {totalAmount.toLocaleString(undefined, {
+                    minimumFractionDigits: 2,
+                  })}
                 </Text>
               </View>
             </View>
@@ -232,14 +247,18 @@ export default function TopupReviewScreen() {
           disabled={isProcessing}
           onPress={handleConfirm}
           className={`w-full h-16 rounded-2xl flex-row items-center justify-center gap-3 ${
-            isProcessing ? 'bg-pink-300' : 'bg-[#f48fb1] shadow-lg shadow-pink-200 active:scale-95'
+            isProcessing
+              ? 'bg-pink-300'
+              : 'bg-[#f48fb1] shadow-lg shadow-pink-200 active:scale-95'
           }`}
         >
           {isProcessing ? (
             <ActivityIndicator color="white" />
           ) : (
             <>
-              <Text className="font-manrope font-black text-white text-base">Confirm Payment</Text>
+              <Text className="font-manrope font-black text-white text-base">
+                Confirm Payment
+              </Text>
               <ArrowRight size={20} color="white" />
             </>
           )}

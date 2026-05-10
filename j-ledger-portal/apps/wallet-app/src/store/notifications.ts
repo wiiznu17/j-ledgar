@@ -18,7 +18,13 @@ const createStorage = () => {
   };
 };
 
-export type NotificationType = 'payment' | 'security' | 'points' | 'info' | 'transfer' | 'error';
+export type NotificationType =
+  | 'payment'
+  | 'security'
+  | 'points'
+  | 'info'
+  | 'transfer'
+  | 'error';
 
 export interface Notification {
   id: string;
@@ -32,7 +38,9 @@ export interface Notification {
 
 interface NotificationStore {
   notifications: Notification[];
-  addNotification: (notification: Omit<Notification, 'id' | 'timestamp' | 'read'>) => void;
+  addNotification: (
+    notification: Omit<Notification, 'id' | 'timestamp' | 'read'>,
+  ) => void;
   removeNotification: (id: string) => void;
   markAsRead: (id: string) => void;
   markAllAsRead: () => void;
@@ -68,7 +76,9 @@ export const useNotificationStore = create<NotificationStore>()(
 
       markAsRead: (id) => {
         set((state) => ({
-          notifications: state.notifications.map((n) => (n.id === id ? { ...n, read: true } : n)),
+          notifications: state.notifications.map((n) =>
+            n.id === id ? { ...n, read: true } : n,
+          ),
         }));
       },
 

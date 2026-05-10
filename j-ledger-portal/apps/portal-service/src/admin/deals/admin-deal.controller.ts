@@ -1,4 +1,13 @@
-import { Controller, Get, Post, Put, Delete, Body, Param, UseGuards } from '@nestjs/common';
+import {
+  Controller,
+  Get,
+  Post,
+  Put,
+  Delete,
+  Body,
+  Param,
+  UseGuards,
+} from '@nestjs/common';
 import { DealService } from '../../modules/deals/deal.service';
 import { AdminJwtGuard } from '../guards/admin-jwt.guard';
 

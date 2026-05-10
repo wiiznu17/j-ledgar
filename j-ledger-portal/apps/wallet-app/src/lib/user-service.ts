@@ -1,6 +1,11 @@
 import api from './axios';
 
-export type AddressType = 'REGISTERED' | 'CURRENT' | 'WORK' | 'SHIPPING' | 'BILLING';
+export type AddressType =
+  | 'REGISTERED'
+  | 'CURRENT'
+  | 'WORK'
+  | 'SHIPPING'
+  | 'BILLING';
 
 export interface Address {
   id: string;
@@ -74,12 +79,17 @@ export const UserProfileService = {
     return response.data;
   },
 
-  updateProfile: async (data: UpdateProfileData): Promise<{ success: boolean }> => {
+  updateProfile: async (
+    data: UpdateProfileData,
+  ): Promise<{ success: boolean }> => {
     const response = await api.put('/identity/profile', data);
     return response.data;
   },
 
-  updateAddress: async (type: AddressType, data: UpdateAddressData): Promise<Address> => {
+  updateAddress: async (
+    type: AddressType,
+    data: UpdateAddressData,
+  ): Promise<Address> => {
     const response = await api.put(`/identity/address/${type}`, data);
     return response.data;
   },

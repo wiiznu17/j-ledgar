@@ -23,9 +23,13 @@ export const RecentActivityList = ({
   return (
     <View className="mb-4 px-1">
       <View className="flex-row justify-between items-end mb-4">
-        <Text className="text-lg font-manrope font-black text-gray-800">Recent Activity</Text>
+        <Text className="text-lg font-manrope font-black text-gray-800">
+          Recent Activity
+        </Text>
         <TouchableOpacity onPress={onSeeAll}>
-          <Text className="text-xs font-manrope font-bold text-[#f48fb1]">See All</Text>
+          <Text className="text-xs font-manrope font-bold text-[#f48fb1]">
+            See All
+          </Text>
         </TouchableOpacity>
       </View>
 
@@ -45,14 +49,19 @@ export const RecentActivityList = ({
                   <Icon size={20} color="#f48fb1" />
                 </View>
                 <View>
-                  <Text className="font-manrope font-black text-gray-800 text-sm">{tx.title}</Text>
+                  <Text className="font-manrope font-black text-gray-800 text-sm">
+                    {tx.title}
+                  </Text>
                   <Text className="font-manrope text-[10px] font-bold text-gray-400 mt-0.5 uppercase tracking-widest">
                     {getTypeMeta(tx.type).label}
                   </Text>
                 </View>
               </View>
               <View className="items-end">
-                <Text className="font-manrope font-black text-base" style={{ color: amountColor }}>
+                <Text
+                  className="font-manrope font-black text-base"
+                  style={{ color: amountColor }}
+                >
                   {tx.direction === 'OUT' ? '-' : '+'}
                   {currency}
                   {Number(tx.amount || 0).toLocaleString(undefined, {

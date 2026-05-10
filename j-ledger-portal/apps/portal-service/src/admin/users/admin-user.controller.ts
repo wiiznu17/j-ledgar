@@ -1,7 +1,20 @@
-import { Controller, Get, Post, Put, Body, Param, Query, UseGuards } from '@nestjs/common';
+import {
+  Controller,
+  Get,
+  Post,
+  Put,
+  Body,
+  Param,
+  Query,
+  UseGuards,
+} from '@nestjs/common';
 import { IdentityService } from '../../modules/identity/identity.service';
 import { AdminService } from '../services/admin.service';
-import { AdminPaginatedResponse, PaginatedResponse, WalletUser } from '@repo/dto';
+import {
+  AdminPaginatedResponse,
+  PaginatedResponse,
+  WalletUser,
+} from '@repo/dto';
 import { AdminJwtGuard } from '../guards/admin-jwt.guard';
 import { AdminRolesGuard } from '../guards/admin-roles.guard';
 import { AdminPermissionsGuard } from '../guards/admin-permissions.guard';
@@ -71,7 +84,10 @@ export class AdminUserController {
   @Put(':id/status')
   @RequirePermissions(Permission.FREEZE_USERS)
   @AuditLog(null as any, ResourceType.USER, 'Updated user status')
-  async updateUserStatus(@Param('id') id: string, @Body() body: { status: string }) {
+  async updateUserStatus(
+    @Param('id') id: string,
+    @Body() body: { status: string },
+  ) {
     return this.identityService.updateUserStatus(id, body.status);
   }
 
@@ -96,7 +112,11 @@ export class AdminUserController {
     @Query('limit') limit: number = 10,
     @Query('userId') userId?: string,
   ): Promise<AdminPaginatedResponse<any>> {
-    return this.identityService.findAllSecurityEvents(Number(page), Number(limit), userId);
+    return this.identityService.findAllSecurityEvents(
+      Number(page),
+      Number(limit),
+      userId,
+    );
   }
 
   @Post(':id/suspend')

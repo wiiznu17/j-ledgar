@@ -23,11 +23,11 @@ export const SetPinStep2: React.FC<SetPinStep2Props> = ({
       subtitle="Please re-enter your 6-digit PIN to confirm."
       leftElement={<PINBackButton onPress={onBack} />}
     >
-      <PINInput 
-        pin={pin} 
-        onPinChange={onPinChange} 
-        length={6} 
-        onComplete={onComplete} 
+      <PINInput
+        pin={pin}
+        onPinChange={onPinChange}
+        length={6}
+        onComplete={onComplete}
       />
     </PINLayout>
   </StepWrapper>

@@ -52,8 +52,12 @@ export const InvoiceView: React.FC<InvoiceViewProps> = ({ invoice }) => {
       <View style={styles.infoSection}>
         <View style={styles.infoBlock}>
           <Text style={styles.label}>FROM</Text>
-          <Text style={styles.infoValue}>{invoice.senderName || 'P-wallet Platform'}</Text>
-          {invoice.senderDetail && <Text style={styles.infoSubValue}>{invoice.senderDetail}</Text>}
+          <Text style={styles.infoValue}>
+            {invoice.senderName || 'P-wallet Platform'}
+          </Text>
+          {invoice.senderDetail && (
+            <Text style={styles.infoSubValue}>{invoice.senderDetail}</Text>
+          )}
         </View>
         <View style={[styles.infoBlock, { alignItems: 'flex-end' }]}>
           <Text style={styles.label}>DATE</Text>
@@ -66,15 +70,25 @@ export const InvoiceView: React.FC<InvoiceViewProps> = ({ invoice }) => {
       {/* Table Header */}
       <View style={styles.tableHeader}>
         <Text style={[styles.tableHeaderText, { flex: 2 }]}>Description</Text>
-        <Text style={[styles.tableHeaderText, { flex: 0.5, textAlign: 'center' }]}>Qty</Text>
-        <Text style={[styles.tableHeaderText, { flex: 1.5, textAlign: 'right' }]}>Amount</Text>
+        <Text
+          style={[styles.tableHeaderText, { flex: 0.5, textAlign: 'center' }]}
+        >
+          Qty
+        </Text>
+        <Text
+          style={[styles.tableHeaderText, { flex: 1.5, textAlign: 'right' }]}
+        >
+          Amount
+        </Text>
       </View>
 
       {/* Table Items */}
       {invoice.items.map((item) => (
         <View key={item.id} style={styles.tableRow}>
           <Text style={[styles.itemText, { flex: 2 }]}>{item.name}</Text>
-          <Text style={[styles.itemText, { flex: 0.5, textAlign: 'center' }]}>{item.quantity}</Text>
+          <Text style={[styles.itemText, { flex: 0.5, textAlign: 'center' }]}>
+            {item.quantity}
+          </Text>
           <Text style={[styles.itemText, { flex: 1.5, textAlign: 'right' }]}>
             {formatCurrency(item.amount)}
           </Text>
@@ -87,7 +101,9 @@ export const InvoiceView: React.FC<InvoiceViewProps> = ({ invoice }) => {
       <View style={styles.totalsContainer}>
         <View style={styles.totalRow}>
           <Text style={styles.totalLabel}>Subtotal</Text>
-          <Text style={styles.totalValue}>{formatCurrency(invoice.amount)}</Text>
+          <Text style={styles.totalValue}>
+            {formatCurrency(invoice.amount)}
+          </Text>
         </View>
         <View style={styles.totalRow}>
           <Text style={styles.totalLabel}>VAT (7%)</Text>
@@ -95,7 +111,9 @@ export const InvoiceView: React.FC<InvoiceViewProps> = ({ invoice }) => {
         </View>
         <View style={[styles.totalRow, styles.grandTotalRow]}>
           <Text style={styles.grandTotalLabel}>Total Amount</Text>
-          <Text style={styles.grandTotalValue}>{formatCurrency(invoice.total)}</Text>
+          <Text style={styles.grandTotalValue}>
+            {formatCurrency(invoice.total)}
+          </Text>
         </View>
       </View>
 

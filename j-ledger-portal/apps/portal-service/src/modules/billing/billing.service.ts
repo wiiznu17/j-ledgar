@@ -1,4 +1,9 @@
-import { Injectable, Logger, NotFoundException, BadRequestException } from '@nestjs/common';
+import {
+  Injectable,
+  Logger,
+  NotFoundException,
+  BadRequestException,
+} from '@nestjs/common';
 import { PrismaService } from '../../core/prisma/prisma.service';
 import { FinanceService } from '../integration/finance.service';
 import { CreateInvoiceDto } from './dto/create-invoice.dto';
@@ -14,22 +19,34 @@ export class BillingService {
   ) {}
 
   async createInvoice(dto: CreateInvoiceDto) {
-    this.logger.log(`[createInvoice] Starting invoice creation for user=${dto.userId}`);
+    this.logger.log(
+      `[createInvoice] Starting invoice creation for user=${dto.userId}`,
+    );
     const { items, ...rest } = dto;
 
     try {
       // Calculate totals
-      const subtotal = items.reduce((sum, item) => sum + item.unitPrice * item.quantity, 0);
+      const subtotal = items.reduce(
+        (sum, item) => sum + item.unitPrice * item.quantity,
+        0,
+      );
       const tax = subtotal * 0.07;
       const total = subtotal + tax;
-      this.logger.log(`[createInvoice] Totals calculated: subtotal=${subtotal}, total=${total}`);
+      this.logger.log(
+        `[createInvoice] Totals calculated: subtotal=${subtotal}, total=${total}`,
+      );
 
       // Generate Invoice Number: INV-YYYYMMDD-XXXXXX-RAND
       const datePart = new Date().toISOString().slice(0, 10).replace(/-/g, '');
-      const randomPart = Math.random().toString(36).substring(2, 6).toUpperCase();
+      const randomPart = Math.random()
+        .toString(36)
+        .substring(2, 6)
+        .toUpperCase();
       const count = await this.prisma.invoice.count();
       const invoiceNumber = `INV-${datePart}-${(count + 1).toString().padStart(4, '0')}-${randomPart}`;
-      this.logger.log(`[createInvoice] Generated unique number: ${invoiceNumber}`);
+      this.logger.log(
+        `[createInvoice] Generated unique number: ${invoiceNumber}`,
+      );
 
       const result = await this.prisma.invoice.create({
         data: {
@@ -52,10 +69,15 @@ export class BillingService {
           items: true,
         },
       });
-      this.logger.log(`[createInvoice] Successfully created invoice: ${result.id}`);
+      this.logger.log(
+        `[createInvoice] Successfully created invoice: ${result.id}`,
+      );
       return result;
     } catch (error) {
-      this.logger.error(`[createInvoice] CRITICAL ERROR: ${error.message}`, error.stack);
+      this.logger.error(
+        `[createInvoice] CRITICAL ERROR: ${error.message}`,
+        error.stack,
+      );
       throw error;
     }
   }
@@ -116,12 +138,16 @@ export class BillingService {
         },
       });
 
-      this.logger.log(`Invoice ${invoice.invoiceNumber} paid by user ${userId}. Tx: ${mockTxId}`);
+      this.logger.log(
+        `Invoice ${invoice.invoiceNumber} paid by user ${userId}. Tx: ${mockTxId}`,
+      );
 
       return updatedInvoice;
     } catch (error) {
       this.logger.error(`Failed to pay invoice ${id}: ${error.message}`);
-      throw new BadRequestException('Payment failed. Please check your balance.');
+      throw new BadRequestException(
+        'Payment failed. Please check your balance.',
+      );
     }
   }
 }

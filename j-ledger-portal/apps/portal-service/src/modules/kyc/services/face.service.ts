@@ -45,7 +45,10 @@ export class AwsRekognitionService {
         referenceImage: response.ReferenceImage,
       };
     } catch (error) {
-      this.logger.error(`Failed to get results for session ${sessionId}`, error);
+      this.logger.error(
+        `Failed to get results for session ${sessionId}`,
+        error,
+      );
       throw error;
     }
   }
@@ -55,7 +58,9 @@ export class AwsRekognitionService {
       const command = new CompareFacesCommand({
         SourceImage: { Bytes: sourceImage },
         TargetImage: { Bytes: targetImage },
-        SimilarityThreshold: Number(this.configService.get('KYC_MIN_SIMILARITY_SCORE', 80)),
+        SimilarityThreshold: Number(
+          this.configService.get('KYC_MIN_SIMILARITY_SCORE', 80),
+        ),
       });
 
       const response = await this.client.send(command);

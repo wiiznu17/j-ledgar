@@ -20,7 +20,12 @@ import { AwsRekognitionService } from './services/face.service';
     NotificationModule,
   ],
   controllers: [KycController],
-  providers: [KycService, S3Service, GoogleVisionService, AwsRekognitionService],
+  providers: [
+    KycService,
+    S3Service,
+    GoogleVisionService,
+    AwsRekognitionService,
+  ],
   exports: [KycService, S3Service, GoogleVisionService, AwsRekognitionService],
 })
 export class KycModule {}

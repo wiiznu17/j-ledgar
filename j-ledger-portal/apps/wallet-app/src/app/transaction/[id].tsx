@@ -1,5 +1,11 @@
 import React from 'react';
-import { View, Text, TouchableOpacity, ScrollView, ActivityIndicator } from 'react-native';
+import {
+  View,
+  Text,
+  TouchableOpacity,
+  ScrollView,
+  ActivityIndicator,
+} from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { ChevronLeft, AlertCircle, Bell } from 'lucide-react-native';
 import { useRouter, useLocalSearchParams } from 'expo-router';
@@ -73,8 +79,8 @@ export default function TransactionDetailScreen() {
           Transaction not found
         </Text>
         <Text className="text-sm font-manrope font-medium text-gray-500 text-center mt-2">
-          We couldn't find the details for this transaction. It might still be processing or has
-          been removed.
+          We couldn't find the details for this transaction. It might still be
+          processing or has been removed.
         </Text>
         <TouchableOpacity
           onPress={() => router.back()}
@@ -142,7 +148,11 @@ export default function TransactionDetailScreen() {
                   adjustsFontSizeToFit
                   minimumFontScale={0.5}
                   className="text-5xl font-manrope font-black tracking-tighter"
-                  style={{ color: amountColor, lineHeight: 60, includeFontPadding: false }}
+                  style={{
+                    color: amountColor,
+                    lineHeight: 60,
+                    includeFontPadding: false,
+                  }}
                 >
                   {Number(transaction.amount || 0).toLocaleString(undefined, {
                     minimumFractionDigits: 2,
@@ -153,12 +163,25 @@ export default function TransactionDetailScreen() {
             </View>
 
             <View className="gap-y-4 pb-2">
-              <DetailRow label="Status" value={transaction.status} valueColor={amountColor} />
-              <DetailRow label="Date & Time" value={formatCreatedAt(transaction.createdAt)} />
+              <DetailRow
+                label="Status"
+                value={transaction.status}
+                valueColor={amountColor}
+              />
+              <DetailRow
+                label="Date & Time"
+                value={formatCreatedAt(transaction.createdAt)}
+              />
               <DetailRow label="Source" value={transaction.source} />
-              <DetailRow label="Reference ID" value={transaction.reference || transaction.id} />
+              <DetailRow
+                label="Reference ID"
+                value={transaction.reference || transaction.id}
+              />
               {transaction.paymentIntentId ? (
-                <DetailRow label="Payment Intent" value={transaction.paymentIntentId} />
+                <DetailRow
+                  label="Payment Intent"
+                  value={transaction.paymentIntentId}
+                />
               ) : null}
               {transaction.orderId ? (
                 <DetailRow label="Order ID" value={transaction.orderId} />
@@ -169,11 +192,15 @@ export default function TransactionDetailScreen() {
           {/* View Receipt Button */}
           <TouchableOpacity
             onPress={() =>
-              router.push(`/billing/${transaction.reference || transaction.id}` as any)
+              router.push(
+                `/billing/${transaction.reference || transaction.id}` as any,
+              )
             }
             className="w-full h-16 bg-white border-2 border-[#f48fb1] rounded-2xl flex-row items-center justify-center gap-2 mb-4 active:scale-95"
           >
-            <Text className="text-sm font-manrope font-black text-[#f48fb1]">View Receipt</Text>
+            <Text className="text-sm font-manrope font-black text-[#f48fb1]">
+              View Receipt
+            </Text>
           </TouchableOpacity>
 
           <TouchableOpacity className="bg-red-50 p-4 rounded-2xl border border-red-100 flex-row items-center justify-center gap-2 shadow-sm active:scale-95 mb-6">

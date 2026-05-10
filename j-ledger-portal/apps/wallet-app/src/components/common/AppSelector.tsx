@@ -44,7 +44,11 @@ export const AppSelector: React.FC<AppSelectorProps> = ({
         activeOpacity={0.7}
         onPress={() => setIsVisible(true)}
         className={`flex-row items-center justify-between px-4 h-16 bg-white/60 rounded-2xl border ${
-          error ? 'border-error' : isVisible ? 'border-primary' : 'border-outline-variant'
+          error
+            ? 'border-error'
+            : isVisible
+              ? 'border-primary'
+              : 'border-outline-variant'
         } shadow-sm`}
       >
         <Text
@@ -57,7 +61,11 @@ export const AppSelector: React.FC<AppSelectorProps> = ({
         <ChevronDown size={18} color="#f48fb1" opacity={0.5} />
       </TouchableOpacity>
 
-      {error && <Text className="text-[10px] font-manrope text-error mt-1 ml-1">{error}</Text>}
+      {error && (
+        <Text className="text-[10px] font-manrope text-error mt-1 ml-1">
+          {error}
+        </Text>
+      )}
 
       <Modal
         visible={isVisible}
@@ -93,17 +101,23 @@ export const AppSelector: React.FC<AppSelectorProps> = ({
                         setIsVisible(false);
                       }}
                       className={`flex-row items-center justify-between py-4 border-b border-on-surfaceVariant/5 ${
-                        item.value === value ? 'bg-primary/5 rounded-xl px-4' : 'px-4'
+                        item.value === value
+                          ? 'bg-primary/5 rounded-xl px-4'
+                          : 'px-4'
                       }`}
                     >
                       <Text
                         className={`text-base font-manrope ${
-                          item.value === value ? 'text-primary font-bold' : 'text-on-surfaceVariant'
+                          item.value === value
+                            ? 'text-primary font-bold'
+                            : 'text-on-surfaceVariant'
                         }`}
                       >
                         {item.label}
                       </Text>
-                      {item.value === value && <Check size={20} color="#f48fb1" />}
+                      {item.value === value && (
+                        <Check size={20} color="#f48fb1" />
+                      )}
                     </TouchableOpacity>
                   )}
                 />

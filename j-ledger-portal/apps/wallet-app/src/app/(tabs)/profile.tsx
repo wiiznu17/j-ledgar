@@ -91,7 +91,10 @@ export default function SettingsScreen() {
 
   if (isLoading) {
     return (
-      <SafeAreaView className="flex-1 bg-transparent items-center justify-center" edges={['top']}>
+      <SafeAreaView
+        className="flex-1 bg-transparent items-center justify-center"
+        edges={['top']}
+      >
         <ActivityIndicator size="large" color="#f48fb1" />
         <Text className="text-sm font-manrope font-bold text-gray-400 mt-4">
           กำลังโหลดข้อมูล...
@@ -104,7 +107,9 @@ export default function SettingsScreen() {
     <SafeAreaView className="flex-1 bg-transparent" edges={['top']}>
       {/* Header */}
       <View className="px-5 pt-2 pb-4 items-center justify-center">
-        <Text className="text-lg font-black text-gray-800 font-manrope">Me</Text>
+        <Text className="text-lg font-black text-gray-800 font-manrope">
+          Me
+        </Text>
       </View>
 
       <ScrollView
@@ -276,7 +281,9 @@ export default function SettingsScreen() {
           className="w-full bg-white border border-gray-100 py-4 rounded-[1.5rem] flex-row items-center justify-center gap-3 shadow-sm active:scale-95 mb-6"
         >
           <LogOut size={20} color="#f48fb1" />
-          <Text className="font-manrope font-black text-[#f48fb1] text-base">Sign Out</Text>
+          <Text className="font-manrope font-black text-[#f48fb1] text-base">
+            Sign Out
+          </Text>
         </TouchableOpacity>
 
         {/* Footer Versioning */}
@@ -303,10 +310,14 @@ function SettingItem({ icon, iconBg, label, onPress, badge }: any) {
       className="w-full px-5 py-4 flex-row items-center justify-between bg-white"
     >
       <View className="flex-row items-center gap-4">
-        <View className={`w-10 h-10 rounded-2xl items-center justify-center ${iconBg}`}>
+        <View
+          className={`w-10 h-10 rounded-2xl items-center justify-center ${iconBg}`}
+        >
           {icon}
         </View>
-        <Text className="font-manrope font-black text-sm text-gray-800">{label}</Text>
+        <Text className="font-manrope font-black text-sm text-gray-800">
+          {label}
+        </Text>
       </View>
       <View className="flex-row items-center gap-2">
         {badge && (
@@ -326,10 +337,14 @@ function ToggleSetting({ icon, iconBg, label, active, onToggle }: any) {
   return (
     <View className="w-full px-5 py-4 flex-row items-center justify-between bg-white">
       <View className="flex-row items-center gap-4">
-        <View className={`w-10 h-10 rounded-2xl items-center justify-center ${iconBg}`}>
+        <View
+          className={`w-10 h-10 rounded-2xl items-center justify-center ${iconBg}`}
+        >
           {icon}
         </View>
-        <Text className="font-manrope font-black text-sm text-gray-800">{label}</Text>
+        <Text className="font-manrope font-black text-sm text-gray-800">
+          {label}
+        </Text>
       </View>
       <Switch
         value={active}

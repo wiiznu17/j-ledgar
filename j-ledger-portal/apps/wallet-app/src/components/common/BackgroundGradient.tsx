@@ -18,14 +18,22 @@ export function BackgroundGradient() {
         pointerEvents="none"
         style={[
           styles.blob,
-          { top: -100, left: -100, backgroundColor: 'rgba(244, 143, 177, 0.15)' },
+          {
+            top: -100,
+            left: -100,
+            backgroundColor: 'rgba(244, 143, 177, 0.15)',
+          },
         ]}
       />
       <View
         pointerEvents="none"
         style={[
           styles.blob,
-          { bottom: -100, right: -100, backgroundColor: 'rgba(72, 85, 165, 0.1)' },
+          {
+            bottom: -100,
+            right: -100,
+            backgroundColor: 'rgba(72, 85, 165, 0.1)',
+          },
         ]}
       />
     </View>

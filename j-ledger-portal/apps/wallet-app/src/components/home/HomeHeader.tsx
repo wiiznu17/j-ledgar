@@ -20,10 +20,15 @@ export const HomeHeader = () => {
       <View className="flex-1 mr-4">
         <View className="bg-white border border-gray-100 rounded-full px-4 py-3 flex-row items-center shadow-sm">
           <Search size={16} color="#9ca3af" />
-          <Text className="text-gray-400 ml-2 text-xs font-manrope font-bold">Search</Text>
+          <Text className="text-gray-400 ml-2 text-xs font-manrope font-bold">
+            Search
+          </Text>
         </View>
       </View>
-      <TouchableOpacity onPress={handleNotificationPress} className="relative active:opacity-70">
+      <TouchableOpacity
+        onPress={handleNotificationPress}
+        className="relative active:opacity-70"
+      >
         <Bell size={24} color="#1a1a1a" />
         {unreadCount > 0 && (
           <View className="absolute -top-1 -right-1 bg-red-500 w-4 h-4 rounded-full items-center justify-center border-2 border-[#f8f9fe]">
