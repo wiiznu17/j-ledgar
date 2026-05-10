@@ -8,7 +8,12 @@ export interface DataSectionProps {
   children: React.ReactNode;
 }
 
-export function DataSection({ title, icon, onEdit, children }: DataSectionProps) {
+export function DataSection({
+  title,
+  icon,
+  onEdit,
+  children,
+}: DataSectionProps) {
   return (
     <View className="bg-white rounded-[2rem] p-5 border border-gray-50 shadow-sm relative group">
       <View className="flex-row justify-between items-center mb-4">
@@ -16,10 +21,15 @@ export function DataSection({ title, icon, onEdit, children }: DataSectionProps)
           <View className="w-10 h-10 rounded-2xl bg-gray-50 items-center justify-center border border-gray-100">
             {React.cloneElement(icon, { size: 20 })}
           </View>
-          <Text className="font-manrope font-black text-gray-800 text-base">{title}</Text>
+          <Text className="font-manrope font-black text-gray-800 text-base">
+            {title}
+          </Text>
         </View>
         {onEdit && (
-          <TouchableOpacity onPress={onEdit} className="px-3 py-1.5 bg-pink-50 rounded-xl">
+          <TouchableOpacity
+            onPress={onEdit}
+            className="px-3 py-1.5 bg-pink-50 rounded-xl"
+          >
             <Text className="font-black text-[10px] uppercase tracking-widest text-[#f48fb1]">
               Edit
             </Text>
@@ -45,7 +55,9 @@ export function InfoItem({
       <Text className="text-[10px] font-black text-gray-400 uppercase tracking-widest">
         {label}
       </Text>
-      <Text className={`text-sm font-bold text-gray-800 ${valueClass || ''}`}>{value || '-'}</Text>
+      <Text className={`text-sm font-bold text-gray-800 ${valueClass || ''}`}>
+        {value || '-'}
+      </Text>
     </View>
   );
 }
@@ -58,7 +70,13 @@ export interface EditFieldProps {
   disabled?: boolean;
 }
 
-export function EditField({ label, icon, value, onChange, disabled }: EditFieldProps) {
+export function EditField({
+  label,
+  icon,
+  value,
+  onChange,
+  disabled,
+}: EditFieldProps) {
   return (
     <View className="space-y-1.5 w-full">
       <Text className="text-[10px] font-black uppercase tracking-widest text-gray-400 ml-1">
@@ -99,7 +117,9 @@ export function EditSelect({ label, icon, value }: EditSelectProps) {
       <TouchableOpacity className="h-14 px-4 bg-gray-50 border border-gray-100 rounded-2xl flex-row items-center justify-between">
         <View className="flex-row items-center gap-3">
           {icon}
-          <Text className="font-manrope font-bold text-sm text-gray-800">{value}</Text>
+          <Text className="font-manrope font-bold text-sm text-gray-800">
+            {value}
+          </Text>
         </View>
         <ChevronIcon size={18} color="#9ca3af" className="rotate-90" />
       </TouchableOpacity>

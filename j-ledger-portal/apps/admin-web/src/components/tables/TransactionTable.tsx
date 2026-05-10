@@ -52,7 +52,9 @@ export function TransactionTable({ data, onRowClick }: TransactionTableProps) {
         <TableHeader className="bg-secondary/50">
           <TableRow>
             <TableHead className="w-[140px]">Type</TableHead>
-            <TableHead className="hidden md:table-cell">Transaction ID</TableHead>
+            <TableHead className="hidden md:table-cell">
+              Transaction ID
+            </TableHead>
             <TableHead>Date & Time</TableHead>
             <TableHead className="text-right">Amount</TableHead>
             <TableHead className="text-center">Status</TableHead>
@@ -65,15 +67,23 @@ export function TransactionTable({ data, onRowClick }: TransactionTableProps) {
               className="cursor-pointer hover:bg-secondary/30 transition-colors"
               onClick={() => onRowClick(String(tx.id))}
             >
-              <TableCell className="font-medium">{getTypeBadge(tx.transactionType)}</TableCell>
+              <TableCell className="font-medium">
+                {getTypeBadge(tx.transactionType)}
+              </TableCell>
               <TableCell className="font-mono text-xs text-muted-foreground hidden md:table-cell">
-                <span className="font-mono">{String(tx.transactionId || tx.id).slice(-8).toUpperCase()}</span>
+                <span className="font-mono">
+                  {String(tx.transactionId || tx.id)
+                    .slice(-8)
+                    .toUpperCase()}
+                </span>
               </TableCell>
               <TableCell className="text-sm">
                 {new Date(tx.createdAt).toLocaleString('th-TH')}
               </TableCell>
               <TableCell className="text-right font-bold text-lg">
-                {tx.amount.toLocaleString(undefined, { minimumFractionDigits: 2 })}
+                {tx.amount.toLocaleString(undefined, {
+                  minimumFractionDigits: 2,
+                })}
                 <span className="text-xs font-normal text-muted-foreground ml-1">
                   {tx.currency}
                 </span>
@@ -96,7 +106,10 @@ export function TransactionTable({ data, onRowClick }: TransactionTableProps) {
           ))}
           {data.length === 0 && (
             <TableRow>
-              <TableCell colSpan={5} className="h-24 text-center text-muted-foreground">
+              <TableCell
+                colSpan={5}
+                className="h-24 text-center text-muted-foreground"
+              >
                 No ledger transactions found.
               </TableCell>
             </TableRow>

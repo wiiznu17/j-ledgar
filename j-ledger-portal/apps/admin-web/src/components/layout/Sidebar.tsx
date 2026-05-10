@@ -172,7 +172,12 @@ const navigationGroups: NavigationGroup[] = [
   {
     title: 'Support & Operations',
     items: [
-      { name: 'Users', href: '/users', icon: Users, requiredPermission: Permission.VIEW_USERS },
+      {
+        name: 'Users',
+        href: '/users',
+        icon: Users,
+        requiredPermission: Permission.VIEW_USERS,
+      },
       {
         name: 'User Activity',
         href: '/users/activity',
@@ -274,13 +279,21 @@ export function Sidebar({
       >
         {!isCollapsed ? (
           <div className="flex items-center">
-            <img src="/logo/logo.png" alt="P-wallet" className="h-8 w-auto object-contain" />
+            <img
+              src="/logo/logo.png"
+              alt="P-wallet"
+              className="h-8 w-auto object-contain"
+            />
             <span className="ml-3 text-xl font-bold text-slate-800 animate-in fade-in duration-500">
               P-wallet
             </span>
           </div>
         ) : (
-          <img src="/logo/logo.png" alt="P-wallet" className="h-8 w-8 object-contain" />
+          <img
+            src="/logo/logo.png"
+            alt="P-wallet"
+            className="h-8 w-8 object-contain"
+          />
         )}
 
         <Button
@@ -299,7 +312,8 @@ export function Sidebar({
           const filteredItems = group.items.filter((item) => {
             const rolePass = !item.roles || item.roles.includes(userRole);
             const permissionPass =
-              !item.requiredPermission || permissions.includes(item.requiredPermission);
+              !item.requiredPermission ||
+              permissions.includes(item.requiredPermission);
             return rolePass && permissionPass;
           });
 
@@ -397,7 +411,9 @@ export function Sidebar({
             <LogOut
               className={`flex-shrink-0 ${isCollapsed ? 'h-6 w-6' : 'mr-3 w-5 h-5 text-slate-500'}`}
             />
-            {!isCollapsed && <span className="font-semibold text-sm">Sign out</span>}
+            {!isCollapsed && (
+              <span className="font-semibold text-sm">Sign out</span>
+            )}
           </Button>
         </form>
       </div>

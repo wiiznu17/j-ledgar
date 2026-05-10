@@ -12,10 +12,10 @@ export class AdminPermissionsGuard implements CanActivate {
   ) {}
 
   async canActivate(context: ExecutionContext): Promise<boolean> {
-    const requiredPermissions = this.reflector.getAllAndOverride<Permission[]>(PERMISSIONS_KEY, [
-      context.getHandler(),
-      context.getClass(),
-    ]);
+    const requiredPermissions = this.reflector.getAllAndOverride<Permission[]>(
+      PERMISSIONS_KEY,
+      [context.getHandler(), context.getClass()],
+    );
 
     if (!requiredPermissions || requiredPermissions.length === 0) {
       return true;
@@ -26,9 +26,13 @@ export class AdminPermissionsGuard implements CanActivate {
       return false;
     }
 
-    const userPermissions = await this.adminService.getStaffPermissions(user.sub);
+    const userPermissions = await this.adminService.getStaffPermissions(
+      user.sub,
+    );
 
     // Require ALL permissions listed
-    return requiredPermissions.every((permission) => userPermissions.includes(permission));
+    return requiredPermissions.every((permission) =>
+      userPermissions.includes(permission),
+    );
   }
 }

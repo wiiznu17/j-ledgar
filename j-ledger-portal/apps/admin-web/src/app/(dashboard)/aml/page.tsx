@@ -1,6 +1,12 @@
 'use client';
 
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -21,7 +27,13 @@ import {
 } from '@/components/ui/dialog';
 import { adminApi } from '@/lib/admin-api';
 import { useState, useEffect, useCallback } from 'react';
-import { ChevronLeft, ChevronRight, Search, X, AlertTriangle } from 'lucide-react';
+import {
+  ChevronLeft,
+  ChevronRight,
+  Search,
+  X,
+  AlertTriangle,
+} from 'lucide-react';
 import { toast } from 'sonner';
 
 export default function AMLPage() {
@@ -86,7 +98,10 @@ export default function AMLPage() {
   const handleUpdateStatus = async (activityId: string, newStatus: string) => {
     setIsReviewing(true);
     try {
-      await adminApi.aml.updateStatus(activityId, { status: newStatus, notes: reviewNotes });
+      await adminApi.aml.updateStatus(activityId, {
+        status: newStatus,
+        notes: reviewNotes,
+      });
       toast.success(`Status updated to ${newStatus}`);
       setReviewNotes('');
       setSelectedActivity(null);
@@ -219,8 +234,8 @@ export default function AMLPage() {
         <CardHeader>
           <CardTitle>Suspicious Activities</CardTitle>
           <CardDescription>
-            Monitor and review suspicious activities flagged by the AML detection system. Total:{' '}
-            {total} records
+            Monitor and review suspicious activities flagged by the AML
+            detection system. Total: {total} records
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -239,19 +254,28 @@ export default function AMLPage() {
               <tbody>
                 {loading ? (
                   <tr>
-                    <td colSpan={6} className="p-8 text-center text-muted-foreground">
+                    <td
+                      colSpan={6}
+                      className="p-8 text-center text-muted-foreground"
+                    >
                       Loading...
                     </td>
                   </tr>
                 ) : activities.length === 0 ? (
                   <tr>
-                    <td colSpan={6} className="p-8 text-center text-muted-foreground">
+                    <td
+                      colSpan={6}
+                      className="p-8 text-center text-muted-foreground"
+                    >
                       No suspicious activities found
                     </td>
                   </tr>
                 ) : (
                   activities.map((activity: any) => (
-                    <tr key={activity.id} className="border-b hover:bg-muted/50">
+                    <tr
+                      key={activity.id}
+                      className="border-b hover:bg-muted/50"
+                    >
                       <td className="p-4">{activity.activityType}</td>
                       <td className="p-4 font-medium">{activity.userId}</td>
                       <td className="p-4">
@@ -289,50 +313,77 @@ export default function AMLPage() {
                                 Review Suspicious Activity
                               </DialogTitle>
                               <DialogDescription>
-                                Review and take action on this suspicious activity
+                                Review and take action on this suspicious
+                                activity
                               </DialogDescription>
                             </DialogHeader>
                             {selectedActivity && (
                               <div className="space-y-4">
                                 <div className="grid grid-cols-2 gap-4">
                                   <div>
-                                    <Label className="font-semibold">Activity Type</Label>
-                                    <p className="text-sm">{selectedActivity.activityType}</p>
-                                  </div>
-                                  <div>
-                                    <Label className="font-semibold">User ID</Label>
-                                    <p className="text-sm">{selectedActivity.userId}</p>
-                                  </div>
-                                  <div>
-                                    <Label className="font-semibold">Risk Score</Label>
-                                    <p className="text-sm">{selectedActivity.riskScore}</p>
-                                  </div>
-                                  <div>
-                                    <Label className="font-semibold">Status</Label>
-                                    <p className="text-sm">{selectedActivity.status}</p>
-                                  </div>
-                                  <div>
-                                    <Label className="font-semibold">Created</Label>
+                                    <Label className="font-semibold">
+                                      Activity Type
+                                    </Label>
                                     <p className="text-sm">
-                                      {new Date(selectedActivity.createdAt).toLocaleString()}
+                                      {selectedActivity.activityType}
                                     </p>
                                   </div>
                                   <div>
-                                    <Label className="font-semibold">Description</Label>
-                                    <p className="text-sm">{selectedActivity.description}</p>
+                                    <Label className="font-semibold">
+                                      User ID
+                                    </Label>
+                                    <p className="text-sm">
+                                      {selectedActivity.userId}
+                                    </p>
+                                  </div>
+                                  <div>
+                                    <Label className="font-semibold">
+                                      Risk Score
+                                    </Label>
+                                    <p className="text-sm">
+                                      {selectedActivity.riskScore}
+                                    </p>
+                                  </div>
+                                  <div>
+                                    <Label className="font-semibold">
+                                      Status
+                                    </Label>
+                                    <p className="text-sm">
+                                      {selectedActivity.status}
+                                    </p>
+                                  </div>
+                                  <div>
+                                    <Label className="font-semibold">
+                                      Created
+                                    </Label>
+                                    <p className="text-sm">
+                                      {new Date(
+                                        selectedActivity.createdAt,
+                                      ).toLocaleString()}
+                                    </p>
+                                  </div>
+                                  <div>
+                                    <Label className="font-semibold">
+                                      Description
+                                    </Label>
+                                    <p className="text-sm">
+                                      {selectedActivity.description}
+                                    </p>
                                   </div>
                                 </div>
 
                                 {selectedActivity.status === 'PENDING' && (
                                   <>
                                     <div>
-                                      <Label htmlFor="reviewNotes">Review Notes</Label>
+                                      <Label htmlFor="reviewNotes">
+                                        Review Notes
+                                      </Label>
                                       <textarea
                                         id="reviewNotes"
                                         value={reviewNotes}
-                                        onChange={(e: React.ChangeEvent<HTMLTextAreaElement>) =>
-                                          setReviewNotes(e.target.value)
-                                        }
+                                        onChange={(
+                                          e: React.ChangeEvent<HTMLTextAreaElement>,
+                                        ) => setReviewNotes(e.target.value)}
                                         placeholder="Add notes about your review..."
                                         rows={3}
                                         className="flex w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
@@ -341,7 +392,10 @@ export default function AMLPage() {
                                     <div className="flex gap-2">
                                       <Button
                                         onClick={() =>
-                                          handleUpdateStatus(selectedActivity.id, 'REVIEWED')
+                                          handleUpdateStatus(
+                                            selectedActivity.id,
+                                            'REVIEWED',
+                                          )
                                         }
                                         disabled={isReviewing || !reviewNotes}
                                       >
@@ -352,7 +406,10 @@ export default function AMLPage() {
                                       <Button
                                         variant="destructive"
                                         onClick={() =>
-                                          handleUpdateStatus(selectedActivity.id, 'REPORTED')
+                                          handleUpdateStatus(
+                                            selectedActivity.id,
+                                            'REPORTED',
+                                          )
                                         }
                                         disabled={isReviewing}
                                       >
@@ -367,24 +424,30 @@ export default function AMLPage() {
                                 {selectedActivity.status === 'REVIEWED' && (
                                   <>
                                     <div>
-                                      <Label htmlFor="reportDetails">Report Details for AMLO</Label>
+                                      <Label htmlFor="reportDetails">
+                                        Report Details for AMLO
+                                      </Label>
                                       <textarea
                                         id="reportDetails"
                                         value={reportDetails}
-                                        onChange={(e: React.ChangeEvent<HTMLTextAreaElement>) =>
-                                          setReportDetails(e.target.value)
-                                        }
+                                        onChange={(
+                                          e: React.ChangeEvent<HTMLTextAreaElement>,
+                                        ) => setReportDetails(e.target.value)}
                                         placeholder="Provide details for the AMLO report..."
                                         rows={4}
                                         className="flex w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
                                       />
                                     </div>
                                     <Button
-                                      onClick={() => handleReportToAMLO(selectedActivity.id)}
+                                      onClick={() =>
+                                        handleReportToAMLO(selectedActivity.id)
+                                      }
                                       disabled={isReporting || !reportDetails}
                                       variant="destructive"
                                     >
-                                      {isReporting ? 'Reporting...' : 'Report to AMLO'}
+                                      {isReporting
+                                        ? 'Reporting...'
+                                        : 'Report to AMLO'}
                                     </Button>
                                   </>
                                 )}
@@ -392,7 +455,8 @@ export default function AMLPage() {
                                 {selectedActivity.status === 'REPORTED' && (
                                   <div className="p-4 bg-yellow-50 border border-yellow-200 rounded-md">
                                     <p className="text-sm text-yellow-800">
-                                      This activity has already been reported to AMLO.
+                                      This activity has already been reported to
+                                      AMLO.
                                     </p>
                                   </div>
                                 )}

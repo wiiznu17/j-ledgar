@@ -9,13 +9,22 @@ import {
 
 export const userRequester = {
   getWalletUsers: async (options?: RequestOptions) =>
-    apiClient.get<AdminPaginatedResponse<WalletUser>>(API_PATHS.ADMIN.USERS.WALLET, options),
+    apiClient.get<AdminPaginatedResponse<WalletUser>>(
+      API_PATHS.ADMIN.USERS.WALLET,
+      options,
+    ),
   getWalletUserStats: async (options?: RequestOptions) =>
     apiClient.get<any>(API_PATHS.ADMIN.USERS.WALLET_STATS, options),
   getSecurityEvents: async (options?: RequestOptions) =>
-    apiClient.get<AdminPaginatedResponse<any>>(API_PATHS.ADMIN.USERS.SECURITY_EVENTS, options),
+    apiClient.get<AdminPaginatedResponse<any>>(
+      API_PATHS.ADMIN.USERS.SECURITY_EVENTS,
+      options,
+    ),
   getAdminUsers: async (options?: RequestOptions) =>
-    apiClient.get<AdminPaginatedResponse<AdminUser>>(API_PATHS.ADMIN.STAFF.BASE, options),
+    apiClient.get<AdminPaginatedResponse<AdminUser>>(
+      API_PATHS.ADMIN.STAFF.BASE,
+      options,
+    ),
   suspendWalletUser: async (id: string, options?: RequestOptions) =>
     apiClient.post<void>(API_PATHS.ADMIN.USERS.SUSPEND(id), {}, options),
   unsuspendWalletUser: async (id: string, options?: RequestOptions) =>
@@ -43,7 +52,8 @@ export const userRequester = {
 
   getUserDetail: async (id: string) =>
     apiClient.get<{ data: WalletUser }>(API_PATHS.ADMIN.USERS.DETAIL(id)),
-  getUserActivity: async (id: string) => apiClient.get<any>(API_PATHS.ADMIN.USERS.ACTIVITY(id)),
+  getUserActivity: async (id: string) =>
+    apiClient.get<any>(API_PATHS.ADMIN.USERS.ACTIVITY(id)),
   getUserAccount: async (userId: string) =>
     apiClient.get<any>(API_PATHS.ADMIN.ACCOUNTS.BY_USER(userId)),
   getUserWallet: async (userId: string) =>
@@ -51,11 +61,16 @@ export const userRequester = {
 
   // Roles & Permissions
   getAllRoles: async () => apiClient.get<any[]>(API_PATHS.ADMIN.ROLES.BASE),
-  getRoleDetail: async (id: string) => apiClient.get<any>(API_PATHS.ADMIN.ROLES.DETAIL(id)),
-  createRole: async (data: any) => apiClient.post<any>(API_PATHS.ADMIN.ROLES.BASE, data),
+  getRoleDetail: async (id: string) =>
+    apiClient.get<any>(API_PATHS.ADMIN.ROLES.DETAIL(id)),
+  createRole: async (data: any) =>
+    apiClient.post<any>(API_PATHS.ADMIN.ROLES.BASE, data),
   updateRole: async (id: string, data: any) =>
     apiClient.put<any>(API_PATHS.ADMIN.ROLES.DETAIL(id), data),
-  getAllPermissions: async () => apiClient.get<any[]>(API_PATHS.ADMIN.PERMISSIONS.BASE),
+  getAllPermissions: async () =>
+    apiClient.get<any[]>(API_PATHS.ADMIN.PERMISSIONS.BASE),
   syncRolePermissions: async (roleId: string, permissionIds: string[]) =>
-    apiClient.put<any>(API_PATHS.ADMIN.ROLES.PERMISSIONS(roleId), { permissionIds }),
+    apiClient.put<any>(API_PATHS.ADMIN.ROLES.PERMISSIONS(roleId), {
+      permissionIds,
+    }),
 };

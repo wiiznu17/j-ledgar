@@ -1,4 +1,9 @@
-import { Injectable, OnModuleInit, OnModuleDestroy, Logger } from '@nestjs/common';
+import {
+  Injectable,
+  OnModuleInit,
+  OnModuleDestroy,
+  Logger,
+} from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { Kafka, Consumer, EachMessagePayload } from 'kafkajs';
 import { NotificationService } from '../notification/notification.service';
@@ -16,8 +21,13 @@ export class KafkaService implements OnModuleInit, OnModuleDestroy {
   ) {}
 
   async onModuleInit() {
-    const brokers = this.configService.get('KAFKA_BROKERS', 'localhost:9092').split(',');
-    const groupId = this.configService.get('KAFKA_CONSUMER_GROUP', 'notification-worker');
+    const brokers = this.configService
+      .get('KAFKA_BROKERS', 'localhost:9092')
+      .split(',');
+    const groupId = this.configService.get(
+      'KAFKA_CONSUMER_GROUP',
+      'notification-worker',
+    );
 
     this.kafka = new Kafka({
       clientId: 'notification-worker',
@@ -37,14 +47,20 @@ export class KafkaService implements OnModuleInit, OnModuleDestroy {
     });
 
     await this.consumer.run({
-      eachMessage: async ({ topic, partition, message }: EachMessagePayload) => {
+      eachMessage: async ({
+        topic,
+        partition,
+        message,
+      }: EachMessagePayload) => {
         try {
           const value = message.value?.toString();
           if (value) {
             await this.handleMessage(topic, JSON.parse(value));
           }
         } catch (error) {
-          this.logger.error(`Error processing message on topic ${topic}: ${error.message}`);
+          this.logger.error(
+            `Error processing message on topic ${topic}: ${error.message}`,
+          );
         }
       },
     });
@@ -55,7 +71,9 @@ export class KafkaService implements OnModuleInit, OnModuleDestroy {
   }
 
   private async handleMessage(topic: string, payload: any) {
-    this.logger.debug(`Received message on topic ${topic} for user ${payload.userId}`);
+    this.logger.debug(
+      `Received message on topic ${topic} for user ${payload.userId}`,
+    );
     await this.notificationService.handleEvent(topic, payload);
   }
 }

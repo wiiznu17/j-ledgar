@@ -161,11 +161,15 @@ export async function performStorageHealthCheck(): Promise<StorageHealthCheck> {
   }
 
   if (!verification.isEncrypted && Platform.OS !== 'web') {
-    recommendations.push('Secure storage is not encrypted. This may indicate a security issue.');
+    recommendations.push(
+      'Secure storage is not encrypted. This may indicate a security issue.',
+    );
   }
 
   if (keysCheck.missingKeys.length > 0) {
-    recommendations.push(`Missing secure storage keys: ${keysCheck.missingKeys.join(', ')}`);
+    recommendations.push(
+      `Missing secure storage keys: ${keysCheck.missingKeys.join(', ')}`,
+    );
   }
 
   if (Platform.OS === 'web') {
@@ -174,7 +178,10 @@ export async function performStorageHealthCheck(): Promise<StorageHealthCheck> {
     );
   }
 
-  const healthy = verification.isAvailable && verification.isEncrypted && keysCheck.allPresent;
+  const healthy =
+    verification.isAvailable &&
+    verification.isEncrypted &&
+    keysCheck.allPresent;
 
   return {
     healthy,

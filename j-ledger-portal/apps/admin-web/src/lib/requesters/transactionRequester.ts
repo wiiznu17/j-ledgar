@@ -15,7 +15,13 @@ export const transactionRequester = {
     );
   },
   getDetails: async (id: string) =>
-    apiClient.get<TransactionDetailsDto>(API_PATHS.ADMIN.TRANSACTIONS.DETAILS(id)),
+    apiClient.get<TransactionDetailsDto>(
+      API_PATHS.ADMIN.TRANSACTIONS.DETAILS(id),
+    ),
   transfer: async (data: TransferRequest, options?: RequestOptions) =>
-    apiClient.post<Transaction>(API_PATHS.ADMIN.TRANSACTIONS.TRANSFER, data, options),
+    apiClient.post<Transaction>(
+      API_PATHS.ADMIN.TRANSACTIONS.TRANSFER,
+      data,
+      options,
+    ),
 };

@@ -78,7 +78,10 @@ export function WalletUsersTable({ users, loading }: WalletUsersTableProps) {
               <TableCell>
                 <Badge
                   variant="outline"
-                  className={cn("font-bold uppercase text-[9px]", getUserStatusConfig(user.status).color)}
+                  className={cn(
+                    'font-bold uppercase text-[9px]',
+                    getUserStatusConfig(user.status).color,
+                  )}
                 >
                   {(() => {
                     const Icon = getUserStatusConfig(user.status).icon;
@@ -127,7 +130,10 @@ export function WalletUsersTable({ users, loading }: WalletUsersTableProps) {
           ))}
           {users.length === 0 && (
             <TableRow>
-              <TableCell colSpan={6} className="h-32 text-center text-slate-400 font-medium">
+              <TableCell
+                colSpan={6}
+                className="h-32 text-center text-slate-400 font-medium"
+              >
                 No registered wallet users found matching your criteria.
               </TableCell>
             </TableRow>

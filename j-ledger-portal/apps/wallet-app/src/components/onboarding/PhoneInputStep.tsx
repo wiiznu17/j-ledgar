@@ -24,7 +24,8 @@ export const PhoneInputStep: React.FC<PhoneInputStepProps> = ({
   const formatPhone = (val: string) => {
     const cleaned = val.replace(/\D/g, '');
     if (cleaned.length <= 3) return cleaned;
-    if (cleaned.length <= 6) return `${cleaned.slice(0, 3)}-${cleaned.slice(3)}`;
+    if (cleaned.length <= 6)
+      return `${cleaned.slice(0, 3)}-${cleaned.slice(3)}`;
     return `${cleaned.slice(0, 3)}-${cleaned.slice(3, 6)}-${cleaned.slice(6, 10)}`;
   };
 
@@ -39,7 +40,9 @@ export const PhoneInputStep: React.FC<PhoneInputStepProps> = ({
         label="Mobile Number"
         placeholder="08X-XXX-XXXX"
         value={formatPhone(phone)}
-        onChangeText={(val) => onPhoneChange(val.replace(/\D/g, '').slice(0, 10))}
+        onChangeText={(val) =>
+          onPhoneChange(val.replace(/\D/g, '').slice(0, 10))
+        }
         keyboardType="phone-pad"
         maxLength={12}
       />

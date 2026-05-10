@@ -1,5 +1,11 @@
 import React from 'react';
-import { TouchableOpacity, Text, ActivityIndicator, View, Platform } from 'react-native';
+import {
+  TouchableOpacity,
+  Text,
+  ActivityIndicator,
+  View,
+  Platform,
+} from 'react-native';
 import { clsx, type ClassValue } from 'clsx';
 import { twMerge } from 'tailwind-merge';
 import * as Haptics from 'expo-haptics';
@@ -32,7 +38,8 @@ export function AppButton({
   icon,
   iconPosition = 'right',
 }: AppButtonProps) {
-  const baseStyles = 'h-16 rounded-2xl flex-row items-center justify-center px-6 transition-all';
+  const baseStyles =
+    'h-16 rounded-2xl flex-row items-center justify-center px-6 transition-all';
   const variantStyles = {
     primary: cn(
       'bg-primary shadow-xl shadow-primary/20',
@@ -74,7 +81,9 @@ export function AppButton({
       )}
     >
       {loading ? (
-        <ActivityIndicator color={variant === 'primary' ? 'white' : '#f48fb1'} />
+        <ActivityIndicator
+          color={variant === 'primary' ? 'white' : '#f48fb1'}
+        />
       ) : (
         <View className="flex-row items-center justify-center gap-2">
           {icon && iconPosition === 'left' && icon}

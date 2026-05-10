@@ -8,7 +8,11 @@ import { InformationHeader } from '@/components/profile/InformationHeader';
 import { UserHeaderCard } from '@/components/profile/UserHeaderCard';
 import { InfoSectionsList } from '@/components/profile/InfoSectionsList';
 import { EditSheetModal } from '@/components/profile/EditSheetModal';
-import { UserProfileService, UserProfile, UpdateProfileData } from '@/lib/user-service';
+import {
+  UserProfileService,
+  UserProfile,
+  UpdateProfileData,
+} from '@/lib/user-service';
 import { RegistrationState, AddressType } from '@repo/dto';
 
 type ProfileSection = 'IDENTIFICATION' | 'ADDRESS' | 'CONTACT' | 'EMPLOYMENT';
@@ -122,41 +126,65 @@ export default function ProfileInformationScreen() {
         sourceOfIncome: profile.profile?.sourceOfFunds || '',
         income: profile.profile?.incomeRange || '',
         purpose: profile.profile?.purposeOfAccount || '',
-        idAddress: profile.addresses?.find((a) => a.type === AddressType.REGISTERED)
+        idAddress: profile.addresses?.find(
+          (a) => a.type === AddressType.REGISTERED,
+        )
           ? {
-              street: profile.addresses.find((a) => a.type === AddressType.REGISTERED)?.line1 || '',
+              street:
+                profile.addresses.find((a) => a.type === AddressType.REGISTERED)
+                  ?.line1 || '',
               subdistrict:
-                profile.addresses.find((a) => a.type === AddressType.REGISTERED)?.subdistrict || '',
+                profile.addresses.find((a) => a.type === AddressType.REGISTERED)
+                  ?.subdistrict || '',
               district:
-                profile.addresses.find((a) => a.type === AddressType.REGISTERED)?.district || '',
+                profile.addresses.find((a) => a.type === AddressType.REGISTERED)
+                  ?.district || '',
               province:
-                profile.addresses.find((a) => a.type === AddressType.REGISTERED)?.province || '',
+                profile.addresses.find((a) => a.type === AddressType.REGISTERED)
+                  ?.province || '',
               postalCode:
-                profile.addresses.find((a) => a.type === AddressType.REGISTERED)?.postalCode || '',
+                profile.addresses.find((a) => a.type === AddressType.REGISTERED)
+                  ?.postalCode || '',
             }
           : DEFAULT_FORM_DATA.idAddress,
-        currentAddress: profile.addresses?.find((a) => a.type === AddressType.CURRENT)
+        currentAddress: profile.addresses?.find(
+          (a) => a.type === AddressType.CURRENT,
+        )
           ? {
-              street: profile.addresses.find((a) => a.type === AddressType.CURRENT)?.line1 || '',
+              street:
+                profile.addresses.find((a) => a.type === AddressType.CURRENT)
+                  ?.line1 || '',
               subdistrict:
-                profile.addresses.find((a) => a.type === AddressType.CURRENT)?.subdistrict || '',
+                profile.addresses.find((a) => a.type === AddressType.CURRENT)
+                  ?.subdistrict || '',
               district:
-                profile.addresses.find((a) => a.type === AddressType.CURRENT)?.district || '',
+                profile.addresses.find((a) => a.type === AddressType.CURRENT)
+                  ?.district || '',
               province:
-                profile.addresses.find((a) => a.type === AddressType.CURRENT)?.province || '',
+                profile.addresses.find((a) => a.type === AddressType.CURRENT)
+                  ?.province || '',
               postalCode:
-                profile.addresses.find((a) => a.type === AddressType.CURRENT)?.postalCode || '',
+                profile.addresses.find((a) => a.type === AddressType.CURRENT)
+                  ?.postalCode || '',
             }
           : DEFAULT_FORM_DATA.currentAddress,
         workAddress: profile.addresses?.find((a) => a.type === AddressType.WORK)
           ? {
-              street: profile.addresses.find((a) => a.type === AddressType.WORK)?.line1 || '',
+              street:
+                profile.addresses.find((a) => a.type === AddressType.WORK)
+                  ?.line1 || '',
               subdistrict:
-                profile.addresses.find((a) => a.type === AddressType.WORK)?.subdistrict || '',
-              district: profile.addresses.find((a) => a.type === AddressType.WORK)?.district || '',
-              province: profile.addresses.find((a) => a.type === AddressType.WORK)?.province || '',
+                profile.addresses.find((a) => a.type === AddressType.WORK)
+                  ?.subdistrict || '',
+              district:
+                profile.addresses.find((a) => a.type === AddressType.WORK)
+                  ?.district || '',
+              province:
+                profile.addresses.find((a) => a.type === AddressType.WORK)
+                  ?.province || '',
               postalCode:
-                profile.addresses.find((a) => a.type === AddressType.WORK)?.postalCode || '',
+                profile.addresses.find((a) => a.type === AddressType.WORK)
+                  ?.postalCode || '',
             }
           : DEFAULT_FORM_DATA.workAddress,
       });

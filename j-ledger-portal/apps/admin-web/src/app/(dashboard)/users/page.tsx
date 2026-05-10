@@ -1,6 +1,12 @@
 'use client';
 
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from '@/components/ui/card';
 import { WalletUsersTable } from '@/components/users/WalletUsersTable';
 import { userRequester } from '@/lib/requesters';
 import { WalletUser } from '@repo/dto';
@@ -27,11 +33,20 @@ import {
   History,
 } from 'lucide-react';
 import { toast } from 'sonner';
-import { FilterSearchInput, FilterSelect, FilterActions } from '@/components/common/FilterElements';
+import {
+  FilterSearchInput,
+  FilterSelect,
+  FilterActions,
+} from '@/components/common/FilterElements';
 
 export default function UsersPage() {
   const [users, setUsers] = useState<WalletUser[]>([]);
-  const [stats, setStats] = useState({ total: 0, active: 0, pending: 0, blocked: 0 });
+  const [stats, setStats] = useState({
+    total: 0,
+    active: 0,
+    pending: 0,
+    blocked: 0,
+  });
   const [loading, setLoading] = useState(true);
   const [total, setTotal] = useState(0);
   const [page, setPage] = useState(1);
@@ -40,7 +55,10 @@ export default function UsersPage() {
   const fetchStats = useCallback(async () => {
     try {
       const response = await userRequester.getWalletUserStats();
-      setStats(response.data || response || { total: 0, active: 0, pending: 0, blocked: 0 });
+      setStats(
+        response.data ||
+          response || { total: 0, active: 0, pending: 0, blocked: 0 },
+      );
     } catch (error) {
       console.error('[USERS_PAGE] Stats error:', error);
     }
@@ -117,7 +135,9 @@ export default function UsersPage() {
     <div className="space-y-4 pb-10">
       {/* Header & Title */}
       <div>
-        <h2 className="text-2xl font-bold tracking-tight text-slate-900">User Registry</h2>
+        <h2 className="text-2xl font-bold tracking-tight text-slate-900">
+          User Registry
+        </h2>
         <p className="text-sm text-slate-500 mt-1">
           Monitor and manage e-wallet participants across the ecosystem.
         </p>
@@ -127,14 +147,17 @@ export default function UsersPage() {
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 bg-white p-4 rounded-xl shadow-sm border border-slate-100">
         <div className="flex items-center gap-2">
           <History className="w-4 h-4 text-indigo-500" />
-          <span className="text-sm font-bold text-slate-700">Registry Snapshot</span>
+          <span className="text-sm font-bold text-slate-700">
+            Registry Snapshot
+          </span>
         </div>
 
         <div className="flex items-center flex-wrap gap-4 md:gap-6 text-sm">
           <div className="flex items-center gap-2">
             <div className="w-2 h-2 rounded-full bg-indigo-500" />
             <span className="text-slate-500 font-medium">
-              Total Users: <strong className="text-slate-800">{stats.total}</strong>
+              Total Users:{' '}
+              <strong className="text-slate-800">{stats.total}</strong>
             </span>
           </div>
           <div className="flex items-center gap-2">
@@ -146,7 +169,8 @@ export default function UsersPage() {
           <div className="flex items-center gap-2">
             <div className="w-2 h-2 rounded-full bg-amber-500" />
             <span className="text-slate-500 font-medium">
-              Pending: <strong className="text-slate-800">{stats.pending}</strong>
+              Pending:{' '}
+              <strong className="text-slate-800">{stats.pending}</strong>
             </span>
           </div>
         </div>
@@ -155,7 +179,10 @@ export default function UsersPage() {
       <Card className="border-none shadow-sm ring-1 ring-slate-100 overflow-hidden bg-white">
         {/* Filter Toolbar - KYC Style */}
         <div className="p-3 bg-white border-b border-slate-100">
-          <form onSubmit={handleFilter} className="grid grid-cols-1 md:grid-cols-5 gap-4 items-end">
+          <form
+            onSubmit={handleFilter}
+            className="grid grid-cols-1 md:grid-cols-5 gap-4 items-end"
+          >
             <FilterSearchInput
               label="Email Address"
               placeholder="search by email..."
@@ -199,9 +226,12 @@ export default function UsersPage() {
           {totalPages > 0 && (
             <div className="p-4 bg-white border-t border-slate-100 flex items-center justify-between">
               <p className="text-xs text-slate-500 font-medium">
-                Showing page <strong className="text-slate-800">{page}</strong> of{' '}
-                <strong className="text-slate-800">{totalPages}</strong>
-                <span className="hidden sm:inline"> ({total} total records)</span>
+                Showing page <strong className="text-slate-800">{page}</strong>{' '}
+                of <strong className="text-slate-800">{totalPages}</strong>
+                <span className="hidden sm:inline">
+                  {' '}
+                  ({total} total records)
+                </span>
               </p>
               <div className="flex gap-2">
                 <Button

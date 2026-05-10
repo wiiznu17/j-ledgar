@@ -26,7 +26,9 @@ describe('Onboarding Flow (e2e)', () => {
       .compile();
 
     app = moduleFixture.createNestApplication();
-    app.useGlobalPipes(new ValidationPipe({ whitelist: true, forbidNonWhitelisted: true }));
+    app.useGlobalPipes(
+      new ValidationPipe({ whitelist: true, forbidNonWhitelisted: true }),
+    );
     await app.init();
 
     prisma = moduleFixture.get<PrismaService>(PrismaService);
@@ -70,7 +72,9 @@ describe('Onboarding Flow (e2e)', () => {
 
       expect([200, 201]).toContain(response.status);
 
-      const updatedUser = await prisma.user.findUnique({ where: { id: user.id } });
+      const updatedUser = await prisma.user.findUnique({
+        where: { id: user.id },
+      });
       expect(updatedUser?.registrationState).toBe('PENDING_OTP');
     });
   });
@@ -85,7 +89,10 @@ describe('Onboarding Flow (e2e)', () => {
         .post('/identity/register/init')
         .send({ phoneNumber: '0881112222' });
 
-      const newRegToken = await authHelper.generateRegistrationToken(user.id, 'PENDING_OTP');
+      const newRegToken = await authHelper.generateRegistrationToken(
+        user.id,
+        'PENDING_OTP',
+      );
 
       const statusRes = await request(app.getHttpServer())
         .post('/identity/register/status')
@@ -106,7 +113,10 @@ describe('Onboarding Flow (e2e)', () => {
         },
       });
 
-      const regToken = await authHelper.generateRegistrationToken(user.id, 'PASSWORD_SET');
+      const regToken = await authHelper.generateRegistrationToken(
+        user.id,
+        'PASSWORD_SET',
+      );
 
       const response = await request(app.getHttpServer())
         .post('/identity/register/status')
@@ -131,7 +141,10 @@ describe('Onboarding Flow (e2e)', () => {
         },
       });
 
-      const regToken = await authHelper.generateRegistrationToken(user.id, 'KYC_VERIFIED');
+      const regToken = await authHelper.generateRegistrationToken(
+        user.id,
+        'KYC_VERIFIED',
+      );
 
       await prisma.address.create({
         data: {
@@ -172,7 +185,10 @@ describe('Onboarding Flow (e2e)', () => {
         },
       });
 
-      const regToken = await authHelper.generateRegistrationToken(user.id, 'KYC_VERIFIED');
+      const regToken = await authHelper.generateRegistrationToken(
+        user.id,
+        'KYC_VERIFIED',
+      );
 
       const dirtyAddress = {
         line1: '123 Main St',
@@ -186,8 +202,16 @@ describe('Onboarding Flow (e2e)', () => {
         createdAt: new Date(),
       };
 
-      const { line1, subdistrict, district, province, postalCode, label } = dirtyAddress;
-      const sanitizedAddress = { line1, subdistrict, district, province, postalCode, label };
+      const { line1, subdistrict, district, province, postalCode, label } =
+        dirtyAddress;
+      const sanitizedAddress = {
+        line1,
+        subdistrict,
+        district,
+        province,
+        postalCode,
+        label,
+      };
 
       const response = await request(app.getHttpServer())
         .post('/identity/register/profile')
@@ -217,7 +241,10 @@ describe('Onboarding Flow (e2e)', () => {
         },
       });
 
-      const regToken = await authHelper.generateRegistrationToken(user.id, 'KYC_VERIFIED');
+      const regToken = await authHelper.generateRegistrationToken(
+        user.id,
+        'KYC_VERIFIED',
+      );
 
       await prisma.address.create({
         data: {
@@ -243,7 +270,9 @@ describe('Onboarding Flow (e2e)', () => {
           currentAddress: { postalCode: '10110' },
         });
 
-      const updatedUser = await prisma.user.findUnique({ where: { id: user.id } });
+      const updatedUser = await prisma.user.findUnique({
+        where: { id: user.id },
+      });
       expect(updatedUser?.status).toBe('PENDING_APPROVAL');
     });
   });
@@ -256,7 +285,10 @@ describe('Onboarding Flow (e2e)', () => {
         data: { phoneNumber: '0833333333', registrationState: 'PENDING' },
       });
 
-      const regToken = await authHelper.generateRegistrationToken(user.id, 'PENDING');
+      const regToken = await authHelper.generateRegistrationToken(
+        user.id,
+        'PENDING',
+      );
 
       const response = await request(app.getHttpServer())
         .post('/identity/register/profile')
@@ -278,10 +310,16 @@ describe('Onboarding Flow (e2e)', () => {
   describe('TC-09: Password Step Enforcement', () => {
     it('should force a new user to set a password after profile completion', async () => {
       const user = await prisma.user.create({
-        data: { phoneNumber: '0883334444', registrationState: 'PROFILE_COMPLETED' },
+        data: {
+          phoneNumber: '0883334444',
+          registrationState: 'PROFILE_COMPLETED',
+        },
       });
 
-      const regToken = await authHelper.generateRegistrationToken(user.id, 'PROFILE_COMPLETED');
+      const regToken = await authHelper.generateRegistrationToken(
+        user.id,
+        'PROFILE_COMPLETED',
+      );
 
       const response = await request(app.getHttpServer())
         .post('/identity/register/pin')
@@ -322,7 +360,10 @@ describe('Onboarding Flow (e2e)', () => {
         },
       });
 
-      const regToken = await authHelper.generateRegistrationToken(user.id, 'COMPLETED');
+      const regToken = await authHelper.generateRegistrationToken(
+        user.id,
+        'COMPLETED',
+      );
 
       const response = await request(app.getHttpServer())
         .post('/identity/register/profile')
@@ -362,7 +403,10 @@ describe('Onboarding Flow (e2e)', () => {
         },
       });
 
-      const tokenA = await authHelper.generateRegistrationToken(userA.id, 'KYC_VERIFIED');
+      const tokenA = await authHelper.generateRegistrationToken(
+        userA.id,
+        'KYC_VERIFIED',
+      );
 
       const response = await request(app.getHttpServer())
         .post('/identity/register/profile')
@@ -378,10 +422,14 @@ describe('Onboarding Flow (e2e)', () => {
 
       expect([200, 201]).toContain(response.status);
 
-      const updatedUserB = await prisma.userSetting.findFirst({ where: { userId: userB.id } });
+      const updatedUserB = await prisma.userSetting.findFirst({
+        where: { userId: userB.id },
+      });
       expect(updatedUserB).toBeNull();
 
-      const updatedUserA = await prisma.userSetting.findFirst({ where: { userId: userA.id } });
+      const updatedUserA = await prisma.userSetting.findFirst({
+        where: { userId: userA.id },
+      });
       expect(updatedUserA).not.toBeNull();
     });
   });

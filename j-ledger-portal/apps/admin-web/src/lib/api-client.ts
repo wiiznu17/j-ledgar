@@ -1,4 +1,9 @@
-import axios, { AxiosError, AxiosInstance, AxiosRequestConfig, AxiosResponse } from 'axios';
+import axios, {
+  AxiosError,
+  AxiosInstance,
+  AxiosRequestConfig,
+  AxiosResponse,
+} from 'axios';
 import { API_BASE_URL } from './api-config';
 
 /**
@@ -83,7 +88,11 @@ const createAxiosInstance = (): AxiosInstance => {
         throw new ApiError(status, errorMessage, data);
       } else if (error.request) {
         // Request was made but no response received
-        throw new ApiError(0, 'Network Error - No response received', error.request);
+        throw new ApiError(
+          0,
+          'Network Error - No response received',
+          error.request,
+        );
       } else {
         // Something happened in setting up the request
         throw new ApiError(0, error.message || 'Request setup failed', error);

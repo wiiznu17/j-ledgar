@@ -30,7 +30,9 @@ export class AdminAuthController {
     const staff = await this.adminService.findByEmail(dto.email);
 
     if (!staff || !staff.isActive) {
-      throw new UnauthorizedException('Invalid credentials or account inactive');
+      throw new UnauthorizedException(
+        'Invalid credentials or account inactive',
+      );
     }
 
     const isPasswordValid = await bcrypt.compare(dto.password, staff.password);
@@ -81,7 +83,10 @@ export class AdminAuthController {
       }
 
       // Check hash against DB
-      const isHashValid = await bcrypt.compare(dto.refreshToken, staff.refreshTokenHash);
+      const isHashValid = await bcrypt.compare(
+        dto.refreshToken,
+        staff.refreshTokenHash,
+      );
       if (!isHashValid) {
         throw new UnauthorizedException('Invalid session');
       }
@@ -139,7 +144,10 @@ export class AdminAuthController {
   @HttpCode(HttpStatus.OK)
   async confirmReset(@Body() body: { token: string; password: string }) {
     try {
-      return await this.adminService.resetPasswordWithToken(body.token, body.password);
+      return await this.adminService.resetPasswordWithToken(
+        body.token,
+        body.password,
+      );
     } catch (e) {
       throw new BadRequestException(e.message);
     }
@@ -159,7 +167,10 @@ export class AdminAuthController {
   @HttpCode(HttpStatus.OK)
   async confirmActivation(@Body() body: { token: string; password: string }) {
     try {
-      return await this.adminService.resetPasswordWithToken(body.token, body.password);
+      return await this.adminService.resetPasswordWithToken(
+        body.token,
+        body.password,
+      );
     } catch (e) {
       throw new BadRequestException(e.message);
     }
@@ -173,7 +184,10 @@ export class AdminAuthController {
 
   @UseGuards(AdminJwtGuard)
   @Put('me')
-  async updateMe(@Req() req: any, @Body() data: { firstName?: string; lastName?: string }) {
+  async updateMe(
+    @Req() req: any,
+    @Body() data: { firstName?: string; lastName?: string },
+  ) {
     return this.adminService.updateStaff(req.user.sub, data);
   }
 }

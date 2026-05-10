@@ -11,7 +11,12 @@ export class NotificationService {
     private readonly kafkaProducer: KafkaProducerService,
   ) {}
 
-  async getNotifications(userId: string, page: number = 1, limit: number = 20, category?: string) {
+  async getNotifications(
+    userId: string,
+    page: number = 1,
+    limit: number = 20,
+    category?: string,
+  ) {
     const skip = (page - 1) * limit;
 
     const where: any = { userId };
@@ -73,7 +78,11 @@ export class NotificationService {
     });
   }
 
-  async updateDevicePushToken(userId: string, deviceIdentifier: string, pushToken: string) {
+  async updateDevicePushToken(
+    userId: string,
+    deviceIdentifier: string,
+    pushToken: string,
+  ) {
     const result = await this.prisma.userDevice.upsert({
       where: { userId_deviceIdentifier: { userId, deviceIdentifier } },
       update: { pushToken, lastSeenAt: new Date() },

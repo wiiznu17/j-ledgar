@@ -21,7 +21,11 @@ export class DealService {
     });
   }
 
-  async getDeals(filters: { categoryId?: string; brandId?: string; search?: string }) {
+  async getDeals(filters: {
+    categoryId?: string;
+    brandId?: string;
+    search?: string;
+  }) {
     const where: any = {
       isActive: true,
       OR: [{ startDate: null }, { startDate: { lte: new Date() } }],
@@ -61,7 +65,10 @@ export class DealService {
       });
 
       if (!deal || !deal.isActive) {
-        throw new HttpException('Deal is not available', HttpStatus.BAD_REQUEST);
+        throw new HttpException(
+          'Deal is not available',
+          HttpStatus.BAD_REQUEST,
+        );
       }
 
       // 2. Check Stock
@@ -75,7 +82,10 @@ export class DealService {
       });
 
       if (userRedemptions >= deal.limitPerUser) {
-        throw new HttpException('You have reached the limit for this deal', HttpStatus.BAD_REQUEST);
+        throw new HttpException(
+          'You have reached the limit for this deal',
+          HttpStatus.BAD_REQUEST,
+        );
       }
 
       // 4. Deduct Points via LoyaltyService logic (inside transaction)
@@ -110,7 +120,9 @@ export class DealService {
           redemptionCode,
           status: RedemptionStatus.REDEEMED,
           // Redemption usually valid for 30 days or until deal end date
-          expiresAt: deal.endDate || new Date(new Date().setDate(new Date().getDate() + 30)),
+          expiresAt:
+            deal.endDate ||
+            new Date(new Date().setDate(new Date().getDate() + 30)),
         },
       });
 
@@ -147,7 +159,10 @@ export class DealService {
     }
 
     if (redemption.status !== RedemptionStatus.REDEEMED) {
-      throw new HttpException('Deal already used or expired', HttpStatus.BAD_REQUEST);
+      throw new HttpException(
+        'Deal already used or expired',
+        HttpStatus.BAD_REQUEST,
+      );
     }
 
     return this.prisma.dealRedemption.update({

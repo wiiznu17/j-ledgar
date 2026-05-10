@@ -3,7 +3,8 @@ import { jwtVerify } from 'jose';
 import { verifyToken } from '@/lib/auth/jwt';
 
 const SECRET = new TextEncoder().encode(
-  process.env.ADMIN_JWT_SECRET || 'jledger-admin-super-secret-2024-dev-key-32chars',
+  process.env.ADMIN_JWT_SECRET ||
+    'jledger-admin-super-secret-2024-dev-key-32chars',
 );
 
 export async function proxy(request: NextRequest) {
@@ -36,11 +37,14 @@ export async function proxy(request: NextRequest) {
     if (refreshToken && userId) {
       try {
         console.log('[Proxy] Attempting token refresh for user:', userId);
-        const refreshResponse = await fetch('http://localhost:3000/api/admin/auth/refresh', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ userId, refreshToken }),
-        });
+        const refreshResponse = await fetch(
+          'http://localhost:3000/api/admin/auth/refresh',
+          {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ userId, refreshToken }),
+          },
+        );
 
         if (refreshResponse.ok) {
           const data = await refreshResponse.json();
@@ -84,7 +88,10 @@ export async function proxy(request: NextRequest) {
       return NextResponse.redirect(new URL('/dashboard', request.url));
     }
 
-    if (role === 'RECONCILER' && (pathname === '/accounts' || pathname === '/users')) {
+    if (
+      role === 'RECONCILER' &&
+      (pathname === '/accounts' || pathname === '/users')
+    ) {
       return NextResponse.redirect(new URL('/dashboard', request.url));
     }
 

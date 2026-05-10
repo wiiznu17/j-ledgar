@@ -81,10 +81,22 @@ export const AdditionalInfoStep: React.FC<AdditionalInfoStepProps> = ({
     // Note: We don't need to fill the address fields here anymore if useIdentityAddress is true,
     // but we'll keep the logic to show the data to the user if they want to see it.
     if (newValue && idCardAddress) {
-      setData('addressField', { field: 'line1', text: idCardAddress.line1 || '' });
-      setData('addressField', { field: 'subdistrict', text: idCardAddress.subdistrict || '' });
-      setData('addressField', { field: 'district', text: idCardAddress.district || '' });
-      setData('addressField', { field: 'province', text: idCardAddress.province || '' });
+      setData('addressField', {
+        field: 'line1',
+        text: idCardAddress.line1 || '',
+      });
+      setData('addressField', {
+        field: 'subdistrict',
+        text: idCardAddress.subdistrict || '',
+      });
+      setData('addressField', {
+        field: 'district',
+        text: idCardAddress.district || '',
+      });
+      setData('addressField', {
+        field: 'province',
+        text: idCardAddress.province || '',
+      });
       // Postal code is NOT on ID card, so user MUST still fill it
     }
   };
@@ -114,7 +126,10 @@ export const AdditionalInfoStep: React.FC<AdditionalInfoStepProps> = ({
 
   return (
     <StepWrapper visible={visible}>
-      <StepHeader title="More Details" subtitle="Tell us a bit more about yourself." />
+      <StepHeader
+        title="More Details"
+        subtitle="Tell us a bit more about yourself."
+      />
       <View className="flex-col gap-y-5">
         {/* Current Address Section */}
         <View className="mb-2">
@@ -154,7 +169,10 @@ export const AdditionalInfoStep: React.FC<AdditionalInfoStepProps> = ({
                     label="SUB-DISTRICT"
                     value={data.address.subdistrict}
                     onChangeText={(v) => {
-                      setData('addressField', { field: 'subdistrict', text: v });
+                      setData('addressField', {
+                        field: 'subdistrict',
+                        text: v,
+                      });
                     }}
                   />
                 </View>

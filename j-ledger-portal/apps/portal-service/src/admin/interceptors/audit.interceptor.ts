@@ -1,8 +1,18 @@
-import { Injectable, NestInterceptor, ExecutionContext, CallHandler, Logger } from '@nestjs/common';
+import {
+  Injectable,
+  NestInterceptor,
+  ExecutionContext,
+  CallHandler,
+  Logger,
+} from '@nestjs/common';
 import { Observable } from 'rxjs';
 import { tap } from 'rxjs/operators';
 import { Reflector } from '@nestjs/core';
-import { AuditService, AuditAction, ResourceType } from '../../modules/audit/audit.service';
+import {
+  AuditService,
+  AuditAction,
+  ResourceType,
+} from '../../modules/audit/audit.service';
 import { AUDIT_LOG_KEY, AuditMetadata } from '../decorators/audit.decorator';
 import { PERMISSIONS_KEY } from '../decorators/permissions.decorator';
 import { Permission } from '@repo/dto';
@@ -22,10 +32,10 @@ export class AuditInterceptor implements NestInterceptor {
     const adminUser = request.user; // Assuming AdminJwtGuard has populated this
 
     // Get required permissions from decorator
-    const requiredPermissions = this.reflector.getAllAndOverride<Permission[]>(PERMISSIONS_KEY, [
-      context.getHandler(),
-      context.getClass(),
-    ]);
+    const requiredPermissions = this.reflector.getAllAndOverride<Permission[]>(
+      PERMISSIONS_KEY,
+      [context.getHandler(), context.getClass()],
+    );
 
     // STRICT: Only log if permission is required
     if (!requiredPermissions || requiredPermissions.length === 0) {
@@ -33,13 +43,14 @@ export class AuditInterceptor implements NestInterceptor {
     }
 
     // Get metadata from decorator (optional now)
-    const metadata = this.reflector.getAllAndOverride<AuditMetadata>(AUDIT_LOG_KEY, [
-      context.getHandler(),
-      context.getClass(),
-    ]);
+    const metadata = this.reflector.getAllAndOverride<AuditMetadata>(
+      AUDIT_LOG_KEY,
+      [context.getHandler(), context.getClass()],
+    );
 
     const primaryPermission = requiredPermissions[0];
-    const actionReason = metadata?.reason || `Executed permission: ${primaryPermission}`;
+    const actionReason =
+      metadata?.reason || `Executed permission: ${primaryPermission}`;
     const actionType = primaryPermission as any; // Use permission name as action
     const resourceType = metadata?.resourceType || ResourceType.PII;
 
@@ -52,7 +63,10 @@ export class AuditInterceptor implements NestInterceptor {
             // Extract Resource ID if path provided
             let resourceId = null;
             if (metadata?.resourceIdPath) {
-              resourceId = this.getValueByPath(request, metadata.resourceIdPath);
+              resourceId = this.getValueByPath(
+                request,
+                metadata.resourceIdPath,
+              );
             } else if (params.id) {
               resourceId = params.id;
             } else if (data && (data as any).id) {
@@ -97,7 +111,9 @@ export class AuditInterceptor implements NestInterceptor {
                 : `Failed: ${err.message}`,
             });
           } catch (logError) {
-            this.logger.error(`Failed to record failed audit log: ${logError.message}`);
+            this.logger.error(
+              `Failed to record failed audit log: ${logError.message}`,
+            );
           }
         },
       }),

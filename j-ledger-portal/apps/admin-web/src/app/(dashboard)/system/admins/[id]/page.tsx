@@ -2,7 +2,13 @@
 
 import { use, useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import {
@@ -26,7 +32,11 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 
-export default function AdminDetailPage({ params }: { params: Promise<{ id: string }> }) {
+export default function AdminDetailPage({
+  params,
+}: {
+  params: Promise<{ id: string }>;
+}) {
   const { id } = use(params);
   const router = useRouter();
   const [admin, setAdmin] = useState<AdminUser | null>(null);
@@ -38,7 +48,10 @@ export default function AdminDetailPage({ params }: { params: Promise<{ id: stri
   const [currentUser, setCurrentUser] = useState<AdminUser | null>(null);
 
   const isInvited = admin?.isInvited && admin?.isActive;
-  const isExpired = isInvited && admin?.inviteExpiry && new Date(admin.inviteExpiry) < new Date();
+  const isExpired =
+    isInvited &&
+    admin?.inviteExpiry &&
+    new Date(admin.inviteExpiry) < new Date();
 
   const fetchAdminData = async () => {
     setLoading(true);
@@ -155,11 +168,19 @@ export default function AdminDetailPage({ params }: { params: Promise<{ id: stri
   };
 
   if (loading) {
-    return <div className="flex justify-center py-12 text-slate-500">Loading profile...</div>;
+    return (
+      <div className="flex justify-center py-12 text-slate-500">
+        Loading profile...
+      </div>
+    );
   }
 
   if (!admin) {
-    return <div className="flex justify-center py-12 text-destructive">Admin not found</div>;
+    return (
+      <div className="flex justify-center py-12 text-destructive">
+        Admin not found
+      </div>
+    );
   }
 
   return (
@@ -179,7 +200,9 @@ export default function AdminDetailPage({ params }: { params: Promise<{ id: stri
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-4">
             <div>
-              <h1 className="text-2xl font-bold text-slate-900 tracking-tight">Staff Detail</h1>
+              <h1 className="text-2xl font-bold text-slate-900 tracking-tight">
+                Staff Detail
+              </h1>
             </div>
           </div>
           <div className="flex items-center gap-2">
@@ -198,7 +221,9 @@ export default function AdminDetailPage({ params }: { params: Promise<{ id: stri
         <Card className="md:col-span-2 border-border shadow-sm">
           <CardHeader>
             <CardTitle>Overview</CardTitle>
-            <CardDescription>Personal details and access rights.</CardDescription>
+            <CardDescription>
+              Personal details and access rights.
+            </CardDescription>
           </CardHeader>
           <CardContent className="space-y-6">
             <div className="flex items-center justify-between">
@@ -209,7 +234,13 @@ export default function AdminDetailPage({ params }: { params: Promise<{ id: stri
                 <p className="text-slate-500">{admin.email}</p>
               </div>
               <Badge
-                variant={isInvited ? 'outline' : admin.isActive ? 'default' : 'destructive'}
+                variant={
+                  isInvited
+                    ? 'outline'
+                    : admin.isActive
+                      ? 'default'
+                      : 'destructive'
+                }
                 className={`text-sm px-3 py-1 font-bold ${
                   isInvited
                     ? isExpired
@@ -244,7 +275,10 @@ export default function AdminDetailPage({ params }: { params: Promise<{ id: stri
 
                 {isEditingRole ? (
                   <div className="flex items-center gap-2 mt-1">
-                    <Select value={editedRole} onValueChange={(val) => val && setEditedRole(val)}>
+                    <Select
+                      value={editedRole}
+                      onValueChange={(val) => val && setEditedRole(val)}
+                    >
                       <SelectTrigger className="h-9 bg-white border-slate-200 rounded-lg text-xs font-semibold">
                         <SelectValue placeholder="Select Role" />
                       </SelectTrigger>
@@ -256,9 +290,15 @@ export default function AdminDetailPage({ params }: { params: Promise<{ id: stri
                         ))}
                         {availableRoles.length === 0 && (
                           <>
-                            <SelectItem value={AdminRole.SUPER_ADMIN}>Super Admin</SelectItem>
-                            <SelectItem value={AdminRole.AUDITOR}>Auditor</SelectItem>
-                            <SelectItem value={AdminRole.SUPPORT_AGENT}>Support Agent</SelectItem>
+                            <SelectItem value={AdminRole.SUPER_ADMIN}>
+                              Super Admin
+                            </SelectItem>
+                            <SelectItem value={AdminRole.AUDITOR}>
+                              Auditor
+                            </SelectItem>
+                            <SelectItem value={AdminRole.SUPPORT_AGENT}>
+                              Support Agent
+                            </SelectItem>
                             <SelectItem value={AdminRole.COMPLIANCE_OFFICER}>
                               Compliance Officer
                             </SelectItem>
@@ -304,7 +344,9 @@ export default function AdminDetailPage({ params }: { params: Promise<{ id: stri
               <div>
                 <p className="text-sm text-slate-500 mb-1">Joined Date</p>
                 <p className="font-medium text-slate-800">
-                  {admin.createdAt ? new Date(admin.createdAt).toLocaleDateString() : 'N/A'}
+                  {admin.createdAt
+                    ? new Date(admin.createdAt).toLocaleDateString()
+                    : 'N/A'}
                 </p>
               </div>
             </div>

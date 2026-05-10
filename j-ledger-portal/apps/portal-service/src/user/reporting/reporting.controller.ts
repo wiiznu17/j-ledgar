@@ -17,7 +17,10 @@ export class ReportingController {
   // ==================== Monthly Reports ====================
 
   @Get('monthly')
-  async getMonthlyReport(@Query('year') year?: number, @Query('month') month?: number) {
+  async getMonthlyReport(
+    @Query('year') year?: number,
+    @Query('month') month?: number,
+  ) {
     return this.reportingService.getMonthlyReport(year, month);
   }
 

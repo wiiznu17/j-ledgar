@@ -1,7 +1,13 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import {
   Table,
@@ -24,7 +30,15 @@ import {
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
-import { Shield, ShieldAlert, Lock, Eye, Plus, ArrowRight, Settings2 } from 'lucide-react';
+import {
+  Shield,
+  ShieldAlert,
+  Lock,
+  Eye,
+  Plus,
+  ArrowRight,
+  Settings2,
+} from 'lucide-react';
 import { showSuccess, showError } from '@/lib/swal';
 import { userRequester } from '@/lib/requesters';
 import Link from 'next/link';
@@ -63,7 +77,10 @@ export default function RolesPage() {
         description: newDescription,
       });
 
-      showSuccess('Created', `Role "${newName}" has been created successfully.`);
+      showSuccess(
+        'Created',
+        `Role "${newName}" has been created successfully.`,
+      );
       setNewName('');
       setNewDescription('');
       setIsDialogOpen(false);
@@ -79,9 +96,12 @@ export default function RolesPage() {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h2 className="text-3xl font-bold tracking-tight text-[#2D3748]">Roles & Permissions</h2>
+          <h2 className="text-3xl font-bold tracking-tight text-[#2D3748]">
+            Roles & Permissions
+          </h2>
           <p className="text-sm text-slate-500 mt-1">
-            Manage administrative roles and their access levels across the system.
+            Manage administrative roles and their access levels across the
+            system.
           </p>
         </div>
 
@@ -97,9 +117,12 @@ export default function RolesPage() {
           <DialogContent className="sm:max-w-[425px] bg-white rounded-2xl border-0 shadow-2xl">
             <form onSubmit={handleCreateRole}>
               <DialogHeader>
-                <DialogTitle className="text-xl font-bold">New Security Role</DialogTitle>
+                <DialogTitle className="text-xl font-bold">
+                  New Security Role
+                </DialogTitle>
                 <DialogDescription>
-                  Define a new role. You can assign specific permissions after creation.
+                  Define a new role. You can assign specific permissions after
+                  creation.
                 </DialogDescription>
               </DialogHeader>
               <div className="grid gap-6 py-6">
@@ -191,7 +214,8 @@ export default function RolesPage() {
                               {role.name}
                             </span>
                             <span className="text-[10px] font-medium text-slate-400 uppercase tracking-tighter">
-                              Created {new Date(role.createdAt).toLocaleDateString()}
+                              Created{' '}
+                              {new Date(role.createdAt).toLocaleDateString()}
                             </span>
                           </div>
                         </div>
@@ -225,7 +249,8 @@ export default function RolesPage() {
                               </>
                             ) : (
                               <>
-                                <Settings2 className="h-3.5 w-3.5 mr-2" /> Configure
+                                <Settings2 className="h-3.5 w-3.5 mr-2" />{' '}
+                                Configure
                               </>
                             )}
                           </Button>
@@ -260,9 +285,9 @@ export default function RolesPage() {
           <div>
             <h4 className="font-bold text-indigo-900">Security Note</h4>
             <p className="text-sm text-indigo-700/80 leading-relaxed mt-1">
-              System roles are core to the platform's stability and cannot be modified or deleted.
-              If you need custom access levels, please create a new role and assign permissions
-              manually.
+              System roles are core to the platform's stability and cannot be
+              modified or deleted. If you need custom access levels, please
+              create a new role and assign permissions manually.
             </p>
           </div>
         </div>

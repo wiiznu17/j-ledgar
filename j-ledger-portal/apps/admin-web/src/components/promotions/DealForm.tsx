@@ -105,7 +105,9 @@ export function DealForm({ initialData, onSuccess, onCancel }: DealFormProps) {
           <Input
             id="title"
             value={formData.title}
-            onChange={(e) => setFormData({ ...formData, title: e.target.value })}
+            onChange={(e) =>
+              setFormData({ ...formData, title: e.target.value })
+            }
             placeholder="e.g. 50% Starbucks Discount"
             required
           />
@@ -116,7 +118,12 @@ export function DealForm({ initialData, onSuccess, onCancel }: DealFormProps) {
             id="points"
             type="number"
             value={formData.pointsRequired}
-            onChange={(e) => setFormData({ ...formData, pointsRequired: parseInt(e.target.value) })}
+            onChange={(e) =>
+              setFormData({
+                ...formData,
+                pointsRequired: parseInt(e.target.value),
+              })
+            }
             required
           />
         </div>
@@ -127,7 +134,9 @@ export function DealForm({ initialData, onSuccess, onCancel }: DealFormProps) {
         <Input
           id="description"
           value={formData.description}
-          onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+          onChange={(e) =>
+            setFormData({ ...formData, description: e.target.value })
+          }
           placeholder="Brief summary shown in the list"
           required
         />
@@ -138,7 +147,9 @@ export function DealForm({ initialData, onSuccess, onCancel }: DealFormProps) {
           <Label>Brand</Label>
           <Select
             value={formData.brandId}
-            onValueChange={(value) => setFormData({ ...formData, brandId: value })}
+            onValueChange={(value) =>
+              setFormData({ ...formData, brandId: value })
+            }
           >
             <SelectTrigger>
               <SelectValue placeholder="Select Brand" />
@@ -156,7 +167,9 @@ export function DealForm({ initialData, onSuccess, onCancel }: DealFormProps) {
           <Label>Category</Label>
           <Select
             value={formData.categoryId}
-            onValueChange={(value) => setFormData({ ...formData, categoryId: value })}
+            onValueChange={(value) =>
+              setFormData({ ...formData, categoryId: value })
+            }
           >
             <SelectTrigger>
               <SelectValue placeholder="Select Category" />
@@ -179,7 +192,9 @@ export function DealForm({ initialData, onSuccess, onCancel }: DealFormProps) {
             id="stock"
             type="number"
             value={formData.stock}
-            onChange={(e) => setFormData({ ...formData, stock: parseInt(e.target.value) })}
+            onChange={(e) =>
+              setFormData({ ...formData, stock: parseInt(e.target.value) })
+            }
             required
           />
         </div>
@@ -189,7 +204,12 @@ export function DealForm({ initialData, onSuccess, onCancel }: DealFormProps) {
             id="limit"
             type="number"
             value={formData.limitPerUser}
-            onChange={(e) => setFormData({ ...formData, limitPerUser: parseInt(e.target.value) })}
+            onChange={(e) =>
+              setFormData({
+                ...formData,
+                limitPerUser: parseInt(e.target.value),
+              })
+            }
             required
           />
         </div>
@@ -199,7 +219,9 @@ export function DealForm({ initialData, onSuccess, onCancel }: DealFormProps) {
             id="priority"
             type="number"
             value={formData.priority}
-            onChange={(e) => setFormData({ ...formData, priority: parseInt(e.target.value) })}
+            onChange={(e) =>
+              setFormData({ ...formData, priority: parseInt(e.target.value) })
+            }
             required
           />
         </div>
@@ -210,7 +232,10 @@ export function DealForm({ initialData, onSuccess, onCancel }: DealFormProps) {
         <div className="flex items-center gap-4">
           {formData.imageUrl ? (
             <div className="relative w-24 h-24 rounded-lg overflow-hidden border">
-              <img src={formData.imageUrl} className="w-full h-full object-cover" />
+              <img
+                src={formData.imageUrl}
+                className="w-full h-full object-cover"
+              />
               <button
                 type="button"
                 onClick={() => setFormData({ ...formData, imageUrl: '' })}
@@ -226,7 +251,9 @@ export function DealForm({ initialData, onSuccess, onCancel }: DealFormProps) {
               ) : (
                 <>
                   <Upload size={20} className="text-muted-foreground" />
-                  <span className="text-[10px] text-muted-foreground mt-1">Upload</span>
+                  <span className="text-[10px] text-muted-foreground mt-1">
+                    Upload
+                  </span>
                 </>
               )}
               <input
@@ -242,7 +269,9 @@ export function DealForm({ initialData, onSuccess, onCancel }: DealFormProps) {
             <Input
               placeholder="Or paste direct image URL"
               value={formData.imageUrl}
-              onChange={(e) => setFormData({ ...formData, imageUrl: e.target.value })}
+              onChange={(e) =>
+                setFormData({ ...formData, imageUrl: e.target.value })
+              }
             />
           </div>
         </div>
@@ -253,7 +282,9 @@ export function DealForm({ initialData, onSuccess, onCancel }: DealFormProps) {
         <Textarea
           id="terms"
           value={formData.termsCondition}
-          onChange={(e) => setFormData({ ...formData, termsCondition: e.target.value })}
+          onChange={(e) =>
+            setFormData({ ...formData, termsCondition: e.target.value })
+          }
           placeholder="One rule per line..."
           rows={3}
         />

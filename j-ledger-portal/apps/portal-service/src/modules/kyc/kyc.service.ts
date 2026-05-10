@@ -14,7 +14,13 @@ import { KafkaProducerService } from '../notification/kafka-producer.service';
 import { S3Service } from './services/s3.service';
 import { GoogleVisionService } from './services/ocr.service';
 import { AwsRekognitionService } from './services/face.service';
-import { createHash, randomBytes, createCipheriv, createDecipheriv, randomUUID } from 'crypto';
+import {
+  createHash,
+  randomBytes,
+  createCipheriv,
+  createDecipheriv,
+  randomUUID,
+} from 'crypto';
 import { ConfirmOcrDto } from './dto/kyc.dto';
 import {
   KafkaTopic,
@@ -47,13 +53,16 @@ export class KycService {
     });
 
     const approvedCount = documents.filter(
-      (d) => (d.status as KYCVerificationStatus) === KYCVerificationStatus.APPROVED,
+      (d) =>
+        (d.status as KYCVerificationStatus) === KYCVerificationStatus.APPROVED,
     ).length;
     const pendingCount = documents.filter(
-      (d) => (d.status as KYCVerificationStatus) === KYCVerificationStatus.PENDING,
+      (d) =>
+        (d.status as KYCVerificationStatus) === KYCVerificationStatus.PENDING,
     ).length;
     const rejectedCount = documents.filter(
-      (d) => (d.status as KYCVerificationStatus) === KYCVerificationStatus.REJECTED,
+      (d) =>
+        (d.status as KYCVerificationStatus) === KYCVerificationStatus.REJECTED,
     ).length;
 
     return {
@@ -93,16 +102,24 @@ export class KycService {
     });
 
     const approvedCount = documents.filter(
-      (d) => (d.status as KYCVerificationStatus) === KYCVerificationStatus.APPROVED,
+      (d) =>
+        (d.status as KYCVerificationStatus) === KYCVerificationStatus.APPROVED,
     ).length;
 
     // Activate wallet when 2 documents are approved
     if (approvedCount >= 2) {
       try {
-        const wallet = await this.financeService.activateWallet(document.userId);
-        this.logger.log(`Wallet activated for user ${document.userId}: ${wallet.walletId}`);
+        const wallet = await this.financeService.activateWallet(
+          document.userId,
+        );
+        this.logger.log(
+          `Wallet activated for user ${document.userId}: ${wallet.walletId}`,
+        );
       } catch (error) {
-        this.logger.error(`Failed to activate wallet for user ${document.userId}`, error);
+        this.logger.error(
+          `Failed to activate wallet for user ${document.userId}`,
+          error,
+        );
         // Don't throw - wallet activation can be retried manually
       }
     }
@@ -156,7 +173,10 @@ export class KycService {
   async approveKyc(userId: string) {
     // Check current status
     const current = await this.prisma.kYCData.findUnique({ where: { userId } });
-    if ((current?.verificationStatus as KYCVerificationStatus) === KYCVerificationStatus.APPROVED) {
+    if (
+      (current?.verificationStatus as KYCVerificationStatus) ===
+      KYCVerificationStatus.APPROVED
+    ) {
       throw new Error('KYC is already approved');
     }
 
@@ -182,7 +202,10 @@ export class KycService {
       select: { registrationState: true },
     });
 
-    const updateData: { status: UserStatus; registrationState?: RegistrationState } = {
+    const updateData: {
+      status: UserStatus;
+      registrationState?: RegistrationState;
+    } = {
       status: UserStatus.ACTIVE,
     };
 
@@ -198,7 +221,12 @@ export class KycService {
     ];
 
     // Only set to KYC_VERIFIED if the user hasn't progressed further
-    if (user && statesBeforeKycVerified.includes(user.registrationState as RegistrationState)) {
+    if (
+      user &&
+      statesBeforeKycVerified.includes(
+        user.registrationState as RegistrationState,
+      )
+    ) {
       updateData.registrationState = RegistrationState.KYC_VERIFIED;
     }
 
@@ -220,7 +248,10 @@ export class KycService {
       );
     }
 
-    await this.identityService.logSecurityEvent(userId, NotificationEventType.KYC_APPROVED);
+    await this.identityService.logSecurityEvent(
+      userId,
+      NotificationEventType.KYC_APPROVED,
+    );
 
     return kyc;
   }
@@ -228,10 +259,16 @@ export class KycService {
   async rejectKyc(userId: string, reason: string) {
     // Check current status
     const current = await this.prisma.kYCData.findUnique({ where: { userId } });
-    if ((current?.verificationStatus as KYCVerificationStatus) === KYCVerificationStatus.APPROVED) {
+    if (
+      (current?.verificationStatus as KYCVerificationStatus) ===
+      KYCVerificationStatus.APPROVED
+    ) {
       throw new Error('Cannot reject an already approved KYC');
     }
-    if ((current?.verificationStatus as KYCVerificationStatus) === KYCVerificationStatus.REJECTED) {
+    if (
+      (current?.verificationStatus as KYCVerificationStatus) ===
+      KYCVerificationStatus.REJECTED
+    ) {
       throw new Error('KYC is already rejected');
     }
 
@@ -264,9 +301,13 @@ export class KycService {
       );
     }
 
-    await this.identityService.logSecurityEvent(userId, NotificationEventType.KYC_REJECTED, {
-      reason,
-    });
+    await this.identityService.logSecurityEvent(
+      userId,
+      NotificationEventType.KYC_REJECTED,
+      {
+        reason,
+      },
+    );
 
     return kyc;
   }
@@ -379,12 +420,20 @@ export class KycService {
     today.setHours(0, 0, 0, 0);
 
     const [pending, approvedToday, rejectedToday] = await Promise.all([
-      this.prisma.user.count({ where: { status: UserStatus.PENDING_APPROVAL } }),
-      this.prisma.kYCData.count({
-        where: { verificationStatus: KYCVerificationStatus.APPROVED, verifiedAt: { gte: today } },
+      this.prisma.user.count({
+        where: { status: UserStatus.PENDING_APPROVAL },
       }),
       this.prisma.kYCData.count({
-        where: { verificationStatus: KYCVerificationStatus.REJECTED, updatedAt: { gte: today } },
+        where: {
+          verificationStatus: KYCVerificationStatus.APPROVED,
+          verifiedAt: { gte: today },
+        },
+      }),
+      this.prisma.kYCData.count({
+        where: {
+          verificationStatus: KYCVerificationStatus.REJECTED,
+          updatedAt: { gte: today },
+        },
       }),
     ]);
 
@@ -404,54 +453,61 @@ export class KycService {
   }
 
   async getKYCDetails(userId: string) {
-    const [kycData, documents, user, addresses, profileSetting] = await Promise.all([
-      this.prisma.kYCData.findUnique({
-        where: { userId },
-        select: {
-          idCardNumberEncrypted: true,
-          firstNameTh: true,
-          lastNameTh: true,
-          firstNameEn: true,
-          lastNameEn: true,
-          prefix: true,
-          prefixEn: true,
-          dateOfBirth: true,
-          idCardIssueDate: true,
-          idCardExpiryDate: true,
-          religion: true,
-          idCardImageUrl: true,
-          selfieImageUrl: true,
-          faceMatchScore: true,
-          ocrConfidence: true,
-          verificationStatus: true,
-          reviewNote: true,
-          createdAt: true,
-        },
-      }),
-      this.prisma.kYCDocument.findMany({
-        where: { userId },
-        select: { id: true, documentType: true, status: true, s3Url: true, createdAt: true },
-      }),
-      this.prisma.user.findUnique({
-        where: { id: userId },
-        select: { id: true, email: true, phoneNumber: true },
-      }),
-      this.prisma.address.findMany({
-        where: { userId },
-        select: {
-          type: true,
-          label: true,
-          line1: true,
-          subdistrict: true,
-          district: true,
-          province: true,
-          postalCode: true,
-        },
-      }),
-      this.prisma.userSetting.findUnique({
-        where: { userId_key: { userId, key: 'profile' } },
-      }),
-    ]);
+    const [kycData, documents, user, addresses, profileSetting] =
+      await Promise.all([
+        this.prisma.kYCData.findUnique({
+          where: { userId },
+          select: {
+            idCardNumberEncrypted: true,
+            firstNameTh: true,
+            lastNameTh: true,
+            firstNameEn: true,
+            lastNameEn: true,
+            prefix: true,
+            prefixEn: true,
+            dateOfBirth: true,
+            idCardIssueDate: true,
+            idCardExpiryDate: true,
+            religion: true,
+            idCardImageUrl: true,
+            selfieImageUrl: true,
+            faceMatchScore: true,
+            ocrConfidence: true,
+            verificationStatus: true,
+            reviewNote: true,
+            createdAt: true,
+          },
+        }),
+        this.prisma.kYCDocument.findMany({
+          where: { userId },
+          select: {
+            id: true,
+            documentType: true,
+            status: true,
+            s3Url: true,
+            createdAt: true,
+          },
+        }),
+        this.prisma.user.findUnique({
+          where: { id: userId },
+          select: { id: true, email: true, phoneNumber: true },
+        }),
+        this.prisma.address.findMany({
+          where: { userId },
+          select: {
+            type: true,
+            label: true,
+            line1: true,
+            subdistrict: true,
+            district: true,
+            province: true,
+            postalCode: true,
+          },
+        }),
+        this.prisma.userSetting.findUnique({
+          where: { userId_key: { userId, key: 'profile' } },
+        }),
+      ]);
 
     // Parse profile if exists
     let profile = null;
@@ -468,9 +524,14 @@ export class KycService {
       // Decrypt ID card number for admin review
       if (kycData.idCardNumberEncrypted) {
         try {
-          kycData.idCardNumberEncrypted = this.decryptPii(kycData.idCardNumberEncrypted);
+          kycData.idCardNumberEncrypted = this.decryptPii(
+            kycData.idCardNumberEncrypted,
+          );
         } catch (e) {
-          this.logger.error(`Failed to decrypt ID card number for user ${userId}`, e);
+          this.logger.error(
+            `Failed to decrypt ID card number for user ${userId}`,
+            e,
+          );
           kycData.idCardNumberEncrypted = 'DECRYPTION_FAILED';
         }
       }
@@ -486,7 +547,10 @@ export class KycService {
         try {
           kycData.selfieImageUrl = await this.s3Service.getPresignedUrl(key);
         } catch (e) {
-          this.logger.error(`Failed to generate signed URL for selfie: ${userId}`, e);
+          this.logger.error(
+            `Failed to generate signed URL for selfie: ${userId}`,
+            e,
+          );
         }
       }
     }
@@ -508,7 +572,9 @@ export class KycService {
         });
 
         // Fetch staff names manually
-        const staffIds = logs.map((l) => l.adminUserId).filter(Boolean) as string[];
+        const staffIds = logs
+          .map((l) => l.adminUserId)
+          .filter(Boolean) as string[];
         const staff = await this.prisma.staff.findMany({
           where: { id: { in: staffIds } },
           select: { id: true, firstName: true, lastName: true, email: true },
@@ -533,14 +599,20 @@ export class KycService {
     const idCardKey = `kyc/${userId}/id-card.jpg`;
 
     // 1. Upload to S3
-    const idCardUrl = await this.s3Service.uploadFile(idCardKey, idCardImage, 'image/jpeg');
+    const idCardUrl = await this.s3Service.uploadFile(
+      idCardKey,
+      idCardImage,
+      'image/jpeg',
+    );
 
     // 2. Perform OCR via Google Vision
     const ocrResult = await this.ocrService.extractIdCardData(idCardImage);
 
     // Fail early if OCR results are clearly invalid/empty
     if (!ocrResult || !ocrResult.idNumber) {
-      this.logger.warn(`[KYC] OCR failed to extract ID number for user ${userId}`);
+      this.logger.warn(
+        `[KYC] OCR failed to extract ID number for user ${userId}`,
+      );
       throw new BadRequestException(
         'Could not read ID card number. Please ensure the card is clear and try again.',
       );
@@ -557,7 +629,9 @@ export class KycService {
       });
 
       if (existingKyc && existingKyc.userId !== userId) {
-        throw new ConflictException('This ID card is already registered with another account');
+        throw new ConflictException(
+          'This ID card is already registered with another account',
+        );
       }
     }
 
@@ -566,14 +640,18 @@ export class KycService {
 
     // 5. Threshold Branching (Manual Review)
     const isLowConfidence = !idCardNumber || idCardNumber.length < 13;
-    const reviewNote = isLowConfidence ? 'OCR failed to extract complete ID number' : null;
+    const reviewNote = isLowConfidence
+      ? 'OCR failed to extract complete ID number'
+      : null;
 
     // 6. Upsert Data
     await this.prisma.$transaction(async (tx) => {
       await tx.kYCData.upsert({
         where: { userId },
         update: {
-          idCardNumberEncrypted: idCardNumber ? this.encryptPii(idCardNumber) : null,
+          idCardNumberEncrypted: idCardNumber
+            ? this.encryptPii(idCardNumber)
+            : null,
           idCardToken,
           idCardImageUrl: idCardUrl,
           idCardImageSha256: idCardHash,
@@ -585,7 +663,9 @@ export class KycService {
         create: {
           userId,
           verificationStatus: KYCVerificationStatus.PENDING,
-          idCardNumberEncrypted: idCardNumber ? this.encryptPii(idCardNumber) : null,
+          idCardNumberEncrypted: idCardNumber
+            ? this.encryptPii(idCardNumber)
+            : null,
           idCardToken,
           idCardImageUrl: idCardUrl,
           idCardImageSha256: idCardHash,
@@ -609,7 +689,9 @@ export class KycService {
       if (extraction.registeredAddress) {
         await tx.pII.upsert({
           where: { userId_field: { userId, field: 'raw_id_card_address' } },
-          update: { encryptedData: this.encryptPii(extraction.registeredAddress) },
+          update: {
+            encryptedData: this.encryptPii(extraction.registeredAddress),
+          },
           create: {
             userId,
             field: 'raw_id_card_address',
@@ -650,7 +732,9 @@ export class KycService {
     // 1. Try to get Liveness Session Results if exists, otherwise fallback to manual comparison
     let livenessResults: any = null;
     try {
-      livenessResults = await this.faceService.getLivenessResults(kyc.livenessSessionId);
+      livenessResults = await this.faceService.getLivenessResults(
+        kyc.livenessSessionId,
+      );
       this.logger.log(
         `Liveness check for user ${userId}: Status=${livenessResults.status}, Confidence=${livenessResults.confidence}`,
       );
@@ -660,7 +744,10 @@ export class KycService {
       );
     }
 
-    const minLivenessScore = this.configService.get('KYC_MIN_LIVENESS_CONFIDENCE', 90);
+    const minLivenessScore = this.configService.get(
+      'KYC_MIN_LIVENESS_CONFIDENCE',
+      90,
+    );
     const isLive =
       livenessResults &&
       livenessResults.status === 'SUCCEEDED' &&
@@ -670,7 +757,9 @@ export class KycService {
     let finalSelfieBuffer: Buffer;
     if (isLive && livenessResults?.referenceImage?.Bytes) {
       finalSelfieBuffer = Buffer.from(livenessResults.referenceImage.Bytes);
-      this.logger.debug(`Using AWS Liveness Reference Image for user ${userId}`);
+      this.logger.debug(
+        `Using AWS Liveness Reference Image for user ${userId}`,
+      );
     } else if (selfieImage) {
       finalSelfieBuffer = selfieImage;
       this.logger.debug(`Using manual selfie upload for user ${userId}`);
@@ -684,7 +773,11 @@ export class KycService {
     const selfieKey = `kyc/${userId}/selfie.jpg`;
 
     // 3. Upload Selfie to S3
-    const selfieUrl = await this.s3Service.uploadFile(selfieKey, finalSelfieBuffer, 'image/jpeg');
+    const selfieUrl = await this.s3Service.uploadFile(
+      selfieKey,
+      finalSelfieBuffer,
+      'image/jpeg',
+    );
 
     // 4. Face Comparison (Real Comparison)
     // We use the ID card key from S3 and the new selfie buffer
@@ -705,9 +798,15 @@ export class KycService {
       const idCardBuffer = await this.s3Service.getFile(idCardKey);
 
       // Compare with the reference image (from liveness) or provided selfie
-      const comparison = await this.faceService.compareFaces(idCardBuffer, finalSelfieBuffer);
+      const comparison = await this.faceService.compareFaces(
+        idCardBuffer,
+        finalSelfieBuffer,
+      );
 
-      const minSimilarity = this.configService.get('KYC_MIN_SIMILARITY_SCORE', 80);
+      const minSimilarity = this.configService.get(
+        'KYC_MIN_SIMILARITY_SCORE',
+        80,
+      );
       isMatch = comparison.isMatch && comparison.similarity >= minSimilarity;
       similarity = comparison.similarity;
 
@@ -751,7 +850,9 @@ export class KycService {
 
     return {
       isMatch,
-      verificationStatus: isMatch ? KYCVerificationStatus.APPROVED : KYCVerificationStatus.REJECTED,
+      verificationStatus: isMatch
+        ? KYCVerificationStatus.APPROVED
+        : KYCVerificationStatus.REJECTED,
     };
   }
 
@@ -759,13 +860,19 @@ export class KycService {
 
   async uploadIdCardSimple(userId: string, idCardImage: Buffer) {
     this.logger.log(`[KYC] STEP 5: Uploading ID card for user ${userId}`);
-    this.logger.log(`[KYC] Image buffer size: ${idCardImage ? idCardImage.length : 'null'} bytes`);
+    this.logger.log(
+      `[KYC] Image buffer size: ${idCardImage ? idCardImage.length : 'null'} bytes`,
+    );
 
     const idCardHash = this.hashBuffer(idCardImage);
     const idCardKey = `kyc/${userId}/id-card.jpg`;
 
     // Upload to S3
-    const idCardUrl = await this.s3Service.uploadFile(idCardKey, idCardImage, 'image/jpeg');
+    const idCardUrl = await this.s3Service.uploadFile(
+      idCardKey,
+      idCardImage,
+      'image/jpeg',
+    );
 
     const extraction = {
       idCardNumber: '1234567890123',
@@ -843,9 +950,14 @@ export class KycService {
           },
         });
       });
-      this.logger.log(`[KYC] KYC data upserted for user ${userId} with encrypted fields`);
+      this.logger.log(
+        `[KYC] KYC data upserted for user ${userId} with encrypted fields`,
+      );
     } catch (error) {
-      this.logger.error(`[KYC] Failed to upsert KYC data for user ${userId}`, error);
+      this.logger.error(
+        `[KYC] Failed to upsert KYC data for user ${userId}`,
+        error,
+      );
       throw error;
     }
 
@@ -855,9 +967,14 @@ export class KycService {
         where: { id: userId },
         data: { registrationState: RegistrationState.ID_CARD_UPLOADED },
       });
-      this.logger.log(`[KYC] User state updated to ID_CARD_UPLOADED for user ${userId}`);
+      this.logger.log(
+        `[KYC] User state updated to ID_CARD_UPLOADED for user ${userId}`,
+      );
     } catch (error) {
-      this.logger.error(`[KYC] Failed to update user state for user ${userId}`, error);
+      this.logger.error(
+        `[KYC] Failed to update user state for user ${userId}`,
+        error,
+      );
       throw error;
     }
 
@@ -894,11 +1011,14 @@ export class KycService {
 
     // Encrypt sensitive fields
     const encryptedId = dto.idNumber ? this.encryptPii(dto.idNumber) : null;
-    const thaiName = `${dto.prefixTh || ''}${dto.firstNameTh || ''} ${dto.lastNameTh || ''}`.trim();
+    const thaiName =
+      `${dto.prefixTh || ''}${dto.firstNameTh || ''} ${dto.lastNameTh || ''}`.trim();
     const encryptedThaiName = thaiName ? this.encryptPii(thaiName) : null;
     // In mock/simple mode, we use userId in the token to allow multiple users to test with the same mock ID
     // TODO: For production, remove + userId to enforce global deduplication of ID cards
-    const idCardToken = dto.idNumber ? this.hashString(dto.idNumber + userId) : null;
+    const idCardToken = dto.idNumber
+      ? this.hashString(dto.idNumber + userId)
+      : null;
 
     try {
       const updated = await this.prisma.kYCData.update({
@@ -914,7 +1034,9 @@ export class KycService {
           prefixEn: dto.prefixEn,
           dateOfBirth: dto.dateOfBirth ? this.parseDate(dto.dateOfBirth) : null,
           idCardIssueDate: dto.issueDate ? this.parseDate(dto.issueDate) : null,
-          idCardExpiryDate: dto.expiryDate ? this.parseDate(dto.expiryDate) : null,
+          idCardExpiryDate: dto.expiryDate
+            ? this.parseDate(dto.expiryDate)
+            : null,
           thaiNameEncrypted: encryptedThaiName,
           religion: dto.religion,
           ...(idCardToken && { idCardToken }),
@@ -942,14 +1064,19 @@ export class KycService {
       );
       return { success: true };
     } catch (error) {
-      this.logger.error(`[KYC] Failed to save confirmed OCR data for user ${userId}`, error);
+      this.logger.error(
+        `[KYC] Failed to save confirmed OCR data for user ${userId}`,
+        error,
+      );
       throw error;
     }
   }
 
   async submitSelfieSimple(userId: string, selfieImage: Buffer) {
     this.logger.log(`[KYC] STEP 6: Submitting selfie for user ${userId}`);
-    this.logger.log(`[KYC] Selfie buffer size: ${selfieImage ? selfieImage.length : 'null'} bytes`);
+    this.logger.log(
+      `[KYC] Selfie buffer size: ${selfieImage ? selfieImage.length : 'null'} bytes`,
+    );
 
     const kyc = await this.prisma.kYCData.findUnique({
       where: { userId },
@@ -960,7 +1087,9 @@ export class KycService {
     );
 
     if (!kyc || !kyc.livenessSessionId) {
-      this.logger.error(`[KYC] ID Card must be uploaded before selfie for user ${userId}`);
+      this.logger.error(
+        `[KYC] ID Card must be uploaded before selfie for user ${userId}`,
+      );
       throw new BadRequestException('ID Card must be uploaded before selfie');
     }
 
@@ -968,7 +1097,11 @@ export class KycService {
     const selfieKey = `kyc/${userId}/selfie.jpg`;
 
     // Upload Selfie to S3
-    const selfieUrl = await this.s3Service.uploadFile(selfieKey, selfieImage, 'image/jpeg');
+    const selfieUrl = await this.s3Service.uploadFile(
+      selfieKey,
+      selfieImage,
+      'image/jpeg',
+    );
 
     // Simple mode: Skip face verification, just save the image
     try {
@@ -985,7 +1118,10 @@ export class KycService {
       });
       this.logger.log(`[KYC] KYC data updated with selfie for user ${userId}`);
     } catch (error) {
-      this.logger.error(`[KYC] Failed to update KYC data with selfie for user ${userId}`, error);
+      this.logger.error(
+        `[KYC] Failed to update KYC data with selfie for user ${userId}`,
+        error,
+      );
       throw error;
     }
 
@@ -995,9 +1131,14 @@ export class KycService {
         where: { id: userId },
         data: { registrationState: RegistrationState.KYC_VERIFIED },
       });
-      this.logger.log(`[KYC] User state updated to KYC_VERIFIED for user ${userId}`);
+      this.logger.log(
+        `[KYC] User state updated to KYC_VERIFIED for user ${userId}`,
+      );
     } catch (error) {
-      this.logger.error(`[KYC] Failed to update user state for user ${userId}`, error);
+      this.logger.error(
+        `[KYC] Failed to update user state for user ${userId}`,
+        error,
+      );
       throw error;
     }
 
@@ -1063,7 +1204,9 @@ export class KycService {
 
     let idx = thaiMonths.findIndex((m) => monthStr.includes(m));
     if (idx === -1)
-      idx = engMonths.findIndex((m) => monthStr.toLowerCase().startsWith(m.toLowerCase()));
+      idx = engMonths.findIndex((m) =>
+        monthStr.toLowerCase().startsWith(m.toLowerCase()),
+      );
 
     return idx === -1 ? 0 : idx;
   }
@@ -1071,7 +1214,9 @@ export class KycService {
   private encryptPii(data: string): string {
     const encryptionKey = this.configService.get<string>('PII_ENCRYPTION_KEY');
     if (!encryptionKey) {
-      throw new InternalServerErrorException('System missing PII encryption capabilities');
+      throw new InternalServerErrorException(
+        'System missing PII encryption capabilities',
+      );
     }
     const iv = randomBytes(12);
     const key = Buffer.from(encryptionKey, 'hex');
@@ -1087,7 +1232,9 @@ export class KycService {
   private decryptPii(encryptedData: string): string {
     const encryptionKey = this.configService.get<string>('PII_ENCRYPTION_KEY');
     if (!encryptionKey) {
-      throw new InternalServerErrorException('System missing PII decryption capabilities');
+      throw new InternalServerErrorException(
+        'System missing PII decryption capabilities',
+      );
     }
 
     try {

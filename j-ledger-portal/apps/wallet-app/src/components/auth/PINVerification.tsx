@@ -1,5 +1,11 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, TouchableOpacity, ActivityIndicator, Alert } from 'react-native';
+import {
+  View,
+  Text,
+  TouchableOpacity,
+  ActivityIndicator,
+  Alert,
+} from 'react-native';
 import { Lock, AlertTriangle, Clock } from 'lucide-react-native';
 import { PINLayout, PINBackButton } from '../common/PINLayout';
 import { PINInput } from '../common/PINInput';
@@ -32,8 +38,12 @@ export const PINVerification: React.FC<PINVerificationProps> = ({
   const [isVerifying, setIsVerifying] = useState(false);
   const [attempts, setAttempts] = useState(0);
   const [isSuspended, setIsSuspended] = useState(false);
-  const [suspensionEndTime, setSuspensionEndTime] = useState<number | null>(null);
-  const [remainingTime, setRemainingTime] = useState<number>(SUSPENSION_MINUTES * 60);
+  const [suspensionEndTime, setSuspensionEndTime] = useState<number | null>(
+    null,
+  );
+  const [remainingTime, setRemainingTime] = useState<number>(
+    SUSPENSION_MINUTES * 60,
+  );
   const verifyPin = useAuthStore((state) => state.verifyPin);
   const unlockWithPin = useAuthStore((state) => state.unlockWithPin);
 
@@ -65,7 +75,9 @@ export const PINVerification: React.FC<PINVerificationProps> = ({
     setIsVerifying(true);
 
     try {
-      const isValid = useUnlock ? await unlockWithPin(enteredPin) : await verifyPin(enteredPin);
+      const isValid = useUnlock
+        ? await unlockWithPin(enteredPin)
+        : await verifyPin(enteredPin);
 
       if (isValid) {
         setIsVerifying(false);
@@ -135,7 +147,9 @@ export const PINVerification: React.FC<PINVerificationProps> = ({
           <View className="bg-red-50/50 border border-red-100 rounded-2xl px-8 py-6 mb-8 items-center w-full mx-4">
             <View className="flex-row items-center gap-2 mb-3">
               <Clock size={20} color={Palette.text.error} />
-              <Text className="font-manrope font-bold text-gray-600">Time remaining</Text>
+              <Text className="font-manrope font-bold text-gray-600">
+                Time remaining
+              </Text>
             </View>
             <Text className="text-4xl font-manrope font-black text-red-600">
               {minutes}:{seconds.toString().padStart(2, '0')}
@@ -144,14 +158,16 @@ export const PINVerification: React.FC<PINVerificationProps> = ({
 
           {/* Info */}
           <Text className="text-xs font-manrope font-bold text-gray-500 text-center px-4">
-            For security reasons, your account has been temporarily suspended after {MAX_ATTEMPTS}{' '}
-            failed PIN attempts.
+            For security reasons, your account has been temporarily suspended
+            after {MAX_ATTEMPTS} failed PIN attempts.
           </Text>
 
           {/* Cancel Button */}
           {onCancel && (
             <TouchableOpacity onPress={onCancel} className="mt-8">
-              <Text className="text-gray-500 font-manrope font-bold text-sm">Close</Text>
+              <Text className="text-gray-500 font-manrope font-bold text-sm">
+                Close
+              </Text>
             </TouchableOpacity>
           )}
         </View>
@@ -171,7 +187,9 @@ export const PINVerification: React.FC<PINVerificationProps> = ({
           <View className="w-20 h-20 bg-red-50 rounded-full items-center justify-center mb-6 border-2 border-red-200">
             <AlertTriangle size={40} color="#ef4444" />
           </View>
-          <Text className="text-lg font-manrope font-black text-red-600 mb-2">Account Locked</Text>
+          <Text className="text-lg font-manrope font-black text-red-600 mb-2">
+            Account Locked
+          </Text>
           <Text className="text-sm font-manrope font-bold text-gray-500 text-center px-4">
             Initializing suspension...
           </Text>
@@ -186,7 +204,9 @@ export const PINVerification: React.FC<PINVerificationProps> = ({
       title="Confirm PIN"
       subtitle="Enter your 6-digit PIN to secure this transaction"
       iconElement={<Lock size={32} color={Palette.primary.DEFAULT} />}
-      leftElement={onCancel && !isVerifying ? <PINBackButton onPress={onCancel} /> : null}
+      leftElement={
+        onCancel && !isVerifying ? <PINBackButton onPress={onCancel} /> : null
+      }
     >
       {isVerifying ? (
         <View className="w-full items-center py-16">
@@ -197,11 +217,11 @@ export const PINVerification: React.FC<PINVerificationProps> = ({
         </View>
       ) : (
         <View className="w-full">
-          <PINInput 
-            pin={pin} 
-            onPinChange={setPin} 
-            length={6} 
-            onComplete={handlePINComplete} 
+          <PINInput
+            pin={pin}
+            onPinChange={setPin}
+            length={6}
+            onComplete={handlePINComplete}
           />
 
           {/* Attempts Counter */}
@@ -209,7 +229,8 @@ export const PINVerification: React.FC<PINVerificationProps> = ({
             <View className="mt-8 items-center">
               <View className="bg-orange-50 px-6 py-3 rounded-full border border-orange-100">
                 <Text className="text-xs font-manrope font-bold text-orange-600">
-                  {MAX_ATTEMPTS - attempts} attempt{MAX_ATTEMPTS - attempts !== 1 ? 's' : ''} remaining
+                  {MAX_ATTEMPTS - attempts} attempt
+                  {MAX_ATTEMPTS - attempts !== 1 ? 's' : ''} remaining
                 </Text>
               </View>
             </View>
@@ -219,7 +240,8 @@ export const PINVerification: React.FC<PINVerificationProps> = ({
           {attempts === MAX_ATTEMPTS - 1 && (
             <View className="mt-4 bg-red-50 px-4 py-3 rounded-2xl border border-red-100 items-center mx-6">
               <Text className="text-xs font-manrope font-bold text-red-600 text-center">
-                ⚠️ Next failed attempt will suspend your account for {SUSPENSION_MINUTES} minutes
+                ⚠️ Next failed attempt will suspend your account for{' '}
+                {SUSPENSION_MINUTES} minutes
               </Text>
             </View>
           )}

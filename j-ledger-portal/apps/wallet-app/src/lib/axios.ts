@@ -107,8 +107,13 @@ api.interceptors.request.use(
     if (config.baseURL) {
       const securityCheck = validateConnectionSecurity(config.baseURL);
       if (!securityCheck.isValid) {
-        console.error('[Security] Connection validation failed:', securityCheck.error);
-        return Promise.reject(new Error(`Security validation failed: ${securityCheck.error}`));
+        console.error(
+          '[Security] Connection validation failed:',
+          securityCheck.error,
+        );
+        return Promise.reject(
+          new Error(`Security validation failed: ${securityCheck.error}`),
+        );
       }
     }
 
@@ -137,7 +142,11 @@ api.interceptors.response.use(
       originalRequest.url?.includes('/identity/verify-otp') ||
       originalRequest.url?.includes('/identity/device/verify');
 
-    if (error.response?.status === 401 && !originalRequest._retry && !isAuthEndpoint) {
+    if (
+      error.response?.status === 401 &&
+      !originalRequest._retry &&
+      !isAuthEndpoint
+    ) {
       originalRequest._retry = true;
 
       const refreshToken = await readRefreshToken();
@@ -161,11 +170,18 @@ api.interceptors.response.use(
             `${getBaseUrl()}/identity/refresh`,
             { refreshToken },
             {
-              headers: { 'Content-Type': 'application/json', 'X-Requested-With': 'XMLHttpRequest' },
+              headers: {
+                'Content-Type': 'application/json',
+                'X-Requested-With': 'XMLHttpRequest',
+              },
             },
           );
 
-          const { accessToken, refreshToken: newRefreshToken, regToken } = response.data;
+          const {
+            accessToken,
+            refreshToken: newRefreshToken,
+            regToken,
+          } = response.data;
 
           // Store new tokens and update auth store
           await storeTokens(accessToken, newRefreshToken);

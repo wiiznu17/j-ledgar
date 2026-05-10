@@ -42,9 +42,14 @@ export class IntegrationService {
       'JLEDGER_INTERNAL_SECRET',
       'default-secret',
     );
-    const stripeSecretKey = this.configService.get<string>('STRIPE_SECRET_KEY', '');
+    const stripeSecretKey = this.configService.get<string>(
+      'STRIPE_SECRET_KEY',
+      '',
+    );
     if (!stripeSecretKey) {
-      this.logger.warn('STRIPE_SECRET_KEY is not set; Stripe features are disabled.');
+      this.logger.warn(
+        'STRIPE_SECRET_KEY is not set; Stripe features are disabled.',
+      );
       this.stripe = null;
     } else {
       this.stripe = new Stripe(stripeSecretKey);
@@ -104,24 +109,36 @@ export class IntegrationService {
     },
   ) {
     if (!userId) {
-      throw new HttpException({ message: 'Unauthorized' }, HttpStatus.UNAUTHORIZED);
+      throw new HttpException(
+        { message: 'Unauthorized' },
+        HttpStatus.UNAUTHORIZED,
+      );
     }
     try {
       const startedAt = Date.now();
-      const page = Math.max(Number(query.page ?? IntegrationService.HISTORY_PAGE_DEFAULT), 0);
+      const page = Math.max(
+        Number(query.page ?? IntegrationService.HISTORY_PAGE_DEFAULT),
+        0,
+      );
       const size = Math.min(
-        Math.max(Number(query.size ?? IntegrationService.HISTORY_SIZE_DEFAULT), 1),
+        Math.max(
+          Number(query.size ?? IntegrationService.HISTORY_SIZE_DEFAULT),
+          1,
+        ),
         IntegrationService.HISTORY_SIZE_MAX,
       );
       const overFetchSize = size * 3;
 
-      const walletTransactions = await this.financeService.getTransactions(userId, {
-        page: 0,
-        size: overFetchSize,
-        type: query.type,
-        from: query.from,
-        to: query.to,
-      });
+      const walletTransactions = await this.financeService.getTransactions(
+        userId,
+        {
+          page: 0,
+          size: overFetchSize,
+          type: query.type,
+          from: query.from,
+          to: query.to,
+        },
+      );
 
       const walletItems = (walletTransactions || []).map((tx: any) =>
         this.mapWalletTransactionToHistoryItem(tx),
@@ -137,16 +154,25 @@ export class IntegrationService {
         hasMore: offset + size < searched.length,
       };
     } catch (error: any) {
-      const message = error?.response?.data?.message || error?.message || 'Failed to fetch history';
+      const message =
+        error?.response?.data?.message ||
+        error?.message ||
+        'Failed to fetch history';
       this.logger.error(`[History] user=${userId} message="${message}"`);
-      throw new HttpException({ message }, error?.status || HttpStatus.BAD_GATEWAY);
+      throw new HttpException(
+        { message },
+        error?.status || HttpStatus.BAD_GATEWAY,
+      );
     }
   }
 
   async getTransactionDetails(transactionId: string) {
     let actualId = transactionId;
     try {
-      if (transactionId.startsWith('topup_') || transactionId.startsWith('p2p_')) {
+      if (
+        transactionId.startsWith('topup_') ||
+        transactionId.startsWith('p2p_')
+      ) {
         // Strategy A: Check TopupOrder table
         if (transactionId.startsWith('topup_')) {
           const order = await this.prisma.topupOrder.findUnique({
@@ -168,7 +194,8 @@ export class IntegrationService {
 
           for (const notification of notifications) {
             const meta = notification?.metadata as any;
-            let resolved = meta?.transactionId || meta?.financeTransactionId || meta?.id;
+            let resolved =
+              meta?.transactionId || meta?.financeTransactionId || meta?.id;
 
             if (resolved !== undefined && resolved !== null) {
               const resolvedStr = String(resolved);
@@ -185,8 +212,18 @@ export class IntegrationService {
           const auditLog = await this.prisma.auditLog.findFirst({
             where: {
               OR: [
-                { requestPayload: { path: ['idempotencyKey'], equals: transactionId } },
-                { requestPayload: { path: ['body', 'idempotencyKey'], equals: transactionId } },
+                {
+                  requestPayload: {
+                    path: ['idempotencyKey'],
+                    equals: transactionId,
+                  },
+                },
+                {
+                  requestPayload: {
+                    path: ['body', 'idempotencyKey'],
+                    equals: transactionId,
+                  },
+                },
               ],
             },
             select: { resourceId: true, changes: true },
@@ -215,7 +252,11 @@ export class IntegrationService {
       throw new HttpException(
         {
           message: 'ไม่พบรายละเอียดธุรกรรม หรือรหัสอ้างอิงไม่ถูกต้อง',
-          debug: { originalId: transactionId, resolvedId: actualId, error: errorMsg },
+          debug: {
+            originalId: transactionId,
+            resolvedId: actualId,
+            error: errorMsg,
+          },
         },
         error?.response?.status || HttpStatus.INTERNAL_SERVER_ERROR,
       );
@@ -266,13 +307,16 @@ export class IntegrationService {
     this.logger.log(`[Dashboard] Fetching dashboard data for user ${userId}`);
 
     // Fetch data in parallel for performance
-    const [kycData, wallet, transactions, userPoint, banners] = await Promise.all([
-      this.prisma.kYCData.findUnique({ where: { userId } }).catch(() => null),
-      this.financeService.getWallet(userId).catch(() => null),
-      this.financeService.getTransactions(userId).catch(() => []),
-      this.loyaltyService.getUserBalance(userId).catch(() => ({ balance: 0 })),
-      this.bannerService.getActiveBanners().catch(() => []),
-    ]);
+    const [kycData, wallet, transactions, userPoint, banners] =
+      await Promise.all([
+        this.prisma.kYCData.findUnique({ where: { userId } }).catch(() => null),
+        this.financeService.getWallet(userId).catch(() => null),
+        this.financeService.getTransactions(userId).catch(() => []),
+        this.loyaltyService
+          .getUserBalance(userId)
+          .catch(() => ({ balance: 0 })),
+        this.bannerService.getActiveBanners().catch(() => []),
+      ]);
 
     // Format recent transactions for the frontend using unified mapping
     const recentTransactions = (transactions || [])
@@ -316,8 +360,11 @@ export class IntegrationService {
   async topUp(userId: string, amount: number, bankAccountId: number) {
     const tx = await this.financeService.topUp(userId, amount, bankAccountId);
 
-    const bankAccounts = await this.financeService.getLinkedBankAccounts(userId);
-    const linkedBank = bankAccounts.find((account: any) => account.id === bankAccountId);
+    const bankAccounts =
+      await this.financeService.getLinkedBankAccounts(userId);
+    const linkedBank = bankAccounts.find(
+      (account: any) => account.id === bankAccountId,
+    );
 
     return {
       transactionId: tx.transactionId || tx.id?.toString(),
@@ -330,7 +377,11 @@ export class IntegrationService {
     };
   }
 
-  async createStripeTopupIntent(userId: string, amount: number, currency: string = 'THB') {
+  async createStripeTopupIntent(
+    userId: string,
+    amount: number,
+    currency: string = 'THB',
+  ) {
     if (!this.stripe) {
       throw new HttpException(
         { message: 'Stripe is not configured' },
@@ -381,7 +432,10 @@ export class IntegrationService {
       orderId: order.id,
       clientSecret: paymentIntent.client_secret,
       paymentIntentId: paymentIntent.id,
-      publishableKey: this.configService.get<string>('STRIPE_PUBLISHABLE_KEY', ''),
+      publishableKey: this.configService.get<string>(
+        'STRIPE_PUBLISHABLE_KEY',
+        '',
+      ),
     };
   }
 
@@ -402,7 +456,10 @@ export class IntegrationService {
     };
   }
 
-  async previewP2PTransfer(userId: string, body: { recipientPhone: string; amount: number }) {
+  async previewP2PTransfer(
+    userId: string,
+    body: { recipientPhone: string; amount: number },
+  ) {
     const recipientPhone = this.normalizePhone(body.recipientPhone);
     const amount = Number(body.amount || 0);
     if (amount <= 0) {
@@ -419,7 +476,10 @@ export class IntegrationService {
         `[P2PPreview] user=${userId} recipientHash=${this.hashPhone(recipientPhone)} outcome=recipient_not_found`,
       );
       throw new HttpException(
-        { message: 'Recipient not found. This phone number is not registered in the system.' },
+        {
+          message:
+            'Recipient not found. This phone number is not registered in the system.',
+        },
         HttpStatus.NOT_FOUND,
       );
     }
@@ -444,7 +504,8 @@ export class IntegrationService {
       return {
         recipient: {
           userId: recipientUserId,
-          phoneMasked: preview?.recipient?.phoneMasked || this.maskPhone(recipientPhone),
+          phoneMasked:
+            preview?.recipient?.phoneMasked || this.maskPhone(recipientPhone),
           displayName: recipientProfile?.idCardName || null,
         },
         amount: preview?.amount ?? amount.toFixed(4),
@@ -454,24 +515,37 @@ export class IntegrationService {
       };
     } catch (error: any) {
       const message =
-        error?.response?.data?.message || error?.message || 'Failed to preview transfer';
+        error?.response?.data?.message ||
+        error?.message ||
+        'Failed to preview transfer';
       this.logger.error(
         `[P2PPreview] user=${userId} recipientHash=${this.hashPhone(recipientPhone)} amount=${amount.toFixed(2)} outcome=failed message="${message}"`,
       );
       // Map finance service "Recipient not found" to 404
       if (message.toLowerCase().includes('recipient not found')) {
         throw new HttpException(
-          { message: 'Recipient not found. This phone number is not registered in the system.' },
+          {
+            message:
+              'Recipient not found. This phone number is not registered in the system.',
+          },
           HttpStatus.NOT_FOUND,
         );
       }
-      throw new HttpException({ message }, error?.status || HttpStatus.BAD_GATEWAY);
+      throw new HttpException(
+        { message },
+        error?.status || HttpStatus.BAD_GATEWAY,
+      );
     }
   }
 
   async transferP2P(
     userId: string,
-    body: { recipientPhone: string; amount: number; note?: string; idempotencyKey: string },
+    body: {
+      recipientPhone: string;
+      amount: number;
+      note?: string;
+      idempotencyKey: string;
+    },
   ) {
     const recipientPhone = this.normalizePhone(body.recipientPhone);
     const amount = Number(body.amount || 0);
@@ -482,7 +556,10 @@ export class IntegrationService {
       );
     }
     if (!body.idempotencyKey) {
-      throw new HttpException({ message: 'idempotencyKey is required' }, HttpStatus.BAD_REQUEST);
+      throw new HttpException(
+        { message: 'idempotencyKey is required' },
+        HttpStatus.BAD_REQUEST,
+      );
     }
 
     // Verify recipient exists in system before calling finance service
@@ -492,7 +569,10 @@ export class IntegrationService {
         `[P2PTransfer] user=${userId} recipientHash=${this.hashPhone(recipientPhone)} outcome=recipient_not_found`,
       );
       throw new HttpException(
-        { message: 'Recipient not found. This phone number is not registered in the system.' },
+        {
+          message:
+            'Recipient not found. This phone number is not registered in the system.',
+        },
         HttpStatus.NOT_FOUND,
       );
     }
@@ -528,7 +608,11 @@ export class IntegrationService {
             responseStatus: 200,
           },
         })
-        .catch((err) => this.logger.error(`[P2PTransfer] Audit logging failed: ${err.message}`));
+        .catch((err) =>
+          this.logger.error(
+            `[P2PTransfer] Audit logging failed: ${err.message}`,
+          ),
+        );
 
       this.logger.log(
         `[P2PTransfer] user=${userId} recipientHash=${this.hashPhone(recipientPhone)} amount=${amount.toFixed(2)} outcome=success txn=${finalTxId}`,
@@ -565,7 +649,9 @@ export class IntegrationService {
           ],
         });
       } catch (err) {
-        this.logger.error(`[P2PTransfer] Invoice creation failed: ${err.message}`);
+        this.logger.error(
+          `[P2PTransfer] Invoice creation failed: ${err.message}`,
+        );
       }
 
       // Earn Loyalty Points (25 THB = 1 Point)
@@ -598,18 +684,27 @@ export class IntegrationService {
 
       return result;
     } catch (error: any) {
-      const message = error?.response?.data?.message || error?.message || 'Failed to transfer';
+      const message =
+        error?.response?.data?.message ||
+        error?.message ||
+        'Failed to transfer';
       this.logger.error(
         `[P2PTransfer] user=${userId} recipientHash=${this.hashPhone(recipientPhone)} amount=${amount.toFixed(2)} outcome=failed message="${message}"`,
       );
       // Map finance service "Recipient not found" to 404
       if (message.toLowerCase().includes('recipient not found')) {
         throw new HttpException(
-          { message: 'Recipient not found. This phone number is not registered in the system.' },
+          {
+            message:
+              'Recipient not found. This phone number is not registered in the system.',
+          },
           HttpStatus.NOT_FOUND,
         );
       }
-      throw new HttpException({ message }, error?.status || HttpStatus.BAD_GATEWAY);
+      throw new HttpException(
+        { message },
+        error?.status || HttpStatus.BAD_GATEWAY,
+      );
     }
   }
 
@@ -620,12 +715,19 @@ export class IntegrationService {
         HttpStatus.SERVICE_UNAVAILABLE,
       );
     }
-    const webhookSecret = this.configService.get<string>('STRIPE_WEBHOOK_SECRET', '');
+    const webhookSecret = this.configService.get<string>(
+      'STRIPE_WEBHOOK_SECRET',
+      '',
+    );
     if (!signature) {
       throw new Error('Missing stripe signature');
     }
 
-    const event = this.stripe.webhooks.constructEvent(rawBody, signature, webhookSecret);
+    const event = this.stripe.webhooks.constructEvent(
+      rawBody,
+      signature,
+      webhookSecret,
+    );
     this.logger.log(`[StripeWebhook] event=${event.type} id=${event.id}`);
     if (event.type === 'payment_intent.succeeded') {
       await this.handlePaymentIntentSucceeded(event);
@@ -644,20 +746,27 @@ export class IntegrationService {
   private async handlePaymentIntentSucceeded(event: any) {
     const paymentIntent = event.data.object as any;
     const paymentIntentId = paymentIntent.id;
-    this.logger.log(`[StripeWebhook] Processing successful payment: ${paymentIntentId}`);
+    this.logger.log(
+      `[StripeWebhook] Processing successful payment: ${paymentIntentId}`,
+    );
 
     const order = await this.prisma.topupOrder.findUnique({
       where: { stripePaymentIntentId: paymentIntentId },
     });
     if (!order) {
-      this.logger.warn(`[StripeWebhook] missing order for paymentIntent=${paymentIntentId}`);
+      this.logger.warn(
+        `[StripeWebhook] missing order for paymentIntent=${paymentIntentId}`,
+      );
       return;
     }
 
     if (order.status === TopupOrderStatus.PAID) {
       return;
     }
-    if (order.status === TopupOrderStatus.PROCESSING && order.processedEventId === event.id) {
+    if (
+      order.status === TopupOrderStatus.PROCESSING &&
+      order.processedEventId === event.id
+    ) {
       return;
     }
 
@@ -721,7 +830,9 @@ export class IntegrationService {
         ],
       });
     } catch (err) {
-      this.logger.error(`[StripeWebhook] Invoice creation failed: ${err.message}`);
+      this.logger.error(
+        `[StripeWebhook] Invoice creation failed: ${err.message}`,
+      );
     }
   }
 
@@ -780,9 +891,14 @@ export class IntegrationService {
   }
 
   private mapWalletTransactionToHistoryItem(tx: any) {
-    const type = (tx?.type || 'PAYMENT') as 'TOPUP' | 'TRANSFER' | 'PAYMENT' | 'WITHDRAWAL';
+    const type = (tx?.type || 'PAYMENT') as
+      | 'TOPUP'
+      | 'TRANSFER'
+      | 'PAYMENT'
+      | 'WITHDRAWAL';
     const metadata = this.parseMetadata(tx?.metadata);
-    const isIncome = type === 'TOPUP' || (!tx?.fromWalletId && !!tx?.toWalletId);
+    const isIncome =
+      type === 'TOPUP' || (!tx?.fromWalletId && !!tx?.toWalletId);
     const createdAt = tx?.createdAt
       ? new Date(tx.createdAt).toISOString()
       : new Date().toISOString();
@@ -812,7 +928,13 @@ export class IntegrationService {
     }
     const q = query.trim().toLowerCase();
     return items.filter((item) =>
-      [item.title, item.subtitle, item.reference, item.paymentIntentId, item.orderId]
+      [
+        item.title,
+        item.subtitle,
+        item.reference,
+        item.paymentIntentId,
+        item.orderId,
+      ]
         .filter(Boolean)
         .some((value) => String(value).toLowerCase().includes(q)),
     );

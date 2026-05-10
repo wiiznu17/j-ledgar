@@ -1,6 +1,12 @@
 'use client';
 
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -35,7 +41,11 @@ import {
 } from 'lucide-react';
 import { useSearchParams, useRouter } from 'next/navigation';
 import { format } from 'date-fns';
-import { FilterSearchInput, FilterSelect, FilterActions } from '@/components/common/FilterElements';
+import {
+  FilterSearchInput,
+  FilterSelect,
+  FilterActions,
+} from '@/components/common/FilterElements';
 
 export default function UserActivityPage() {
   const searchParams = useSearchParams();
@@ -94,10 +104,18 @@ export default function UserActivityPage() {
   };
 
   const getEventColor = (type: string) => {
-    if (type.includes('FAILURE') || type.includes('LOCKED') || type.includes('SUSPICIOUS')) {
+    if (
+      type.includes('FAILURE') ||
+      type.includes('LOCKED') ||
+      type.includes('SUSPICIOUS')
+    ) {
       return 'bg-rose-50 text-rose-600 border-rose-100';
     }
-    if (type.includes('SUCCESS') || type.includes('COMPLETED') || type.includes('VERIFIED')) {
+    if (
+      type.includes('SUCCESS') ||
+      type.includes('COMPLETED') ||
+      type.includes('VERIFIED')
+    ) {
       return 'bg-emerald-50 text-emerald-600 border-emerald-100';
     }
     return 'bg-slate-50 text-slate-600 border-slate-100';
@@ -107,7 +125,9 @@ export default function UserActivityPage() {
     <div className="space-y-4 pb-10">
       {/* Header */}
       <div>
-        <h2 className="text-2xl font-bold tracking-tight text-slate-900">User Activity Logs</h2>
+        <h2 className="text-2xl font-bold tracking-tight text-slate-900">
+          User Activity Logs
+        </h2>
         <p className="text-sm text-slate-500 mt-1">
           Monitor real-time security events and identity transactions.
         </p>
@@ -117,7 +137,9 @@ export default function UserActivityPage() {
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 bg-white p-4 rounded-xl shadow-sm border border-slate-100">
         <div className="flex items-center gap-2">
           <Activity className="w-4 h-4 text-indigo-500" />
-          <span className="text-sm font-bold text-slate-700">Security Pulse</span>
+          <span className="text-sm font-bold text-slate-700">
+            Security Pulse
+          </span>
         </div>
 
         <div className="flex items-center flex-wrap gap-4 md:gap-6 text-sm">
@@ -144,7 +166,8 @@ export default function UserActivityPage() {
             <span className="text-slate-500 font-medium">
               Device Changes:{' '}
               <strong className="text-slate-800">
-                {logs.filter((l) => l.eventType === 'DEVICE_REGISTERED').length}+
+                {logs.filter((l) => l.eventType === 'DEVICE_REGISTERED').length}
+                +
               </strong>
             </span>
           </div>
@@ -154,7 +177,10 @@ export default function UserActivityPage() {
       <Card className="border-none shadow-sm ring-1 ring-slate-100 overflow-hidden bg-white">
         {/* Filter Toolbar */}
         <div className="p-3 bg-white border-b border-slate-100">
-          <form onSubmit={handleFilter} className="grid grid-cols-1 md:grid-cols-5 gap-4 items-end">
+          <form
+            onSubmit={handleFilter}
+            className="grid grid-cols-1 md:grid-cols-5 gap-4 items-end"
+          >
             <FilterSearchInput
               label="Wallet User Identifier"
               placeholder="ID, Email, or Phone..."
@@ -206,13 +232,19 @@ export default function UserActivityPage() {
                 ))
               ) : logs.length === 0 ? (
                 <tr>
-                  <td colSpan={5} className="px-6 py-12 text-center text-slate-400 font-medium">
+                  <td
+                    colSpan={5}
+                    className="px-6 py-12 text-center text-slate-400 font-medium"
+                  >
                     No security events matches your criteria.
                   </td>
                 </tr>
               ) : (
                 logs.map((log: any) => (
-                  <tr key={log.id} className="hover:bg-slate-50/50 transition-colors group">
+                  <tr
+                    key={log.id}
+                    className="hover:bg-slate-50/50 transition-colors group"
+                  >
                     <td className="px-6 py-4">
                       <div className="flex flex-col">
                         <span className="text-xs font-bold text-slate-700">
@@ -230,7 +262,9 @@ export default function UserActivityPage() {
                         </div>
                         <div className="flex flex-col">
                           <span className="text-xs font-bold text-slate-700 leading-tight">
-                            {log.user?.email || log.user?.phoneNumber || 'Unknown Identity'}
+                            {log.user?.email ||
+                              log.user?.phoneNumber ||
+                              'Unknown Identity'}
                           </span>
                           <span className="text-[10px] text-slate-400 font-mono truncate max-w-[150px]">
                             {log.userId}
@@ -277,7 +311,8 @@ export default function UserActivityPage() {
                               Technical Intel
                             </DialogTitle>
                             <DialogDescription className="text-xs">
-                              Detailed cryptographic and session metadata for this event.
+                              Detailed cryptographic and session metadata for
+                              this event.
                             </DialogDescription>
                           </DialogHeader>
                           {selectedLog && (
@@ -287,13 +322,17 @@ export default function UserActivityPage() {
                                   <p className="font-black text-slate-400 uppercase tracking-widest text-[9px] mb-1">
                                     Status Code
                                   </p>
-                                  <p className="font-bold text-slate-700">200 OK</p>
+                                  <p className="font-bold text-slate-700">
+                                    200 OK
+                                  </p>
                                 </div>
                                 <div>
                                   <p className="font-black text-slate-400 uppercase tracking-widest text-[9px] mb-1">
                                     Identity Provider
                                   </p>
-                                  <p className="font-bold text-slate-700">Local Auth</p>
+                                  <p className="font-bold text-slate-700">
+                                    Local Auth
+                                  </p>
                                 </div>
                               </div>
                               <div className="space-y-2">
@@ -302,7 +341,11 @@ export default function UserActivityPage() {
                                 </p>
                                 <div className="p-4 bg-slate-900 rounded-xl overflow-hidden">
                                   <pre className="text-[10px] text-indigo-300 font-mono overflow-x-auto custom-scrollbar leading-relaxed">
-                                    {JSON.stringify(selectedLog.metadata, null, 2)}
+                                    {JSON.stringify(
+                                      selectedLog.metadata,
+                                      null,
+                                      2,
+                                    )}
                                   </pre>
                                 </div>
                               </div>
@@ -324,7 +367,10 @@ export default function UserActivityPage() {
             <p className="text-xs text-slate-500 font-medium">
               Showing page <strong className="text-slate-800">{page}</strong> of{' '}
               <strong className="text-slate-800">{totalPages}</strong>
-              <span className="hidden sm:inline"> ({total} security events)</span>
+              <span className="hidden sm:inline">
+                {' '}
+                ({total} security events)
+              </span>
             </p>
             <div className="flex gap-2">
               <Button

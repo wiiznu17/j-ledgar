@@ -5,7 +5,9 @@ const CSRF_SECRET = process.env.CSRF_SECRET || 'jledger-local-dev-csrf-secret';
 export async function generateCSRFToken(): Promise<string> {
   const timestamp = Date.now();
   const random = Math.random().toString(36).substring(2);
-  const token = Buffer.from(`${timestamp}.${random}.${CSRF_SECRET}`).toString('base64');
+  const token = Buffer.from(`${timestamp}.${random}.${CSRF_SECRET}`).toString(
+    'base64',
+  );
   return token;
 }
 

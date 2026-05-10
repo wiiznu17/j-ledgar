@@ -9,7 +9,17 @@ import {
   KeyboardAvoidingView,
   Platform,
 } from 'react-native';
-import { User, MapPin, Mail, Phone, Briefcase, Coins, Target, Check, X } from 'lucide-react-native';
+import {
+  User,
+  MapPin,
+  Mail,
+  Phone,
+  Briefcase,
+  Coins,
+  Target,
+  Check,
+  X,
+} from 'lucide-react-native';
 import { MotiView } from 'moti';
 import { EditField, EditSelect } from './ProfileUIAtoms';
 
@@ -77,7 +87,10 @@ export function EditSheetModal({
             </TouchableOpacity>
           </View>
 
-          <ScrollView showsVerticalScrollIndicator={false} className="max-h-[60vh]">
+          <ScrollView
+            showsVerticalScrollIndicator={false}
+            className="max-h-[60vh]"
+          >
             <View className="gap-y-5">
               {activeModal === 'ADDRESS' && (
                 <View className="gap-y-5">
@@ -88,7 +101,10 @@ export function EditSheetModal({
                     onChange={(v: string) =>
                       setFormData({
                         ...formData,
-                        currentAddress: { ...formData.currentAddress, street: v },
+                        currentAddress: {
+                          ...formData.currentAddress,
+                          street: v,
+                        },
                       })
                     }
                   />
@@ -101,7 +117,10 @@ export function EditSheetModal({
                         onChange={(v: string) =>
                           setFormData({
                             ...formData,
-                            currentAddress: { ...formData.currentAddress, subdistrict: v },
+                            currentAddress: {
+                              ...formData.currentAddress,
+                              subdistrict: v,
+                            },
                           })
                         }
                       />
@@ -114,7 +133,10 @@ export function EditSheetModal({
                         onChange={(v: string) =>
                           setFormData({
                             ...formData,
-                            currentAddress: { ...formData.currentAddress, district: v },
+                            currentAddress: {
+                              ...formData.currentAddress,
+                              district: v,
+                            },
                           })
                         }
                       />
@@ -129,7 +151,10 @@ export function EditSheetModal({
                         onChange={(v: string) =>
                           setFormData({
                             ...formData,
-                            currentAddress: { ...formData.currentAddress, province: v },
+                            currentAddress: {
+                              ...formData.currentAddress,
+                              province: v,
+                            },
                           })
                         }
                       />
@@ -142,7 +167,10 @@ export function EditSheetModal({
                         onChange={(v: string) =>
                           setFormData({
                             ...formData,
-                            currentAddress: { ...formData.currentAddress, postalCode: v },
+                            currentAddress: {
+                              ...formData.currentAddress,
+                              postalCode: v,
+                            },
                           })
                         }
                       />
@@ -157,7 +185,9 @@ export function EditSheetModal({
                     label="Email Address"
                     icon={<Mail size={18} color="#9ca3af" />}
                     value={formData.email}
-                    onChange={(v: string) => setFormData({ ...formData, email: v })}
+                    onChange={(v: string) =>
+                      setFormData({ ...formData, email: v })
+                    }
                   />
                   <EditField
                     label="Mobile Number"
@@ -167,8 +197,8 @@ export function EditSheetModal({
                     disabled
                   />
                   <Text className="text-[10px] font-medium text-gray-400 italic ml-1 leading-tight">
-                    Note: Phone number is tied to device binding and KYC verification and cannot be
-                    changed here.
+                    Note: Phone number is tied to device binding and KYC
+                    verification and cannot be changed here.
                   </Text>
                 </View>
               )}
@@ -189,7 +219,9 @@ export function EditSheetModal({
                     label="Source of Income"
                     icon={<Coins size={18} color="#9ca3af" />}
                     value={formData.sourceOfIncome}
-                    onChange={(v: string) => setFormData({ ...formData, sourceOfIncome: v })}
+                    onChange={(v: string) =>
+                      setFormData({ ...formData, sourceOfIncome: v })
+                    }
                   />
                   <EditSelect
                     label="Usage Purpose"
@@ -223,7 +255,10 @@ export function EditSheetModal({
                             onChange={(v: string) =>
                               setFormData({
                                 ...formData,
-                                workAddress: { ...formData.workAddress, subdistrict: v },
+                                workAddress: {
+                                  ...formData.workAddress,
+                                  subdistrict: v,
+                                },
                               })
                             }
                           />
@@ -236,7 +271,10 @@ export function EditSheetModal({
                             onChange={(v: string) =>
                               setFormData({
                                 ...formData,
-                                workAddress: { ...formData.workAddress, district: v },
+                                workAddress: {
+                                  ...formData.workAddress,
+                                  district: v,
+                                },
                               })
                             }
                           />
@@ -251,7 +289,10 @@ export function EditSheetModal({
                             onChange={(v: string) =>
                               setFormData({
                                 ...formData,
-                                workAddress: { ...formData.workAddress, province: v },
+                                workAddress: {
+                                  ...formData.workAddress,
+                                  province: v,
+                                },
                               })
                             }
                           />
@@ -264,7 +305,10 @@ export function EditSheetModal({
                             onChange={(v: string) =>
                               setFormData({
                                 ...formData,
-                                workAddress: { ...formData.workAddress, postalCode: v },
+                                workAddress: {
+                                  ...formData.workAddress,
+                                  postalCode: v,
+                                },
                               })
                             }
                           />
@@ -283,11 +327,15 @@ export function EditSheetModal({
                 ${isSaving ? 'bg-pink-300 shadow-none' : 'bg-[#f48fb1] shadow-pink-200'}`}
             >
               {isSaving ? (
-                <Text className="text-white font-black text-sm">Saving Changes...</Text>
+                <Text className="text-white font-black text-sm">
+                  Saving Changes...
+                </Text>
               ) : (
                 <>
                   <Check size={20} color="white" />
-                  <Text className="text-white font-black text-sm">Save Changes</Text>
+                  <Text className="text-white font-black text-sm">
+                    Save Changes
+                  </Text>
                 </>
               )}
             </TouchableOpacity>

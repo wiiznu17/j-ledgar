@@ -126,9 +126,12 @@ export default function KycDetailPage() {
     }
   };
 
-  if (isLoading) return <div className="p-8 text-center">Loading KYC Details...</div>;
+  if (isLoading)
+    return <div className="p-8 text-center">Loading KYC Details...</div>;
   if (!details || !details.kycData)
-    return <div className="p-8 text-center text-red-500">KYC Data not found</div>;
+    return (
+      <div className="p-8 text-center text-red-500">KYC Data not found</div>
+    );
 
   const { kycData, user } = details;
 
@@ -154,7 +157,9 @@ export default function KycDetailPage() {
             <div className="flex items-center gap-2 mt-0.5">
               <span className="text-xs text-slate-500 font-medium">
                 Reviewing identity for{' '}
-                <span className="font-bold text-slate-700">{user?.email || user?.phoneNumber}</span>
+                <span className="font-bold text-slate-700">
+                  {user?.email || user?.phoneNumber}
+                </span>
               </span>
             </div>
           </div>
@@ -167,8 +172,8 @@ export default function KycDetailPage() {
           <div className="p-6 space-y-4">
             <h3 className="font-bold text-slate-800">Final Decision</h3>
             <p className="text-xs text-slate-500 leading-relaxed">
-              Please verify that the ID card belongs to the user in the selfie and that all data
-              matches the government records.
+              Please verify that the ID card belongs to the user in the selfie
+              and that all data matches the government records.
             </p>
 
             {kycData.verificationStatus === 'PENDING' ? (
@@ -200,7 +205,10 @@ export default function KycDetailPage() {
                     <p className="text-[10px] opacity-70">
                       This verification was approved on{' '}
                       {kycData.verifiedAt
-                        ? format(new Date(kycData.verifiedAt), 'dd MMMM yyyy HH:mm')
+                        ? format(
+                            new Date(kycData.verifiedAt),
+                            'dd MMMM yyyy HH:mm',
+                          )
                         : format(new Date(), 'dd MMMM yyyy')}
                     </p>
                   </div>
@@ -260,8 +268,12 @@ export default function KycDetailPage() {
               </div>
             </div>
             <div className="p-4 bg-indigo-50/30 flex justify-between items-center border-t border-indigo-50">
-              <span className="text-xs font-bold text-indigo-700">OCR CONFIDENCE</span>
-              <Badge className="bg-indigo-500">{(kycData.ocrConfidence || 0) * 100}%</Badge>
+              <span className="text-xs font-bold text-indigo-700">
+                OCR CONFIDENCE
+              </span>
+              <Badge className="bg-indigo-500">
+                {(kycData.ocrConfidence || 0) * 100}%
+              </Badge>
             </div>
           </CardContent>
         </Card>
@@ -289,7 +301,9 @@ export default function KycDetailPage() {
               )}
             </div>
             <div className="p-4 bg-pink-50/30 flex justify-between items-center border-t border-pink-50">
-              <span className="text-xs font-bold text-pink-700">FACE MATCH SCORE</span>
+              <span className="text-xs font-bold text-pink-700">
+                FACE MATCH SCORE
+              </span>
               <Badge
                 className={`bg-pink-500 ${(kycData.faceMatchScore || 0) < 80 ? 'bg-red-500' : ''}`}
               >
@@ -315,7 +329,11 @@ export default function KycDetailPage() {
                 Personal Information (TH)
               </label>
               <div className="space-y-3">
-                <InfoRow label="Prefix" value={kycData.prefix || 'N/A'} icon={UserIcon} />
+                <InfoRow
+                  label="Prefix"
+                  value={kycData.prefix || 'N/A'}
+                  icon={UserIcon}
+                />
                 <InfoRow
                   label="First Name (TH)"
                   value={kycData.firstNameTh || 'N/A'}
@@ -342,7 +360,11 @@ export default function KycDetailPage() {
                 Personal Information (EN)
               </label>
               <div className="space-y-3">
-                <InfoRow label="Prefix (EN)" value={kycData.prefixEn || 'N/A'} icon={UserIcon} />
+                <InfoRow
+                  label="Prefix (EN)"
+                  value={kycData.prefixEn || 'N/A'}
+                  icon={UserIcon}
+                />
                 <InfoRow
                   label="First Name (EN)"
                   value={kycData.firstNameEn || 'N/A'}
@@ -353,7 +375,11 @@ export default function KycDetailPage() {
                   value={kycData.lastNameEn || 'N/A'}
                   icon={UserIcon}
                 />
-                <InfoRow label="Religion" value={kycData.religion || 'N/A'} icon={ShieldCheck} />
+                <InfoRow
+                  label="Religion"
+                  value={kycData.religion || 'N/A'}
+                  icon={ShieldCheck}
+                />
               </div>
             </div>
             <div className="space-y-4">
@@ -370,7 +396,10 @@ export default function KycDetailPage() {
                   label="Issue Date"
                   value={
                     kycData.idCardIssueDate
-                      ? format(new Date(kycData.idCardIssueDate), 'dd MMMM yyyy')
+                      ? format(
+                          new Date(kycData.idCardIssueDate),
+                          'dd MMMM yyyy',
+                        )
                       : 'N/A'
                   }
                   icon={Calendar}
@@ -379,7 +408,10 @@ export default function KycDetailPage() {
                   label="Expiry Date"
                   value={
                     kycData.idCardExpiryDate
-                      ? format(new Date(kycData.idCardExpiryDate), 'dd MMMM yyyy')
+                      ? format(
+                          new Date(kycData.idCardExpiryDate),
+                          'dd MMMM yyyy',
+                        )
                       : 'N/A'
                   }
                   icon={Calendar}
@@ -399,7 +431,10 @@ export default function KycDetailPage() {
                 />
                 <InfoRow
                   label="Submitted At"
-                  value={format(new Date(kycData.createdAt), 'dd MMM yyyy HH:mm')}
+                  value={format(
+                    new Date(kycData.createdAt),
+                    'dd MMM yyyy HH:mm',
+                  )}
                   icon={Calendar}
                 />
                 <InfoRow
@@ -476,7 +511,9 @@ export default function KycDetailPage() {
                           </span>
                         )}
                       </div>
-                      <p className="text-xs text-slate-700 font-medium">{addr.line1}</p>
+                      <p className="text-xs text-slate-700 font-medium">
+                        {addr.line1}
+                      </p>
                       <p className="text-[11px] text-slate-500 mt-0.5">
                         {addr.subdistrict ? `${addr.subdistrict}, ` : ''}
                         {addr.district ? `${addr.district}, ` : ''}
@@ -546,7 +583,9 @@ function InfoRow({ label, value, icon: Icon, status }: any) {
         <Icon className="w-4 h-4 text-slate-400" />
       </div>
       <div>
-        <p className="text-[10px] font-bold text-slate-400 uppercase tracking-tighter">{label}</p>
+        <p className="text-[10px] font-bold text-slate-400 uppercase tracking-tighter">
+          {label}
+        </p>
         <p
           className={`text-sm font-semibold ${status === 'APPROVED' ? 'text-emerald-600' : status === 'REJECTED' ? 'text-red-600' : 'text-slate-700'}`}
         >

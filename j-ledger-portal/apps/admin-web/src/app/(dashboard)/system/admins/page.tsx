@@ -1,7 +1,13 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import {
   Table,
@@ -44,7 +50,11 @@ import { showConfirm, showSuccess, showError } from '@/lib/swal';
 import { AdminUser, AdminRole } from '@repo/dto';
 import { userRequester, authRequester } from '@/lib/requesters';
 import Link from 'next/link';
-import { FilterSearchInput, FilterSelect, FilterActions } from '@/components/common/FilterElements';
+import {
+  FilterSearchInput,
+  FilterSelect,
+  FilterActions,
+} from '@/components/common/FilterElements';
 
 export default function UsersPage() {
   const [users, setUsers] = useState<AdminUser[]>([]);
@@ -91,7 +101,8 @@ export default function UsersPage() {
       const response = await userRequester.getAdminUsers({ params });
 
       // Support both structured {data, pagination} and direct array responses
-      const staffList = response?.data || (Array.isArray(response) ? response : []);
+      const staffList =
+        response?.data || (Array.isArray(response) ? response : []);
       console.log('staffList', staffList);
       setUsers(staffList);
 
@@ -101,7 +112,10 @@ export default function UsersPage() {
         setCurrentPage(response.pagination.page);
       }
     } catch {
-      showError('Access Denied', 'Failed to load users. You might need higher permissions.');
+      showError(
+        'Access Denied',
+        'Failed to load users. You might need higher permissions.',
+      );
     } finally {
       setLoading(false);
     }
@@ -174,7 +188,10 @@ export default function UsersPage() {
         role: newRole,
       });
 
-      showSuccess('Invitation Sent', `An invitation email has been sent to ${newEmail}`);
+      showSuccess(
+        'Invitation Sent',
+        `An invitation email has been sent to ${newEmail}`,
+      );
       setNewEmail('');
       setNewFirstName('');
       setNewLastName('');
@@ -207,7 +224,9 @@ export default function UsersPage() {
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
-        <h2 className="text-3xl font-bold tracking-tight text-[#2D3748]">User Management</h2>
+        <h2 className="text-3xl font-bold tracking-tight text-[#2D3748]">
+          User Management
+        </h2>
 
         <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
           <DialogTrigger
@@ -223,7 +242,8 @@ export default function UsersPage() {
               <DialogHeader>
                 <DialogTitle>Add New Admin</DialogTitle>
                 <DialogDescription>
-                  Create a new administrator account with specific role-based access.
+                  Create a new administrator account with specific role-based
+                  access.
                 </DialogDescription>
               </DialogHeader>
               <div className="grid gap-4 py-4">
@@ -262,7 +282,10 @@ export default function UsersPage() {
                 </div>
                 <div className="grid gap-2">
                   <Label htmlFor="role">Role Assignment</Label>
-                  <Select value={newRole} onValueChange={(val) => val && setNewRole(val)}>
+                  <Select
+                    value={newRole}
+                    onValueChange={(val) => val && setNewRole(val)}
+                  >
                     <SelectTrigger id="role" className="bg-white">
                       <SelectValue placeholder="Select a role" />
                     </SelectTrigger>
@@ -274,9 +297,15 @@ export default function UsersPage() {
                       ))}
                       {availableRoles.length === 0 && (
                         <>
-                          <SelectItem value={AdminRole.SUPER_ADMIN}>Super Admin</SelectItem>
-                          <SelectItem value={AdminRole.AUDITOR}>Auditor</SelectItem>
-                          <SelectItem value={AdminRole.SUPPORT_AGENT}>Support Agent</SelectItem>
+                          <SelectItem value={AdminRole.SUPER_ADMIN}>
+                            Super Admin
+                          </SelectItem>
+                          <SelectItem value={AdminRole.AUDITOR}>
+                            Auditor
+                          </SelectItem>
+                          <SelectItem value={AdminRole.SUPPORT_AGENT}>
+                            Support Agent
+                          </SelectItem>
                         </>
                       )}
                     </SelectContent>
@@ -316,12 +345,18 @@ export default function UsersPage() {
               onValueChange={(val) => setFilterRole(val || 'ALL')}
               options={[
                 { label: 'ALL ROLES', value: 'ALL' },
-                ...availableRoles.map((r) => ({ label: r.name, value: r.name })),
+                ...availableRoles.map((r) => ({
+                  label: r.name,
+                  value: r.name,
+                })),
                 ...(availableRoles.length === 0
                   ? [
                       { label: 'SUPER ADMIN', value: AdminRole.SUPER_ADMIN },
                       { label: 'AUDITOR', value: AdminRole.AUDITOR },
-                      { label: 'SUPPORT AGENT', value: AdminRole.SUPPORT_AGENT },
+                      {
+                        label: 'SUPPORT AGENT',
+                        value: AdminRole.SUPPORT_AGENT,
+                      },
                     ]
                   : []),
               ]}
@@ -338,7 +373,11 @@ export default function UsersPage() {
               ]}
             />
 
-            <FilterActions searchLabel="Search" isLoading={loading} onReset={handleResetFilter} />
+            <FilterActions
+              searchLabel="Search"
+              isLoading={loading}
+              onReset={handleResetFilter}
+            />
           </form>
         </div>
 
@@ -356,13 +395,18 @@ export default function UsersPage() {
               <TableBody>
                 {Array.isArray(users) &&
                   users.map((user) => (
-                    <TableRow key={user.id} className="hover:bg-secondary/30 transition-colors">
+                    <TableRow
+                      key={user.id}
+                      className="hover:bg-secondary/30 transition-colors"
+                    >
                       <TableCell>
                         <div className="flex flex-col">
                           <span className="font-medium">
                             {user.firstName} {user.lastName}
                           </span>
-                          <span className="text-xs text-muted-foreground">{user.email}</span>
+                          <span className="text-xs text-muted-foreground">
+                            {user.email}
+                          </span>
                         </div>
                       </TableCell>
                       <TableCell>
@@ -430,14 +474,20 @@ export default function UsersPage() {
                   ))}
                 {loading && users.length === 0 && (
                   <TableRow>
-                    <TableCell colSpan={4} className="h-24 text-center text-slate-400">
+                    <TableCell
+                      colSpan={4}
+                      className="h-24 text-center text-slate-400"
+                    >
                       Loading directory...
                     </TableCell>
                   </TableRow>
                 )}
                 {!loading && users.length === 0 && (
                   <TableRow>
-                    <TableCell colSpan={4} className="h-32 text-center text-slate-400">
+                    <TableCell
+                      colSpan={4}
+                      className="h-32 text-center text-slate-400"
+                    >
                       <div className="flex flex-col items-center justify-center gap-2">
                         <Search className="h-8 w-8 text-slate-200" />
                         <p>No admin users found.</p>
@@ -453,9 +503,13 @@ export default function UsersPage() {
           {totalPages > 0 && (
             <div className="p-4 bg-white border-t border-slate-100 flex items-center justify-between">
               <p className="text-xs text-slate-500 font-medium">
-                Showing page <strong className="text-slate-800">{currentPage}</strong> of{' '}
+                Showing page{' '}
+                <strong className="text-slate-800">{currentPage}</strong> of{' '}
                 <strong className="text-slate-800">{totalPages}</strong>
-                <span className="hidden sm:inline"> ({totalItems} total records)</span>
+                <span className="hidden sm:inline">
+                  {' '}
+                  ({totalItems} total records)
+                </span>
               </p>
               <div className="flex gap-2">
                 <Button

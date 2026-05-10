@@ -23,7 +23,9 @@ import { useEffect } from 'react';
 export async function preventScreenCapture(): Promise<void> {
   if (Platform.OS === 'web') {
     // Web browsers don't support screen capture prevention
-    console.warn('[ScreenCapture] Screen capture prevention not supported on web');
+    console.warn(
+      '[ScreenCapture] Screen capture prevention not supported on web',
+    );
     return;
   }
 

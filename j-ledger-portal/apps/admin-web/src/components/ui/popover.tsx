@@ -7,9 +7,16 @@ import { cn } from '@/lib/utils';
 
 const Popover = PopoverPrimitive.Root;
 
-function PopoverTrigger({ className, ...props }: PopoverPrimitive.Trigger.Props) {
+function PopoverTrigger({
+  className,
+  ...props
+}: PopoverPrimitive.Trigger.Props) {
   return (
-    <PopoverPrimitive.Trigger data-slot="popover-trigger" className={cn(className)} {...props} />
+    <PopoverPrimitive.Trigger
+      data-slot="popover-trigger"
+      className={cn(className)}
+      {...props}
+    />
   );
 }
 
@@ -22,7 +29,10 @@ function PopoverContent({
   alignOffset = 0,
   ...props
 }: PopoverPrimitive.Popup.Props &
-  Pick<PopoverPrimitive.Positioner.Props, 'align' | 'alignOffset' | 'side' | 'sideOffset'>) {
+  Pick<
+    PopoverPrimitive.Positioner.Props,
+    'align' | 'alignOffset' | 'side' | 'sideOffset'
+  >) {
   return (
     <PopoverPrimitive.Portal>
       <PopoverPrimitive.Positioner

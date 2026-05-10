@@ -3,7 +3,11 @@ import { Toaster } from '@/components/ui/sonner';
 import { DashboardWrapper } from '@/components/layout/DashboardWrapper';
 import { verifyToken } from '@/lib/auth/jwt';
 
-export default async function DashboardLayout({ children }: { children: React.ReactNode }) {
+export default async function DashboardLayout({
+  children,
+}: {
+  children: React.ReactNode;
+}) {
   const cookieStore = await cookies();
   const token = cookieStore.get('admin_session')?.value;
 

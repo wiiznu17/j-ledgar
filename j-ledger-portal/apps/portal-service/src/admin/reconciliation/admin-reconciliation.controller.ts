@@ -18,7 +18,10 @@ export class AdminReconciliationController {
     @Query('page') page: number = 1,
     @Query('limit') limit: number = 50,
   ): Promise<AdminPaginatedResponse<any>> {
-    const response = await this.reportingService.getReconciliationReports({ page, limit });
+    const response = await this.reportingService.getReconciliationReports({
+      page,
+      limit,
+    });
 
     // Format to match UI expectations (PaginatedResponse)
     const content = Array.isArray(response) ? response : response.content || [];

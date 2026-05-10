@@ -15,4 +15,5 @@ export const AuditLog = (
   resourceType: ResourceType,
   reason?: string,
   resourceIdPath?: string,
-) => SetMetadata(AUDIT_LOG_KEY, { action, resourceType, reason, resourceIdPath });
+) =>
+  SetMetadata(AUDIT_LOG_KEY, { action, resourceType, reason, resourceIdPath });

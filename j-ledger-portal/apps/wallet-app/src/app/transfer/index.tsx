@@ -95,7 +95,8 @@ export default function TransferScreen() {
         } as any);
       })
       .catch((err: any) => {
-        const message = err?.response?.data?.message || 'Unable to preview transfer';
+        const message =
+          err?.response?.data?.message || 'Unable to preview transfer';
         const status = err?.response?.status;
 
         // Show warning banner for recipient not found errors
@@ -179,7 +180,9 @@ export default function TransferScreen() {
               </Text>
 
               <View className="flex-row items-center justify-center border-b-2 border-pink-100 pb-2 mb-6 w-full max-w-[220px]">
-                <Text className="text-2xl font-manrope font-black text-gray-400 mr-2">฿</Text>
+                <Text className="text-2xl font-manrope font-black text-gray-400 mr-2">
+                  ฿
+                </Text>
                 <TextInput
                   placeholder="0.00"
                   placeholderTextColor="#d1d5db"
@@ -250,8 +253,8 @@ export default function TransferScreen() {
                     Recipient Not Found
                   </Text>
                   <Text className="text-[10px] font-manrope font-medium text-red-500 leading-relaxed">
-                    This phone number is not registered in P-wallet. Please check the number or
-                    invite them to join.
+                    This phone number is not registered in P-wallet. Please
+                    check the number or invite them to join.
                   </Text>
                 </View>
               </MotiView>
@@ -261,18 +264,30 @@ export default function TransferScreen() {
             <View className="bg-orange-50 p-4 rounded-2xl border border-orange-100 flex-row items-center gap-3 mb-6">
               <Info size={14} color="#f97316" />
               <Text className="text-[9px] font-manrope font-bold text-gray-500 leading-relaxed flex-1">
-                Please confirm the recipient's identity. Transfers cannot be refunded.
+                Please confirm the recipient's identity. Transfers cannot be
+                refunded.
               </Text>
             </View>
 
             {/* Submit Button */}
-            <MotiView from={{ opacity: 0, translateY: 10 }} animate={{ opacity: 1, translateY: 0 }}>
+            <MotiView
+              from={{ opacity: 0, translateY: 10 }}
+              animate={{ opacity: 1, translateY: 0 }}
+            >
               <TouchableOpacity
-                disabled={isSubmitting || !recipient || !amount || parseFloat(amount) <= 0}
+                disabled={
+                  isSubmitting ||
+                  !recipient ||
+                  !amount ||
+                  parseFloat(amount) <= 0
+                }
                 onPress={handleNext}
                 className={`w-full h-14 rounded-2xl flex-row items-center justify-center gap-2 shadow-lg transition-all
                   ${
-                    isSubmitting || !recipient || !amount || parseFloat(amount) <= 0
+                    isSubmitting ||
+                    !recipient ||
+                    !amount ||
+                    parseFloat(amount) <= 0
                       ? 'bg-gray-200 shadow-none'
                       : 'bg-[#f48fb1] shadow-pink-200 active:scale-95'
                   }`}
@@ -283,7 +298,10 @@ export default function TransferScreen() {
                   {isSubmitting ? 'Processing...' : 'Next Step'}
                 </Text>
                 {!isSubmitting && (
-                  <ArrowRight size={18} color={!recipient || !amount ? '#9ca3af' : 'white'} />
+                  <ArrowRight
+                    size={18}
+                    color={!recipient || !amount ? '#9ca3af' : 'white'}
+                  />
                 )}
               </TouchableOpacity>
             </MotiView>

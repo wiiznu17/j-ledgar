@@ -39,7 +39,10 @@ export function KycPendingQueue() {
         <CardContent>
           <div className="space-y-4">
             {[1, 2, 3].map((i) => (
-              <div key={i} className="h-12 bg-slate-50 animate-pulse rounded-lg" />
+              <div
+                key={i}
+                className="h-12 bg-slate-50 animate-pulse rounded-lg"
+              />
             ))}
           </div>
         </CardContent>
@@ -55,7 +58,10 @@ export function KycPendingQueue() {
             <Clock className="w-4 h-4 text-amber-500" />
             KYC Pending Queue
           </CardTitle>
-          <Badge variant="secondary" className="bg-amber-50 text-amber-600 border-amber-100">
+          <Badge
+            variant="secondary"
+            className="bg-amber-50 text-amber-600 border-amber-100"
+          >
             {pendingUsers.length} waiting
           </Badge>
         </div>
@@ -80,7 +86,8 @@ export function KycPendingQueue() {
                       {item.user?.email || item.user?.phoneNumber}
                     </p>
                     <p className="text-[10px] text-slate-400 font-medium">
-                      Submitted {formatDistanceToNow(new Date(item.createdAt))} ago
+                      Submitted {formatDistanceToNow(new Date(item.createdAt))}{' '}
+                      ago
                     </p>
                   </div>
                   <ArrowRight className="w-4 h-4 text-slate-300 group-hover:text-indigo-500 group-hover:translate-x-1 transition-all" />

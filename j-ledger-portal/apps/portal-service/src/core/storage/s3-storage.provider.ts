@@ -1,6 +1,10 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
-import { S3Client, PutObjectCommand, DeleteObjectCommand } from '@aws-sdk/client-s3';
+import {
+  S3Client,
+  PutObjectCommand,
+  DeleteObjectCommand,
+} from '@aws-sdk/client-s3';
 import { Upload } from '@aws-sdk/lib-storage';
 import { IStorageProvider } from './storage.interface';
 
@@ -12,14 +16,17 @@ export class S3StorageProvider implements IStorageProvider {
   private readonly logger = new Logger(S3StorageProvider.name);
 
   constructor(private readonly configService: ConfigService) {
-    this.region = this.configService.get<string>('AWS_REGION') || 'ap-southeast-1';
+    this.region =
+      this.configService.get<string>('AWS_REGION') || 'ap-southeast-1';
     this.bucket = this.configService.get<string>('AWS_S3_BUCKET');
 
     this.s3Client = new S3Client({
       region: this.region,
       credentials: {
         accessKeyId: this.configService.get<string>('AWS_ACCESS_KEY_ID'),
-        secretAccessKey: this.configService.get<string>('AWS_SECRET_ACCESS_KEY'),
+        secretAccessKey: this.configService.get<string>(
+          'AWS_SECRET_ACCESS_KEY',
+        ),
       },
     });
   }

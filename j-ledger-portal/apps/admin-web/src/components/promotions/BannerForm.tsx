@@ -14,7 +14,11 @@ interface BannerFormProps {
   onCancel: () => void;
 }
 
-export function BannerForm({ initialData, onSuccess, onCancel }: BannerFormProps) {
+export function BannerForm({
+  initialData,
+  onSuccess,
+  onCancel,
+}: BannerFormProps) {
   const [loading, setLoading] = useState(false);
   const [uploading, setUploading] = useState(false);
 
@@ -79,7 +83,10 @@ export function BannerForm({ initialData, onSuccess, onCancel }: BannerFormProps
         <div className="flex flex-col gap-4">
           {formData.imageUrl ? (
             <div className="relative w-full h-40 rounded-xl overflow-hidden border bg-slate-50">
-              <img src={formData.imageUrl} className="w-full h-full object-cover" />
+              <img
+                src={formData.imageUrl}
+                className="w-full h-full object-cover"
+              />
               <button
                 type="button"
                 onClick={() => setFormData({ ...formData, imageUrl: '' })}
@@ -112,7 +119,9 @@ export function BannerForm({ initialData, onSuccess, onCancel }: BannerFormProps
           <Input
             placeholder="Or paste direct image URL"
             value={formData.imageUrl}
-            onChange={(e) => setFormData({ ...formData, imageUrl: e.target.value })}
+            onChange={(e) =>
+              setFormData({ ...formData, imageUrl: e.target.value })
+            }
           />
         </div>
       </div>
@@ -123,7 +132,9 @@ export function BannerForm({ initialData, onSuccess, onCancel }: BannerFormProps
           <Input
             id="action"
             value={formData.actionPath}
-            onChange={(e) => setFormData({ ...formData, actionPath: e.target.value })}
+            onChange={(e) =>
+              setFormData({ ...formData, actionPath: e.target.value })
+            }
             placeholder="e.g. /(tabs)/deals"
             required
           />
@@ -134,14 +145,21 @@ export function BannerForm({ initialData, onSuccess, onCancel }: BannerFormProps
             id="priority"
             type="number"
             value={formData.priority}
-            onChange={(e) => setFormData({ ...formData, priority: parseInt(e.target.value) })}
+            onChange={(e) =>
+              setFormData({ ...formData, priority: parseInt(e.target.value) })
+            }
             required
           />
         </div>
       </div>
 
       <div className="flex justify-end gap-3 pt-4 border-t border-slate-100">
-        <Button type="button" variant="ghost" onClick={onCancel} className="rounded-xl">
+        <Button
+          type="button"
+          variant="ghost"
+          onClick={onCancel}
+          className="rounded-xl"
+        >
           Cancel
         </Button>
         <Button

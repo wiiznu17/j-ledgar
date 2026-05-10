@@ -63,7 +63,8 @@ export const API_PATHS = {
       WALLETS: '/api/admin/wallets',
       WALLET_DETAIL: (id: string) => `/api/admin/wallets/${id}`,
       WALLET_FREEZE: (userId: string) => `/api/admin/wallets/${userId}/freeze`,
-      WALLET_UNFREEZE: (userId: string) => `/api/admin/wallets/${userId}/unfreeze`,
+      WALLET_UNFREEZE: (userId: string) =>
+        `/api/admin/wallets/${userId}/unfreeze`,
       TRANSACTIONS: '/api/admin/transactions',
       TRANSACTION_DETAIL: (id: string) => `/api/admin/transactions/${id}`,
     },
@@ -170,12 +171,17 @@ export const API_PATHS = {
       CREATE: '/api/finance/wallets/create',
       GET: (userId: string) => `/api/finance/wallets/${userId}`,
       ACTIVATE: (userId: string) => `/api/finance/wallets/${userId}/activate`,
-      TRANSACTIONS: (userId: string) => `/api/finance/wallets/${userId}/transactions`,
+      TRANSACTIONS: (userId: string) =>
+        `/api/finance/wallets/${userId}/transactions`,
       BANK_ACCOUNTS: (userId: string) => `/api/finance/bank-accounts/${userId}`,
-      TOPUP_BANK: (userId: string) => `/api/finance/wallets/${userId}/topup/bank`,
-      TOPUP_CREDIT: (userId: string) => `/api/internal/wallets/${userId}/topup/credit`,
-      TRANSFER_PREVIEW: (userId: string) => `/api/finance/wallets/${userId}/transfer/preview`,
-      TRANSFER_PHONE: (userId: string) => `/api/finance/wallets/${userId}/transfer/phone`,
+      TOPUP_BANK: (userId: string) =>
+        `/api/finance/wallets/${userId}/topup/bank`,
+      TOPUP_CREDIT: (userId: string) =>
+        `/api/internal/wallets/${userId}/topup/credit`,
+      TRANSFER_PREVIEW: (userId: string) =>
+        `/api/finance/wallets/${userId}/transfer/preview`,
+      TRANSFER_PHONE: (userId: string) =>
+        `/api/finance/wallets/${userId}/transfer/phone`,
     },
   },
 };
@@ -201,8 +207,10 @@ export const INTERNAL_API_PATHS = {
       GET: (userId: string) => `/api/finance/wallets/${userId}`,
       FREEZE: (userId: string) => `/api/finance/wallets/${userId}/freeze`,
       UNFREEZE: (userId: string) => `/api/finance/wallets/${userId}/unfreeze`,
-      TRANSACTIONS: (userId: string) => `/api/finance/wallets/${userId}/transactions`,
-      TRANSACTION_DETAIL: (id: string) => `/api/finance/wallets/transactions/${id}`,
+      TRANSACTIONS: (userId: string) =>
+        `/api/finance/wallets/${userId}/transactions`,
+      TRANSACTION_DETAIL: (id: string) =>
+        `/api/finance/wallets/transactions/${id}`,
     },
     TRANSACTIONS: {
       BASE: '/api/v1/transactions',
@@ -210,7 +218,8 @@ export const INTERNAL_API_PATHS = {
     },
     AML: {
       SUSPICIOUS_ACTIVITIES: '/api/v1/aml/suspicious-activities',
-      SUSPICIOUS_ACTIVITY_STATUS: (id: string) => `/api/v1/aml/suspicious-activities/${id}/status`,
+      SUSPICIOUS_ACTIVITY_STATUS: (id: string) =>
+        `/api/v1/aml/suspicious-activities/${id}/status`,
       REPORT_AMLO: '/api/v1/aml/report-to-amlo',
     },
     SYSTEM: {

@@ -10,7 +10,10 @@ interface OcrGuideStepProps {
   onScan: () => void;
 }
 
-export const OcrGuideStep: React.FC<OcrGuideStepProps> = ({ visible, onScan }) => (
+export const OcrGuideStep: React.FC<OcrGuideStepProps> = ({
+  visible,
+  onScan,
+}) => (
   <StepWrapper visible={visible} direction="vertical">
     <View className="items-center">
       <StepHeader
@@ -30,7 +33,9 @@ export const OcrGuideStep: React.FC<OcrGuideStepProps> = ({ visible, onScan }) =
         <View className="flex-row items-center gap-4 bg-primary/5 p-3 rounded-2xl border border-primary/10">
           <Lightbulb size={20} color="#f48fb1" />
           <View className="flex-1">
-            <Text className="text-sm font-manrope font-bold text-on-surface">Good Lighting</Text>
+            <Text className="text-sm font-manrope font-bold text-on-surface">
+              Good Lighting
+            </Text>
             <Text className="text-xs font-manrope text-on-surfaceVariant">
               Avoid glare and shadows on the card
             </Text>

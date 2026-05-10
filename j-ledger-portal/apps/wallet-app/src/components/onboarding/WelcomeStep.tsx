@@ -18,7 +18,10 @@ export const WelcomeStep: React.FC<WelcomeStepProps> = ({
   onBackToLogin,
 }) => (
   <StepWrapper visible={visible} direction="vertical">
-    <View style={{ minHeight: SCREEN_HEIGHT * 0.7 }} className="items-center justify-center">
+    <View
+      style={{ minHeight: SCREEN_HEIGHT * 0.7 }}
+      className="items-center justify-center"
+    >
       <View className="items-center mb-12">
         <Image
           source={require('../../../assets/images/logo/logo.png')}

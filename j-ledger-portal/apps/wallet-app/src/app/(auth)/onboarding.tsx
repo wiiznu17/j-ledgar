@@ -89,7 +89,9 @@ export default function OnboardingScreen() {
 
   const [idCardUri, setIdCardUri] = useState<string | null>(null);
   const [selfieUri, setSelfieUri] = useState<string | null>(null);
-  const [livenessSessionId, setLivenessSessionId] = useState<string | null>(null);
+  const [livenessSessionId, setLivenessSessionId] = useState<string | null>(
+    null,
+  );
   const [isScanningID, setIsScanningID] = useState(false);
 
   const [idCardAddress, setIdCardAddress] = useState<any>(null);
@@ -162,9 +164,12 @@ export default function OnboardingScreen() {
         if (identity.lastNameEn) setLastNameEn(identity.lastNameEn);
 
         // Format dates correctly for ThaiDatePickerModal (DD/MM/YYYY with B.E.)
-        if (identity.dateOfBirth) setDateOfBirth(formatToThaiDate(identity.dateOfBirth));
-        if (identity.issueDate) setIssueDate(formatToThaiDate(identity.issueDate));
-        if (identity.expiryDate) setExpiryDate(formatToThaiDate(identity.expiryDate));
+        if (identity.dateOfBirth)
+          setDateOfBirth(formatToThaiDate(identity.dateOfBirth));
+        if (identity.issueDate)
+          setIssueDate(formatToThaiDate(identity.issueDate));
+        if (identity.expiryDate)
+          setExpiryDate(formatToThaiDate(identity.expiryDate));
 
         if (identity.religion) setReligion(identity.religion);
 
@@ -180,7 +185,9 @@ export default function OnboardingScreen() {
           !addresses?.registered &&
           step === OnboardingStepUI.OCR_REVIEW
         ) {
-          console.log('[Onboarding] Using raw ID card address string for review');
+          console.log(
+            '[Onboarding] Using raw ID card address string for review',
+          );
           setAddress((prev: any) => ({
             ...prev,
             line1: identity.idCardAddress,
@@ -283,7 +290,8 @@ export default function OnboardingScreen() {
   const formatPhone = (val: string) => {
     const cleaned = val.replace(/\D/g, '');
     if (cleaned.length <= 3) return cleaned;
-    if (cleaned.length <= 6) return `${cleaned.slice(0, 3)}-${cleaned.slice(3)}`;
+    if (cleaned.length <= 6)
+      return `${cleaned.slice(0, 3)}-${cleaned.slice(3)}`;
     return `${cleaned.slice(0, 3)}-${cleaned.slice(3, 6)}-${cleaned.slice(6, 10)}`;
   };
 
@@ -292,7 +300,9 @@ export default function OnboardingScreen() {
   const handlePhoneSubmit = async () => {
     setIsLoading(true);
     try {
-      const res = await api.post('/identity/register/init', { phoneNumber: phone });
+      const res = await api.post('/identity/register/init', {
+        phoneNumber: phone,
+      });
       setChallengeId(res.data.challengeId);
       setStep(OnboardingStepUI.OTP);
       setTimer(60);
@@ -306,7 +316,12 @@ export default function OnboardingScreen() {
   const handleOtpVerify = async () => {
     setIsLoading(true);
     const otpString = otp.join('').trim();
-    console.log('[Onboarding] Verifying OTP:', otpString, 'for challenge:', challengeId);
+    console.log(
+      '[Onboarding] Verifying OTP:',
+      otpString,
+      'for challenge:',
+      challengeId,
+    );
 
     try {
       const res = await api.post('/identity/register/verify-otp', {
@@ -321,7 +336,10 @@ export default function OnboardingScreen() {
       const currentState = await syncStatus();
       mapBackendStateToUI(currentState);
     } catch (err: any) {
-      console.log('[Onboarding] Verification failed:', err.response?.data || err.message);
+      console.log(
+        '[Onboarding] Verification failed:',
+        err.response?.data || err.message,
+      );
       // Clear OTP on error
       setOtp(['', '', '', '', '', '']);
       Alert.alert('Error', err.response?.data?.message || 'Invalid OTP');
@@ -383,7 +401,10 @@ export default function OnboardingScreen() {
       setLivenessSessionId(res.data.livenessSessionId);
 
       const extracted = res.data.extractedData;
-      console.log('[Onboarding] OCR Extracted Data:', JSON.stringify(extracted, null, 2));
+      console.log(
+        '[Onboarding] OCR Extracted Data:',
+        JSON.stringify(extracted, null, 2),
+      );
 
       if (
         !extracted ||
@@ -436,7 +457,10 @@ export default function OnboardingScreen() {
       const errorMsg =
         err.response?.data?.message ||
         'Could not process ID card. Please check your connection and try again.';
-      console.log('[Onboarding] OCR Failed:', err.response?.data || err.message);
+      console.log(
+        '[Onboarding] OCR Failed:',
+        err.response?.data || err.message,
+      );
       Alert.alert('Scanning Failed', errorMsg);
     } finally {
       setIsLoading(false);
@@ -507,7 +531,10 @@ export default function OnboardingScreen() {
       registeredAddress: cleanAddress,
     };
 
-    console.log('[Onboarding] Sending Confirm OCR Data:', JSON.stringify(payload, null, 2));
+    console.log(
+      '[Onboarding] Sending Confirm OCR Data:',
+      JSON.stringify(payload, null, 2),
+    );
 
     try {
       const res = await api.post('/kyc/confirm-ocr', payload, {
@@ -550,11 +577,22 @@ export default function OnboardingScreen() {
       } else {
         // Sanitize address: only pick fields that the backend expects (UpdateAddressDto)
         // This prevents validation errors like "id should not exist" during Retry flows
-        const { line1, subdistrict, district, province, postalCode, label } = address;
-        profileData.currentAddress = { line1, subdistrict, district, province, postalCode, label };
+        const { line1, subdistrict, district, province, postalCode, label } =
+          address;
+        profileData.currentAddress = {
+          line1,
+          subdistrict,
+          district,
+          province,
+          postalCode,
+          label,
+        };
       }
 
-      console.log('[Onboarding] Submitting Profile Data:', JSON.stringify(profileData, null, 2));
+      console.log(
+        '[Onboarding] Submitting Profile Data:',
+        JSON.stringify(profileData, null, 2),
+      );
 
       const res = await api.post('/identity/register/profile', profileData, {
         headers: { Authorization: `Bearer ${regToken}` },
@@ -574,8 +612,14 @@ export default function OnboardingScreen() {
         setStep(OnboardingStepUI.SET_PASSWORD);
       }
     } catch (err: any) {
-      console.error('[Onboarding] Profile Submit FAILED:', err.response?.data || err.message);
-      Alert.alert('Error', err.response?.data?.message || 'Failed to save profile');
+      console.error(
+        '[Onboarding] Profile Submit FAILED:',
+        err.response?.data || err.message,
+      );
+      Alert.alert(
+        'Error',
+        err.response?.data?.message || 'Failed to save profile',
+      );
     } finally {
       setIsLoading(false);
     }
@@ -624,11 +668,16 @@ export default function OnboardingScreen() {
 
       // Save tokens returned from completeRegistration for seamless login
       if (completeRes.data.accessToken && completeRes.data.refreshToken) {
-        console.log('[Onboarding] Registration complete, saving tokens for seamless experience');
+        console.log(
+          '[Onboarding] Registration complete, saving tokens for seamless experience',
+        );
         const { useAuthStore } = await import('@/store/auth');
         await useAuthStore
           .getState()
-          .setToken(completeRes.data.accessToken, completeRes.data.refreshToken);
+          .setToken(
+            completeRes.data.accessToken,
+            completeRes.data.refreshToken,
+          );
         if (completeRes.data.user) {
           useAuthStore.getState().setUser(completeRes.data.user);
         }
@@ -638,10 +687,14 @@ export default function OnboardingScreen() {
 
       setStep(OnboardingStepUI.SUCCESS);
     } catch (err: any) {
-      console.error('[Onboarding] Pin setup/complete failed:', err.response?.data || err.message);
+      console.error(
+        '[Onboarding] Pin setup/complete failed:',
+        err.response?.data || err.message,
+      );
       Alert.alert(
         'Registration Failed',
-        err.response?.data?.message || 'Could not complete registration. Please try again.',
+        err.response?.data?.message ||
+          'Could not complete registration. Please try again.',
       );
     } finally {
       setIsLoading(false);
@@ -717,7 +770,8 @@ export default function OnboardingScreen() {
       <SafeAreaView className="flex-1 bg-transparent">
         <KeyboardAvoidingView
           behavior={
-            step === OnboardingStepUI.SET_PIN || step === OnboardingStepUI.CONFIRM_PIN
+            step === OnboardingStepUI.SET_PIN ||
+            step === OnboardingStepUI.CONFIRM_PIN
               ? undefined
               : Platform.OS === 'ios'
                 ? 'padding'
@@ -822,7 +876,10 @@ export default function OnboardingScreen() {
                   isLoading={isLoading}
                   onComplete={handleLivenessSuccess}
                   onError={(err) => {
-                    Alert.alert('Liveness Error', 'Something went wrong during face scan.');
+                    Alert.alert(
+                      'Liveness Error',
+                      'Something went wrong during face scan.',
+                    );
                     setStep(OnboardingStepUI.FACE_GUIDE);
                   }}
                   onCancel={() => setStep(OnboardingStepUI.FACE_GUIDE)}
@@ -831,7 +888,13 @@ export default function OnboardingScreen() {
 
               <Onboarding.AdditionalInfoStep
                 visible={step === OnboardingStepUI.ADDITIONAL_INFO}
-                data={{ address, occupation, incomeRange, sourceOfFunds, purpose }}
+                data={{
+                  address,
+                  occupation,
+                  incomeRange,
+                  sourceOfFunds,
+                  purpose,
+                }}
                 idCardAddress={idCardAddress}
                 setData={updateProfileData}
                 isLoading={isLoading}
@@ -863,7 +926,10 @@ export default function OnboardingScreen() {
                   if (completedPin === pin) {
                     handlePinSubmit(completedPin);
                   } else {
-                    Alert.alert('PIN Mismatch', 'Codes do not match. Please try again.');
+                    Alert.alert(
+                      'PIN Mismatch',
+                      'Codes do not match. Please try again.',
+                    );
                     setConfirmPin('');
                   }
                 }}

@@ -43,7 +43,10 @@ export const HISTORY_FILTERS: HistoryFilter[] = [
   { key: 'WITHDRAWAL', label: 'Withdrawal', icon: ArrowUpFromLine },
 ];
 
-export const TYPE_META: Record<TransactionType, { label: string; icon: LucideIcon }> = {
+export const TYPE_META: Record<
+  TransactionType,
+  { label: string; icon: LucideIcon }
+> = {
   TOPUP: { label: 'Top Up', icon: ArrowDownToLine },
   TRANSFER: { label: 'Transfer', icon: ArrowLeftRight },
   PAYMENT: { label: 'Payment', icon: Receipt },
@@ -57,7 +60,10 @@ export function getTypeMeta(type?: string) {
   return { label: 'Transaction', icon: CircleHelp };
 }
 
-export function getAmountColor(direction: HistoryDirection, status: HistoryStatus) {
+export function getAmountColor(
+  direction: HistoryDirection,
+  status: HistoryStatus,
+) {
   if (status === 'FAILED' || status === 'CANCELED') {
     return '#ef4444';
   }

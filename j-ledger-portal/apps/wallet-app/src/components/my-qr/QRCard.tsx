@@ -1,5 +1,11 @@
 import React, { useRef, forwardRef, useImperativeHandle } from 'react';
-import { View, Text, Image, TouchableOpacity, ImageSourcePropType } from 'react-native';
+import {
+  View,
+  Text,
+  Image,
+  TouchableOpacity,
+  ImageSourcePropType,
+} from 'react-native';
 import { Copy, Zap, Coins } from 'lucide-react-native';
 import { Svg, Polyline } from 'react-native-svg';
 import QRCode from 'react-native-qrcode-svg';
@@ -67,7 +73,12 @@ export const QRCard = forwardRef<QRCardRef, QRCardProps>(
 
         {/* QR Code Container */}
         <View className="w-64 h-64 bg-[#f8f9fe] rounded-[2.5rem] items-center justify-center p-6 shadow-inner border border-gray-100 relative">
-          <QRCode value={qrData} size={220} color="#1a1a1a" backgroundColor="transparent" />
+          <QRCode
+            value={qrData}
+            size={220}
+            color="#1a1a1a"
+            backgroundColor="transparent"
+          />
           {/* Logo Overlay */}
           <View className="absolute bg-white p-2 rounded-2xl shadow-md border border-gray-50">
             <View className="w-8 h-8 rounded-xl bg-[#f48fb1] items-center justify-center">

@@ -1,6 +1,12 @@
 import React from 'react';
 import { View, Text } from 'react-native';
-import { Shield, Phone, MapPin, Briefcase, ShieldCheck } from 'lucide-react-native';
+import {
+  Shield,
+  Phone,
+  MapPin,
+  Briefcase,
+  ShieldCheck,
+} from 'lucide-react-native';
 import { DataSection, InfoItem } from './ProfileUIAtoms';
 
 export interface InfoSectionsListProps {
@@ -40,13 +46,22 @@ export function InfoSectionsList({ formData, onEdit }: InfoSectionsListProps) {
             />
             <InfoItem label="Identity Type" value="ID Card" />
           </View>
-          <InfoItem label="Identity Number" value={maskIdCard(formData.idNumber)} />
+          <InfoItem
+            label="Identity Number"
+            value={maskIdCard(formData.idNumber)}
+          />
           <View className="flex-row">
             <View className="w-1/2">
-              <InfoItem label="Name (Thai)" value={`${formData.prefixTh} ${formData.nameTh}`} />
+              <InfoItem
+                label="Name (Thai)"
+                value={`${formData.prefixTh} ${formData.nameTh}`}
+              />
             </View>
             <View className="w-1/2">
-              <InfoItem label="Name (English)" value={`${formData.prefixEn} ${formData.nameEn}`} />
+              <InfoItem
+                label="Name (English)"
+                value={`${formData.prefixEn} ${formData.nameEn}`}
+              />
             </View>
           </View>
           <View className="flex-row">
@@ -91,21 +106,36 @@ export function InfoSectionsList({ formData, onEdit }: InfoSectionsListProps) {
         onEdit={() => onEdit('ADDRESS')}
       >
         <View className="gap-y-4">
-          <InfoItem label="Street / House No." value={formData.currentAddress.street} />
+          <InfoItem
+            label="Street / House No."
+            value={formData.currentAddress.street}
+          />
           <View className="flex-row">
             <View className="w-1/2">
-              <InfoItem label="Sub-district" value={formData.currentAddress.subdistrict} />
+              <InfoItem
+                label="Sub-district"
+                value={formData.currentAddress.subdistrict}
+              />
             </View>
             <View className="w-1/2">
-              <InfoItem label="District" value={formData.currentAddress.district} />
+              <InfoItem
+                label="District"
+                value={formData.currentAddress.district}
+              />
             </View>
           </View>
           <View className="flex-row">
             <View className="w-1/2">
-              <InfoItem label="Province" value={formData.currentAddress.province} />
+              <InfoItem
+                label="Province"
+                value={formData.currentAddress.province}
+              />
             </View>
             <View className="w-1/2">
-              <InfoItem label="Postal Code" value={formData.currentAddress.postalCode} />
+              <InfoItem
+                label="Postal Code"
+                value={formData.currentAddress.postalCode}
+              />
             </View>
           </View>
         </View>
@@ -125,7 +155,10 @@ export function InfoSectionsList({ formData, onEdit }: InfoSectionsListProps) {
             <InfoItem label="Monthly Income" value={formData.income} />
           </View>
           <View className="w-1/2">
-            <InfoItem label="Source of Income" value={formData.sourceOfIncome} />
+            <InfoItem
+              label="Source of Income"
+              value={formData.sourceOfIncome}
+            />
           </View>
           <View className="w-1/2">
             <InfoItem label="Usage Purpose" value={formData.purpose} />

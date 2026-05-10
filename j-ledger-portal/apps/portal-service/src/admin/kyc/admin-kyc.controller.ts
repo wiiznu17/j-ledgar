@@ -1,4 +1,14 @@
-import { Controller, Get, Post, Param, Body, Query, Req, UseGuards, Logger } from '@nestjs/common';
+import {
+  Controller,
+  Get,
+  Post,
+  Param,
+  Body,
+  Query,
+  Req,
+  UseGuards,
+  Logger,
+} from '@nestjs/common';
 import { KycService } from '../../modules/kyc/kyc.service';
 import { AuditService, ResourceType } from '../../modules/audit/audit.service';
 import { AdminJwtGuard } from '../guards/admin-jwt.guard';
@@ -26,7 +36,11 @@ export class AdminKycController {
 
   @Post('approve/:userId')
   @RequirePermissions(Permission.APPROVE_KYC)
-  @AuditLog(null as any, ResourceType.KYC_DOCUMENT, 'Approved user KYC document')
+  @AuditLog(
+    null as any,
+    ResourceType.KYC_DOCUMENT,
+    'Approved user KYC document',
+  )
   async approveKyc(@Param('userId') userId: string) {
     this.logger.log(`[AdminKyc] Approving KYC for user: ${userId}`);
     return this.kycService.approveKyc(userId);
@@ -34,9 +48,18 @@ export class AdminKycController {
 
   @Post('reject/:userId')
   @RequirePermissions(Permission.REJECT_KYC)
-  @AuditLog(null as any, ResourceType.KYC_DOCUMENT, 'Rejected user KYC document')
-  async rejectKyc(@Param('userId') userId: string, @Body('reason') reason: string) {
-    this.logger.log(`[AdminKyc] Rejecting KYC for user: ${userId}, Reason: ${reason}`);
+  @AuditLog(
+    null as any,
+    ResourceType.KYC_DOCUMENT,
+    'Rejected user KYC document',
+  )
+  async rejectKyc(
+    @Param('userId') userId: string,
+    @Body('reason') reason: string,
+  ) {
+    this.logger.log(
+      `[AdminKyc] Rejecting KYC for user: ${userId}, Reason: ${reason}`,
+    );
     return this.kycService.rejectKyc(userId, reason);
   }
 
@@ -74,7 +97,9 @@ export class AdminKycController {
   async getKYCDetails(@Param('userId') userId: string) {
     this.logger.log(`[AdminKyc] Fetching KYC details for user: ${userId}`);
     const result = await this.kycService.getKYCDetails(userId);
-    this.logger.log(`[AdminKyc] KYC details for ${userId}: ${JSON.stringify(result)}`);
+    this.logger.log(
+      `[AdminKyc] KYC details for ${userId}: ${JSON.stringify(result)}`,
+    );
     return result;
   }
 

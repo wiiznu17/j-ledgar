@@ -1,4 +1,9 @@
-import { Injectable, OnModuleInit, OnModuleDestroy, Logger } from '@nestjs/common';
+import {
+  Injectable,
+  OnModuleInit,
+  OnModuleDestroy,
+  Logger,
+} from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { Kafka, Producer } from 'kafkajs';
 
@@ -9,7 +14,9 @@ export class KafkaProducerService implements OnModuleInit, OnModuleDestroy {
   private producer: Producer;
 
   constructor(private readonly configService: ConfigService) {
-    const brokers = this.configService.get<string>('KAFKA_BROKERS', 'localhost:9092').split(',');
+    const brokers = this.configService
+      .get<string>('KAFKA_BROKERS', 'localhost:9092')
+      .split(',');
     this.kafka = new Kafka({
       clientId: 'portal-service',
       brokers,

@@ -2,7 +2,13 @@
 
 import { useEffect, useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -84,9 +90,15 @@ export default function SetupAccountPage() {
     try {
       await authRequester.activateAccount({ token, password });
       setIsSuccess(true);
-      showSuccess('Welcome!', 'Your account has been activated. Welcome to the team!');
+      showSuccess(
+        'Welcome!',
+        'Your account has been activated. Welcome to the team!',
+      );
     } catch (e) {
-      showError('Failed', 'Could not activate account. The invitation link may have expired.');
+      showError(
+        'Failed',
+        'Could not activate account. The invitation link may have expired.',
+      );
     } finally {
       setIsSubmitting(false);
     }
@@ -96,7 +108,9 @@ export default function SetupAccountPage() {
     return (
       <div className="min-h-screen bg-[#F7FAFC] flex flex-col items-center justify-center p-4">
         <Loader2 className="w-8 h-8 text-indigo-600 animate-spin mb-4" />
-        <p className="text-slate-500 font-medium animate-pulse">Verifying invitation...</p>
+        <p className="text-slate-500 font-medium animate-pulse">
+          Verifying invitation...
+        </p>
       </div>
     );
   }
@@ -114,8 +128,8 @@ export default function SetupAccountPage() {
               Expired Invitation
             </CardTitle>
             <CardDescription className="text-slate-500 mt-2 px-4">
-              This invitation link is no longer valid or has expired. Please contact your system
-              administrator to request a new invitation.
+              This invitation link is no longer valid or has expired. Please
+              contact your system administrator to request a new invitation.
             </CardDescription>
           </CardHeader>
           <CardContent className="pb-10 px-8">
@@ -145,8 +159,8 @@ export default function SetupAccountPage() {
               Account Activated!
             </CardTitle>
             <CardDescription className="text-slate-500 mt-2 px-4">
-              Welcome aboard! Your administrator account is now active and ready. You can now log in
-              to the portal.
+              Welcome aboard! Your administrator account is now active and
+              ready. You can now log in to the portal.
             </CardDescription>
           </CardHeader>
           <CardContent className="pb-10 px-8">
@@ -179,8 +193,8 @@ export default function SetupAccountPage() {
             Welcome to the Team!
           </CardTitle>
           <CardDescription className="text-slate-500 text-center md:text-left">
-            You've been invited as an administrator. Please set up your password to activate your
-            account.
+            You've been invited as an administrator. Please set up your password
+            to activate your account.
           </CardDescription>
 
           {email && (
@@ -188,7 +202,9 @@ export default function SetupAccountPage() {
               <div className="w-8 h-8 bg-white rounded-lg flex items-center justify-center shadow-sm">
                 <UserCircle className="w-4 h-4 text-slate-400" />
               </div>
-              <span className="text-xs font-bold text-slate-600 truncate">{email}</span>
+              <span className="text-xs font-bold text-slate-600 truncate">
+                {email}
+              </span>
             </div>
           )}
         </CardHeader>
@@ -240,7 +256,11 @@ export default function SetupAccountPage() {
                 disabled={isSubmitting}
                 className="w-full h-12 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white font-bold shadow-lg shadow-indigo-200 transition-all active:scale-[0.98]"
               >
-                {isSubmitting ? <Loader2 className="w-4 h-4 animate-spin" /> : 'Activate Account'}
+                {isSubmitting ? (
+                  <Loader2 className="w-4 h-4 animate-spin" />
+                ) : (
+                  'Activate Account'
+                )}
               </Button>
             </div>
           </form>

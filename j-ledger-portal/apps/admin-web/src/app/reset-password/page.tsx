@@ -2,7 +2,13 @@
 
 import { useEffect, useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -79,9 +85,15 @@ export default function ResetPasswordPage() {
     try {
       await authRequester.confirmPasswordReset({ token, password });
       setIsSuccess(true);
-      showSuccess('Success', 'Your password has been updated. You can now log in.');
+      showSuccess(
+        'Success',
+        'Your password has been updated. You can now log in.',
+      );
     } catch (e) {
-      showError('Failed', 'Could not reset password. The link may have expired.');
+      showError(
+        'Failed',
+        'Could not reset password. The link may have expired.',
+      );
     } finally {
       setIsSubmitting(false);
     }
@@ -91,7 +103,9 @@ export default function ResetPasswordPage() {
     return (
       <div className="min-h-screen bg-[#F7FAFC] flex flex-col items-center justify-center p-4">
         <Loader2 className="w-8 h-8 text-indigo-600 animate-spin mb-4" />
-        <p className="text-slate-500 font-medium animate-pulse">Verifying secure link...</p>
+        <p className="text-slate-500 font-medium animate-pulse">
+          Verifying secure link...
+        </p>
       </div>
     );
   }
@@ -109,8 +123,8 @@ export default function ResetPasswordPage() {
               Invalid or Expired Link
             </CardTitle>
             <CardDescription className="text-slate-500 mt-2 px-4">
-              This password reset link is no longer valid. Please request a new one from the
-              administrator or your login page.
+              This password reset link is no longer valid. Please request a new
+              one from the administrator or your login page.
             </CardDescription>
           </CardHeader>
           <CardContent className="pb-10 px-8">
@@ -140,8 +154,8 @@ export default function ResetPasswordPage() {
               Password Updated
             </CardTitle>
             <CardDescription className="text-slate-500 mt-2 px-4">
-              Your security credentials have been successfully updated. You can now access your
-              account with the new password.
+              Your security credentials have been successfully updated. You can
+              now access your account with the new password.
             </CardDescription>
           </CardHeader>
           <CardContent className="pb-10 px-8">
@@ -166,13 +180,16 @@ export default function ResetPasswordPage() {
         <CardHeader className="pt-10 pb-4 px-8">
           <div className="flex items-center gap-2 text-indigo-600 mb-6">
             <ShieldCheck className="w-6 h-6" />
-            <span className="font-black text-sm uppercase tracking-widest">J-Ledger Secure</span>
+            <span className="font-black text-sm uppercase tracking-widest">
+              J-Ledger Secure
+            </span>
           </div>
           <CardTitle className="text-2xl font-bold text-slate-900 tracking-tight">
             Set Your Password
           </CardTitle>
           <CardDescription className="text-slate-500">
-            Please create a strong password to secure your administrator account.
+            Please create a strong password to secure your administrator
+            account.
           </CardDescription>
         </CardHeader>
         <CardContent className="pb-10 px-8">
@@ -223,7 +240,11 @@ export default function ResetPasswordPage() {
                 disabled={isSubmitting}
                 className="w-full h-12 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white font-bold shadow-lg shadow-indigo-200 transition-all active:scale-[0.98]"
               >
-                {isSubmitting ? <Loader2 className="w-4 h-4 animate-spin" /> : 'Update Password'}
+                {isSubmitting ? (
+                  <Loader2 className="w-4 h-4 animate-spin" />
+                ) : (
+                  'Update Password'
+                )}
               </Button>
             </div>
           </form>

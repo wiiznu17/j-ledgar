@@ -25,7 +25,11 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
-import { Popover, PopoverTrigger, PopoverContent } from '@/components/ui/popover';
+import {
+  Popover,
+  PopoverTrigger,
+  PopoverContent,
+} from '@/components/ui/popover';
 import { Calendar } from '@/components/ui/calendar';
 import {
   Select,
@@ -151,27 +155,41 @@ export default function TransactionsPage() {
 
   return (
     <div className="space-y-6 pb-10">
-        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-          <div className="flex-1">
-            <h2 className="text-3xl font-bold tracking-tight text-slate-900">Transactions</h2>
-            <div className="flex flex-wrap items-center gap-2 mt-1">
-              <p className="text-slate-500">
-                Monitor and manage all financial activities across the platform.
-              </p>
-              {activeFilters.userId && (
-                <Badge variant="secondary" className="bg-indigo-50 text-indigo-600 border-indigo-100 px-2 py-0.5 rounded-md flex items-center gap-1">
-                  Filtering by User: <span className="font-mono text-[10px]">{activeFilters.userId}</span>
-                  <button 
-                    onClick={() => setActiveFilters(prev => ({ ...prev, userId: '', page: 0 }))}
-                    className="ml-1 hover:text-indigo-800"
-                  >
-                    <X size={12} />
-                  </button>
-                </Badge>
-              )}
-            </div>
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+        <div className="flex-1">
+          <h2 className="text-3xl font-bold tracking-tight text-slate-900">
+            Transactions
+          </h2>
+          <div className="flex flex-wrap items-center gap-2 mt-1">
+            <p className="text-slate-500">
+              Monitor and manage all financial activities across the platform.
+            </p>
+            {activeFilters.userId && (
+              <Badge
+                variant="secondary"
+                className="bg-indigo-50 text-indigo-600 border-indigo-100 px-2 py-0.5 rounded-md flex items-center gap-1"
+              >
+                Filtering by User:{' '}
+                <span className="font-mono text-[10px]">
+                  {activeFilters.userId}
+                </span>
+                <button
+                  onClick={() =>
+                    setActiveFilters((prev) => ({
+                      ...prev,
+                      userId: '',
+                      page: 0,
+                    }))
+                  }
+                  className="ml-1 hover:text-indigo-800"
+                >
+                  <X size={12} />
+                </button>
+              </Badge>
+            )}
           </div>
         </div>
+      </div>
 
       <Card className="border-none shadow-sm ring-1 ring-slate-100 overflow-hidden bg-white">
         {/* Filter Toolbar */}
@@ -298,11 +316,16 @@ export default function TransactionsPage() {
                 </tr>
               ) : (
                 transactions.map((txn) => (
-                  <tr key={txn.id} className="hover:bg-slate-50/50 transition-colors">
+                  <tr
+                    key={txn.id}
+                    className="hover:bg-slate-50/50 transition-colors"
+                  >
                     <td className="px-6 py-5">
                       <div>
                         <p className="text-sm font-bold text-slate-800 tabular-nums">
-                          {String(txn.transactionId || txn.id).slice(0, 12).toUpperCase()}
+                          {String(txn.transactionId || txn.id)
+                            .slice(0, 12)
+                            .toUpperCase()}
                         </p>
                         <p className="text-[10px] text-slate-400 font-medium truncate max-w-[150px]">
                           Ref: {String(txn.transactionId || txn.id)}
@@ -342,7 +365,9 @@ export default function TransactionsPage() {
                           : txn.transactionType === TransactionType.WITHDRAW
                             ? '-'
                             : ''}
-                        {Number(txn.amount).toLocaleString(undefined, { minimumFractionDigits: 2 })}
+                        {Number(txn.amount).toLocaleString(undefined, {
+                          minimumFractionDigits: 2,
+                        })}
                         <span className="ml-1 text-[10px] font-bold opacity-70">
                           {txn.currency}
                         </span>

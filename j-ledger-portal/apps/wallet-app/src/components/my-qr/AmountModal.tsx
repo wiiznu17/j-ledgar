@@ -36,7 +36,11 @@ export function AmountModal({
       >
         {/* Backdrop */}
         <View className="absolute inset-0 bg-black/40" />
-        <TouchableOpacity activeOpacity={1} onPress={onClose} className="absolute inset-0" />
+        <TouchableOpacity
+          activeOpacity={1}
+          onPress={onClose}
+          className="absolute inset-0"
+        />
 
         {/* Sheet */}
         <MotiView
@@ -52,7 +56,9 @@ export function AmountModal({
         >
           <View className="flex-row justify-between items-center mb-8">
             <View>
-              <Text className="text-2xl font-manrope font-black text-gray-800">Specify Amount</Text>
+              <Text className="text-2xl font-manrope font-black text-gray-800">
+                Specify Amount
+              </Text>
               <Text className="text-[11px] font-manrope font-bold text-gray-400 uppercase tracking-[0.15em] mt-1">
                 Enter receiving amount
               </Text>
@@ -67,7 +73,9 @@ export function AmountModal({
 
           <View className="bg-gray-50 rounded-[2rem] p-10 mb-8 border border-gray-100 items-center justify-center">
             <View className="flex-row items-center justify-center border-b-2 border-pink-100 pb-2 w-full max-w-[280px]">
-              <Text className="text-3xl font-manrope font-black text-gray-400 mr-2 mt-1">฿</Text>
+              <Text className="text-3xl font-manrope font-black text-gray-400 mr-2 mt-1">
+                ฿
+              </Text>
 
               <TextInput
                 autoFocus
@@ -107,11 +115,15 @@ export function AmountModal({
               ${isProcessing ? 'bg-pink-300 shadow-none' : 'bg-[#f48fb1] shadow-pink-200'}`}
           >
             {isProcessing ? (
-              <Text className="text-white font-manrope font-black text-base">Generating...</Text>
+              <Text className="text-white font-manrope font-black text-base">
+                Generating...
+              </Text>
             ) : (
               <>
                 <Check size={20} color="white" strokeWidth={3} />
-                <Text className="text-white font-manrope font-black text-base">Generate QR</Text>
+                <Text className="text-white font-manrope font-black text-base">
+                  Generate QR
+                </Text>
               </>
             )}
           </TouchableOpacity>

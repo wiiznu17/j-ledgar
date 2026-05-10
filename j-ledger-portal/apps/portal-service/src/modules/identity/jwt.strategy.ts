@@ -14,12 +14,15 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
       jwtFromRequest: ExtractJwt.fromAuthHeaderAsBearerToken(),
       ignoreExpiration: false,
       secretOrKey:
-        configService.get<string>('CUSTOMER_JWT_SECRET') || 'jledger-customer-secret-dev-2024',
+        configService.get<string>('CUSTOMER_JWT_SECRET') ||
+        'jledger-customer-secret-dev-2024',
     });
   }
 
   async validate(payload: any) {
-    console.log(`[JwtStrategy] Validating payload for sub: ${payload.sub}, typ: ${payload.typ}`);
+    console.log(
+      `[JwtStrategy] Validating payload for sub: ${payload.sub}, typ: ${payload.typ}`,
+    );
 
     // Ensure user still exists
     const user = await this.prisma.user.findUnique({
@@ -27,7 +30,9 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
     });
 
     if (!user) {
-      console.warn(`[JwtStrategy] User not found in DB for sub: ${payload.sub}`);
+      console.warn(
+        `[JwtStrategy] User not found in DB for sub: ${payload.sub}`,
+      );
       throw new UnauthorizedException();
     }
 

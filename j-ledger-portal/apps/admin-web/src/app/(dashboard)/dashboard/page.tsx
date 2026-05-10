@@ -31,7 +31,10 @@ export default function DashboardPage() {
   const [totalAccounts, setTotalAccounts] = useState<number>(0);
   const [kycStats, setKycStats] = useState<any>(null);
   const [chartData, setChartData] = useState<any[]>([]);
-  const [growthStats, setGrowthStats] = useState<any>({ approvalRate: 0, volumeGoal: 0 });
+  const [growthStats, setGrowthStats] = useState<any>({
+    approvalRate: 0,
+    volumeGoal: 0,
+  });
   const [isOnline, setIsOnline] = useState<boolean>(true);
   const [loading, setLoading] = useState(true);
 
@@ -80,9 +83,12 @@ export default function DashboardPage() {
     <div className="space-y-8 pb-10">
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
-          <h2 className="text-3xl font-bold tracking-tight text-slate-900">Command Center</h2>
+          <h2 className="text-3xl font-bold tracking-tight text-slate-900">
+            Command Center
+          </h2>
           <p className="text-slate-500 mt-1 font-medium">
-            Real-time overview of your ledger ecosystem and user verification queue.
+            Real-time overview of your ledger ecosystem and user verification
+            queue.
           </p>
         </div>
       </div>
@@ -117,7 +123,9 @@ export default function DashboardPage() {
           value={kycStats?.pending || 0}
           description="Waiting for verification"
           icon={ShieldCheck}
-          iconClassName={kycStats?.pending > 0 ? 'text-amber-500' : 'text-slate-400'}
+          iconClassName={
+            kycStats?.pending > 0 ? 'text-amber-500' : 'text-slate-400'
+          }
           className={`border-none shadow-sm ring-1 ${kycStats?.pending > 0 ? 'ring-amber-100 bg-amber-50/30' : 'ring-slate-100 bg-white'}`}
         />
 
@@ -147,7 +155,9 @@ export default function DashboardPage() {
               </h3>
               <div className="space-y-4">
                 <div className="flex items-center justify-between">
-                  <span className="text-xs font-medium text-slate-500">KYC Approval Rate</span>
+                  <span className="text-xs font-medium text-slate-500">
+                    KYC Approval Rate
+                  </span>
                   <span className="text-xs font-bold text-emerald-600">
                     {growthStats.approvalRate}%
                   </span>
@@ -160,7 +170,9 @@ export default function DashboardPage() {
                 </div>
 
                 <div className="flex items-center justify-between pt-2">
-                  <span className="text-xs font-medium text-slate-500">Daily Volume Goal</span>
+                  <span className="text-xs font-medium text-slate-500">
+                    Daily Volume Goal
+                  </span>
                   <span className="text-xs font-bold text-indigo-600">
                     {growthStats.volumeGoal}%
                   </span>

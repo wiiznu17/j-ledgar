@@ -1,5 +1,11 @@
 import React from 'react';
-import { View, Text, TouchableOpacity, Modal, ActivityIndicator } from 'react-native';
+import {
+  View,
+  Text,
+  TouchableOpacity,
+  Modal,
+  ActivityIndicator,
+} from 'react-native';
 import { X } from 'lucide-react-native';
 import { MotiView, AnimatePresence } from 'moti';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -77,7 +83,8 @@ export const RedemptionConfirmationModal = ({
             </Text>
             <View className="h-px w-full bg-pink-100/50 my-5" />
             <Text className="text-xs font-manrope font-bold text-gray-500 text-center leading-relaxed">
-              You are about to redeem <Text className="font-black text-gray-700">{dealTitle}</Text>.
+              You are about to redeem{' '}
+              <Text className="font-black text-gray-700">{dealTitle}</Text>.
             </Text>
           </View>
 
@@ -87,7 +94,9 @@ export const RedemptionConfirmationModal = ({
               disabled={isProcessing}
               className="flex-1 h-16 bg-gray-50 border border-gray-100 rounded-2xl items-center justify-center active:scale-95"
             >
-              <Text className="font-manrope font-black text-gray-500">Cancel</Text>
+              <Text className="font-manrope font-black text-gray-500">
+                Cancel
+              </Text>
             </TouchableOpacity>
             <TouchableOpacity
               onPress={onConfirm}
@@ -97,7 +106,9 @@ export const RedemptionConfirmationModal = ({
               {isProcessing ? (
                 <ActivityIndicator color="white" />
               ) : (
-                <Text className="font-manrope font-black text-white text-base">Confirm</Text>
+                <Text className="font-manrope font-black text-white text-base">
+                  Confirm
+                </Text>
               )}
             </TouchableOpacity>
           </View>

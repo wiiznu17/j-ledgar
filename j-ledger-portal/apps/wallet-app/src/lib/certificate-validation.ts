@@ -42,7 +42,10 @@ export function validateHttpsUrl(url: string): CertificateValidationResult {
     const urlObj = new URL(url);
     const isProduction = !__DEV__;
 
-    if (isProduction && !knownDomains.some((domain) => urlObj.hostname.includes(domain))) {
+    if (
+      isProduction &&
+      !knownDomains.some((domain) => urlObj.hostname.includes(domain))
+    ) {
       return {
         isValid: false,
         error: 'Unknown production domain',
@@ -95,7 +98,9 @@ export function getExpectedCertificateFingerprints(): string[] {
  * Validates that the connection is using a secure protocol.
  * This is called before making API requests.
  */
-export function validateConnectionSecurity(url: string): CertificateValidationResult {
+export function validateConnectionSecurity(
+  url: string,
+): CertificateValidationResult {
   // Skip HTTPS check in development (localhost uses HTTP)
   if (__DEV__) {
     return { isValid: true };

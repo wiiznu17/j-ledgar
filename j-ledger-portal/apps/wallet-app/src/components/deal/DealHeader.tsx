@@ -38,7 +38,9 @@ export const DealHeader = ({
         <View className="w-10 h-10" />
       )}
 
-      <Text className="text-lg font-black text-gray-800 font-manrope">{title}</Text>
+      <Text className="text-lg font-black text-gray-800 font-manrope">
+        {title}
+      </Text>
 
       {showGift ? (
         <TouchableOpacity

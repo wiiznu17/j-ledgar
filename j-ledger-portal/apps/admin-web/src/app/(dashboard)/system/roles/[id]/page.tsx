@@ -2,7 +2,13 @@
 
 import { use, useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Checkbox } from '@/components/ui/checkbox';
@@ -24,7 +30,11 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 
-export default function RoleDetailPage({ params }: { params: Promise<{ id: string }> }) {
+export default function RoleDetailPage({
+  params,
+}: {
+  params: Promise<{ id: string }>;
+}) {
   const { id } = use(params);
   const router = useRouter();
   const [role, setRole] = useState<any>(null);
@@ -51,7 +61,9 @@ export default function RoleDetailPage({ params }: { params: Promise<{ id: strin
       setAllPermissions(permsData);
 
       // Extract IDs of current permissions
-      const currentPermIds = roleData.rolePermissions.map((rp: any) => rp.permissionId);
+      const currentPermIds = roleData.rolePermissions.map(
+        (rp: any) => rp.permissionId,
+      );
       setSelectedPerms(currentPermIds);
     } catch (e) {
       showError('Error', 'Failed to load role details');
@@ -68,7 +80,9 @@ export default function RoleDetailPage({ params }: { params: Promise<{ id: strin
     if (role?.isSystem) return; // Prevent toggling for system roles
 
     setSelectedPerms((prev) =>
-      prev.includes(permId) ? prev.filter((p) => p !== permId) : [...prev, permId],
+      prev.includes(permId)
+        ? prev.filter((p) => p !== permId)
+        : [...prev, permId],
     );
   };
 
@@ -192,7 +206,9 @@ export default function RoleDetailPage({ params }: { params: Promise<{ id: strin
             </CardHeader>
             <CardContent className="space-y-6">
               <div className="space-y-2">
-                <Label className="text-xs font-bold text-slate-500 ml-1">Unique Name</Label>
+                <Label className="text-xs font-bold text-slate-500 ml-1">
+                  Unique Name
+                </Label>
                 <Input
                   value={roleName}
                   onChange={(e) => setRoleName(e.target.value)}
@@ -201,7 +217,9 @@ export default function RoleDetailPage({ params }: { params: Promise<{ id: strin
                 />
               </div>
               <div className="space-y-2">
-                <Label className="text-xs font-bold text-slate-500 ml-1">Role Objective</Label>
+                <Label className="text-xs font-bold text-slate-500 ml-1">
+                  Role Objective
+                </Label>
                 <Textarea
                   value={roleDescription}
                   onChange={(e) => setRoleDescription(e.target.value)}
@@ -213,8 +231,8 @@ export default function RoleDetailPage({ params }: { params: Promise<{ id: strin
                 <div className="bg-amber-50 border border-amber-100 rounded-xl p-4 flex gap-3">
                   <AlertCircle className="w-5 h-5 text-amber-500 shrink-0" />
                   <p className="text-[11px] text-amber-700 leading-normal font-medium">
-                    This is a **Core System Role**. Identity and permissions are immutable to ensure
-                    platform integrity.
+                    This is a **Core System Role**. Identity and permissions are
+                    immutable to ensure platform integrity.
                   </p>
                 </div>
               )}
@@ -246,84 +264,90 @@ export default function RoleDetailPage({ params }: { params: Promise<{ id: strin
           </div>
 
           <div className="grid grid-cols-1 gap-6">
-            {Object.entries(groupedPerms).map(([resource, perms]: [string, any]) => (
-              <Card
-                key={resource}
-                className="border-0 shadow-lg shadow-slate-100/50 rounded-2xl overflow-hidden bg-white/60 backdrop-blur-sm group"
-              >
-                <div className="bg-slate-50/80 px-6 py-4 border-b border-slate-100/50 flex items-center justify-between">
-                  <h4 className="text-xs font-black text-slate-800 uppercase tracking-[0.2em]">
-                    {resource}
-                  </h4>
-                  <Badge
-                    variant="outline"
-                    className="bg-white text-[10px] font-bold border-slate-200 text-slate-500"
-                  >
-                    {perms.length} Actions
-                  </Badge>
-                </div>
-                <CardContent className="p-0">
-                  <div className="grid grid-cols-1 divide-y divide-slate-50">
-                    {perms.map((perm: any) => {
-                      const isSelected = selectedPerms.includes(perm.id);
-                      return (
-                        <div
-                          key={perm.id}
-                          className={`flex items-center justify-between px-6 py-4 transition-all duration-300 ${
-                            isSelected ? 'bg-emerald-50/30' : 'hover:bg-slate-50/50'
-                          }`}
-                        >
-                          <div className="flex items-center gap-4 flex-1">
-                            <Checkbox
-                              id={perm.id}
-                              checked={isSelected}
-                              onCheckedChange={() => togglePermission(perm.id)}
-                              disabled={role.isSystem}
-                              className={`w-5 h-5 rounded-md border-2 transition-all ${
-                                isSelected
-                                  ? 'bg-emerald-600 border-emerald-600 shadow-lg shadow-emerald-200'
-                                  : 'border-slate-200'
-                              }`}
-                            />
-                            <div
-                              className="cursor-pointer flex-1"
-                              onClick={() => togglePermission(perm.id)}
-                            >
-                              <div className="flex items-center gap-2">
-                                <span
-                                  className={`text-sm font-bold tracking-tight ${isSelected ? 'text-emerald-700' : 'text-slate-700'}`}
-                                >
-                                  {perm.name.replace(`${resource}_`, '')}
-                                </span>
-                                {isSelected && (
-                                  <CheckCircle2 className="w-3.5 h-3.5 text-emerald-500" />
-                                )}
+            {Object.entries(groupedPerms).map(
+              ([resource, perms]: [string, any]) => (
+                <Card
+                  key={resource}
+                  className="border-0 shadow-lg shadow-slate-100/50 rounded-2xl overflow-hidden bg-white/60 backdrop-blur-sm group"
+                >
+                  <div className="bg-slate-50/80 px-6 py-4 border-b border-slate-100/50 flex items-center justify-between">
+                    <h4 className="text-xs font-black text-slate-800 uppercase tracking-[0.2em]">
+                      {resource}
+                    </h4>
+                    <Badge
+                      variant="outline"
+                      className="bg-white text-[10px] font-bold border-slate-200 text-slate-500"
+                    >
+                      {perms.length} Actions
+                    </Badge>
+                  </div>
+                  <CardContent className="p-0">
+                    <div className="grid grid-cols-1 divide-y divide-slate-50">
+                      {perms.map((perm: any) => {
+                        const isSelected = selectedPerms.includes(perm.id);
+                        return (
+                          <div
+                            key={perm.id}
+                            className={`flex items-center justify-between px-6 py-4 transition-all duration-300 ${
+                              isSelected
+                                ? 'bg-emerald-50/30'
+                                : 'hover:bg-slate-50/50'
+                            }`}
+                          >
+                            <div className="flex items-center gap-4 flex-1">
+                              <Checkbox
+                                id={perm.id}
+                                checked={isSelected}
+                                onCheckedChange={() =>
+                                  togglePermission(perm.id)
+                                }
+                                disabled={role.isSystem}
+                                className={`w-5 h-5 rounded-md border-2 transition-all ${
+                                  isSelected
+                                    ? 'bg-emerald-600 border-emerald-600 shadow-lg shadow-emerald-200'
+                                    : 'border-slate-200'
+                                }`}
+                              />
+                              <div
+                                className="cursor-pointer flex-1"
+                                onClick={() => togglePermission(perm.id)}
+                              >
+                                <div className="flex items-center gap-2">
+                                  <span
+                                    className={`text-sm font-bold tracking-tight ${isSelected ? 'text-emerald-700' : 'text-slate-700'}`}
+                                  >
+                                    {perm.name.replace(`${resource}_`, '')}
+                                  </span>
+                                  {isSelected && (
+                                    <CheckCircle2 className="w-3.5 h-3.5 text-emerald-500" />
+                                  )}
+                                </div>
+                                <p className="text-[11px] text-slate-400 font-medium leading-relaxed mt-0.5">
+                                  {perm.description ||
+                                    `Grants ${perm.action.toLowerCase()} access to ${resource.toLowerCase()} resources.`}
+                                </p>
                               </div>
-                              <p className="text-[11px] text-slate-400 font-medium leading-relaxed mt-0.5">
-                                {perm.description ||
-                                  `Grants ${perm.action.toLowerCase()} access to ${resource.toLowerCase()} resources.`}
-                              </p>
+                            </div>
+
+                            <div className="ml-4">
+                              <Badge
+                                className={`font-black text-[9px] px-2 py-0.5 tracking-tighter border-0 ${
+                                  isSelected
+                                    ? 'bg-emerald-600/10 text-emerald-600'
+                                    : 'bg-slate-100 text-slate-400'
+                                }`}
+                              >
+                                {perm.action}
+                              </Badge>
                             </div>
                           </div>
-
-                          <div className="ml-4">
-                            <Badge
-                              className={`font-black text-[9px] px-2 py-0.5 tracking-tighter border-0 ${
-                                isSelected
-                                  ? 'bg-emerald-600/10 text-emerald-600'
-                                  : 'bg-slate-100 text-slate-400'
-                              }`}
-                            >
-                              {perm.action}
-                            </Badge>
-                          </div>
-                        </div>
-                      );
-                    })}
-                  </div>
-                </CardContent>
-              </Card>
-            ))}
+                        );
+                      })}
+                    </div>
+                  </CardContent>
+                </Card>
+              ),
+            )}
           </div>
         </div>
       </div>

@@ -35,7 +35,10 @@ export const SetPasswordStep: React.FC<SetPasswordStepProps> = ({
       met: /[a-z]/.test(password) && /[A-Z]/.test(password),
     },
     { label: 'At least 1 number', met: /\d/.test(password) },
-    { label: 'At least 1 special character', met: /[!@#$%^&*(),.?":{}|<>]/.test(password) },
+    {
+      label: 'At least 1 special character',
+      met: /[!@#$%^&*(),.?":{}|<>]/.test(password),
+    },
     {
       label: 'No repeating/sequential patterns',
       met:
@@ -48,14 +51,20 @@ export const SetPasswordStep: React.FC<SetPasswordStepProps> = ({
           password,
         ),
     },
-    { label: 'Passwords match', met: !!password && password === confirmPassword },
+    {
+      label: 'Passwords match',
+      met: !!password && password === confirmPassword,
+    },
   ];
 
   const allMet = rules.every((r) => r.met);
 
   return (
     <StepWrapper visible={visible}>
-      <StepHeader title="Account Password" subtitle="Create a password to secure your login." />
+      <StepHeader
+        title="Account Password"
+        subtitle="Create a password to secure your login."
+      />
       <View className="space-y-4">
         <AppTextInput
           label="Password"
@@ -77,7 +86,10 @@ export const SetPasswordStep: React.FC<SetPasswordStepProps> = ({
         {/* Rules Checklist */}
         <View className="bg-white/40 p-4 rounded-2xl border border-outline-variant/10 my-2">
           {rules.map((rule, idx) => (
-            <View key={idx} className="flex-row items-center gap-3 mb-2 last:mb-0">
+            <View
+              key={idx}
+              className="flex-row items-center gap-3 mb-2 last:mb-0"
+            >
               {rule.met ? (
                 <CheckCircle2 size={16} color="#4caf50" />
               ) : (
@@ -99,7 +111,9 @@ export const SetPasswordStep: React.FC<SetPasswordStepProps> = ({
           onChangeText={onConfirmPasswordChange}
           placeholder="Repeat your password"
           rightElement={
-            <TouchableOpacity onPress={() => setShowConfirmPassword(!showConfirmPassword)}>
+            <TouchableOpacity
+              onPress={() => setShowConfirmPassword(!showConfirmPassword)}
+            >
               {showConfirmPassword ? (
                 <EyeOff size={20} color="#9e9e9e" />
               ) : (
@@ -110,7 +124,12 @@ export const SetPasswordStep: React.FC<SetPasswordStepProps> = ({
         />
 
         <View className="pt-4">
-          <AppButton title="Continue" loading={isLoading} disabled={!allMet} onPress={onSubmit} />
+          <AppButton
+            title="Continue"
+            loading={isLoading}
+            disabled={!allMet}
+            onPress={onSubmit}
+          />
         </View>
       </View>
     </StepWrapper>

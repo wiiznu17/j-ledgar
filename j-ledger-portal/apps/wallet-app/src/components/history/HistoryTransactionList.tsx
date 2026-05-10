@@ -1,5 +1,11 @@
 import React from 'react';
-import { View, Text, ScrollView, TouchableOpacity, RefreshControl } from 'react-native';
+import {
+  View,
+  Text,
+  ScrollView,
+  TouchableOpacity,
+  RefreshControl,
+} from 'react-native';
 import { MotiView } from 'moti';
 import { ArrowDownLeft, ArrowUpRight, Search } from 'lucide-react-native';
 import {
@@ -33,13 +39,19 @@ export const HistoryTransactionList = ({
       contentContainerStyle={{ paddingHorizontal: 20, paddingBottom: 140 }}
       showsVerticalScrollIndicator={false}
       refreshControl={
-        <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor="#f48fb1" />
+        <RefreshControl
+          refreshing={refreshing}
+          onRefresh={onRefresh}
+          tintColor="#f48fb1"
+        />
       }
       onMomentumScrollEnd={(event) => {
-        const { layoutMeasurement, contentOffset, contentSize } = event.nativeEvent;
+        const { layoutMeasurement, contentOffset, contentSize } =
+          event.nativeEvent;
         const threshold = 120;
         const reachedBottom =
-          layoutMeasurement.height + contentOffset.y >= contentSize.height - threshold;
+          layoutMeasurement.height + contentOffset.y >=
+          contentSize.height - threshold;
         if (reachedBottom && hasMore && !isLoadingMore) {
           onLoadMore?.();
         }
@@ -76,7 +88,9 @@ export const HistoryTransactionList = ({
                 </View>
 
                 <View>
-                  <Text className="text-sm font-manrope font-black text-gray-800">{tx.title}</Text>
+                  <Text className="text-sm font-manrope font-black text-gray-800">
+                    {tx.title}
+                  </Text>
                   <Text className="text-[10px] font-manrope font-bold text-gray-400 uppercase tracking-widest mt-1">
                     {getTypeMeta(tx.type).label}
                   </Text>

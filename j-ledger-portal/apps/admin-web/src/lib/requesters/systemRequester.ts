@@ -31,6 +31,10 @@ export const systemRequester = {
   },
 
   retryOutbox: async (id: string, options?: RequestOptions) => {
-    return apiClient.post<void>(API_PATHS.ADMIN.SYSTEM.OUTBOX_RETRY(id), {}, options);
+    return apiClient.post<void>(
+      API_PATHS.ADMIN.SYSTEM.OUTBOX_RETRY(id),
+      {},
+      options,
+    );
   },
 };

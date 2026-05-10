@@ -63,7 +63,8 @@ export class ReportingService {
     const totalTransactions = content.length || 0;
     const totalAmount =
       content.reduce((sum: number, tx: any) => sum + Number(tx.amount), 0) || 0;
-    const avgAmount = totalTransactions > 0 ? totalAmount / totalTransactions : 0;
+    const avgAmount =
+      totalTransactions > 0 ? totalAmount / totalTransactions : 0;
 
     // Breakdown by type
     const byType =
@@ -115,7 +116,8 @@ export class ReportingService {
     const totalTransactions = content.length || 0;
     const totalAmount =
       content.reduce((sum: number, tx: any) => sum + Number(tx.amount), 0) || 0;
-    const avgAmount = totalTransactions > 0 ? totalAmount / totalTransactions : 0;
+    const avgAmount =
+      totalTransactions > 0 ? totalAmount / totalTransactions : 0;
 
     // Breakdown by type
     const byType =
@@ -197,7 +199,10 @@ export class ReportingService {
   }
 
   async runReconciliation() {
-    return this.forwardToGateway<any>('post', INTERNAL_API_PATHS.FINANCE.SYSTEM.RECONCILE.TRIGGER);
+    return this.forwardToGateway<any>(
+      'post',
+      INTERNAL_API_PATHS.FINANCE.SYSTEM.RECONCILE.TRIGGER,
+    );
   }
 
   async getOutbox(query?: { status?: string; eventType?: string }) {
@@ -213,6 +218,9 @@ export class ReportingService {
   }
 
   async retryOutbox(id: string) {
-    return this.forwardToGateway<any>('post', INTERNAL_API_PATHS.FINANCE.SYSTEM.OUTBOX.RETRY(id));
+    return this.forwardToGateway<any>(
+      'post',
+      INTERNAL_API_PATHS.FINANCE.SYSTEM.OUTBOX.RETRY(id),
+    );
   }
 }

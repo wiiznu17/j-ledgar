@@ -81,7 +81,14 @@ export class AuditService {
   private maskSensitiveData(data: any): any {
     if (!data) return data;
 
-    const sensitiveFields = ['password', 'pin', 'secret', 'token', 'apiKey', 'creditCard'];
+    const sensitiveFields = [
+      'password',
+      'pin',
+      'secret',
+      'token',
+      'apiKey',
+      'creditCard',
+    ];
     const masked = { ...data };
 
     for (const field of sensitiveFields) {

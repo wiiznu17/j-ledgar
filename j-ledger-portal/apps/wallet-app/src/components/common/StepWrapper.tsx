@@ -7,7 +7,11 @@ interface StepWrapperProps {
   direction?: 'horizontal' | 'vertical';
 }
 
-export function StepWrapper({ children, visible, direction = 'horizontal' }: StepWrapperProps) {
+export function StepWrapper({
+  children,
+  visible,
+  direction = 'horizontal',
+}: StepWrapperProps) {
   return (
     <AnimatePresence>
       {visible && (

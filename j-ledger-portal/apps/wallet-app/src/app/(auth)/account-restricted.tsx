@@ -57,7 +57,9 @@ export default function AccountRestrictedScreen() {
             }}
           >
             <MessageCircle size={20} color="white" className="mr-2" />
-            <Text className="text-white font-manrope font-black text-lg ml-2">Contact Support</Text>
+            <Text className="text-white font-manrope font-black text-lg ml-2">
+              Contact Support
+            </Text>
           </TouchableOpacity>
 
           <TouchableOpacity
@@ -65,7 +67,9 @@ export default function AccountRestrictedScreen() {
             className="w-full bg-gray-50 py-4 rounded-2xl flex-row justify-center items-center border border-gray-100"
           >
             <LogOut size={20} color="#666" className="mr-2" />
-            <Text className="text-gray-500 font-manrope font-black text-lg ml-2">Logout</Text>
+            <Text className="text-gray-500 font-manrope font-black text-lg ml-2">
+              Logout
+            </Text>
           </TouchableOpacity>
         </View>
 

@@ -1,5 +1,12 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, Modal, TouchableOpacity, ScrollView, Platform } from 'react-native';
+import {
+  View,
+  Text,
+  Modal,
+  TouchableOpacity,
+  ScrollView,
+  Platform,
+} from 'react-native';
 import { X } from 'lucide-react-native';
 
 interface ThaiDatePickerModalProps {
@@ -68,7 +75,8 @@ export const ThaiDatePickerModal: React.FC<ThaiDatePickerModalProps> = ({
         if (mStr) {
           // Month handling
           let mIdx = THAI_MONTHS_SHORT.findIndex((m) => mStr.includes(m));
-          if (mIdx === -1) mIdx = THAI_MONTHS.findIndex((m) => mStr.includes(m));
+          if (mIdx === -1)
+            mIdx = THAI_MONTHS.findIndex((m) => mStr.includes(m));
           if (mIdx === -1) {
             const mInt = parseInt(mStr);
             if (!isNaN(mInt)) mIdx = mInt - 1;
@@ -103,8 +111,13 @@ export const ThaiDatePickerModal: React.FC<ThaiDatePickerModalProps> = ({
       <View className="flex-1 bg-black/60 justify-end">
         <View className="bg-white rounded-t-[40px] p-8 pb-12">
           <View className="flex-row justify-between items-center mb-8">
-            <Text className="text-xl font-manrope font-black text-primary">{title}</Text>
-            <TouchableOpacity onPress={onClose} className="p-2 bg-gray-100 rounded-full">
+            <Text className="text-xl font-manrope font-black text-primary">
+              {title}
+            </Text>
+            <TouchableOpacity
+              onPress={onClose}
+              className="p-2 bg-gray-100 rounded-full"
+            >
               <X size={20} color="#666" />
             </TouchableOpacity>
           </View>
@@ -112,7 +125,9 @@ export const ThaiDatePickerModal: React.FC<ThaiDatePickerModalProps> = ({
           <View className="flex-row h-64">
             {/* Day Column */}
             <View className="flex-1">
-              <Text className="text-center text-xs font-bold text-gray-400 mb-2">วัน</Text>
+              <Text className="text-center text-xs font-bold text-gray-400 mb-2">
+                วัน
+              </Text>
               <ScrollView showsVerticalScrollIndicator={false}>
                 {days.map((d) => (
                   <TouchableOpacity
@@ -132,7 +147,9 @@ export const ThaiDatePickerModal: React.FC<ThaiDatePickerModalProps> = ({
 
             {/* Month Column */}
             <View className="flex-[2]">
-              <Text className="text-center text-xs font-bold text-gray-400 mb-2">เดือน</Text>
+              <Text className="text-center text-xs font-bold text-gray-400 mb-2">
+                เดือน
+              </Text>
               <ScrollView showsVerticalScrollIndicator={false}>
                 {THAI_MONTHS.map((m, i) => (
                   <TouchableOpacity
@@ -152,7 +169,9 @@ export const ThaiDatePickerModal: React.FC<ThaiDatePickerModalProps> = ({
 
             {/* Year Column */}
             <View className="flex-1">
-              <Text className="text-center text-xs font-bold text-gray-400 mb-2">ปี พ.ศ.</Text>
+              <Text className="text-center text-xs font-bold text-gray-400 mb-2">
+                ปี พ.ศ.
+              </Text>
               <ScrollView showsVerticalScrollIndicator={false}>
                 {years.map((y) => (
                   <TouchableOpacity
@@ -175,7 +194,9 @@ export const ThaiDatePickerModal: React.FC<ThaiDatePickerModalProps> = ({
             onPress={handleConfirm}
             className="bg-primary py-4 rounded-2xl mt-8 shadow-lg shadow-primary/30"
           >
-            <Text className="text-center text-white font-manrope font-black text-lg">ตกลง</Text>
+            <Text className="text-center text-white font-manrope font-black text-lg">
+              ตกลง
+            </Text>
           </TouchableOpacity>
         </View>
       </View>

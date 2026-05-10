@@ -58,14 +58,18 @@ export function Topbar({ onLogout }: TopbarProps) {
   // Find the exact match or the closest parent route match
   const getPageTitle = () => {
     if (routeTitles[pathname]) return routeTitles[pathname];
-    const match = Object.keys(routeTitles).find((route) => pathname.startsWith(route));
+    const match = Object.keys(routeTitles).find((route) =>
+      pathname.startsWith(route),
+    );
     return match ? routeTitles[match] : 'P-wallet Admin';
   };
 
   return (
     <header className="h-16 bg-white border-b border-border flex items-center justify-between pl-8 pr-8 flex-shrink-0">
       <div className="flex items-center gap-4">
-        <h1 className="text-xl font-black text-slate-800 tracking-tight">{getPageTitle()}</h1>
+        <h1 className="text-xl font-black text-slate-800 tracking-tight">
+          {getPageTitle()}
+        </h1>
       </div>
       <div className="flex items-center gap-4">
         <ThemeToggle />
@@ -97,7 +101,9 @@ export function Topbar({ onLogout }: TopbarProps) {
                   <span className="text-xs font-black text-slate-400 uppercase tracking-widest mb-1">
                     Authenticated Account
                   </span>
-                  <span className="text-sm font-bold text-slate-900 truncate">{user.email}</span>
+                  <span className="text-sm font-bold text-slate-900 truncate">
+                    {user.email}
+                  </span>
                 </div>
               </DropdownMenuLabel>
               <DropdownMenuSeparator className="bg-slate-50 my-1" />
@@ -105,7 +111,10 @@ export function Topbar({ onLogout }: TopbarProps) {
                 asChild
                 className="rounded-xl focus:bg-indigo-50 focus:text-indigo-600 py-2.5 cursor-pointer"
               >
-                <Link href="/system/profile" className="flex items-center w-full">
+                <Link
+                  href="/system/profile"
+                  className="flex items-center w-full"
+                >
                   <User className="w-4 h-4 mr-3 text-slate-400 group-focus:text-indigo-600" />
                   <span className="font-semibold text-xs">My Profile</span>
                 </Link>

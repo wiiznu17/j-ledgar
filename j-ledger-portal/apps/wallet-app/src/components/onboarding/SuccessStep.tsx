@@ -8,7 +8,10 @@ interface SuccessStepProps {
   onEnterWallet: () => void;
 }
 
-export const SuccessStep: React.FC<SuccessStepProps> = ({ visible, onEnterWallet }) => (
+export const SuccessStep: React.FC<SuccessStepProps> = ({
+  visible,
+  onEnterWallet,
+}) => (
   <StepWrapper visible={visible}>
     <View className="flex-1 items-center justify-center min-h-[500]">
       <Image
@@ -21,7 +24,11 @@ export const SuccessStep: React.FC<SuccessStepProps> = ({ visible, onEnterWallet
       <Text className="text-on-surfaceVariant text-center mb-12">
         Your account is active and device is securely bound.
       </Text>
-      <AppButton title="Enter Wallet" className="w-full" onPress={onEnterWallet} />
+      <AppButton
+        title="Enter Wallet"
+        className="w-full"
+        onPress={onEnterWallet}
+      />
     </View>
   </StepWrapper>
 );

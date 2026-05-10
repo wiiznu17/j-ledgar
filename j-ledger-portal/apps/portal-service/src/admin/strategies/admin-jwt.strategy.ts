@@ -17,7 +17,10 @@ export class AdminJwtStrategy extends PassportStrategy(Strategy, 'admin-jwt') {
           let token = null;
           if (req && req.cookies) {
             token = req.cookies['admin_session'];
-            console.log('[AdminJwtStrategy] Cookie admin_session found:', !!token);
+            console.log(
+              '[AdminJwtStrategy] Cookie admin_session found:',
+              !!token,
+            );
           } else {
             console.log('[AdminJwtStrategy] No cookies found in request');
           }

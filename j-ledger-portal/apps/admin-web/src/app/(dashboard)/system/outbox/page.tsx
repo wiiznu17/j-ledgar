@@ -20,7 +20,11 @@ import {
 } from '@/components/ui/select';
 import { useEffect, useState } from 'react';
 import { toast } from 'sonner';
-import { FilterSearchInput, FilterSelect, FilterActions } from '@/components/common/FilterElements';
+import {
+  FilterSearchInput,
+  FilterSelect,
+  FilterActions,
+} from '@/components/common/FilterElements';
 import { systemRequester, OutboxEvent } from '@/lib/requesters/systemRequester';
 import {
   Radio,
@@ -52,7 +56,10 @@ export default function SystemOutboxPage() {
   const [tempStatus, setTempStatus] = useState<string>('ALL');
   const [tempType, setTempType] = useState<string>('ALL');
 
-  const fetchOutbox = async (statusOverride?: string, typeOverride?: string) => {
+  const fetchOutbox = async (
+    statusOverride?: string,
+    typeOverride?: string,
+  ) => {
     try {
       setLoading(true);
       const filters: any = {};
@@ -63,7 +70,9 @@ export default function SystemOutboxPage() {
       if (type !== 'ALL') filters.eventType = type;
 
       const response = await systemRequester.getOutbox(filters);
-      setData(Array.isArray(response) ? response : (response as any).data || []);
+      setData(
+        Array.isArray(response) ? response : (response as any).data || [],
+      );
     } catch (error) {
       console.error('[OUTBOX] Fetch error:', error);
       toast.error('Service temporarily unavailable.');
@@ -117,7 +126,9 @@ export default function SystemOutboxPage() {
   const stats = {
     total: data.length,
     processed: data.filter(
-      (e) => e.status.toUpperCase() === 'COMPLETED' || e.status.toUpperCase() === 'PROCESSED',
+      (e) =>
+        e.status.toUpperCase() === 'COMPLETED' ||
+        e.status.toUpperCase() === 'PROCESSED',
     ).length,
     failed: data.filter((e) => e.status.toUpperCase() === 'FAILED').length,
     pending: data.filter((e) => e.status.toUpperCase() === 'PENDING').length,
@@ -143,7 +154,9 @@ export default function SystemOutboxPage() {
             <div className="p-2 bg-indigo-600 rounded-xl shadow-lg shadow-indigo-200">
               <Radio className="w-5 h-5 text-white" />
             </div>
-            <h1 className="text-2xl font-black text-slate-800 tracking-tight">System Outbox</h1>
+            <h1 className="text-2xl font-black text-slate-800 tracking-tight">
+              System Outbox
+            </h1>
           </div>
           <p className="text-sm text-slate-500 font-medium ml-1">
             Transactional event logs and Kafka integration stream.
@@ -183,7 +196,10 @@ export default function SystemOutboxPage() {
             bg: 'bg-rose-50',
           },
         ].map((s, i) => (
-          <Card key={i} className="border-none shadow-sm ring-1 ring-slate-100 overflow-hidden">
+          <Card
+            key={i}
+            className="border-none shadow-sm ring-1 ring-slate-100 overflow-hidden"
+          >
             <CardContent className="p-4 flex items-center gap-3">
               <div className={`p-2.5 ${s.bg} ${s.color} rounded-xl`}>
                 <s.icon className="w-5 h-5" />
@@ -192,7 +208,9 @@ export default function SystemOutboxPage() {
                 <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest leading-none mb-1">
                   {s.label}
                 </p>
-                <p className="text-xl font-black text-slate-800 leading-none">{s.value}</p>
+                <p className="text-xl font-black text-slate-800 leading-none">
+                  {s.value}
+                </p>
               </div>
             </CardContent>
           </Card>
@@ -211,8 +229,16 @@ export default function SystemOutboxPage() {
               options={[
                 { label: 'ALL STATUS', value: 'ALL' },
                 { label: 'PENDING', value: 'PENDING' },
-                { label: 'PROCESSED', value: 'PROCESSED', className: 'text-emerald-600' },
-                { label: 'FAILED', value: 'FAILED', className: 'text-rose-600' },
+                {
+                  label: 'PROCESSED',
+                  value: 'PROCESSED',
+                  className: 'text-emerald-600',
+                },
+                {
+                  label: 'FAILED',
+                  value: 'FAILED',
+                  className: 'text-rose-600',
+                },
               ]}
             />
 
@@ -242,9 +268,15 @@ export default function SystemOutboxPage() {
           <table className="w-full text-left">
             <thead>
               <tr className="border-b border-slate-100 bg-slate-50/30 text-slate-400 text-[10px] uppercase font-bold tracking-widest">
-                <th className="px-6 py-2.5 border-r border-slate-200/60">Registration Time</th>
-                <th className="px-6 py-2.5 text-center border-r border-slate-200/60">Status</th>
-                <th className="px-6 py-2.5 text-center border-r border-slate-200/60">Event Type</th>
+                <th className="px-6 py-2.5 border-r border-slate-200/60">
+                  Registration Time
+                </th>
+                <th className="px-6 py-2.5 text-center border-r border-slate-200/60">
+                  Status
+                </th>
+                <th className="px-6 py-2.5 text-center border-r border-slate-200/60">
+                  Event Type
+                </th>
                 <th className="px-6 py-2.5 text-center border-r border-slate-200/60">
                   Processing Details
                 </th>
@@ -260,7 +292,10 @@ export default function SystemOutboxPage() {
                 ))
               ) : data.length === 0 ? (
                 <tr>
-                  <td colSpan={5} className="px-6 py-12 text-center text-slate-400 font-medium">
+                  <td
+                    colSpan={5}
+                    className="px-6 py-12 text-center text-slate-400 font-medium"
+                  >
                     No outbox events found in the stream.
                   </td>
                 </tr>
@@ -268,11 +303,17 @@ export default function SystemOutboxPage() {
                 data.map((event) => {
                   const config = getStatusConfig(event.status);
                   return (
-                    <tr key={event.id} className="hover:bg-slate-50/50 transition-colors group">
+                    <tr
+                      key={event.id}
+                      className="hover:bg-slate-50/50 transition-colors group"
+                    >
                       <td className="px-6 py-2 border-r border-slate-100">
                         <div className="flex flex-col">
                           <span className="text-xs font-bold text-slate-700">
-                            {format(new Date(event.createdAt), 'MMM d, HH:mm:ss')}
+                            {format(
+                              new Date(event.createdAt),
+                              'MMM d, HH:mm:ss',
+                            )}
                           </span>
                           <span className="text-[9px] text-slate-400 font-mono tracking-tighter italic">
                             ID: {event.id.split('-')[0]}...
@@ -281,7 +322,9 @@ export default function SystemOutboxPage() {
                       </td>
                       <td className="px-6 py-2 border-r border-slate-100">
                         <div className="flex items-center justify-center gap-2">
-                          <div className={`w-1.5 h-1.5 rounded-full ${config.dot}`} />
+                          <div
+                            className={`w-1.5 h-1.5 rounded-full ${config.dot}`}
+                          />
                           <span
                             className={`px-2 py-0.5 rounded-md text-[9px] font-black uppercase tracking-wider border ${config.color}`}
                           >
@@ -341,7 +384,8 @@ export default function SystemOutboxPage() {
                                 Event Intel: {event.eventType}
                               </DialogTitle>
                               <DialogDescription className="text-xs">
-                                Technical trace of the outbox event and Kafka payload.
+                                Technical trace of the outbox event and Kafka
+                                payload.
                               </DialogDescription>
                             </DialogHeader>
                             {selectedEvent && (
@@ -368,7 +412,10 @@ export default function SystemOutboxPage() {
                                         <p className="flex justify-between border-b border-slate-50 pb-1 text-slate-500">
                                           <span>Created:</span>
                                           <span>
-                                            {format(new Date(selectedEvent.createdAt), 'PPP p')}
+                                            {format(
+                                              new Date(selectedEvent.createdAt),
+                                              'PPP p',
+                                            )}
                                           </span>
                                         </p>
                                       </div>
@@ -399,7 +446,12 @@ export default function SystemOutboxPage() {
                                           <span>Last Updated:</span>
                                           <span>
                                             {selectedEvent.updatedAt
-                                              ? format(new Date(selectedEvent.updatedAt), 'PPP p')
+                                              ? format(
+                                                  new Date(
+                                                    selectedEvent.updatedAt,
+                                                  ),
+                                                  'PPP p',
+                                                )
                                               : '-'}
                                           </span>
                                         </p>
@@ -430,7 +482,11 @@ export default function SystemOutboxPage() {
                                     </p>
                                     <div className="p-4 bg-slate-900 rounded-xl overflow-hidden border border-slate-800 shadow-inner">
                                       <pre className="text-[10px] text-emerald-400 font-mono overflow-x-auto custom-scrollbar leading-relaxed">
-                                        {JSON.stringify(selectedEvent.payload, null, 2)}
+                                        {JSON.stringify(
+                                          selectedEvent.payload,
+                                          null,
+                                          2,
+                                        )}
                                       </pre>
                                     </div>
                                   </div>
@@ -444,7 +500,11 @@ export default function SystemOutboxPage() {
                                     </p>
                                     <div className="p-4 bg-slate-800 rounded-xl overflow-hidden border border-slate-700 shadow-inner">
                                       <pre className="text-[10px] text-indigo-300 font-mono overflow-x-auto custom-scrollbar leading-relaxed">
-                                        {JSON.stringify(selectedEvent.metadata, null, 2)}
+                                        {JSON.stringify(
+                                          selectedEvent.metadata,
+                                          null,
+                                          2,
+                                        )}
                                       </pre>
                                     </div>
                                   </div>
@@ -460,7 +520,9 @@ export default function SystemOutboxPage() {
                                 Close
                               </Button>
                               <Button
-                                onClick={() => selectedEvent && handleRetry(selectedEvent.id)}
+                                onClick={() =>
+                                  selectedEvent && handleRetry(selectedEvent.id)
+                                }
                                 className="h-9 px-4 rounded-xl text-xs font-bold bg-indigo-600 hover:bg-indigo-700 text-white shadow-lg shadow-indigo-100 transition-all active:scale-95"
                               >
                                 <RotateCcw className="w-3.5 h-3.5 mr-2" />
@@ -486,7 +548,9 @@ export default function SystemOutboxPage() {
         </p>
         <div className="flex items-center gap-2">
           <History className="w-3 h-3" />
-          <span className="text-[10px] font-medium italic">Streaming active...</span>
+          <span className="text-[10px] font-medium italic">
+            Streaming active...
+          </span>
         </div>
       </div>
     </div>

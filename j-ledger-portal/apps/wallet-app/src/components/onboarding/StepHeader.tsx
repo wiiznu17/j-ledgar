@@ -8,7 +8,11 @@ interface StepHeaderProps {
   onBack?: () => void;
 }
 
-export const StepHeader: React.FC<StepHeaderProps> = ({ title, subtitle, onBack }) => (
+export const StepHeader: React.FC<StepHeaderProps> = ({
+  title,
+  subtitle,
+  onBack,
+}) => (
   <View className="mb-10">
     {onBack && (
       <TouchableOpacity

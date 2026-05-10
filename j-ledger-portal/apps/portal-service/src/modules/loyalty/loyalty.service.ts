@@ -24,11 +24,18 @@ export class LoyaltyService {
     });
   }
 
-  async earnPoints(userId: string, amountThb: number, description: string, referenceId?: string) {
+  async earnPoints(
+    userId: string,
+    amountThb: number,
+    description: string,
+    referenceId?: string,
+  ) {
     const pointsToEarn = Math.floor(amountThb * this.POINTS_PER_THB);
     if (pointsToEarn <= 0) return null;
 
-    this.logger.log(`User ${userId} earned ${pointsToEarn} points for: ${description}`);
+    this.logger.log(
+      `User ${userId} earned ${pointsToEarn} points for: ${description}`,
+    );
 
     return this.prisma.$transaction(async (tx) => {
       // 1. Update or Create UserPoint balance
@@ -54,7 +61,9 @@ export class LoyaltyService {
           description,
           referenceId,
           // Points expire in 1 year from now
-          expiresAt: new Date(new Date().setFullYear(new Date().getFullYear() + 1)),
+          expiresAt: new Date(
+            new Date().setFullYear(new Date().getFullYear() + 1),
+          ),
         },
       });
 

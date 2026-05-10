@@ -12,7 +12,11 @@ interface DashboardWrapperProps {
   permissions: string[];
 }
 
-export function DashboardWrapper({ children, userRole, permissions }: DashboardWrapperProps) {
+export function DashboardWrapper({
+  children,
+  userRole,
+  permissions,
+}: DashboardWrapperProps) {
   const [isCollapsed, setIsCollapsed] = useState(false);
 
   return (

@@ -64,7 +64,11 @@ export class IntegrationController {
   @Post('topup')
   async topUp(@Req() req: any, @Body() body: TopUpBody) {
     const userId = req.user?.sub;
-    return this.integrationService.topUp(userId, body.amount, body.bankAccountId);
+    return this.integrationService.topUp(
+      userId,
+      body.amount,
+      body.bankAccountId,
+    );
   }
 
   @Post('topup/intent')

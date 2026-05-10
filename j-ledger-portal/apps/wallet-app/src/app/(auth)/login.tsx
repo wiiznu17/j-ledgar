@@ -53,7 +53,9 @@ export default function LoginScreen() {
   const router = useRouter();
   const setToken = useAuthStore((state) => state.setToken);
   const setUser = useAuthStore((state) => state.setUser);
-  const needsPinVerification = useAuthStore((state) => state.needsPinVerification);
+  const needsPinVerification = useAuthStore(
+    (state) => state.needsPinVerification,
+  );
   const unlockWithPin = useAuthStore((state) => state.unlockWithPin);
   const logout = useAuthStore((state) => state.logout);
 
@@ -96,7 +98,8 @@ export default function LoginScreen() {
   const formatPhone = (val: string) => {
     const cleaned = val.replace(/\D/g, '');
     if (cleaned.length <= 3) return cleaned;
-    if (cleaned.length <= 6) return `${cleaned.slice(0, 3)}-${cleaned.slice(3)}`;
+    if (cleaned.length <= 6)
+      return `${cleaned.slice(0, 3)}-${cleaned.slice(3)}`;
     return `${cleaned.slice(0, 3)}-${cleaned.slice(3, 6)}-${cleaned.slice(6, 10)}`;
   };
 
@@ -190,7 +193,9 @@ export default function LoginScreen() {
 
       // Save regToken if provided (for resuming onboarding)
       if (res.data.regToken) {
-        console.log('[Login] Saving regToken to resume onboarding (New Device)');
+        console.log(
+          '[Login] Saving regToken to resume onboarding (New Device)',
+        );
         const { useRegistrationStore } = await import('@/store/registration');
         await useRegistrationStore.getState().setRegToken(res.data.regToken);
       }
@@ -204,7 +209,9 @@ export default function LoginScreen() {
   };
 
   const handlePinSuccess = () => {
-    console.log('[Login] Authentication successful, relying on global guard for navigation...');
+    console.log(
+      '[Login] Authentication successful, relying on global guard for navigation...',
+    );
     setIsLoading(false);
     // Removed direct redirect to (tabs) to let RootLayout handle status-based navigation
   };
@@ -229,7 +236,13 @@ export default function LoginScreen() {
   return (
     <SafeAreaView className="flex-1 bg-transparent" edges={['top', 'bottom']}>
       <KeyboardAvoidingView
-        behavior={step === 'PIN' ? undefined : (Platform.OS === 'ios' ? 'padding' : 'height')}
+        behavior={
+          step === 'PIN'
+            ? undefined
+            : Platform.OS === 'ios'
+              ? 'padding'
+              : 'height'
+        }
         className="flex-1"
       >
         <ScrollView
@@ -339,7 +352,10 @@ export default function LoginScreen() {
                       >
                         Sign In
                       </Text>
-                      <ArrowRight size={18} color={!phone || !password ? '#9ca3af' : 'white'} />
+                      <ArrowRight
+                        size={18}
+                        color={!phone || !password ? '#9ca3af' : 'white'}
+                      />
                     </>
                   )}
                 </TouchableOpacity>
@@ -355,7 +371,9 @@ export default function LoginScreen() {
             >
               <Text className="text-sm font-manrope font-bold text-gray-400">
                 New to P-wallet?{' '}
-                <Text className="text-[#f48fb1] font-black underline">Create a Wallet</Text>
+                <Text className="text-[#f48fb1] font-black underline">
+                  Create a Wallet
+                </Text>
               </Text>
             </TouchableOpacity>
           </StepWrapper>
@@ -383,7 +401,9 @@ export default function LoginScreen() {
                 </Text>
                 <Text className="text-xs text-gray-400 font-manrope font-medium text-center leading-relaxed">
                   Enter the 6-digit code sent to{'\n'}
-                  <Text className="font-black text-gray-700">{formatPhone(phone)}</Text>
+                  <Text className="font-black text-gray-700">
+                    {formatPhone(phone)}
+                  </Text>
                 </Text>
               </View>
 
@@ -403,7 +423,9 @@ export default function LoginScreen() {
               {error ? (
                 <View className="flex-row items-center justify-center gap-2 mb-6">
                   <AlertCircle size={14} color="#ef4444" />
-                  <Text className="text-xs text-red-500 font-manrope font-bold">{error}</Text>
+                  <Text className="text-xs text-red-500 font-manrope font-bold">
+                    {error}
+                  </Text>
                 </View>
               ) : null}
 
@@ -452,8 +474,8 @@ export default function LoginScreen() {
                 headerCenterElement={
                   <View className="flex-row items-center gap-2">
                     <View className="w-8 h-8 bg-pink-50 rounded-lg items-center justify-center border border-pink-100 shadow-sm">
-                      <Image 
-                        source={require('../../../assets/images/icon.png')} 
+                      <Image
+                        source={require('../../../assets/images/icon.png')}
                         className="w-5 h-5"
                         resizeMode="contain"
                       />
@@ -476,13 +498,15 @@ export default function LoginScreen() {
                 <AlertCircle size={40} color="#ef4444" />
               </View>
               <Text className="text-5xl font-manrope font-black text-red-500 mb-4 tracking-tighter">
-                {Math.floor(lockoutTime / 60)}:{(lockoutTime % 60).toString().padStart(2, '0')}
+                {Math.floor(lockoutTime / 60)}:
+                {(lockoutTime % 60).toString().padStart(2, '0')}
               </Text>
               <Text className="text-2xl font-manrope font-black text-gray-800 mb-3 tracking-tight">
                 Account Locked
               </Text>
               <Text className="text-sm text-gray-500 font-manrope font-medium text-center leading-relaxed">
-                Too many failed attempts. For your security, please wait before trying again.
+                Too many failed attempts. For your security, please wait before
+                trying again.
               </Text>
             </View>
           </StepWrapper>

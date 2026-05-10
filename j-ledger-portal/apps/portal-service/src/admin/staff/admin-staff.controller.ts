@@ -35,7 +35,11 @@ export class AdminStaffController {
     @Query('role') role?: string,
     @Query('status') status?: string,
   ) {
-    return this.adminService.findAllStaff(Number(page), Number(limit), { search, role, status });
+    return this.adminService.findAllStaff(Number(page), Number(limit), {
+      search,
+      role,
+      status,
+    });
   }
 
   @Get('staff/:id')
@@ -111,14 +115,20 @@ export class AdminStaffController {
   @Post('staff/:staffId/roles/:roleId')
   @RequirePermissions(Permission.ASSIGN_STAFF_ROLES)
   @AuditLog(null as any, ResourceType.ADMIN_USER, 'Assigned role to staff')
-  async assignRole(@Param('staffId') staffId: string, @Param('roleId') roleId: string) {
+  async assignRole(
+    @Param('staffId') staffId: string,
+    @Param('roleId') roleId: string,
+  ) {
     return this.adminService.assignRole(staffId, roleId);
   }
 
   @Delete('staff/:staffId/roles/:roleId')
   @RequirePermissions(Permission.ASSIGN_STAFF_ROLES)
   @AuditLog(null as any, ResourceType.ADMIN_USER, 'Removed role from staff')
-  async removeRole(@Param('staffId') staffId: string, @Param('roleId') roleId: string) {
+  async removeRole(
+    @Param('staffId') staffId: string,
+    @Param('roleId') roleId: string,
+  ) {
     return this.adminService.removeRole(staffId, roleId);
   }
 
@@ -153,7 +163,10 @@ export class AdminStaffController {
   @Roles(AdminRole.SUPER_ADMIN)
   @RequirePermissions(Permission.MANAGE_SYSTEM_PERMISSIONS)
   @AuditLog(null as any, ResourceType.ROLE, 'Synchronized role permissions')
-  async syncPermissions(@Param('id') id: string, @Body() data: { permissionIds: string[] }) {
+  async syncPermissions(
+    @Param('id') id: string,
+    @Body() data: { permissionIds: string[] },
+  ) {
     return this.adminService.syncRolePermissions(id, data.permissionIds);
   }
 

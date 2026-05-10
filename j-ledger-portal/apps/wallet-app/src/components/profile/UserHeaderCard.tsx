@@ -11,7 +11,13 @@ export interface UserHeaderCardProps {
   kycTier: string;
 }
 
-export function UserHeaderCard({ nameTh, nameEn, avatar, phone, kycTier }: UserHeaderCardProps) {
+export function UserHeaderCard({
+  nameTh,
+  nameEn,
+  avatar,
+  phone,
+  kycTier,
+}: UserHeaderCardProps) {
   console.log('User header card data = ', nameTh);
   // Helper to mask phone: 0812345678 -> 081-XXX-XX78
   const maskPhone = (p: string) => {
@@ -38,7 +44,9 @@ export function UserHeaderCard({ nameTh, nameEn, avatar, phone, kycTier }: UserH
           {nameTh}
         </Text>
         <Text className="text-sm font-bold text-gray-400 mt-0.5">{nameEn}</Text>
-        <Text className="text-[11px] font-bold text-gray-400 mt-1">{maskPhone(phone)}</Text>
+        <Text className="text-[11px] font-bold text-gray-400 mt-1">
+          {maskPhone(phone)}
+        </Text>
       </View>
       <View className="flex-row items-center gap-1.5 mt-3 px-3 py-1.5 bg-green-50 rounded-full border border-green-100">
         <ShieldCheck size={14} color="#22c55e" />

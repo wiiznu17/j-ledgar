@@ -9,7 +9,9 @@ export class AuthTestHelper {
   ) {}
 
   async generateRegistrationToken(userId: string, state: string) {
-    const secret = this.configService.get<string>('CUSTOMER_REGISTRATION_SECRET');
+    const secret = this.configService.get<string>(
+      'CUSTOMER_REGISTRATION_SECRET',
+    );
     const payload = {
       sub: userId,
       state,

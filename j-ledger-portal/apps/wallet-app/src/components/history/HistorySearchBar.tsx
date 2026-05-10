@@ -7,7 +7,10 @@ interface HistorySearchBarProps {
   onChangeText: (text: string) => void;
 }
 
-export const HistorySearchBar = ({ value, onChangeText }: HistorySearchBarProps) => {
+export const HistorySearchBar = ({
+  value,
+  onChangeText,
+}: HistorySearchBarProps) => {
   return (
     <View className="px-5 pb-6">
       <View className="bg-white rounded-full px-4 py-3.5 flex-row items-center border border-gray-100 shadow-sm">

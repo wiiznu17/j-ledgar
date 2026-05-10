@@ -19,13 +19,20 @@ export const HistoryCategoryTabs = ({
       <ScrollView
         horizontal
         showsHorizontalScrollIndicator={false}
-        contentContainerStyle={{ paddingHorizontal: 20, paddingVertical: 1, gap: 10 }}
+        contentContainerStyle={{
+          paddingHorizontal: 20,
+          paddingVertical: 1,
+          gap: 10,
+        }}
       >
         {categories.map((cat) => {
           const Icon = cat.icon;
           const selected = selectedCategory === cat.key;
           return (
-            <TouchableOpacity key={cat.key} onPress={() => onSelectCategory(cat.key)}>
+            <TouchableOpacity
+              key={cat.key}
+              onPress={() => onSelectCategory(cat.key)}
+            >
               <MotiView
                 animate={{
                   backgroundColor: selected ? '#f48fb1' : '#ffffff',

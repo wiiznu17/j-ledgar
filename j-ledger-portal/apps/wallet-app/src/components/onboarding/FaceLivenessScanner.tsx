@@ -46,7 +46,10 @@ export const FaceLivenessScanner: React.FC<FaceLivenessScannerProps> = ({
         <Text className="text-white text-center mb-6">
           Camera permission is required for face verification
         </Text>
-        <TouchableOpacity onPress={requestPermission} className="bg-primary px-6 py-3 rounded-full">
+        <TouchableOpacity
+          onPress={requestPermission}
+          className="bg-primary px-6 py-3 rounded-full"
+        >
           <Text className="text-white font-bold">Grant Permission</Text>
         </TouchableOpacity>
       </View>
@@ -75,14 +78,20 @@ export const FaceLivenessScanner: React.FC<FaceLivenessScannerProps> = ({
 
   return (
     <View style={StyleSheet.absoluteFill} className="bg-black">
-      <CameraView ref={cameraRef} style={StyleSheet.absoluteFill} facing="front">
+      <CameraView
+        ref={cameraRef}
+        style={StyleSheet.absoluteFill}
+        facing="front"
+      >
         {/* Overlay with Circular Cutout */}
         <View style={styles.overlay}>
           <View style={styles.header}>
             <TouchableOpacity onPress={onCancel} className="p-2">
               <Ionicons name="close" size={32} color="white" />
             </TouchableOpacity>
-            <Text className="text-white text-xl font-bold ml-4">Face Verification</Text>
+            <Text className="text-white text-xl font-bold ml-4">
+              Face Verification
+            </Text>
           </View>
 
           <View style={styles.scannerContainer}>
@@ -142,9 +151,17 @@ export const FaceLivenessScanner: React.FC<FaceLivenessScannerProps> = ({
             <TouchableOpacity
               onPress={takePicture}
               disabled={processing}
-              style={[styles.captureButton, processing && { borderColor: 'gray' }]}
+              style={[
+                styles.captureButton,
+                processing && { borderColor: 'gray' },
+              ]}
             >
-              <View style={[styles.captureInner, processing && { backgroundColor: 'gray' }]} />
+              <View
+                style={[
+                  styles.captureInner,
+                  processing && { backgroundColor: 'gray' },
+                ]}
+              />
             </TouchableOpacity>
             <Text className="text-white/60 text-center mt-4">
               Ensure your face is well-lit and fits inside the circle
@@ -154,7 +171,12 @@ export const FaceLivenessScanner: React.FC<FaceLivenessScannerProps> = ({
 
         {/* Processing Overlay with Captured Face */}
         {processing && (
-          <View style={[StyleSheet.absoluteFill, { backgroundColor: 'black', zIndex: 999 }]}>
+          <View
+            style={[
+              StyleSheet.absoluteFill,
+              { backgroundColor: 'black', zIndex: 999 },
+            ]}
+          >
             {capturedUri && (
               <Image
                 source={{ uri: capturedUri }}
@@ -162,7 +184,11 @@ export const FaceLivenessScanner: React.FC<FaceLivenessScannerProps> = ({
                 resizeMode="cover"
               />
             )}
-            <BlurView intensity={20} style={StyleSheet.absoluteFill} tint="dark">
+            <BlurView
+              intensity={20}
+              style={StyleSheet.absoluteFill}
+              tint="dark"
+            >
               <View
                 style={[
                   StyleSheet.absoluteFill,
@@ -177,7 +203,9 @@ export const FaceLivenessScanner: React.FC<FaceLivenessScannerProps> = ({
                 <Text className="text-white font-manrope font-bold text-xl mt-6">
                   Verifying Identity...
                 </Text>
-                <Text className="text-white/60 text-sm mt-2">Please wait a moment</Text>
+                <Text className="text-white/60 text-sm mt-2">
+                  Please wait a moment
+                </Text>
               </View>
             </BlurView>
           </View>

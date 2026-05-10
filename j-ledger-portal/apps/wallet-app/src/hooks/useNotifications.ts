@@ -20,8 +20,12 @@ Notifications.setNotificationHandler({
 });
 
 export const useNotifications = () => {
-  const notificationListener = useRef<Notifications.Subscription | undefined>(undefined);
-  const responseListener = useRef<Notifications.Subscription | undefined>(undefined);
+  const notificationListener = useRef<Notifications.Subscription | undefined>(
+    undefined,
+  );
+  const responseListener = useRef<Notifications.Subscription | undefined>(
+    undefined,
+  );
   const isAuthenticated = useAuthStore((state) => state.isAuthenticated);
 
   useEffect(() => {
@@ -40,15 +44,20 @@ export const useNotifications = () => {
       if (typeof url === 'string') handleDeepLink(url);
     });
 
-    notificationListener.current = Notifications.addNotificationReceivedListener((notification) => {
-      console.log('[Push] Notification received in foreground:', notification);
-    });
+    notificationListener.current =
+      Notifications.addNotificationReceivedListener((notification) => {
+        console.log(
+          '[Push] Notification received in foreground:',
+          notification,
+        );
+      });
 
-    responseListener.current = Notifications.addNotificationResponseReceivedListener((response) => {
-      console.log('[Push] Notification tapped:', response);
-      const url = response.notification.request.content.data?.url;
-      if (typeof url === 'string') handleDeepLink(url);
-    });
+    responseListener.current =
+      Notifications.addNotificationResponseReceivedListener((response) => {
+        console.log('[Push] Notification tapped:', response);
+        const url = response.notification.request.content.data?.url;
+        if (typeof url === 'string') handleDeepLink(url);
+      });
 
     return () => {
       notificationListener.current?.remove();
@@ -91,7 +100,8 @@ async function registerForPushNotificationsAsync() {
   }
 
   if (Device.isDevice) {
-    const { status: existingStatus } = await Notifications.getPermissionsAsync();
+    const { status: existingStatus } =
+      await Notifications.getPermissionsAsync();
     let finalStatus = existingStatus;
     if (existingStatus !== 'granted') {
       const { status } = await Notifications.requestPermissionsAsync();
@@ -105,7 +115,8 @@ async function registerForPushNotificationsAsync() {
     // Learn more about projectId:
     // https://docs.expo.dev/push-notifications/push-notifications-setup/#configure-projectid
     const projectId =
-      Constants?.expoConfig?.extra?.eas?.projectId ?? Constants?.easConfig?.projectId;
+      Constants?.expoConfig?.extra?.eas?.projectId ??
+      Constants?.easConfig?.projectId;
 
     if (!projectId) {
       console.warn(

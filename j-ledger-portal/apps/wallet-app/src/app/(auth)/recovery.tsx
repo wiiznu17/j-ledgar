@@ -1,7 +1,13 @@
 import React, { useState } from 'react';
 import { View, Text, TouchableOpacity, ScrollView } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { ShieldAlert, Mail, Smartphone, ArrowRight, ChevronLeft } from 'lucide-react-native';
+import {
+  ShieldAlert,
+  Mail,
+  Smartphone,
+  ArrowRight,
+  ChevronLeft,
+} from 'lucide-react-native';
 import { useRouter } from 'expo-router';
 import { AppTextInput } from '@/components/common/AppTextInput';
 import { AppButton } from '@/components/common/AppButton';
@@ -31,7 +37,8 @@ export default function RecoveryScreen() {
               Account Recovery
             </Text>
             <Text className="text-sm font-manrope font-medium text-on-surfaceVariant text-center">
-              Enter your registered details below to reset your PIN or recover your account.
+              Enter your registered details below to reset your PIN or recover
+              your account.
             </Text>
           </View>
 
@@ -55,14 +62,17 @@ export default function RecoveryScreen() {
             <View className="pt-4">
               <AppButton
                 title="Send Recovery Code"
-                onPress={() => alert('Recovery code sent to your mobile number.')}
+                onPress={() =>
+                  alert('Recovery code sent to your mobile number.')
+                }
                 icon={<ArrowRight size={20} color="white" />}
               />
             </View>
 
             <TouchableOpacity className="mt-6 items-center">
               <Text className="text-sm font-manrope font-bold text-on-surfaceVariant/60">
-                Need more help? <Text className="text-primary">Contact Support</Text>
+                Need more help?{' '}
+                <Text className="text-primary">Contact Support</Text>
               </Text>
             </TouchableOpacity>
           </View>
@@ -72,7 +82,8 @@ export default function RecoveryScreen() {
               Security Tip
             </Text>
             <Text className="text-xs font-manrope font-medium text-on-surfaceVariant leading-relaxed text-center">
-              We will never ask for your recovery code or full National ID details over the phone.
+              We will never ask for your recovery code or full National ID
+              details over the phone.
             </Text>
           </GlassPanel>
         </ScrollView>

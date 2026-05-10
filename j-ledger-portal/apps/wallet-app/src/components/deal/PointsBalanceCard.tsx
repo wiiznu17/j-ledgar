@@ -7,7 +7,10 @@ interface PointsBalanceCardProps {
   onMyDealsPress: () => void;
 }
 
-export const PointsBalanceCard = ({ points, onMyDealsPress }: PointsBalanceCardProps) => {
+export const PointsBalanceCard = ({
+  points,
+  onMyDealsPress,
+}: PointsBalanceCardProps) => {
   return (
     <MotiView
       from={{ opacity: 0, translateY: 10 }}

@@ -12,7 +12,12 @@ import {
 } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
 import { transactionRequester } from '@/lib/requesters';
-import { ArrowUpRight, ArrowDownLeft, CreditCard, ExternalLink } from 'lucide-react';
+import {
+  ArrowUpRight,
+  ArrowDownLeft,
+  CreditCard,
+  ExternalLink,
+} from 'lucide-react';
 import { format } from 'date-fns';
 import Link from 'next/link';
 
@@ -25,7 +30,10 @@ export function RecentTransactions({ className }: { className?: string }) {
   useEffect(() => {
     const fetchTransactions = async () => {
       try {
-        const response = await transactionRequester.getHistory({ page: 0, limit: 10 });
+        const response = await transactionRequester.getHistory({
+          page: 0,
+          limit: 10,
+        });
         setTransactions(response.data || []);
       } catch (error) {
         console.error('Failed to fetch transactions', error);
@@ -39,14 +47,21 @@ export function RecentTransactions({ className }: { className?: string }) {
 
   if (loading) {
     return (
-      <Card className={`border-none shadow-sm ring-1 ring-slate-100 ${className}`}>
+      <Card
+        className={`border-none shadow-sm ring-1 ring-slate-100 ${className}`}
+      >
         <CardHeader>
-          <CardTitle className="text-sm font-bold">Recent Transactions</CardTitle>
+          <CardTitle className="text-sm font-bold">
+            Recent Transactions
+          </CardTitle>
         </CardHeader>
         <CardContent>
           <div className="space-y-4">
             {[1, 2, 3, 4, 5].map((i) => (
-              <div key={i} className="h-10 bg-slate-50 animate-pulse rounded-lg" />
+              <div
+                key={i}
+                className="h-10 bg-slate-50 animate-pulse rounded-lg"
+              />
             ))}
           </div>
         </CardContent>
@@ -112,7 +127,9 @@ export function RecentTransactions({ className }: { className?: string }) {
                           <ArrowUpRight size={14} />
                         )}
                       </div>
-                      <span className="text-xs font-bold text-slate-700">{tx.transactionType}</span>
+                      <span className="text-xs font-bold text-slate-700">
+                        {tx.transactionType}
+                      </span>
                     </div>
                   </TableCell>
                   <TableCell className="py-4">
@@ -120,7 +137,9 @@ export function RecentTransactions({ className }: { className?: string }) {
                       <span className="text-xs font-bold text-slate-800 truncate max-w-[150px]">
                         {tx.id}
                       </span>
-                      <span className="text-[10px] text-slate-400">{tx.currency} Wallet</span>
+                      <span className="text-[10px] text-slate-400">
+                        {tx.currency} Wallet
+                      </span>
                     </div>
                   </TableCell>
                   <TableCell className="py-4">

@@ -3,11 +3,20 @@ import { TriggerAuditButton } from '@/components/reconcile/TriggerAuditButton';
 import { ReconciliationReport, ReconciliationStatus } from '@repo/dto';
 import { adminApi } from '@/lib/admin-api';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { ShieldCheck, AlertCircle, Wallet, Landmark, Activity } from 'lucide-react';
+import {
+  ShieldCheck,
+  AlertCircle,
+  Wallet,
+  Landmark,
+  Activity,
+} from 'lucide-react';
 
 async function getReconciliationReports(): Promise<ReconciliationReport[]> {
   try {
-    const response = await adminApi.reconciliation.findAll({ page: 1, limit: 50 });
+    const response = await adminApi.reconciliation.findAll({
+      page: 1,
+      limit: 50,
+    });
     return response.data;
   } catch (error) {
     console.error('[RECONCILE] Fetch error:', error);
@@ -35,8 +44,8 @@ export default async function ReconcilePage() {
             System Reconciliation
           </h2>
           <p className="text-slate-400 mt-1 text-sm font-medium max-w-xl">
-            Mathematical auditing of the double-entry ledger. Ensuring that every digital Baht in
-            circulation is backed by real-world assets.
+            Mathematical auditing of the double-entry ledger. Ensuring that
+            every digital Baht in circulation is backed by real-world assets.
           </p>
         </div>
         <TriggerAuditButton />
@@ -57,9 +66,10 @@ export default async function ReconcilePage() {
             <div className="flex flex-col">
               <span className="text-2xl font-black text-slate-700 font-mono">
                 {latestReport
-                  ? new Intl.NumberFormat('th-TH', { style: 'currency', currency: 'THB' }).format(
-                      latestReport.totalSystemAssets,
-                    )
+                  ? new Intl.NumberFormat('th-TH', {
+                      style: 'currency',
+                      currency: 'THB',
+                    }).format(latestReport.totalSystemAssets)
                   : '฿0.00'}
               </span>
               <span className="text-[10px] text-slate-400 font-bold mt-1 uppercase tracking-tight">
@@ -82,9 +92,10 @@ export default async function ReconcilePage() {
             <div className="flex flex-col">
               <span className="text-2xl font-black text-slate-700 font-mono">
                 {latestReport
-                  ? new Intl.NumberFormat('th-TH', { style: 'currency', currency: 'THB' }).format(
-                      latestReport.totalUserLiabilities,
-                    )
+                  ? new Intl.NumberFormat('th-TH', {
+                      style: 'currency',
+                      currency: 'THB',
+                    }).format(latestReport.totalUserLiabilities)
                   : '฿0.00'}
               </span>
               <span className="text-[10px] text-slate-400 font-bold mt-1 uppercase tracking-tight">
@@ -133,7 +144,9 @@ export default async function ReconcilePage() {
           <div className="flex items-center justify-between">
             <h3 className="text-sm font-black text-slate-400 uppercase tracking-[0.2em] flex items-center gap-2">
               Historical Audit Logs
-              {reports.some((r) => r.status === ReconciliationStatus.DISCREPANCY) && (
+              {reports.some(
+                (r) => r.status === ReconciliationStatus.DISCREPANCY,
+              ) && (
                 <span className="flex h-2 w-2 rounded-full bg-rose-500 animate-pulse" />
               )}
             </h3>
@@ -150,8 +163,8 @@ export default async function ReconcilePage() {
               Mathematical Core Invariant
             </h4>
             <p className="text-slate-400 leading-relaxed text-sm relative z-10">
-              The system enforces financial integrity by verifying the following invariant at each
-              audit point:
+              The system enforces financial integrity by verifying the following
+              invariant at each audit point:
               <span className="block font-mono mt-4 bg-slate-800 p-4 rounded-2xl border border-slate-700 text-indigo-400 text-xs">
                 System Assets - Sum(User Liabilities) == 0
               </span>
@@ -161,10 +174,13 @@ export default async function ReconcilePage() {
             </p>
           </div>
           <div className="p-8 bg-white rounded-[2rem] border border-slate-100 shadow-sm">
-            <h4 className="font-bold text-slate-800 text-lg mb-3">Nightly Automation</h4>
+            <h4 className="font-bold text-slate-800 text-lg mb-3">
+              Nightly Automation
+            </h4>
             <p className="text-slate-500 leading-relaxed text-sm">
-              While manual audits can be triggered at any time for real-time verification, the
-              system automatically performs this reconciliation nightly at{' '}
+              While manual audits can be triggered at any time for real-time
+              verification, the system automatically performs this
+              reconciliation nightly at{' '}
               <span className="font-black text-slate-700 underline decoration-indigo-200 decoration-2">
                 00:00:00 UTC
               </span>
@@ -173,8 +189,9 @@ export default async function ReconcilePage() {
             <div className="mt-6 flex items-start gap-3 p-4 bg-amber-50 rounded-2xl border border-amber-100">
               <AlertCircle className="w-5 h-5 text-amber-500 shrink-0" />
               <p className="text-[11px] text-amber-700 font-medium">
-                If a discrepancy is detected, the system will automatically notify the treasury and
-                security teams via the established incident response channels.
+                If a discrepancy is detected, the system will automatically
+                notify the treasury and security teams via the established
+                incident response channels.
               </p>
             </div>
           </div>

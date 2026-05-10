@@ -10,13 +10,23 @@ import {
   Platform,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { X, Image as ImageIcon, QrCode, Lightbulb, AlertCircle } from 'lucide-react-native';
+import {
+  X,
+  Image as ImageIcon,
+  QrCode,
+  Lightbulb,
+  AlertCircle,
+} from 'lucide-react-native';
 import { useRouter } from 'expo-router';
 import { MotiView, AnimatePresence } from 'moti';
 import { CameraView, useCameraPermissions, Camera } from 'expo-camera';
 import * as ImagePicker from 'expo-image-picker';
 import * as Haptics from 'expo-haptics';
-import { validateAndParseQR, logQRScan, getErrorMessage } from '../../lib/qr-validation';
+import {
+  validateAndParseQR,
+  logQRScan,
+  getErrorMessage,
+} from '../../lib/qr-validation';
 import { NotificationService } from '../../lib/notification-service';
 import { ParsedQR } from '../../lib/qr-parser';
 
@@ -27,7 +37,10 @@ const SCAN_FRAME_SIZE = width * 0.72;
 // Mock QR codes for testing on simulator - Only JLEDGER format supported
 const MOCK_QR_CODES = [
   { label: 'Internal (no amount): 0812345678', data: 'JLEDGER:0812345678' },
-  { label: 'Internal (+500 THB): 0987654321', data: 'JLEDGER:0987654321:500.00' },
+  {
+    label: 'Internal (+500 THB): 0987654321',
+    data: 'JLEDGER:0987654321:500.00',
+  },
   { label: 'Real Account: 0000000000', data: 'JLEDGER:0000000000' },
   { label: 'Invalid Format Test', data: 'INVALID_QR_CODE_TEST' },
 ];
@@ -134,7 +147,10 @@ export default function ScanScreen() {
       setIsProcessing(false);
 
       // Send error notification
-      NotificationService.info('Scan Error', 'An unexpected error occurred during scanning');
+      NotificationService.info(
+        'Scan Error',
+        'An unexpected error occurred during scanning',
+      );
 
       Alert.alert('Error', 'An unexpected error occurred. Please try again.', [
         {
@@ -181,7 +197,11 @@ export default function ScanScreen() {
         } catch (error) {
           setIsProcessing(false);
           console.error('[Gallery] Error processing image:', error);
-          Alert.alert('Error', 'Failed to process the image. Please try again.', [{ text: 'OK' }]);
+          Alert.alert(
+            'Error',
+            'Failed to process the image. Please try again.',
+            [{ text: 'OK' }],
+          );
         }
       }
     } catch (error) {
@@ -208,19 +228,24 @@ export default function ScanScreen() {
           Camera Access
         </Text>
         <Text className="text-gray-500 text-center text-sm font-manrope font-bold mb-10 leading-relaxed">
-          We need access to your camera to scan QR codes for lightning-fast payments.
+          We need access to your camera to scan QR codes for lightning-fast
+          payments.
         </Text>
         <TouchableOpacity
           onPress={requestPermission}
           className="w-full bg-[#f48fb1] h-16 rounded-2xl items-center justify-center shadow-lg shadow-pink-200 active:scale-95"
         >
-          <Text className="text-white font-manrope font-black text-base">Grant Permission</Text>
+          <Text className="text-white font-manrope font-black text-base">
+            Grant Permission
+          </Text>
         </TouchableOpacity>
         <TouchableOpacity
           onPress={() => router.back()}
           className="w-full h-14 mt-4 items-center justify-center active:scale-95"
         >
-          <Text className="text-gray-400 font-manrope font-black text-sm">Cancel</Text>
+          <Text className="text-gray-400 font-manrope font-black text-sm">
+            Cancel
+          </Text>
         </TouchableOpacity>
       </View>
     );
@@ -250,7 +275,10 @@ export default function ScanScreen() {
       />
 
       {/* 2. Mask Layer (ครอบสีดำ เจาะรูกลางจอ) */}
-      <View style={[StyleSheet.absoluteFillObject, { zIndex: 10 }]} pointerEvents="none">
+      <View
+        style={[StyleSheet.absoluteFillObject, { zIndex: 10 }]}
+        pointerEvents="none"
+      >
         {/* Top Mask */}
         <View
           style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.65)' }}
@@ -274,7 +302,13 @@ export default function ScanScreen() {
         <View className="flex-row" style={{ height: SCAN_FRAME_SIZE }}>
           <View style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.65)' }} />
 
-          <View style={{ width: SCAN_FRAME_SIZE, height: SCAN_FRAME_SIZE, position: 'relative' }}>
+          <View
+            style={{
+              width: SCAN_FRAME_SIZE,
+              height: SCAN_FRAME_SIZE,
+              position: 'relative',
+            }}
+          >
             {/* กรอบมุมทั้ง 4 ด้าน */}
             <View className="absolute top-0 left-0 w-12 h-12 border-t-[5px] border-l-[5px] border-[#f48fb1] rounded-tl-3xl" />
             <View className="absolute top-0 right-0 w-12 h-12 border-t-[5px] border-r-[5px] border-[#f48fb1] rounded-tr-3xl" />
@@ -312,7 +346,10 @@ export default function ScanScreen() {
       </View>
 
       {/* 3. Floating Controls Layer (UI ปุ่มกด ลอยเหนือกล้องและ Mask) */}
-      <View style={[StyleSheet.absoluteFillObject, { zIndex: 20 }]} pointerEvents="box-none">
+      <View
+        style={[StyleSheet.absoluteFillObject, { zIndex: 20 }]}
+        pointerEvents="box-none"
+      >
         {/* Top Header Buttons (ดันลงมาหลบขอบจอบน) */}
         <View
           className="absolute top-0 w-full flex-row justify-between px-6"

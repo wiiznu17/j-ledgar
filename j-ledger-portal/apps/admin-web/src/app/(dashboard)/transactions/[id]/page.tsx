@@ -1,7 +1,13 @@
 'use client';
 
 import { Badge } from '@/components/ui/badge';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from '@/components/ui/card';
 import {
   Table,
   TableBody,
@@ -14,7 +20,11 @@ import { useParams } from 'next/navigation';
 import { useEffect, useState } from 'react';
 import { toast } from 'sonner';
 import { transactionRequester } from '@/lib/requesters';
-import { TransactionDetailsDto, TransactionStatus, LedgerEntryType } from '@repo/dto';
+import {
+  TransactionDetailsDto,
+  TransactionStatus,
+  LedgerEntryType,
+} from '@repo/dto';
 
 export default function TransactionDetailsPage() {
   const params = useParams();
@@ -39,14 +49,18 @@ export default function TransactionDetailsPage() {
 
   if (!data) {
     return (
-      <div className="p-8 text-muted-foreground animate-pulse">Loading transaction details...</div>
+      <div className="p-8 text-muted-foreground animate-pulse">
+        Loading transaction details...
+      </div>
     );
   }
 
   return (
     <div className="space-y-6">
       <div className="flex items-center gap-4">
-        <h2 className="text-3xl font-bold tracking-tight">Transaction Details</h2>
+        <h2 className="text-3xl font-bold tracking-tight">
+          Transaction Details
+        </h2>
         <Badge
           variant="outline"
           className={
@@ -73,7 +87,9 @@ export default function TransactionDetailsPage() {
             </div>
             <div>
               <p className="text-sm text-muted-foreground">Type</p>
-              <p className="font-semibold">{data.transaction.transactionType}</p>
+              <p className="font-semibold">
+                {data.transaction.transactionType}
+              </p>
             </div>
             <div>
               <p className="text-sm text-muted-foreground">Timestamp</p>
@@ -91,7 +107,9 @@ export default function TransactionDetailsPage() {
         <Card className="border-border shadow-sm">
           <CardHeader>
             <CardTitle>Double-Entry Ledger Records</CardTitle>
-            <CardDescription>System integrity verification map.</CardDescription>
+            <CardDescription>
+              System integrity verification map.
+            </CardDescription>
           </CardHeader>
           <CardContent>
             <div className="border rounded-lg overflow-hidden border-border bg-white">
@@ -109,7 +127,9 @@ export default function TransactionDetailsPage() {
                       <TableCell>
                         <Badge
                           variant={
-                            entry.entryType === LedgerEntryType.CREDIT ? 'default' : 'destructive'
+                            entry.entryType === LedgerEntryType.CREDIT
+                              ? 'default'
+                              : 'destructive'
                           }
                           className={
                             entry.entryType === LedgerEntryType.CREDIT
@@ -130,7 +150,10 @@ export default function TransactionDetailsPage() {
                   ))}
                   {data.ledgerEntries.length === 0 && (
                     <TableRow>
-                      <TableCell colSpan={3} className="h-24 text-center text-muted-foreground">
+                      <TableCell
+                        colSpan={3}
+                        className="h-24 text-center text-muted-foreground"
+                      >
                         No ledger entries recorded.
                       </TableCell>
                     </TableRow>

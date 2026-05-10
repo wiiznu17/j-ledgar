@@ -24,7 +24,11 @@ interface IDCardScannerProps {
   isLoading?: boolean; // เพิ่ม prop นี้เพื่อให้หน้าบ้านควบคุมการหมุนได้
 }
 
-export const IDCardScanner: React.FC<IDCardScannerProps> = ({ onCapture, onClose, isLoading }) => {
+export const IDCardScanner: React.FC<IDCardScannerProps> = ({
+  onCapture,
+  onClose,
+  isLoading,
+}) => {
   const [permission, requestPermission] = useCameraPermissions();
   const [isCapturing, setIsCapturing] = useState(false); // เปลี่ยนชื่อเพื่อไม่ให้สับสน
   const [capturedUri, setCapturedUri] = useState<string | null>(null);
@@ -36,7 +40,9 @@ export const IDCardScanner: React.FC<IDCardScannerProps> = ({ onCapture, onClose
   if (!permission.granted) {
     return (
       <View style={styles.permissionContainer}>
-        <Text style={styles.text}>ต้องการสิทธิ์การเข้าถึงกล้องเพื่อถ่ายรูปบัตร</Text>
+        <Text style={styles.text}>
+          ต้องการสิทธิ์การเข้าถึงกล้องเพื่อถ่ายรูปบัตร
+        </Text>
         <TouchableOpacity style={styles.button} onPress={requestPermission}>
           <Text style={styles.buttonText}>อนุญาตการเข้าถึง</Text>
         </TouchableOpacity>
@@ -143,7 +149,9 @@ export const IDCardScanner: React.FC<IDCardScannerProps> = ({ onCapture, onClose
           </View>
           <View style={styles.bottomOverlay}>
             <Text style={styles.guideText}>
-              {processing ? 'กำลังประมวลผลรูปภาพ...' : 'วางบัตรประชาชนให้อยู่ในกรอบ'}
+              {processing
+                ? 'กำลังประมวลผลรูปภาพ...'
+                : 'วางบัตรประชาชนให้อยู่ในกรอบ'}
             </Text>
           </View>
         </View>
@@ -168,15 +176,28 @@ export const IDCardScanner: React.FC<IDCardScannerProps> = ({ onCapture, onClose
         )}
       </CameraView>
       <View style={styles.controls}>
-        <TouchableOpacity onPress={onClose} style={styles.closeButton} disabled={processing}>
-          <Ionicons name="close" size={32} color={processing ? 'gray' : 'white'} />
+        <TouchableOpacity
+          onPress={onClose}
+          style={styles.closeButton}
+          disabled={processing}
+        >
+          <Ionicons
+            name="close"
+            size={32}
+            color={processing ? 'gray' : 'white'}
+          />
         </TouchableOpacity>
         <TouchableOpacity
           onPress={takePicture}
           style={[styles.captureButton, processing && { borderColor: 'gray' }]}
           disabled={processing}
         >
-          <View style={[styles.captureInner, processing && { backgroundColor: 'gray' }]} />
+          <View
+            style={[
+              styles.captureInner,
+              processing && { backgroundColor: 'gray' },
+            ]}
+          />
         </TouchableOpacity>
         <View style={{ width: 32 }} />
       </View>
@@ -214,7 +235,12 @@ const styles = StyleSheet.create({
   topRight: { top: 0, right: 0, borderLeftWidth: 0, borderBottomWidth: 0 },
   bottomLeft: { bottom: 0, left: 0, borderRightWidth: 0, borderTopWidth: 0 },
   bottomRight: { bottom: 0, right: 0, borderLeftWidth: 0, borderTopWidth: 0 },
-  guideText: { color: 'white', fontSize: 16, fontWeight: 'bold', textAlign: 'center' },
+  guideText: {
+    color: 'white',
+    fontSize: 16,
+    fontWeight: 'bold',
+    textAlign: 'center',
+  },
   controls: {
     height: 120,
     flexDirection: 'row',
@@ -238,7 +264,12 @@ const styles = StyleSheet.create({
     backgroundColor: 'white',
   },
   closeButton: { padding: 10 },
-  permissionContainer: { flex: 1, justifyContent: 'center', alignItems: 'center', padding: 20 },
+  permissionContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 20,
+  },
   text: { fontSize: 16, textAlign: 'center', marginBottom: 20 },
   button: { backgroundColor: '#2196F3', padding: 15, borderRadius: 10 },
   buttonText: { color: 'white', fontWeight: 'bold' },
