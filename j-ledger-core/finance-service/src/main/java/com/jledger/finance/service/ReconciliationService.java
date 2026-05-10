@@ -1,7 +1,7 @@
 package com.jledger.finance.service;
 
-import com.jledger.finance.domain.Account;
-import com.jledger.finance.domain.ReconciliationReport;
+import com.jledger.finance.domain.entity.Account;
+import com.jledger.finance.domain.entity.ReconciliationReport;
 import com.jledger.finance.repository.AccountRepository;
 import com.jledger.finance.repository.ReconciliationReportRepository;
 import lombok.RequiredArgsConstructor;

@@ -1,14 +1,13 @@
-package com.jledger.finance.domain;
+package com.jledger.finance.domain.entity;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
-import jakarta.persistence.EnumType;
-import jakarta.persistence.Enumerated;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.Table;
 import java.math.BigDecimal;
+import java.time.LocalDate;
 import java.time.ZonedDateTime;
 import java.util.UUID;
 import lombok.AllArgsConstructor;
@@ -17,51 +16,36 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 import org.hibernate.annotations.CreationTimestamp;
-import org.hibernate.annotations.UpdateTimestamp;
 
 @Entity
-@Table(name = "payment_transactions", schema = "finance")
+@Table(name = "reconciliation_reports", schema = "finance")
 @Getter
 @Setter
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-public class PaymentTransaction {
-
-    public enum Type {
-        TOPUP, WITHDRAW
-    }
-
-    public enum Status {
-        PENDING, PROCESSING, SUCCESS, FAILED
-    }
+public class ReconciliationReport {
 
     @Id
     @GeneratedValue(strategy = GenerationType.UUID)
     private UUID id;
 
-    @Column(name = "account_id", nullable = false)
-    private UUID accountId;
+    @Column(name = "report_date", nullable = false, unique = true)
+    private LocalDate reportDate;
 
-    @Column(name = "reference_id", nullable = false, unique = true, length = 100)
-    private String referenceId;
+    @Column(name = "total_system_assets", nullable = false, precision = 20, scale = 4)
+    private BigDecimal totalSystemAssets;
 
-    @Enumerated(EnumType.STRING)
-    @Column(nullable = false, length = 20)
-    private Type type;
+    @Column(name = "total_user_liabilities", nullable = false, precision = 20, scale = 4)
+    private BigDecimal totalUserLiabilities;
 
     @Column(nullable = false, precision = 20, scale = 4)
-    private BigDecimal amount;
+    private BigDecimal discrepancy;
 
-    @Enumerated(EnumType.STRING)
     @Column(nullable = false, length = 20)
-    private Status status;
+    private String status; // MATCHED, DISCREPANCY
 
     @CreationTimestamp
     @Column(name = "created_at", updatable = false)
     private ZonedDateTime createdAt;
-
-    @UpdateTimestamp
-    @Column(name = "updated_at")
-    private ZonedDateTime updatedAt;
 }

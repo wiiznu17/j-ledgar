@@ -1,8 +1,10 @@
 package com.jledger.finance.repository;
 
-import com.jledger.finance.domain.RewardAccount;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
+
+import com.jledger.finance.domain.entity.RewardAccount;
+
 import java.util.UUID;
 
 @Repository

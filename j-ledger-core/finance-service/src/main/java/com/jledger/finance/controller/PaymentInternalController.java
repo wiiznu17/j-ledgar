@@ -1,6 +1,6 @@
 package com.jledger.finance.controller;
 
-import com.jledger.finance.domain.PaymentTransaction;
+import com.jledger.finance.domain.entity.PaymentTransaction;
 import com.jledger.finance.dto.PaymentCreateRequest;
 import com.jledger.finance.service.PaymentService;
 import lombok.RequiredArgsConstructor;

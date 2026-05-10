@@ -1,6 +1,6 @@
 package com.jledger.finance.controller;
 
-import com.jledger.finance.domain.LedgerEntry;
+import com.jledger.finance.domain.entity.LedgerEntry;
 import com.jledger.finance.repository.LedgerEntryRepository;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;

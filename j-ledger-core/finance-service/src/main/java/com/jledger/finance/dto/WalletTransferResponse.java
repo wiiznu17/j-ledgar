@@ -1,11 +1,12 @@
 package com.jledger.finance.dto;
 
-import com.jledger.finance.domain.Transaction;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
+
+import com.jledger.finance.domain.entity.Transaction;
 
 /**
  * Wallet Transfer Response DTO

@@ -2,7 +2,8 @@ package com.jledger.finance.service;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.jledger.finance.domain.Transaction;
+import com.jledger.finance.domain.entity.Transaction;
+
 import java.util.Optional;
 import java.util.concurrent.TimeUnit;
 import org.redisson.api.RBucket;

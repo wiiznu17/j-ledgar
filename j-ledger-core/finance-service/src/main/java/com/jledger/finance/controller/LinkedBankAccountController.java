@@ -1,6 +1,6 @@
 package com.jledger.finance.controller;
 
-import com.jledger.finance.domain.LinkedBankAccount;
+import com.jledger.finance.domain.entity.LinkedBankAccount;
 import com.jledger.finance.service.WalletService;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;

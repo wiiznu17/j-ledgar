@@ -1,7 +1,7 @@
 package com.jledger.finance.controller;
 
-import com.jledger.finance.domain.SuspiciousActivity;
 import com.jledger.finance.domain.SuspiciousActivityStatus;
+import com.jledger.finance.domain.entity.SuspiciousActivity;
 import com.jledger.finance.service.AmlMonitoringService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;

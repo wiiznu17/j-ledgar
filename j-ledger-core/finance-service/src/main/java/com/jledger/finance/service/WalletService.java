@@ -1,19 +1,20 @@
 package com.jledger.finance.service;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.jledger.finance.domain.LinkedBankAccount;
-import com.jledger.finance.domain.Transaction;
 import com.jledger.finance.domain.TransactionStatus;
 import com.jledger.finance.domain.TransactionType;
-import com.jledger.finance.domain.Wallet;
-import com.jledger.finance.domain.IntegrationOutbox;
+import com.jledger.finance.domain.entity.Account;
+import com.jledger.finance.domain.entity.IntegrationOutbox;
+import com.jledger.finance.domain.entity.LinkedBankAccount;
+import com.jledger.finance.domain.entity.Transaction;
+import com.jledger.finance.domain.entity.Wallet;
 import com.jledger.finance.domain.NotificationEventType;
 import com.jledger.finance.repository.IntegrationOutboxRepository;
 import com.jledger.finance.repository.LinkedBankAccountRepository;
 import com.jledger.finance.repository.TransactionRepository;
 import com.jledger.finance.repository.WalletRepository;
 import com.jledger.finance.repository.AccountRepository;
-import com.jledger.finance.domain.Account;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;

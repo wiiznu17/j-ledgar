@@ -1,7 +1,9 @@
 package com.jledger.finance.repository;
 
-import com.jledger.finance.domain.ReconciliationReport;
 import org.springframework.data.jpa.repository.JpaRepository;
+
+import com.jledger.finance.domain.entity.ReconciliationReport;
+
 import java.time.LocalDate;
 import java.util.Optional;
 import java.util.UUID;

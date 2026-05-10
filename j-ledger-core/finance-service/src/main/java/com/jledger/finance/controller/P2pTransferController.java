@@ -85,7 +85,7 @@ public class P2pTransferController {
 
         try {
             // Execute transfer with double-entry ledger
-            com.jledger.finance.domain.Transaction transaction = transferService.executeTransfer(
+            com.jledger.finance.domain.entity.Transaction transaction = transferService.executeTransfer(
                     request.getIdempotencyKey(),
                     request.toDomain()
             );
@@ -108,7 +108,7 @@ public class P2pTransferController {
     ) {
         log.info("Get transfer status requested for transactionId={}", transactionId);
 
-        Optional<com.jledger.finance.domain.Transaction> transaction = transactionRepository.findByTransactionId(transactionId);
+        Optional<com.jledger.finance.domain.entity.Transaction> transaction = transactionRepository.findByTransactionId(transactionId);
 
         return transaction.map(t -> ResponseEntity.ok(new WalletTransferResponse(t)))
                 .orElse(ResponseEntity.notFound().build());

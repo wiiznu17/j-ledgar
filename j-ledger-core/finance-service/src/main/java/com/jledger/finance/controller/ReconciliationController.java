@@ -1,6 +1,6 @@
 package com.jledger.finance.controller;
 
-import com.jledger.finance.domain.ReconciliationReport;
+import com.jledger.finance.domain.entity.ReconciliationReport;
 import com.jledger.finance.service.ReconciliationService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;

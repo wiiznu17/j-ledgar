@@ -1,7 +1,8 @@
 package com.jledger.finance.repository;
 
-import com.jledger.finance.domain.SuspiciousActivity;
 import com.jledger.finance.domain.SuspiciousActivityStatus;
+import com.jledger.finance.domain.entity.SuspiciousActivity;
+
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.UUID;

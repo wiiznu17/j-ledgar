@@ -1,6 +1,6 @@
 package com.jledger.finance.service;
 
-import com.jledger.finance.domain.LedgerEntry;
+import com.jledger.finance.domain.entity.LedgerEntry;
 import com.jledger.finance.repository.LedgerEntryRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;

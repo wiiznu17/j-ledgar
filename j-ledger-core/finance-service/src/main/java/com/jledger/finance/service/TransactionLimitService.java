@@ -1,7 +1,7 @@
 package com.jledger.finance.service;
 
-import com.jledger.finance.domain.TransactionLimit;
 import com.jledger.finance.domain.TransactionLimitType;
+import com.jledger.finance.domain.entity.TransactionLimit;
 import com.jledger.finance.exception.ConflictException;
 import com.jledger.finance.repository.TransactionLimitRepository;
 import com.jledger.finance.repository.TransactionRepository;

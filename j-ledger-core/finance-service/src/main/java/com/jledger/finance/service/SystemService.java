@@ -1,7 +1,7 @@
 package com.jledger.finance.service;
 
-import com.jledger.finance.domain.IntegrationOutbox;
-import com.jledger.finance.domain.SystemSettings;
+import com.jledger.finance.domain.entity.IntegrationOutbox;
+import com.jledger.finance.domain.entity.SystemSettings;
 import com.jledger.finance.dto.ReconciliationSummary;
 import com.jledger.finance.repository.AccountRepository;
 import com.jledger.finance.repository.LedgerEntryRepository;

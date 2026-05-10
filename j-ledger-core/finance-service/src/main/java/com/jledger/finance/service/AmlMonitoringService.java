@@ -1,9 +1,9 @@
 package com.jledger.finance.service;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.jledger.finance.domain.SuspiciousActivity;
 import com.jledger.finance.domain.SuspiciousActivityStatus;
 import com.jledger.finance.domain.SuspiciousActivityType;
+import com.jledger.finance.domain.entity.SuspiciousActivity;
 import com.jledger.finance.repository.TransactionRepository;
 import com.jledger.finance.repository.SuspiciousActivityRepository;
 import java.math.BigDecimal;
