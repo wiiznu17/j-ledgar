@@ -1,7 +1,7 @@
 package com.jledger.finance.repository;
 
-import com.jledger.finance.domain.TransactionLimitType;
 import com.jledger.finance.domain.entity.TransactionLimit;
+import com.jledger.finance.domain.enums.TransactionLimitType;
 
 import java.util.List;
 import java.util.Optional;

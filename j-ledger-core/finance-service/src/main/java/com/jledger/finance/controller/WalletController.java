@@ -1,8 +1,8 @@
 package com.jledger.finance.controller;
 
-import com.jledger.finance.domain.TransactionType;
 import com.jledger.finance.domain.entity.Transaction;
 import com.jledger.finance.domain.entity.Wallet;
+import com.jledger.finance.domain.enums.TransactionType;
 import com.jledger.finance.service.WalletService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;

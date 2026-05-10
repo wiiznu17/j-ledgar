@@ -1,8 +1,8 @@
 package com.jledger.finance.repository;
 
-import com.jledger.finance.domain.TransactionStatus;
-import com.jledger.finance.domain.TransactionType;
 import com.jledger.finance.domain.entity.Transaction;
+import com.jledger.finance.domain.enums.TransactionStatus;
+import com.jledger.finance.domain.enums.TransactionType;
 
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;

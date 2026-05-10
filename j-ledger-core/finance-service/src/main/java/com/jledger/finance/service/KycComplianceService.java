@@ -1,7 +1,7 @@
 package com.jledger.finance.service;
 
-import com.jledger.finance.domain.KycStatus;
 import com.jledger.finance.domain.entity.Account;
+import com.jledger.finance.domain.enums.KycStatus;
 import com.jledger.finance.exception.ConflictException;
 import com.jledger.finance.repository.AccountRepository;
 import java.time.ZonedDateTime;

@@ -1,8 +1,8 @@
 package com.jledger.finance.controller;
 
-import com.jledger.finance.domain.TransactionStatus;
-import com.jledger.finance.domain.TransactionType;
 import com.jledger.finance.domain.entity.Transaction;
+import com.jledger.finance.domain.enums.TransactionStatus;
+import com.jledger.finance.domain.enums.TransactionType;
 import com.jledger.finance.repository.TransactionRepository;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
