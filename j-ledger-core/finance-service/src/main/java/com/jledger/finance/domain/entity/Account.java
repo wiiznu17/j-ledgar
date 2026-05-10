@@ -20,7 +20,7 @@ import lombok.Setter;
 import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.UpdateTimestamp;
 
-import com.jledger.finance.domain.KycStatus;
+import com.jledger.finance.domain.enums.KycStatus;
 
 @Entity
 @Table(name = "accounts", schema = "finance")

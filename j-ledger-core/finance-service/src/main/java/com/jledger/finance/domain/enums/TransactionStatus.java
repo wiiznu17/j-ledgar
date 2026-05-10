@@ -1,4 +1,4 @@
-package com.jledger.finance.domain;
+package com.jledger.finance.domain.enums;
 
 public enum TransactionStatus {
     PENDING,

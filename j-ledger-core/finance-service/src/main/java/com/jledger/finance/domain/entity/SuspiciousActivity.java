@@ -12,8 +12,8 @@ import lombok.Setter;
 import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.UpdateTimestamp;
 
-import com.jledger.finance.domain.SuspiciousActivityStatus;
-import com.jledger.finance.domain.SuspiciousActivityType;
+import com.jledger.finance.domain.enums.SuspiciousActivityStatus;
+import com.jledger.finance.domain.enums.SuspiciousActivityType;
 
 @Entity
 @Table(name = "suspicious_activities", schema = "finance")

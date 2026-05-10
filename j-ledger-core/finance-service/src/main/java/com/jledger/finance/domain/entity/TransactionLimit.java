@@ -12,7 +12,7 @@ import lombok.Setter;
 import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.UpdateTimestamp;
 
-import com.jledger.finance.domain.TransactionLimitType;
+import com.jledger.finance.domain.enums.TransactionLimitType;
 
 @Entity
 @Table(name = "transaction_limits", schema = "finance")

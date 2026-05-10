@@ -1,6 +1,6 @@
 package com.jledger.finance.controller;
 
-import com.jledger.finance.domain.KycStatus;
+import com.jledger.finance.domain.enums.KycStatus;
 import com.jledger.finance.service.KycComplianceService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
