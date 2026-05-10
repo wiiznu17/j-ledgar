@@ -334,35 +334,28 @@ export default function ReviewTransferScreen() {
             from={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            className="absolute inset-0 bg-black/40 items-end justify-end z-40"
+            className="absolute inset-0 bg-white items-center justify-center z-40"
           >
-            <MotiView
-              from={{ translateY: 200 }}
-              animate={{ translateY: 0 }}
-              exit={{ translateY: 200 }}
-              className="w-full bg-white rounded-t-[2.5rem] p-6 pt-8 max-h-[80%]"
-            >
-              <ScrollView showsVerticalScrollIndicator={false}>
-                {showBiometric && biometricAvailable && biometricEnabled && (
-                  <BiometricAuth
-                    onSuccess={handleBiometricSuccess}
-                    onFailure={handleBiometricFailure}
-                    onUsePIN={() => {
-                      setShowBiometric(false);
-                      setShowPIN(true);
-                    }}
-                  />
-                )}
+            {showBiometric && biometricAvailable && biometricEnabled && (
+              <View className="w-full bg-white rounded-t-[2.5rem] p-6 pt-8">
+                <BiometricAuth
+                  onSuccess={handleBiometricSuccess}
+                  onFailure={handleBiometricFailure}
+                  onUsePIN={() => {
+                    setShowBiometric(false);
+                    setShowPIN(true);
+                  }}
+                />
+              </View>
+            )}
 
-                {showPIN && (
-                  <PINVerification
-                    onSuccess={handlePINSuccess}
-                    onFailure={handlePINFailure}
-                    onCancel={handleAuthCancel}
-                  />
-                )}
-              </ScrollView>
-            </MotiView>
+            {showPIN && (
+              <PINVerification
+                onSuccess={handlePINSuccess}
+                onFailure={handlePINFailure}
+                onCancel={handleAuthCancel}
+              />
+            )}
           </MotiView>
         )}
       </AnimatePresence>
