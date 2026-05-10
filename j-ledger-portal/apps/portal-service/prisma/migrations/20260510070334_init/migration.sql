@@ -78,7 +78,7 @@ CREATE TABLE "identity"."users" (
     "passwordHash" TEXT,
     "pinHash" TEXT,
     "biometricKey" TEXT,
-    "status" "identity"."UserStatus" NOT NULL DEFAULT 'PENDING_APPROVAL',
+    "status" "identity"."UserStatus" NOT NULL DEFAULT 'INACTIVE',
     "registrationState" "identity"."RegistrationState" NOT NULL DEFAULT 'PENDING',
     "pinAttempts" INTEGER NOT NULL DEFAULT 0,
     "pinLockedUntil" TIMESTAMP(3),
@@ -334,18 +334,6 @@ CREATE TABLE "identity"."addresses" (
     "updatedAt" TIMESTAMP(3) NOT NULL,
 
     CONSTRAINT "addresses_pkey" PRIMARY KEY ("id")
-);
-
--- CreateTable
-CREATE TABLE "kyc"."users" (
-    "id" TEXT NOT NULL,
-    "userId" TEXT NOT NULL,
-    "email" TEXT,
-    "phone" TEXT,
-    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    "updatedAt" TIMESTAMP(3) NOT NULL,
-
-    CONSTRAINT "users_pkey" PRIMARY KEY ("id")
 );
 
 -- CreateTable
@@ -671,9 +659,6 @@ CREATE INDEX "addresses_userId_idx" ON "identity"."addresses"("userId");
 CREATE INDEX "addresses_isVerified_idx" ON "identity"."addresses"("isVerified");
 
 -- CreateIndex
-CREATE UNIQUE INDEX "users_userId_key" ON "kyc"."users"("userId");
-
--- CreateIndex
 CREATE INDEX "kyc_documents_userId_idx" ON "kyc"."kyc_documents"("userId");
 
 -- CreateIndex
@@ -752,12 +737,6 @@ CREATE INDEX "invoices_status_idx" ON "billing"."invoices"("status");
 CREATE INDEX "invoices_createdAt_idx" ON "billing"."invoices"("createdAt");
 
 -- AddForeignKey
-ALTER TABLE "loyalty"."user_points" ADD CONSTRAINT "user_points_userId_fkey" FOREIGN KEY ("userId") REFERENCES "identity"."users"("id") ON DELETE CASCADE ON UPDATE CASCADE;
-
--- AddForeignKey
-ALTER TABLE "loyalty"."point_history" ADD CONSTRAINT "point_history_userId_fkey" FOREIGN KEY ("userId") REFERENCES "identity"."users"("id") ON DELETE CASCADE ON UPDATE CASCADE;
-
--- AddForeignKey
 ALTER TABLE "loyalty"."deals" ADD CONSTRAINT "deals_brandId_fkey" FOREIGN KEY ("brandId") REFERENCES "loyalty"."brands"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
 
 -- AddForeignKey
@@ -765,9 +744,6 @@ ALTER TABLE "loyalty"."deals" ADD CONSTRAINT "deals_categoryId_fkey" FOREIGN KEY
 
 -- AddForeignKey
 ALTER TABLE "loyalty"."deal_redemptions" ADD CONSTRAINT "deal_redemptions_dealId_fkey" FOREIGN KEY ("dealId") REFERENCES "loyalty"."deals"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
-
--- AddForeignKey
-ALTER TABLE "loyalty"."deal_redemptions" ADD CONSTRAINT "deal_redemptions_userId_fkey" FOREIGN KEY ("userId") REFERENCES "identity"."users"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
 
 -- AddForeignKey
 ALTER TABLE "identity"."user_devices" ADD CONSTRAINT "user_devices_userId_fkey" FOREIGN KEY ("userId") REFERENCES "identity"."users"("id") ON DELETE CASCADE ON UPDATE CASCADE;
@@ -804,9 +780,6 @@ ALTER TABLE "admin"."role_permissions" ADD CONSTRAINT "role_permissions_permissi
 
 -- AddForeignKey
 ALTER TABLE "admin"."role_permissions" ADD CONSTRAINT "role_permissions_roleId_fkey" FOREIGN KEY ("roleId") REFERENCES "admin"."roles"("id") ON DELETE CASCADE ON UPDATE CASCADE;
-
--- AddForeignKey
-ALTER TABLE "billing"."invoices" ADD CONSTRAINT "invoices_userId_fkey" FOREIGN KEY ("userId") REFERENCES "identity"."users"("id") ON DELETE CASCADE ON UPDATE CASCADE;
 
 -- AddForeignKey
 ALTER TABLE "billing"."invoice_items" ADD CONSTRAINT "invoice_items_invoiceId_fkey" FOREIGN KEY ("invoiceId") REFERENCES "billing"."invoices"("id") ON DELETE CASCADE ON UPDATE CASCADE;

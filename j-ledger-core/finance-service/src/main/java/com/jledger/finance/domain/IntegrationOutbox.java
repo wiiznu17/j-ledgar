@@ -20,7 +20,7 @@ import org.hibernate.annotations.UpdateTimestamp;
 import org.hibernate.type.SqlTypes;
 
 @Entity
-@Table(name = "integration_outbox")
+@Table(name = "integration_outbox", schema = "finance")
 @Getter
 @Setter
 @NoArgsConstructor

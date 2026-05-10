@@ -21,7 +21,7 @@ import lombok.Setter;
 import org.hibernate.annotations.CreationTimestamp;
 
 @Entity
-@Table(name = "internal_ledger_entries")
+@Table(name = "internal_ledger_entries", schema = "finance")
 @Getter
 @Setter
 @NoArgsConstructor
