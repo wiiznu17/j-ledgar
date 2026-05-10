@@ -1,4 +1,4 @@
-package com.jledger.finance.domain;
+package com.jledger.finance.domain.constant;
 
 public enum AppPath {
     HOME("/"),

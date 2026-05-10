@@ -1,4 +1,4 @@
-package com.jledger.finance.domain;
+package com.jledger.finance.domain.constant;
 
 public enum KafkaTopic {
     SECURITY_EVENTS("security-events"),
