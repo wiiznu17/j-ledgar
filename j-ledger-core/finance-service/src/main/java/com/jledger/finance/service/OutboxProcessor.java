@@ -1,6 +1,6 @@
 package com.jledger.finance.service;
 
-import com.jledger.finance.domain.KafkaTopic;
+import com.jledger.finance.domain.constant.KafkaTopic;
 import com.jledger.finance.domain.entity.IntegrationOutbox;
 import com.jledger.finance.repository.IntegrationOutboxRepository;
 import java.util.List;
