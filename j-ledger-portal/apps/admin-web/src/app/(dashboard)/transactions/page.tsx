@@ -42,6 +42,7 @@ import { format } from 'date-fns';
 import { transactionRequester } from '@/lib/requesters/transactionRequester';
 import { Transaction, TransactionStatus, TransactionType } from '@repo/dto';
 import { toast } from 'sonner';
+import { TablePagination } from '@/components/common/TablePagination';
 import {
   FilterSearchInput,
   FilterSelect,
@@ -62,7 +63,7 @@ export default function TransactionsPage() {
   const [endDate, setEndDate] = useState('');
 
   // Pagination
-  const [currentPage, setCurrentPage] = useState(0); // API uses 0-based index
+  const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
   const [totalItems, setTotalItems] = useState(0);
 
@@ -77,14 +78,14 @@ export default function TransactionsPage() {
     startDate: '',
     endDate: '',
     userId: userIdParam || '',
-    page: 0,
+    page: 1,
   });
 
   const fetchTransactions = useCallback(async () => {
     setIsLoading(true);
     try {
       const params = {
-        page: activeFilters.page,
+        page: activeFilters.page - 1, // Convert to 0-based for API
         size: 10,
         ...(activeFilters.status !== 'ALL' && { status: activeFilters.status }),
         ...(activeFilters.type !== 'ALL' && { type: activeFilters.type }),
@@ -98,7 +99,7 @@ export default function TransactionsPage() {
       setTransactions(res.data);
       setTotalPages(res.pagination.totalPages);
       setTotalItems(res.pagination.total);
-      setCurrentPage(res.pagination.page);
+      setCurrentPage(res.pagination.page + 1); // Convert back to 1-based
     } catch (err) {
       console.error('[TRANSACTIONS_PAGE] Fetch error:', err);
       toast.error('Failed to fetch transactions');
@@ -112,7 +113,7 @@ export default function TransactionsPage() {
       setActiveFilters((prev) => ({
         ...prev,
         userId: userIdParam || '',
-        page: 0,
+        page: 1,
       }));
     }
   }, [userIdParam]);
@@ -130,14 +131,12 @@ export default function TransactionsPage() {
       startDate,
       endDate,
       userId: prev.userId,
-      page: 0,
+      page: 1, // Reset to page 1
     }));
-    setCurrentPage(0);
   };
 
-  const handlePageChange = (newPage: number) => {
-    if (newPage < 0 || newPage >= totalPages) return;
-    setActiveFilters((prev) => ({ ...prev, page: newPage }));
+  const handlePageChange = (page: number) => {
+    setActiveFilters((prev) => ({ ...prev, page }));
   };
 
   const getTransactionIcon = (type: string) => {
@@ -413,39 +412,13 @@ export default function TransactionsPage() {
           </table>
         </div>
 
-        {/* Pagination */}
-        {totalPages > 1 && (
-          <div className="px-6 py-4 bg-white border-t border-slate-100 flex items-center justify-between">
-            <p className="text-[11px] text-slate-400 font-bold uppercase tracking-wider">
-              Page <span className="text-slate-800">{currentPage + 1}</span> of{' '}
-              <span className="text-slate-800">{totalPages}</span>
-              <span className="ml-2 opacity-50">•</span>
-              <span className="ml-2">{totalItems} Total Records</span>
-            </p>
-            <div className="flex gap-2">
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => handlePageChange(currentPage - 1)}
-                disabled={currentPage === 0 || isLoading}
-                className="h-8 px-3 text-xs font-black uppercase tracking-widest rounded-lg border-slate-200 text-slate-600 hover:bg-slate-50"
-              >
-                <ChevronLeft className="w-3.5 h-3.5 mr-1" />
-                Prev
-              </Button>
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => handlePageChange(currentPage + 1)}
-                disabled={currentPage === totalPages - 1 || isLoading}
-                className="h-8 px-3 text-xs font-black uppercase tracking-widest rounded-lg border-slate-200 text-slate-600 hover:bg-slate-50"
-              >
-                Next
-                <ChevronRight className="w-3.5 h-3.5 ml-1" />
-              </Button>
-            </div>
-          </div>
-        )}
+        <TablePagination
+          currentPage={currentPage}
+          totalPages={totalPages}
+          totalItems={totalItems}
+          onPageChange={handlePageChange}
+          isLoading={isLoading}
+        />
       </Card>
     </div>
   );

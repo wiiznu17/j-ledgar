@@ -404,9 +404,9 @@ export class KycService {
     }));
 
     return {
-      items,
+      data: items,
       stats,
-      meta: {
+      pagination: {
         total,
         page,
         limit,
@@ -450,7 +450,7 @@ export class KycService {
 
   async getPendingKYCList() {
     const list = await this.getKYCList(UserStatus.PENDING_APPROVAL);
-    return list.items;
+    return list.data;
   }
 
   async getKYCHistory(userId: string) {

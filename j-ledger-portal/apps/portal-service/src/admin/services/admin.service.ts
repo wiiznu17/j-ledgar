@@ -490,16 +490,33 @@ export class AdminService {
 
   // ==================== Role Management ====================
 
-  async findAllRoles() {
-    return this.prisma.role.findMany({
-      include: {
-        rolePermissions: {
-          include: {
-            permission: true,
+  async findAllRoles(page: number = 1, limit: number = 100) {
+    const skip = (page - 1) * limit;
+    const [data, total] = await Promise.all([
+      this.prisma.role.findMany({
+        include: {
+          rolePermissions: {
+            include: {
+              permission: true,
+            },
           },
         },
+        skip,
+        take: limit,
+        orderBy: { name: 'asc' },
+      }),
+      this.prisma.role.count(),
+    ]);
+
+    return {
+      data,
+      pagination: {
+        total,
+        page,
+        limit,
+        totalPages: Math.ceil(total / limit),
       },
-    });
+    };
   }
 
   async findRoleById(id: string) {

@@ -26,6 +26,7 @@ import { accountRequester } from '@/lib/requesters/accountRequester';
 import { Account, AdminPaginatedResponse } from '@repo/dto';
 import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
+import { TablePagination } from '@/components/common/TablePagination';
 
 export default function InternalLedgerPage() {
   const router = useRouter();
@@ -39,8 +40,8 @@ export default function InternalLedgerPage() {
     setLoading(true);
     try {
       const response = await accountRequester.getAccounts({
-        page: page - 1,
-        size: 10,
+        page,
+        limit: 10,
       });
 
       setAccounts(response.data as Account[]);
@@ -228,28 +229,13 @@ export default function InternalLedgerPage() {
             </Table>
           </div>
 
-          {/* Pagination */}
-          <div className="p-4 border-t border-slate-100 bg-slate-50/30 flex items-center justify-between">
-            <div className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">
-              Page {page} of {totalPages}
-            </div>
-            <div className="flex gap-2">
-              <button
-                onClick={() => setPage((p) => Math.max(1, p - 1))}
-                disabled={page === 1 || loading}
-                className="p-2 rounded-lg hover:bg-white border border-transparent hover:border-slate-200 disabled:opacity-30 transition-all"
-              >
-                <ChevronLeft className="w-4 h-4" />
-              </button>
-              <button
-                onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
-                disabled={page === totalPages || loading}
-                className="p-2 rounded-lg hover:bg-white border border-transparent hover:border-slate-200 disabled:opacity-30 transition-all"
-              >
-                <ChevronRight className="w-4 h-4" />
-              </button>
-            </div>
-          </div>
+          <TablePagination
+            currentPage={page}
+            totalPages={totalPages}
+            totalItems={total}
+            onPageChange={setPage}
+            isLoading={loading}
+          />
         </CardContent>
       </Card>
 

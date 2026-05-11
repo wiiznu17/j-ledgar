@@ -26,7 +26,7 @@ import {
   DialogTrigger,
 } from '@/components/ui/dialog';
 import { userRequester } from '@/lib/requesters';
-import { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import {
   ChevronLeft,
   ChevronRight,
@@ -46,6 +46,7 @@ import {
   FilterSelect,
   FilterActions,
 } from '@/components/common/FilterElements';
+import { TablePagination } from '@/components/common/TablePagination';
 
 export default function UserActivityPage() {
   const searchParams = useSearchParams();
@@ -185,14 +186,14 @@ export default function UserActivityPage() {
               label="Wallet User Identifier"
               placeholder="ID, Email, or Phone..."
               value={userId}
-              onChange={(e) => setUserId(e.target.value)}
+              onChange={(e: React.ChangeEvent<HTMLInputElement>) => setUserId(e.target.value)}
               className="md:col-span-2"
             />
 
             <FilterSelect
               label="Event Classification"
               value={eventType}
-              onValueChange={(val) => setEventType(val || 'ALL')}
+              onValueChange={(val: string) => setEventType(val || 'ALL')}
               options={[
                 { label: 'ALL CATEGORIES', value: 'ALL' },
                 { label: 'LOGIN SUCCESS', value: 'LOGIN_SUCCESS' },
@@ -361,41 +362,13 @@ export default function UserActivityPage() {
           </table>
         </div>
 
-        {/* Pagination UI */}
-        {totalPages > 0 && (
-          <div className="p-4 bg-white border-t border-slate-100 flex items-center justify-between">
-            <p className="text-xs text-slate-500 font-medium">
-              Showing page <strong className="text-slate-800">{page}</strong> of{' '}
-              <strong className="text-slate-800">{totalPages}</strong>
-              <span className="hidden sm:inline">
-                {' '}
-                ({total} security events)
-              </span>
-            </p>
-            <div className="flex gap-2">
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => setPage(page - 1)}
-                disabled={page === 1 || loading}
-                className="h-8 px-3 text-xs font-bold rounded-lg border-slate-200 text-slate-600"
-              >
-                <ChevronLeft className="w-4 h-4 mr-1" />
-                Prev
-              </Button>
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => setPage(page + 1)}
-                disabled={page === totalPages || loading}
-                className="h-8 px-3 text-xs font-bold rounded-lg border-slate-200 text-slate-600"
-              >
-                Next
-                <ChevronRight className="w-4 h-4 ml-1" />
-              </Button>
-            </div>
-          </div>
-        )}
+        <TablePagination
+          currentPage={page}
+          totalPages={totalPages}
+          totalItems={total}
+          onPageChange={setPage}
+          isLoading={loading}
+        />
       </Card>
     </div>
   );

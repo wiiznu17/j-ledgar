@@ -53,6 +53,7 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from '@/components/ui/popover';
+import { TablePagination } from '@/components/common/TablePagination';
 
 export default function WalletAccountsPage() {
   const [wallets, setWallets] = useState<WalletDto[]>([]);
@@ -387,58 +388,13 @@ export default function WalletAccountsPage() {
             </Table>
           </div>
 
-          {/* Pagination */}
-          <div className="p-4 border-t border-slate-100 bg-slate-50/30 flex flex-col md:flex-row items-center justify-between gap-4">
-            <div className="text-xs font-medium text-slate-500">
-              Showing page <span className="text-slate-900">{page}</span> of{' '}
-              <span className="text-slate-900">{totalPages}</span>
-              <span className="mx-2 text-slate-200">|</span>
-              Total <span className="text-slate-900">{total}</span> records
-            </div>
-            <div className="flex items-center gap-2">
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => setPage((p) => Math.max(1, p - 1))}
-                disabled={page === 1 || loading}
-                className="!h-9 rounded-xl border-slate-200 bg-white text-slate-600 hover:bg-slate-50 font-bold text-xs"
-              >
-                <ChevronLeft className="w-4 h-4 mr-1" />
-                Previous
-              </Button>
-              <div className="flex items-center gap-1">
-                {Array.from({ length: Math.min(5, totalPages) }).map((_, i) => {
-                  const pageNum = i + 1; // Simplified pagination for now
-                  return (
-                    <Button
-                      key={pageNum}
-                      variant={page === pageNum ? 'default' : 'ghost'}
-                      size="sm"
-                      onClick={() => setPage(pageNum)}
-                      className={cn(
-                        'w-9 h-9 rounded-xl text-xs font-bold',
-                        page === pageNum
-                          ? 'bg-indigo-600 text-white shadow-md shadow-indigo-100'
-                          : 'text-slate-400',
-                      )}
-                    >
-                      {pageNum}
-                    </Button>
-                  );
-                })}
-              </div>
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
-                disabled={page === totalPages || loading}
-                className="!h-9 rounded-xl border-slate-200 bg-white text-slate-600 hover:bg-slate-50 font-bold text-xs"
-              >
-                Next
-                <ChevronRight className="w-4 h-4 ml-1" />
-              </Button>
-            </div>
-          </div>
+          <TablePagination
+            currentPage={page}
+            totalPages={totalPages}
+            totalItems={total}
+            onPageChange={setPage}
+            isLoading={loading}
+          />
         </CardContent>
       </Card>
     </div>

@@ -60,7 +60,8 @@ export const userRequester = {
     apiClient.get<any>(`/api/admin/wallets/user/${userId}`),
 
   // Roles & Permissions
-  getAllRoles: async () => apiClient.get<any[]>(API_PATHS.ADMIN.ROLES.BASE),
+  getAllRoles: async (options?: RequestOptions) =>
+    apiClient.get<AdminPaginatedResponse<any>>(API_PATHS.ADMIN.ROLES.BASE, options),
   getRoleDetail: async (id: string) =>
     apiClient.get<any>(API_PATHS.ADMIN.ROLES.DETAIL(id)),
   createRole: async (data: any) =>

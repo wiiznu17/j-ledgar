@@ -38,6 +38,7 @@ import {
   FilterSelect,
   FilterActions,
 } from '@/components/common/FilterElements';
+import { TablePagination } from '@/components/common/TablePagination';
 
 export default function UsersPage() {
   const [users, setUsers] = useState<WalletUser[]>([]);
@@ -127,7 +128,6 @@ export default function UsersPage() {
   };
 
   const handlePageChange = (newPage: number) => {
-    if (newPage < 1 || newPage > totalPages) return;
     setPage(newPage);
   };
 
@@ -200,7 +200,7 @@ export default function UsersPage() {
             <FilterSelect
               label="Account Status"
               value={status}
-              onValueChange={(val) => setStatus(val || 'ALL')}
+              onValueChange={(val: string) => setStatus(val || 'ALL')}
               options={[
                 { label: 'ALL STATUSES', value: 'ALL' },
                 { label: 'ACTIVE', value: 'ACTIVE' },
@@ -222,41 +222,13 @@ export default function UsersPage() {
         <CardContent className="p-0">
           <WalletUsersTable users={users} loading={loading} />
 
-          {/* Pagination UI - KYC Style */}
-          {totalPages > 0 && (
-            <div className="p-4 bg-white border-t border-slate-100 flex items-center justify-between">
-              <p className="text-xs text-slate-500 font-medium">
-                Showing page <strong className="text-slate-800">{page}</strong>{' '}
-                of <strong className="text-slate-800">{totalPages}</strong>
-                <span className="hidden sm:inline">
-                  {' '}
-                  ({total} total records)
-                </span>
-              </p>
-              <div className="flex gap-2">
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => handlePageChange(page - 1)}
-                  disabled={page === 1 || loading}
-                  className="h-8 px-3 text-xs font-bold rounded-lg border-slate-200 text-slate-600"
-                >
-                  <ChevronLeft className="w-4 h-4 mr-1" />
-                  Prev
-                </Button>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => handlePageChange(page + 1)}
-                  disabled={page === totalPages || loading}
-                  className="h-8 px-3 text-xs font-bold rounded-lg border-slate-200 text-slate-600"
-                >
-                  Next
-                  <ChevronRight className="w-4 h-4 ml-1" />
-                </Button>
-              </div>
-            </div>
-          )}
+          <TablePagination
+            currentPage={page}
+            totalPages={totalPages}
+            totalItems={total}
+            onPageChange={handlePageChange}
+            isLoading={loading}
+          />
         </CardContent>
       </Card>
     </div>

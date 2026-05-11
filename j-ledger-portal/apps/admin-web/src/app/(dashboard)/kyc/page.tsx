@@ -41,6 +41,7 @@ import {
   FilterActions,
   FilterDatePicker,
 } from '@/components/common/FilterElements';
+import { TablePagination } from '@/components/common/TablePagination';
 
 interface KycDocument {
   id: string;
@@ -92,12 +93,12 @@ export default function KycListPage() {
         limit: 10,
       });
 
-      setDocuments(res.items);
+      setDocuments(res.data);
       setStats(res.stats);
-      if (res.meta) {
-        setTotalPages(res.meta.totalPages);
-        setTotalItems(res.meta.total);
-        setCurrentPage(res.meta.page);
+      if (res.pagination) {
+        setTotalPages(res.pagination.totalPages);
+        setTotalItems(res.pagination.total);
+        setCurrentPage(res.pagination.page);
       }
     } catch (err) {
       console.error(err);
@@ -342,42 +343,13 @@ export default function KycListPage() {
           </table>
         </div>
 
-        {/* Pagination UI */}
-        {totalPages > 0 && (
-          <div className="p-4 bg-white border-t border-slate-100 flex items-center justify-between">
-            <p className="text-xs text-slate-500 font-medium">
-              Showing page{' '}
-              <strong className="text-slate-800">{currentPage}</strong> of{' '}
-              <strong className="text-slate-800">{totalPages}</strong>
-              <span className="hidden sm:inline">
-                {' '}
-                ({totalItems} total records)
-              </span>
-            </p>
-            <div className="flex gap-2">
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => handlePageChange(currentPage - 1)}
-                disabled={currentPage === 1 || isLoading}
-                className="h-8 px-3 text-xs font-bold rounded-lg border-slate-200 text-slate-600"
-              >
-                <ChevronLeft className="w-4 h-4 mr-1" />
-                Prev
-              </Button>
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => handlePageChange(currentPage + 1)}
-                disabled={currentPage === totalPages || isLoading}
-                className="h-8 px-3 text-xs font-bold rounded-lg border-slate-200 text-slate-600"
-              >
-                Next
-                <ChevronRight className="w-4 h-4 ml-1" />
-              </Button>
-            </div>
-          </div>
-        )}
+        <TablePagination
+          currentPage={currentPage}
+          totalPages={totalPages}
+          totalItems={totalItems}
+          onPageChange={handlePageChange}
+          isLoading={isLoading}
+        />
       </Card>
     </div>
   );

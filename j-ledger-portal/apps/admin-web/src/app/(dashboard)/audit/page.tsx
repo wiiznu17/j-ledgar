@@ -56,6 +56,7 @@ import {
   FilterSelect,
   FilterActions,
 } from '@/components/common/FilterElements';
+import { TablePagination } from '@/components/common/TablePagination';
 
 export default function AuditPage() {
   const [logs, setLogs] = useState<any[]>([]);
@@ -237,7 +238,7 @@ export default function AuditPage() {
             <FilterSelect
               label="Operation Action"
               value={action}
-              onValueChange={(val) => setAction(val || 'ALL')}
+              onValueChange={(val: string) => setAction(val || 'ALL')}
               options={[
                 { label: 'ALL PERMISSIONS', value: 'ALL' },
                 { label: 'CREATE_ADMINS', value: 'CREATE_ADMINS' },
@@ -263,7 +264,7 @@ export default function AuditPage() {
             <FilterSelect
               label="Resource Type"
               value={resourceType}
-              onValueChange={(val) => setResourceType(val || 'ALL')}
+              onValueChange={(val: string) => setResourceType(val || 'ALL')}
               options={[
                 { label: 'ALL RESOURCES', value: 'ALL' },
                 { label: 'USER', value: 'USER' },
@@ -524,41 +525,13 @@ export default function AuditPage() {
           </table>
         </div>
 
-        {/* Pagination UI */}
-        {totalPages > 0 && (
-          <div className="p-4 bg-white border-t border-slate-100 flex items-center justify-between">
-            <p className="text-xs text-slate-500 font-medium">
-              Showing page <strong className="text-slate-800">{page}</strong> of{' '}
-              <strong className="text-slate-800">{totalPages}</strong>
-              <span className="hidden sm:inline">
-                {' '}
-                ({total} total audit records)
-              </span>
-            </p>
-            <div className="flex gap-2">
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => setPage(page - 1)}
-                disabled={page === 1 || loading}
-                className="h-8 px-3 text-xs font-bold rounded-lg border-slate-200 text-slate-600"
-              >
-                <ChevronLeft className="w-4 h-4 mr-1" />
-                Prev
-              </Button>
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => setPage(page + 1)}
-                disabled={page === totalPages || loading}
-                className="h-8 px-3 text-xs font-bold rounded-lg border-slate-200 text-slate-600"
-              >
-                Next
-                <ChevronRight className="w-4 h-4 ml-1" />
-              </Button>
-            </div>
-          </div>
-        )}
+          <TablePagination
+            currentPage={page}
+            totalPages={totalPages}
+            totalItems={total}
+            onPageChange={setPage}
+            isLoading={loading}
+          />
       </Card>
     </div>
   );

@@ -1,5 +1,5 @@
 import { apiClient, RequestOptions } from '@/lib/api-client';
-import { API_PATHS } from '@repo/dto';
+import { API_PATHS, AdminPaginatedResponse } from '@repo/dto';
 
 export interface OutboxEvent {
   id: string;
@@ -18,10 +18,10 @@ export const systemRequester = {
    * Fetches the current system outbox events for Kafka integration monitoring.
    */
   getOutbox: async (
-    filters?: { status?: string; eventType?: string },
+    filters?: { status?: string; eventType?: string; page?: number; limit?: number },
     options?: RequestOptions,
   ) => {
-    return apiClient.get<OutboxEvent[]>(API_PATHS.ADMIN.SYSTEM.OUTBOX, {
+    return apiClient.get<AdminPaginatedResponse<OutboxEvent>>(API_PATHS.ADMIN.SYSTEM.OUTBOX, {
       ...options,
       params: {
         ...options?.params,

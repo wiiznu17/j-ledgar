@@ -112,6 +112,8 @@ export const apiClient = {
     axiosInstance.post<T>(path, data, options).then((res) => res.data),
   put: <T>(path: string, data?: unknown, options?: RequestOptions) =>
     axiosInstance.put<T>(path, data, options).then((res) => res.data),
+  patch: <T>(path: string, data?: unknown, options?: RequestOptions) =>
+    axiosInstance.patch<T>(path, data, options).then((res) => res.data),
   delete: <T>(path: string, options?: RequestOptions) =>
     axiosInstance.delete<T>(path, options).then((res) => res.data),
 };
