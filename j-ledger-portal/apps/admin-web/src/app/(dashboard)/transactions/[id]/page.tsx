@@ -16,6 +16,7 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table';
+import { Coins, Calendar as CalendarIcon } from 'lucide-react';
 import { useParams } from 'next/navigation';
 import { useEffect, useState } from 'react';
 import { toast } from 'sonner';
@@ -103,6 +104,42 @@ export default function TransactionDetailsPage() {
             </div>
           </CardContent>
         </Card>
+
+        {data.pointsEarned && (
+          <Card className="border-emerald-100 shadow-sm bg-emerald-50/10">
+            <CardHeader className="pb-2">
+              <div className="flex items-center gap-2 text-emerald-700">
+                <Coins className="h-5 w-5" />
+                <CardTitle className="text-lg">Loyalty Points Earned</CardTitle>
+              </div>
+              <CardDescription className="text-emerald-600/80">
+                Points awarded to user for this transaction.
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="flex items-baseline gap-2">
+                <span className="text-3xl font-black text-emerald-600">
+                  +{data.pointsEarned.amount.toLocaleString()}
+                </span>
+                <span className="text-sm font-bold text-emerald-700/70">POINTS</span>
+              </div>
+              
+              <div className="flex items-center gap-2 p-3 bg-white/50 rounded-lg border border-emerald-100/50">
+                <CalendarIcon className="h-4 w-4 text-emerald-600" />
+                <div className="text-xs">
+                  <p className="text-emerald-700/60 font-medium uppercase tracking-wider">Expires On</p>
+                  <p className="font-bold text-emerald-800">
+                    {new Date(data.pointsEarned.expiresAt).toLocaleDateString(undefined, { 
+                      year: 'numeric', 
+                      month: 'long', 
+                      day: 'numeric' 
+                    })}
+                  </p>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        )}
 
         <Card className="border-border shadow-sm">
           <CardHeader>

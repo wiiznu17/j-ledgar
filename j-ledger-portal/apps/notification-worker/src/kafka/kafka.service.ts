@@ -43,6 +43,7 @@ export class KafkaService implements OnModuleInit, OnModuleDestroy {
         KafkaTopic.TRANSACTION_EVENTS,
         KafkaTopic.KYC_EVENTS,
         KafkaTopic.SECURITY_EVENTS,
+        KafkaTopic.LOYALTY_EVENTS,
       ],
     });
 

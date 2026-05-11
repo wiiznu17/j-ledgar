@@ -15,9 +15,11 @@ import { LoyaltyModule } from './modules/loyalty/loyalty.module';
 import { DealModule } from './modules/deals/deal.module';
 import { BannerModule } from './modules/banners/banner.module';
 import { HealthController } from './core/health/health.controller';
+import { ScheduleModule } from '@nestjs/schedule';
 
 @Module({
   imports: [
+    ScheduleModule.forRoot(),
     PrismaModule,
     RedisModule,
     ConfigModule.forRoot({

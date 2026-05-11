@@ -17,6 +17,7 @@ export interface WalletUser {
   status: string; // UserStatus enum
   registrationState: string; // RegistrationState enum
   ledgerAccountId: string | null;
+  loyaltyPoints?: number;
   createdAt: Date | string;
   updatedAt: Date | string;
 }
@@ -82,6 +83,10 @@ export interface Transaction {
 export interface TransactionDetailsDto {
   transaction: Transaction;
   ledgerEntries: LedgerEntry[];
+  pointsEarned?: {
+    amount: number;
+    expiresAt: string | Date;
+  };
 }
 
 export interface ReconciliationReport {

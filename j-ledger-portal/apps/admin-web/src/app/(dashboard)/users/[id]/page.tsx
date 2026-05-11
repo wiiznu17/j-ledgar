@@ -22,6 +22,7 @@ import {
   ArrowRight,
   ExternalLink,
   Search,
+  Coins,
 } from 'lucide-react';
 import {
   Dialog,
@@ -211,6 +212,16 @@ export default function UserDetailPage({
                           <ExternalLink className="w-3 h-3" />
                         </Button>
                       </Link>
+                    </div>
+
+                    <div className="flex items-center gap-1.5">
+                      <span className="text-[10px] font-bold text-slate-400 uppercase tracking-tight">
+                        Points:
+                      </span>
+                      <Badge className="bg-amber-50 text-amber-600 border-none text-[10px] font-black rounded-lg px-2 py-0.5 uppercase tracking-tighter flex items-center gap-1">
+                        <Coins className="w-2.5 h-2.5" />
+                        {(user as any).loyaltyPoints?.toLocaleString() || 0}
+                      </Badge>
                     </div>
 
                     <span className="text-[10px] font-bold text-slate-400 flex items-center gap-1.5 uppercase">

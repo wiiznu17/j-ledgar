@@ -166,6 +166,10 @@ export class NotificationService {
       return metadata?.isReceiver ? 'Money Received' : 'Payment Sent';
     }
 
+    if (type === NotificationEventType.LOYALTY_EARN) {
+      return '🏆 ได้รับคะแนนสะสม!';
+    }
+
     return 'J-Ledger Notification';
   }
 
@@ -234,6 +238,14 @@ export class NotificationService {
             metadata?.recipientName || metadata?.recipientPhone || 'Recipient';
           return `Payment of ฿${amount} to ${recipient} has been processed successfully.${refText}`;
         }
+
+      case NotificationEventType.LOYALTY_EARN:
+        const pts = metadata?.points || 0;
+        const total = metadata?.totalBalance || 0;
+        const sourceName =
+          metadata?.source === 'TOPUP' ? 'การเติมเงิน' : 'การโอนเงิน';
+        const expiry = metadata?.expiresPeriod || 'เร็วๆ นี้';
+        return `คุณได้รับ ${pts} แต้มจาก${sourceName} แต้มสะสมรวม ${total} แต้ม (หมดอายุ ${expiry})`;
 
       default:
         return `You have a new update regarding your account activities.`;
@@ -305,6 +317,10 @@ export class NotificationService {
 
     if (type === NotificationEventType.REGISTRATION_COMPLETED) {
       return { category: NotificationCategory.SYSTEM, path: AppPath.HOME };
+    }
+
+    if (type === NotificationEventType.LOYALTY_EARN) {
+      return { category: NotificationCategory.PROMO, path: AppPath.LOYALTY };
     }
 
     if (['PROMO', 'OFFER', 'CAMPAIGN'].includes(type)) {

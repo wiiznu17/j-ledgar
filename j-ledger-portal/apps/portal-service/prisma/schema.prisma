@@ -65,6 +65,22 @@ model PointHistory {
   @@schema("loyalty")
 }
 
+model LoyaltyRule {
+  id           String   @id @default(uuid())
+  eventType    String   @unique // "TOPUP", "P2P_TRANSFER", "MERCHANT_PAYMENT"
+  pointsPerThb Float    @default(0.04) // e.g., 0.04 = 25 THB per 1 point
+  minAmount    Float    @default(0)
+  maxPoints    Int?
+  isActive     Boolean  @default(true)
+  isLocked     Boolean  @default(true) // Maintenance mode lock
+  description  String?
+  updatedAt    DateTime @updatedAt
+  updatedBy    String?
+
+  @@map("loyalty_rules")
+  @@schema("loyalty")
+}
+
 model Brand {
   id          String   @id @default(uuid())
   name        String   @unique
