@@ -19,7 +19,7 @@ export class ReportingService {
     );
     this.internalSecret = this.configService.get<string>(
       'JLEDGER_INTERNAL_SECRET',
-      'default-secret',
+      'default_internal_secret',
     );
   }
 

@@ -15,23 +15,26 @@ export class AdminSystemController {
     @Query('status') status?: string,
     @Query('eventType') eventType?: string,
   ): Promise<AdminPaginatedResponse<any>> {
-    const skipPage = Math.max(0, page - 1);
+    const pageNum = Number(page) || 1;
+    const limitNum = Number(limit) || 10;
+    const skipPage = Math.max(0, pageNum - 1);
+    
     const response = await this.reportingService.getOutbox({
       status,
       eventType,
       page: skipPage,
-      limit,
+      limit: limitNum,
     });
 
-    const content = response.content || [];
+    const content = Array.isArray(response) ? response : (response.content || []);
     const totalElements = response.totalElements || content.length;
-    const totalPages = response.totalPages || 1;
+    const totalPages = response.totalPages || Math.ceil(totalElements / limitNum) || 1;
 
     return {
       data: content,
       pagination: {
-        page: Number(page),
-        limit: Number(limit),
+        page: pageNum,
+        limit: limitNum,
         total: totalElements,
         totalPages: totalPages,
       },
