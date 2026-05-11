@@ -135,8 +135,11 @@ export class AdminStaffController {
   // ==================== Role Endpoints ====================
 
   @Get('roles')
-  async findAllRoles() {
-    return this.adminService.findAllRoles();
+  async findAllRoles(
+    @Query('page') page: number = 1,
+    @Query('limit') limit: number = 100,
+  ) {
+    return this.adminService.findAllRoles(Number(page), Number(limit));
   }
 
   @Get('roles/:id')

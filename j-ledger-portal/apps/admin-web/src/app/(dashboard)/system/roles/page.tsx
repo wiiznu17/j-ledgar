@@ -42,26 +42,46 @@ import {
 import { showSuccess, showError } from '@/lib/swal';
 import { userRequester } from '@/lib/requesters';
 import Link from 'next/link';
+import { TablePagination } from '@/components/common/TablePagination';
 
 export default function RolesPage() {
   const [roles, setRoles] = useState<any[]>([]);
   const [loading, setLoading] = useState(false);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
 
+  // Pagination
+  const [page, setPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
+  const [totalItems, setTotalItems] = useState(0);
+
   // New role form state
   const [newName, setNewName] = useState('');
   const [newDescription, setNewDescription] = useState('');
 
-  const fetchRoles = async () => {
+  const fetchRoles = async (pageOverride?: number) => {
     setLoading(true);
     try {
-      const response = await userRequester.getAllRoles();
-      setRoles(Array.isArray(response) ? response : []);
+      const currentPage = pageOverride || page;
+      const response = await userRequester.getAllRoles({
+        params: {
+          page: currentPage,
+          limit: 10,
+        },
+      });
+      setRoles(response.data);
+      setTotalPages(response.pagination.totalPages);
+      setTotalItems(response.pagination.total);
+      setPage(response.pagination.page);
     } catch {
       showError('Access Denied', 'Failed to load roles.');
     } finally {
       setLoading(false);
     }
+  };
+
+  const handlePageChange = (newPage: number) => {
+    setPage(newPage);
+    fetchRoles(newPage);
   };
 
   useEffect(() => {
@@ -273,6 +293,13 @@ export default function RolesPage() {
                 </TableBody>
               </Table>
             </div>
+            <TablePagination
+              currentPage={page}
+              totalPages={totalPages}
+              totalItems={totalItems}
+              onPageChange={handlePageChange}
+              isLoading={loading}
+            />
           </CardContent>
         </Card>
       </div>

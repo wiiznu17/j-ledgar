@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import {
   Card,
   CardContent,
@@ -55,6 +55,7 @@ import {
   FilterSelect,
   FilterActions,
 } from '@/components/common/FilterElements';
+import { TablePagination } from '@/components/common/TablePagination';
 
 export default function UsersPage() {
   const [users, setUsers] = useState<AdminUser[]>([]);
@@ -123,8 +124,8 @@ export default function UsersPage() {
 
   const fetchRoles = async () => {
     try {
-      const data = await userRequester.getAllRoles();
-      setAvailableRoles(data);
+      const response = await userRequester.getAllRoles();
+      setAvailableRoles(response.data || []);
     } catch (error) {
       console.error('Failed to fetch roles:', error);
     }
@@ -170,7 +171,6 @@ export default function UsersPage() {
   };
 
   const handlePageChange = (newPage: number) => {
-    if (newPage < 1 || newPage > totalPages) return;
     setCurrentPage(newPage);
     setActiveFilters((prev) => ({ ...prev, page: newPage }));
   };
@@ -336,13 +336,13 @@ export default function UsersPage() {
               label="Staff Name / Email"
               placeholder="Enter keyword..."
               value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
+              onChange={(e: React.ChangeEvent<HTMLInputElement>) => setSearchQuery(e.target.value)}
             />
 
             <FilterSelect
               label="Role Assignment"
               value={filterRole}
-              onValueChange={(val) => setFilterRole(val || 'ALL')}
+              onValueChange={(val: string) => setFilterRole(val || 'ALL')}
               options={[
                 { label: 'ALL ROLES', value: 'ALL' },
                 ...availableRoles.map((r) => ({
@@ -365,7 +365,7 @@ export default function UsersPage() {
             <FilterSelect
               label="Account Status"
               value={filterStatus}
-              onValueChange={(val) => setFilterStatus(val || 'ALL')}
+              onValueChange={(val: string) => setFilterStatus(val || 'ALL')}
               options={[
                 { label: 'ALL STATUS', value: 'ALL' },
                 { label: 'ACTIVE', value: 'ACTIVE' },
@@ -499,42 +499,13 @@ export default function UsersPage() {
             </Table>
           </div>
 
-          {/* Pagination UI */}
-          {totalPages > 0 && (
-            <div className="p-4 bg-white border-t border-slate-100 flex items-center justify-between">
-              <p className="text-xs text-slate-500 font-medium">
-                Showing page{' '}
-                <strong className="text-slate-800">{currentPage}</strong> of{' '}
-                <strong className="text-slate-800">{totalPages}</strong>
-                <span className="hidden sm:inline">
-                  {' '}
-                  ({totalItems} total records)
-                </span>
-              </p>
-              <div className="flex gap-2">
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => handlePageChange(currentPage - 1)}
-                  disabled={currentPage === 1 || loading}
-                  className="h-8 px-3 text-xs font-bold rounded-lg border-slate-200 text-slate-600"
-                >
-                  <ChevronLeft className="w-4 h-4 mr-1" />
-                  Prev
-                </Button>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => handlePageChange(currentPage + 1)}
-                  disabled={currentPage === totalPages || loading}
-                  className="h-8 px-3 text-xs font-bold rounded-lg border-slate-200 text-slate-600"
-                >
-                  Next
-                  <ChevronRight className="w-4 h-4 ml-1" />
-                </Button>
-              </div>
-            </div>
-          )}
+          <TablePagination
+            currentPage={currentPage}
+            totalPages={totalPages}
+            totalItems={totalItems}
+            onPageChange={handlePageChange}
+            isLoading={loading}
+          />
         </CardContent>
       </Card>
     </div>

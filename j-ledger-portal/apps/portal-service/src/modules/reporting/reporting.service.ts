@@ -26,20 +26,26 @@ export class ReportingService {
   private async forwardToGateway<T = any>(
     method: 'get' | 'post' | 'put' | 'delete',
     path: string,
-    data?: unknown,
+    paramsOrData?: unknown,
   ): Promise<T> {
     const url = `${this.apiGatewayUrl}${path}`;
     const headers = {
       'X-Internal-Secret': this.internalSecret,
     };
 
-    const response = await this.httpService.axiosRef.request<T>({
+    const config: any = {
       method: method.toUpperCase(),
       url,
-      data,
       headers,
-    });
+    };
 
+    if (method.toLowerCase() === 'get') {
+      config.params = paramsOrData;
+    } else {
+      config.data = paramsOrData;
+    }
+
+    const response = await this.httpService.axiosRef.request<T>(config);
     return response.data;
   }
 
@@ -205,12 +211,19 @@ export class ReportingService {
     );
   }
 
-  async getOutbox(query?: { status?: string; eventType?: string }) {
+  async getOutbox(query?: {
+    status?: string;
+    eventType?: string;
+    page?: number;
+    limit?: number;
+  }) {
     const params: Record<string, string> = {};
     if (query?.status) params.status = query.status;
     if (query?.eventType) params.eventType = query.eventType;
+    if (query?.page) params.page = query.page.toString();
+    if (query?.limit) params.limit = query.limit.toString();
 
-    return this.forwardToGateway<any[]>(
+    return this.forwardToGateway<any>(
       'get',
       INTERNAL_API_PATHS.FINANCE.SYSTEM.OUTBOX.BASE,
       params,

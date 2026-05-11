@@ -25,6 +25,7 @@ import {
   FilterSelect,
   FilterActions,
 } from '@/components/common/FilterElements';
+import { TablePagination } from '@/components/common/TablePagination';
 import { systemRequester, OutboxEvent } from '@/lib/requesters/systemRequester';
 import {
   Radio,
@@ -56,13 +57,23 @@ export default function SystemOutboxPage() {
   const [tempStatus, setTempStatus] = useState<string>('ALL');
   const [tempType, setTempType] = useState<string>('ALL');
 
+  // Pagination
+  const [page, setPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
+  const [totalItems, setTotalItems] = useState(0);
+
   const fetchOutbox = async (
     statusOverride?: string,
     typeOverride?: string,
+    pageOverride?: number,
   ) => {
     try {
       setLoading(true);
-      const filters: any = {};
+      const currentPage = pageOverride || page;
+      const filters: any = {
+        page: currentPage,
+        limit: 10,
+      };
       const status = statusOverride || filterStatus;
       const type = typeOverride || filterType;
 
@@ -70,9 +81,10 @@ export default function SystemOutboxPage() {
       if (type !== 'ALL') filters.eventType = type;
 
       const response = await systemRequester.getOutbox(filters);
-      setData(
-        Array.isArray(response) ? response : (response as any).data || [],
-      );
+      setData(response.data);
+      setTotalPages(response.pagination.totalPages);
+      setTotalItems(response.pagination.total);
+      setPage(response.pagination.page);
     } catch (error) {
       console.error('[OUTBOX] Fetch error:', error);
       toast.error('Service temporarily unavailable.');
@@ -84,7 +96,8 @@ export default function SystemOutboxPage() {
   const handleApplyFilter = () => {
     setFilterStatus(tempStatus);
     setFilterType(tempType);
-    fetchOutbox(tempStatus, tempType);
+    setPage(1);
+    fetchOutbox(tempStatus, tempType, 1);
   };
 
   const handleClearFilter = () => {
@@ -92,7 +105,13 @@ export default function SystemOutboxPage() {
     setTempType('ALL');
     setFilterStatus('ALL');
     setFilterType('ALL');
-    fetchOutbox('ALL', 'ALL');
+    setPage(1);
+    fetchOutbox('ALL', 'ALL', 1);
+  };
+
+  const handlePageChange = (newPage: number) => {
+    setPage(newPage);
+    fetchOutbox(filterStatus, filterType, newPage);
   };
 
   useEffect(() => {
@@ -124,14 +143,10 @@ export default function SystemOutboxPage() {
   };
 
   const stats = {
-    total: data.length,
-    processed: data.filter(
-      (e) =>
-        e.status.toUpperCase() === 'COMPLETED' ||
-        e.status.toUpperCase() === 'PROCESSED',
-    ).length,
-    failed: data.filter((e) => e.status.toUpperCase() === 'FAILED').length,
-    pending: data.filter((e) => e.status.toUpperCase() === 'PENDING').length,
+    total: totalItems,
+    processed: 0, // We don't have global stats for this easily without a dedicated endpoint
+    failed: 0,
+    pending: 0,
   };
 
   const handleRetry = async (id: string) => {
@@ -541,18 +556,13 @@ export default function SystemOutboxPage() {
         </div>
       </Card>
 
-      {/* Pagination Placeholder or Footer */}
-      <div className="flex items-center justify-between px-2 text-slate-400">
-        <p className="text-[10px] font-bold uppercase tracking-widest">
-          {data.length} Total Events in Stream
-        </p>
-        <div className="flex items-center gap-2">
-          <History className="w-3 h-3" />
-          <span className="text-[10px] font-medium italic">
-            Streaming active...
-          </span>
-        </div>
-      </div>
+        <TablePagination
+          currentPage={page}
+          totalPages={totalPages}
+          totalItems={totalItems}
+          onPageChange={handlePageChange}
+          isLoading={loading}
+        />
     </div>
   );
 }

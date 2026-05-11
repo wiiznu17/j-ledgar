@@ -39,13 +39,14 @@ export class AdminFinanceController {
 
   @Get('accounts')
   async getAccounts(
-    @Query('page') page: number = 0,
-    @Query('size') size: number = 50,
+    @Query('page') page: number = 1,
+    @Query('limit') limit: number = 50,
   ): Promise<AdminPaginatedResponse<Account>> {
+    const skipPage = Math.max(0, page - 1);
     // Proxy to finance-service
     const response = await this.integrationService.forwardToGateway<any>(
       'get',
-      `${INTERNAL_API_PATHS.FINANCE.ACCOUNTS.BASE}?page=${page}&size=${size}`,
+      `${INTERNAL_API_PATHS.FINANCE.ACCOUNTS.BASE}?page=${skipPage}&size=${limit}`,
     );
 
     const content = Array.isArray(response) ? response : response.content || [];
@@ -56,7 +57,7 @@ export class AdminFinanceController {
       data: content,
       pagination: {
         page: Number(page),
-        limit: Number(size),
+        limit: Number(limit),
         total: totalElements,
         totalPages: totalPages,
       },
@@ -93,12 +94,13 @@ export class AdminFinanceController {
   @Get('accounts/:id/ledger-entries')
   async getLedgerEntries(
     @Param('id') id: string,
-    @Query('page') page: number = 0,
-    @Query('size') size: number = 50,
+    @Query('page') page: number = 1,
+    @Query('limit') limit: number = 50,
   ): Promise<AdminPaginatedResponse<any>> {
+    const skipPage = Math.max(0, page - 1);
     const response = await this.integrationService.forwardToGateway<any>(
       'get',
-      `${INTERNAL_API_PATHS.FINANCE.ACCOUNTS.LEDGER_HISTORY(id)}?page=${page}&size=${size}`,
+      `${INTERNAL_API_PATHS.FINANCE.ACCOUNTS.LEDGER_HISTORY(id)}?page=${skipPage}&size=${limit}`,
     );
 
     const content = response.content || [];
@@ -109,7 +111,7 @@ export class AdminFinanceController {
       data: content,
       pagination: {
         page: Number(page),
-        limit: Number(size),
+        limit: Number(limit),
         total: totalElements,
         totalPages: totalPages,
       },
@@ -133,12 +135,13 @@ export class AdminFinanceController {
 
   @Get('wallets')
   async getWallets(
-    @Query('page') page: number = 0,
-    @Query('size') size: number = 20,
+    @Query('page') page: number = 1,
+    @Query('limit') limit: number = 20,
   ): Promise<AdminPaginatedResponse<WalletDto>> {
+    const skipPage = Math.max(0, page - 1);
     const response = await this.integrationService.forwardToGateway<any>(
       'get',
-      `${INTERNAL_API_PATHS.FINANCE.WALLETS.ADMIN_LIST}?page=${page}&size=${size}`,
+      `${INTERNAL_API_PATHS.FINANCE.WALLETS.ADMIN_LIST}?page=${skipPage}&size=${limit}`,
     );
 
     const content = response.content || [];
@@ -149,7 +152,7 @@ export class AdminFinanceController {
       data: content,
       pagination: {
         page: Number(page),
-        limit: Number(size),
+        limit: Number(limit),
         total: totalElements,
         totalPages: totalPages,
       },
@@ -204,8 +207,8 @@ export class AdminFinanceController {
 
   @Get('transactions')
   async getTransactions(
-    @Query('page') page: number = 0,
-    @Query('size') size: number = 50,
+    @Query('page') page: number = 1,
+    @Query('limit') limit: number = 50,
     @Query('status') status?: string,
     @Query('type') type?: string,
     @Query('userId') userId?: string,
@@ -213,9 +216,10 @@ export class AdminFinanceController {
     @Query('startDate') startDate?: string,
     @Query('endDate') endDate?: string,
   ): Promise<AdminPaginatedResponse<Transaction>> {
+    const skipPage = Math.max(0, page - 1);
     const query = new URLSearchParams({
-      page: page.toString(),
-      size: size.toString(),
+      page: skipPage.toString(),
+      size: limit.toString(),
       ...(status && { status }),
       ...(type && { type }),
       ...(userId && { userId }),
@@ -237,7 +241,7 @@ export class AdminFinanceController {
       data: content,
       pagination: {
         page: Number(page),
-        limit: Number(size),
+        limit: Number(limit),
         total: totalElements,
         totalPages: totalPages,
       },
@@ -271,12 +275,13 @@ export class AdminFinanceController {
 
   @Get('aml/suspicious-activities')
   async getSuspiciousActivities(
-    @Query('page') page: number = 0,
-    @Query('size') size: number = 50,
+    @Query('page') page: number = 1,
+    @Query('limit') limit: number = 50,
   ): Promise<AdminPaginatedResponse<any>> {
+    const skipPage = Math.max(0, page - 1);
     const response = await this.integrationService.forwardToGateway<any>(
       'get',
-      `${INTERNAL_API_PATHS.FINANCE.AML.SUSPICIOUS_ACTIVITIES}?page=${page}&size=${size}`,
+      `${INTERNAL_API_PATHS.FINANCE.AML.SUSPICIOUS_ACTIVITIES}?page=${skipPage}&size=${limit}`,
     );
 
     // Format to match UI expectations (PaginatedResponse)
@@ -288,7 +293,7 @@ export class AdminFinanceController {
       data: content,
       pagination: {
         page: Number(page),
-        limit: Number(size),
+        limit: Number(limit),
         total: totalElements,
         totalPages: totalPages,
       },
