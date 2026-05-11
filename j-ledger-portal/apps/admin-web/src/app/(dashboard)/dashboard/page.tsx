@@ -57,13 +57,15 @@ export default function DashboardPage() {
           setTotalBalance(recData.totalAccountBalances.toFixed(2));
         }
 
-        setTotalAccounts(accData?.pagination?.total || 0);
         setTotalTransactions(txData?.pagination?.total || 0);
 
         if (dashStats) {
           setKycStats(dashStats.kyc);
           setChartData(dashStats.chartData);
           setGrowthStats(dashStats.growth);
+          if (dashStats.totalActiveUsers !== undefined) {
+            setTotalAccounts(dashStats.totalActiveUsers);
+          }
         }
 
         setIsOnline(true);

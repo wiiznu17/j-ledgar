@@ -440,6 +440,14 @@ export class KycService {
     return { pending, approvedToday, rejectedToday };
   }
 
+  async getActiveUsersCount() {
+    return this.prisma.user.count({
+      where: {
+        status: UserStatus.ACTIVE,
+      },
+    });
+  }
+
   async getPendingKYCList() {
     const list = await this.getKYCList(UserStatus.PENDING_APPROVAL);
     return list.items;

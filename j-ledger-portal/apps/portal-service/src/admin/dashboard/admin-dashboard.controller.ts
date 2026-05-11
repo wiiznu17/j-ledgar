@@ -35,7 +35,10 @@ export class AdminDashboardController {
     const now = new Date();
     const chartData = this.processTransactionVolume(transactions);
 
-    // 4. Calculate Growth Stats
+    // 4. Fetch Total Active Users
+    const activeUsersCount = await this.kycService.getActiveUsersCount();
+
+    // 5. Calculate Growth Stats
     const totalKyc = kycStats.approvedToday + kycStats.rejectedToday;
     const approvalRate =
       totalKyc > 0
@@ -45,6 +48,7 @@ export class AdminDashboardController {
     return {
       kyc: kycStats,
       chartData,
+      totalActiveUsers: activeUsersCount,
       growth: {
         approvalRate,
         volumeGoal: 65, // This could be dynamic based on historical averages
