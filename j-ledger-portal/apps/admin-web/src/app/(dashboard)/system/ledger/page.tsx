@@ -44,9 +44,12 @@ export default function InternalLedgerPage() {
         limit: 10,
       });
 
-      setAccounts(response.data as Account[]);
-      setTotal(response.pagination.total);
-      setTotalPages(response.pagination.totalPages);
+      setAccounts(response.data as Account[] || []);
+      
+      if (response.pagination) {
+        setTotal(response.pagination.total || 0);
+        setTotalPages(response.pagination.totalPages || 1);
+      }
     } catch (error) {
       console.error('[INTERNAL_LEDGER] Fetch error:', error);
       toast.error('Failed to fetch internal accounts');

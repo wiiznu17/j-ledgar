@@ -81,10 +81,13 @@ export default function SystemOutboxPage() {
       if (type !== 'ALL') filters.eventType = type;
 
       const response = await systemRequester.getOutbox(filters);
-      setData(response.data);
-      setTotalPages(response.pagination.totalPages);
-      setTotalItems(response.pagination.total);
-      setPage(response.pagination.page);
+      setData(response.data || []);
+      
+      if (response.pagination) {
+        setTotalPages(response.pagination.totalPages || 1);
+        setTotalItems(response.pagination.total || 0);
+        setPage(response.pagination.page || 1);
+      }
     } catch (error) {
       console.error('[OUTBOX] Fetch error:', error);
       toast.error('Service temporarily unavailable.');

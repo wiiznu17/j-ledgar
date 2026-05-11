@@ -62,8 +62,11 @@ export default function InternalLedgerDetailPage({
       ]);
 
       setAccount(accResponse.data);
-      setEntries(entriesResponse.data);
-      setTotalPages(entriesResponse.pagination.totalPages);
+      setEntries(entriesResponse.data || []);
+      
+      if (entriesResponse.pagination) {
+        setTotalPages(entriesResponse.pagination.totalPages || 1);
+      }
     } catch (error) {
       console.error('[LEDGER_DETAIL] Fetch error:', error);
       toast.error('Failed to fetch ledger details');
