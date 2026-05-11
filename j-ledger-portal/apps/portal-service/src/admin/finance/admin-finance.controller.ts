@@ -295,4 +295,43 @@ export class AdminFinanceController {
       data,
     );
   }
+
+  // ==================== Treasury Management ====================
+
+  @Get('treasury/summary')
+  @Roles(AdminRole.SUPER_ADMIN, AdminRole.AUDITOR)
+  async getTreasurySummary(): Promise<any> {
+    const [financeSummary, stripeBalance] = await Promise.all([
+      this.integrationService.forwardToGateway(
+        'get',
+        INTERNAL_API_PATHS.FINANCE.TREASURY.SUMMARY,
+      ),
+      this.integrationService.getStripeBalance(),
+    ]);
+
+    const totalRealAssets = 
+      (stripeBalance?.available || 0) + 
+      (stripeBalance?.pending || 0) + 
+      (financeSummary.totalBankBalance || 0);
+    
+    const realReserveRatio = financeSummary.totalCustomerLiability > 0
+      ? Math.round((totalRealAssets / financeSummary.totalCustomerLiability) * 10000) / 100
+      : 100;
+
+    return {
+      ...financeSummary,
+      stripeAvailableBalance: stripeBalance?.available || 0,
+      stripePendingBalance: stripeBalance?.pending || 0,
+      reserveRatio: realReserveRatio,
+    };
+  }
+
+  @Get('treasury/payouts')
+  @Roles(AdminRole.SUPER_ADMIN, AdminRole.AUDITOR)
+  async getTreasuryPayouts(): Promise<any> {
+    return this.integrationService.forwardToGateway(
+      'get',
+      INTERNAL_API_PATHS.FINANCE.TREASURY.PAYOUTS,
+    );
+  }
 }

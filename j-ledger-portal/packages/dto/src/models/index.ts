@@ -161,3 +161,37 @@ export interface WalletDto {
   createdAt: string;
   updatedAt: string;
 }
+
+// ==================== Treasury Models ====================
+
+export interface TreasuryBankAccount {
+  id: number;
+  name: string;
+  accountNumber: string;
+  bankName: string;
+  balance: number;
+  currency: string;
+  provider: string;
+  updatedAt: string;
+}
+
+export interface TreasuryPayout {
+  id: number;
+  stripePayoutId: string;
+  amount: number;
+  currency: string;
+  status: string;
+  arrivalDate: string;
+  note: string;
+  createdAt: string;
+}
+
+export interface TreasurySummary {
+  stripeBalance: number; // Gross balance calculated from our DB
+  stripeAvailableBalance?: number; // Real balance from Stripe API
+  stripePendingBalance?: number; // Real pending balance from Stripe API
+  totalBankBalance: number;
+  totalCustomerLiability: number;
+  reserveRatio: number;
+  bankAccounts: TreasuryBankAccount[];
+}

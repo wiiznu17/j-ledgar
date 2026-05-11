@@ -75,7 +75,6 @@ const navigationGroups: NavigationGroup[] = [
         href: '/finance/treasury',
         icon: Landmark,
         requiredPermission: Permission.VIEW_TRANSACTIONS,
-        isSoon: true,
       },
       {
         name: 'Settlement',

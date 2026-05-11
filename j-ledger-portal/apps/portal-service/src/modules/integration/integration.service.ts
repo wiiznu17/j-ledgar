@@ -56,6 +56,26 @@ export class IntegrationService {
     }
   }
 
+  async getStripeBalance() {
+    if (!this.stripe) return null;
+    try {
+      const balance = await this.stripe.balance.retrieve();
+      // Stripe returns an array for available and pending (multi-currency)
+      const available =
+        balance.available.find((b) => b.currency === 'thb')?.amount || 0;
+      const pending =
+        balance.pending.find((b) => b.currency === 'thb')?.amount || 0;
+
+      return {
+        available: available / 100, // Convert from cents to THB
+        pending: pending / 100,
+      };
+    } catch (error) {
+      this.logger.error(`Failed to fetch Stripe balance: ${error.message}`);
+      return null;
+    }
+  }
+
   // ==================== Ledger Proxy ====================
 
   async forwardToGateway<T = any>(
@@ -733,6 +753,10 @@ export class IntegrationService {
       await this.handlePaymentIntentSucceeded(event);
     }
 
+    if (event.type === 'payout.paid') {
+      await this.handlePayoutPaid(event);
+    }
+
     if (
       event.type === 'payment_intent.payment_failed' ||
       event.type === 'payment_intent.canceled'
@@ -741,6 +765,27 @@ export class IntegrationService {
     }
 
     return { received: true };
+  }
+
+  private async handlePayoutPaid(event: any) {
+    const payout = event.data.object as any;
+    this.logger.log(`[StripeWebhook] Processing payout: ${payout.id}`);
+
+    try {
+      await this.forwardToGateway(
+        'post',
+        INTERNAL_API_PATHS.FINANCE.TREASURY.CONFIRM_STRIPE_PAYOUT,
+        {
+          stripePayoutId: payout.id,
+          amount: (payout.amount / 100).toFixed(4), // Convert from cents
+          arrivalDate: new Date(payout.arrival_date * 1000).toISOString(),
+        },
+      );
+    } catch (error: any) {
+      this.logger.error(
+        `[StripeWebhook] Failed to confirm payout ${payout.id}: ${error.message}`,
+      );
+    }
   }
 
   private async handlePaymentIntentSucceeded(event: any) {
