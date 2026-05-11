@@ -103,6 +103,12 @@ export const API_PATHS = {
       CATEGORIES: '/api/admin/deals/meta/categories',
       UPLOAD: '/api/admin/common/upload',
     },
+    LOYALTY: {
+      RULES: '/api/admin/loyalty/rules',
+      RULE_DETAIL: (eventType: string) => `/api/admin/loyalty/rules/${eventType}`,
+      STATS: '/api/admin/loyalty/stats',
+      EXPIRY_SCHEDULE: '/api/admin/loyalty/expiry-schedule',
+    },
   },
   PORTAL: {
     IDENTITY: {

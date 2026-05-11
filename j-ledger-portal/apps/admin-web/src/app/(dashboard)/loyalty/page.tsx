@@ -1,0 +1,147 @@
+'use client';
+
+import { useEffect, useState } from 'react';
+import { toast } from 'sonner';
+import { StatCard } from '@/components/dashboard/StatCard';
+import { 
+  Coins, 
+  Users, 
+  Settings, 
+  Calendar,
+  AlertCircle,
+  Gift,
+  XCircle
+} from 'lucide-react';
+import { loyaltyRequester } from '@/lib/requesters';
+import { RulesTable } from './_components/RulesTable';
+import { ExpirySchedule } from './_components/ExpirySchedule';
+// Removed missing Alert imports
+
+export default function LoyaltyPage() {
+  const [rules, setRules] = useState<any[]>([]);
+  const [stats, setStats] = useState<any>(null);
+  const [expiryData, setExpiryData] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  const fetchData = async () => {
+    try {
+      setLoading(true);
+      const [rulesRes, statsRes, expiryRes] = await Promise.all([
+        loyaltyRequester.getRules(),
+        loyaltyRequester.getStats(),
+        loyaltyRequester.getExpirySchedule(),
+      ]);
+      setRules(rulesRes);
+      setStats(statsRes);
+      setExpiryData(expiryRes);
+    } catch (error) {
+      console.error('Failed to fetch loyalty data', error);
+      toast.error('Could not load loyalty data');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchData();
+  }, []);
+
+  return (
+    <div className="space-y-8 pb-10">
+      <div>
+        <h2 className="text-3xl font-bold tracking-tight text-slate-900">
+          Loyalty & Points
+        </h2>
+        <p className="text-slate-500 mt-1 font-medium">
+          Manage earning rules, monitor point circulation, and track upcoming expiries.
+        </p>
+      </div>
+
+      <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+        <StatCard
+          title="Active Points"
+          value={stats?.totalActivePoints.toLocaleString() || '0'}
+          description="Current points in user wallets"
+          icon={Coins}
+          className="bg-white border-none shadow-sm ring-1 ring-slate-100"
+        />
+
+        <StatCard
+          title="Lifetime Earned"
+          value={stats?.totalLifetimePoints.toLocaleString() || '0'}
+          description="Total points awarded since launch"
+          icon={Calendar}
+          className="bg-white border-none shadow-sm ring-1 ring-slate-100"
+        />
+
+        <StatCard
+          title="Redeemed Points"
+          value={stats?.totalRedeemedPoints?.toLocaleString() || '0'}
+          description="Total points used for rewards/deals"
+          icon={Gift}
+          className="bg-emerald-50/30 border-none shadow-sm ring-1 ring-emerald-100/50"
+        />
+
+        <StatCard
+          title="Expired Points"
+          value={stats?.totalExpiredPoints?.toLocaleString() || '0'}
+          description="Points removed due to expiry"
+          icon={XCircle}
+          className="bg-amber-50/30 border-none shadow-sm ring-1 ring-amber-100/50"
+        />
+
+        <StatCard
+          title="Point Holders"
+          value={stats?.totalUsersWithPoints || 0}
+          description="Active users with point balance"
+          icon={Users}
+          className="bg-white border-none shadow-sm ring-1 ring-slate-100"
+        />
+
+        <StatCard
+          title="Active Rules"
+          value={stats?.activeRules || 0}
+          description="Currently enabled earning rules"
+          icon={Settings}
+          className="bg-white border-none shadow-sm ring-1 ring-slate-100"
+        />
+      </div>
+
+      <div className="grid gap-8 lg:grid-cols-3">
+        <div className="lg:col-span-2 space-y-6">
+          <div className="flex items-center justify-between">
+            <h3 className="text-xl font-bold text-slate-800">Earning Rules</h3>
+          </div>
+          
+          <div className="bg-blue-50/50 border border-blue-100 rounded-xl p-4 flex items-start gap-3">
+            <AlertCircle className="h-5 w-5 text-blue-600 mt-0.5 flex-shrink-0" />
+            <div>
+              <h4 className="font-bold text-blue-900 text-sm">Maintenance Mode Notice</h4>
+              <p className="text-blue-800 text-xs mt-1 leading-relaxed">
+                Rules can only be modified when <strong>Unlocked</strong>. Unlocking a rule enables maintenance mode for that specific event trigger.
+              </p>
+            </div>
+          </div>
+
+          <RulesTable rules={rules} onRefresh={fetchData} />
+        </div>
+
+        <div className="space-y-6">
+          <h3 className="text-xl font-bold text-slate-800">Expiry Outlook</h3>
+          <ExpirySchedule data={expiryData} />
+          
+          <div className="bg-amber-50 p-6 rounded-xl border-none shadow-sm ring-1 ring-amber-100">
+            <h4 className="text-sm font-bold text-amber-900 flex items-center gap-2 mb-2">
+              <Calendar className="w-4 h-4" />
+              Monthly Cycle Info
+            </h4>
+            <p className="text-xs text-amber-800 leading-relaxed">
+              Points earned are valid for 1 year, expiring at the end of the same month of the following year. 
+              The cleanup job runs automatically every day at midnight to process any expired balances.
+            </p>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}

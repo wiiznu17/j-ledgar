@@ -23,13 +23,17 @@ import {
 } from '@repo/dto';
 
 import { IntegrationService } from '../../modules/integration/integration.service';
+import { LoyaltyService } from '../../modules/loyalty/loyalty.service';
 
 @Controller('admin')
 @UseGuards(AdminJwtGuard, AdminRolesGuard)
 export class AdminFinanceController {
   private readonly logger = new Logger(AdminFinanceController.name);
 
-  constructor(private readonly integrationService: IntegrationService) {}
+  constructor(
+    private readonly integrationService: IntegrationService,
+    private readonly loyaltyService: LoyaltyService,
+  ) {}
 
   // ==================== Account Management ====================
 
@@ -249,9 +253,17 @@ export class AdminFinanceController {
       INTERNAL_API_PATHS.FINANCE.TRANSACTIONS.DETAIL(id),
     );
 
+    // Fetch points earned for this transaction
+    const pointHistories = await this.loyaltyService.getPointHistoryByReference(id);
+    const earnedPoints = pointHistories.find(p => p.amount > 0);
+
     return {
       transaction: response,
       ledgerEntries: [], // Ledger entries not yet exposed by core
+      pointsEarned: earnedPoints ? {
+        amount: earnedPoints.amount,
+        expiresAt: earnedPoints.expiresAt,
+      } : undefined,
     };
   }
 

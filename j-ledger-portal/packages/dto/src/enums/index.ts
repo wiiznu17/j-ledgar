@@ -214,6 +214,9 @@ export enum NotificationEventType {
   OFFER = 'OFFER',
   NEWS = 'NEWS',
   ANNOUNCEMENT = 'ANNOUNCEMENT',
+
+  // Loyalty
+  LOYALTY_EARN = 'LOYALTY_EARN',
 }
 
 export enum KafkaTopic {
@@ -223,6 +226,7 @@ export enum KafkaTopic {
   FINANCIAL_EVENTS_V1 = 'financial-events-v1',
   TRANSACTION_EVENTS = 'transaction-events',
   NOTIFICATION_EVENTS = 'notification-events',
+  LOYALTY_EVENTS = 'loyalty-events',
 }
 
 export enum NotificationCategory {
@@ -237,4 +241,5 @@ export enum AppPath {
   PROFILE_SECURITY = '/profile/security',
   PROFILE_INFO = '/profile/information',
   TRANSACTION_DETAIL = '/transaction',
+  LOYALTY = '/loyalty',
 }

@@ -9,6 +9,7 @@ import {
   UseGuards,
 } from '@nestjs/common';
 import { IdentityService } from '../../modules/identity/identity.service';
+import { LoyaltyService } from '../../modules/loyalty/loyalty.service';
 import { AdminService } from '../services/admin.service';
 import {
   AdminPaginatedResponse,
@@ -30,6 +31,7 @@ export class AdminUserController {
   constructor(
     private readonly identityService: IdentityService,
     private readonly adminService: AdminService,
+    private readonly loyaltyService: LoyaltyService,
   ) {}
 
   @Get()
@@ -72,7 +74,8 @@ export class AdminUserController {
   @RequirePermissions(Permission.VIEW_USERS)
   async getUserById(@Param('id') id: string) {
     const user = await this.identityService.findById(id);
-    return { data: user };
+    const loyalty = await this.loyaltyService.getUserBalance(id);
+    return { data: { ...user, loyaltyPoints: loyalty.balance } };
   }
 
   @Get(':id/activity')

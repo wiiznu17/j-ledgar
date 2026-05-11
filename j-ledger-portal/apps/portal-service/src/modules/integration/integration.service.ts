@@ -674,29 +674,18 @@ export class IntegrationService {
         );
       }
 
-      // Earn Loyalty Points (25 THB = 1 Point)
+      // Earn Loyalty Points
       try {
         const pointsEarned = await this.loyaltyService.earnPoints(
           userId,
           amount,
+          'P2P_TRANSFER',
           `P2P Transfer to ${recipientProfile?.idCardName || recipientPhone}`,
           finalTxId,
         );
 
         if (pointsEarned) {
-          // Send Notification about earned points
-          await this.prisma.notification
-            .create({
-              data: {
-                userId,
-                title: 'Points Earned! 🏆',
-                message: `You earned ${Math.floor(amount * 0.04)} points from your transfer.`,
-                type: 'LOYALTY_EARN',
-                idempotencyKey: `points_earn_${finalTxId}`,
-                referenceId: finalTxId,
-              },
-            })
-            .catch(() => {});
+          this.logger.log(`Loyalty points earned for transaction ${finalTxId}`);
         }
       } catch (err) {
         this.logger.error(`[P2PTransfer] Point earning failed: ${err.message}`);
@@ -855,6 +844,21 @@ export class IntegrationService {
         processedEventId: event.id,
       },
     });
+
+    // Earn Loyalty Points (TOPUP)
+    try {
+      await this.loyaltyService.earnPoints(
+        order.userId,
+        Number(order.amount),
+        'TOPUP',
+        `Top-up via ${order.currency}`,
+        order.id,
+      );
+    } catch (err) {
+      this.logger.error(
+        `[StripeWebhook] Loyalty points earning failed for order=${order.id}: ${err.message}`,
+      );
+    }
 
     // Create Invoice after successful Top-up
     this.logger.log(

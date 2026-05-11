@@ -326,7 +326,44 @@ async function main() {
     });
   }
 
-  console.log('✅ Comprehensive RBAC Seed completed successfully!');
+  // 5. Seed Loyalty Rules
+  console.log('💎 Seeding loyalty rules...');
+  const loyaltyRules = [
+    {
+      eventType: 'TOPUP',
+      pointsPerThb: 0.04, // 25 THB = 1 Point
+      minAmount: 100,
+      isActive: true,
+      isLocked: true,
+      description: 'Earn points on successful wallet top-ups',
+    },
+    {
+      eventType: 'P2P_TRANSFER',
+      pointsPerThb: 0.04, // 25 THB = 1 Point
+      minAmount: 1,
+      isActive: true,
+      isLocked: true,
+      description: 'Earn points on peer-to-peer transfers (Sender only)',
+    },
+    {
+      eventType: 'MERCHANT_PAYMENT',
+      pointsPerThb: 0.08, // 12.5 THB = 1 Point (Bonus for spending!)
+      minAmount: 1,
+      isActive: true,
+      isLocked: true,
+      description: 'Earn points on merchant payments',
+    },
+  ];
+
+  for (const rule of loyaltyRules) {
+    await prisma.loyaltyRule.upsert({
+      where: { eventType: rule.eventType },
+      update: rule,
+      create: rule,
+    });
+  }
+
+  console.log('✅ Comprehensive RBAC and Loyalty Seed completed successfully!');
 }
 
 main()

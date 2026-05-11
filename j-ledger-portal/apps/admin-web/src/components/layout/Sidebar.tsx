@@ -29,6 +29,7 @@ import {
   Database,
   History,
   Wallet,
+  Coins,
 } from 'lucide-react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
@@ -165,6 +166,13 @@ const navigationGroups: NavigationGroup[] = [
         icon: ClipboardList,
         requiredPermission: Permission.VIEW_DASHBOARD,
         isSoon: true,
+      },
+      {
+        name: 'Loyalty Points',
+        href: '/loyalty',
+        icon: Coins,
+        requiredPermission: Permission.VIEW_DASHBOARD,
+        isNew: true,
       },
     ],
   },

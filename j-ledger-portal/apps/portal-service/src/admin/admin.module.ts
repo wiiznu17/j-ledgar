@@ -16,12 +16,14 @@ import { AdminAuditController } from './audit/admin-audit.controller';
 import { AdminIntegrationController } from './integration/admin-integration.controller';
 import { AdminKycController } from './kyc/admin-kyc.controller';
 import { AdminDashboardController } from './dashboard/admin-dashboard.controller';
+import { AdminLoyaltyController } from './loyalty/admin-loyalty.controller';
 import { IdentityModule } from '../modules/identity/identity.module';
 import { StorageModule } from '../core/storage/storage.module';
 import { ReportingModule } from '../modules/reporting/reporting.module';
 import { IntegrationModule } from '../modules/integration/integration.module';
 import { BannerModule } from '../modules/banners/banner.module';
 import { DealModule } from '../modules/deals/deal.module';
+import { LoyaltyModule } from '../modules/loyalty/loyalty.module';
 import { AuditModule } from '../modules/audit/audit.module';
 import { KycModule } from '../modules/kyc/kyc.module';
 import { JwtModule } from '@nestjs/jwt';
@@ -35,6 +37,7 @@ import { AdminJwtStrategy } from './strategies/admin-jwt.strategy';
     IntegrationModule,
     BannerModule,
     DealModule,
+    LoyaltyModule,
     AuditModule,
     KycModule,
     JwtModule.register({
@@ -58,6 +61,7 @@ import { AdminJwtStrategy } from './strategies/admin-jwt.strategy';
     AdminIntegrationController,
     AdminKycController,
     AdminDashboardController,
+    AdminLoyaltyController,
   ],
   providers: [
     AdminService,
