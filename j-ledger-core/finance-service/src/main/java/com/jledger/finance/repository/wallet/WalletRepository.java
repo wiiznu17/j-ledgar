@@ -20,4 +20,7 @@ public interface WalletRepository extends JpaRepository<Wallet, Long> {
 
     boolean existsByUserId(String userId);
     Optional<Wallet> findByWalletId(String walletId);
+
+    @Query("SELECT SUM(w.balance) FROM Wallet w")
+    java.math.BigDecimal sumAllBalances();
 }

@@ -90,4 +90,7 @@ public interface TransactionRepository extends JpaRepository<Transaction, Long> 
     // For data retention
     long countByCreatedAtBefore(LocalDateTime createdAt);
     long deleteByCreatedAtBefore(LocalDateTime createdAt);
+
+    @Query("SELECT SUM(t.amount) FROM Transaction t WHERE t.type = :type AND t.status = :status")
+    java.math.BigDecimal sumAmountByTypeAndStatus(@Param("type") TransactionType type, @Param("status") TransactionStatus status);
 }

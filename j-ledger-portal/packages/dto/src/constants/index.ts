@@ -67,6 +67,8 @@ export const API_PATHS = {
         `/api/admin/wallets/${userId}/unfreeze`,
       TRANSACTIONS: '/api/admin/transactions',
       TRANSACTION_DETAIL: (id: string) => `/api/admin/transactions/${id}`,
+      TREASURY_SUMMARY: '/api/admin/treasury/summary',
+      TREASURY_PAYOUTS: '/api/admin/treasury/payouts',
     },
     SYSTEM: {
       OUTBOX: '/api/admin/system/outbox',
@@ -232,6 +234,11 @@ export const INTERNAL_API_PATHS = {
         BASE: '/api/v1/system/outbox',
         RETRY: (id: string) => `/api/v1/system/outbox/${id}/retry`,
       },
+    },
+    TREASURY: {
+      SUMMARY: '/api/admin/treasury/summary',
+      PAYOUTS: '/api/admin/treasury/payouts',
+      CONFIRM_STRIPE_PAYOUT: '/api/admin/treasury/internal/payouts/stripe-confirmed',
     },
   },
 };
