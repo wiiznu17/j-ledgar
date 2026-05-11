@@ -12,6 +12,7 @@ export interface DashboardStats {
     approvalRate: number;
     volumeGoal: number;
   };
+  totalActiveUsers?: number;
 }
 
 export const dashboardRequester = {
