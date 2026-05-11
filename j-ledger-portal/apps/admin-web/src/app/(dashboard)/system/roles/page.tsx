@@ -68,10 +68,13 @@ export default function RolesPage() {
           limit: 10,
         },
       });
-      setRoles(response.data);
-      setTotalPages(response.pagination.totalPages);
-      setTotalItems(response.pagination.total);
-      setPage(response.pagination.page);
+      setRoles(response.data || []);
+      
+      if (response.pagination) {
+        setTotalPages(response.pagination.totalPages || 1);
+        setTotalItems(response.pagination.total || 0);
+        setPage(response.pagination.page || 1);
+      }
     } catch {
       showError('Access Denied', 'Failed to load roles.');
     } finally {
