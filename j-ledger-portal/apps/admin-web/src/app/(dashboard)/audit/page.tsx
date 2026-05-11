@@ -106,9 +106,12 @@ export default function AuditPage() {
         startDate: startDate || undefined,
         endDate: endDate || undefined,
       });
-      setLogs(response.data);
-      setTotalPages(response.pagination.totalPages);
-      setTotal(response.pagination.total);
+      setLogs(response.data || []);
+      
+      if (response.pagination) {
+        setTotalPages(response.pagination.totalPages || 1);
+        setTotal(response.pagination.total || 0);
+      }
     } catch (error) {
       console.error('[AUDIT_PAGE] Fetch error:', error);
     } finally {
