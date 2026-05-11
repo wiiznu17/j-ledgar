@@ -721,6 +721,7 @@ export class IdentityService {
     eventType: NotificationEventType,
     metadata?: any,
   ) {
+    // 1. Always record to Database for audit trail
     await this.prisma.securityEvent.create({
       data: {
         userId,
@@ -729,6 +730,25 @@ export class IdentityService {
       },
     });
 
+    // 2. Only emit to Kafka for events that REQUIRE a notification to the user
+    // We filter out common/non-critical events to avoid notification spam
+    const essentialEvents = [
+      NotificationEventType.LOGIN_FAILURE,
+      NotificationEventType.PASSWORD_CHANGE,
+      NotificationEventType.PASSWORD_SET,
+      NotificationEventType.PIN_SETUP,
+      NotificationEventType.KYC_APPROVED,
+      NotificationEventType.KYC_REJECTED,
+      NotificationEventType.DEVICE_REGISTERED,
+    ];
+
+    if (!essentialEvents.includes(eventType)) {
+      this.logger.debug(
+        `Skipping Kafka emission for non-essential security event: ${eventType}`,
+      );
+      return;
+    }
+
     // Emit to Kafka for notification-worker
     try {
       await this.kafkaProducer.emit(KafkaTopic.SECURITY_EVENTS, {
@@ -736,13 +756,12 @@ export class IdentityService {
         eventType,
         metadata: metadata || {},
         timestamp: new Date().toISOString(),
-        referenceId: new Date().getTime().toString(), // Using time as fallback reference
+        referenceId: new Date().getTime().toString(),
       });
     } catch (error) {
       this.logger.warn(
         `Failed to emit security event to Kafka for user ${userId}: ${error.message}`,
       );
-      // Don't rethrow - we don't want notification failures to block core logic
     }
   }
 
