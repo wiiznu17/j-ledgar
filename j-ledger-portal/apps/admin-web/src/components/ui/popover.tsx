@@ -9,12 +9,15 @@ const Popover = PopoverPrimitive.Root;
 
 function PopoverTrigger({
   className,
+  render,
   ...props
 }: PopoverPrimitive.Trigger.Props) {
   return (
     <PopoverPrimitive.Trigger
       data-slot="popover-trigger"
       className={cn(className)}
+      nativeButton={render ? false : undefined}
+      render={render}
       {...props}
     />
   );

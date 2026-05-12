@@ -13,6 +13,8 @@ describe('AccountTable Role-Based Actions', () => {
       balance: 1500.0,
       currency: 'THB',
       status: AccountStatus.ACTIVE,
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
     },
   ];
 

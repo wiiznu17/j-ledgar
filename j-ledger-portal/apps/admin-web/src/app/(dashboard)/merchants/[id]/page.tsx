@@ -1,0 +1,243 @@
+'use client';
+
+import { useEffect, useState, use } from 'react';
+import { useRouter } from 'next/navigation';
+import {
+  Store,
+  Wallet,
+  Shield,
+  ShieldCheck,
+  ShieldAlert,
+  ChevronRight,
+  ArrowLeft,
+  Calendar,
+  Building2,
+  FileText,
+  CreditCard,
+  Gamepad2,
+  ExternalLink,
+  Plus,
+  Settings,
+} from 'lucide-react';
+import {
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle,
+} from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
+import { toast } from 'sonner';
+import Link from 'next/link';
+
+import { merchantRequester } from '@/lib/requesters';
+
+export default function PartnerDetailPage({
+  params,
+}: {
+  params: Promise<{ id: string }>;
+}) {
+  const { id: partnerId } = use(params);
+  const router = useRouter();
+
+  const [partner, setPartner] = useState<any>(null);
+  const [loading, setLoading] = useState(true);
+
+  const fetchData = async () => {
+    try {
+      setLoading(true);
+      const response = await merchantRequester.getPartnerDetail(partnerId);
+      setPartner(response);
+    } catch (error) {
+      console.error('Error fetching partner details', error);
+      toast.error('Failed to load partner information');
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  useEffect(() => {
+    if (partnerId) fetchData();
+  }, [partnerId]);
+
+  if (loading) {
+    return (
+      <div className="p-8 space-y-6 animate-pulse">
+        <div className="h-4 w-48 bg-slate-100 rounded mb-8" />
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+          <div className="lg:col-span-2 h-64 bg-slate-50 rounded-[2rem]" />
+          <div className="h-64 bg-slate-50 rounded-[2rem]" />
+        </div>
+      </div>
+    );
+  }
+
+  if (!partner) {
+    return (
+      <div className="flex flex-col items-center justify-center min-h-[60vh] text-center p-10 bg-white rounded-3xl border border-dashed border-slate-200">
+        <h2 className="text-2xl font-bold text-slate-900">Partner Not Found</h2>
+        <Button variant="outline" onClick={() => router.back()} className="mt-8 rounded-xl px-8">
+          Go Back
+        </Button>
+      </div>
+    );
+  }
+
+  const finance = partner.financeAccounts || { available: 0, pending: 0, fee: 0 };
+
+  return (
+    <div className="space-y-5 pb-10 max-w-7xl mx-auto px-4 md:px-0">
+      {/* Header & Breadcrumbs */}
+      <div className="flex flex-col gap-3">
+        <div className="flex items-center text-[10px] font-bold text-slate-400 uppercase tracking-widest gap-2">
+          <Link href="/merchants" className="hover:text-indigo-600 transition-colors">
+            Merchants
+          </Link>
+          <ChevronRight className="w-3 h-3" />
+          <span className="text-slate-900">Partner Profile</span>
+        </div>
+
+        <div className="flex flex-col md:flex-row md:items-center justify-between gap-3">
+          <h1 className="text-3xl font-black text-slate-900 tracking-tight">
+            Business Partner Profile
+          </h1>
+          <div className="flex items-center gap-2">
+            <Link href={`/merchants/${partnerId}/terminals`}>
+              <Button variant="outline" size="sm" className="h-9 rounded-xl border-slate-200">
+                <Settings className="w-4 h-4 mr-2" />
+                Manage Terminals
+              </Button>
+            </Link>
+            <Button size="sm" className="h-9 rounded-xl bg-indigo-600 hover:bg-indigo-700 shadow-indigo-200">
+              Update Status
+            </Button>
+          </div>
+        </div>
+      </div>
+
+      <div className="grid gap-5 lg:grid-cols-3">
+        <div className="lg:col-span-2 space-y-5">
+          {/* Main Info Card */}
+          <Card className="border-none shadow-sm ring-1 ring-slate-100 bg-white overflow-hidden rounded-[2rem]">
+            <div className="h-24 bg-gradient-to-r from-emerald-600 to-teal-600 relative overflow-hidden">
+              <div className="absolute top-0 right-0 w-32 h-32 bg-white/10 rounded-full blur-2xl -translate-y-1/2 translate-x-1/2" />
+            </div>
+            <CardHeader className="relative pb-0">
+              <div className="absolute -top-12 left-8 p-1.5 bg-white rounded-[1.5rem] shadow-lg">
+                <div className="w-16 h-16 rounded-[1.2rem] bg-slate-900 flex items-center justify-center text-white">
+                  <Building2 className="w-8 h-8 text-emerald-400" />
+                </div>
+              </div>
+              <div className="pl-28 pt-2 pb-6">
+                <div className="flex items-center gap-3">
+                  <h3 className="text-2xl font-black text-slate-900 tracking-tight">
+                    {partner.name}
+                  </h3>
+                  <Badge className="bg-emerald-50 text-emerald-700 border-none text-[10px] font-black rounded-lg">
+                    {partner.status}
+                  </Badge>
+                </div>
+                <div className="flex items-center gap-4 mt-1 text-slate-500 text-xs">
+                  <span className="flex items-center gap-1.5">
+                    <FileText className="w-3.5 h-3.5" />
+                    TAX ID: <span className="font-mono font-bold">{partner.taxId || 'N/A'}</span>
+                  </span>
+                  <span className="flex items-center gap-1.5 font-medium">
+                    <Calendar className="w-3.5 h-3.5" />
+                    Joined {new Date(partner.createdAt).toLocaleDateString()}
+                  </span>
+                </div>
+              </div>
+            </CardHeader>
+            <CardContent className="p-8 pt-4 grid md:grid-cols-2 gap-8 border-t border-slate-50 mt-4">
+              <div className="space-y-6">
+                <h4 className="text-[10px] font-black text-slate-400 uppercase tracking-widest flex items-center gap-2">
+                  <CreditCard className="w-3 h-3" /> Capabilities
+                </h4>
+                <div className="grid gap-3">
+                  <div className="flex items-center justify-between p-3 rounded-xl bg-slate-50 ring-1 ring-slate-100">
+                    <div className="flex items-center gap-3">
+                      <CreditCard className="w-4 h-4 text-slate-400" />
+                      <span className="text-xs font-bold text-slate-700">Payment Processing</span>
+                    </div>
+                    <Badge variant={partner.isPaymentEnabled ? "default" : "secondary"} className={partner.isPaymentEnabled ? "bg-emerald-500" : ""}>
+                      {partner.isPaymentEnabled ? 'Enabled' : 'Disabled'}
+                    </Badge>
+                  </div>
+                  <div className="flex items-center justify-between p-3 rounded-xl bg-slate-50 ring-1 ring-slate-100">
+                    <div className="flex items-center gap-3">
+                      <Gamepad2 className="w-4 h-4 text-slate-400" />
+                      <span className="text-xs font-bold text-slate-700">Loyalty Rewards</span>
+                    </div>
+                    <Badge variant={partner.isLoyaltyEnabled ? "default" : "secondary"} className={partner.isLoyaltyEnabled ? "bg-emerald-500" : ""}>
+                      {partner.isLoyaltyEnabled ? 'Enabled' : 'Disabled'}
+                    </Badge>
+                  </div>
+                </div>
+              </div>
+
+              <div className="space-y-6">
+                <h4 className="text-[10px] font-black text-slate-400 uppercase tracking-widest flex items-center gap-2">
+                  <Wallet className="w-3 h-3" /> Finance Accounts
+                </h4>
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="p-4 rounded-xl bg-indigo-50/50 ring-1 ring-indigo-100">
+                    <p className="text-[9px] font-black text-indigo-400 uppercase tracking-tighter">Available Balance</p>
+                    <div className="text-xl font-black text-slate-900 mt-1">
+                      {Number(finance.available || 0).toLocaleString()}
+                      <span className="text-[10px] ml-1 text-slate-400 font-bold uppercase">THB</span>
+                    </div>
+                  </div>
+                  <div className="p-4 rounded-xl bg-amber-50/50 ring-1 ring-amber-100">
+                    <p className="text-[9px] font-black text-amber-500 uppercase tracking-tighter">Pending Clear</p>
+                    <div className="text-xl font-black text-slate-900 mt-1">
+                      {Number(finance.pending || 0).toLocaleString()}
+                      <span className="text-[10px] ml-1 text-slate-400 font-bold uppercase">THB</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+
+        <div className="space-y-5">
+          <Card className="border-none shadow-sm ring-1 ring-slate-100 bg-white rounded-[2rem] overflow-hidden">
+            <CardHeader className="p-6">
+              <CardTitle className="text-sm font-black uppercase tracking-widest text-slate-400 flex items-center justify-between">
+                Partner Status
+                <Shield className="w-4 h-4" />
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="p-6 pt-0 space-y-6">
+              <div className="space-y-4">
+                <div className="p-4 rounded-2xl bg-slate-50 border border-slate-100 flex items-center gap-4">
+                  <div className={`p-2 rounded-lg ${partner.status === 'ACTIVE' ? 'bg-emerald-100 text-emerald-600' : 'bg-amber-100 text-amber-600'}`}>
+                    <ShieldCheck className="w-5 h-5" />
+                  </div>
+                  <div>
+                    <div className="text-xs font-bold text-slate-900 uppercase">Verification Level</div>
+                    <div className="text-[10px] text-slate-500">Fully verified tax entity</div>
+                  </div>
+                </div>
+                
+                <div className="pt-4 border-t border-slate-100">
+                  <div className="flex items-center justify-between mb-4">
+                    <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Active Terminals</span>
+                    <span className="text-sm font-black text-slate-900">{partner._count?.merchants || 0} Nodes</span>
+                  </div>
+                  <Button variant="outline" className="w-full justify-between h-10 rounded-xl text-slate-600 border-slate-100 font-bold text-[10px] uppercase tracking-wider" nativeButton={false} render={
+                    <Link href={`/merchants/${partnerId}/terminals`}>
+                      Manage Registered Terminals
+                      <ChevronRight className="w-4 h-4" />
+                    </Link>
+                  } />
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+      </div>
+    </div>
+  );
+}

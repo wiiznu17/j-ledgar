@@ -67,8 +67,8 @@ export default function AdminDetailPage({
 
   const fetchRoles = async () => {
     try {
-      const data = await userRequester.getAllRoles();
-      setAvailableRoles(data);
+      const response = await userRequester.getAllRoles();
+      setAvailableRoles(response.data || []);
     } catch (error) {
       console.error('Failed to fetch roles:', error);
     }

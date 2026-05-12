@@ -10,3 +10,4 @@ export { dashboardRequester } from './dashboardRequester';
 export { walletRequester } from './walletRequester';
 export { treasuryRequester } from './treasuryRequester';
 export { loyaltyRequester } from './loyaltyRequester';
+export { merchantRequester } from './merchantRequester';

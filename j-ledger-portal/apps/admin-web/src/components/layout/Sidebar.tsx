@@ -31,6 +31,7 @@ import {
   Wallet,
   Coins,
   Settings,
+  Store,
 } from 'lucide-react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
@@ -189,6 +190,12 @@ const navigationGroups: NavigationGroup[] = [
         href: '/users',
         icon: Users,
         requiredPermission: Permission.VIEW_USERS,
+      },
+      {
+        name: 'Merchant Partners',
+        href: '/merchants',
+        icon: Store,
+        requiredPermission: Permission.VIEW_MERCHANTS,
       },
       {
         name: 'User Activity',
