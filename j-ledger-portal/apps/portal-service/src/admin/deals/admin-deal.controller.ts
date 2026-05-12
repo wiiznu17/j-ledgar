@@ -52,10 +52,16 @@ export class AdminDealController {
   async getAllRedemptions(
     @Query('page') page?: string,
     @Query('limit') limit?: string,
+    @Query('status') status?: string,
+    @Query('dealId') dealId?: string,
+    @Query('search') search?: string,
   ) {
     return this.dealService.getAllRedemptions({
       page: page ? parseInt(page) : 1,
       limit: limit ? parseInt(limit) : 10,
+      status,
+      dealId,
+      search,
     });
   }
 

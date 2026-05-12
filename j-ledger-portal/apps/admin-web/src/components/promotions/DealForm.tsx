@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -10,86 +11,134 @@ import {
   SelectContent,
   SelectItem,
   SelectTrigger,
-  SelectValue,
 } from '@/components/ui/select';
 import { promotionsRequester } from '@/lib/requesters';
 import { toast } from 'sonner';
-import { Loader2, Upload, X } from 'lucide-react';
+import { Loader2, Info, Tag, ShoppingBag, Settings2, Image as ImageIcon, Scale } from 'lucide-react';
+import { ImageUploadWithCrop } from '@/components/promotions/ImageUploadWithCrop';
+import { FilterDatePicker } from '@/components/common/FilterElements';
 
 interface DealFormProps {
   initialData?: any;
-  onSuccess: () => void;
-  onCancel: () => void;
+  onSuccess?: () => void;
+  onCancel?: () => void;
+  isPage?: boolean;
 }
 
-export function DealForm({ initialData, onSuccess, onCancel }: DealFormProps) {
+const SectionHeader = ({ icon: Icon, title, colorClass }: { icon: any, title: string, colorClass: string }) => (
+  <div className={`flex items-center gap-2 px-3 py-1.5 rounded-lg ${colorClass} mb-3`}>
+    <Icon size={14} className="opacity-70" />
+    <h3 className="text-[10px] font-bold uppercase tracking-widest">{title}</h3>
+  </div>
+);
+
+const CharCounter = ({ current, max }: { current: number, max: number }) => (
+  <div className={`text-[9px] font-bold text-right mt-1 ${current > max ? 'text-red-500' : 'text-slate-300'}`}>
+    {current.toLocaleString()} / {max.toLocaleString()}
+  </div>
+);
+
+export function DealForm({ initialData, onSuccess, onCancel, isPage = false }: DealFormProps) {
+  const router = useRouter();
   const [loading, setLoading] = useState(false);
-  const [uploading, setUploading] = useState(false);
+  const [imageFile, setImageFile] = useState<File | null>(null);
   const [brands, setBrands] = useState<any[]>([]);
   const [categories, setCategories] = useState<any[]>([]);
+  const [isDirty, setIsDirty] = useState(false);
 
   const [formData, setFormData] = useState({
     title: initialData?.title || '',
     description: initialData?.description || '',
     pointsRequired: initialData?.pointsRequired || 0,
     stock: initialData?.stock || 0,
-    remainingStock: initialData?.remainingStock || 0,
     imageUrl: initialData?.imageUrl || '',
     brandId: initialData?.brandId || '',
     categoryId: initialData?.categoryId || '',
     priority: initialData?.priority || 0,
     termsCondition: initialData?.termsCondition || '',
-    limitPerUser: initialData?.limitPerUser || 1,
+    limitPerUser: initialData?.limitPerUser || 0,
+    isActive: initialData?.isActive !== undefined ? initialData.isActive : true,
+    startDate: initialData?.startDate
+      ? new Date(initialData.startDate).toISOString().split('T')[0]
+      : '',
+    endDate: initialData?.endDate
+      ? new Date(initialData.endDate).toISOString().split('T')[0]
+      : '',
   });
 
-  useEffect(() => {
-    const fetchMeta = async () => {
-      try {
-        const [b, c] = await Promise.all([
-          promotionsRequester.getBrands(),
-          promotionsRequester.getCategories(),
-        ]);
-        setBrands(b);
-        setCategories(c);
-      } catch (error) {
-        toast.error('Failed to load metadata');
-      }
-    };
-    fetchMeta();
-  }, []);
-
-  const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-
-    setUploading(true);
+  const fetchMeta = async () => {
     try {
-      const res = await promotionsRequester.uploadFile(file);
-      setFormData((prev) => ({ ...prev, imageUrl: res.url }));
-      toast.success('Image uploaded successfully');
+      const [b, c] = await Promise.all([
+        promotionsRequester.getBrands(),
+        promotionsRequester.getCategories(),
+      ]);
+      setBrands(b);
+      setCategories(c);
     } catch (error) {
-      toast.error('Failed to upload image');
-    } finally {
-      setUploading(false);
+      toast.error('Failed to load metadata');
     }
   };
 
+  useEffect(() => {
+    fetchMeta();
+  }, []);
+
+  // -- Unsaved Changes Warning --
+  useEffect(() => {
+    const handleBeforeUnload = (e: BeforeUnloadEvent) => {
+      if (isDirty) {
+        e.preventDefault();
+        e.returnValue = 'You have unsaved changes. Are you sure you want to leave?';
+        return e.returnValue;
+      }
+    };
+
+    window.addEventListener('beforeunload', handleBeforeUnload);
+    return () => window.removeEventListener('beforeunload', handleBeforeUnload);
+  }, [isDirty]);
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setLoading(true);
+    
+    if (!formData.brandId || !formData.categoryId) {
+        toast.error('Please select both Brand and Category');
+        return;
+    }
 
+    if (formData.startDate && formData.endDate && new Date(formData.startDate) > new Date(formData.endDate)) {
+        toast.error('End Date cannot be earlier than Start Date');
+        return;
+    }
+
+    setLoading(true);
     try {
+      let finalImageUrl = formData.imageUrl;
+      if (imageFile) {
+        const { url } = await promotionsRequester.uploadFile(imageFile);
+        finalImageUrl = url;
+      }
+
+      const submissionData = {
+        ...formData,
+        imageUrl: finalImageUrl,
+        limitPerUser: formData.limitPerUser || 1, // Fallback to 1 if empty
+      };
+
       if (initialData?.id) {
-        await promotionsRequester.updateDeal(initialData.id, formData);
+        await promotionsRequester.updateDeal(initialData.id, submissionData);
         toast.success('Deal updated successfully');
       } else {
-        await promotionsRequester.createDeal({
-          ...formData,
-          remainingStock: formData.stock, // Initial sync
-        });
+        await promotionsRequester.createDeal(submissionData);
         toast.success('Deal created successfully');
       }
-      onSuccess();
+      
+      setIsDirty(false); // Reset dirty state after successful save
+      
+      if (onSuccess) onSuccess();
+      else if (isPage) {
+        router.push('/promotions/deals');
+        router.refresh();
+      }
     } catch (error) {
       toast.error('Failed to save deal');
     } finally {
@@ -98,209 +147,279 @@ export function DealForm({ initialData, onSuccess, onCancel }: DealFormProps) {
   };
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-6">
-      <div className="grid grid-cols-2 gap-4">
-        <div className="space-y-2">
-          <Label htmlFor="title">Deal Title</Label>
-          <Input
-            id="title"
-            value={formData.title}
-            onChange={(e) =>
-              setFormData({ ...formData, title: e.target.value })
-            }
-            placeholder="e.g. 50% Starbucks Discount"
-            required
-          />
-        </div>
-        <div className="space-y-2">
-          <Label htmlFor="points">Points Required</Label>
-          <Input
-            id="points"
-            type="number"
-            value={formData.pointsRequired}
-            onChange={(e) =>
-              setFormData({
-                ...formData,
-                pointsRequired: parseInt(e.target.value),
-              })
-            }
-            required
-          />
-        </div>
-      </div>
-
-      <div className="space-y-2">
-        <Label htmlFor="description">Short Description</Label>
-        <Input
-          id="description"
-          value={formData.description}
-          onChange={(e) =>
-            setFormData({ ...formData, description: e.target.value })
-          }
-          placeholder="Brief summary shown in the list"
-          required
-        />
-      </div>
-
-      <div className="grid grid-cols-2 gap-4">
-        <div className="space-y-2">
-          <Label>Brand</Label>
-          <Select
-            value={formData.brandId}
-            onValueChange={(value) =>
-              setFormData({ ...formData, brandId: value })
-            }
-          >
-            <SelectTrigger>
-              <SelectValue placeholder="Select Brand" />
-            </SelectTrigger>
-            <SelectContent>
-              {brands.map((b) => (
-                <SelectItem key={b.id} value={b.id}>
-                  {b.name}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        </div>
-        <div className="space-y-2">
-          <Label>Category</Label>
-          <Select
-            value={formData.categoryId}
-            onValueChange={(value) =>
-              setFormData({ ...formData, categoryId: value })
-            }
-          >
-            <SelectTrigger>
-              <SelectValue placeholder="Select Category" />
-            </SelectTrigger>
-            <SelectContent>
-              {categories.map((c) => (
-                <SelectItem key={c.id} value={c.id}>
-                  {c.name}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        </div>
-      </div>
-
-      <div className="grid grid-cols-3 gap-4">
-        <div className="space-y-2">
-          <Label htmlFor="stock">Initial Stock</Label>
-          <Input
-            id="stock"
-            type="number"
-            value={formData.stock}
-            onChange={(e) =>
-              setFormData({ ...formData, stock: parseInt(e.target.value) })
-            }
-            required
-          />
-        </div>
-        <div className="space-y-2">
-          <Label htmlFor="limit">Limit per User</Label>
-          <Input
-            id="limit"
-            type="number"
-            value={formData.limitPerUser}
-            onChange={(e) =>
-              setFormData({
-                ...formData,
-                limitPerUser: parseInt(e.target.value),
-              })
-            }
-            required
-          />
-        </div>
-        <div className="space-y-2">
-          <Label htmlFor="priority">Priority (1-10)</Label>
-          <Input
-            id="priority"
-            type="number"
-            value={formData.priority}
-            onChange={(e) =>
-              setFormData({ ...formData, priority: parseInt(e.target.value) })
-            }
-            required
-          />
-        </div>
-      </div>
-
-      <div className="space-y-2">
-        <Label>Deal Image</Label>
-        <div className="flex items-center gap-4">
-          {formData.imageUrl ? (
-            <div className="relative w-24 h-24 rounded-lg overflow-hidden border">
-              <img
-                src={formData.imageUrl}
-                className="w-full h-full object-cover"
-              />
-              <button
-                type="button"
-                onClick={() => setFormData({ ...formData, imageUrl: '' })}
-                className="absolute top-1 right-1 bg-white/80 p-1 rounded-full shadow-sm hover:bg-white"
-              >
-                <X size={12} />
-              </button>
+    <form onSubmit={handleSubmit} className="space-y-6 p-6">
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
+        
+        {/* LEFT COLUMN (WIDER: 7/12) */}
+        <div className="lg:col-span-7 space-y-6 flex flex-col h-full">
+            <div className="bg-white p-5 rounded-[1.5rem] border border-slate-100 shadow-sm flex-1">
+                <SectionHeader icon={ImageIcon} title="Deal Media" colorClass="bg-indigo-50 text-indigo-700" />
+                <ImageUploadWithCrop
+                    label="Cover Banner"
+                    value={formData.imageUrl}
+                    onChange={(url, file) => {
+                        setFormData({ ...formData, imageUrl: url });
+                        setIsDirty(true);
+                        if (file) setImageFile(file);
+                        else setImageFile(null);
+                    }}
+                    aspect={16 / 9}
+                    maxSizeMB={2}
+                />
             </div>
-          ) : (
-            <label className="w-24 h-24 flex flex-col items-center justify-center border-2 border-dashed rounded-lg cursor-pointer hover:bg-slate-50 transition-colors">
-              {uploading ? (
-                <Loader2 className="animate-spin text-muted-foreground" />
-              ) : (
-                <>
-                  <Upload size={20} className="text-muted-foreground" />
-                  <span className="text-[10px] text-muted-foreground mt-1">
-                    Upload
-                  </span>
-                </>
-              )}
-              <input
-                type="file"
-                className="hidden"
-                accept="image/*"
-                onChange={handleImageUpload}
-                disabled={uploading}
-              />
-            </label>
-          )}
-          <div className="flex-1">
-            <Input
-              placeholder="Or paste direct image URL"
-              value={formData.imageUrl}
-              onChange={(e) =>
-                setFormData({ ...formData, imageUrl: e.target.value })
-              }
-            />
-          </div>
+
+            <div className="bg-white p-5 rounded-[1.5rem] border border-slate-100 shadow-sm">
+                <SectionHeader icon={ShoppingBag} title="Logistics & Rules" colorClass="bg-emerald-50 text-emerald-700" />
+                <div className="grid grid-cols-3 gap-4">
+                    <div className="space-y-1.5">
+                        <Label htmlFor="points" className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Points</Label>
+                        <div className="relative">
+                            <Input
+                                id="points"
+                                type="text"
+                                inputMode="numeric"
+                                value={formData.pointsRequired || ''}
+                                disabled={!!initialData?.id}
+                                onChange={(e) => {
+                                    const val = e.target.value.replace(/\D/g, '');
+                                    const numVal = parseInt(val);
+                                    setFormData({ ...formData, pointsRequired: isNaN(numVal) ? 0 : numVal });
+                                    setIsDirty(true);
+                                }}
+                                placeholder="e.g. 500"
+                                required
+                                className={`rounded-xl border-slate-200 pl-8 h-10 font-bold ${!!initialData?.id ? 'bg-slate-50 text-slate-400 cursor-not-allowed' : 'text-blue-600 bg-blue-50/20'} placeholder:font-medium placeholder:text-slate-300`}
+                            />
+                            <Tag size={12} className="absolute left-3 top-1/2 -translate-y-1/2 text-blue-400" />
+                        </div>
+                    </div>
+                    <div className="space-y-1.5">
+                        <Label htmlFor="stock" className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Stock</Label>
+                        <Input
+                            id="stock"
+                            type="text"
+                            inputMode="numeric"
+                            value={formData.stock || ''}
+                            onChange={(e) => {
+                                const val = e.target.value.replace(/\D/g, '');
+                                const numVal = parseInt(val);
+                                setFormData({ ...formData, stock: isNaN(numVal) ? 0 : numVal });
+                                setIsDirty(true);
+                            }}
+                            placeholder="e.g. 100"
+                            required
+                            className="rounded-xl border-slate-200 h-10 text-center font-bold placeholder:font-medium placeholder:text-slate-300"
+                        />
+                    </div>
+                    <div className="space-y-1.5">
+                        <Label htmlFor="limit" className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Limit Per User</Label>
+                        <Input
+                            id="limit"
+                            type="text"
+                            inputMode="numeric"
+                            value={formData.limitPerUser || ''}
+                            onChange={(e) => {
+                                const val = e.target.value.replace(/\D/g, '');
+                                const numVal = parseInt(val);
+                                setFormData({ ...formData, limitPerUser: isNaN(numVal) ? 1 : numVal });
+                                setIsDirty(true);
+                            }}
+                            placeholder="e.g. 1"
+                            required
+                            className="rounded-xl border-slate-200 h-10 text-center font-bold placeholder:font-medium placeholder:text-slate-300"
+                        />
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        {/* RIGHT COLUMN (5/12) */}
+        <div className="lg:col-span-5 space-y-6 flex flex-col h-full">
+            <div className="bg-white p-5 rounded-[1.5rem] border border-slate-100 shadow-sm flex-1">
+                <SectionHeader icon={Info} title="Promotion Content" colorClass="bg-blue-50 text-blue-700" />
+                <div className="grid grid-cols-1 gap-4">
+                    <div className="space-y-1.5">
+                        <Label htmlFor="title" className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Headline</Label>
+                        <Input
+                            id="title"
+                            value={formData.title}
+                            maxLength={100}
+                            onChange={(e) => {
+                                setFormData({ ...formData, title: e.target.value });
+                                setIsDirty(true);
+                            }}
+                            placeholder="Catchy deal title"
+                            required
+                            className="rounded-xl border-slate-200 h-10 font-bold placeholder:font-medium placeholder:text-slate-300"
+                        />
+                        <CharCounter current={formData.title.length} max={100} />
+                    </div>
+
+                    <div className="grid grid-cols-2 gap-4">
+                        <div className="space-y-1.5">
+                            <Label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Brand</Label>
+                            <Select
+                                value={formData.brandId || ''}
+                                onValueChange={(val) => {
+                                    setFormData({ ...formData, brandId: val });
+                                    setIsDirty(true);
+                                }}
+                            >
+                                <SelectTrigger className="rounded-xl border-slate-200 h-9 font-bold text-slate-700 bg-slate-50/50">
+                                    {formData.brandId && brands.length > 0
+                                        ? <span>{brands.find(b => b.id === formData.brandId)?.name || 'Select Brand'}</span>
+                                        : <span className="text-muted-foreground">{brands.length === 0 ? 'Loading...' : 'Select Brand'}</span>
+                                    }
+                                </SelectTrigger>
+                                <SelectContent className="rounded-xl">
+                                    {brands.map((b) => (
+                                        <SelectItem key={b.id} value={b.id} className="font-bold py-1.5">
+                                            {b.name}
+                                        </SelectItem>
+                                    ))}
+                                </SelectContent>
+                            </Select>
+                        </div>
+                        <div className="space-y-1.5">
+                            <Label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Category</Label>
+                            <Select
+                                value={formData.categoryId || ''}
+                                onValueChange={(val) => {
+                                    setFormData({ ...formData, categoryId: val });
+                                    setIsDirty(true);
+                                }}
+                            >
+                                <SelectTrigger className="rounded-xl border-slate-200 h-9 font-bold text-slate-700 bg-slate-50/50">
+                                    {formData.categoryId && categories.length > 0
+                                        ? <span>{categories.find(c => c.id === formData.categoryId)?.name || 'Select Category'}</span>
+                                        : <span className="text-muted-foreground">{categories.length === 0 ? 'Loading...' : 'Select Category'}</span>
+                                    }
+                                </SelectTrigger>
+                                <SelectContent className="rounded-xl">
+                                    {categories.map((c) => (
+                                        <SelectItem key={c.id} value={c.id} className="font-bold py-1.5">
+                                            {c.name}
+                                        </SelectItem>
+                                    ))}
+                                </SelectContent>
+                            </Select>
+                        </div>
+                    </div>
+
+                    <div className="space-y-1.5">
+                        <Label htmlFor="description" className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Summary</Label>
+                        <Input
+                            id="description"
+                            value={formData.description}
+                            maxLength={500}
+                            onChange={(e) => {
+                                setFormData({ ...formData, description: e.target.value });
+                                setIsDirty(true);
+                            }}
+                            placeholder="Short summary for customers"
+                            required
+                            className="rounded-xl border-slate-200 h-10 font-bold placeholder:font-medium placeholder:text-slate-300"
+                        />
+                        <CharCounter current={formData.description.length} max={500} />
+                    </div>
+                </div>
+            </div>
+
+            <div className="bg-white p-5 rounded-[1.5rem] border border-slate-100 shadow-sm">
+                <SectionHeader icon={Settings2} title="Availability" colorClass="bg-purple-50 text-purple-700" />
+                <div className="space-y-3 flex-1">
+                    <div className="flex items-center justify-between p-2 rounded-xl bg-slate-50 border border-slate-100">
+                        <div className="space-y-0.5">
+                            <Label className="text-[10px] font-bold">Status</Label>
+                            <p className="text-[9px] text-muted-foreground uppercase font-black">Active</p>
+                        </div>
+                        <div 
+                            onClick={() => {
+                                setFormData({ ...formData, isActive: !formData.isActive });
+                                setIsDirty(true);
+                            }}
+                            className={`relative w-12 h-6 rounded-full cursor-pointer transition-all duration-300 shadow-inner ${
+                                formData.isActive ? 'bg-emerald-500' : 'bg-slate-200'
+                            }`}
+                        >
+                            <div className={`absolute top-1 left-1 bg-white w-4 h-4 rounded-full shadow-md transition-all duration-300 transform ${
+                                formData.isActive ? 'translate-x-6' : 'translate-x-0'
+                            } flex items-center justify-center`}>
+                                <div className={`w-1 h-1 rounded-full ${formData.isActive ? 'bg-emerald-500' : 'bg-slate-300'}`} />
+                            </div>
+                            <span className={`absolute inset-0 flex items-center justify-center text-[8px] font-black pointer-events-none transition-all ${
+                                formData.isActive ? 'pr-5 text-white opacity-0' : 'pl-5 text-slate-500 opacity-100'
+                            }`}>
+                                OFF
+                            </span>
+                            <span className={`absolute inset-0 flex items-center justify-center text-[8px] font-black pointer-events-none transition-all ${
+                                formData.isActive ? 'pr-5 text-white opacity-100' : 'pl-5 text-slate-500 opacity-0'
+                            }`}>
+                                ON
+                            </span>
+                        </div>
+                    </div>
+                    <div className="grid grid-cols-2 gap-4">
+                        <FilterDatePicker
+                            label="Start"
+                            value={formData.startDate || ''}
+                            onChange={(val: string) => {
+                                const newFormData = { ...formData, startDate: val };
+                                if (val && formData.endDate && new Date(val) > new Date(formData.endDate)) {
+                                    newFormData.endDate = '';
+                                }
+                                setFormData(newFormData);
+                                setIsDirty(true);
+                            }}
+                            placeholder="Immediate"
+                        />
+                        <FilterDatePicker
+                            label="End"
+                            value={formData.endDate || ''}
+                            onChange={(val: string) => {
+                                if (val && formData.startDate && new Date(val) < new Date(formData.startDate)) {
+                                    toast.error('End Date cannot be earlier than Start Date');
+                                    return;
+                                }
+                                setFormData({ ...formData, endDate: val });
+                                setIsDirty(true);
+                            }}
+                            placeholder="Never"
+                        />
+                    </div>
+                </div>
+            </div>
         </div>
       </div>
 
-      <div className="space-y-2">
-        <Label htmlFor="terms">Terms & Conditions</Label>
-        <Textarea
-          id="terms"
-          value={formData.termsCondition}
-          onChange={(e) =>
-            setFormData({ ...formData, termsCondition: e.target.value })
-          }
-          placeholder="One rule per line..."
-          rows={3}
-        />
+      {/* FULL WIDTH BOTTOM: Legal & Fine Print */}
+      <div className="bg-white p-5 rounded-[1.5rem] border border-slate-100 shadow-sm">
+          <SectionHeader icon={Scale} title="Legal & Fine Print" colorClass="bg-slate-50 text-slate-700" />
+          <div className="flex flex-col">
+              <Textarea
+                  id="terms"
+                  rows={3}
+                  maxLength={2000}
+                  value={formData.termsCondition}
+                  onChange={(e) => {
+                      setFormData({ ...formData, termsCondition: e.target.value });
+                      setIsDirty(true);
+                  }}
+                  placeholder="Usage rules, expiration terms, and legal disclaimers..."
+                  className="rounded-xl border-slate-200 p-4 resize-none text-xs"
+              />
+              <CharCounter current={formData.termsCondition.length} max={2000} />
+          </div>
       </div>
 
-      <div className="flex justify-end gap-3 pt-4">
-        <Button type="button" variant="ghost" onClick={onCancel}>
-          Cancel
-        </Button>
+      <div className="flex justify-end pt-4 border-t border-slate-100">
         <Button
           type="submit"
-          className="bg-[#f48fb1] hover:bg-[#f06292] text-white"
-          disabled={loading || uploading}
+          className="bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white rounded-xl px-12 h-11 font-black shadow-lg shadow-blue-100 transition-all active:scale-95"
+          disabled={loading}
         >
           {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-          {initialData?.id ? 'Update Deal' : 'Create Deal'}
+          {initialData?.id ? 'Save Changes' : 'Publish Deal'}
         </Button>
       </div>
     </form>

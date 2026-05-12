@@ -1,10 +1,10 @@
 import { apiClient, RequestOptions } from '@/lib/api-client';
-import { API_PATHS } from '@repo/dto';
+import { API_PATHS, AdminPaginatedResponse } from '@repo/dto';
 
 export const promotionsRequester = {
   // Deals
   getDeals: async (options?: RequestOptions) =>
-    apiClient.get<any[]>(API_PATHS.ADMIN.PROMOTIONS.DEALS, options),
+    apiClient.get<AdminPaginatedResponse<any>>(API_PATHS.ADMIN.PROMOTIONS.DEALS, options),
   getDeal: async (id: string, options?: RequestOptions) =>
     apiClient.get<any>(API_PATHS.ADMIN.PROMOTIONS.DEAL_DETAIL(id), options),
   createDeal: async (data: any, options?: RequestOptions) =>
@@ -17,6 +17,12 @@ export const promotionsRequester = {
     ),
   deleteDeal: async (id: string, options?: RequestOptions) =>
     apiClient.delete<void>(API_PATHS.ADMIN.PROMOTIONS.DEAL_DETAIL(id), options),
+  toggleDeal: async (id: string, options?: RequestOptions) =>
+    apiClient.patch<any>(
+      `${API_PATHS.ADMIN.PROMOTIONS.DEAL_DETAIL(id)}/toggle`,
+      {},
+      options,
+    ),
 
   // Banners
   getBanners: async (options?: RequestOptions) =>
@@ -39,13 +45,25 @@ export const promotionsRequester = {
 
   // Redemptions
   getRedemptions: async (options?: RequestOptions) =>
-    apiClient.get<any[]>(API_PATHS.ADMIN.PROMOTIONS.REDEMPTIONS, options),
+    apiClient.get<AdminPaginatedResponse<any>>(API_PATHS.ADMIN.PROMOTIONS.REDEMPTIONS, options),
 
   // Meta
   getBrands: async (options?: RequestOptions) =>
     apiClient.get<any[]>(API_PATHS.ADMIN.PROMOTIONS.BRANDS, options),
+  createBrand: async (data: any, options?: RequestOptions) =>
+    apiClient.post<any>(API_PATHS.ADMIN.PROMOTIONS.BRANDS, data, options),
+  updateBrand: async (id: string, data: any, options?: RequestOptions) =>
+    apiClient.put<any>(`${API_PATHS.ADMIN.PROMOTIONS.BRANDS}/${id}`, data, options),
   getCategories: async (options?: RequestOptions) =>
     apiClient.get<any[]>(API_PATHS.ADMIN.PROMOTIONS.CATEGORIES, options),
+  createCategory: async (data: any, options?: RequestOptions) =>
+    apiClient.post<any>(API_PATHS.ADMIN.PROMOTIONS.CATEGORIES, data, options),
+  updateCategory: async (id: string, data: any, options?: RequestOptions) =>
+    apiClient.put<any>(
+      `${API_PATHS.ADMIN.PROMOTIONS.CATEGORIES}/${id}`,
+      data,
+      options,
+    ),
 
   // Common
   uploadFile: async (file: File, options?: RequestOptions) => {

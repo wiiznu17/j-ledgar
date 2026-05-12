@@ -30,6 +30,7 @@ import {
   History,
   Wallet,
   Coins,
+  Settings,
 } from 'lucide-react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
@@ -151,7 +152,6 @@ const navigationGroups: NavigationGroup[] = [
         href: '/promotions/deals',
         icon: Ticket,
         requiredPermission: Permission.VIEW_DASHBOARD,
-        isSoon: true,
       },
       {
         name: 'Banners',
@@ -165,7 +165,12 @@ const navigationGroups: NavigationGroup[] = [
         href: '/promotions/redemptions',
         icon: ClipboardList,
         requiredPermission: Permission.VIEW_DASHBOARD,
-        isSoon: true,
+      },
+      {
+        name: 'Deal Settings',
+        href: '/promotions/settings',
+        icon: Settings,
+        requiredPermission: Permission.VIEW_DASHBOARD,
       },
       {
         name: 'Loyalty Points',

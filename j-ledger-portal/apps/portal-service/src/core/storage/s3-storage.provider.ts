@@ -18,7 +18,7 @@ export class S3StorageProvider implements IStorageProvider {
   constructor(private readonly configService: ConfigService) {
     this.region =
       this.configService.get<string>('AWS_REGION') || 'ap-southeast-1';
-    this.bucket = this.configService.get<string>('AWS_S3_BUCKET');
+    this.bucket = this.configService.get<string>('AWS_S3_BUCKET_NAME');
 
     this.s3Client = new S3Client({
       region: this.region,

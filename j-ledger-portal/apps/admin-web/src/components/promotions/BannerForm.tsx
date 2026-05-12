@@ -82,7 +82,7 @@ export function BannerForm({
         <Label>Banner Image (Recommended 1200x600)</Label>
         <div className="flex flex-col gap-4">
           {formData.imageUrl ? (
-            <div className="relative w-full h-40 rounded-xl overflow-hidden border bg-slate-50">
+            <div className="relative w-full aspect-video rounded-xl overflow-hidden border bg-slate-50 shadow-inner">
               <img
                 src={formData.imageUrl}
                 className="w-full h-full object-cover"
@@ -90,13 +90,13 @@ export function BannerForm({
               <button
                 type="button"
                 onClick={() => setFormData({ ...formData, imageUrl: '' })}
-                className="absolute top-2 right-2 bg-white/90 p-2 rounded-full shadow-md hover:bg-white transition-all"
+                className="absolute top-3 right-3 bg-white/90 p-2.5 rounded-full shadow-lg hover:bg-white transition-all hover:scale-110 active:scale-95"
               >
-                <X size={16} />
+                <X size={18} />
               </button>
             </div>
           ) : (
-            <label className="w-full h-40 flex flex-col items-center justify-center border-2 border-dashed rounded-xl cursor-pointer hover:bg-slate-50 transition-all border-slate-200">
+            <label className="w-full aspect-video flex flex-col items-center justify-center border-2 border-dashed rounded-[2rem] cursor-pointer hover:bg-slate-50 transition-all border-slate-200 group">
               {uploading ? (
                 <Loader2 className="animate-spin text-pink-300 h-8 w-8" />
               ) : (

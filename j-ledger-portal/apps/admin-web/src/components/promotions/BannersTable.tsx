@@ -62,14 +62,14 @@ export function BannersTable({
               className="hover:bg-secondary/30 transition-colors"
             >
               <TableCell>
-                <div className="w-32 h-16 rounded-lg overflow-hidden bg-slate-100 border border-slate-200">
+                <div className="w-32 aspect-video rounded-lg overflow-hidden bg-slate-100 border border-slate-200">
                   <img
                     src={banner.imageUrl}
                     alt={banner.title}
                     className="w-full h-full object-cover"
                     onError={(e) => {
                       (e.target as any).src =
-                        'https://placehold.co/200x100?text=No+Image';
+                        'https://placehold.co/160x90?text=No+Image';
                     }}
                   />
                 </div>

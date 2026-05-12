@@ -9,20 +9,35 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table';
-import { Edit2, Trash2, Loader2 } from 'lucide-react';
+import { Edit2, Trash2, Loader2, Power, PowerOff, Calendar, Eye } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { promotionsRequester } from '@/lib/requesters';
 import { toast } from 'sonner';
 import { useState } from 'react';
+import { useRouter } from 'next/navigation';
 
 interface DealsTableProps {
   deals: any[];
-  onEdit: (deal: any) => void;
   onRefresh: () => void;
 }
 
-export function DealsTable({ deals, onEdit, onRefresh }: DealsTableProps) {
+export function DealsTable({ deals, onRefresh }: DealsTableProps) {
+  const router = useRouter();
   const [deletingId, setDeletingId] = useState<string | null>(null);
+  const [togglingId, setTogglingId] = useState<string | null>(null);
+
+  const handleToggle = async (id: string) => {
+    setTogglingId(id);
+    try {
+      await promotionsRequester.toggleDeal(id);
+      toast.success('Deal status updated');
+      onRefresh();
+    } catch (error) {
+      toast.error('Failed to toggle deal status');
+    } finally {
+      setTogglingId(null);
+    }
+  };
 
   const handleDelete = async (id: string) => {
     if (!confirm('Are you sure you want to delete this deal?')) return;
@@ -48,6 +63,7 @@ export function DealsTable({ deals, onEdit, onRefresh }: DealsTableProps) {
             <TableHead>Brand / Category</TableHead>
             <TableHead>Points Required</TableHead>
             <TableHead>Stock Status</TableHead>
+            <TableHead>Status</TableHead>
             <TableHead>Priority</TableHead>
             <TableHead className="text-right">Actions</TableHead>
           </TableRow>
@@ -60,22 +76,39 @@ export function DealsTable({ deals, onEdit, onRefresh }: DealsTableProps) {
             >
               <TableCell>
                 <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 rounded-lg overflow-hidden bg-slate-100 border border-slate-200">
+                  <div className="w-24 aspect-video rounded-lg overflow-hidden bg-slate-100 border border-slate-200 shadow-sm">
                     <img
                       src={deal.imageUrl}
                       alt={deal.title}
                       className="w-full h-full object-cover"
                       onError={(e) => {
                         (e.target as any).src =
-                          'https://placehold.co/100x100?text=No+Image';
+                          'https://placehold.co/160x90?text=No+Image';
                       }}
                     />
                   </div>
                   <div>
-                    <div className="font-semibold text-sm">{deal.title}</div>
+                    <div 
+                        className="font-bold text-sm text-slate-800 hover:text-blue-600 cursor-pointer transition-colors"
+                        onClick={() => router.push(`/promotions/deals/${deal.id}`)}
+                    >
+                        {deal.title}
+                    </div>
                     <div className="text-[10px] text-muted-foreground line-clamp-1 max-w-[200px]">
                       {deal.description}
                     </div>
+                    {(deal.startDate || deal.endDate) && (
+                      <div className="flex items-center gap-1 text-[9px] text-pink-400 mt-0.5">
+                        <Calendar size={10} />
+                        {deal.startDate
+                          ? new Date(deal.startDate).toLocaleDateString()
+                          : '...'}
+                        {' - '}
+                        {deal.endDate
+                          ? new Date(deal.endDate).toLocaleDateString()
+                          : '...'}
+                      </div>
+                    )}
                   </div>
                 </div>
               </TableCell>
@@ -114,6 +147,27 @@ export function DealsTable({ deals, onEdit, onRefresh }: DealsTableProps) {
                 </div>
               </TableCell>
               <TableCell>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className={`h-7 px-2 text-[10px] gap-1 ${deal.isActive ? 'text-green-600 bg-green-50' : 'text-slate-400 bg-slate-50'}`}
+                  disabled={togglingId === deal.id}
+                  onClick={() => handleToggle(deal.id)}
+                >
+                  {togglingId === deal.id ? (
+                    <Loader2 size={12} className="animate-spin" />
+                  ) : deal.isActive ? (
+                    <>
+                      <Power size={12} /> Active
+                    </>
+                  ) : (
+                    <>
+                      <PowerOff size={12} /> Inactive
+                    </>
+                  )}
+                </Button>
+              </TableCell>
+              <TableCell>
                 <Badge variant="secondary" className="text-[10px]">
                   P{deal.priority}
                 </Badge>
@@ -124,7 +178,17 @@ export function DealsTable({ deals, onEdit, onRefresh }: DealsTableProps) {
                     variant="ghost"
                     size="icon"
                     className="h-8 w-8 text-slate-400 hover:text-blue-600"
-                    onClick={() => onEdit(deal)}
+                    onClick={() => router.push(`/promotions/deals/${deal.id}`)}
+                    title="View Details"
+                  >
+                    <Eye size={14} />
+                  </Button>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="h-8 w-8 text-slate-400 hover:text-amber-600"
+                    onClick={() => router.push(`/promotions/deals/${deal.id}/edit`)}
+                    title="Edit Deal"
                   >
                     <Edit2 size={14} />
                   </Button>
@@ -134,6 +198,7 @@ export function DealsTable({ deals, onEdit, onRefresh }: DealsTableProps) {
                     className="h-8 w-8 text-slate-400 hover:text-red-600"
                     disabled={deletingId === deal.id}
                     onClick={() => handleDelete(deal.id)}
+                    title="Delete Deal"
                   >
                     {deletingId === deal.id ? (
                       <Loader2 size={14} className="animate-spin" />

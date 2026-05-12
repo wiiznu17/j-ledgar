@@ -1,122 +1,232 @@
 'use client';
 
-import { useState, useEffect } from 'react';
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from '@/components/ui/card';
+import { useState, useEffect, useCallback } from 'react';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Plus, Loader2 } from 'lucide-react';
+import { Plus, Ticket, Loader2 } from 'lucide-react';
 import { promotionsRequester } from '@/lib/requesters';
 import { DealsTable } from '@/components/promotions/DealsTable';
+import { toast } from 'sonner';
+import { useRouter } from 'next/navigation';
 import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
-} from '@/components/ui/dialog';
-import { DealForm } from '@/components/promotions/DealForm';
+  FilterSearchInput,
+  FilterSelect,
+  FilterActions,
+} from '@/components/common/FilterElements';
+import { TablePagination } from '@/components/common/TablePagination';
 
 export default function DealsPage() {
+  const router = useRouter();
   const [deals, setDeals] = useState<any[]>([]);
+  const [brands, setBrands] = useState<any[]>([]);
+  const [categories, setCategories] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
-  const [isModalOpen, setIsModalOpen] = useState(false);
-  const [editingDeal, setEditingDeal] = useState<any>(null);
 
-  const fetchDeals = async () => {
+  // Filter states
+  const [search, setSearch] = useState('');
+  const [brandId, setBrandId] = useState('all');
+  const [categoryId, setCategoryId] = useState('all');
+  const [status, setStatus] = useState('all');
+
+  const [activeFilters, setActiveFilters] = useState({
+    search: '',
+    brandId: 'all',
+    categoryId: 'all',
+    status: 'all',
+    page: 1,
+  });
+
+  const [currentPage, setCurrentPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
+  const [totalItems, setTotalItems] = useState(0);
+
+  const fetchMeta = useCallback(async () => {
+    try {
+      const [bData, cData] = await Promise.all([
+        promotionsRequester.getBrands(),
+        promotionsRequester.getCategories(),
+      ]);
+      setBrands(bData);
+      setCategories(cData);
+    } catch (error) {
+      console.error('Failed to load meta data');
+    }
+  }, []);
+
+  const fetchDeals = useCallback(async () => {
     setLoading(true);
     try {
-      const data = await promotionsRequester.getDeals();
-      setDeals(data);
+      const params: any = {
+        page: activeFilters.page,
+        limit: 10,
+      };
+      if (activeFilters.search) params.search = activeFilters.search;
+      if (activeFilters.brandId !== 'all') params.brandId = activeFilters.brandId;
+      if (activeFilters.categoryId !== 'all') params.categoryId = activeFilters.categoryId;
+      if (activeFilters.status !== 'all') params.isActive = activeFilters.status === 'active';
+
+      const res = await promotionsRequester.getDeals({ params });
+      setDeals(res.data || []);
+      if (res.pagination) {
+        setTotalPages(res.pagination.totalPages);
+        setTotalItems(res.pagination.total);
+        setCurrentPage(res.pagination.page);
+      }
     } catch (error) {
-      console.error('[DEALS_PAGE] Fetch error:', error);
+      toast.error('Failed to load deals');
     } finally {
       setLoading(false);
     }
-  };
+  }, [activeFilters]);
+
+  useEffect(() => {
+    fetchMeta();
+  }, [fetchMeta]);
 
   useEffect(() => {
     fetchDeals();
-  }, []);
+  }, [fetchDeals]);
 
-  const handleCreate = () => {
-    setEditingDeal(null);
-    setIsModalOpen(true);
+  const handleApplyFilter = (e?: React.FormEvent) => {
+    if (e) e.preventDefault();
+    setActiveFilters({
+      search,
+      brandId,
+      categoryId,
+      status,
+      page: 1,
+    });
+    setCurrentPage(1);
   };
 
-  const handleEdit = (deal: any) => {
-    setEditingDeal(deal);
-    setIsModalOpen(true);
+  const handleReset = () => {
+    setSearch('');
+    setBrandId('all');
+    setCategoryId('all');
+    setStatus('all');
+    setActiveFilters({
+      search: '',
+      brandId: 'all',
+      categoryId: 'all',
+      status: 'all',
+      page: 1,
+    });
+    setCurrentPage(1);
   };
 
-  const handleSuccess = () => {
-    setIsModalOpen(false);
-    fetchDeals();
+  const handlePageChange = (newPage: number) => {
+    if (newPage < 1 || newPage > totalPages) return;
+    setCurrentPage(newPage);
+    setActiveFilters((prev) => ({ ...prev, page: newPage }));
   };
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
-          <h2 className="text-3xl font-bold tracking-tight text-[#2D3748]">
+          <h2 className="text-3xl font-black tracking-tight text-slate-900">
             Deals & Rewards
           </h2>
-          <p className="text-muted-foreground mt-1">
-            Manage points-based rewards and promotional offers.
+          <p className="text-slate-500 font-medium text-sm">
+            Manage points-based rewards and promotional offers for customers.
           </p>
         </div>
-        <Button
-          onClick={handleCreate}
-          className="bg-pink-500 hover:bg-pink-600 text-white rounded-lg shadow-md shadow-pink-100 transition-all active:scale-95"
+        <Button 
+            className="bg-blue-600 hover:bg-blue-700 text-white shadow-lg shadow-blue-100 rounded-xl px-6 h-11 font-black transition-all active:scale-95"
+            onClick={() => router.push('/promotions/deals/new')}
         >
-          <Plus className="mr-2 h-4 w-4" /> New Deal
+          <Plus className="mr-2 h-5 w-5" /> New Deal
         </Button>
       </div>
 
-      <Card className="border-border shadow-sm">
-        <CardHeader>
-          <CardTitle>Active Inventory</CardTitle>
-          <CardDescription>
-            Monitor stock levels and point requirements for all active deals.
-          </CardDescription>
+      <Card className="border-none shadow-sm ring-1 ring-slate-100 overflow-hidden bg-white">
+        {/* Filter Toolbar */}
+        <div className="p-4 bg-white border-b border-slate-100">
+            <form onSubmit={handleApplyFilter} className="grid grid-cols-1 md:grid-cols-5 gap-4 items-end">
+                <FilterSearchInput
+                    label="Search Deals"
+                    placeholder="Search by deal name..."
+                    value={search}
+                    onChange={(e) => setSearch(e.target.value)}
+                />
+
+                <FilterSelect
+                    label="Brand"
+                    value={brandId}
+                    onValueChange={setBrandId}
+                    options={[
+                        { label: 'All Brands', value: 'all' },
+                        ...brands.map(b => ({ label: b.name, value: b.id }))
+                    ]}
+                />
+
+                <FilterSelect
+                    label="Category"
+                    value={categoryId}
+                    onValueChange={setCategoryId}
+                    options={[
+                        { label: 'All Categories', value: 'all' },
+                        ...categories.map(c => ({ label: c.name, value: c.id }))
+                    ]}
+                />
+
+                <FilterSelect
+                    label="Status"
+                    value={status}
+                    onValueChange={setStatus}
+                    options={[
+                        { label: 'All Status', value: 'all' },
+                        { label: 'Active', value: 'active' },
+                        { label: 'Inactive', value: 'inactive' },
+                    ]}
+                />
+
+                <FilterActions
+                    searchLabel="Filter"
+                    isLoading={loading}
+                    onReset={handleReset}
+                />
+            </form>
+        </div>
+
+        <CardHeader className="bg-slate-50/30 border-b border-slate-100 px-6 py-4">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <div className="w-8 h-8 rounded-lg bg-blue-50 flex items-center justify-center text-blue-500">
+                <Ticket size={16} />
+              </div>
+              <CardTitle className="text-base font-bold text-slate-700">Inventory List</CardTitle>
+            </div>
+            <div className="text-xs font-bold text-slate-400 uppercase tracking-widest">
+                {totalItems} Total Deals
+            </div>
+          </div>
         </CardHeader>
-        <CardContent>
+        <CardContent className="p-0">
           {loading ? (
             <div className="h-64 flex items-center justify-center">
-              <Loader2 className="h-8 w-8 animate-spin text-pink-300" />
+              <div className="flex flex-col items-center gap-2">
+                <Loader2 className="h-10 w-10 animate-spin text-blue-400/50" />
+                <span className="text-xs font-bold text-slate-400 uppercase tracking-widest animate-pulse">Fetching Data...</span>
+              </div>
             </div>
           ) : (
             <DealsTable
               deals={deals}
-              onEdit={handleEdit}
               onRefresh={fetchDeals}
             />
           )}
         </CardContent>
-      </Card>
 
-      <Dialog open={isModalOpen} onOpenChange={setIsModalOpen}>
-        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
-          <DialogHeader>
-            <DialogTitle>
-              {editingDeal ? 'Edit Deal' : 'Create New Deal'}
-            </DialogTitle>
-            <DialogDescription>
-              Fill in the details below to publish a reward offer to the wallet
-              app.
-            </DialogDescription>
-          </DialogHeader>
-          <DealForm
-            initialData={editingDeal}
-            onSuccess={handleSuccess}
-            onCancel={() => setIsModalOpen(false)}
-          />
-        </DialogContent>
-      </Dialog>
+        <TablePagination
+            currentPage={currentPage}
+            totalPages={totalPages}
+            totalItems={totalItems}
+            onPageChange={handlePageChange}
+            isLoading={loading}
+            itemName="deals"
+        />
+      </Card>
     </div>
   );
 }
