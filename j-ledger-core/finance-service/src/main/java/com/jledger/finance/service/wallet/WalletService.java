@@ -936,8 +936,29 @@ public class WalletService {
 
     @Transactional
     public Transaction transferByWalletId(String fromUserId, String toWalletId, BigDecimal amount) {
-        Wallet fromWallet = walletRepository.findByUserId(fromUserId)
+        Long toWalletIdLong = Long.parseLong(toWalletId);
+        
+        // 1. Fetch source wallet ID to determine lock order
+        Wallet fromWalletInfo = walletRepository.findByUserId(fromUserId)
                 .orElseThrow(() -> new RuntimeException("Source wallet not found"));
+        Long fromWalletId = fromWalletInfo.getId();
+
+        // 2. Acquire locks in consistent order (ID ascending) to prevent deadlocks
+        Wallet fromWallet;
+        Wallet toWallet;
+        if (fromWalletId < toWalletIdLong) {
+            fromWallet = walletRepository.findByIdForUpdate(fromWalletId)
+                    .orElseThrow(() -> new RuntimeException("Source wallet not found"));
+            toWallet = walletRepository.findByIdForUpdate(toWalletIdLong)
+                    .orElseThrow(() -> new RuntimeException("Recipient wallet not found"));
+        } else if (fromWalletId > toWalletIdLong) {
+            toWallet = walletRepository.findByIdForUpdate(toWalletIdLong)
+                    .orElseThrow(() -> new RuntimeException("Recipient wallet not found"));
+            fromWallet = walletRepository.findByIdForUpdate(fromWalletId)
+                    .orElseThrow(() -> new RuntimeException("Source wallet not found"));
+        } else {
+            throw new IllegalArgumentException("Cannot transfer to the same wallet");
+        }
 
         if (!fromWallet.getIsActive()) {
             throw new RuntimeException("Source wallet is inactive");
@@ -947,19 +968,31 @@ public class WalletService {
             throw new RuntimeException("Insufficient balance");
         }
 
-        Wallet toWallet = walletRepository.findById(Long.parseLong(toWalletId))
-                .orElseThrow(() -> new RuntimeException("Recipient wallet not found"));
-
         if (!toWallet.getIsActive()) {
             throw new RuntimeException("Recipient wallet is inactive");
         }
 
+        // 3. Acquire Ledger Account locks in consistent order
+        Account senderAccountInfo = getOrCreateLedgerAccount(fromUserId, fromWallet.getCurrency());
+        Account receiverAccountInfo = getOrCreateLedgerAccount(toWallet.getUserId(), toWallet.getCurrency());
+        
+        Account senderAccount;
+        Account receiverAccount;
+        
+        if (senderAccountInfo.getId().compareTo(receiverAccountInfo.getId()) < 0) {
+            senderAccount = accountRepository.findByIdForUpdate(senderAccountInfo.getId()).get();
+            receiverAccount = accountRepository.findByIdForUpdate(receiverAccountInfo.getId()).get();
+        } else if (senderAccountInfo.getId().compareTo(receiverAccountInfo.getId()) > 0) {
+            receiverAccount = accountRepository.findByIdForUpdate(receiverAccountInfo.getId()).get();
+            senderAccount = accountRepository.findByIdForUpdate(senderAccountInfo.getId()).get();
+        } else {
+            // Same account (different wallets for same user? Possible but unlikely in this flow)
+            senderAccount = receiverAccount = accountRepository.findByIdForUpdate(senderAccountInfo.getId()).get();
+        }
+
+        // 4. Update Balances
         fromWallet.setBalance(fromWallet.getBalance().subtract(amount));
         toWallet.setBalance(toWallet.getBalance().add(amount));
-        
-        // Update Ledger Accounts
-        Account senderAccount = getOrCreateLedgerAccount(fromUserId, fromWallet.getCurrency());
-        Account receiverAccount = getOrCreateLedgerAccount(toWallet.getUserId(), toWallet.getCurrency());
         
         senderAccount.setBalance(senderAccount.getBalance().subtract(amount));
         receiverAccount.setBalance(receiverAccount.getBalance().add(amount));

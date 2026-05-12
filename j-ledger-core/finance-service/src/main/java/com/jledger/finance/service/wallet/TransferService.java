@@ -38,47 +38,56 @@ public class TransferService {
     public Transaction executeTransfer(String idempotencyKey, TransferRequest request) {
         validateIdempotencyKey(idempotencyKey);
         validateTransferRequest(request);
-        BigDecimal normalizedAmount = normalizeAmount(request.amount());
 
-        // Sort account IDs to prevent deadlocks
-        String firstAccountId = request.fromAccountId().compareTo(request.toAccountId()) <= 0 
-                ? request.fromAccountId() : request.toAccountId();
-        String secondAccountId = request.fromAccountId().compareTo(request.toAccountId()) <= 0 
-                ? request.toAccountId() : request.fromAccountId();
+        // 1. Check if already processed
+        return redisIdempotencyService.getIfProcessed(idempotencyKey)
+                .orElseGet(() -> {
+                    BigDecimal normalizedAmount = normalizeAmount(request.amount());
 
-        RLock firstLock = redissonClient.getLock(ACCOUNT_LOCK_PREFIX + firstAccountId);
-        RLock secondLock = redissonClient.getLock(ACCOUNT_LOCK_PREFIX + secondAccountId);
+                    // Sort account IDs to prevent deadlocks
+                    String firstAccountId = request.fromAccountId().compareTo(request.toAccountId()) <= 0 
+                            ? request.fromAccountId() : request.toAccountId();
+                    String secondAccountId = request.fromAccountId().compareTo(request.toAccountId()) <= 0 
+                            ? request.toAccountId() : request.fromAccountId();
 
-        boolean firstLocked = false;
-        boolean secondLocked = false;
-        try {
-            firstLocked = firstLock.tryLock(lockWaitSeconds, lockLeaseSeconds, TimeUnit.SECONDS);
-            if (!firstLocked) {
-                throw new ConcurrentOperationException(LOCK_TIMEOUT_MESSAGE);
-            }
+                    RLock firstLock = redissonClient.getLock(ACCOUNT_LOCK_PREFIX + firstAccountId);
+                    RLock secondLock = redissonClient.getLock(ACCOUNT_LOCK_PREFIX + secondAccountId);
 
-            secondLocked = secondLock.tryLock(lockWaitSeconds, lockLeaseSeconds, TimeUnit.SECONDS);
-            if (!secondLocked) {
-                throw new ConcurrentOperationException(LOCK_TIMEOUT_MESSAGE);
-            }
+                    boolean firstLocked = false;
+                    boolean secondLocked = false;
+                    try {
+                        firstLocked = firstLock.tryLock(lockWaitSeconds, lockLeaseSeconds, TimeUnit.SECONDS);
+                        if (!firstLocked) {
+                            throw new ConcurrentOperationException(LOCK_TIMEOUT_MESSAGE);
+                        }
 
-            Transaction transaction = walletService.transferByWalletId(
-                request.fromAccountId(),
-                request.toAccountId(),
-                normalizedAmount
-            );
-            return transaction;
-        } catch (InterruptedException exception) {
-            Thread.currentThread().interrupt();
-            throw new ConcurrentOperationException("Transfer interrupted while waiting for account lock", exception);
-        } finally {
-            if (secondLocked && secondLock.isHeldByCurrentThread()) {
-                secondLock.unlock();
-            }
-            if (firstLocked && firstLock.isHeldByCurrentThread()) {
-                firstLock.unlock();
-            }
-        }
+                        secondLocked = secondLock.tryLock(lockWaitSeconds, lockLeaseSeconds, TimeUnit.SECONDS);
+                        if (!secondLocked) {
+                            throw new ConcurrentOperationException(LOCK_TIMEOUT_MESSAGE);
+                        }
+
+                        Transaction transaction = walletService.transferByWalletId(
+                            request.fromAccountId(),
+                            request.toAccountId(),
+                            normalizedAmount
+                        );
+
+                        // 2. Cache successful result
+                        redisIdempotencyService.cacheResponse(idempotencyKey, transaction);
+                        
+                        return transaction;
+                    } catch (InterruptedException exception) {
+                        Thread.currentThread().interrupt();
+                        throw new ConcurrentOperationException("Transfer interrupted while waiting for account lock", exception);
+                    } finally {
+                        if (secondLocked && secondLock.isHeldByCurrentThread()) {
+                            secondLock.unlock();
+                        }
+                        if (firstLocked && firstLock.isHeldByCurrentThread()) {
+                            firstLock.unlock();
+                        }
+                    }
+                });
     }
 
     private void validateIdempotencyKey(String idempotencyKey) {
