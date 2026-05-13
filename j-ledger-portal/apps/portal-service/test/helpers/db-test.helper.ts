@@ -21,6 +21,15 @@ export class DbTestHelper {
       'Notification',
       'UserPoint',
       'PointHistory',
+      'TerminalIdempotencyRecord',
+      'MerchantApplication',
+      'Terminal',
+      'Merchant',
+      'Partner',
+      'DealRedemption',
+      'Deal',
+      'Brand',
+      'DealCategory',
       'User',
     ];
 

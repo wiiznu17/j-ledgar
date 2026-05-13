@@ -59,4 +59,15 @@ public class AccountController {
         }
         return ResponseEntity.ok(accounts.get(0));
     }
+
+    @PostMapping
+    @Operation(summary = "Create a new internal account", description = "Creates a new internal account for a user")
+    public ResponseEntity<Account> createAccount(@RequestBody java.util.Map<String, String> request) {
+        UUID userId = UUID.fromString(request.get("user_id"));
+        String accountName = request.get("account_name");
+        String currency = request.get("currency");
+        
+        Account created = accountService.createAccount(userId, accountName, currency);
+        return ResponseEntity.status(org.springframework.http.HttpStatus.CREATED).body(created);
+    }
 }

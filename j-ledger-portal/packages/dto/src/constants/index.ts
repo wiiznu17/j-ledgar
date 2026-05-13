@@ -109,6 +109,14 @@ export const API_PATHS = {
       STATS: '/api/admin/loyalty/stats',
       EXPIRY_SCHEDULE: '/api/admin/loyalty/expiry-schedule',
     },
+    MERCHANT: {
+      PARTNERS: '/api/admin/merchants/partners',
+      APPLICATIONS: '/api/admin/merchants/applications',
+      APPLICATION_REVIEW: (id: string) => `/api/admin/merchants/applications/${id}/review`,
+      PARTNER_DETAIL: (id: string) => `/api/admin/merchants/partners/${id}`,
+      PARTNER_STATUS: (id: string) => `/api/admin/merchants/partners/${id}/status`,
+      TERMINALS: (merchantId: string) => `/api/admin/merchants/${merchantId}/terminals`,
+    },
   },
   PORTAL: {
     IDENTITY: {
@@ -248,3 +256,17 @@ export const INTERNAL_API_PATHS = {
     },
   },
 };
+
+export const MERCHANT_CATEGORIES = [
+  { id: 'FOOD_BEVERAGE', label: 'อาหารและเครื่องดื่ม', labelEn: 'Food & Beverage' },
+  { id: 'RETAIL', label: 'ค้าปลีกทั่วไป', labelEn: 'General Retail' },
+  { id: 'FASHION', label: 'แฟชั่นและเครื่องแต่งกาย', labelEn: 'Fashion & Apparel' },
+  { id: 'ELECTRONICS', label: 'เครื่องใช้ไฟฟ้าและไอที', labelEn: 'Electronics & IT' },
+  { id: 'HEALTH_BEAUTY', label: 'สุขภาพและความงาม', labelEn: 'Health & Beauty' },
+  { id: 'SERVICES', label: 'การบริการ', labelEn: 'Services' },
+  { id: 'OTHERS', label: 'อื่นๆ', labelEn: 'Others' },
+];
+
+export const SALES_CHANNELS = [
+  { id: 'PHYSICAL_STORE', label: 'หน้าร้าน (Physical Store)', labelEn: 'Physical Store' },
+];

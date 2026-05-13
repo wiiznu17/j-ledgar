@@ -189,9 +189,19 @@ export class IdentityService {
         throw new ConflictException('User already registered');
       }
 
-      // Keep existing registration state to allow resumption
+      // Update registration state to PENDING_OTP to enforce OTP verification even for resumes
+      if (user.registrationState !== RegistrationState.PENDING_OTP) {
+        await this.prisma.user.update({
+          where: { id: user.id },
+          data: { registrationState: RegistrationState.PENDING_OTP },
+        });
+        this.logger.log(
+          `[Register] Updated registration state to PENDING_OTP for ${phoneNumber}`,
+        );
+      }
+
       this.logger.log(
-        `[Register] Resuming onboarding for ${phoneNumber} from state: ${user.registrationState}`,
+        `[Register] Resuming onboarding for ${phoneNumber} from previous state: ${user.registrationState}`,
       );
     }
 
@@ -1260,10 +1270,11 @@ export class IdentityService {
       nextState = RegistrationState.COMPLETED;
     }
 
-    // Status Protection: Only move to PENDING_APPROVAL if currently INACTIVE.
-    // If user is already REJECTED, ACTIVE, or BLOCKED, we MUST preserve that status.
+    // Status Protection: Move to PENDING_APPROVAL if currently INACTIVE or REJECTED (retry case).
+    // If user is already ACTIVE or BLOCKED, we MUST preserve that status.
     const updatedStatus =
-      (user.status as UserStatus) === UserStatus.INACTIVE
+      (user.status as UserStatus) === UserStatus.INACTIVE ||
+      (user.status as UserStatus) === UserStatus.REJECTED
         ? UserStatus.PENDING_APPROVAL
         : (user.status as UserStatus);
 
@@ -1632,10 +1643,11 @@ export class IdentityService {
       }
 
       // Update user with wallet info and final state
-      // Status Protection: Only move to PENDING_APPROVAL if currently INACTIVE.
-      // If user is already REJECTED, ACTIVE, or BLOCKED, we MUST preserve that status.
+      // Status Protection: Move to PENDING_APPROVAL if currently INACTIVE or REJECTED (retry case).
+      // If user is already ACTIVE or BLOCKED, we MUST preserve that status.
       const updatedStatus =
-        (user.status as UserStatus) === UserStatus.INACTIVE
+        (user.status as UserStatus) === UserStatus.INACTIVE ||
+        (user.status as UserStatus) === UserStatus.REJECTED
           ? UserStatus.PENDING_APPROVAL
           : (user.status as UserStatus);
 

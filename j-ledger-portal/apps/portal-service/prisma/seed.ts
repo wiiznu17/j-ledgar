@@ -1,5 +1,6 @@
 import { PrismaClient } from '@prisma/client';
 import * as bcrypt from 'bcryptjs';
+import { randomBytes } from 'crypto';
 
 const prisma = new PrismaClient();
 
@@ -172,7 +173,7 @@ async function main() {
       description: 'Trigger system reconciliation',
     },
 
-    // AML (From seed.js)
+    // AML
     {
       name: 'VIEW_SUSPICIOUS_ACTIVITIES',
       resource: 'AML',
@@ -190,6 +191,32 @@ async function main() {
       resource: 'AML',
       action: 'REPORT',
       description: 'Send official report to AMLO',
+    },
+
+    // Merchant Management
+    {
+      name: 'VIEW_MERCHANTS',
+      resource: 'merchant',
+      action: 'read',
+      description: 'View merchant partners and branches',
+    },
+    {
+      name: 'VIEW_MERCHANT_APPLICATIONS',
+      resource: 'merchant',
+      action: 'read',
+      description: 'View new merchant applications',
+    },
+    {
+      name: 'APPROVE_MERCHANTS',
+      resource: 'merchant',
+      action: 'approve',
+      description: 'Approve or reject merchant applications',
+    },
+    {
+      name: 'MANAGE_MERCHANTS',
+      resource: 'merchant',
+      action: 'manage',
+      description: 'Freeze, unfreeze or manage terminals',
     },
   ];
 
@@ -248,6 +275,7 @@ async function main() {
       'VIEW_AUDIT_LOGS',
       'VIEW_DASHBOARD',
       'VIEW_STATISTICS',
+      'VIEW_MERCHANTS',
     ],
     SUPPORT_AGENT: [
       'VIEW_USERS',
@@ -255,6 +283,8 @@ async function main() {
       'VIEW_TRANSACTIONS',
       'VIEW_DASHBOARD',
       'VIEW_KYC',
+      'VIEW_MERCHANTS',
+      'VIEW_MERCHANT_APPLICATIONS',
     ],
     COMPLIANCE_OFFICER: [
       'VIEW_SUSPICIOUS_ACTIVITIES',
@@ -266,6 +296,10 @@ async function main() {
       'VIEW_KYC',
       'APPROVE_KYC',
       'REJECT_KYC',
+      'VIEW_MERCHANTS',
+      'VIEW_MERCHANT_APPLICATIONS',
+      'APPROVE_MERCHANTS',
+      'MANAGE_MERCHANTS',
     ],
   };
 
@@ -274,7 +308,6 @@ async function main() {
     const roleId = createdRolesMap.get(roleName);
     if (!roleId) continue;
 
-    // Clear existing permissions for this role to ensure a clean sync (idempotent)
     await prisma.rolePermission.deleteMany({ where: { roleId } });
 
     for (const permName of perms) {
@@ -308,7 +341,6 @@ async function main() {
     },
   });
 
-  // Assign SUPER_ADMIN role to default admin
   const superAdminRoleId = createdRolesMap.get('SUPER_ADMIN');
   if (superAdminRoleId) {
     await prisma.staffRole.upsert({
@@ -363,7 +395,91 @@ async function main() {
     });
   }
 
-  console.log('✅ Comprehensive RBAC and Loyalty Seed completed successfully!');
+  // 6. Seed Merchant Ecosystem
+  const isProduction = process.env.NODE_ENV === 'production';
+  
+  if (isProduction) {
+    console.log('⚠️ Skipping sensitive Merchant Ecosystem seed in production environment.');
+  } else {
+    console.log('🏪 Seeding merchant ecosystem...');
+    
+    // Create a Merchant User
+    const merchantUser = await prisma.user.upsert({
+      where: { phoneNumber: '0812345678' },
+      update: {},
+      create: {
+        phoneNumber: '0812345678',
+        email: 'merchant@test.com',
+        status: 'ACTIVE',
+        registrationState: 'COMPLETED',
+      },
+    });
+
+    // Create a Partner (HQ)
+    const partner = await prisma.partner.upsert({
+      where: { taxId: '1234567890123' },
+      update: {
+        userId: merchantUser.id,
+        status: 'ACTIVE',
+      },
+      create: {
+        userId: merchantUser.id,
+        name: 'Coffee Master HQ',
+        taxId: '1234567890123',
+        status: 'ACTIVE',
+        financeAccounts: {
+          available: 'f0000000-0000-0000-0000-000000000001',
+          pending: 'f0000000-0000-0000-0000-000000000002',
+          fee: 'f0000000-0000-0000-0000-000000000003'
+        },
+      },
+    });
+
+    // Create a Brand for the Partner
+    const brand = await prisma.brand.upsert({
+      where: { name: 'Coffee Master' },
+      update: { partnerId: partner.id },
+      create: {
+        name: 'Coffee Master',
+        partnerId: partner.id,
+        description: 'The best coffee in town',
+        logoUrl: 'https://placehold.co/400x400?text=Coffee+Master',
+      },
+    });
+
+    // Create a Merchant (Branch)
+    let merchant = await prisma.merchant.findFirst({
+        where: { name: 'Coffee Master - Sukhumvit Branch', partnerId: partner.id }
+    });
+
+    if (!merchant) {
+        merchant = await prisma.merchant.create({
+            data: {
+                partnerId: partner.id,
+                name: 'Coffee Master - Sukhumvit Branch',
+                category: 'COFFEE_SHOP',
+                address: 'Sukhumvit Soi 24, Bangkok',
+                location: { lat: 13.7314, lng: 100.5694 } as any,
+            },
+        });
+    }
+
+    // Create a Terminal for the Branch with a random secret
+    const randomSecret = 'sk_' + randomBytes(24).toString('hex');
+    await prisma.terminal.upsert({
+      where: { hardwareId: 'HW-TM-001' },
+      update: { secretKey: randomSecret },
+      create: {
+        merchantId: merchant.id,
+        name: 'POS-01',
+        secretKey: randomSecret,
+        hardwareId: 'HW-TM-001',
+        status: 'ACTIVE',
+      },
+    });
+  }
+
+  console.log('✅ Comprehensive RBAC, Loyalty, and Merchant Seed completed successfully!');
 }
 
 main()

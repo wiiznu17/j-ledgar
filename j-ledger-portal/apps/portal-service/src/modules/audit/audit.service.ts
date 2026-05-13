@@ -17,6 +17,9 @@ export enum AuditAction {
   APPROVE = 'APPROVE',
   REJECT = 'REJECT',
   SYNC_PERMISSIONS = 'SYNC_PERMISSIONS',
+  MERCHANT_PAYMENT = 'MERCHANT_PAYMENT',
+  MERCHANT_REDEMPTION = 'MERCHANT_REDEMPTION',
+  SETTLEMENT = 'SETTLEMENT',
 }
 
 export enum ResourceType {
@@ -30,6 +33,9 @@ export enum ResourceType {
   PII = 'PII',
   ROLE = 'ROLE',
   PERMISSION = 'PERMISSION',
+  MERCHANT = 'MERCHANT',
+  TERMINAL = 'TERMINAL',
+  PARTNER = 'PARTNER',
 }
 
 export interface AuditLogData {
@@ -80,20 +86,25 @@ export class AuditService {
 
   private maskSensitiveData(data: any): any {
     if (!data) return data;
+    if (Array.isArray(data)) return data.map(i => this.maskSensitiveData(i));
+    if (typeof data !== 'object') return data;
 
     const sensitiveFields = [
       'password',
       'pin',
       'secret',
+      'secretKey',
       'token',
       'apiKey',
       'creditCard',
     ];
     const masked = { ...data };
 
-    for (const field of sensitiveFields) {
-      if (masked[field]) {
-        masked[field] = '***MASKED***';
+    for (const key in masked) {
+      if (sensitiveFields.some(f => key.toLowerCase().includes(f.toLowerCase()))) {
+        masked[key] = '***MASKED***';
+      } else if (typeof masked[key] === 'object') {
+        masked[key] = this.maskSensitiveData(masked[key]);
       }
     }
 

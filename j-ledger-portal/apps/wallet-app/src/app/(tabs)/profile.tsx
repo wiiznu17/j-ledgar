@@ -20,6 +20,7 @@ import {
   Fingerprint,
   Smartphone,
   CreditCard,
+  Store,
 } from 'lucide-react-native';
 import { MotiView } from 'moti';
 import { useRouter } from 'expo-router';
@@ -153,6 +154,21 @@ export default function SettingsScreen() {
                   : 'Standard Member'}
               </Text>
             </View>
+          </View>
+        </View>
+
+        {/* Business & Merchant */}
+        <View className="mb-6">
+          <Text className="text-[10px] font-black text-gray-400 uppercase tracking-widest px-2 mb-3">
+            Business
+          </Text>
+          <View className="bg-white rounded-[2rem] border border-gray-50 shadow-sm overflow-hidden">
+            <SettingItem
+              icon={<Store size={20} color="#f59e0b" />}
+              iconBg="bg-amber-50"
+              label="Switch to Merchant Mode"
+              onPress={() => router.push('/merchant/dashboard' as any)}
+            />
           </View>
         </View>
 

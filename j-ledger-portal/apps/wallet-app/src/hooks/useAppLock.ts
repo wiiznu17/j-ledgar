@@ -2,7 +2,7 @@ import { useEffect, useRef } from 'react';
 import { AppState, AppStateStatus } from 'react-native';
 import { useAuthStore } from '@/store/auth';
 
-const LOCK_TIMEOUT_MS = 5000; // 5 seconds as requested
+const LOCK_TIMEOUT_MS = 60000; // 1 minute timeout for background lock
 
 export const useAppLock = () => {
   const appState = useRef(AppState.currentState);
@@ -37,7 +37,8 @@ export const useAppLock = () => {
           if (
             isAuthenticated &&
             !needsPinVerification &&
-            elapsed > LOCK_TIMEOUT_MS
+            elapsed > LOCK_TIMEOUT_MS &&
+            useAuthStore.getState().user?.registrationState === 'COMPLETED'
           ) {
             console.log(
               '[AppLock] Security timeout reached. Locking session...',

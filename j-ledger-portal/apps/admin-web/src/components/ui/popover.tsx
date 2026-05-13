@@ -16,7 +16,6 @@ function PopoverTrigger({
     <PopoverPrimitive.Trigger
       data-slot="popover-trigger"
       className={cn(className)}
-      nativeButton={render ? false : undefined}
       render={render}
       {...props}
     />

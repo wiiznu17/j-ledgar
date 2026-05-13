@@ -27,4 +27,19 @@ public class AccountService {
         log.info("Account status updated: id={}, status={}", id, status);
         return updated;
     }
+
+    @Transactional
+    public Account createAccount(UUID userId, String accountName, String currency) {
+        log.info("Creating new account for user: {}, name: {}", userId, accountName);
+        
+        Account account = Account.builder()
+                .userId(userId)
+                .accountName(accountName)
+                .balance(java.math.BigDecimal.ZERO)
+                .currency(currency != null ? currency : "THB")
+                .status("ACTIVE")
+                .build();
+        
+        return accountRepository.save(account);
+    }
 }

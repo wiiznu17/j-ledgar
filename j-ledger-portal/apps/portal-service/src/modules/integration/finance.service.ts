@@ -98,6 +98,46 @@ export class FinanceService {
     }
   }
 
+  async createAccount(
+    ownerId: string,
+    accountName: string,
+    currency: string = 'THB',
+  ): Promise<{ id: string }> {
+    const url = `${this.financeServiceUrl}/api/v1/accounts`;
+    const body = {
+      user_id: ownerId, // The Java service uses user_id as the field name in the database
+      account_name: accountName,
+      currency,
+    };
+
+    try {
+      const response = await this.httpService.axiosRef.post<{ id: string }>(
+        url,
+        body,
+        {
+          headers: this.getInternalHeaders(),
+        },
+      );
+      return response.data;
+    } catch (error: any) {
+      this.logCompactError(`createAccount owner=${ownerId} name=${accountName}`, error);
+      this.rethrowAsHttpException(error, `Failed to create account ${accountName}`);
+    }
+  }
+
+  async getAccountDetail(accountId: string): Promise<any> {
+    const url = `${this.financeServiceUrl}/api/v1/accounts/${accountId}`;
+    try {
+      const response = await this.httpService.axiosRef.get(url, {
+        headers: this.getInternalHeaders(),
+      });
+      return response.data;
+    } catch (error: any) {
+      this.logCompactError(`getAccountDetail id=${accountId}`, error);
+      this.rethrowAsHttpException(error, 'Failed to get account details');
+    }
+  }
+
   async activateWallet(userId: string): Promise<WalletResponse> {
     const url = `${this.financeServiceUrl}/api/finance/wallets/${userId}/activate`;
 

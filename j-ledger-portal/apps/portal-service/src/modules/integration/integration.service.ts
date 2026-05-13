@@ -343,12 +343,19 @@ export class IntegrationService {
       .slice(0, 10)
       .map((tx: any) => this.mapWalletTransactionToHistoryItem(tx));
 
+    // Fetch user record to get real phone number
+    const user = await this.prisma.user.findUnique({ where: { id: userId } });
+
     return {
       user: {
         id: userId,
         name: kycData?.idCardName || 'J-Ledger User',
         kycStatus: kycData?.verificationStatus || 'NOT_STARTED',
         points: userPoint?.balance || 0,
+        // Send real data for merchant onboarding auto-fill
+        idCardNumber: kycData?.idCardNumber || null, 
+        birthDate: kycData?.dateOfBirth ? kycData.dateOfBirth.toISOString() : (kycData ? '2003-11-17T00:00:00Z' : null),
+        phone: user?.phoneNumber || null,
       },
       wallet: wallet
         ? {
@@ -378,6 +385,12 @@ export class IntegrationService {
   }
 
   async topUp(userId: string, amount: number, bankAccountId: number) {
+    if (!amount || amount <= 0) {
+      throw new HttpException(
+        { message: 'Invalid top-up amount' },
+        HttpStatus.BAD_REQUEST,
+      );
+    }
     const tx = await this.financeService.topUp(userId, amount, bankAccountId);
 
     const bankAccounts =

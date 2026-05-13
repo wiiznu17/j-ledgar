@@ -165,10 +165,12 @@ export default function InternalLedgerPage() {
                           </div>
                           <div className="flex flex-col">
                             <span className="text-sm font-bold text-slate-900 leading-tight">
-                              {getAccountLabel(account.userId)}
+                              {account.userId === '00000000-0000-0000-0000-000000000000' 
+                                ? 'Master Treasury' 
+                                : account.accountName || 'Internal Account'}
                             </span>
                             <span className="text-[10px] font-bold text-slate-400 uppercase tracking-tight">
-                              ID: {account.id.substring(0, 8)}...
+                              UID: {account.userId.substring(0, 8)}...
                             </span>
                           </div>
                         </div>

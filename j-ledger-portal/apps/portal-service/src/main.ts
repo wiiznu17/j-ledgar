@@ -3,8 +3,26 @@ import { RequestMethod, ValidationPipe } from '@nestjs/common';
 import { AppModule } from './app.module';
 import cookieParser from 'cookie-parser';
 
+import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
+
 async function bootstrap() {
   const app = await NestFactory.create(AppModule, { rawBody: true });
+
+  // Swagger Documentation Setup
+  const nodeEnv = (process.env.NODE_ENV || 'development').toLowerCase();
+  const isProduction = nodeEnv === 'production';
+  const enableSwagger = process.env.ENABLE_SWAGGER === 'true';
+
+  if (!isProduction || enableSwagger) {
+    const config = new DocumentBuilder()
+      .setTitle('J-Ledger Portal API')
+      .setDescription('The core API for J-Ledger Fintech Platform')
+      .setVersion('1.0')
+      .addBearerAuth()
+      .build();
+    const document = SwaggerModule.createDocument(app, config);
+    SwaggerModule.setup('api/docs', app, document);
+  }
 
   app.use(cookieParser());
 

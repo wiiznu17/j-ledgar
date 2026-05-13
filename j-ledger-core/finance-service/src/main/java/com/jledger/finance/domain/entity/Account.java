@@ -50,6 +50,7 @@ public class Account {
     @Column(nullable = false, length = 20)
     private String status;
 
+    @Builder.Default
     @Enumerated(EnumType.STRING)
     @Column(name = "kyc_status", nullable = false, length = 20)
     private KycStatus kycStatus = KycStatus.NOT_SUBMITTED;

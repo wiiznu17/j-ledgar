@@ -5,7 +5,7 @@ generator client {
 datasource db {
   provider = "postgresql"
   url      = env("DATABASE_URL")
-  schemas  = ["admin", "audit", "billing", "identity", "integration", "kyc", "loyalty", "reporting"]
+  schemas  = ["admin", "audit", "billing", "identity", "integration", "kyc", "loyalty", "merchant", "reporting"]
 }
 
 model User {
@@ -90,6 +90,7 @@ model Brand {
   isActive    Boolean  @default(true)
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
+  partnerId   String?
   deals       Deal[]
 
   @@map("brands")
@@ -149,6 +150,7 @@ model DealRedemption {
   usedAt         DateTime?
   createdAt      DateTime         @default(now())
   updatedAt      DateTime         @updatedAt
+  usedAtMerchantId String?
   deal           Deal             @relation(fields: [dealId], references: [id])
 
   @@index([dealId])
@@ -488,18 +490,111 @@ model BankIntegration {
   @@schema("integration")
 }
 
+model Partner {
+  id              String               @id @default(uuid())
+  userId          String?
+  name            String
+  taxId           String?              @unique
+  financeAccounts Json?                // { available: UUID, pending: UUID, fee: UUID }
+  isPaymentEnabled Boolean             @default(true)
+  isLoyaltyEnabled Boolean             @default(true)
+  status          PartnerStatus        @default(PENDING_REVIEW)
+  metadata        Json?
+  createdAt       DateTime             @default(now())
+  updatedAt       DateTime             @updatedAt
+  merchants       Merchant[]
+  applications    MerchantApplication[]
+
+  @@index([userId])
+  @@index([status])
+  @@map("partners")
+  @@schema("merchant")
+}
+
 model Merchant {
-  id         BigInt         @id @default(autoincrement())
-  merchantId String         @unique
+  id         String   @id @default(uuid())
+  partnerId  String
   name       String
-  category   String
+  category   String?
+  location   Json?    // { lat, lng }
+  address    String?
+  isActive   Boolean  @default(true)
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+  partner    Partner  @relation(fields: [partnerId], references: [id])
+  terminals  Terminal[]
+
+  @@index([partnerId])
+  @@map("merchants")
+  @@schema("merchant")
+}
+
+model Terminal {
+  id         String         @id @default(uuid())
+  merchantId String
+  name       String?
+  secretKey  String         @unique // HMAC Secret
+  hardwareId String?        @unique
+  status     TerminalStatus @default(ACTIVE)
   createdAt  DateTime       @default(now())
   updatedAt  DateTime       @updatedAt
-  status     MerchantStatus @default(ACTIVE)
+  merchant   Merchant       @relation(fields: [merchantId], references: [id])
 
-  @@map("merchants")
-  @@schema("integration")
+  @@index([merchantId])
+  @@map("terminals")
+  @@schema("merchant")
 }
+
+model TerminalIdempotencyRecord {
+  id              String   @id @default(uuid())
+  terminalId      String
+  operation       String   // PAYMENT | REDEEM
+  idempotencyKey  String
+  requestHash     String   // SHA256 of the request body
+  responsePayload Json
+  status          Int      // HTTP status code
+  createdAt       DateTime @default(now())
+  expiresAt       DateTime
+
+  @@unique([terminalId, operation, idempotencyKey])
+  @@index([expiresAt])
+  @@map("terminal_idempotency_records")
+  @@schema("merchant")
+}
+
+model MerchantApplication {
+  id             String            @id @default(uuid())
+  partnerId      String
+  userId         String
+  businessName   String
+  businessNameEn String?
+  category       String
+  salesChannel   String            @default("PHYSICAL_STORE")
+  contactName    String
+  email          String
+  phone          String
+  taxId          String
+  address        String
+  addressDetail  String?
+  ownerIdCardNumber String?
+  ownerBirthDate    String?
+  location       Json?             // { lat, lng }
+  images         String[]          @default([])
+  status         ApplicationStatus @default(PENDING)
+
+  reviewNote     String?
+  reviewedBy     String?
+  createdAt      DateTime          @default(now())
+  updatedAt      DateTime          @updatedAt
+  partner        Partner           @relation(fields: [partnerId], references: [id])
+
+  @@index([partnerId])
+  @@index([userId])
+  @@index([status])
+  @@map("merchant_applications")
+  @@schema("merchant")
+}
+
 
 model TopupOrder {
   id                    String           @id @default(uuid())
@@ -750,6 +845,30 @@ enum MerchantStatus {
   INACTIVE
 
   @@schema("integration")
+}
+
+enum PartnerStatus {
+  PENDING_REVIEW
+  ACTIVE
+  INACTIVE
+  SUSPENDED
+
+  @@schema("merchant")
+}
+
+enum TerminalStatus {
+  ACTIVE
+  REVOKED
+
+  @@schema("merchant")
+}
+
+enum ApplicationStatus {
+  PENDING
+  APPROVED
+  REJECTED
+
+  @@schema("merchant")
 }
 
 enum ReportStatus {

@@ -1,5 +1,5 @@
 import { useEffect } from 'react';
-import { View, StyleSheet } from 'react-native';
+import { View, StyleSheet, Text, Image, Alert } from 'react-native';
 import {
   DarkTheme,
   DefaultTheme,
@@ -44,6 +44,8 @@ import { BackgroundGradient } from '@/components/common/BackgroundGradient';
 
 import { UserStatus, RegistrationState } from '@repo/dto';
 
+import { PINVerification } from '@/components/auth/PINVerification';
+
 export default function RootLayout() {
   const colorScheme = useColorScheme();
   useNotifications();
@@ -56,6 +58,7 @@ export default function RootLayout() {
     needsPinVerification,
     hasSession,
     user,
+    unlockWithPin,
   } = useAuthStore();
   const segments = useSegments();
 
@@ -89,36 +92,33 @@ export default function RootLayout() {
       registrationState: user?.registrationState,
     });
 
-    if (needsPinVerification) {
-      router.replace('/(auth)/login');
-    } else if (!isAuthenticated) {
+    // If we need PIN verification and we ARE NOT already on the login screen,
+    // we don't redirect anymore, we'll show an overlay.
+    // However, if we ARE NOT authenticated at all (no session), we MUST go to login.
+    if (!isAuthenticated && !needsPinVerification) {
       if (
         segments[0] !== '(auth)' ||
         (segments[1] !== 'login' && segments[1] !== 'onboarding')
       ) {
         router.replace('/(auth)/login');
       }
-    } else if (user) {
+    } else if (user && !needsPinVerification) {
       const isAuthGroup = segments[0] === '(auth)';
       const isOnboarding = segments[1] === 'onboarding';
       const isPendingApproval = segments[1] === 'pending-approval';
 
-      // 1. Handle Incomplete Registration Flow (Highest Priority - Force finish steps 1-12)
+      // 1. Handle Incomplete Registration Flow
       if (user.registrationState !== RegistrationState.COMPLETED) {
         if (!isOnboarding) {
-          console.log(
-            '[RootLayout] Registration incomplete, forcing Onboarding flow',
-          );
           router.replace('/(auth)/onboarding');
         }
         return;
       }
 
-      // 2. Handle Final Account Status (Now we know registrationState === RegistrationState.COMPLETED)
+      // 2. Handle Final Account Status
       switch (user.status) {
         case UserStatus.ACTIVE:
           if (isAuthGroup) {
-            console.log('[RootLayout] Access Granted, entering App');
             router.replace('/(tabs)');
           }
           break;
@@ -126,15 +126,11 @@ export default function RootLayout() {
         case UserStatus.PENDING_APPROVAL:
         case UserStatus.REJECTED:
           if (!isPendingApproval) {
-            console.log(
-              `[RootLayout] Registration complete but status is ${user.status}, showing status screen`,
-            );
             router.replace('/(auth)/pending-approval');
           }
           break;
 
         case UserStatus.DELETED:
-          console.log('[RootLayout] Account DELETED, signing out');
           initializeAuth();
           router.replace('/(auth)/login');
           break;
@@ -144,9 +140,6 @@ export default function RootLayout() {
         case UserStatus.INACTIVE:
         default:
           if (segments[1] !== 'account-restricted') {
-            console.log(
-              `[RootLayout] Account ${user.status}, redirecting to restricted screen`,
-            );
             router.replace('/(auth)/account-restricted');
           }
           break;
@@ -209,6 +202,40 @@ export default function RootLayout() {
                 />
                 <Stack.Screen name="profile/information" />
               </Stack>
+
+              {/* Security PIN Overlay - Preserves underlying route! */}
+              {needsPinVerification && segments[1] !== 'login' && (
+                <View style={[StyleSheet.absoluteFill, { zIndex: 9999 }]}>
+                  {/* Reuse Background Gradient for consistency */}
+                  <View style={StyleSheet.absoluteFill}>
+                    <BackgroundGradient />
+                  </View>
+                  
+                  <SafeAreaProvider>
+                    <PINVerification
+                      onSuccess={() => {
+                        console.log('[RootLayout] Overlay Unlock Successful');
+                      }}
+                      onFailure={(msg) => Alert.alert('PIN Incorrect', msg)}
+                      useUnlock={true}
+                      headerCenterElement={
+                        <View className="flex-row items-center gap-2">
+                          <View className="w-8 h-8 bg-pink-50 rounded-lg items-center justify-center border border-pink-100 shadow-sm">
+                            <Image
+                              source={require('../../assets/images/icon.png')}
+                              className="w-5 h-5"
+                              resizeMode="contain"
+                            />
+                          </View>
+                          <Text className="text-sm font-manrope font-black text-gray-800 tracking-tight">
+                            P-wallet
+                          </Text>
+                        </View>
+                      }
+                    />
+                  </SafeAreaProvider>
+                </View>
+              )}
             </View>
             <StatusBar style="auto" />
           </ThemeProvider>
@@ -217,3 +244,4 @@ export default function RootLayout() {
     </StripeProvider>
   );
 }
+// End of RootLayout

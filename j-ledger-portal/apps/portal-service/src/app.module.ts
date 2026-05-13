@@ -14,6 +14,7 @@ import { StorageModule } from './core/storage/storage.module';
 import { LoyaltyModule } from './modules/loyalty/loyalty.module';
 import { DealModule } from './modules/deals/deal.module';
 import { BannerModule } from './modules/banners/banner.module';
+import { MerchantModule } from './modules/merchant/merchant.module';
 import { HealthController } from './core/health/health.controller';
 import { ScheduleModule } from '@nestjs/schedule';
 
@@ -37,6 +38,7 @@ import { ScheduleModule } from '@nestjs/schedule';
     LoyaltyModule,
     DealModule,
     BannerModule,
+    MerchantModule,
   ],
   controllers: [HealthController],
 })

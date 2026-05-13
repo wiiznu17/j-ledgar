@@ -1,0 +1,33 @@
+(node:45278) TimeoutNegativeWarning: -1778592922296 is a negative number.
+Timeout duration was set to 1.
+(Use `node --trace-warnings ...` to show where the warning was created)
+[31m[Nest] 45278  - [39m05/12/2026, 8:35:22 PM [31m  ERROR[39m [38;5;3m[FinanceService] [39m[31m[FinanceService] createAccount owner=505f5fb8-2c86-4b24-9899-bfdd9e444700 name=Available Balance failed status=500 message="An unexpected internal error occurred"[39m
+FAIL test/e2e/e2e-master-flow.e2e-spec.ts (6.748 s)
+  Phase E: E2E Master Flow - Merchant Integration
+    ✕ should successfully execute the full merchant lifecycle end-to-end (174 ms)
+
+  ● Phase E: E2E Master Flow - Merchant Integration › should successfully execute the full merchant lifecycle end-to-end
+
+    expect(received).toBe(expected) // Object.is equality
+
+    Expected: 200
+    Received: 500
+
+      116 |       .send({ status: 'APPROVED', note: 'Looks good' });
+      117 |     
+    > 118 |     expect(reviewRes.status).toBe(200);
+          |                              ^
+      119 |
+      120 |     // Get the created merchant ID from the DB
+      121 |     const merchant = await prisma.merchant.findFirst({ where: { partnerId: partner.id } });
+
+      at Object.<anonymous> (e2e/e2e-master-flow.e2e-spec.ts:118:30)
+
+Test Suites: 1 failed, 1 total
+Tests:       1 failed, 1 total
+Snapshots:   0 total
+Time:        7.022 s, estimated 8 s
+Ran all test suites matching test/e2e/e2e-master-flow.e2e-spec.ts.
+Jest did not exit one second after the test run has completed.
+
+'This usually means that there are asynchronous operations that weren't stopped in your tests. Consider running Jest with `--detectOpenHandles` to troubleshoot this issue.

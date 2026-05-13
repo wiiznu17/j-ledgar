@@ -192,6 +192,15 @@ export class KycService {
     try {
       await this.financeService.activateWallet(userId);
       this.logger.log(`Wallet activated for user ${userId} after KYC approval`);
+      
+      // Also create a default ledger account for reward points and accounting
+      try {
+        await this.financeService.createAccount(userId, 'Main Account');
+        this.logger.log(`Ledger account created for user ${userId} after KYC approval`);
+      } catch (accErr) {
+        this.logger.warn(`Failed to create ledger account for user ${userId}: ${accErr.message}`);
+        // Non-blocking for now
+      }
     } catch (err) {
       this.logger.error(`Failed to activate wallet for user ${userId}`, err);
     }
