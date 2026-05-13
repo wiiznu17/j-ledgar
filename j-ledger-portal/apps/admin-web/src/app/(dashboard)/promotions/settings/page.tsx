@@ -11,7 +11,7 @@ import {
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Button } from '@/components/ui/button';
 import { Plus, Loader2, Globe, Tag, ExternalLink, Edit2, X, Info, Link as LinkIcon, Layers } from 'lucide-react';
-import { promotionsRequester } from '@/lib/requesters';
+import { promotionsRequester, merchantRequester } from '@/lib/requesters';
 import {
   Table,
   TableBody,
@@ -34,6 +34,13 @@ import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { ImageUploadWithCrop } from '@/components/promotions/ImageUploadWithCrop';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
 
 const SectionHeader = ({ icon: Icon, title, colorClass }: { icon: any, title: string, colorClass: string }) => (
   <div className={`flex items-center gap-2 px-3 py-1.5 rounded-lg ${colorClass} mb-4`}>
@@ -48,9 +55,18 @@ const CharCounter = ({ current, max }: { current: number, max: number }) => (
   </div>
 );
 
+interface BrandForm {
+  name: string;
+  description: string;
+  website: string;
+  logoUrl: string;
+  partnerId: string;
+}
+
 export default function PromotionSettingsPage() {
   const [brands, setBrands] = useState<any[]>([]);
   const [categories, setCategories] = useState<any[]>([]);
+  const [partners, setPartners] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
 
@@ -60,11 +76,12 @@ export default function PromotionSettingsPage() {
   const [editingItem, setEditingItem] = useState<any>(null);
 
   // Form states
-  const [brandForm, setBrandForm] = useState({
+  const [brandForm, setBrandForm] = useState<BrandForm>({
     name: '',
     description: '',
     website: '',
     logoUrl: '',
+    partnerId: 'none',
   });
   const [brandLogoFile, setBrandLogoFile] = useState<File | null>(null);
 
@@ -78,12 +95,14 @@ export default function PromotionSettingsPage() {
   const fetchData = async () => {
     setLoading(true);
     try {
-      const [b, c] = await Promise.all([
+      const [b, c, p] = await Promise.all([
         promotionsRequester.getBrands(),
         promotionsRequester.getCategories(),
+        merchantRequester.getPartners({ limit: 100, status: 'ACTIVE' }),
       ]);
       setBrands(b);
       setCategories(c);
+      setPartners(p.data || []);
     } catch (error) {
       toast.error('Failed to load settings data');
     } finally {
@@ -104,10 +123,11 @@ export default function PromotionSettingsPage() {
         description: brand.description || '',
         website: brand.website || '',
         logoUrl: brand.logoUrl || '',
+        partnerId: brand.partnerId || 'none',
       });
     } else {
       setEditingItem(null);
-      setBrandForm({ name: '', description: '', website: '', logoUrl: '' });
+      setBrandForm({ name: '', description: '', website: '', logoUrl: '', partnerId: 'none' });
     }
     setIsBrandModalOpen(true);
   };
@@ -140,7 +160,12 @@ export default function PromotionSettingsPage() {
         finalLogoUrl = url;
       }
 
-      const submissionData = { ...brandForm, logoUrl: finalLogoUrl };
+      // Convert 'none' back to null for API
+      const submissionData = { 
+        ...brandForm, 
+        logoUrl: finalLogoUrl,
+        partnerId: brandForm.partnerId === 'none' ? null : brandForm.partnerId 
+      };
 
       if (editingItem) {
         await promotionsRequester.updateBrand(editingItem.id, submissionData);
@@ -224,6 +249,7 @@ export default function PromotionSettingsPage() {
                   <TableHeader className="bg-slate-50/30">
                     <TableRow className="border-b border-slate-100">
                       <TableHead className="px-6 text-[10px] font-black text-slate-400 uppercase tracking-widest">Brand</TableHead>
+                      <TableHead className="px-6 text-[10px] font-black text-slate-400 uppercase tracking-widest">Partner</TableHead>
                       <TableHead className="px-6 text-[10px] font-black text-slate-400 uppercase tracking-widest">Description</TableHead>
                       <TableHead className="px-6 text-[10px] font-black text-slate-400 uppercase tracking-widest">Website</TableHead>
                       <TableHead className="px-6 text-right text-[10px] font-black text-slate-400 uppercase tracking-widest">Action</TableHead>
@@ -243,6 +269,15 @@ export default function PromotionSettingsPage() {
                               </div>
                               <span className="font-bold text-slate-700">{b.name}</span>
                           </div>
+                        </TableCell>
+                        <TableCell className="px-6 py-4">
+                           {b.partner ? (
+                             <Badge variant="outline" className="bg-blue-50 text-blue-700 border-blue-100 font-bold px-2 py-0.5 rounded-lg text-[9px]">
+                               {b.partner.name}
+                             </Badge>
+                           ) : (
+                             <span className="text-[10px] text-slate-300 font-bold italic">NO PARTNER</span>
+                           )}
                         </TableCell>
                         <TableCell className="px-6 py-4 text-xs text-slate-500 max-w-[300px] leading-relaxed">
                           {b.description || '-'}
@@ -365,10 +400,26 @@ export default function PromotionSettingsPage() {
                 <div>
                     <SectionHeader icon={Info} title="Basic Details" colorClass="bg-blue-50 text-blue-700" />
                     <div className="space-y-4">
-                        <div className="space-y-2">
-                            <Label htmlFor="b-name" className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Brand Name</Label>
-                            <Input id="b-name" maxLength={100} value={brandForm.name} onChange={(e) => setBrandForm({...brandForm, name: e.target.value})} placeholder="e.g. Starbucks" required className="rounded-xl border-slate-200 focus:ring-blue-500" />
-                            <CharCounter current={brandForm.name.length} max={100} />
+                        <div className="grid grid-cols-2 gap-4">
+                            <div className="space-y-2">
+                                <Label htmlFor="b-name" className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Brand Name</Label>
+                                <Input id="b-name" maxLength={100} value={brandForm.name} onChange={(e) => setBrandForm({...brandForm, name: e.target.value})} placeholder="e.g. Starbucks" required className="rounded-xl border-slate-200 focus:ring-blue-500" />
+                                <CharCounter current={brandForm.name.length} max={100} />
+                            </div>
+                            <div className="space-y-2">
+                                <Label htmlFor="b-partner" className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Associated Partner</Label>
+                                <Select value={brandForm.partnerId} onValueChange={(val: string | null) => setBrandForm(prev => ({...prev, partnerId: val || 'none'}))}>
+                                    <SelectTrigger id="b-partner" className="rounded-xl border-slate-200">
+                                        <SelectValue placeholder="Select Partner" />
+                                    </SelectTrigger>
+                                    <SelectContent className="rounded-xl border-slate-100 shadow-xl">
+                                        <SelectItem value="none" className="text-slate-400 italic">None (Independent Brand)</SelectItem>
+                                        {partners.map(p => (
+                                            <SelectItem key={p.id} value={p.id || ''}>{p.name}</SelectItem>
+                                        ))}
+                                    </SelectContent>
+                                </Select>
+                            </div>
                         </div>
                         <div className="space-y-2">
                             <Label htmlFor="b-web" className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Website URL</Label>

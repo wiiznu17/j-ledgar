@@ -16,7 +16,8 @@ import {
   Settings, 
   RotateCcw, 
   Trash2, 
-  Plus 
+  Plus,
+  Loader2
 } from 'lucide-react';
 import { Skeleton } from '@/components/ui/skeleton';
 
@@ -38,9 +39,12 @@ interface TerminalTableProps {
   merchants: MerchantWithTerminals[];
   loading: boolean;
   onCreateTerminal: (merchantId: string, merchantName: string) => void;
+  onRotateSecret?: (terminalId: string) => void;
+  isRotating?: boolean;
+  isSME?: boolean;
 }
 
-export function TerminalTable({ merchants, loading, onCreateTerminal }: TerminalTableProps) {
+export function TerminalTable({ merchants, loading, onCreateTerminal, onRotateSecret, isRotating, isSME }: TerminalTableProps) {
   if (loading) {
     return (
       <div className="p-4 space-y-3">
@@ -64,22 +68,28 @@ export function TerminalTable({ merchants, loading, onCreateTerminal }: Terminal
             <div className="flex items-center justify-between px-2">
               <div className="flex items-center gap-3">
                 <div className="w-10 h-10 rounded-xl bg-indigo-50 flex items-center justify-center text-indigo-600 border border-indigo-100 shadow-sm shadow-indigo-50">
-                  <Plus className="w-5 h-5 cursor-pointer hover:scale-110 transition-transform" onClick={() => onCreateTerminal(merchant.id, merchant.name)} />
+                  {isSME ? (
+                    <Smartphone className="w-5 h-5" />
+                  ) : (
+                    <Plus className="w-5 h-5 cursor-pointer hover:scale-110 transition-transform" onClick={() => onCreateTerminal(merchant.id, merchant.name)} />
+                  )}
                 </div>
                 <div>
                   <h4 className="text-sm font-black text-slate-900 uppercase tracking-tight">{merchant.name}</h4>
                   <p className="text-[10px] text-slate-500 font-bold uppercase tracking-widest">Branch ID: {merchant.id.substring(0, 8)}</p>
                 </div>
               </div>
-              <Button 
-                variant="outline" 
-                size="sm" 
-                className="h-8 rounded-lg border-slate-200 text-slate-600 font-bold text-[10px] uppercase tracking-wider"
-                onClick={() => onCreateTerminal(merchant.id, merchant.name)}
-              >
-                <Plus className="w-3.5 h-3.5 mr-1.5" />
-                Add Terminal
-              </Button>
+              {!isSME && (
+                <Button 
+                  variant="outline" 
+                  size="sm" 
+                  className="h-8 rounded-lg border-slate-200 text-slate-600 font-bold text-[10px] uppercase tracking-wider"
+                  onClick={() => onCreateTerminal(merchant.id, merchant.name)}
+                >
+                  <Plus className="w-3.5 h-3.5 mr-1.5" />
+                  Add Terminal
+                </Button>
+              )}
             </div>
 
             <div className="bg-white rounded-[2rem] ring-1 ring-slate-100 shadow-sm overflow-hidden border border-white">
@@ -123,8 +133,15 @@ export function TerminalTable({ merchants, loading, onCreateTerminal }: Terminal
                         </TableCell>
                         <TableCell className="py-4 text-right pr-6">
                           <div className="flex justify-end gap-1">
-                            <Button variant="ghost" size="sm" className="h-8 w-8 p-0 text-slate-300 hover:text-indigo-600 hover:bg-indigo-50 rounded-lg transition-all">
-                              <RotateCcw className="h-4 w-4" />
+                            <Button 
+                                variant="ghost" 
+                                size="sm" 
+                                title="Rotate Secret Key"
+                                onClick={() => onRotateSecret?.(terminal.id)}
+                                disabled={isRotating}
+                                className="h-8 w-8 p-0 text-slate-300 hover:text-indigo-600 hover:bg-indigo-50 rounded-lg transition-all"
+                            >
+                              {isRotating ? <Loader2 className="h-4 w-4 animate-spin" /> : <RotateCcw className="h-4 w-4" />}
                             </Button>
                             <Button variant="ghost" size="sm" className="h-8 w-8 p-0 text-slate-300 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition-all">
                               <Trash2 className="h-4 w-4" />

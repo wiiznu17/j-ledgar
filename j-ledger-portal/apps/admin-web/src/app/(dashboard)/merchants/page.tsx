@@ -15,6 +15,10 @@ import {
 import { toast } from 'sonner';
 import Link from 'next/link';
 
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+
 import { merchantRequester } from '@/lib/requesters';
 import { MerchantTable } from '@/components/merchants/MerchantTable';
 import { TablePagination } from '@/components/common/TablePagination';
@@ -85,6 +89,31 @@ export default function MerchantsPage() {
     });
   };
 
+  const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
+  const [createForm, setCreateForm] = useState({ name: '', taxId: '' });
+  const [isCreating, setIsCreating] = useState(false);
+
+  const handleCreatePartner = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!createForm.name.trim()) return toast.error('Partner name is required');
+    
+    setIsCreating(true);
+    try {
+      await merchantRequester.createPartner({ 
+        name: createForm.name, 
+        taxId: createForm.taxId || undefined 
+      });
+      toast.success('Partner created successfully');
+      setIsCreateModalOpen(false);
+      setCreateForm({ name: '', taxId: '' });
+      fetchPartners(); // Refresh list
+    } catch (error) {
+      toast.error('Failed to create partner');
+    } finally {
+      setIsCreating(false);
+    }
+  };
+
   return (
     <div className="space-y-4 pb-10">
       <div className="flex justify-between items-end">
@@ -97,8 +126,16 @@ export default function MerchantsPage() {
           </p>
         </div>
         <div className="flex gap-2">
+          <Link href="/merchants/create">
+            <Button 
+              className="h-9 gap-1.5 bg-indigo-600 hover:bg-indigo-700 text-white shadow-sm"
+            >
+              <Plus className="w-4 h-4" />
+              Create Partner
+            </Button>
+          </Link>
           <Link href="/merchants/applications">
-            <Button variant="outline" size="sm" className="h-9 gap-1.5">
+            <Button variant="outline" size="sm" className="h-9 gap-1.5 border-slate-200">
               <ClipboardList className="w-4 h-4" />
               Approval Queue
             </Button>

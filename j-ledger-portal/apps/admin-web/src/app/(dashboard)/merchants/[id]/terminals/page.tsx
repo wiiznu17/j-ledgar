@@ -8,11 +8,17 @@ import {
   RefreshCcw,
   Store,
   ShieldCheck,
-  ChevronRight
+  ChevronRight,
+  Key,
+  Copy,
 } from 'lucide-react';
 import { toast } from 'sonner';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
+import {
+  Dialog,
+  DialogContent,
+} from '@/components/ui/dialog';
 
 import { merchantRequester } from '@/lib/requesters';
 import { TerminalTable } from '@/components/merchants/TerminalTable';
@@ -32,6 +38,9 @@ export default function TerminalsPage({
   // Modal State
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [selectedMerchant, setSelectedMerchant] = useState<{ id: string; name: string } | null>(null);
+  const [rotatedTerminal, setRotatedTerminal] = useState<any>(null);
+  const [isRotateModalOpen, setIsRotateModalOpen] = useState(false);
+  const [isRotating, setIsRotating] = useState(false);
 
   const fetchData = useCallback(async () => {
     setLoading(true);
@@ -57,6 +66,22 @@ export default function TerminalsPage({
   const handleOpenModal = (merchantId: string, merchantName: string) => {
     setSelectedMerchant({ id: merchantId, name: merchantName });
     setIsModalOpen(true);
+  };
+
+  const handleRotateSecret = async (terminalId: string) => {
+    if (!confirm('Are you sure you want to rotate the secret key? The old key will stop working immediately.')) return;
+    
+    setIsRotating(true);
+    try {
+      const response = await merchantRequester.rotateTerminalSecret(terminalId);
+      setRotatedTerminal(response);
+      setIsRotateModalOpen(true);
+      toast.success('Secret key rotated successfully');
+    } catch (error) {
+      toast.error('Failed to rotate secret key');
+    } finally {
+      setIsRotating(false);
+    }
   };
 
   return (
@@ -143,6 +168,9 @@ export default function TerminalsPage({
           merchants={merchants} 
           loading={loading} 
           onCreateTerminal={handleOpenModal}
+          onRotateSecret={handleRotateSecret}
+          isRotating={isRotating}
+          isSME={partner?.type === 'SME'}
         />
       </div>
 
@@ -155,6 +183,50 @@ export default function TerminalsPage({
           onSuccess={fetchData}
         />
       )}
+
+      {/* Rotate Secret Result Modal */}
+      <Dialog open={isRotateModalOpen} onOpenChange={setIsRotateModalOpen}>
+        <DialogContent className="sm:max-w-[450px] rounded-[2rem] border-none shadow-2xl p-8 text-center">
+            {rotatedTerminal && (
+                <div className="space-y-6">
+                    <div className="w-20 h-20 bg-amber-50 rounded-[2rem] flex items-center justify-center text-amber-500 mx-auto">
+                        <Key className="w-10 h-10" />
+                    </div>
+                    <div>
+                        <h3 className="text-2xl font-black text-slate-900 tracking-tight">Secret Key Rotated</h3>
+                        <p className="text-sm text-slate-500 mt-2">
+                            New secret key for <span className="font-bold text-slate-700">{rotatedTerminal.name}</span>.
+                            Update your terminal configuration immediately.
+                        </p>
+                    </div>
+                    <div className="w-full space-y-4">
+                        <div className="p-6 bg-slate-900 rounded-[2rem] text-left">
+                            <label className="text-[10px] font-black text-indigo-300 uppercase tracking-[0.2em] block mb-3">New HMAC Secret Key</label>
+                            <div className="flex items-center gap-3">
+                                <div className="flex-1 font-mono text-xs text-white bg-white/5 p-3 rounded-xl border border-white/10 break-all select-all">
+                                    {rotatedTerminal.secretKey}
+                                </div>
+                                <Button 
+                                    size="icon" 
+                                    variant="ghost" 
+                                    onClick={() => {
+                                        navigator.clipboard.writeText(rotatedTerminal.secretKey);
+                                        toast.success('Copied to clipboard');
+                                    }}
+                                    className="h-10 w-10 text-white/50 hover:text-white hover:bg-white/10"
+                                >
+                                    <Copy className="w-4 h-4" />
+                                </Button>
+                            </div>
+                        </div>
+                    </div>
+                    <Button onClick={() => setIsRotateModalOpen(false)} className="w-full h-12 rounded-xl font-black uppercase tracking-wider bg-slate-900 hover:bg-slate-800">
+                        Done, I've Updated the terminal
+                    </Button>
+                </div>
+            )}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

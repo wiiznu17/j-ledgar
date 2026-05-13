@@ -11,6 +11,28 @@ export const merchantRequester = {
     return apiClient.get<any>(API_PATHS.ADMIN.MERCHANT.PARTNER_DETAIL(id));
   },
 
+  createPartner: async (data: { 
+    name: string; 
+    taxId?: string;
+    profile?: {
+      businessNameEn?: string;
+      category?: string;
+      contactName?: string;
+      email?: string;
+      phone?: string;
+      address?: string;
+      addressDetail?: string;
+      website?: string;
+      logoUrl?: string;
+    }
+  }) => {
+    return apiClient.post<any>(API_PATHS.ADMIN.MERCHANT.PARTNERS, data);
+  },
+
+  updatePartner: async (id: string, data: any) => {
+    return apiClient.put<any>(API_PATHS.ADMIN.MERCHANT.PARTNER_DETAIL(id), data);
+  },
+
   updatePartnerStatus: async (id: string, status: boolean) => {
     return apiClient.put<void>(API_PATHS.ADMIN.MERCHANT.PARTNER_STATUS(id), { status });
   },
@@ -35,5 +57,13 @@ export const merchantRequester = {
 
   createTerminal: async (merchantId: string, data: { name: string; hardwareId?: string }) => {
     return apiClient.post<any>(API_PATHS.ADMIN.MERCHANT.TERMINALS(merchantId), data);
+  },
+
+  createMerchant: async (partnerId: string, data: { name: string; address?: string }) => {
+    return apiClient.post<any>(`${API_PATHS.ADMIN.MERCHANT.PARTNERS}/${partnerId}/merchants`, data);
+  },
+
+  rotateTerminalSecret: async (terminalId: string) => {
+    return apiClient.post<any>(`/admin/merchants/terminals/${terminalId}/rotate`);
   },
 };

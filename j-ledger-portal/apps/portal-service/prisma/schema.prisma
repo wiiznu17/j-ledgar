@@ -490,11 +490,19 @@ model BankIntegration {
   @@schema("integration")
 }
 
+enum PartnerType {
+  SME
+  CORPORATE
+
+  @@schema("merchant")
+}
+
 model Partner {
   id              String               @id @default(uuid())
   userId          String?
   name            String
   taxId           String?              @unique
+  type            PartnerType          @default(SME)
   financeAccounts Json?                // { available: UUID, pending: UUID, fee: UUID }
   isPaymentEnabled Boolean             @default(true)
   isLoyaltyEnabled Boolean             @default(true)
@@ -504,10 +512,32 @@ model Partner {
   updatedAt       DateTime             @updatedAt
   merchants       Merchant[]
   applications    MerchantApplication[]
+  profile         PartnerProfile?
 
   @@index([userId])
   @@index([status])
   @@map("partners")
+  @@schema("merchant")
+}
+
+model PartnerProfile {
+  id              String   @id @default(uuid())
+  partnerId       String   @unique
+  partner         Partner  @relation(fields: [partnerId], references: [id])
+  businessNameEn  String?
+  category        String?
+  contactName     String?
+  email           String?
+  phone           String?
+  address         String?
+  addressDetail   String?
+  location        Json?    // { lat, lng }
+  website         String?
+  logoUrl         String?
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  @@map("partner_profiles")
   @@schema("merchant")
 }
 

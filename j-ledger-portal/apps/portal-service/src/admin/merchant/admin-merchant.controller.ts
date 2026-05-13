@@ -17,11 +17,18 @@ import { Permission } from '@repo/dto';
 import { ReviewApplicationDto } from './dto/review-application.dto';
 import { UpdatePartnerStatusDto } from './dto/update-partner-status.dto';
 import { CreateTerminalDto } from './dto/create-terminal.dto';
+import { CreatePartnerDto, UpdatePartnerDto } from './dto/create-partner.dto';
 
 @Controller('admin/merchants')
 @UseGuards(AdminJwtGuard, AdminPermissionsGuard)
 export class AdminMerchantController {
   constructor(private readonly merchantService: MerchantService) {}
+
+  @Post('partners')
+  @Permissions(Permission.MANAGE_MERCHANTS)
+  async createPartner(@Body() body: CreatePartnerDto) {
+    return this.merchantService.createPartnerManual(body);
+  }
 
   @Get('partners')
   @Permissions(Permission.VIEW_MERCHANTS)
@@ -59,6 +66,15 @@ export class AdminMerchantController {
     return this.merchantService.findPartnerById(id);
   }
 
+  @Put('partners/:id')
+  @Permissions(Permission.MANAGE_MERCHANTS)
+  async updatePartner(
+    @Param('id') id: string,
+    @Body() body: UpdatePartnerDto
+  ) {
+    return this.merchantService.updatePartner(id, body);
+  }
+
   @Get('partners/:id/merchants')
   @Permissions(Permission.VIEW_MERCHANTS)
   async getPartnerMerchants(@Param('id') id: string) {
@@ -78,5 +94,20 @@ export class AdminMerchantController {
   @Permissions(Permission.VIEW_MERCHANTS)
   async getMerchantTerminals(@Param('merchantId') merchantId: string) {
     return this.merchantService.findTerminalsByMerchantId(merchantId);
+  }
+
+  @Post('partners/:id/merchants')
+  @Permissions(Permission.MANAGE_MERCHANTS)
+  async createMerchant(
+    @Param('id') partnerId: string,
+    @Body() body: { name: string; address?: string },
+  ) {
+    return this.merchantService.createMerchant(partnerId, body);
+  }
+
+  @Post('terminals/:id/rotate')
+  @Permissions(Permission.MANAGE_MERCHANTS)
+  async rotateSecret(@Param('id') terminalId: string) {
+    return this.merchantService.rotateTerminalSecret(terminalId);
   }
 }

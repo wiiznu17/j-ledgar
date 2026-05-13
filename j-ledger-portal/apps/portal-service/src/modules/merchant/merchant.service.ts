@@ -119,10 +119,33 @@ export class MerchantService {
     };
   }
 
+  async updatePartner(id: string, data: { 
+    name?: string; 
+    taxId?: string;
+    profile?: any;
+  }) {
+    const { profile, ...partnerData } = data;
+
+    return this.prisma.partner.update({
+      where: { id },
+      data: {
+        ...partnerData,
+        profile: profile ? {
+          upsert: {
+            create: profile,
+            update: profile,
+          }
+        } : undefined
+      },
+      include: { profile: true }
+    });
+  }
+
   async findPartnerById(id: string) {
     const partner = await this.prisma.partner.findUnique({
       where: { id },
       include: {
+        profile: true,
         merchants: {
           include: { terminals: true },
         },
@@ -239,12 +262,25 @@ export class MerchantService {
           },
         });
 
-        // 3. Update Partner Status
+        // 3. Update Partner Status & Create Profile
         await tx.partner.update({
           where: { id: application.partnerId },
           data: { 
             status: 'ACTIVE',
+            type: 'SME',
             financeAccounts: financeAccounts as any,
+            profile: {
+              create: {
+                businessNameEn: application.businessNameEn,
+                category: application.category,
+                contactName: application.contactName,
+                email: application.email,
+                phone: application.phone,
+                address: application.address,
+                addressDetail: application.addressDetail,
+                location: application.location as any,
+              }
+            }
           },
         });
 
@@ -316,6 +352,23 @@ export class MerchantService {
   }
 
   async createTerminal(merchantId: string, body: { name: string; hardwareId?: string }) {
+    const merchant = await this.prisma.merchant.findUnique({
+      where: { id: merchantId },
+      include: { partner: true },
+    });
+
+    if (!merchant) throw new HttpException('Merchant not found', HttpStatus.NOT_FOUND);
+
+    // ENFORCE: SME (partner.type === 'SME') can only have 1 terminal
+    if (merchant.partner.type === 'SME') {
+      const count = await this.prisma.terminal.count({
+        where: { merchantId },
+      });
+      if (count >= 1) {
+        throw new HttpException('SME merchants are restricted to a single terminal node.', HttpStatus.BAD_REQUEST);
+      }
+    }
+
     const secretKey = 'sk_' + randomBytes(24).toString('hex');
     const hardwareId = body.hardwareId || 'HW-' + randomBytes(4).toString('hex').toUpperCase();
 
@@ -738,5 +791,205 @@ export class MerchantService {
       });
     }
     console.log('✅ Settlement completed.');
+  }
+
+  // ==================== Redemption Management (Option 2) ====================
+
+  async verifyRedemption(code: string, terminalId: string) {
+    const redemption = await this.prisma.dealRedemption.findUnique({
+      where: { redemptionCode: code },
+      include: {
+        deal: {
+          include: { brand: true },
+        },
+      },
+    });
+
+    if (!redemption) {
+      throw new HttpException('Invalid redemption code', HttpStatus.NOT_FOUND);
+    }
+
+    if (redemption.status !== 'REDEEMED') {
+      const statusMsg = redemption.status === 'USED' ? 'Code already used' : 'Code expired or cancelled';
+      throw new HttpException(statusMsg, HttpStatus.BAD_REQUEST);
+    }
+
+    if (redemption.expiresAt && new Date() > redemption.expiresAt) {
+      // Auto-expire if needed
+      await this.prisma.dealRedemption.update({
+        where: { id: redemption.id },
+        data: { status: 'EXPIRED' },
+      });
+      throw new HttpException('Code expired', HttpStatus.BAD_REQUEST);
+    }
+
+    return {
+      isValid: true,
+      dealTitle: redemption.deal.title,
+      brandName: redemption.deal.brand.name,
+      pointsSpent: redemption.pointsSpent,
+      expiresAt: redemption.expiresAt,
+    };
+  }
+
+  async useRedemption(code: string, terminalId: string) {
+    const terminal = await this.prisma.terminal.findUnique({
+      where: { id: terminalId },
+      include: {
+        merchant: {
+          include: { partner: true },
+        },
+      },
+    });
+
+    if (!terminal) throw new HttpException('Terminal not found', HttpStatus.UNAUTHORIZED);
+
+    const redemption = await this.prisma.dealRedemption.findUnique({
+      where: { redemptionCode: code },
+    });
+
+    if (!redemption) throw new HttpException('Invalid code', HttpStatus.NOT_FOUND);
+    if (redemption.status !== 'REDEEMED') {
+      throw new HttpException(`Code already ${redemption.status.toLowerCase()}`, HttpStatus.BAD_REQUEST);
+    }
+
+    // Update status to USED
+    const updated = await this.prisma.dealRedemption.update({
+      where: { id: redemption.id },
+      data: {
+        status: 'USED',
+        usedAt: new Date(),
+        usedAtMerchantId: terminal.merchantId,
+      },
+    });
+
+    this.logger.log(`Redemption code ${code} used at terminal ${terminalId} (Merchant: ${terminal.merchantId})`);
+
+    return {
+      success: true,
+      usedAt: updated.usedAt,
+      redemptionId: updated.id,
+    };
+  }
+
+  // ==================== Manual Management (Admin Operations) ====================
+
+  async createPartnerManual(data: { 
+    name: string; 
+    taxId?: string;
+    profile?: {
+      businessNameEn?: string;
+      category?: string;
+      contactName?: string;
+      email?: string;
+      phone?: string;
+      address?: string;
+      addressDetail?: string;
+      website?: string;
+      logoUrl?: string;
+    }
+  }) {
+    // 1. Create the partner first to get the ID
+    const partner = await this.prisma.partner.create({
+      data: {
+        name: data.name,
+        taxId: data.taxId,
+        status: 'ACTIVE',
+        type: 'CORPORATE',
+        isPaymentEnabled: true,
+        isLoyaltyEnabled: true,
+        profile: data.profile ? {
+          create: data.profile
+        } : undefined,
+      },
+      include: {
+        profile: true
+      }
+    });
+
+    // 2. Create real financial accounts in the Finance Service
+    try {
+      const [availableAcc, pendingAcc, feeAcc] = await Promise.all([
+        this.financeService.createAccount(partner.id, `${partner.name} - Available`),
+        this.financeService.createAccount(partner.id, `${partner.name} - Pending`),
+        this.financeService.createAccount(partner.id, `${partner.name} - Fee`),
+      ]);
+
+      // 3. Update the partner with the real account IDs
+      const updatedPartner = await this.prisma.partner.update({
+        where: { id: partner.id },
+        data: {
+          financeAccounts: {
+            available: availableAcc.id,
+            pending: pendingAcc.id,
+            fee: feeAcc.id,
+          }
+        },
+        include: { profile: true }
+      });
+
+      this.logger.log(`Manual partner created with finance accounts: ${partner.name} (${partner.id})`);
+      return updatedPartner;
+    } catch (error) {
+      this.logger.error(`Failed to create finance accounts for partner ${partner.id}:`, error);
+      // We still return the partner even if account creation failed, 
+      // though ideally we should handle this more robustly.
+      return partner;
+    }
+  }
+
+  async createMerchant(partnerId: string, data: { name: string; address?: string }) {
+    const partner = await this.prisma.partner.findUnique({
+      where: { id: partnerId },
+    });
+
+    if (!partner) throw new HttpException('Partner not found', HttpStatus.NOT_FOUND);
+
+    // ENFORCE: SME (partner.type === 'SME') can only have 1 merchant branch
+    if (partner.type === 'SME') {
+      const count = await this.prisma.merchant.count({
+        where: { partnerId },
+      });
+      if (count >= 1) {
+        throw new HttpException('SME partners are restricted to a single merchant branch.', HttpStatus.BAD_REQUEST);
+      }
+    }
+
+    const merchant = await this.prisma.merchant.create({
+      data: {
+        partnerId,
+        name: data.name,
+        address: data.address,
+        isActive: true,
+      },
+    });
+
+    this.logger.log(`Manual merchant branch created: ${merchant.name} (Partner: ${partnerId})`);
+    return merchant;
+  }
+
+  async rotateTerminalSecret(terminalId: string) {
+    const terminal = await this.prisma.terminal.findUnique({
+      where: { id: terminalId },
+    });
+
+    if (!terminal) throw new HttpException('Terminal not found', HttpStatus.NOT_FOUND);
+
+    const newSecret = randomBytes(32).toString('hex');
+
+    const updated = await this.prisma.terminal.update({
+      where: { id: terminalId },
+      data: {
+        secretKey: newSecret,
+      },
+    });
+
+    this.logger.log(`Terminal secret rotated for node: ${terminalId}`);
+
+    return {
+      id: updated.id,
+      name: updated.name,
+      secretKey: newSecret,
+    };
   }
 }

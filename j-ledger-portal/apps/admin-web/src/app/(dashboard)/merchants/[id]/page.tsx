@@ -18,6 +18,11 @@ import {
   ExternalLink,
   Plus,
   Settings,
+  Loader2,
+  User,
+  Mail,
+  Phone,
+  Globe,
 } from 'lucide-react';
 import {
   Card,
@@ -29,6 +34,17 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { toast } from 'sonner';
 import Link from 'next/link';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog';
+import { Label } from '@/components/ui/label';
+import { Input } from '@/components/ui/input';
+import { Textarea } from '@/components/ui/textarea';
 
 import { merchantRequester } from '@/lib/requesters';
 
@@ -41,13 +57,24 @@ export default function PartnerDetailPage({
   const router = useRouter();
 
   const [partner, setPartner] = useState<any>(null);
+  const [merchants, setMerchants] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  
+  // Modal states
+  const [isMerchantModalOpen, setIsMerchantModalOpen] = useState(false);
+  const [newMerchantName, setNewMerchantName] = useState('');
+  const [newMerchantAddress, setNewMerchantAddress] = useState('');
+  const [submitting, setSubmitting] = useState(false);
 
   const fetchData = async () => {
     try {
       setLoading(true);
-      const response = await merchantRequester.getPartnerDetail(partnerId);
-      setPartner(response);
+      const [p, m] = await Promise.all([
+        merchantRequester.getPartnerDetail(partnerId),
+        merchantRequester.getPartnerMerchants(partnerId)
+      ]);
+      setPartner(p);
+      setMerchants(m || []);
     } catch (error) {
       console.error('Error fetching partner details', error);
       toast.error('Failed to load partner information');
@@ -59,6 +86,26 @@ export default function PartnerDetailPage({
   useEffect(() => {
     if (partnerId) fetchData();
   }, [partnerId]);
+
+  const handleCreateMerchant = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setSubmitting(true);
+    try {
+      await merchantRequester.createMerchant(partnerId, {
+        name: newMerchantName,
+        address: newMerchantAddress
+      });
+      toast.success('Merchant branch added successfully');
+      setIsMerchantModalOpen(false);
+      setNewMerchantName('');
+      setNewMerchantAddress('');
+      fetchData();
+    } catch (error) {
+      toast.error('Failed to add merchant branch');
+    } finally {
+      setSubmitting(false);
+    }
+  };
 
   if (loading) {
     return (
@@ -102,6 +149,12 @@ export default function PartnerDetailPage({
             Business Partner Profile
           </h1>
           <div className="flex items-center gap-2">
+            <Link href={`/merchants/${partnerId}/edit`}>
+              <Button variant="outline" size="sm" className="h-9 rounded-xl border-slate-200">
+                <FileText className="w-4 h-4 mr-2 text-amber-500" />
+                Edit Profile
+              </Button>
+            </Link>
             <Link href={`/merchants/${partnerId}/terminals`}>
               <Button variant="outline" size="sm" className="h-9 rounded-xl border-slate-200">
                 <Settings className="w-4 h-4 mr-2" />
@@ -197,6 +250,114 @@ export default function PartnerDetailPage({
                   </div>
                 </div>
               </div>
+
+              <div className="space-y-6">
+                <h4 className="text-[10px] font-black text-slate-400 uppercase tracking-widest flex items-center gap-2">
+                  <Building2 className="w-3 h-3" /> Official Profile
+                </h4>
+                <div className="space-y-4">
+                  <div>
+                    <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest">En Business Name</p>
+                    <p className="text-sm font-bold text-slate-700 mt-0.5">{partner.profile?.businessNameEn || 'Not Provided'}</p>
+                  </div>
+                  <div>
+                    <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest">Registered Address</p>
+                    <p className="text-xs text-slate-600 mt-1 leading-relaxed">
+                      {partner.profile?.address || 'N/A'}
+                      {partner.profile?.addressDetail && <span className="block mt-0.5 text-slate-400 italic">{partner.profile.addressDetail}</span>}
+                    </p>
+                  </div>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card className="border-none shadow-sm ring-1 ring-slate-100 bg-white overflow-hidden rounded-[2rem]">
+            <CardHeader className="bg-slate-50/50 border-b border-slate-100 px-8 py-4">
+              <CardTitle className="text-[10px] font-black uppercase tracking-widest text-slate-400 flex items-center gap-2">
+                <User className="w-3.5 h-3.5" /> Corporate Contact
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="p-8 grid md:grid-cols-2 gap-6">
+               <div className="flex items-center gap-4">
+                  <div className="w-10 h-10 rounded-xl bg-indigo-50 flex items-center justify-center text-indigo-600">
+                    <User className="w-5 h-5" />
+                  </div>
+                  <div>
+                    <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest">Contact Person</p>
+                    <p className="text-sm font-bold text-slate-800">{partner.profile?.contactName || 'N/A'}</p>
+                  </div>
+               </div>
+               <div className="flex items-center gap-4">
+                  <div className="w-10 h-10 rounded-xl bg-rose-50 flex items-center justify-center text-rose-600">
+                    <Mail className="w-5 h-5" />
+                  </div>
+                  <div>
+                    <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest">Email Address</p>
+                    <p className="text-sm font-bold text-slate-800">{partner.profile?.email || 'N/A'}</p>
+                  </div>
+               </div>
+               <div className="flex items-center gap-4">
+                  <div className="w-10 h-10 rounded-xl bg-emerald-50 flex items-center justify-center text-emerald-600">
+                    <Phone className="w-5 h-5" />
+                  </div>
+                  <div>
+                    <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest">Phone Number</p>
+                    <p className="text-sm font-bold text-slate-800">{partner.profile?.phone || 'N/A'}</p>
+                  </div>
+               </div>
+               <div className="flex items-center gap-4">
+                  <div className="w-10 h-10 rounded-xl bg-amber-50 flex items-center justify-center text-amber-600">
+                    <Globe className="w-5 h-5" />
+                  </div>
+                  <div>
+                    <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest">Website</p>
+                    <p className="text-sm font-bold text-slate-800 break-all">{partner.profile?.website || 'N/A'}</p>
+                  </div>
+               </div>
+            </CardContent>
+          </Card>
+
+          {/* Merchants / Branches List */}
+          <Card className="border-none shadow-sm ring-1 ring-slate-100 bg-white overflow-hidden rounded-[2rem]">
+            <CardHeader className="p-8 pb-4 flex flex-row items-center justify-between">
+              <div>
+                <CardTitle className="text-sm font-black uppercase tracking-widest text-slate-400">Merchant Branches</CardTitle>
+                <p className="text-xs text-slate-500 mt-1">Managed locations and outlet nodes.</p>
+              </div>
+              {partner.type !== 'SME' && (
+                <Button size="sm" variant="outline" className="h-9 rounded-xl border-slate-200 font-bold text-xs" onClick={() => setIsMerchantModalOpen(true)}>
+                  <Plus className="w-4 h-4 mr-2" /> Add Branch
+                </Button>
+              )}
+            </CardHeader>
+            <CardContent className="p-8 pt-0">
+              <div className="grid gap-3">
+                {merchants.length === 0 ? (
+                  <div className="py-10 text-center text-slate-400 text-sm border-2 border-dashed border-slate-50 rounded-2xl">
+                    No branches configured yet.
+                  </div>
+                ) : (
+                  merchants.map((m) => (
+                    <div key={m.id} className="p-4 rounded-2xl bg-slate-50 border border-slate-100 flex items-center justify-between group hover:bg-indigo-50/30 hover:border-indigo-100 transition-all">
+                      <div className="flex items-center gap-4">
+                        <div className="w-10 h-10 rounded-xl bg-white border border-slate-100 flex items-center justify-center text-slate-400 group-hover:text-indigo-600 transition-colors">
+                          <Store className="w-5 h-5" />
+                        </div>
+                        <div>
+                          <div className="font-bold text-slate-900 text-sm">{m.name}</div>
+                          <div className="text-[10px] text-slate-500 font-medium">{m.address || 'No address set'}</div>
+                        </div>
+                      </div>
+                      <Link href={`/merchants/${partnerId}/terminals`}>
+                        <Button variant="ghost" size="icon" className="text-slate-300 hover:text-indigo-600">
+                          <ChevronRight className="w-5 h-5" />
+                        </Button>
+                      </Link>
+                    </div>
+                  ))
+                )}
+              </div>
             </CardContent>
           </Card>
         </div>
@@ -223,21 +384,77 @@ export default function PartnerDetailPage({
                 
                 <div className="pt-4 border-t border-slate-100">
                   <div className="flex items-center justify-between mb-4">
-                    <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Active Terminals</span>
-                    <span className="text-sm font-black text-slate-900">{partner._count?.merchants || 0} Nodes</span>
+                    <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Active Nodes</span>
+                    <span className="text-sm font-black text-slate-900">{merchants.length} สาขา</span>
                   </div>
-                  <Button variant="outline" className="w-full justify-between h-10 rounded-xl text-slate-600 border-slate-100 font-bold text-[10px] uppercase tracking-wider" nativeButton={false} render={
-                    <Link href={`/merchants/${partnerId}/terminals`}>
+                  <Link href={`/merchants/${partnerId}/terminals`} className="block w-full">
+                    <Button variant="outline" className="w-full justify-between h-10 rounded-xl text-slate-600 border-slate-100 font-bold text-[10px] uppercase tracking-wider">
                       Manage Registered Terminals
                       <ChevronRight className="w-4 h-4" />
-                    </Link>
-                  } />
+                    </Button>
+                  </Link>
                 </div>
               </div>
             </CardContent>
           </Card>
         </div>
       </div>
+
+      {/* Create Merchant Modal */}
+      <Dialog open={isMerchantModalOpen} onOpenChange={setIsMerchantModalOpen}>
+        <DialogContent className="sm:max-w-[450px] rounded-[2rem] border-none shadow-2xl p-0 overflow-hidden">
+          <form onSubmit={handleCreateMerchant}>
+            <div className="p-8 pb-4">
+              <DialogHeader>
+                <DialogTitle className="text-2xl font-black text-slate-900 tracking-tight flex items-center gap-2">
+                  <div className="p-2 bg-indigo-50 rounded-xl">
+                    <Store className="w-6 h-6 text-indigo-600" />
+                  </div>
+                  Add New Branch
+                </DialogTitle>
+                <DialogDescription className="text-slate-500 pt-2 text-sm leading-relaxed">
+                  Register a new physical location or outlet for this partner.
+                </DialogDescription>
+              </DialogHeader>
+
+              <div className="space-y-6 py-6">
+                <div className="space-y-2">
+                  <Label htmlFor="m-name" className="text-[10px] font-black uppercase text-slate-400 tracking-widest ml-1">Branch Name</Label>
+                  <Input
+                    id="m-name"
+                    placeholder="e.g. Siam Square Branch"
+                    value={newMerchantName}
+                    onChange={(e) => setNewMerchantName(e.target.value)}
+                    required
+                    className="h-12 rounded-xl bg-slate-50 border-slate-100 focus:ring-indigo-500 font-bold"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="m-address" className="text-[10px] font-black uppercase text-slate-400 tracking-widest ml-1">Address (Optional)</Label>
+                  <Textarea
+                    id="m-address"
+                    placeholder="Physical location of the store"
+                    value={newMerchantAddress}
+                    onChange={(e) => setNewMerchantAddress(e.target.value)}
+                    className="rounded-xl bg-slate-50 border-slate-100 focus:ring-indigo-500 min-h-[80px]"
+                  />
+                </div>
+              </div>
+            </div>
+            <DialogFooter className="p-8 pt-0 flex gap-3">
+              <Button type="button" variant="ghost" onClick={() => setIsMerchantModalOpen(false)} className="rounded-xl font-bold flex-1 h-12">Cancel</Button>
+              <Button type="submit" disabled={submitting} className="rounded-xl font-bold bg-indigo-600 hover:bg-indigo-700 flex-1 h-12 shadow-lg shadow-indigo-100">
+                {submitting ? (
+                  <Loader2 className="w-4 h-4 animate-spin" />
+                ) : (
+                  'Add Branch'
+                )}
+              </Button>
+            </DialogFooter>
+          </form>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
+
