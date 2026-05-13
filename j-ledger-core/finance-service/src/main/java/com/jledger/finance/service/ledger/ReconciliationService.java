@@ -117,6 +117,6 @@ public class ReconciliationService {
     }
 
     public List<ReconciliationReport> getAllReports() {
-        return reconciliationReportRepository.findAll();
+        return reconciliationReportRepository.findAllOrderByDateDesc();
     }
 }

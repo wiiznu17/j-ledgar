@@ -262,6 +262,12 @@ public class WalletService {
         userAccount.setBalance(userAccount.getBalance().add(amount));
         accountRepository.save(userAccount);
 
+        // Update System Account (for reconciliation)
+        Account systemAccount = accountRepository.findByIdForUpdate(UUID.fromString(SYSTEM_ACCOUNT_ID))
+                .orElseThrow(() -> new RuntimeException("System account not found"));
+        systemAccount.setBalance(systemAccount.getBalance().add(amount));
+        accountRepository.save(systemAccount);
+
         // Record adjustment transaction
         String txId = UUID.randomUUID().toString();
         Transaction transaction = new Transaction();
@@ -339,8 +345,8 @@ public class WalletService {
         Wallet updatedWallet = walletRepository.save(Objects.requireNonNull(wallet));
         cacheWallet(updatedWallet);
 
-        // 3. Update System Account Balance (Debit)
-        systemAccount.setBalance(systemAccount.getBalance().subtract(amount));
+        // 3. Update System Account Balance (Credit/Deposit to bank increases asset)
+        systemAccount.setBalance(systemAccount.getBalance().add(amount));
         accountRepository.save(systemAccount);
 
         // Record Ledger Entry for System Account (Debit)
@@ -425,20 +431,35 @@ public class WalletService {
             }
 
             // 3. Update Balances (Double-Entry)
-            systemAccount.setBalance(systemAccount.getBalance().subtract(amount));
+            systemAccount.setBalance(systemAccount.getBalance().add(amount));
             wallet.setBalance(wallet.getBalance().add(amount));
 
             accountRepository.save(systemAccount);
+
+            // Update User Ledger Account
+            Account userAccount = getOrCreateLedgerAccount(userId, wallet.getCurrency());
+            userAccount.setBalance(userAccount.getBalance().add(amount));
+            accountRepository.save(userAccount);
             
             // Record Ledger Entry for System Account (Debit)
-            LedgerEntry ledgerEntry = LedgerEntry.builder()
+            LedgerEntry systemEntry = LedgerEntry.builder()
                     .account(systemAccount)
                     .entryType("DEBIT")
                     .amount(amount)
                     .transactionId(externalRef)
                     .description(String.format("%s Top-up credit for user %s", provider, userId))
                     .build();
-            ledgerEntryRepository.save(Objects.requireNonNull(ledgerEntry));
+            ledgerEntryRepository.save(Objects.requireNonNull(systemEntry));
+
+            // Record Ledger Entry for User Account (Credit)
+            LedgerEntry userEntry = LedgerEntry.builder()
+                    .account(userAccount)
+                    .entryType("CREDIT")
+                    .amount(amount)
+                    .transactionId(externalRef)
+                    .description(String.format("%s Top-up credit", provider == null ? "EXTERNAL" : provider))
+                    .build();
+            ledgerEntryRepository.save(Objects.requireNonNull(userEntry));
 
             Wallet updatedWallet = walletRepository.save(Objects.requireNonNull(wallet));
             cacheWallet(updatedWallet);
@@ -986,7 +1007,6 @@ public class WalletService {
             receiverAccount = accountRepository.findByIdForUpdate(receiverAccountInfo.getId()).get();
             senderAccount = accountRepository.findByIdForUpdate(senderAccountInfo.getId()).get();
         } else {
-            // Same account (different wallets for same user? Possible but unlikely in this flow)
             senderAccount = receiverAccount = accountRepository.findByIdForUpdate(senderAccountInfo.getId()).get();
         }
 
@@ -1031,14 +1051,86 @@ public class WalletService {
                 .entryType("CREDIT")
                 .amount(amount)
                 .transactionId(txId)
-                .description("Transfer from wallet " + fromWallet.getId())
+                .description("Transfer from wallet " + fromWallet.getWalletId())
                 .build();
         ledgerEntryRepository.save(Objects.requireNonNull(receiverEntry));
 
-        // Notify Sender
+        // Notify
         publishTransactionEvent(fromUserId, savedTransaction, false);
-        // Notify Receiver
         publishTransactionEvent(toWallet.getUserId(), savedTransaction, true);
+
+        return savedTransaction;
+    }
+
+    @Transactional
+    public Transaction transferWalletToAccount(String fromUserId, String toAccountId, BigDecimal amount) {
+        // 1. Fetch source wallet
+        Wallet fromWallet = walletRepository.findByUserIdForUpdate(fromUserId)
+                .orElseThrow(() -> new RuntimeException("Source wallet not found"));
+
+        if (!fromWallet.getIsActive()) {
+            throw new RuntimeException("Source wallet is inactive");
+        }
+
+        if (fromWallet.getBalance().compareTo(amount) < 0) {
+            throw new RuntimeException("Insufficient balance");
+        }
+
+        // 2. Fetch destination account (UUID)
+        UUID toAccountUuid = UUID.fromString(toAccountId);
+        Account receiverAccount = accountRepository.findByIdForUpdate(toAccountUuid)
+                .orElseThrow(() -> new RuntimeException("Recipient account not found: " + toAccountId));
+
+        // 3. Get Source Ledger Account
+        Account senderAccount = getOrCreateLedgerAccount(fromUserId, fromWallet.getCurrency());
+        senderAccount = accountRepository.findByIdForUpdate(senderAccount.getId()).get();
+
+        // 4. Update Balances
+        fromWallet.setBalance(fromWallet.getBalance().subtract(amount));
+        senderAccount.setBalance(senderAccount.getBalance().subtract(amount));
+        receiverAccount.setBalance(receiverAccount.getBalance().add(amount));
+
+        // 5. Save State
+        walletRepository.save(fromWallet);
+        accountRepository.save(senderAccount);
+        accountRepository.save(receiverAccount);
+
+        // 6. Record Transaction
+        String txId = UUID.randomUUID().toString();
+        Transaction transaction = new Transaction();
+        transaction.setTransactionId(txId);
+        transaction.setType(TransactionType.PAYMENT);
+        transaction.setAmount(amount);
+        transaction.setStatus(TransactionStatus.COMPLETED);
+        transaction.setFromWalletId(fromWallet.getId());
+        transaction.setToWalletId(null); // Direct to account
+        transaction.setDescription("Merchant payment to account " + toAccountId);
+        transaction.setMetadata("{\"toAccountId\":\"" + toAccountId + "\"}");
+
+        Transaction savedTransaction = transactionRepository.save(transaction);
+
+        // 7. Record Ledger Entries
+        LedgerEntry senderEntry = LedgerEntry.builder()
+                .account(senderAccount)
+                .entryType("DEBIT")
+                .amount(amount)
+                .transactionId(txId)
+                .description("Merchant payment to " + toAccountId)
+                .build();
+        ledgerEntryRepository.save(senderEntry);
+
+        LedgerEntry receiverEntry = LedgerEntry.builder()
+                .account(receiverAccount)
+                .entryType("CREDIT")
+                .amount(amount)
+                .transactionId(txId)
+                .description("Merchant payment from " + fromWallet.getWalletId())
+                .build();
+        ledgerEntryRepository.save(receiverEntry);
+
+        // 8. Notify
+        publishTransactionEvent(fromUserId, savedTransaction, false);
+        publishTransactionEvent(receiverAccount.getUserId().toString(), savedTransaction, true);
 
         return savedTransaction;
     }

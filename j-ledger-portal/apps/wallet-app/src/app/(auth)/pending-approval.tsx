@@ -3,10 +3,10 @@ import {
   View,
   Text,
   TouchableOpacity,
-  SafeAreaView,
   Alert,
   ActivityIndicator,
 } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { useAuthStore } from '@/store/auth';
 import { router } from 'expo-router';
 import {
@@ -17,7 +17,6 @@ import {
   ArrowRight,
 } from 'lucide-react-native';
 import { api } from '@/lib/axios';
-
 import { UserStatus } from '@repo/dto';
 
 export default function PendingApprovalScreen() {
@@ -84,7 +83,7 @@ export default function PendingApprovalScreen() {
   };
 
   return (
-    <SafeAreaView style={{ flex: 1, backgroundColor: '#FFFFFF' }}>
+    <SafeAreaView style={{ flex: 1, backgroundColor: 'transparent' }} edges={['top']}>
       <View
         style={{
           flex: 1,
@@ -140,7 +139,7 @@ export default function PendingApprovalScreen() {
           <View
             style={{
               width: '100%',
-              backgroundColor: '#f9fafb',
+              backgroundColor: 'rgba(255, 255, 255, 0.7)',
               padding: 16,
               borderRadius: 16,
               marginBottom: 48,
@@ -245,14 +244,14 @@ export default function PendingApprovalScreen() {
             onPress={handleLogout}
             style={{
               width: '100%',
-              backgroundColor: '#f9fafb',
+              backgroundColor: 'rgba(255, 255, 255, 0.7)',
               paddingVertical: 16,
               borderRadius: 20,
               flexDirection: 'row',
               justifyContent: 'center',
               alignItems: 'center',
               borderWidth: 1,
-              borderColor: '#f3f4f6',
+              borderColor: 'rgba(0, 0, 0, 0.05)',
             }}
           >
             <LogOut size={20} color="#6b7280" />

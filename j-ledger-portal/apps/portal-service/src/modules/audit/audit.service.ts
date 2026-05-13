@@ -39,12 +39,13 @@ export enum ResourceType {
 }
 
 export interface AuditLogData {
-  adminUserId: string;
+  adminUserId?: string;
+  userId?: string;
   action: AuditAction;
   resourceType: ResourceType;
   resourceId: string;
-  ipAddress: string;
-  userAgent: string;
+  ipAddress?: string;
+  userAgent?: string;
   requestPayload?: Record<string, any>;
   responseStatus: number;
   changes?: {
@@ -71,6 +72,7 @@ export class AuditService {
     return this.prisma.auditLog.create({
       data: {
         adminUserId: data.adminUserId,
+        userId: data.userId,
         action: data.action,
         resourceType: data.resourceType,
         resourceId: data.resourceId,

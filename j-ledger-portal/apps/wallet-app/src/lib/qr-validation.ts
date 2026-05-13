@@ -43,7 +43,21 @@ export const validateAndParseQR = (rawData: string): ValidationResult => {
       };
     }
 
-    // Normalize recipient to 10-digit phone number
+    // Handle Merchant Payments - Skip phone number validation
+    if (parsed.type === 'MERCHANT_PAYMENT') {
+        return {
+            success: true,
+            data: {
+                type: 'MERCHANT_PAYMENT',
+                recipient: 'MERCHANT',
+                paymentId: parsed.paymentId,
+                amount: parsed.amount || '',
+                merchantName: parsed.merchantName,
+            } as any,
+        };
+    }
+
+    // Normalize recipient to 10-digit phone number for P2P transfers
     let recipient = parsed.recipient.replace(/\D/g, '');
     if (recipient.length === 9) {
       recipient = '0' + recipient;

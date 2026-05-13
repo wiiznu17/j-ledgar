@@ -288,6 +288,47 @@ export class FinanceService {
     }
   }
 
+  async performTransfer(payload: {
+    fromAccountId: string;
+    toAccountId: string;
+    amount: string;
+    note?: string;
+    idempotencyKey: string;
+    type?: string;
+    currency?: string;
+  }): Promise<any> {
+    const isMerchant = payload.type === 'MERCHANT_PAYMENT';
+    const url = isMerchant 
+      ? `${this.financeServiceUrl}/api/finance/transactions/merchant-pay`
+      : `${this.financeServiceUrl}/api/finance/transactions/p2p-transfer`;
+    
+    try {
+      const body = isMerchant ? {
+        fromWalletId: payload.fromAccountId,
+        toWalletId: payload.toAccountId,
+        amount: payload.amount,
+        currency: payload.currency || 'THB'
+      } : {
+        idempotencyKey: payload.idempotencyKey,
+        fromAccountId: payload.fromAccountId,
+        toAccountId: payload.toAccountId,
+        amount: payload.amount,
+        currency: payload.currency || 'THB'
+      };
+
+      const response = await this.httpService.axiosRef.post(url, body, {
+        headers: {
+            ...this.getInternalHeaders(),
+            'Idempotency-Key': payload.idempotencyKey
+        },
+      });
+      return response.data;
+    } catch (error: any) {
+      this.logCompactError(`performTransfer from=${payload.fromAccountId} to=${payload.toAccountId}`, error);
+      this.rethrowAsHttpException(error, 'Failed to perform transfer');
+    }
+  }
+
   private getInternalHeaders() {
     const internalSecret = this.configService.get<string>(
       'JLEDGER_INTERNAL_SECRET',

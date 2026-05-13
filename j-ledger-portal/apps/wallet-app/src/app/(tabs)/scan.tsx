@@ -41,7 +41,7 @@ const MOCK_QR_CODES = [
     label: 'Internal (+500 THB): 0987654321',
     data: 'JLEDGER:0987654321:500.00',
   },
-  { label: 'Real Account: 0000000000', data: 'JLEDGER:0000000000' },
+  { label: 'Merchant Payment (Test)', data: 'jledger://pay?id=test-payment-id' },
   { label: 'Invalid Format Test', data: 'INVALID_QR_CODE_TEST' },
 ];
 
@@ -103,14 +103,24 @@ export default function ScanScreen() {
         setTimeout(() => {
           setIsProcessing(false);
           const rawData = validationResult.data!;
-          router.push({
-            pathname: '/transfer',
-            params: {
-              recipient: rawData.recipient,
-              amount: rawData.amount || '',
-              merchantName: rawData.merchantName || '',
-            },
-          } as any);
+
+          if (rawData.type === 'MERCHANT_PAYMENT') {
+            router.push({
+              pathname: '/merchant/payment-confirm',
+              params: {
+                paymentId: rawData.paymentId,
+              },
+            } as any);
+          } else {
+            router.push({
+              pathname: '/transfer',
+              params: {
+                recipient: rawData.recipient,
+                amount: rawData.amount || '',
+                merchantName: rawData.merchantName || '',
+              },
+            } as any);
+          }
           setTimeout(() => setScanned(false), 1000);
         }, 500);
       } else {

@@ -49,13 +49,27 @@ public class MerchantPaymentService {
                 LOGGER.info("Processing merchant payment: {} -> {} amount={}",
                     request.fromWalletId(), request.toWalletId(), request.amount());
 
-                Wallet fromWallet = walletRepository.findById(request.fromWalletId())
-                    .orElseThrow(() -> new IllegalArgumentException("Source wallet not found"));
+                // 0. Resolve Source Wallet
+                Wallet fromWallet;
+                if (request.fromWalletId().startsWith("W")) {
+                    fromWallet = walletRepository.findByWalletId(request.fromWalletId())
+                        .orElseThrow(() -> new IllegalArgumentException("Source wallet not found: " + request.fromWalletId()));
+                } else {
+                    try {
+                        Long id = Long.parseLong(request.fromWalletId());
+                        fromWallet = walletRepository.findById(id)
+                            .orElseThrow(() -> new IllegalArgumentException("Source wallet not found ID: " + id));
+                    } catch (NumberFormatException e) {
+                         // Try as UUID if it's not a W-prefix or Long
+                         fromWallet = walletRepository.findByUserId(request.fromWalletId())
+                            .orElseThrow(() -> new IllegalArgumentException("Source wallet not found for user: " + request.fromWalletId()));
+                    }
+                }
 
-                // 1. Perform Fund Transfer using WalletService
-                Transaction transaction = walletService.transferByWalletId(
+                // 1. Perform Fund Transfer using specialized Merchant method
+                Transaction transaction = walletService.transferWalletToAccount(
                     fromWallet.getUserId(),
-                    request.toWalletId().toString(),
+                    request.toWalletId(),
                     request.amount()
                 );
 

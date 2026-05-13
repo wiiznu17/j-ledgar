@@ -1,5 +1,5 @@
 import { useEffect } from 'react';
-import { View, StyleSheet, Text, Image, Alert } from 'react-native';
+import { View, StyleSheet, Text, Image, Alert, ActivityIndicator } from 'react-native';
 import {
   DarkTheme,
   DefaultTheme,
@@ -9,7 +9,7 @@ import { router, Stack, SplashScreen, useSegments } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import 'react-native-reanimated';
-import { SafeAreaProvider } from 'react-native-safe-area-context';
+import { SafeAreaProvider, SafeAreaView } from 'react-native-safe-area-context';
 import { StripeProvider } from '@stripe/stripe-react-native';
 
 import { useColorScheme } from '@/hooks/use-color-scheme';
@@ -155,7 +155,14 @@ export default function RootLayout() {
   ]);
 
   if ((!fontsLoaded && !fontError) || isAuthLoading) {
-    return null;
+    return (
+      <SafeAreaView style={{ flex: 1, backgroundColor: 'transparent' }} edges={['top']}>
+        <BackgroundGradient />
+        <View className="flex-1 items-center justify-center">
+           <ActivityIndicator color="#f48fb1" size="large" />
+        </View>
+      </SafeAreaView>
+    );
   }
 
   const navTheme = {
@@ -201,6 +208,7 @@ export default function RootLayout() {
                   options={{ presentation: 'modal', title: 'Settings' }}
                 />
                 <Stack.Screen name="profile/information" />
+                <Stack.Screen name="merchant" />
               </Stack>
 
               {/* Security PIN Overlay - Preserves underlying route! */}

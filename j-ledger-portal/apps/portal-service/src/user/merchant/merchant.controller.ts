@@ -8,6 +8,7 @@ import {
   Body,
   UseInterceptors,
   UploadedFiles,
+  Param,
 } from '@nestjs/common';
 import { MerchantService } from '../../modules/merchant/merchant.service';
 import { JwtAuthGuard } from '../../core/common/guards/jwt-auth.guard';
@@ -66,5 +67,24 @@ export class MerchantController {
 
     const results = await Promise.all(uploadPromises);
     return { urls: results };
+  }
+
+  // ==================== Merchant Payments (QR) ====================
+
+  @Post('payments/qr')
+  async generateQR(@Req() req: any, @Body() body: { merchantId: string; amount: number; terminalId?: string }) {
+    const userId = req.user?.sub;
+    return this.merchantService.generatePaymentQR(userId, body.merchantId, body.amount, body.terminalId);
+  }
+
+  @Get('payments/:paymentId')
+  async getPaymentDetail(@Param('paymentId') paymentId: string) {
+    return this.merchantService.getPaymentDetail(paymentId);
+  }
+
+  @Post('payments/:paymentId/confirm')
+  async confirmPayment(@Req() req: any, @Param('paymentId') paymentId: string) {
+    const userId = req.user?.sub;
+    return this.merchantService.processQRPayment(userId, paymentId);
   }
 }

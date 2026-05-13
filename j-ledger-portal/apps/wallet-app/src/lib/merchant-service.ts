@@ -2,6 +2,7 @@ import api from './axios';
 
 export interface MerchantDashboardData {
   isMerchant: boolean;
+  merchantId?: string;
   applicationStatus: string | null;
   message?: string;
   totalRevenue?: number;
@@ -70,6 +71,23 @@ export const MerchantService = {
 
   getTerminals: async (): Promise<MerchantTerminal[]> => {
     const response = await api.get('/merchant/terminals');
+    return response.data;
+  },
+
+  // ==================== Merchant Payments (QR) ====================
+
+  generatePaymentQR: async (merchantId: string, amount: number): Promise<any> => {
+    const response = await api.post('/merchant/payments/qr', { merchantId, amount });
+    return response.data;
+  },
+
+  getPaymentDetail: async (paymentId: string): Promise<any> => {
+    const response = await api.get(`/merchant/payments/${paymentId}`);
+    return response.data;
+  },
+
+  confirmPayment: async (paymentId: string): Promise<any> => {
+    const response = await api.post(`/merchant/payments/${paymentId}/confirm`);
     return response.data;
   },
 };

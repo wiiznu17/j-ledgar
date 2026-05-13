@@ -1,9 +1,8 @@
-import React, { useState, useCallback } from 'react';
+import React, { useState, useEffect } from 'react';
 import { View, Text, ScrollView, RefreshControl, TouchableOpacity, ActivityIndicator } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
-import { useFocusEffect } from '@react-navigation/native';
-import { Store, DollarSign, Activity, CreditCard, ChevronLeft, AlertTriangle } from 'lucide-react-native';
+import { Store, DollarSign, Activity, CreditCard, ChevronLeft, AlertTriangle, QrCode, ArrowRight } from 'lucide-react-native';
 import { MerchantService, MerchantDashboardData } from '@/lib/merchant-service';
 
 export default function MerchantDashboard() {
@@ -31,11 +30,9 @@ export default function MerchantDashboard() {
     }
   };
 
-  useFocusEffect(
-    useCallback(() => {
-      fetchDashboard();
-    }, [])
-  );
+  useEffect(() => {
+    fetchDashboard();
+  }, []);
 
   const onRefresh = () => {
     setIsRefreshing(true);
@@ -79,7 +76,7 @@ export default function MerchantDashboard() {
           {!isPending ? (
             <TouchableOpacity 
               onPress={() => router.push('/merchant/apply' as any)}
-              className="bg-gray-900 w-full py-4 rounded-2xl shadow-lg shadow-gray-200"
+              className="bg-gray-900 w-full py-4 rounded-2xl"
             >
               <Text className="text-white text-center font-black font-manrope">Start Application</Text>
             </TouchableOpacity>
@@ -147,7 +144,7 @@ export default function MerchantDashboard() {
         {/* Metric Cards */}
         <View className="flex-row flex-wrap justify-between">
           
-          <View className="w-[48%] bg-white p-4 rounded-3xl shadow-sm mb-4 border border-gray-100">
+          <View className="w-[48%] bg-white p-4 rounded-3xl mb-4 border border-gray-100">
             <View className="w-10 h-10 bg-emerald-50 rounded-full items-center justify-center mb-3">
               <DollarSign size={20} color="#10b981" />
             </View>
@@ -155,7 +152,7 @@ export default function MerchantDashboard() {
             <Text className="text-xl font-black font-manrope text-gray-800">฿{data?.totalRevenue?.toLocaleString() || '0'}</Text>
           </View>
 
-          <View className="w-[48%] bg-white p-4 rounded-3xl shadow-sm mb-4 border border-gray-100">
+          <View className="w-[48%] bg-white p-4 rounded-3xl mb-4 border border-gray-100">
             <View className="w-10 h-10 bg-blue-50 rounded-full items-center justify-center mb-3">
               <Activity size={20} color="#3b82f6" />
             </View>
@@ -163,7 +160,7 @@ export default function MerchantDashboard() {
             <Text className="text-xl font-black font-manrope text-gray-800">{data?.totalTransactions || 0}</Text>
           </View>
 
-          <View className="w-[100%] bg-white p-4 rounded-3xl shadow-sm mb-6 border border-gray-100 flex-row items-center justify-between">
+          <View className="w-[100%] bg-white p-4 rounded-3xl mb-6 border border-gray-100 flex-row items-center justify-between">
             <View>
               <Text className="text-xs font-bold text-gray-400 uppercase tracking-widest mb-1">Active Terminals</Text>
               <Text className="text-xl font-black font-manrope text-gray-800">{data?.activeTerminals || 0} Devices</Text>
@@ -177,7 +174,23 @@ export default function MerchantDashboard() {
 
         {/* Quick Actions */}
         <Text className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-3 ml-2">Quick Actions</Text>
-        <View className="bg-white rounded-[2rem] border border-gray-100 shadow-sm overflow-hidden mb-6">
+        <View className="bg-white rounded-[2rem] border border-gray-100 overflow-hidden mb-6">
+          <TouchableOpacity 
+            className="flex-row items-center justify-between p-5 border-b border-gray-50 bg-amber-50/30"
+            onPress={() => router.push('/merchant/payment-qr' as any)}
+          >
+            <View className="flex-row items-center">
+              <View className="w-10 h-10 bg-amber-100 rounded-xl items-center justify-center mr-4">
+                <QrCode size={20} color="#f59e0b" />
+              </View>
+              <View>
+                <Text className="font-manrope font-black text-gray-800">Receive Payment</Text>
+                <Text className="text-[10px] text-amber-600 font-bold">Generate QR for customers</Text>
+              </View>
+            </View>
+            <ArrowRight size={16} color="#f59e0b" />
+          </TouchableOpacity>
+
           <TouchableOpacity 
             className="flex-row items-center justify-between p-5 border-b border-gray-50"
             onPress={() => router.push('/merchant/transactions' as any)}

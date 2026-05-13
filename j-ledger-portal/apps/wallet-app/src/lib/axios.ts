@@ -203,10 +203,12 @@ api.interceptors.response.use(
 
           // Retry original request
           return api(originalRequest);
-        } catch (refreshError) {
-          // Refresh failed, instead of logout, lock the session
-          // This allows user to unlock with PIN which might trigger another refresh
-          useAuthStore.getState().lockSession();
+        } catch (refreshError: any) {
+          console.error('[Axios] Refresh failed, logging out:', refreshError.response?.data || refreshError.message);
+          
+          // If refresh fails, it means the refresh token is invalid or user is gone
+          // We MUST logout to clear state and redirect to login
+          await useAuthStore.getState().logout();
 
           refreshSubscribers.forEach((callback) => callback(''));
           refreshSubscribers = [];
@@ -215,8 +217,8 @@ api.interceptors.response.use(
           isRefreshing = false;
         }
       } else {
-        // No refresh token available, lock the session (it might be a brand new install or cleared storage)
-        useAuthStore.getState().lockSession();
+        // No refresh token available, logout
+        await useAuthStore.getState().logout();
       }
     }
 

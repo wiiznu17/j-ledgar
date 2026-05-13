@@ -5,6 +5,7 @@ import { FinanceService } from '../integration/finance.service';
 import { AuditService, AuditAction, ResourceType } from '../audit/audit.service';
 import { Cron, CronExpression } from '@nestjs/schedule';
 import { randomBytes, randomUUID, timingSafeEqual, createHmac } from 'crypto';
+import * as QRCode from 'qrcode';
 import { TerminalIdempotencyService } from './security/terminal-idempotency.service';
 import { ApplyMerchantDto } from '../../user/merchant/dto/apply-merchant.dto';
 
@@ -436,6 +437,168 @@ export class MerchantService {
     })));
   }
 
+  // ==================== Merchant Payments (QR) ====================
+
+  async generatePaymentQR(userId: string, merchantId: string, amount: number, terminalId?: string) {
+    // 1. Verify merchant belongs to user
+    const merchant = await this.prisma.merchant.findFirst({
+      where: { id: merchantId, partner: { userId } },
+      include: { partner: true }
+    });
+
+    if (!merchant) throw new HttpException('Merchant not found', HttpStatus.NOT_FOUND);
+
+    const idempotencyKey = `qr_pay_${randomUUID()}`;
+    const expiresAt = new Date(Date.now() + 15 * 60 * 1000); // 15 mins expiry
+
+    // 2. Create Payment Record
+    const payment = await this.prisma.merchantPayment.create({
+      data: {
+        merchantId,
+        terminalId,
+        amount: amount.toFixed(4),
+        idempotencyKey,
+        expiresAt,
+        status: 'PENDING',
+      }
+    });
+
+    // 3. Generate QR Data
+    // Format: jledger://pay?id={paymentId}
+    const payUrl = `jledger://pay?id=${payment.id}`;
+    const qrDataUrl = await QRCode.toDataURL(payUrl);
+
+    return {
+      paymentId: payment.id,
+      amount: payment.amount,
+      currency: payment.currency,
+      qrCode: qrDataUrl,
+      payUrl,
+      expiresAt,
+    };
+  }
+
+  async getPaymentDetail(paymentId: string) {
+    const payment = await this.prisma.merchantPayment.findUnique({
+      where: { id: paymentId },
+      include: { merchant: true }
+    });
+
+    if (!payment) throw new HttpException('Payment request not found', HttpStatus.NOT_FOUND);
+    
+    if (payment.status === 'EXPIRED') {
+        throw new HttpException('Payment request expired', HttpStatus.GONE);
+    }
+    
+    if (payment.status !== 'PENDING') {
+        throw new HttpException('Payment is no longer pending', HttpStatus.GONE);
+    }
+
+    if (new Date() > payment.expiresAt) {
+       await this.prisma.merchantPayment.update({ 
+           where: { id: paymentId }, 
+           data: { status: 'EXPIRED' }
+       });
+       throw new HttpException('Payment request expired', HttpStatus.GONE);
+    }
+
+    return {
+      id: payment.id,
+      merchantName: payment.merchant.name,
+      amount: payment.amount,
+      currency: payment.currency,
+      createdAt: payment.createdAt,
+      expiresAt: payment.expiresAt,
+    };
+  }
+
+  async processQRPayment(userId: string, paymentId: string) {
+    // 1. Get Payment Request
+    const payment = await this.prisma.merchantPayment.findUnique({
+      where: { id: paymentId },
+      include: { merchant: { include: { partner: true } } }
+    });
+
+    if (!payment) throw new HttpException('Payment request not found', HttpStatus.NOT_FOUND);
+    if (payment.status !== 'PENDING') throw new HttpException('Payment is no longer pending', HttpStatus.GONE);
+    
+    if (new Date() > payment.expiresAt) {
+       await this.prisma.merchantPayment.update({ 
+           where: { id: paymentId }, 
+           data: { status: 'EXPIRED' }
+       });
+       throw new HttpException('Payment request expired', HttpStatus.GONE);
+    }
+
+    const merchantPartner = payment.merchant.partner;
+    const financeAccounts = merchantPartner.financeAccounts as any;
+    // We use the "pending" account for merchant payments
+    const merchantAccountId = financeAccounts?.pending || financeAccounts?.available;
+
+    if (!merchantAccountId) {
+       throw new HttpException('Merchant financial account not initialized', HttpStatus.INTERNAL_SERVER_ERROR);
+    }
+
+    // 2. Get Customer Wallet
+    const customerWallet = await this.financeService.getWallet(userId);
+    if (!customerWallet || !customerWallet.walletId) {
+        throw new HttpException('Customer wallet not found', HttpStatus.NOT_FOUND);
+    }
+
+    // 3. Perform Transfer (Ledger Command)
+    const idempotencyKey = `pay_exec_${payment.id}`;
+    
+    try {
+        const tx = await this.financeService.performTransfer({
+            fromAccountId: customerWallet.walletId, 
+            toAccountId: merchantAccountId,
+            amount: payment.amount.toString(),
+            idempotencyKey,
+            note: `Payment to ${payment.merchant.name}`,
+            type: 'MERCHANT_PAYMENT'
+        });
+
+        // 4. Update Status
+        await this.prisma.merchantPayment.update({
+            where: { id: paymentId },
+            data: { 
+                status: 'COMPLETED',
+                referenceId: tx.transactionId || tx.id?.toString()
+            }
+        });
+
+        // 5. Log Audit
+        await this.auditService.log({
+            userId: userId,
+            action: AuditAction.MERCHANT_PAYMENT,
+            resourceType: ResourceType.MERCHANT,
+            resourceId: payment.merchantId,
+            requestPayload: { paymentId, transactionId: tx.transactionId || tx.id?.toString() },
+            responseStatus: 200,
+            ipAddress: '0.0.0.0', // Optional but good to have placeholders if not available
+            userAgent: 'J-Ledger/Internal'
+        });
+
+        return {
+            success: true,
+            transactionId: tx.transactionId || tx.id?.toString(),
+            amount: payment.amount,
+            merchantName: payment.merchant.name
+        };
+    } catch (error: any) {
+        this.logger.error(`Failed to process QR payment ${paymentId}: ${error.message}`);
+        
+        // If it was already completed (idempotency), don't mark as failed
+        if (error.status !== HttpStatus.CONFLICT) {
+            await this.prisma.merchantPayment.update({
+                where: { id: paymentId },
+                data: { status: 'FAILED', metadata: { error: error.message } as any }
+            }).catch(() => {});
+        }
+        throw error;
+    }
+  }
+
   async getMerchantDashboard(userId: string) {
     const partner = await this.prisma.partner.findFirst({
       where: { userId },
@@ -463,10 +626,11 @@ export class MerchantService {
       };
     }
 
-    const merchantIds = await this.prisma.merchant.findMany({
+    const merchants = await this.prisma.merchant.findMany({
       where: { partnerId: partner.id },
       select: { id: true },
-    }).then(ms => ms.map(m => m.id));
+    });
+    const merchantIds = merchants.map(m => m.id);
 
     const today = new Date();
     today.setHours(0, 0, 0, 0);
@@ -494,6 +658,7 @@ export class MerchantService {
 
     return {
       isMerchant: true,
+      merchantId: merchants[0]?.id,
       totalRevenue: todaySales,
       totalTransactions: transactions.length,
       activeTerminals,
@@ -628,31 +793,29 @@ export class MerchantService {
           const partnerId = terminal.merchant.partnerId;
 
           // 1. Acquire pessimistic lock on the partner using a dummy update
-          // This is a reliable cross-database way to achieve SELECT FOR UPDATE in Prisma
           await tx.partner.update({
             where: { id: partnerId },
             data: { updatedAt: new Date() },
           });
 
-          // 2. Atomic balance update
+          // 2. Verify Partner and Accounts
           const partner = await tx.partner.findUnique({ 
             where: { id: partnerId } 
           });
           
           if (!partner) throw new HttpException('Partner not found', HttpStatus.NOT_FOUND);
 
-          const currentFinance = (partner.financeAccounts as any) || { available: 0, pending: 0, fee: 0 };
-          const newFinance = {
-            ...currentFinance,
-            pending: Number(currentFinance.pending || 0) + amount,
-          };
+          const financeAccounts = (partner.financeAccounts as any);
+          if (!financeAccounts?.pending) {
+              throw new HttpException('Merchant financial account not initialized', HttpStatus.INTERNAL_SERVER_ERROR);
+          }
 
-          await tx.partner.update({
-            where: { id: partnerId },
-            data: { financeAccounts: newFinance as any },
-          });
+          const txId = `txn_tm_pmt_${randomUUID()}`;
 
-          const txId = `txn_pmt_${randomUUID()}`;
+          // Note: In a real scenario, we would call financeService.performTransfer here
+          // if we had the source account (e.g. from a card bridge).
+          // For now, we fix the data integrity issue by NOT overwriting the JSON with numbers.
+          // We will just log the transaction success.
 
           // Log Audit inside transaction
           await tx.auditLog.create({

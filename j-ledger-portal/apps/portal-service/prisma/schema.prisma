@@ -553,6 +553,7 @@ model Merchant {
   updatedAt  DateTime @updatedAt
   partner    Partner  @relation(fields: [partnerId], references: [id])
   terminals  Terminal[]
+  payments   MerchantPayment[]
 
   @@index([partnerId])
   @@map("merchants")
@@ -569,9 +570,41 @@ model Terminal {
   createdAt  DateTime       @default(now())
   updatedAt  DateTime       @updatedAt
   merchant   Merchant       @relation(fields: [merchantId], references: [id])
+  payments   MerchantPayment[]
 
   @@index([merchantId])
   @@map("terminals")
+  @@schema("merchant")
+}
+
+enum MerchantPaymentStatus {
+  PENDING
+  COMPLETED
+  FAILED
+  EXPIRED
+
+  @@schema("merchant")
+}
+
+model MerchantPayment {
+  id              String                @id @default(uuid())
+  merchantId      String
+  terminalId      String?
+  amount          Decimal               @db.Decimal(19, 4)
+  currency        String                @default("THB")
+  status          MerchantPaymentStatus @default(PENDING)
+  idempotencyKey  String                @unique
+  referenceId     String?               @unique // External reference or txn ID
+  note            String?
+  metadata        Json?
+  expiresAt       DateTime
+  createdAt       DateTime              @default(now())
+  updatedAt       DateTime              @updatedAt
+
+  merchant        Merchant              @relation(fields: [merchantId], references: [id])
+  terminal        Terminal?             @relation(fields: [terminalId], references: [id])
+
+  @@map("merchant_payments")
   @@schema("merchant")
 }
 

@@ -5,10 +5,11 @@
  */
 
 export interface ParsedQR {
-  type: 'INTERNAL' | 'UNSUPPORTED';
+  type: 'INTERNAL' | 'MERCHANT_PAYMENT' | 'UNSUPPORTED';
   recipient: string;
   amount?: string;
   merchantName?: string;
+  paymentId?: string;
   error?: string;
 }
 
@@ -31,6 +32,38 @@ export const parseQRData = (data: string): ParsedQR => {
       error:
         'PromptPay QR is not supported yet. Please use JLEDGER QR codes only.',
     };
+  }
+
+  // Merchant Payment URL format: jledger://pay?id=...
+  if (data.startsWith('jledger://pay')) {
+    const urlParts = data.split('?');
+    const queryParams = urlParts[1]?.split('&') || [];
+    const idParam = queryParams.find(p => p.startsWith('id='));
+    const paymentId = idParam?.split('=')[1];
+
+    if (paymentId) {
+        return {
+            type: 'MERCHANT_PAYMENT',
+            recipient: 'MERCHANT',
+            paymentId,
+        };
+    }
+  }
+
+  // Merchant Payment URL format: jledger://pay?id=...
+  if (data.startsWith('jledger://pay')) {
+    const urlParts = data.split('?');
+    const queryParams = urlParts[1]?.split('&') || [];
+    const idParam = queryParams.find((p) => p.startsWith('id='));
+    const paymentId = idParam?.split('=')[1];
+
+    if (paymentId) {
+      return {
+        type: 'MERCHANT_PAYMENT',
+        recipient: 'MERCHANT',
+        paymentId,
+      };
+    }
   }
 
   return {
