@@ -22,6 +22,7 @@ import { MotiView, AnimatePresence } from 'moti';
 import { CameraView, useCameraPermissions, Camera } from 'expo-camera';
 import * as ImagePicker from 'expo-image-picker';
 import * as Haptics from 'expo-haptics';
+import { useIsFocused } from '@react-navigation/native';
 import {
   validateAndParseQR,
   logQRScan,
@@ -34,51 +35,34 @@ const { width } = Dimensions.get('window');
 // คำนวณขนาดกรอบสแกนให้พอดีกับหน้าจอ (70% ของความกว้าง)
 const SCAN_FRAME_SIZE = width * 0.72;
 
-// Mock QR codes for testing on simulator - Only JLEDGER format supported
-const MOCK_QR_CODES = [
-  { label: 'Internal (no amount): 0812345678', data: 'JLEDGER:0812345678' },
-  {
-    label: 'Internal (+500 THB): 0987654321',
-    data: 'JLEDGER:0987654321:500.00',
-  },
-  { label: 'Merchant Payment (Test)', data: 'jledger://pay?id=test-payment-id' },
-  { label: 'Invalid Format Test', data: 'INVALID_QR_CODE_TEST' },
-];
+
 
 export default function ScanScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
+  const isFocused = useIsFocused();
   const [permission, requestPermission] = useCameraPermissions();
 
   const [torch, setTorch] = useState(false);
   const [scanned, setScanned] = useState(false);
   const [isProcessing, setIsProcessing] = useState(false);
-  const [showSimulatorWarning, setShowSimulatorWarning] = useState(false);
 
   useEffect(() => {
     if (!permission) requestPermission();
 
-    // Log camera status for debugging
-    console.log('[Scan] Camera permission status:', permission);
-
-    // Show warning on simulator if not already shown
-    if (Platform.OS === 'ios' && Platform.isPad === false) {
-      console.log('[Scan] Running on iOS - camera may not work on simulator');
+    // If we return to the screen, reset the scanned state
+    if (isFocused) {
+      setScanned(false);
+      setIsProcessing(false);
     }
-  }, [permission]);
+  }, [permission, isFocused]);
 
   const handleBarCodeScanned = ({ data }: { data: string }) => {
-    if (scanned || isProcessing) return;
+    if (!isFocused || scanned || isProcessing) return;
     console.log('[Scan] QR code detected:', data);
     processQRResult(data);
   };
 
-  // For simulator testing only
-  const testQRScan = (qrData?: string) => {
-    const testData = qrData || MOCK_QR_CODES[0]?.data || 'JLEDGER:0812345678';
-    console.log('[Scan] Testing with mock QR:', testData);
-    processQRResult(testData);
-  };
 
   const processQRResult = async (rawData: string) => {
     setScanned(true);
@@ -289,7 +273,7 @@ export default function ScanScreen() {
         style={StyleSheet.absoluteFillObject}
         facing="back"
         enableTorch={torch}
-        onBarcodeScanned={scanned ? undefined : handleBarCodeScanned}
+        onBarcodeScanned={(!isFocused || scanned || isProcessing) ? undefined : handleBarCodeScanned}
         barcodeScannerSettings={{ barcodeTypes: ['qr'] }}
       />
 
@@ -437,32 +421,6 @@ export default function ScanScreen() {
           </View>
         </View>
 
-        {/* Test QR Button - Simulator Only (positioned higher to avoid tab bar) */}
-        {__DEV__ && (
-          <View
-            className="absolute w-full items-center"
-            style={{ bottom: Math.max(insets.bottom, 20) + 200 }}
-          >
-            <TouchableOpacity
-              onPress={() => {
-                Alert.alert('Test QR Code', 'Select a test QR code', [
-                  ...MOCK_QR_CODES.map((item, index) => ({
-                    text: item.label,
-                    onPress: () => testQRScan(item.data),
-                  })),
-                  {
-                    text: 'Cancel',
-                  },
-                ]);
-              }}
-              className="px-4 py-2 rounded-lg bg-blue-500/80 active:scale-95"
-            >
-              <Text className="text-white text-xs font-manrope font-bold">
-                🧪 Test QR (Dev Only)
-              </Text>
-            </TouchableOpacity>
-          </View>
-        )}
       </View>
     </View>
   );
