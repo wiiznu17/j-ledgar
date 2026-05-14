@@ -53,8 +53,22 @@ export const validateAndParseQR = (rawData: string): ValidationResult => {
                 paymentId: parsed.paymentId,
                 amount: parsed.amount || '',
                 merchantName: parsed.merchantName,
-            } as any,
+            },
         };
+    }
+
+    // Handle Merchant Static QR
+    if (parsed.type === 'MERCHANT_STATIC') {
+      return {
+          success: true,
+          data: {
+              type: 'MERCHANT_STATIC',
+              recipient: 'MERCHANT',
+              merchantId: parsed.merchantId,
+              amount: '',
+              merchantName: parsed.merchantName,
+          },
+      };
     }
 
     // Normalize recipient to 10-digit phone number for P2P transfers

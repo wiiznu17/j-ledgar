@@ -478,6 +478,26 @@ export class MerchantService {
     };
   }
 
+  async generateStaticQR(userId: string, merchantId: string) {
+    // 1. Verify merchant belongs to user
+    const merchant = await this.prisma.merchant.findFirst({
+      where: { id: merchantId, partner: { userId } },
+    });
+
+    if (!merchant) throw new HttpException('Merchant not found', HttpStatus.NOT_FOUND);
+
+    // 2. Generate QR Data
+    // Format: jledger://merchant?id={merchantId}
+    const payUrl = `jledger://merchant?id=${merchant.id}`;
+    const qrDataUrl = await QRCode.toDataURL(payUrl);
+
+    return {
+      merchantId: merchant.id,
+      qrCode: qrDataUrl,
+      payUrl,
+    };
+  }
+
   async getPaymentDetail(paymentId: string) {
     const payment = await this.prisma.merchantPayment.findUnique({
       where: { id: paymentId },
@@ -596,6 +616,81 @@ export class MerchantService {
             }).catch(() => {});
         }
         throw error;
+    }
+  }
+
+  async previewManualPayment(merchantId: string) {
+    const merchant = await this.prisma.merchant.findUnique({
+      where: { id: merchantId },
+      include: { partner: { include: { profile: true } } }
+    });
+
+    if (!merchant) throw new HttpException('Merchant not found', HttpStatus.NOT_FOUND);
+
+    return {
+      merchantId: merchant.id,
+      merchantName: merchant.name,
+      category: merchant.category || merchant.partner.profile?.category,
+      logoUrl: merchant.partner.profile?.logoUrl,
+    };
+  }
+
+  async processManualPayment(userId: string, merchantId: string, amount: number, note?: string) {
+    const merchant = await this.prisma.merchant.findUnique({
+      where: { id: merchantId },
+      include: { partner: { include: { profile: true } } }
+    });
+
+    if (!merchant) throw new HttpException('Merchant not found', HttpStatus.NOT_FOUND);
+
+    const partner = merchant.partner;
+    const financeAccounts = partner.financeAccounts as any;
+    // For manual payments, we also use the pending account for standard flow, or available if pending is missing
+    const merchantAccountId = financeAccounts?.pending || financeAccounts?.available;
+
+    if (!merchantAccountId) {
+      throw new HttpException('Merchant financial account not initialized', HttpStatus.INTERNAL_SERVER_ERROR);
+    }
+
+    // Get Customer Wallet
+    const customerWallet = await this.financeService.getWallet(userId);
+    if (!customerWallet || !customerWallet.walletId) {
+      throw new HttpException('Customer wallet not found', HttpStatus.NOT_FOUND);
+    }
+
+    const idempotencyKey = `manual_pay_${merchantId}_${userId}_${Date.now()}`;
+
+    try {
+      const tx = await this.financeService.performTransfer({
+        fromAccountId: customerWallet.walletId,
+        toAccountId: merchantAccountId,
+        amount: amount.toFixed(4),
+        idempotencyKey,
+        note: note || `Manual Payment to ${merchant.name}`,
+        type: 'MERCHANT_PAYMENT'
+      });
+
+      // Log Audit
+      await this.auditService.log({
+        userId: userId,
+        action: AuditAction.MERCHANT_PAYMENT,
+        resourceType: ResourceType.MERCHANT,
+        resourceId: merchant.id,
+        requestPayload: { amount, note, transactionId: tx.transactionId || tx.id?.toString(), mode: 'MANUAL' },
+        responseStatus: 200,
+        ipAddress: '0.0.0.0',
+        userAgent: 'J-Ledger/Internal'
+      });
+
+      return {
+        success: true,
+        transactionId: tx.transactionId || tx.id?.toString(),
+        amount,
+        merchantName: merchant.name
+      };
+    } catch (error: any) {
+      this.logger.error(`Failed to process manual payment to ${merchantId}: ${error.message}`);
+      throw error;
     }
   }
 
@@ -782,15 +877,29 @@ export class MerchantService {
 
     const merchantIds = partner.merchants.map((m: any) => m.id);
 
-    return this.prisma.auditLog.findMany({
+    const payments = await this.prisma.merchantPayment.findMany({
       where: {
-        resourceType: ResourceType.MERCHANT,
-        resourceId: { in: merchantIds },
-        action: AuditAction.MERCHANT_PAYMENT,
+        merchantId: { in: merchantIds },
+        status: 'COMPLETED',
+      },
+      include: {
+        terminal: true,
       },
       orderBy: { createdAt: 'desc' },
       take: 20,
     });
+
+    return {
+      data: payments.map(p => ({
+        id: p.id,
+        amount: Number(p.amount),
+        status: p.status,
+        type: p.note || (p.terminalId ? `Terminal: ${p.terminal?.name || p.terminalId}` : 'QR Payment'),
+        createdAt: p.createdAt,
+        referenceId: p.referenceId,
+      })),
+      pagination: { total: payments.length, page: 1, limit: 20, totalPages: 1 }
+    };
   }
 
   async processTerminalPayment(terminalId: string, body: { amount: number; idempotencyKey: string; note?: string }) {
@@ -835,6 +944,20 @@ export class MerchantService {
           // if we had the source account (e.g. from a card bridge).
           // For now, we fix the data integrity issue by NOT overwriting the JSON with numbers.
           // We will just log the transaction success.
+
+          // Create MerchantPayment record for the terminal transaction
+          await tx.merchantPayment.create({
+            data: {
+              merchantId: terminal.merchantId,
+              terminalId: terminalId,
+              amount: amount,
+              status: 'COMPLETED',
+              idempotencyKey: body.idempotencyKey,
+              referenceId: txId,
+              note: body.note || 'Terminal Payment',
+              expiresAt: new Date(), // Already completed
+            }
+          });
 
           // Log Audit inside transaction
           await tx.auditLog.create({

@@ -100,7 +100,9 @@ export default function RootLayout() {
         segments[0] !== '(auth)' ||
         (segments[1] !== 'login' && segments[1] !== 'onboarding')
       ) {
-        router.replace('/(auth)/login');
+        setTimeout(() => {
+          router.replace('/(auth)/login');
+        }, 0);
       }
     } else if (user && !needsPinVerification) {
       const isAuthGroup = segments[0] === '(auth)';
@@ -110,7 +112,9 @@ export default function RootLayout() {
       // 1. Handle Incomplete Registration Flow
       if (user.registrationState !== RegistrationState.COMPLETED) {
         if (!isOnboarding) {
-          router.replace('/(auth)/onboarding');
+          setTimeout(() => {
+            router.replace('/(auth)/onboarding');
+          }, 0);
         }
         return;
       }
@@ -124,24 +128,29 @@ export default function RootLayout() {
           break;
 
         case UserStatus.PENDING_APPROVAL:
+          if (!isAuthGroup || segments[1] !== 'pending-approval') {
+            setTimeout(() => {
+              router.replace('/(auth)/pending-approval');
+            }, 0);
+          }
+          break;
+
         case UserStatus.REJECTED:
-          if (!isPendingApproval) {
-            router.replace('/(auth)/pending-approval');
+        case UserStatus.SUSPENDED:
+        case UserStatus.BLOCKED:
+        case UserStatus.INACTIVE:
+          if (!isAuthGroup || segments[1] !== 'account-restricted') {
+            setTimeout(() => {
+              router.replace('/(auth)/account-restricted');
+            }, 0);
           }
           break;
 
         case UserStatus.DELETED:
           initializeAuth();
-          router.replace('/(auth)/login');
-          break;
-
-        case UserStatus.BLOCKED:
-        case UserStatus.SUSPENDED:
-        case UserStatus.INACTIVE:
-        default:
-          if (segments[1] !== 'account-restricted') {
-            router.replace('/(auth)/account-restricted');
-          }
+          setTimeout(() => {
+            router.replace('/(auth)/login');
+          }, 0);
           break;
       }
     }
@@ -208,7 +217,6 @@ export default function RootLayout() {
                   options={{ presentation: 'modal', title: 'Settings' }}
                 />
                 <Stack.Screen name="profile/information" />
-                <Stack.Screen name="merchant" />
               </Stack>
 
               {/* Security PIN Overlay - Preserves underlying route! */}
@@ -219,29 +227,27 @@ export default function RootLayout() {
                     <BackgroundGradient />
                   </View>
                   
-                  <SafeAreaProvider>
-                    <PINVerification
-                      onSuccess={() => {
-                        console.log('[RootLayout] Overlay Unlock Successful');
-                      }}
-                      onFailure={(msg) => Alert.alert('PIN Incorrect', msg)}
-                      useUnlock={true}
-                      headerCenterElement={
-                        <View className="flex-row items-center gap-2">
-                          <View className="w-8 h-8 bg-pink-50 rounded-lg items-center justify-center border border-pink-100 shadow-sm">
-                            <Image
-                              source={require('../../assets/images/icon.png')}
-                              className="w-5 h-5"
-                              resizeMode="contain"
-                            />
-                          </View>
-                          <Text className="text-sm font-manrope font-black text-gray-800 tracking-tight">
-                            P-wallet
-                          </Text>
+                  <PINVerification
+                    onSuccess={() => {
+                      console.log('[RootLayout] Overlay Unlock Successful');
+                    }}
+                    onFailure={(msg) => Alert.alert('PIN Incorrect', msg)}
+                    useUnlock={true}
+                    headerCenterElement={
+                      <View className="flex-row items-center gap-2">
+                        <View className="w-8 h-8 bg-pink-50 rounded-lg items-center justify-center border border-pink-100 shadow-sm">
+                          <Image
+                            source={require('../../assets/images/icon.png')}
+                            className="w-5 h-5"
+                            resizeMode="contain"
+                          />
                         </View>
-                      }
-                    />
-                  </SafeAreaProvider>
+                        <Text className="text-sm font-manrope font-black text-gray-800 tracking-tight">
+                          P-wallet
+                        </Text>
+                      </View>
+                    }
+                  />
                 </View>
               )}
             </View>

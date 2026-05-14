@@ -1,18 +1,16 @@
 import React, { useState, useCallback } from 'react';
 import { View, Text, FlatList, TouchableOpacity, ActivityIndicator, ScrollView } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { useRouter } from 'expo-router';
+import { router } from 'expo-router';
 import { useFocusEffect } from '@react-navigation/native';
 import { ChevronLeft, ArrowDownLeft, Receipt, Filter } from 'lucide-react-native';
 import { MerchantService, MerchantTransaction } from '@/lib/merchant-service';
 
 export default function MerchantTransactions() {
-  const router = useRouter();
   const [transactions, setTransactions] = useState<MerchantTransaction[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isRefreshing, setIsRefreshing] = useState(false);
   
-  // Basic filter
   const [activeFilter, setActiveFilter] = useState<'ALL' | 'SUCCESS' | 'FAILED'>('ALL');
 
   const fetchTransactions = async (statusFilter?: string) => {
@@ -58,38 +56,43 @@ export default function MerchantTransactions() {
   );
 
   const renderTransaction = ({ item }: { item: MerchantTransaction }) => {
-    const isSuccess = item.status === 'COMPLETED' || item.status === 'SUCCESS';
+    const isSuccess = item.status === 'COMPLETED';
+    const isPending = item.status === 'PENDING';
     const isFailed = item.status === 'FAILED' || item.status === 'CANCELLED';
 
     return (
       <View className="bg-white p-4 rounded-[1.5rem] mb-3 border border-gray-100 flex-row items-center justify-between shadow-sm">
         <View className="flex-row items-center flex-1">
           <View className={`w-12 h-12 rounded-2xl items-center justify-center mr-4 ${
-            isSuccess ? 'bg-emerald-50' : isFailed ? 'bg-red-50' : 'bg-gray-50'
+            isSuccess ? 'bg-emerald-50' : isPending ? 'bg-amber-50' : 'bg-red-50'
           }`}>
-            <ArrowDownLeft size={20} color={isSuccess ? '#10b981' : isFailed ? '#ef4444' : '#6b7280'} />
+            <ArrowDownLeft size={20} color={isSuccess ? '#10b981' : isPending ? '#f59e0b' : '#ef4444'} />
           </View>
           <View className="flex-1">
             <Text className="font-manrope font-black text-gray-800 text-base" numberOfLines={1}>
               {item.type || 'Payment Received'}
             </Text>
             <Text className="text-xs text-gray-400 font-medium mt-1">
-              {new Date(item.createdAt).toLocaleString()}
+              {item.createdAt ? new Date(item.createdAt).toLocaleString() : '-'}
             </Text>
             {item.referenceId && (
-              <Text className="text-[10px] text-gray-300 font-bold mt-1">Ref: {item.referenceId}</Text>
+              <Text className="text-[10px] text-gray-300 font-bold mt-1">ID: {item.referenceId}</Text>
             )}
           </View>
         </View>
         <View className="items-end">
           <Text className="font-manrope font-black text-lg text-gray-900">
-            +฿{item.amount.toLocaleString()}
+            +฿{Number(item.amount || 0).toLocaleString(undefined, { minimumFractionDigits: 2 })}
           </Text>
-          <Text className={`text-[10px] font-black uppercase tracking-wider mt-1 ${
-            isSuccess ? 'text-emerald-500' : isFailed ? 'text-red-500' : 'text-amber-500'
+          <View className={`px-2 py-0.5 rounded-full mt-1 ${
+            isSuccess ? 'bg-emerald-50' : isPending ? 'bg-amber-50' : 'bg-red-50'
           }`}>
-            {item.status}
-          </Text>
+            <Text className={`text-[8px] font-black uppercase tracking-wider ${
+              isSuccess ? 'text-emerald-600' : isPending ? 'text-amber-600' : 'text-red-600'
+            }`}>
+              {item.status}
+            </Text>
+          </View>
         </View>
       </View>
     );
@@ -125,7 +128,7 @@ export default function MerchantTransactions() {
       {/* List */}
       {isLoading && !isRefreshing ? (
         <View className="flex-1 items-center justify-center">
-          <ActivityIndicator size="large" color="#f59e0b" />
+          <ActivityIndicator size="large" color="#f48fb1" />
         </View>
       ) : (
         <FlatList

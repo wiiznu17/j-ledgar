@@ -23,7 +23,11 @@ export type TransferParams = z.infer<typeof TransferParamsSchema>;
  */
 export interface ValidationResult {
   success: boolean;
-  data?: TransferParams;
+  data?: TransferParams & {
+    type?: 'INTERNAL' | 'MERCHANT_PAYMENT' | 'MERCHANT_STATIC';
+    paymentId?: string;
+    merchantId?: string;
+  };
   error?: {
     code: 'INVALID_QR' | 'INVALID_RECIPIENT' | 'INVALID_AMOUNT' | 'PARSE_ERROR';
     message: string;

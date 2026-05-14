@@ -77,6 +77,12 @@ export class MerchantController {
     return this.merchantService.generatePaymentQR(userId, body.merchantId, body.amount, body.terminalId);
   }
 
+  @Get('payments/static-qr')
+  async getStaticQR(@Req() req: any, @Query('merchantId') merchantId: string) {
+    const userId = req.user?.sub;
+    return this.merchantService.generateStaticQR(userId, merchantId);
+  }
+
   @Get('payments/:paymentId')
   async getPaymentDetail(@Param('paymentId') paymentId: string) {
     return this.merchantService.getPaymentDetail(paymentId);
@@ -86,5 +92,16 @@ export class MerchantController {
   async confirmPayment(@Req() req: any, @Param('paymentId') paymentId: string) {
     const userId = req.user?.sub;
     return this.merchantService.processQRPayment(userId, paymentId);
+  }
+
+  @Get('manual-pay/preview')
+  async previewManualPayment(@Query('merchantId') merchantId: string) {
+    return this.merchantService.previewManualPayment(merchantId);
+  }
+
+  @Post('manual-pay/confirm')
+  async confirmManualPayment(@Req() req: any, @Body() body: { merchantId: string; amount: number; note?: string }) {
+    const userId = req.user?.sub;
+    return this.merchantService.processManualPayment(userId, body.merchantId, body.amount, body.note);
   }
 }

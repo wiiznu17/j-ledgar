@@ -102,13 +102,22 @@ export default function ScanScreen() {
         // Navigate to transfer with validated data
         setTimeout(() => {
           setIsProcessing(false);
-          const rawData = validationResult.data!;
+          const rawData = validationResult.data;
+
+          if (!rawData) return;
 
           if (rawData.type === 'MERCHANT_PAYMENT') {
             router.push({
               pathname: '/merchant/payment-confirm',
               params: {
                 paymentId: rawData.paymentId,
+              },
+            } as any);
+          } else if (rawData.type === 'MERCHANT_STATIC') {
+            router.push({
+              pathname: '/merchant/manual-pay',
+              params: {
+                merchantId: rawData.merchantId,
               },
             } as any);
           } else {

@@ -2,7 +2,6 @@ import axios from 'axios';
 import { Platform } from 'react-native';
 import * as SecureStore from 'expo-secure-store';
 import { validateConnectionSecurity } from './certificate-validation';
-import { useAuthStore } from '@/store/auth';
 
 /**
  * Network timeout configuration for different request types.
@@ -130,9 +129,17 @@ api.interceptors.request.use(
 
 // Response Interceptor: Handle errors globally and implement token rotation
 api.interceptors.response.use(
-  (response) => response,
+  (response) => {
+    console.log(`[Axios] Success: [${response.config.method?.toUpperCase()}] ${response.config.url}`, response.status);
+    return response;
+  },
   async (error) => {
     const originalRequest = error.config;
+    console.error(`[Axios] Error: [${originalRequest?.method?.toUpperCase()}] ${originalRequest?.url}`, {
+      status: error.response?.status,
+      message: error.message,
+      data: error.response?.data
+    });
 
     // If error is 401 and we haven't retried yet
     // Do NOT auto-lock or refresh if the request was to login, register or initial auth flows
@@ -183,9 +190,18 @@ api.interceptors.response.use(
             regToken,
           } = response.data;
 
-          // Store new tokens and update auth store
-          await storeTokens(accessToken, newRefreshToken);
-          useAuthStore.getState().setToken(accessToken, newRefreshToken);
+          // Store new tokens
+          if (Platform.OS === 'web') {
+            localStorage.setItem('auth_token', accessToken);
+            if (newRefreshToken) localStorage.setItem('refresh_token', newRefreshToken);
+          } else {
+            await SecureStore.setItemAsync('auth_token', accessToken);
+            if (newRefreshToken) await SecureStore.setItemAsync('refresh_token', newRefreshToken);
+          }
+          
+          // Use dynamic require to break cycle and update store
+          const { useAuthStore: authStore } = require('@/store/auth');
+          authStore.getState().setToken(accessToken, newRefreshToken);
 
           // If a regToken was returned (incomplete registration), update the registration store
           if (regToken) {
@@ -206,9 +222,11 @@ api.interceptors.response.use(
         } catch (refreshError: any) {
           console.error('[Axios] Refresh failed, logging out:', refreshError.response?.data || refreshError.message);
           
-          // If refresh fails, it means the refresh token is invalid or user is gone
-          // We MUST logout to clear state and redirect to login
-          await useAuthStore.getState().logout();
+          // If refresh fails, logout
+          const { useAuthStore: authStore } = require('@/store/auth');
+          if (authStore.getState().isAuthenticated) {
+             await authStore.getState().logout();
+          }
 
           refreshSubscribers.forEach((callback) => callback(''));
           refreshSubscribers = [];
@@ -217,8 +235,11 @@ api.interceptors.response.use(
           isRefreshing = false;
         }
       } else {
-        // No refresh token available, logout
-        await useAuthStore.getState().logout();
+        // No refresh token available, logout if we haven't already
+        const { useAuthStore: authStore } = require('@/store/auth');
+        if (authStore.getState().isAuthenticated) {
+           await authStore.getState().logout();
+        }
       }
     }
 

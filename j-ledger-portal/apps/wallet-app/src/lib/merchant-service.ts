@@ -87,6 +87,11 @@ export const MerchantService = {
     return response.data;
   },
 
+  getStaticQR: async (merchantId: string): Promise<any> => {
+    const response = await api.get('/merchant/payments/static-qr', { params: { merchantId } });
+    return response.data;
+  },
+
   getPaymentDetail: async (paymentId: string): Promise<any> => {
     const response = await api.get(`/merchant/payments/${paymentId}`);
     return response.data;
@@ -94,6 +99,16 @@ export const MerchantService = {
 
   confirmPayment: async (paymentId: string): Promise<any> => {
     const response = await api.post(`/merchant/payments/${paymentId}/confirm`);
+    return response.data;
+  },
+
+  previewManualPayment: async (merchantId: string): Promise<any> => {
+    const response = await api.get('/merchant/manual-pay/preview', { params: { merchantId } });
+    return response.data;
+  },
+
+  confirmManualPayment: async (data: { merchantId: string; amount: number; note?: string }): Promise<any> => {
+    const response = await api.post('/merchant/manual-pay/confirm', data);
     return response.data;
   },
 };
