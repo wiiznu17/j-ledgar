@@ -8,11 +8,9 @@ export default function MerchantLayout() {
         contentStyle: { backgroundColor: '#f8f9fe' },
       }}
     >
-      <Stack.Screen name="dashboard" />
-      <Stack.Screen name="payment-qr" />
+      <Stack.Screen name="(tabs)" />
       <Stack.Screen name="payment-confirm" />
-      <Stack.Screen name="transactions" />
-      <Stack.Screen name="terminals" />
+      <Stack.Screen name="apply" />
     </Stack>
   );
 }

@@ -167,7 +167,7 @@ export default function SettingsScreen() {
               icon={<Store size={20} color="#f59e0b" />}
               iconBg="bg-amber-50"
               label="Switch to Merchant Mode"
-              onPress={() => router.push('/merchant/dashboard' as any)}
+              onPress={() => router.push('/merchant' as any)}
             />
           </View>
         </View>

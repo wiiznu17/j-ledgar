@@ -450,7 +450,7 @@ export default function MerchantApply() {
           Application for {form.businessName} submitted. We will review it within 1-2 business days.
         </Text>
         <TouchableOpacity 
-          onPress={() => router.replace('/merchant/dashboard' as any)}
+          onPress={() => router.replace('/merchant' as any)}
           className="bg-gray-900 w-full py-4 rounded-2xl shadow-lg shadow-gray-200"
         >
           <Text className="text-white text-center font-black font-manrope text-lg">Go to Dashboard</Text>

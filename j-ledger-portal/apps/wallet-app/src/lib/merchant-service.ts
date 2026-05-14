@@ -9,6 +9,12 @@ export interface MerchantDashboardData {
   totalTransactions?: number;
   activeTerminals?: number;
   totalMerchantBalance?: number;
+  profile?: {
+    name: string;
+    businessNameEn?: string;
+    category?: string;
+    logoUrl?: string;
+  };
 }
 
 export interface MerchantTransaction {

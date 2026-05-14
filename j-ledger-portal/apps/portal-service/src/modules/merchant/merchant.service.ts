@@ -602,6 +602,7 @@ export class MerchantService {
   async getMerchantDashboard(userId: string) {
     const partner = await this.prisma.partner.findFirst({
       where: { userId },
+      include: { profile: true },
     });
 
     if (!partner) {
@@ -656,13 +657,31 @@ export class MerchantService {
       return sum + ((log.requestPayload as any)?.amount || 0);
     }, 0);
 
+    // Fetch real-time balance if finance accounts exist
+    let availableBalance = 0;
+    const financeAccounts = partner.financeAccounts as any;
+    if (financeAccounts?.available) {
+      try {
+        const acc = await this.financeService.getAccountDetail(financeAccounts.available);
+        availableBalance = Number(acc.balance);
+      } catch (error) {
+        this.logger.warn(`Failed to fetch balance for partner ${partner.id}: ${error.message}`);
+      }
+    }
+    
     return {
       isMerchant: true,
       merchantId: merchants[0]?.id,
       totalRevenue: todaySales,
       totalTransactions: transactions.length,
       activeTerminals,
-      totalMerchantBalance: (partner.financeAccounts as any)?.available || 0,
+      totalMerchantBalance: availableBalance,
+      profile: {
+        name: partner.name,
+        businessNameEn: partner.profile?.businessNameEn,
+        category: partner.profile?.category || (merchants[0] as any)?.category,
+        logoUrl: partner.profile?.logoUrl,
+      }
     };
   }
 

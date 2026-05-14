@@ -14,7 +14,7 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
-import { ChevronLeft, QrCode, Copy, Share2, CheckCircle2 } from 'lucide-react-native';
+import { ChevronLeft, QrCode, Copy, Share2, CheckCircle2, Store } from 'lucide-react-native';
 import { MerchantService } from '@/lib/merchant-service';
 import * as Clipboard from 'expo-clipboard';
 
@@ -75,12 +75,9 @@ export default function MerchantPaymentQRScreen() {
       >
         {/* Header */}
         <View className="px-5 pt-2 pb-4 flex-row items-center justify-between">
-          <TouchableOpacity
-            onPress={() => router.back()}
-            className="w-10 h-10 rounded-2xl bg-white border border-gray-100 flex items-center justify-center"
-          >
-            <ChevronLeft size={24} color="#1a1a1a" />
-          </TouchableOpacity>
+          <View className="w-10 h-10 bg-pink-50 rounded-xl items-center justify-center border border-pink-100">
+            <Store size={20} color="#f48fb1" />
+          </View>
           <Text className="text-lg font-manrope font-black text-gray-800 tracking-tight">
             Receive Payment
           </Text>
@@ -89,22 +86,22 @@ export default function MerchantPaymentQRScreen() {
 
         <ScrollView 
           className="flex-1 px-6"
-          contentContainerStyle={{ paddingBottom: 40 }}
+          contentContainerStyle={{ paddingBottom: 140 }}
           showsVerticalScrollIndicator={false}
         >
           {!qrResult ? (
             <View className="pt-10">
               <View className="items-center mb-10">
-                <View className="w-20 h-20 bg-amber-50 rounded-3xl items-center justify-center mb-4 border border-amber-100">
-                  <QrCode size={40} color="#f59e0b" />
+                <View className="w-20 h-20 bg-pink-50 rounded-3xl items-center justify-center mb-4 border border-pink-100">
+                  <QrCode size={40} color="#f48fb1" />
                 </View>
                 <Text className="text-2xl font-manrope font-black text-gray-800">Enter Amount</Text>
                 <Text className="text-sm text-gray-400 font-bold mt-1">Set the price for your customer</Text>
               </View>
 
-              <View className="bg-white rounded-[2.5rem] p-8 border border-gray-100">
-                <View className="flex-row items-center justify-center border-b-2 border-gray-100 pb-4 mb-10">
-                  <Text className="text-4xl font-manrope font-black text-gray-300 mr-3">฿</Text>
+              <View className="bg-white rounded-[2.5rem] p-8 border border-gray-100 shadow-xl shadow-pink-100">
+                <View className="flex-row items-center justify-center border-b-2 border-gray-50 pb-4 mb-10">
+                  <Text className="text-4xl font-manrope font-black text-gray-200 mr-3">฿</Text>
                   <TextInput
                     className="text-5xl font-manrope font-black text-gray-800 flex-1"
                     placeholder="0.00"
@@ -119,9 +116,9 @@ export default function MerchantPaymentQRScreen() {
                   onPress={handleGenerateQR}
                   disabled={isGenerating || !amount}
                   style={{
-                    backgroundColor: isGenerating || !amount ? '#fde68a' : '#f59e0b',
+                    backgroundColor: isGenerating || !amount ? '#fbcfe8' : '#f48fb1',
                   }}
-                  className="h-16 rounded-2xl flex-row items-center justify-center gap-3"
+                  className="h-16 rounded-2xl flex-row items-center justify-center gap-3 shadow-lg shadow-pink-200"
                 >
                   {isGenerating ? (
                     <ActivityIndicator color="white" />
@@ -136,7 +133,7 @@ export default function MerchantPaymentQRScreen() {
             </View>
           ) : (
             <View className="pt-6 items-center">
-              <View className="bg-white rounded-[3rem] p-10 items-center w-full border border-gray-100">
+              <View className="bg-white rounded-[3rem] p-10 items-center w-full border border-gray-100 shadow-xl shadow-pink-100">
                 <View className="flex-row items-center mb-6">
                   <CheckCircle2 size={20} color="#10b981" />
                   <Text className="ml-2 text-emerald-500 font-manrope font-black uppercase tracking-widest text-[10px]">QR Code Generated</Text>
