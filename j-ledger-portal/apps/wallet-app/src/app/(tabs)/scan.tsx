@@ -2,23 +2,15 @@ import React, { useState, useEffect } from 'react';
 import {
   View,
   Text,
-  TouchableOpacity,
   StyleSheet,
   Alert,
   ActivityIndicator,
   Dimensions,
-  Platform,
+  TouchableOpacity,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import {
-  X,
-  Image as ImageIcon,
-  QrCode,
-  Lightbulb,
-  AlertCircle,
-} from 'lucide-react-native';
+import { QrCode } from 'lucide-react-native';
 import { useRouter } from 'expo-router';
-import { MotiView, AnimatePresence } from 'moti';
 import { CameraView, useCameraPermissions, Camera } from 'expo-camera';
 import * as ImagePicker from 'expo-image-picker';
 import * as Haptics from 'expo-haptics';
@@ -29,13 +21,15 @@ import {
   getErrorMessage,
 } from '../../lib/qr-validation';
 import { NotificationService } from '../../lib/notification-service';
-import { ParsedQR } from '../../lib/qr-parser';
+
+// Import New Components
+import { ScannerFrame } from '../../components/scanner/ScannerFrame';
+import { ScannerOverlay } from '../../components/scanner/ScannerOverlay';
+import { ScannerControls } from '../../components/scanner/ScannerControls';
+import { ScannerMenu } from '../../components/scanner/ScannerMenu';
 
 const { width } = Dimensions.get('window');
-// คำนวณขนาดกรอบสแกนให้พอดีกับหน้าจอ (70% ของความกว้าง)
 const SCAN_FRAME_SIZE = width * 0.72;
-
-
 
 export default function ScanScreen() {
   const router = useRouter();
@@ -63,18 +57,15 @@ export default function ScanScreen() {
     processQRResult(data);
   };
 
-
   const processQRResult = async (rawData: string) => {
     setScanned(true);
     setIsProcessing(true);
     Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
 
     try {
-      // Validate and parse QR data
       const validationResult = validateAndParseQR(rawData);
 
       if (validationResult.success && validationResult.data) {
-        // Log successful scan
         await logQRScan({
           timestamp: Date.now(),
           type: 'INTERNAL',
@@ -83,26 +74,20 @@ export default function ScanScreen() {
           success: true,
         });
 
-        // Navigate to transfer with validated data
         setTimeout(() => {
           setIsProcessing(false);
           const rawData = validationResult.data;
-
           if (!rawData) return;
 
           if (rawData.type === 'MERCHANT_PAYMENT') {
             router.push({
               pathname: '/merchant/payment-confirm',
-              params: {
-                paymentId: rawData.paymentId,
-              },
+              params: { paymentId: rawData.paymentId },
             } as any);
           } else if (rawData.type === 'MERCHANT_STATIC') {
             router.push({
               pathname: '/merchant/manual-pay',
-              params: {
-                merchantId: rawData.merchantId,
-              },
+              params: { merchantId: rawData.merchantId },
             } as any);
           } else {
             router.push({
@@ -114,10 +99,8 @@ export default function ScanScreen() {
               },
             } as any);
           }
-          setTimeout(() => setScanned(false), 1000);
         }, 500);
       } else {
-        // Log failed scan
         await logQRScan({
           timestamp: Date.now(),
           type: 'UNKNOWN',
@@ -127,39 +110,17 @@ export default function ScanScreen() {
 
         setIsProcessing(false);
         const errorMessage = getErrorMessage(validationResult);
-
-        // Send error notification
         NotificationService.qrInvalid(errorMessage);
 
         Alert.alert('Invalid QR Code', errorMessage, [
-          {
-            text: 'Try Again',
-            onPress: () => setTimeout(() => setScanned(false), 300),
-          },
+          { text: 'Try Again', onPress: () => setTimeout(() => setScanned(false), 300) },
         ]);
       }
     } catch (error) {
       console.error('[Scan] Unexpected error:', error);
-      await logQRScan({
-        timestamp: Date.now(),
-        type: 'UNKNOWN',
-        success: false,
-        error: 'Unexpected error during scan',
-      });
-
       setIsProcessing(false);
-
-      // Send error notification
-      NotificationService.info(
-        'Scan Error',
-        'An unexpected error occurred during scanning',
-      );
-
       Alert.alert('Error', 'An unexpected error occurred. Please try again.', [
-        {
-          text: 'Try Again',
-          onPress: () => setTimeout(() => setScanned(false), 300),
-        },
+        { text: 'Try Again', onPress: () => setTimeout(() => setScanned(false), 300) },
       ]);
     }
   };
@@ -179,43 +140,27 @@ export default function ScanScreen() {
 
         try {
           if (imageUri) {
-            console.log('[Gallery] Selected image:', imageUri);
-
-            // Use Camera.scanFromURLAsync to scan QR from image
             const scanResults = await Camera.scanFromURLAsync(imageUri, ['qr']);
-
             if (scanResults && scanResults.length > 0 && scanResults[0]) {
-              const qrData = scanResults[0].data;
-              console.log('[Gallery] QR detected:', qrData);
-              processQRResult(qrData);
+              processQRResult(scanResults[0].data);
             } else {
               setIsProcessing(false);
-              Alert.alert(
-                'No QR Code Found',
-                'No QR code was detected in the selected image. Please try another image.',
-                [{ text: 'OK' }],
-              );
+              Alert.alert('No QR Code Found', 'No QR code was detected in the selected image.');
             }
           }
         } catch (error) {
           setIsProcessing(false);
-          console.error('[Gallery] Error processing image:', error);
-          Alert.alert(
-            'Error',
-            'Failed to process the image. Please try again.',
-            [{ text: 'OK' }],
-          );
+          Alert.alert('Error', 'Failed to process the image.');
         }
       }
     } catch (error) {
-      console.error('[Gallery] Error picking image:', error);
       setIsProcessing(false);
     }
   };
 
   if (!permission) {
     return (
-      <View className="flex-1 bg-black items-center justify-center">
+      <View className="flex-1 bg-white items-center justify-center">
         <ActivityIndicator size="large" color="#f48fb1" />
       </View>
     );
@@ -227,28 +172,15 @@ export default function ScanScreen() {
         <View className="w-24 h-24 bg-pink-50 rounded-full items-center justify-center mb-6">
           <QrCode size={40} color="#f48fb1" />
         </View>
-        <Text className="text-gray-800 text-center text-2xl font-manrope font-black mb-3">
-          Camera Access
-        </Text>
+        <Text className="text-gray-800 text-center text-2xl font-manrope font-black mb-3">Camera Access</Text>
         <Text className="text-gray-500 text-center text-sm font-manrope font-bold mb-10 leading-relaxed">
-          We need access to your camera to scan QR codes for lightning-fast
-          payments.
+          We need access to your camera to scan QR codes for lightning-fast payments.
         </Text>
         <TouchableOpacity
           onPress={requestPermission}
-          className="w-full bg-[#f48fb1] h-16 rounded-2xl items-center justify-center shadow-lg shadow-pink-200 active:scale-95"
+          className="w-full bg-[#f48fb1] h-16 rounded-2xl items-center justify-center shadow-lg active:scale-95"
         >
-          <Text className="text-white font-manrope font-black text-base">
-            Grant Permission
-          </Text>
-        </TouchableOpacity>
-        <TouchableOpacity
-          onPress={() => router.back()}
-          className="w-full h-14 mt-4 items-center justify-center active:scale-95"
-        >
-          <Text className="text-gray-400 font-manrope font-black text-sm">
-            Cancel
-          </Text>
+          <Text className="text-white font-manrope font-black text-base">Grant Permission</Text>
         </TouchableOpacity>
       </View>
     );
@@ -256,19 +188,6 @@ export default function ScanScreen() {
 
   return (
     <View className="flex-1 bg-black relative">
-      {/* iOS Simulator Warning - Camera not supported */}
-      {__DEV__ && Platform.OS === 'ios' && !permission?.granted && (
-        <View className="absolute top-0 w-full bg-blue-500/90 px-4 py-3 z-30 flex-row items-center gap-2">
-          <AlertCircle size={16} color="white" />
-          <View className="flex-1">
-            <Text className="text-white text-xs font-manrope font-bold">
-              💡 iOS Simulator: Use "Test QR" button or test on real device
-            </Text>
-          </View>
-        </View>
-      )}
-
-      {/* 1. Camera Layer (ล่างสุด เต็มจอ 100%) */}
       <CameraView
         style={StyleSheet.absoluteFillObject}
         facing="back"
@@ -277,151 +196,22 @@ export default function ScanScreen() {
         barcodeScannerSettings={{ barcodeTypes: ['qr'] }}
       />
 
-      {/* 2. Mask Layer (ครอบสีดำ เจาะรูกลางจอ) */}
-      <View
-        style={[StyleSheet.absoluteFillObject, { zIndex: 10 }]}
-        pointerEvents="none"
-      >
-        {/* Top Mask */}
-        <View
-          style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.65)' }}
-          className="items-center justify-end pb-8"
-        >
-          <View className="items-center gap-2">
-            <View className="bg-black/60 px-5 py-2.5 rounded-full border border-white/20">
-              <Text className="text-white font-manrope font-bold text-xs tracking-widest uppercase">
-                Position QR Code in Frame
-              </Text>
-            </View>
-            <View className="bg-black/40 px-4 py-1.5 rounded-full">
-              <Text className="text-white/70 font-manrope text-[10px]">
-                Supports: JLEDGER QR only
-              </Text>
-            </View>
-          </View>
-        </View>
+      <ScannerOverlay frameSize={SCAN_FRAME_SIZE}>
+        <ScannerFrame size={SCAN_FRAME_SIZE} isProcessing={isProcessing} />
+      </ScannerOverlay>
 
-        {/* Center Row (ซ้าย - กล่องสแกน - ขวา) */}
-        <View className="flex-row" style={{ height: SCAN_FRAME_SIZE }}>
-          <View style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.65)' }} />
+      <ScannerControls
+        topInset={insets.top}
+        torch={torch}
+        onClose={() => router.back()}
+        onToggleTorch={() => setTorch(!torch)}
+      />
 
-          <View
-            style={{
-              width: SCAN_FRAME_SIZE,
-              height: SCAN_FRAME_SIZE,
-              position: 'relative',
-            }}
-          >
-            {/* กรอบมุมทั้ง 4 ด้าน */}
-            <View className="absolute top-0 left-0 w-12 h-12 border-t-[5px] border-l-[5px] border-[#f48fb1] rounded-tl-3xl" />
-            <View className="absolute top-0 right-0 w-12 h-12 border-t-[5px] border-r-[5px] border-[#f48fb1] rounded-tr-3xl" />
-            <View className="absolute bottom-0 left-0 w-12 h-12 border-b-[5px] border-l-[5px] border-[#f48fb1] rounded-bl-3xl" />
-            <View className="absolute bottom-0 right-0 w-12 h-12 border-b-[5px] border-r-[5px] border-[#f48fb1] rounded-br-3xl" />
-
-            {/* เส้นเลเซอร์แสกน */}
-            <MotiView
-              from={{ translateY: 0 }}
-              animate={{ translateY: SCAN_FRAME_SIZE - 4 }}
-              transition={{ loop: true, type: 'timing', duration: 2500 }}
-              className="absolute left-3 right-3 h-[2px] bg-[#f48fb1] shadow-lg shadow-pink-400 z-10"
-            />
-
-            {/* Overlay กำลังประมวลผล (แสดงตอนสแกนติด) */}
-            <AnimatePresence>
-              {isProcessing && (
-                <MotiView
-                  from={{ opacity: 0 }}
-                  animate={{ opacity: 1 }}
-                  exit={{ opacity: 0 }}
-                  className="absolute inset-0 bg-black/60 rounded-3xl items-center justify-center"
-                >
-                  <ActivityIndicator size="large" color="#f48fb1" />
-                </MotiView>
-              )}
-            </AnimatePresence>
-          </View>
-
-          <View style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.65)' }} />
-        </View>
-
-        {/* Bottom Mask */}
-        <View style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.65)' }} />
-      </View>
-
-      {/* 3. Floating Controls Layer (UI ปุ่มกด ลอยเหนือกล้องและ Mask) */}
-      <View
-        style={[StyleSheet.absoluteFillObject, { zIndex: 20 }]}
-        pointerEvents="box-none"
-      >
-        {/* Top Header Buttons (ดันลงมาหลบขอบจอบน) */}
-        <View
-          className="absolute top-0 w-full flex-row justify-between px-6"
-          style={{ paddingTop: Math.max(insets.top, 20) + 10 }}
-        >
-          <TouchableOpacity
-            onPress={() => router.back()}
-            className="w-12 h-12 rounded-[1.2rem] bg-[#1a1a1a]/80 items-center justify-center border border-white/20 active:scale-95"
-          >
-            <X size={24} color="white" />
-          </TouchableOpacity>
-          <TouchableOpacity
-            onPress={() => setTorch(!torch)}
-            className={`w-12 h-12 rounded-[1.2rem] items-center justify-center border border-white/20 active:scale-95 transition-all ${
-              torch ? 'bg-[#f48fb1]' : 'bg-[#1a1a1a]/80'
-            }`}
-          >
-            <Lightbulb size={24} color="white" />
-          </TouchableOpacity>
-        </View>
-
-        {/* Supported Format Hint */}
-        <View
-          className="absolute w-full items-center"
-          style={{ bottom: Math.max(insets.bottom, 20) + 160 }}
-        >
-          <View className="bg-[#1a1a1a]/60 px-4 py-2 rounded-full border border-white/10">
-            <Text className="text-white/50 font-manrope text-[10px]">
-              Only JLEDGER QR codes are supported
-            </Text>
-          </View>
-        </View>
-
-        {/* Bottom Menu (ใช้ style bottom ดันขึ้นจากขอบล่างชัดเจน การันตีไม่โดนบัง) */}
-        <View
-          className="absolute w-full items-center"
-          style={{ bottom: Math.max(insets.bottom, 20) + 120 }}
-        >
-          <View className="flex-row items-center bg-[#1a1a1a]/90 px-8 py-4 rounded-[2rem] border border-white/10 shadow-2xl">
-            <TouchableOpacity
-              onPress={pickImageFromGallery}
-              className="items-center mr-8 active:scale-95"
-            >
-              <View className="w-12 h-12 rounded-full bg-white/10 items-center justify-center mb-1">
-                <ImageIcon size={22} color="white" />
-              </View>
-              <Text className="text-white/90 text-[10px] font-manrope font-bold uppercase tracking-widest mt-1">
-                Gallery
-              </Text>
-            </TouchableOpacity>
-
-            {/* เส้นคั่นกลาง */}
-            <View className="w-[1px] h-12 bg-white/20" />
-
-            <TouchableOpacity
-              onPress={() => router.push('/my-qr' as any)}
-              className="items-center ml-8 active:scale-95"
-            >
-              <View className="w-12 h-12 rounded-full bg-white/10 items-center justify-center mb-1">
-                <QrCode size={22} color="white" />
-              </View>
-              <Text className="text-white/90 text-[10px] font-manrope font-bold uppercase tracking-widest mt-1">
-                My QR
-              </Text>
-            </TouchableOpacity>
-          </View>
-        </View>
-
-      </View>
+      <ScannerMenu
+        bottomInset={insets.bottom}
+        onPickImage={pickImageFromGallery}
+        onShowMyQr={() => router.push('/my-qr' as any)}
+      />
     </View>
   );
 }
