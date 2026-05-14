@@ -160,7 +160,7 @@ export class MerchantService {
 
     // If partner has finance accounts, fetch the real-time balances
     const financeAccounts = partner.financeAccounts as any;
-    if (financeAccounts && (financeAccounts.available || financeAccounts.pending || financeAccounts.fee)) {
+    if (financeAccounts && (financeAccounts.available || financeAccounts.pending || financeAccounts.fee || financeAccounts.vat)) {
       try {
         const balances: any = {};
         
@@ -177,6 +177,11 @@ export class MerchantService {
         if (financeAccounts.fee) {
           const acc = await this.financeService.getAccountDetail(financeAccounts.fee);
           balances.fee = acc.balance;
+        }
+
+        if (financeAccounts.vat) {
+          const acc = await this.financeService.getAccountDetail(financeAccounts.vat);
+          balances.vat = acc.balance;
         }
 
         return {
@@ -232,26 +237,25 @@ export class MerchantService {
     try {
       // 1. Create Merchant Accounts in Ledger (Finance Service)
       // We do this BEFORE DB update because if it fails, we want to stop
-      let financeAccounts = { available: null, pending: null, fee: null };
+      let financeAccounts = { available: null, pending: null, fee: null, vat: null };
       
       try {
         const bizName = application.businessName || 'Merchant';
-        const [availableAcc, pendingAcc, feeAcc] = await Promise.all([
+        const [availableAcc, pendingAcc, feeAcc, vatAcc] = await Promise.all([
           this.financeService.createAccount(application.partnerId, `${bizName} - Available`),
           this.financeService.createAccount(application.partnerId, `${bizName} - Pending`),
           this.financeService.createAccount(application.partnerId, `${bizName} - Fee`),
+          this.financeService.createAccount(application.partnerId, `${bizName} - VAT`),
         ]);
         
         financeAccounts = {
           available: availableAcc.id,
           pending: pendingAcc.id,
           fee: feeAcc.id,
+          vat: vatAcc.id,
         };
       } catch (error) {
         this.logger.error(`Failed to create finance accounts for partner ${application.partnerId}: ${error.message}`);
-        // For development/testing, we might want to continue even if finance service fails
-        // but for production, we should probably throw here.
-        // throw new HttpException('Failed to initialize finance accounts', HttpStatus.INTERNAL_SERVER_ERROR);
       }
 
       return await this.prisma.$transaction(async (tx) => {
@@ -270,6 +274,7 @@ export class MerchantService {
           data: { 
             status: 'ACTIVE',
             type: 'SME',
+            feeRate: 0.03, // Default fee rate for new partners
             financeAccounts: financeAccounts as any,
             profile: {
               create: {
@@ -552,13 +557,19 @@ export class MerchantService {
     }
 
     const merchantPartner = payment.merchant.partner;
-    const financeAccounts = merchantPartner.financeAccounts as any;
-    // We use the "pending" account for merchant payments
-    const merchantAccountId = financeAccounts?.pending || financeAccounts?.available;
+    const systemPartner = await this.prisma.partner.findFirst({
+      where: { taxId: '0000000000000' }
+    });
 
-    if (!merchantAccountId) {
-       throw new HttpException('Merchant financial account not initialized', HttpStatus.INTERNAL_SERVER_ERROR);
+    if (!merchantPartner?.financeAccounts) {
+       throw new HttpException('Merchant financial accounts not found', HttpStatus.INTERNAL_SERVER_ERROR);
     }
+    if (!systemPartner?.financeAccounts) {
+       throw new HttpException('System financial accounts not found', HttpStatus.INTERNAL_SERVER_ERROR);
+    }
+
+    const mAcc = merchantPartner.financeAccounts as any;
+    const sAcc = systemPartner.financeAccounts as any;
 
     // 2. Get Customer Wallet
     const customerWallet = await this.financeService.getWallet(userId);
@@ -566,18 +577,65 @@ export class MerchantService {
         throw new HttpException('Customer wallet not found', HttpStatus.NOT_FOUND);
     }
 
-    // 3. Perform Transfer (Ledger Command)
-    const idempotencyKey = `pay_exec_${payment.id}`;
+    // 3. Calculate 4-Way Split
+    const total = Number(payment.amount);
+    const feeRate = Number(merchantPartner.feeRate || 0);
     
+    // Calculate shares (Standard logic for gross payment)
+    const merchantVat = total * (7 / 107); // Calculate VAT from gross amount (7% included)
+    const systemFee = total * feeRate;
+    const systemVat = systemFee * 0.07;
+    const merchantNet = total - merchantVat - systemFee - systemVat;
+
+    this.logger.log(`[processQRPayment] Executing split for payment=${paymentId}: Net=${merchantNet.toFixed(2)}, MVAT=${merchantVat.toFixed(2)}, Fee=${systemFee.toFixed(2)}, SVAT=${systemVat.toFixed(2)}`);
+
+    // 4. Perform Transfers (Ledger Commands)
     try {
+        // Leg 1: Merchant Net (To Pending)
         const tx = await this.financeService.performTransfer({
             fromAccountId: customerWallet.walletId, 
-            toAccountId: merchantAccountId,
-            amount: payment.amount.toString(),
-            idempotencyKey,
-            note: `Payment to ${payment.merchant.name}`,
+            toAccountId: mAcc.pending,
+            amount: merchantNet.toFixed(2),
+            idempotencyKey: `qr_pay_net_${payment.id}`,
+            note: `QR Payment to ${payment.merchant.name}`,
             type: 'MERCHANT_PAYMENT'
         });
+
+        // Leg 2: Merchant VAT (To VAT)
+        if (merchantVat > 0 && mAcc.vat) {
+          await this.financeService.performTransfer({
+            fromAccountId: customerWallet.walletId,
+            toAccountId: mAcc.vat,
+            amount: merchantVat.toFixed(2),
+            idempotencyKey: `qr_pay_vat_${payment.id}`,
+            type: 'MERCHANT_PAYMENT',
+            note: `Merchant VAT for QR ${payment.id}`
+          });
+        }
+
+        // Leg 3: System Fee (To System Revenue)
+        if (systemFee > 0 && sAcc.revenue) {
+          await this.financeService.performTransfer({
+            fromAccountId: customerWallet.walletId,
+            toAccountId: sAcc.revenue,
+            amount: systemFee.toFixed(2),
+            idempotencyKey: `qr_pay_fee_${payment.id}`,
+            type: 'MERCHANT_PAYMENT',
+            note: `System Fee for QR ${payment.id}`
+          });
+        }
+
+        // Leg 4: System VAT (To System VAT Payable)
+        if (systemVat > 0 && sAcc.vat_payable) {
+          await this.financeService.performTransfer({
+            fromAccountId: customerWallet.walletId,
+            toAccountId: sAcc.vat_payable,
+            amount: systemVat.toFixed(2),
+            idempotencyKey: `qr_pay_svat_${payment.id}`,
+            type: 'MERCHANT_PAYMENT',
+            note: `Service VAT for QR ${payment.id}`
+          });
+        }
 
         // 4. Update Status
         await this.prisma.merchantPayment.update({
@@ -645,13 +703,19 @@ export class MerchantService {
     if (!merchant) throw new HttpException('Merchant not found', HttpStatus.NOT_FOUND);
 
     const partner = merchant.partner;
-    const financeAccounts = partner.financeAccounts as any;
-    // For manual payments, we also use the pending account for standard flow, or available if pending is missing
-    const merchantAccountId = financeAccounts?.pending || financeAccounts?.available;
+    const systemPartner = await this.prisma.partner.findFirst({
+      where: { taxId: '0000000000000' }
+    });
 
-    if (!merchantAccountId) {
-      throw new HttpException('Merchant financial account not initialized', HttpStatus.INTERNAL_SERVER_ERROR);
+    if (!partner?.financeAccounts) {
+       throw new HttpException('Merchant financial accounts not found', HttpStatus.INTERNAL_SERVER_ERROR);
     }
+    if (!systemPartner?.financeAccounts) {
+       throw new HttpException('System financial accounts not found', HttpStatus.INTERNAL_SERVER_ERROR);
+    }
+
+    const mAcc = partner.financeAccounts as any;
+    const sAcc = systemPartner.financeAccounts as any;
 
     // Get Customer Wallet
     const customerWallet = await this.financeService.getWallet(userId);
@@ -659,17 +723,65 @@ export class MerchantService {
       throw new HttpException('Customer wallet not found', HttpStatus.NOT_FOUND);
     }
 
+    // Calculate Split
+    const total = Number(amount);
+    const feeRate = Number(partner.feeRate || 0);
+    
+    const merchantVat = total * (7 / 107);
+    const systemFee = total * feeRate;
+    const systemVat = systemFee * 0.07;
+    const merchantNet = total - merchantVat - systemFee - systemVat;
+
+    this.logger.log(`[processManualPayment] Split for manual pay=${merchantId}: Net=${merchantNet.toFixed(2)}, MVAT=${merchantVat.toFixed(2)}, Fee=${systemFee.toFixed(2)}, SVAT=${systemVat.toFixed(2)}`);
+
     const idempotencyKey = `manual_pay_${merchantId}_${userId}_${Date.now()}`;
 
     try {
+      // Leg 1: Merchant Net
       const tx = await this.financeService.performTransfer({
         fromAccountId: customerWallet.walletId,
-        toAccountId: merchantAccountId,
-        amount: amount.toFixed(4),
-        idempotencyKey,
+        toAccountId: mAcc.pending,
+        amount: merchantNet.toFixed(2),
+        idempotencyKey: `manual_leg_net_${idempotencyKey}`,
         note: note || `Manual Payment to ${merchant.name}`,
         type: 'MERCHANT_PAYMENT'
       });
+
+      // Leg 2: Merchant VAT
+      if (merchantVat > 0 && mAcc.vat) {
+        await this.financeService.performTransfer({
+          fromAccountId: customerWallet.walletId,
+          toAccountId: mAcc.vat,
+          amount: merchantVat.toFixed(2),
+          idempotencyKey: `manual_leg_vat_${idempotencyKey}`,
+          type: 'MERCHANT_PAYMENT',
+          note: `VAT for ${merchant.name}`
+        });
+      }
+
+      // Leg 3: System Fee
+      if (systemFee > 0 && sAcc.revenue) {
+        await this.financeService.performTransfer({
+          fromAccountId: customerWallet.walletId,
+          toAccountId: sAcc.revenue,
+          amount: systemFee.toFixed(2),
+          idempotencyKey: `manual_leg_fee_${idempotencyKey}`,
+          type: 'MERCHANT_PAYMENT',
+          note: `System Fee from ${merchant.name}`
+        });
+      }
+
+      // Leg 4: System VAT
+      if (systemVat > 0 && sAcc.vat_payable) {
+        await this.financeService.performTransfer({
+          fromAccountId: customerWallet.walletId,
+          toAccountId: sAcc.vat_payable,
+          amount: systemVat.toFixed(2),
+          idempotencyKey: `manual_leg_svat_${idempotencyKey}`,
+          type: 'MERCHANT_PAYMENT',
+          note: `System VAT from ${merchant.name}`
+        });
+      }
 
       // Log Audit
       await this.auditService.log({

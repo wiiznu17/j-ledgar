@@ -48,6 +48,24 @@ export class BillingService {
         `[createInvoice] Generated unique number: ${invoiceNumber}`,
       );
 
+      // Calculate Platform Fees if partnerId is provided
+      let feeRate = null;
+      let feeAmount = null;
+      let feeTax = null;
+
+      if (dto.partnerId) {
+        const partner = await this.prisma.partner.findUnique({
+          where: { id: dto.partnerId },
+        });
+        if (partner) {
+          feeRate = partner.feeRate;
+          // Calculate fee from TOTAL amount (Gross) as per recommendation
+          feeAmount = total * Number(feeRate);
+          feeTax = feeAmount * 0.07;
+          this.logger.log(`[createInvoice] Platform fees calculated: feeAmount=${feeAmount}, feeTax=${feeTax}`);
+        }
+      }
+
       const result = await this.prisma.invoice.create({
         data: {
           ...rest,
@@ -55,6 +73,9 @@ export class BillingService {
           amount: subtotal,
           tax,
           total,
+          feeRate,
+          feeAmount,
+          feeTax,
           status: InvoiceStatus.PENDING,
           items: {
             create: items.map((item) => ({
@@ -120,34 +141,93 @@ export class BillingService {
     }
 
     // 1. Process payment with Finance Service
-    // In a real scenario, we might need a specific payment endpoint.
-    // For now, we'll simulate it or use an internal transfer if it's a P2P bill.
-    // Assuming finance service has a general payment method or we can use a reference.
-
     try {
-      // Logic for finance-service payment call would go here
-      // For MVP, we'll mark it as paid and simulate the transaction ID
-      const mockTxId = `billing_pay_${id}_${Date.now()}`;
+      if (invoice.partnerId) {
+        // REAL SETTLEMENT & VAT SEPARATION
+        const [userWallet, partner, systemPartner] = await Promise.all([
+          this.financeService.getWallet(userId),
+          this.prisma.partner.findUnique({ where: { id: invoice.partnerId } }),
+          this.prisma.partner.findFirst({ where: { taxId: '0000000000000' } }),
+        ]);
+
+        if (!userWallet) throw new BadRequestException('Customer wallet not found');
+        if (!partner || !partner.financeAccounts) throw new BadRequestException('Merchant accounts not found');
+        if (!systemPartner || !systemPartner.financeAccounts) throw new BadRequestException('System accounts not found');
+
+        const mAcc = partner.financeAccounts as any;
+        const sAcc = systemPartner.financeAccounts as any;
+
+        // Calculate Split (All based on recorded values at creation)
+        const total = Number(invoice.total);
+        const merchantVat = Number(invoice.tax);
+        const systemFee = Number(invoice.feeAmount || 0);
+        const systemVat = Number(invoice.feeTax || 0);
+        const merchantNet = total - merchantVat - systemFee - systemVat;
+
+        this.logger.log(`[payInvoice] Executing 4-way split for invoice=${invoice.id}: Net=${merchantNet}, MVAT=${merchantVat}, Fee=${systemFee}, SVAT=${systemVat}`);
+
+        // Leg 1: Merchant Net (To Pending)
+        await this.financeService.performTransfer({
+          fromAccountId: userWallet.walletId,
+          toAccountId: mAcc.pending,
+          amount: merchantNet.toFixed(2),
+          idempotencyKey: `pay_leg_net_${invoice.id}`,
+          type: 'MERCHANT_PAYMENT',
+          note: `Payment for INV ${invoice.invoiceNumber}`
+        });
+
+        // Leg 2: Merchant VAT (To VAT)
+        if (merchantVat > 0 && mAcc.vat) {
+          await this.financeService.performTransfer({
+            fromAccountId: userWallet.walletId,
+            toAccountId: mAcc.vat,
+            amount: merchantVat.toFixed(2),
+            idempotencyKey: `pay_leg_vat_${invoice.id}`,
+            type: 'MERCHANT_PAYMENT',
+            note: `VAT for INV ${invoice.invoiceNumber}`
+          });
+        }
+
+        // Leg 3: System Fee (To System Revenue)
+        if (systemFee > 0 && sAcc.revenue) {
+          await this.financeService.performTransfer({
+            fromAccountId: userWallet.walletId,
+            toAccountId: sAcc.revenue,
+            amount: systemFee.toFixed(2),
+            idempotencyKey: `pay_leg_fee_${invoice.id}`,
+            type: 'MERCHANT_PAYMENT',
+            note: `Fee for INV ${invoice.invoiceNumber}`
+          });
+        }
+
+        // Leg 4: System VAT (To System VAT Payable)
+        if (systemVat > 0 && sAcc.vat_payable) {
+          await this.financeService.performTransfer({
+            fromAccountId: userWallet.walletId,
+            toAccountId: sAcc.vat_payable,
+            amount: systemVat.toFixed(2),
+            idempotencyKey: `pay_leg_svat_${invoice.id}`,
+            type: 'MERCHANT_PAYMENT',
+            note: `Service VAT for INV ${invoice.invoiceNumber}`
+          });
+        }
+      }
 
       const updatedInvoice = await this.prisma.invoice.update({
         where: { id },
         data: {
           status: InvoiceStatus.PAID,
           paidAt: new Date(),
-          referenceId: mockTxId,
+          referenceId: `SPLIT_PAY_${invoice.id}`,
         },
+        include: { items: true },
       });
 
-      this.logger.log(
-        `Invoice ${invoice.invoiceNumber} paid by user ${userId}. Tx: ${mockTxId}`,
-      );
-
+      this.logger.log(`[payInvoice] Successfully processed payment for invoice: ${id}`);
       return updatedInvoice;
     } catch (error) {
-      this.logger.error(`Failed to pay invoice ${id}: ${error.message}`);
-      throw new BadRequestException(
-        'Payment failed. Please check your balance.',
-      );
+      this.logger.error(`[payInvoice] Payment failed: ${error.message}`, error.stack);
+      throw error;
     }
   }
 }

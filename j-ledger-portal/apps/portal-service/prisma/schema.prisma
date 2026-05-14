@@ -506,6 +506,7 @@ model Partner {
   financeAccounts Json?                // { available: UUID, pending: UUID, fee: UUID }
   isPaymentEnabled Boolean             @default(true)
   isLoyaltyEnabled Boolean             @default(true)
+  feeRate         Decimal              @default(0.03) @db.Decimal(19, 4)
   status          PartnerStatus        @default(PENDING_REVIEW)
   metadata        Json?
   createdAt       DateTime             @default(now())
@@ -513,6 +514,7 @@ model Partner {
   merchants       Merchant[]
   applications    MerchantApplication[]
   profile         PartnerProfile?
+  invoices        Invoice[]
 
   @@index([userId])
   @@index([status])
@@ -722,16 +724,21 @@ model Invoice {
   senderDetail  String?
   amount        Decimal       @db.Decimal(19, 4)
   tax           Decimal       @default(0) @db.Decimal(19, 4)
+  feeRate       Decimal?      @db.Decimal(19, 4)
+  feeAmount     Decimal?      @db.Decimal(19, 4)
+  feeTax        Decimal?      @db.Decimal(19, 4)
   total         Decimal       @db.Decimal(19, 4)
   currency      String        @default("THB")
   status        InvoiceStatus @default(PENDING)
   dueDate       DateTime?
   paidAt        DateTime?
+  partnerId     String?
   referenceId   String?
   note          String?
   createdAt     DateTime      @default(now())
   updatedAt     DateTime      @updatedAt
   items         InvoiceItem[]
+  partner       Partner?      @relation(fields: [partnerId], references: [id])
 
   @@index([userId])
   @@index([status])

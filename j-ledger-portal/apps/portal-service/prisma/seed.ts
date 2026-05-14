@@ -1,6 +1,7 @@
 import { PrismaClient } from '@prisma/client';
 import * as bcrypt from 'bcryptjs';
 import { randomBytes } from 'crypto';
+import axios from 'axios';
 
 const prisma = new PrismaClient();
 
@@ -395,45 +396,103 @@ async function main() {
     });
   }
 
-  // 6. Seed Merchant Ecosystem
-  const isProduction = process.env.NODE_ENV === 'production';
-  
-  if (isProduction) {
-    console.log('⚠️ Skipping sensitive Merchant Ecosystem seed in production environment.');
-  } else {
-    console.log('🏪 Seeding merchant ecosystem...');
-    
-    // Create a Merchant User
-    const merchantUser = await prisma.user.upsert({
-      where: { phoneNumber: '0812345678' },
+    // 6. System Ecosystem Seed
+    console.log('🏛️ Seeding system ecosystem...');
+    const systemPartner = await prisma.partner.upsert({
+      where: { taxId: '0000000000000' },
       update: {},
       create: {
-        phoneNumber: '0812345678',
-        email: 'merchant@test.com',
+        name: 'J-Ledger System',
+        taxId: '0000000000000',
         status: 'ACTIVE',
-        registrationState: 'COMPLETED',
+        type: 'CORPORATE',
+        feeRate: 0,
       },
     });
 
-    // Create a Partner (HQ)
-    const partner = await prisma.partner.upsert({
-      where: { taxId: '1234567890123' },
-      update: {
-        userId: merchantUser.id,
-        status: 'ACTIVE',
-      },
-      create: {
-        userId: merchantUser.id,
-        name: 'Coffee Master HQ',
-        taxId: '1234567890123',
-        status: 'ACTIVE',
-        financeAccounts: {
-          available: 'f0000000-0000-0000-0000-000000000001',
-          pending: 'f0000000-0000-0000-0000-000000000002',
-          fee: 'f0000000-0000-0000-0000-000000000003'
+    const financeUrl = process.env.FINANCE_SERVICE_URL || 'http://localhost:8081';
+    const internalSecret = process.env.JLEDGER_INTERNAL_SECRET || 'default_internal_secret';
+
+    let systemAccounts = systemPartner.financeAccounts as any || {};
+
+    if (!systemAccounts.revenue || !systemAccounts.vat_payable) {
+      try {
+        console.log('💰 Creating system accounts in Finance Service...');
+        const headers = { 'X-Internal-Secret': internalSecret };
+
+        if (!systemAccounts.revenue) {
+          const res = await axios.post(`${financeUrl}/api/v1/accounts`, {
+            user_id: systemPartner.id,
+            account_name: 'SYSTEM_REVENUE',
+            currency: 'THB'
+          }, { headers });
+          systemAccounts.revenue = res.data.id;
+          console.log(`- Created SYSTEM_REVENUE: ${systemAccounts.revenue}`);
+        }
+
+        if (!systemAccounts.vat_payable) {
+          const res = await axios.post(`${financeUrl}/api/v1/accounts`, {
+            user_id: systemPartner.id,
+            account_name: 'SYSTEM_VAT_PAYABLE',
+            currency: 'THB'
+          }, { headers });
+          systemAccounts.vat_payable = res.data.id;
+          console.log(`- Created SYSTEM_VAT_PAYABLE: ${systemAccounts.vat_payable}`);
+        }
+
+        await prisma.partner.update({
+          where: { id: systemPartner.id },
+          data: { financeAccounts: systemAccounts }
+        });
+        console.log('✅ System accounts created and linked.');
+      } catch (error: any) {
+        console.warn('⚠️ Warning: Failed to create system accounts in Finance Service. Is it running?');
+        console.warn('   Reason:', error.message);
+      }
+    }
+
+    // 7. Seed Merchant Ecosystem
+    const isProduction = process.env.NODE_ENV === 'production';
+    
+    if (isProduction) {
+      console.log('⚠️ Skipping sensitive Merchant Ecosystem seed in production environment.');
+    } else {
+      console.log('🏪 Seeding merchant ecosystem...');
+      
+      // Create a Merchant User
+      const merchantUser = await prisma.user.upsert({
+        where: { phoneNumber: '0812345678' },
+        update: {},
+        create: {
+          phoneNumber: '0812345678',
+          email: 'merchant@test.com',
+          status: 'ACTIVE',
+          registrationState: 'COMPLETED',
         },
-      },
-    });
+      });
+
+      // Create a Partner (HQ)
+      const partner = await prisma.partner.upsert({
+        where: { taxId: '1234567890123' },
+        update: {
+          userId: merchantUser.id,
+          status: 'ACTIVE',
+          feeRate: 0.03,
+        },
+        create: {
+          userId: merchantUser.id,
+          name: 'Coffee Master HQ',
+          taxId: '1234567890123',
+          status: 'ACTIVE',
+          feeRate: 0.03,
+          financeAccounts: {
+            available: 'f0000000-0000-0000-0000-000000000001',
+            pending: 'f0000000-0000-0000-0000-000000000002',
+            fee: 'f0000000-0000-0000-0000-000000000003',
+            vat: 'f0000000-0000-0000-0000-000000000004'
+          },
+        },
+      });
 
     // Create a Brand for the Partner
     const brand = await prisma.brand.upsert({
