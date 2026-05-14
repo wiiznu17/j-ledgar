@@ -11,6 +11,8 @@ import {
   Activity,
 } from 'lucide-react';
 
+export const dynamic = 'force-dynamic';
+
 async function getReconciliationReports(): Promise<ReconciliationReport[]> {
   try {
     const response = await adminApi.reconciliation.findAll({

@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import {
   Card,
@@ -28,7 +28,7 @@ import {
   Circle,
 } from 'lucide-react';
 
-export default function SetupAccountPage() {
+function SetupAccountForm() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const token = searchParams.get('token');
@@ -267,6 +267,21 @@ export default function SetupAccountPage() {
         </CardContent>
       </Card>
     </div>
+  );
+}
+
+export default function SetupAccountPage() {
+  return (
+    <Suspense
+      fallback={
+        <div className="min-h-screen bg-[#F7FAFC] flex flex-col items-center justify-center p-4">
+          <Loader2 className="w-8 h-8 text-indigo-600 animate-spin mb-4" />
+          <p className="text-slate-500 font-medium">Loading invitation...</p>
+        </div>
+      }
+    >
+      <SetupAccountForm />
+    </Suspense>
   );
 }
 

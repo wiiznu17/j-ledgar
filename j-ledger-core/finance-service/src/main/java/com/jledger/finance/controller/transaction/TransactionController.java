@@ -4,6 +4,8 @@ import com.jledger.finance.domain.entity.Transaction;
 import com.jledger.finance.domain.enums.TransactionStatus;
 import com.jledger.finance.domain.enums.TransactionType;
 import com.jledger.finance.repository.transaction.TransactionRepository;
+import com.jledger.finance.domain.entity.LedgerEntry;
+import com.jledger.finance.repository.ledger.LedgerEntryRepository;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
@@ -23,6 +25,7 @@ import java.util.UUID;
 public class TransactionController {
 
     private final TransactionRepository transactionRepository;
+    private final LedgerEntryRepository ledgerEntryRepository;
 
     @GetMapping
     @Operation(summary = "List all transactions", description = "Returns a paginated list of all financial transactions with optional filtering")
@@ -54,5 +57,19 @@ public class TransactionController {
         return transactionRepository.findByTransactionId(transactionId)
                 .map(ResponseEntity::ok)
                 .orElse(ResponseEntity.notFound().build());
+    }
+
+    @GetMapping("/{id}/ledger-entries")
+    @Operation(summary = "Get ledger entries by transaction internal ID", description = "Returns all double-entry ledger records for a specific transaction using its primary key")
+    public ResponseEntity<java.util.List<LedgerEntry>> getLedgerEntriesByInternalId(@PathVariable Long id) {
+        return transactionRepository.findById(id)
+                .map(t -> ResponseEntity.ok(ledgerEntryRepository.findByTransactionId(t.getTransactionId())))
+                .orElse(ResponseEntity.notFound().build());
+    }
+
+    @GetMapping("/uuid/{transactionId}/ledger-entries")
+    @Operation(summary = "Get ledger entries by transaction UUID", description = "Returns all double-entry ledger records for a specific transaction")
+    public ResponseEntity<java.util.List<LedgerEntry>> getLedgerEntriesByTransactionUuid(@PathVariable String transactionId) {
+        return ResponseEntity.ok(ledgerEntryRepository.findByTransactionId(transactionId));
     }
 }

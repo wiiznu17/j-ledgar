@@ -100,9 +100,7 @@ export default function RootLayout() {
         segments[0] !== '(auth)' ||
         (segments[1] !== 'login' && segments[1] !== 'onboarding')
       ) {
-        setTimeout(() => {
-          router.replace('/(auth)/login');
-        }, 0);
+        router.replace('/(auth)/login');
       }
     } else if (user && !needsPinVerification) {
       const isAuthGroup = segments[0] === '(auth)';
@@ -110,11 +108,15 @@ export default function RootLayout() {
       const isPendingApproval = segments[1] === 'pending-approval';
 
       // 1. Handle Incomplete Registration Flow
-      if (user.registrationState !== RegistrationState.COMPLETED) {
+      // Users who are PENDING_APPROVAL or ACTIVE are considered to have finished their part of onboarding.
+      const isRegistrationDone = 
+        user.registrationState === RegistrationState.COMPLETED || 
+        user.status === UserStatus.PENDING_APPROVAL ||
+        user.status === UserStatus.ACTIVE;
+
+      if (!isRegistrationDone) {
         if (!isOnboarding) {
-          setTimeout(() => {
-            router.replace('/(auth)/onboarding');
-          }, 0);
+          router.replace('/(auth)/onboarding');
         }
         return;
       }
@@ -129,9 +131,7 @@ export default function RootLayout() {
 
         case UserStatus.PENDING_APPROVAL:
           if (!isAuthGroup || segments[1] !== 'pending-approval') {
-            setTimeout(() => {
-              router.replace('/(auth)/pending-approval');
-            }, 0);
+            router.replace('/(auth)/pending-approval');
           }
           break;
 
@@ -140,17 +140,13 @@ export default function RootLayout() {
         case UserStatus.BLOCKED:
         case UserStatus.INACTIVE:
           if (!isAuthGroup || segments[1] !== 'account-restricted') {
-            setTimeout(() => {
-              router.replace('/(auth)/account-restricted');
-            }, 0);
+            router.replace('/(auth)/account-restricted');
           }
           break;
 
         case UserStatus.DELETED:
           initializeAuth();
-          setTimeout(() => {
-            router.replace('/(auth)/login');
-          }, 0);
+          router.replace('/(auth)/login');
           break;
       }
     }
@@ -165,7 +161,7 @@ export default function RootLayout() {
 
   if ((!fontsLoaded && !fontError) || isAuthLoading) {
     return (
-      <SafeAreaView style={{ flex: 1, backgroundColor: 'transparent' }} edges={['top']}>
+      <SafeAreaView style={{ flex: 1, backgroundColor: '#f8cec2' }} edges={['top']}>
         <BackgroundGradient />
         <View className="flex-1 items-center justify-center">
            <ActivityIndicator color="#f48fb1" size="large" />
@@ -192,7 +188,7 @@ export default function RootLayout() {
       <QueryClientProvider client={queryClient}>
         <SafeAreaProvider>
           <ThemeProvider value={navTheme}>
-            <View style={{ flex: 1, backgroundColor: 'transparent' }}>
+            <View style={{ flex: 1, backgroundColor: '#f8cec2' }}>
               {/* Standalone Background */}
               <View style={StyleSheet.absoluteFill}>
                 <BackgroundGradient />

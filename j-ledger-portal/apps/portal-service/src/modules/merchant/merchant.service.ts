@@ -235,10 +235,11 @@ export class MerchantService {
       let financeAccounts = { available: null, pending: null, fee: null };
       
       try {
+        const bizName = application.businessName || 'Merchant';
         const [availableAcc, pendingAcc, feeAcc] = await Promise.all([
-          this.financeService.createAccount(application.partnerId, 'Available Balance'),
-          this.financeService.createAccount(application.partnerId, 'Pending Balance'),
-          this.financeService.createAccount(application.partnerId, 'Fee Account'),
+          this.financeService.createAccount(application.partnerId, `${bizName} - Available`),
+          this.financeService.createAccount(application.partnerId, `${bizName} - Pending`),
+          this.financeService.createAccount(application.partnerId, `${bizName} - Fee`),
         ]);
         
         financeAccounts = {

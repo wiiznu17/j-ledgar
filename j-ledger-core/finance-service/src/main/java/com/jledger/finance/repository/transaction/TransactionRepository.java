@@ -78,6 +78,18 @@ public interface TransactionRepository extends JpaRepository<Transaction, Long> 
             Pageable pageable
     );
 
+    @Query("SELECT t FROM Transaction t WHERE (t.fromAccountId = :accountId OR t.toAccountId = :accountId) ORDER BY t.createdAt DESC")
+    List<Transaction> findByAccountId(@Param("accountId") java.util.UUID accountId, Pageable pageable);
+
+    @Query("SELECT t FROM Transaction t WHERE (t.fromAccountId = :accountId OR t.toAccountId = :accountId) AND t.type = :type ORDER BY t.createdAt DESC")
+    List<Transaction> findByAccountIdAndType(@Param("accountId") java.util.UUID accountId, @Param("type") TransactionType type, Pageable pageable);
+
+    @Query("SELECT t FROM Transaction t WHERE (t.fromAccountId = :accountId OR t.toAccountId = :accountId) AND t.createdAt >= :from AND t.createdAt <= :to ORDER BY t.createdAt DESC")
+    List<Transaction> findByAccountIdAndDateRange(@Param("accountId") java.util.UUID accountId, @Param("from") LocalDateTime from, @Param("to") LocalDateTime to, Pageable pageable);
+
+    @Query("SELECT t FROM Transaction t WHERE (t.fromAccountId = :accountId OR t.toAccountId = :accountId) AND t.type = :type AND t.createdAt >= :from AND t.createdAt <= :to ORDER BY t.createdAt DESC")
+    List<Transaction> findByAccountIdAndTypeAndDateRange(@Param("accountId") java.util.UUID accountId, @Param("type") TransactionType type, @Param("from") LocalDateTime from, @Param("to") LocalDateTime to, Pageable pageable);
+
     Optional<Transaction> findByTransactionId(String transactionId);
     
     // For AML monitoring

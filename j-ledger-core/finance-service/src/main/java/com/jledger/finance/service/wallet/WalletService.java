@@ -95,11 +95,15 @@ public class WalletService {
         String cacheKey = CACHE_PREFIX + userId;
         Object cached = redisTemplate.opsForValue().get(cacheKey);
         if (cached instanceof Wallet wallet) {
+            Account account = getOrCreateLedgerAccount(wallet.getUserId(), wallet.getCurrency());
+            wallet.setAccountId(account.getId());
             return Optional.of(wallet);
         }
         if (cached instanceof Map<?, ?> cachedMap) {
             try {
                 Wallet wallet = objectMapper.convertValue(cachedMap, Wallet.class);
+                Account account = getOrCreateLedgerAccount(wallet.getUserId(), wallet.getCurrency());
+                wallet.setAccountId(account.getId());
                 return Optional.of(wallet);
             } catch (IllegalArgumentException ignored) {
                 redisTemplate.delete(cacheKey);
@@ -107,7 +111,11 @@ public class WalletService {
         }
 
         Optional<Wallet> wallet = walletRepository.findByUserId(userId);
-        wallet.ifPresent(w -> redisTemplate.opsForValue().set(cacheKey, Objects.requireNonNull(w), 5, TimeUnit.MINUTES));
+        wallet.ifPresent(w -> {
+            Account account = getOrCreateLedgerAccount(w.getUserId(), w.getCurrency());
+            w.setAccountId(account.getId());
+            redisTemplate.opsForValue().set(cacheKey, Objects.requireNonNull(w), 5, TimeUnit.MINUTES);
+        });
         return wallet;
     }
 
@@ -183,7 +191,8 @@ public class WalletService {
     public List<Transaction> getTopUpHistory(String userId) {
         Wallet wallet = walletRepository.findByUserId(userId)
                 .orElseThrow(() -> new RuntimeException("Wallet not found"));
-        return transactionRepository.findByToWalletIdAndTypeOrderByCreatedAtDesc(wallet.getId(), TransactionType.TOPUP);
+        Account userAccount = getOrCreateLedgerAccount(userId, wallet.getCurrency());
+        return transactionRepository.findByAccountIdAndType(userAccount.getId(), TransactionType.TOPUP, PageRequest.of(0, 50));
     }
 
     public String generateStaticQR(String userId) {
@@ -195,7 +204,8 @@ public class WalletService {
     public List<Transaction> getTransactions(String userId) {
         Wallet wallet = walletRepository.findByUserId(userId)
                 .orElseThrow(() -> new RuntimeException("Wallet not found"));
-        return transactionRepository.findByFromWalletIdOrToWalletIdOrderByCreatedAtDesc(wallet.getId(), wallet.getId());
+        Account userAccount = getOrCreateLedgerAccount(userId, wallet.getCurrency());
+        return transactionRepository.findByAccountId(userAccount.getId(), PageRequest.of(0, 50));
     }
 
     public List<Transaction> getTransactions(
@@ -209,39 +219,37 @@ public class WalletService {
         Wallet wallet = walletRepository.findByUserId(userId)
                 .orElseThrow(() -> new RuntimeException("Wallet not found"));
 
+        // Get the UUID account to query by
+        Account userAccount = getOrCreateLedgerAccount(userId, wallet.getCurrency());
+        java.util.UUID accountId = userAccount.getId();
+
         int resolvedPage = Math.max(page == null ? 0 : page, 0);
         int resolvedSize = Math.min(Math.max(size == null ? 20 : size, 1), 100);
         Pageable pageable = PageRequest.of(resolvedPage, resolvedSize);
 
         boolean hasType = type != null;
+        boolean hasDate = from != null || to != null;
         LocalDateTime resolvedFrom = from != null ? from : LocalDateTime.of(1970, 1, 1, 0, 0);
         LocalDateTime resolvedTo = to != null ? to : LocalDateTime.of(9999, 12, 31, 23, 59);
-        boolean hasDate = from != null || to != null;
 
         if (hasType && hasDate) {
-            return transactionRepository.findByFromWalletIdOrToWalletIdAndTypeAndCreatedAtGreaterThanEqualAndCreatedAtLessThanOrderByCreatedAtDesc(
-                    wallet.getId(), wallet.getId(), type, resolvedFrom, resolvedTo, pageable
-            );
+            return transactionRepository.findByAccountIdAndTypeAndDateRange(accountId, type, resolvedFrom, resolvedTo, pageable);
         }
         if (hasType) {
-            return transactionRepository.findByFromWalletIdOrToWalletIdAndTypeOrderByCreatedAtDesc(
-                    wallet.getId(), wallet.getId(), type, pageable
-            );
+            return transactionRepository.findByAccountIdAndType(accountId, type, pageable);
         }
         if (hasDate) {
-            return transactionRepository.findByFromWalletIdOrToWalletIdAndCreatedAtGreaterThanEqualAndCreatedAtLessThanOrderByCreatedAtDesc(
-                    wallet.getId(), wallet.getId(), resolvedFrom, resolvedTo, pageable
-            );
+            return transactionRepository.findByAccountIdAndDateRange(accountId, resolvedFrom, resolvedTo, pageable);
         }
-        return transactionRepository.findByFromWalletIdOrToWalletIdOrderByCreatedAtDesc(
-                wallet.getId(), wallet.getId(), pageable
-        );
+        return transactionRepository.findByAccountId(accountId, pageable);
     }
 
     public List<Transaction> getQRHistory(String userId) {
         Wallet wallet = walletRepository.findByUserId(userId)
                 .orElseThrow(() -> new RuntimeException("Wallet not found"));
-        return transactionRepository.findByFromWalletIdOrToWalletIdOrderByCreatedAtDesc(wallet.getId(), wallet.getId());
+        Account userAccount = getOrCreateLedgerAccount(userId, wallet.getCurrency());
+        // For QR history, we typically want payments
+        return transactionRepository.findByAccountIdAndType(userAccount.getId(), TransactionType.PAYMENT, PageRequest.of(0, 50));
     }
 
     public Wallet getWalletById(Long id) {
@@ -277,6 +285,8 @@ public class WalletService {
         transaction.setStatus(TransactionStatus.COMPLETED);
         transaction.setFromWalletId(null);
         transaction.setToWalletId(wallet.getId());
+        transaction.setFromAccountId(UUID.fromString(SYSTEM_ACCOUNT_ID));
+        transaction.setToAccountId(userAccount.getId());
         transaction.setDescription("Admin balance adjustment: " + reason);
         transaction.setMetadata("{\"reason\":\"" + reason + "\",\"adminAdjustment\":true}");
 
@@ -349,30 +359,10 @@ public class WalletService {
         systemAccount.setBalance(systemAccount.getBalance().add(amount));
         accountRepository.save(systemAccount);
 
-        // Record Ledger Entry for System Account (Debit)
+        // Record Ledger Entries
         String txId = UUID.randomUUID().toString();
-        LedgerEntry systemEntry = LedgerEntry.builder()
-                .account(systemAccount)
-                .entryType("DEBIT")
-                .amount(amount)
-                .transactionId(txId)
-                .description(String.format("Bank top-up from %s for user %s", bankAccount.getBankName(), userId))
-                .build();
-        ledgerEntryRepository.save(Objects.requireNonNull(systemEntry));
-
-        // 5. Record Ledger Entry for User Account (Credit)
         Account userAccount = getOrCreateLedgerAccount(userId, wallet.getCurrency());
-        userAccount.setBalance(userAccount.getBalance().add(amount));
-        accountRepository.save(userAccount);
-
-        LedgerEntry userEntry = LedgerEntry.builder()
-                .account(userAccount)
-                .entryType("CREDIT")
-                .amount(amount)
-                .transactionId(txId)
-                .description(String.format("Bank top-up from %s", bankAccount.getBankName()))
-                .build();
-        ledgerEntryRepository.save(Objects.requireNonNull(userEntry));
+        recordLedgerEntries(systemAccount, userAccount, amount, txId, String.format("Bank top-up from %s", bankAccount.getBankName()));
 
         Transaction transaction = new Transaction();
         transaction.setTransactionId(txId);
@@ -381,6 +371,8 @@ public class WalletService {
         transaction.setStatus(TransactionStatus.COMPLETED);
         transaction.setFromWalletId(null);
         transaction.setToWalletId(wallet.getId());
+        transaction.setFromAccountId(UUID.fromString(SYSTEM_ACCOUNT_ID));
+        transaction.setToAccountId(userAccount.getId());
         transaction.setDescription(
                 String.format("Bank top-up from %s %s", bankAccount.getBankName(), bankAccount.getAccountNumber())
         );
@@ -472,6 +464,8 @@ public class WalletService {
             transaction.setStatus(TransactionStatus.COMPLETED);
             transaction.setFromWalletId(null);
             transaction.setToWalletId(wallet.getId());
+            transaction.setFromAccountId(UUID.fromString(SYSTEM_ACCOUNT_ID));
+            transaction.setToAccountId(userAccount.getId());
             transaction.setDescription(String.format("%s top-up credit", provider == null ? "EXTERNAL" : provider));
             transaction.setMetadata(metadataJson);
 
@@ -633,7 +627,8 @@ public class WalletService {
             throw new RuntimeException("Wallet is inactive");
         }
 
-        // Lock System Account & User Wallet
+        // Fetch User Account & Lock System Account
+        Account userAccount = getOrCreateLedgerAccount(userId, wallet.getCurrency());
         Account systemAccount = accountRepository.findByIdForUpdate(UUID.fromString(SYSTEM_ACCOUNT_ID))
                 .orElseThrow(() -> new RuntimeException("System account not found"));
 
@@ -645,6 +640,10 @@ public class WalletService {
         systemAccount.setBalance(systemAccount.getBalance().subtract(amount));
         accountRepository.save(systemAccount);
 
+        // Update User Account Balance (Credit)
+        userAccount.setBalance(userAccount.getBalance().add(amount));
+        accountRepository.save(userAccount);
+
         String txId = UUID.randomUUID().toString();
         Transaction transaction = new Transaction();
         transaction.setTransactionId(txId);
@@ -653,35 +652,15 @@ public class WalletService {
         transaction.setStatus(TransactionStatus.COMPLETED);
         transaction.setFromWalletId(null);
         transaction.setToWalletId(wallet.getId());
+        transaction.setFromAccountId(UUID.fromString(SYSTEM_ACCOUNT_ID));
+        transaction.setToAccountId(userAccount.getId());
         transaction.setDescription("Counter top-up at " + counterCode);
         transaction.setMetadata("{\"counterCode\":\"" + counterCode + "\"}");
 
         Transaction savedTransaction = transactionRepository.save(transaction);
 
         // Record Ledger Entries
-        // Debit Treasury
-        LedgerEntry treasuryEntry = LedgerEntry.builder()
-                .account(systemAccount)
-                .entryType("DEBIT")
-                .amount(amount)
-                .transactionId(txId)
-                .description("Counter Top-up at " + counterCode)
-                .build();
-        ledgerEntryRepository.save(Objects.requireNonNull(treasuryEntry));
-
-        // Credit User
-        Account userAccount = getOrCreateLedgerAccount(userId, wallet.getCurrency());
-        userAccount.setBalance(userAccount.getBalance().add(amount));
-        accountRepository.save(userAccount);
-
-        LedgerEntry userEntry = LedgerEntry.builder()
-                .account(userAccount)
-                .entryType("CREDIT")
-                .amount(amount)
-                .transactionId(txId)
-                .description("Counter Top-up")
-                .build();
-        ledgerEntryRepository.save(Objects.requireNonNull(userEntry));
+        recordLedgerEntries(systemAccount, userAccount, amount, savedTransaction.getTransactionId(), "Top-up");
 
         return savedTransaction;
     }
@@ -695,7 +674,8 @@ public class WalletService {
             throw new RuntimeException("Wallet is inactive");
         }
 
-        // Lock System Account & User Wallet
+        // Fetch User Account & Lock System Account
+        Account userAccount = getOrCreateLedgerAccount(userId, wallet.getCurrency());
         Account systemAccount = accountRepository.findByIdForUpdate(UUID.fromString(SYSTEM_ACCOUNT_ID))
                 .orElseThrow(() -> new RuntimeException("System account not found"));
 
@@ -707,6 +687,10 @@ public class WalletService {
         systemAccount.setBalance(systemAccount.getBalance().subtract(amount));
         accountRepository.save(systemAccount);
 
+        // Update User Account Balance (Credit)
+        userAccount.setBalance(userAccount.getBalance().add(amount));
+        accountRepository.save(userAccount);
+
         String txId = UUID.randomUUID().toString();
         Transaction transaction = new Transaction();
         transaction.setTransactionId(txId);
@@ -715,35 +699,15 @@ public class WalletService {
         transaction.setStatus(TransactionStatus.COMPLETED);
         transaction.setFromWalletId(null);
         transaction.setToWalletId(wallet.getId());
+        transaction.setFromAccountId(UUID.fromString(SYSTEM_ACCOUNT_ID));
+        transaction.setToAccountId(userAccount.getId());
         transaction.setDescription("Cash top-up at agent " + agentId);
         transaction.setMetadata("{\"agentId\":\"" + agentId + "\"}");
 
         Transaction savedTransaction = transactionRepository.save(transaction);
 
         // Record Ledger Entries
-        // Debit Treasury
-        LedgerEntry treasuryEntry = LedgerEntry.builder()
-                .account(systemAccount)
-                .entryType("DEBIT")
-                .amount(amount)
-                .transactionId(txId)
-                .description("Agent Cash Top-up by " + agentId)
-                .build();
-        ledgerEntryRepository.save(Objects.requireNonNull(treasuryEntry));
-
-        // Credit User
-        Account userAccount = getOrCreateLedgerAccount(userId, wallet.getCurrency());
-        userAccount.setBalance(userAccount.getBalance().add(amount));
-        accountRepository.save(userAccount);
-
-        LedgerEntry userEntry = LedgerEntry.builder()
-                .account(userAccount)
-                .entryType("CREDIT")
-                .amount(amount)
-                .transactionId(txId)
-                .description("Cash Top-up")
-                .build();
-        ledgerEntryRepository.save(Objects.requireNonNull(userEntry));
+        recordLedgerEntries(systemAccount, userAccount, amount, savedTransaction.getTransactionId(), "Top-up");
 
         return savedTransaction;
     }
@@ -914,6 +878,8 @@ public class WalletService {
             transaction.setStatus(TransactionStatus.COMPLETED);
             transaction.setFromWalletId(fromWallet.getId());
             transaction.setToWalletId(toWallet.getId());
+            transaction.setFromAccountId(senderAccount.getId());
+            transaction.setToAccountId(receiverAccount.getId());
             transaction.setDescription("Transfer to phone " + normalizedPhone);
             transaction.setMetadata(buildTransferMetadata(normalizedPhone, recipientUserId, note, idempotencyKey));
             
@@ -942,9 +908,23 @@ public class WalletService {
         UUID userUuid = UUID.fromString(userId);
         return accountRepository.findByUserId(userUuid).stream().findFirst()
                 .orElseGet(() -> {
+                    String accountName = "User Wallet Account";
+                    try {
+                        String sql = "SELECT \"phoneNumber\" FROM identity.users WHERE id = ? LIMIT 1";
+                        String phoneNumber = jdbcTemplate.queryForObject(sql, String.class, userId);
+                        if (phoneNumber != null && !phoneNumber.isBlank()) {
+                            accountName = "Wallet: " + phoneNumber;
+                        }
+                    } catch (Exception e) {
+                        logger.warn("Could not fetch phone number for userId: {}, defaulting to 'System Account' if system-like", userId);
+                        if (userId.startsWith("00000000")) {
+                            accountName = "System Account";
+                        }
+                    }
+
                     Account newAcc = Account.builder()
                             .userId(userUuid)
-                            .accountName("User Wallet Account")
+                            .accountName(accountName)
                             .balance(BigDecimal.ZERO)
                             .currency(currency != null ? currency : "THB")
                             .status("ACTIVE")
@@ -957,11 +937,19 @@ public class WalletService {
 
     @Transactional
     public Transaction transferByWalletId(String fromUserId, String toWalletId, BigDecimal amount) {
-        Long toWalletIdLong = Long.parseLong(toWalletId);
-        
         // 1. Fetch source wallet ID to determine lock order
         Wallet fromWalletInfo = walletRepository.findByUserId(fromUserId)
                 .orElseThrow(() -> new RuntimeException("Source wallet not found"));
+
+        // If toWalletId is not a long, it must be an account UUID
+        Long toWalletIdLong;
+        try {
+            toWalletIdLong = Long.parseLong(toWalletId);
+        } catch (NumberFormatException e) {
+            // It's a UUID (Account), delegate to the appropriate method
+            return transferWalletToAccount(fromUserId, toWalletId, amount);
+        }
+        
         Long fromWalletId = fromWalletInfo.getId();
 
         // 2. Acquire locks in consistent order (ID ascending) to prevent deadlocks
@@ -1031,31 +1019,17 @@ public class WalletService {
         transaction.setStatus(TransactionStatus.COMPLETED);
         transaction.setFromWalletId(fromWallet.getId());
         transaction.setToWalletId(toWallet.getId());
+        transaction.setFromAccountId(senderAccount.getId());
+        transaction.setToAccountId(receiverAccount.getId());
         transaction.setDescription("Transfer to wallet " + toWalletId);
         transaction.setMetadata("{\"toWalletId\":\"" + toWalletId + "\"}");
 
         Transaction savedTransaction = transactionRepository.save(transaction);
         
-        // Record Ledger Entries
-        LedgerEntry senderEntry = LedgerEntry.builder()
-                .account(senderAccount)
-                .entryType("DEBIT")
-                .amount(amount)
-                .transactionId(txId)
-                .description("Transfer to wallet " + toWalletId)
-                .build();
-        ledgerEntryRepository.save(Objects.requireNonNull(senderEntry));
+        // 5. Record Ledger Entries
+        recordLedgerEntries(senderAccount, receiverAccount, amount, savedTransaction.getTransactionId(), "Transfer to wallet " + toWalletId);
         
-        LedgerEntry receiverEntry = LedgerEntry.builder()
-                .account(receiverAccount)
-                .entryType("CREDIT")
-                .amount(amount)
-                .transactionId(txId)
-                .description("Transfer from wallet " + fromWallet.getWalletId())
-                .build();
-        ledgerEntryRepository.save(Objects.requireNonNull(receiverEntry));
-
-        // Notify
+        // 6. Publish Event
         publishTransactionEvent(fromUserId, savedTransaction, false);
         publishTransactionEvent(toWallet.getUserId(), savedTransaction, true);
 
@@ -1104,29 +1078,15 @@ public class WalletService {
         transaction.setStatus(TransactionStatus.COMPLETED);
         transaction.setFromWalletId(fromWallet.getId());
         transaction.setToWalletId(null); // Direct to account
+        transaction.setFromAccountId(senderAccount.getId());
+        transaction.setToAccountId(UUID.fromString(toAccountId));
         transaction.setDescription("Merchant payment to account " + toAccountId);
         transaction.setMetadata("{\"toAccountId\":\"" + toAccountId + "\"}");
 
         Transaction savedTransaction = transactionRepository.save(transaction);
 
         // 7. Record Ledger Entries
-        LedgerEntry senderEntry = LedgerEntry.builder()
-                .account(senderAccount)
-                .entryType("DEBIT")
-                .amount(amount)
-                .transactionId(txId)
-                .description("Merchant payment to " + toAccountId)
-                .build();
-        ledgerEntryRepository.save(senderEntry);
-
-        LedgerEntry receiverEntry = LedgerEntry.builder()
-                .account(receiverAccount)
-                .entryType("CREDIT")
-                .amount(amount)
-                .transactionId(txId)
-                .description("Merchant payment from " + fromWallet.getWalletId())
-                .build();
-        ledgerEntryRepository.save(receiverEntry);
+        recordLedgerEntries(senderAccount, receiverAccount, amount, txId, "Merchant payment to " + toAccountId);
 
         // 8. Notify
         publishTransactionEvent(fromUserId, savedTransaction, false);
@@ -1393,6 +1353,30 @@ public class WalletService {
                 escapedNote,
                 idempotencyKey == null ? "" : escapeJson(idempotencyKey)
         );
+    }
+
+    private void recordLedgerEntries(Account fromAccount, Account toAccount, BigDecimal amount, String transactionId, String description) {
+        if (fromAccount != null) {
+            LedgerEntry debitEntry = LedgerEntry.builder()
+                    .account(fromAccount)
+                    .entryType("DEBIT")
+                    .amount(amount)
+                    .transactionId(transactionId)
+                    .description(description != null ? description : "Ledger Transfer (Debit)")
+                    .build();
+            ledgerEntryRepository.save(debitEntry);
+        }
+
+        if (toAccount != null) {
+            LedgerEntry creditEntry = LedgerEntry.builder()
+                    .account(toAccount)
+                    .entryType("CREDIT")
+                    .amount(amount)
+                    .transactionId(transactionId)
+                    .description(description != null ? description : "Ledger Transfer (Credit)")
+                    .build();
+            ledgerEntryRepository.save(creditEntry);
+        }
     }
 
     private void publishTransactionEvent(String userId, Transaction transaction, boolean isReceiver) {

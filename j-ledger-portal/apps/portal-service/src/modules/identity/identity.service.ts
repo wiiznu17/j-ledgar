@@ -1611,36 +1611,11 @@ export class IdentityService {
       throw new ConflictException('Registration already completed');
     }
 
-    // Create wallet in finance service
-    try {
-      this.logger.log(`[Register] Creating wallet for user ${user.id}`);
-      let walletId = user.ledgerAccountId;
+    // Wallet creation is now postponed until Admin Approval (kyc.service.ts)
+    // to prevent provisioning accounts for unverified users.
+    const walletId = user.ledgerAccountId;
 
-      if (!walletId) {
-        try {
-          const wallet = await this.financeService.createWallet(user.id, 'THB');
-          walletId = wallet.walletId;
-          this.logger.log(
-            `[Register] New wallet created for user ${user.id}: ${walletId}`,
-          );
-        } catch (walletError: any) {
-          // If wallet already exists, try to fetch it instead of failing
-          if (
-            walletError.message?.includes('already exists') ||
-            walletError.status === 409
-          ) {
-            this.logger.warn(
-              `[Register] Wallet already exists for user ${user.id}, attempting to link existing one`,
-            );
-            // We can either fetch it from finance service or just assume it's there if we have a way to find it
-            // For now, let's try to get status which might return the wallet info
-            const existingWallet = await this.financeService.getWallet(user.id);
-            walletId = existingWallet?.walletId;
-          } else {
-            throw walletError;
-          }
-        }
-      }
+    try {
 
       // Update user with wallet info and final state
       // Status Protection: Move to PENDING_APPROVAL if currently INACTIVE or REJECTED (retry case).

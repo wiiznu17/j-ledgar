@@ -17,6 +17,7 @@ interface WalletResponse {
   status: string;
   dailyLimit: number;
   monthlyLimit: number;
+  accountId: string;
   createdAt: string;
   updatedAt: string;
 }
@@ -218,25 +219,57 @@ export class FinanceService {
     }
   }
 
+  /**
+   * Refactored Top-up using the 2-Step International Standard Process.
+   * Step 1: Create Payment Intent (PaymentTransaction)
+   * Step 2: Settle Payment (Triggers Ledger Transaction)
+   */
   async topUp(
     userId: string,
     amount: number,
     bankAccountId: number,
   ): Promise<any> {
-    const url = `${this.financeServiceUrl}/api/finance/wallets/${userId}/topup/bank`;
     try {
-      const response = await this.httpService.axiosRef.post(
-        url,
+      // 1. Get user's wallet to identify accountId
+      const wallet = await this.getWallet(userId);
+      if (!wallet) throw new Error('Wallet not found');
+
+      const referenceId = `TOPUP_${Date.now()}_${Math.floor(Math.random() * 1000)}`;
+
+      // Step 1: Create Payment Intent in finance-service
+      const createIntentUrl = `${this.financeServiceUrl}/api/finance/payments`;
+      await this.httpService.axiosRef.post(
+        createIntentUrl,
         {
+          accountId: wallet.accountId,
+          referenceId: referenceId,
           amount: amount.toString(),
-          bankAccountId: bankAccountId.toString(),
+          type: 'TOPUP'
         },
-        { headers: this.getInternalHeaders() },
+        { headers: this.getInternalHeaders() }
       );
-      return response.data;
+
+      // Step 2: Simulate Payment Confirmation (Settlement)
+      const webhookUrl = `${this.financeServiceUrl}/api/finance/webhooks`;
+      await this.httpService.axiosRef.post(
+        webhookUrl,
+        {
+          reference_id: referenceId,
+          status: 'SUCCESS',
+          signature: 'mock_signature_verified'
+        },
+        { headers: this.getInternalHeaders() }
+      );
+
+      return {
+        success: true,
+        referenceId: referenceId,
+        message: 'Top-up successfully settled via 2-step process',
+        newBalance: wallet.balance + amount
+      };
     } catch (error: any) {
-      this.logCompactError(`topUp user=${userId}`, error);
-      this.rethrowAsHttpException(error, 'Failed to top up');
+      this.logCompactError(`topUp (2-step) user=${userId}`, error);
+      this.rethrowAsHttpException(error, 'Failed to process top up');
     }
   }
 

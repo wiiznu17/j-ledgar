@@ -23,6 +23,12 @@ public class Transaction {
     @Column(name = "to_wallet_id")
     private Long toWalletId;
 
+    @Column(name = "from_account_id")
+    private java.util.UUID fromAccountId;
+
+    @Column(name = "to_account_id")
+    private java.util.UUID toAccountId;
+
     @Enumerated(EnumType.STRING)
     @Column(nullable = false, length = 50)
     @com.fasterxml.jackson.annotation.JsonProperty("transactionType")
@@ -80,6 +86,12 @@ public class Transaction {
 
     public Long getToWalletId() { return toWalletId; }
     public void setToWalletId(Long toWalletId) { this.toWalletId = toWalletId; }
+
+    public java.util.UUID getFromAccountId() { return fromAccountId; }
+    public void setFromAccountId(java.util.UUID fromAccountId) { this.fromAccountId = fromAccountId; }
+
+    public java.util.UUID getToAccountId() { return toAccountId; }
+    public void setToAccountId(java.util.UUID toAccountId) { this.toAccountId = toAccountId; }
 
     public TransactionType getType() { return type; }
     public void setType(TransactionType type) { this.type = type; }

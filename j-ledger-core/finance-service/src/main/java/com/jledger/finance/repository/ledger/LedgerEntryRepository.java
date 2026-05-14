@@ -28,4 +28,6 @@ public interface LedgerEntryRepository extends JpaRepository<LedgerEntry, UUID> 
     )
     Page<LedgerEntry> findHistoryByAccountId(@Param("accountId") UUID accountId, Pageable pageable);
 
+    List<LedgerEntry> findByTransactionId(String transactionId);
+
 }

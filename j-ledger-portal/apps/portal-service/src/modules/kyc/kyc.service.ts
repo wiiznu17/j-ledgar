@@ -188,21 +188,43 @@ export class KycService {
       },
     });
 
-    // Activate wallet on KYC approval
+    // Ensure wallet exists and is active on KYC approval
     try {
-      await this.financeService.activateWallet(userId);
-      this.logger.log(`Wallet activated for user ${userId} after KYC approval`);
-      
+      const userFull = await this.prisma.user.findUnique({
+        where: { id: userId },
+      });
+      let walletId = userFull?.ledgerAccountId;
+
+      if (!walletId) {
+        this.logger.log(`[KYC] Creating new wallet for user ${userId} on approval`);
+        const wallet = await this.financeService.createWallet(userId, 'THB');
+        walletId = wallet.walletId;
+        // Link wallet to user in portal DB
+        await this.prisma.user.update({
+          where: { id: userId },
+          data: { ledgerAccountId: walletId },
+        });
+      } else {
+        // Just activate if it somehow already exists
+        await this.financeService.activateWallet(userId);
+      }
+
+      this.logger.log(`Wallet ready for user ${userId} after KYC approval`);
+
       // Also create a default ledger account for reward points and accounting
       try {
-        await this.financeService.createAccount(userId, 'Main Account');
-        this.logger.log(`Ledger account created for user ${userId} after KYC approval`);
+        const accountName = `Wallet: ${userFull.phoneNumber}`;
+        await this.financeService.createAccount(userId, accountName);
+        this.logger.log(
+          `Ledger account '${accountName}' created for user ${userId} after KYC approval`,
+        );
       } catch (accErr) {
-        this.logger.warn(`Failed to create ledger account for user ${userId}: ${accErr.message}`);
-        // Non-blocking for now
+        this.logger.warn(
+          `Failed to create ledger account for user ${userId}: ${accErr.message}`,
+        );
       }
     } catch (err) {
-      this.logger.error(`Failed to activate wallet for user ${userId}`, err);
+      this.logger.error(`Failed to initialize wallet for user ${userId}`, err);
     }
 
     // Update main user status and registration state

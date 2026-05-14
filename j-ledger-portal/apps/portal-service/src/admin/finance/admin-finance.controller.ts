@@ -252,18 +252,23 @@ export class AdminFinanceController {
   async getTransactionDetails(
     @Param('id') id: string,
   ): Promise<TransactionDetailsDto> {
-    const response = await this.integrationService.forwardToGateway<any>(
-      'get',
-      INTERNAL_API_PATHS.FINANCE.TRANSACTIONS.DETAIL(id),
-    );
+    const [transaction, ledgerEntries, pointHistories] = await Promise.all([
+      this.integrationService.forwardToGateway<any>(
+        'get',
+        INTERNAL_API_PATHS.FINANCE.TRANSACTIONS.DETAIL(id),
+      ),
+      this.integrationService.forwardToGateway<any[]>(
+        'get',
+        `${INTERNAL_API_PATHS.FINANCE.TRANSACTIONS.DETAIL(id)}/ledger-entries`,
+      ),
+      this.loyaltyService.getPointHistoryByReference(id),
+    ]);
 
-    // Fetch points earned for this transaction
-    const pointHistories = await this.loyaltyService.getPointHistoryByReference(id);
     const earnedPoints = pointHistories.find(p => p.amount > 0);
 
     return {
-      transaction: response,
-      ledgerEntries: [], // Ledger entries not yet exposed by core
+      transaction,
+      ledgerEntries,
       pointsEarned: earnedPoints ? {
         amount: earnedPoints.amount,
         expiresAt: earnedPoints.expiresAt,

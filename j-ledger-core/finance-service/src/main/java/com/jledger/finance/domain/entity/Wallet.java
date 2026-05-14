@@ -41,6 +41,9 @@ public class Wallet {
     @Version
     private Integer version;
 
+    @Transient
+    private java.util.UUID accountId;
+
     @PrePersist
     protected void onCreate() {
         createdAt = LocalDateTime.now();
@@ -88,6 +91,9 @@ public class Wallet {
 
     public Integer getVersion() { return version; }
     public void setVersion(Integer version) { this.version = version; }
+
+    public java.util.UUID getAccountId() { return accountId; }
+    public void setAccountId(java.util.UUID accountId) { this.accountId = accountId; }
 
     // Convenience method for backward compatibility
     public Boolean getIsActive() { return "ACTIVE".equals(status); }

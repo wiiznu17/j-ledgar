@@ -95,6 +95,7 @@ export default function OnboardingScreen() {
   const [isScanningID, setIsScanningID] = useState(false);
 
   const [idCardAddress, setIdCardAddress] = useState<any>(null);
+  const completionResultRef = useRef<any>(null);
 
   const router = useRouter();
   const { regToken, setRegToken, syncStatus, prefillData, reset, initialize } =
@@ -264,9 +265,9 @@ export default function OnboardingScreen() {
         break;
       case RegistrationState.COMPLETED:
         console.log(
-          '[Onboarding] Flow completed, refreshing session to let RootLayout handle routing...',
+          '[Onboarding] Flow completed, showing success step',
         );
-        refreshSession();
+        setStep(OnboardingStepUI.SUCCESS);
         break;
       default:
         setStep(OnboardingStepUI.WELCOME);
@@ -603,10 +604,6 @@ export default function OnboardingScreen() {
       if (res.data.regToken) await setRegToken(res.data.regToken);
 
       if (res.data.nextState) {
-        if (res.data.nextState === RegistrationState.COMPLETED) {
-          // If skipping to completion, refresh session first to get updated status and trigger guards
-          await refreshSession();
-        }
         mapBackendStateToUI(res.data.nextState);
       } else {
         setStep(OnboardingStepUI.SET_PASSWORD);
@@ -666,25 +663,10 @@ export default function OnboardingScreen() {
         },
       );
 
-      // Save tokens returned from completeRegistration for seamless login
-      if (completeRes.data.accessToken && completeRes.data.refreshToken) {
-        console.log(
-          '[Onboarding] Registration complete, saving tokens for seamless experience',
-        );
-        const { useAuthStore } = await import('@/store/auth');
-        await useAuthStore
-          .getState()
-          .setToken(
-            completeRes.data.accessToken,
-            completeRes.data.refreshToken,
-          );
-        if (completeRes.data.user) {
-          useAuthStore.getState().setUser(completeRes.data.user);
-        }
-        // Force refresh to be absolutely sure we have the server-side status
-        await useAuthStore.getState().refreshSession();
-      }
-
+      // DO NOT update auth store yet to prevent RootLayout from redirecting 
+      // before the user sees the Success animation.
+      completionResultRef.current = completeRes.data;
+      
       setStep(OnboardingStepUI.SUCCESS);
     } catch (err: any) {
       console.error(
@@ -943,13 +925,22 @@ export default function OnboardingScreen() {
               <Onboarding.SuccessStep
                 visible={step === OnboardingStepUI.SUCCESS}
                 onEnterWallet={async () => {
-                  setIsLoading(true);
                   try {
+                    const result = completionResultRef.current;
+                    if (result?.accessToken && result?.refreshToken) {
+                      console.log('[Onboarding] Finalizing login session...');
+                      const { useAuthStore } = await import('@/store/auth');
+                      await useAuthStore.getState().setToken(result.accessToken, result.refreshToken);
+                      if (result.user) {
+                        useAuthStore.getState().setUser(result.user);
+                      }
+                    }
+
                     await reset(); // ล้าง registration_token
-                    // The RootLayout will automatically pick up the new auth state
-                    // and redirect to the appropriate screen (Pending Approval or Tabs)
-                  } finally {
-                    setIsLoading(false);
+                    // Proactively redirect to provide smoother UX
+                    router.replace('/(auth)/pending-approval');
+                  } catch (err) {
+                    console.error('[Onboarding] Error during final redirect:', err);
                   }
                 }}
               />
