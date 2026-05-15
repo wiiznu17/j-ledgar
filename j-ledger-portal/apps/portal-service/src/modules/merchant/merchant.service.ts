@@ -820,6 +820,19 @@ export class MerchantService {
         legs
       });
 
+      // Create MerchantPayment record for history and dashboard reporting
+      await this.prisma.merchantPayment.create({
+        data: {
+          merchantId: merchant.id,
+          amount: amount,
+          status: 'COMPLETED',
+          idempotencyKey: `mp_manual_${idempotencyKey}`,
+          referenceId: tx.transactionId || tx.id?.toString(),
+          note: note || 'Manual Merchant Payment',
+          expiresAt: new Date(), // Already completed
+        }
+      });
+
       // Log Audit
       await this.auditService.log({
         userId: userId,

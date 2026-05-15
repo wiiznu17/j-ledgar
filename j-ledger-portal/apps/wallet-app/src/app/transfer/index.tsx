@@ -17,7 +17,9 @@ import { api } from '@/lib/axios';
 import { MerchantService } from '@/lib/merchant-service';
 import { TransactionAmountCard } from '@/components/transaction/TransactionAmountCard';
 import { StickyActionArea } from '@/components/transaction/StickyActionArea';
-import { Store, User, Search, SearchIcon, ChevronLeft, Info, X } from 'lucide-react-native';
+import { TransactionRecipientCard } from '@/components/transaction/TransactionRecipientCard';
+import { TransactionSearchArea } from '@/components/transaction/TransactionSearchArea';
+import { ChevronLeft, Info } from 'lucide-react-native';
 
 export default function TransferScreen() {
   const router = useRouter();
@@ -29,7 +31,8 @@ export default function TransferScreen() {
     merchantName?: string 
   }>();
 
-  const [recipient, setRecipient] = React.useState('');
+  const [recipient, setRecipient] = React.useState<any>(null);
+  const [search, setSearch] = React.useState('');
   const [amount, setAmount] = React.useState('');
   const [note, setNote] = React.useState('');
   const [isSubmitting, setIsSubmitting] = React.useState(false);
@@ -40,7 +43,7 @@ export default function TransferScreen() {
   React.useEffect(() => {
     // Handle params from QR scan (validated by qr-validation)
     if (params.recipient) {
-      setRecipient(params.recipient);
+      handleRecipientChange(params.recipient);
     }
     if (params.amount) {
       setAmount(params.amount);
@@ -51,6 +54,13 @@ export default function TransferScreen() {
       loadPaymentDetails(params.paymentId);
     }
   }, [params.merchantId, params.paymentId, params.recipient, params.amount]);
+
+  // Auto-search when search is populated from params
+  React.useEffect(() => {
+    if (params.recipient && search.replace(/\D/g, '').length >= 10 && !recipient && !isSubmitting) {
+      handleSearch();
+    }
+  }, [search, params.recipient]);
 
   const loadPaymentDetails = async (id: string) => {
     try {
@@ -85,24 +95,48 @@ export default function TransferScreen() {
   const handleRecipientChange = (text: string) => {
     const cleaned = text.replace(/\D/g, '');
     let formatted = cleaned;
-    // ... (logic follows)
     if (cleaned.length > 3 && cleaned.length <= 6) {
       formatted = `${cleaned.slice(0, 3)}-${cleaned.slice(3)}`;
     } else if (cleaned.length > 6) {
       formatted = `${cleaned.slice(0, 3)}-${cleaned.slice(3, 6)}-${cleaned.slice(6, 10)}`;
     }
-    setRecipient(formatted);
+    setSearch(formatted);
+  };
+
+  const handleSearch = async () => {
+    if (search.replace(/\D/g, '').length < 10) return;
+    
+    setIsSubmitting(true);
+    setRecipientNotFound(false);
+    
+    try {
+      const res = await api.post('/integration/p2p/preview', {
+        recipientPhone: search,
+        amount: parseFloat(amount) || 1, // Just for preview
+      });
+      const preview = res.data || {};
+      setRecipient({
+        phone: search,
+        displayName: preview?.recipient?.displayName || 'Unknown User',
+        phoneMasked: preview?.recipient?.phoneMasked || search,
+      });
+    } catch (err: any) {
+      setRecipientNotFound(true);
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   const handleNext = () => {
     if (isSubmitting) return;
 
     if (params.merchantId || params.paymentId) {
-      // Merchant Pay doesn't need preview, go straight to review
+      // Merchant Pay logic remains
       router.push({
         pathname: '/transfer/review',
         params: {
-          merchantId: params.merchantId || params.paymentId, // Use either as key
+          merchantId: params.merchantId,
+          paymentId: params.paymentId,
           amount,
           note,
           merchantName: merchant?.merchantName,
@@ -111,67 +145,22 @@ export default function TransferScreen() {
       return;
     }
 
-    setRecipientNotFound(false);
-
-    // Validate transfer params using Zod schema
-    const validation = TransferParamsSchema.safeParse({
-      recipient: recipient.replace(/\D/g, ''),
-      amount: amount,
-    });
-
-    if (!validation.success) {
-      const firstError = validation.error.issues?.[0];
-      let errorMessage = firstError?.message || 'Validation error';
-
-      if (firstError?.path?.[0] === 'recipient') {
-        errorMessage = 'Please enter a valid recipient phone number';
-      } else if (firstError?.path?.[0] === 'amount') {
-        errorMessage = 'Please enter a valid amount greater than 0';
-      }
-
-      Alert.alert('Validation Error', errorMessage);
+    // For P2P, we already have the recipient object from handleSearch
+    if (!recipient) {
+      handleSearch();
       return;
     }
 
-    setIsSubmitting(true);
-    api
-      .post('/integration/p2p/preview', {
-        recipientPhone: recipient,
-        amount: parseFloat(amount),
-      })
-      .then((res) => {
-        const preview = res.data || {};
-        router.push({
-          pathname: '/transfer/review',
-          params: {
-            recipient,
-            amount,
-            note,
-            recipientName: preview?.recipient?.displayName || '',
-            recipientMasked: preview?.recipient?.phoneMasked || '',
-          },
-        } as any);
-      })
-      .catch((err: any) => {
-        const message =
-          err?.response?.data?.message || 'Unable to preview transfer';
-        const status = err?.response?.status;
-
-        // Show warning banner for recipient not found errors
-        const isRecipientNotFound =
-          status === 404 ||
-          message.toLowerCase().includes('not found') ||
-          message.toLowerCase().includes('recipient');
-
-        if (isRecipientNotFound) {
-          setRecipientNotFound(true);
-          // Don't show Alert for recipient not found - banner is sufficient
-          return;
-        }
-
-        Alert.alert('Transfer Error', message);
-      })
-      .finally(() => setIsSubmitting(false));
+    router.push({
+      pathname: '/transfer/review',
+      params: {
+        recipient: recipient.phone,
+        amount,
+        note,
+        recipientName: recipient.displayName,
+        recipientMasked: recipient.phoneMasked,
+      },
+    } as any);
   };
 
   const handleQuickAmount = (val: string) => {
@@ -209,50 +198,32 @@ export default function TransferScreen() {
               className="mt-4 mb-6"
             >
               {params.merchantId || params.paymentId ? (
-                /* Unified Merchant Header */
-                <View className="bg-white rounded-[2.5rem] p-6 border border-gray-100 flex-row items-center shadow-sm">
-                  <View className="w-16 h-16 bg-pink-50 rounded-[1.5rem] items-center justify-center border border-pink-100">
-                    <Store size={32} color="#f48fb1" />
-                  </View>
-                  <View className="ml-4 flex-1">
-                    <Text className="text-[10px] font-manrope font-black text-gray-400 uppercase tracking-widest mb-1">
-                      {params.paymentId ? 'Payment Request' : 'Paying To Merchant'}
-                    </Text>
-                    <Text className="text-xl font-manrope font-black text-gray-800" numberOfLines={1}>
-                      {merchant?.merchantName || 'Loading...'}
-                    </Text>
-                    <Text className="text-xs font-manrope font-bold text-gray-400">
-                      {merchant?.category || 'Verified Business'}
-                    </Text>
-                  </View>
-                </View>
+                /* Unified Merchant Mode */
+                <TransactionRecipientCard 
+                  name={merchant?.merchantName}
+                  subtitle={merchant?.category || (params.paymentId ? 'Payment Request' : 'Verified Business')}
+                  type="merchant"
+                />
+              ) : recipient ? (
+                /* Selected Person Mode */
+                <TransactionRecipientCard 
+                  name={(recipient as any).displayName}
+                  subtitle={(recipient as any).phoneMasked}
+                  type="user"
+                  onClear={() => {
+                    setRecipient('' as any);
+                    setAmount('');
+                  }}
+                />
               ) : (
-                /* Original P2P Input */
-                <View>
-                  <Text className="text-[10px] font-manrope font-black text-gray-400 uppercase tracking-widest px-1 mb-3">
-                    Recipient Phone Number
-                  </Text>
-                  <View className="bg-white rounded-2xl px-5 py-4 flex-row items-center border border-gray-50 shadow-sm">
-                    <TextInput
-                      placeholder="08X-XXX-XXXX"
-                      placeholderTextColor="#d1d5db"
-                      value={recipient}
-                      onChangeText={handleRecipientChange}
-                      keyboardType="number-pad"
-                      className="flex-1 font-manrope font-black text-gray-800 text-lg tracking-[0.05em]"
-                      style={{ paddingVertical: 0 }}
-                      maxLength={12}
-                    />
-                    {recipient.length > 0 && (
-                      <TouchableOpacity
-                        onPress={() => setRecipient('')}
-                        className="w-6 h-6 bg-gray-100 rounded-full items-center justify-center p-1"
-                      >
-                        <X size={14} color="#9ca3af" />
-                      </TouchableOpacity>
-                    )}
-                  </View>
-                </View>
+                /* Search Mode */
+                <TransactionSearchArea 
+                  value={search}
+                  onChangeText={handleRecipientChange}
+                  onSearch={handleSearch}
+                  onClear={() => setSearch('')}
+                  isLoading={isSubmitting}
+                />
               )}
             </MotiView>
 

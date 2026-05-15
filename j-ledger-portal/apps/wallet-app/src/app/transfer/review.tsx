@@ -49,6 +49,7 @@ export default function ReviewTransferScreen() {
   const router = useRouter();
   const {
     merchantId,
+    paymentId,
     recipient,
     amount,
     note,
@@ -57,6 +58,7 @@ export default function ReviewTransferScreen() {
     recipientMasked,
   } = useLocalSearchParams<{
     merchantId?: string;
+    paymentId?: string;
     recipient?: string;
     amount: string;
     note?: string;
@@ -147,8 +149,11 @@ export default function ReviewTransferScreen() {
     try {
       let result: any;
       
-      if (merchantId) {
-        // Merchant Payment Flow
+      if (paymentId) {
+        // Dynamic QR Payment Flow
+        result = await MerchantService.confirmPayment(paymentId);
+      } else if (merchantId) {
+        // Static QR / Manual Merchant Payment Flow
         result = await MerchantService.confirmManualPayment({
           merchantId,
           amount: transferAmount,
@@ -172,7 +177,7 @@ export default function ReviewTransferScreen() {
       const recipientDisplay = (merchantName as string) || (recipientName as string) || (recipient as string) || 'Recipient';
       NotificationService.transferSuccess(recipientDisplay, amount as string);
 
-      router.push({
+      router.replace({
         pathname: '/transfer/success',
         params: {
           recipient,
@@ -263,8 +268,8 @@ export default function ReviewTransferScreen() {
           <TransactionReviewCard 
             amount={transferAmount}
             toName={(merchantName as string) || (recipientName as string) || (recipient as string)}
-            toType={merchantId ? 'merchant' : 'user'}
-            transactionType={merchantId ? 'Merchant Payment' : 'Peer-to-Peer'}
+            toType={merchantId || paymentId ? 'merchant' : 'user'}
+            transactionType={paymentId ? 'QR Payment' : merchantId ? 'Merchant Payment' : 'Peer-to-Peer'}
             fee={fee}
             note={note as string}
           />
