@@ -27,6 +27,9 @@ public record TransferRequest(
         @Schema(description = "Currency code (3-letter ISO)", example = "THB")
         @NotBlank(message = "Currency is required")
         @Pattern(regexp = "^[A-Z]{3}$", message = "Currency must be a 3-letter uppercase code")
-        String currency
+        String currency,
+
+        @Schema(description = "Optional metadata for the transaction", example = "{\"silent\":true}")
+        Object metadata
 ) {
 }

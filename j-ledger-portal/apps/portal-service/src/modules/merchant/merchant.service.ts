@@ -446,6 +446,9 @@ export class MerchantService {
   // ==================== Merchant Payments (QR) ====================
 
   async generatePaymentQR(userId: string, merchantId: string, amount: number, terminalId?: string) {
+    if (amount < 5.00) {
+      throw new HttpException('Minimum payment amount for QR is ฿5.00', HttpStatus.BAD_REQUEST);
+    }
     // 1. Verify merchant belongs to user
     const merchant = await this.prisma.merchant.findFirst({
       where: { id: merchantId, partner: { userId } },
@@ -577,17 +580,24 @@ export class MerchantService {
         throw new HttpException('Customer wallet not found', HttpStatus.NOT_FOUND);
     }
 
-    // 3. Calculate 4-Way Split
+    // 3. Calculate 4-Way Split with Residual Adjustment
     const total = Number(payment.amount);
+    
+    if (total < 5.00) {
+        throw new HttpException('Minimum payment amount is ฿5.00', HttpStatus.BAD_REQUEST);
+    }
+
     const feeRate = Number(merchantPartner.feeRate || 0);
     
-    // Calculate shares (Standard logic for gross payment)
-    const merchantVat = total * (7 / 107); // Calculate VAT from gross amount (7% included)
-    const systemFee = total * feeRate;
-    const systemVat = systemFee * 0.07;
+    // 3.1 Calculate and round sub-legs (VAT and Fees) to 2 decimals
+    const merchantVat = Number((total * (7 / 107)).toFixed(2)); // vat 7% for merchant
+    const systemFee = Number((total * feeRate).toFixed(2)); // fee 3%
+    const systemVat = Number((systemFee * 0.07).toFixed(2)); // vat 7% for system
+    
+    // 3.2 Merchant Net is the residual (ensures sum is exactly equal to total)
     const merchantNet = total - merchantVat - systemFee - systemVat;
 
-    this.logger.log(`[processQRPayment] Executing split for payment=${paymentId}: Net=${merchantNet.toFixed(2)}, MVAT=${merchantVat.toFixed(2)}, Fee=${systemFee.toFixed(2)}, SVAT=${systemVat.toFixed(2)}`);
+    this.logger.log(`[processQRPayment] Executing split for payment=${paymentId}: Total=${total.toFixed(2)}, Net=${merchantNet.toFixed(2)}, MVAT=${merchantVat.toFixed(2)}, Fee=${systemFee.toFixed(2)}, SVAT=${systemVat.toFixed(2)}`);
 
     // 4. Perform Transfers (Ledger Commands)
     try {
@@ -598,42 +608,50 @@ export class MerchantService {
             amount: merchantNet.toFixed(2),
             idempotencyKey: `qr_pay_net_${payment.id}`,
             note: `QR Payment to ${payment.merchant.name}`,
-            type: 'MERCHANT_PAYMENT'
+            type: 'MERCHANT_PAYMENT',
+            metadata: { 
+              isMerchantPayment: true,
+              recipientName: payment.merchant.name,
+              totalAmount: total.toFixed(2)
+            }
         });
 
         // Leg 2: Merchant VAT (To VAT)
-        if (merchantVat > 0 && mAcc.vat) {
+        if (Number(merchantVat.toFixed(2)) > 0 && mAcc.vat) {
           await this.financeService.performTransfer({
             fromAccountId: customerWallet.walletId,
             toAccountId: mAcc.vat,
             amount: merchantVat.toFixed(2),
             idempotencyKey: `qr_pay_vat_${payment.id}`,
             type: 'MERCHANT_PAYMENT',
-            note: `Merchant VAT for QR ${payment.id}`
+            note: `Merchant VAT for QR ${payment.id}`,
+            metadata: { silent: true, isMerchantPayment: true, parentIdempotencyKey: `qr_pay_net_${payment.id}` }
           });
         }
 
         // Leg 3: System Fee (To System Revenue)
-        if (systemFee > 0 && sAcc.revenue) {
+        if (Number(systemFee.toFixed(2)) > 0 && sAcc.revenue) {
           await this.financeService.performTransfer({
             fromAccountId: customerWallet.walletId,
             toAccountId: sAcc.revenue,
             amount: systemFee.toFixed(2),
             idempotencyKey: `qr_pay_fee_${payment.id}`,
             type: 'MERCHANT_PAYMENT',
-            note: `System Fee for QR ${payment.id}`
+            note: `System Fee for QR ${payment.id}`,
+            metadata: { silent: true, isMerchantPayment: true, parentIdempotencyKey: `qr_pay_net_${payment.id}` }
           });
         }
 
         // Leg 4: System VAT (To System VAT Payable)
-        if (systemVat > 0 && sAcc.vat_payable) {
+        if (Number(systemVat.toFixed(2)) > 0 && sAcc.vat_payable) {
           await this.financeService.performTransfer({
             fromAccountId: customerWallet.walletId,
             toAccountId: sAcc.vat_payable,
             amount: systemVat.toFixed(2),
             idempotencyKey: `qr_pay_svat_${payment.id}`,
             type: 'MERCHANT_PAYMENT',
-            note: `Service VAT for QR ${payment.id}`
+            note: `Service VAT for QR ${payment.id}`,
+            metadata: { silent: true, isMerchantPayment: true, parentIdempotencyKey: `qr_pay_net_${payment.id}` }
           });
         }
 
@@ -723,13 +741,21 @@ export class MerchantService {
       throw new HttpException('Customer wallet not found', HttpStatus.NOT_FOUND);
     }
 
-    // Calculate Split
+    // Calculate Split with Residual Adjustment
     const total = Number(amount);
+
+    if (total < 5.00) {
+      throw new HttpException('Minimum payment amount is ฿5.00', HttpStatus.BAD_REQUEST);
+    }
+
     const feeRate = Number(partner.feeRate || 0);
     
-    const merchantVat = total * (7 / 107);
-    const systemFee = total * feeRate;
-    const systemVat = systemFee * 0.07;
+    // 1. Calculate and round sub-legs (VAT and Fees) to 2 decimals
+    const merchantVat = Number((total * (7 / 107)).toFixed(2));
+    const systemFee = Number((total * feeRate).toFixed(2));
+    const systemVat = Number((systemFee * 0.07).toFixed(2));
+    
+    // 2. Merchant Net is the residual (ensures sum is exactly equal to total)
     const merchantNet = total - merchantVat - systemFee - systemVat;
 
     this.logger.log(`[processManualPayment] Split for manual pay=${merchantId}: Net=${merchantNet.toFixed(2)}, MVAT=${merchantVat.toFixed(2)}, Fee=${systemFee.toFixed(2)}, SVAT=${systemVat.toFixed(2)}`);
@@ -744,42 +770,50 @@ export class MerchantService {
         amount: merchantNet.toFixed(2),
         idempotencyKey: `manual_leg_net_${idempotencyKey}`,
         note: note || `Manual Payment to ${merchant.name}`,
-        type: 'MERCHANT_PAYMENT'
+        type: 'MERCHANT_PAYMENT',
+        metadata: { 
+          isMerchantPayment: true,
+          recipientName: merchant.name,
+          totalAmount: total.toFixed(2)
+        }
       });
 
       // Leg 2: Merchant VAT
-      if (merchantVat > 0 && mAcc.vat) {
+      if (Number(merchantVat.toFixed(2)) > 0 && mAcc.vat) {
         await this.financeService.performTransfer({
           fromAccountId: customerWallet.walletId,
           toAccountId: mAcc.vat,
           amount: merchantVat.toFixed(2),
           idempotencyKey: `manual_leg_vat_${idempotencyKey}`,
           type: 'MERCHANT_PAYMENT',
-          note: `VAT for ${merchant.name}`
+          note: `VAT for ${merchant.name}`,
+          metadata: { silent: true, parentIdempotencyKey: `manual_leg_net_${idempotencyKey}`, isMerchantPayment: true }
         });
       }
 
       // Leg 3: System Fee
-      if (systemFee > 0 && sAcc.revenue) {
+      if (Number(systemFee.toFixed(2)) > 0 && sAcc.revenue) {
         await this.financeService.performTransfer({
           fromAccountId: customerWallet.walletId,
           toAccountId: sAcc.revenue,
           amount: systemFee.toFixed(2),
           idempotencyKey: `manual_leg_fee_${idempotencyKey}`,
           type: 'MERCHANT_PAYMENT',
-          note: `System Fee from ${merchant.name}`
+          note: `System Fee from ${merchant.name}`,
+          metadata: { silent: true, parentIdempotencyKey: `manual_leg_net_${idempotencyKey}`, isMerchantPayment: true }
         });
       }
 
       // Leg 4: System VAT
-      if (systemVat > 0 && sAcc.vat_payable) {
+      if (Number(systemVat.toFixed(2)) > 0 && sAcc.vat_payable) {
         await this.financeService.performTransfer({
           fromAccountId: customerWallet.walletId,
           toAccountId: sAcc.vat_payable,
           amount: systemVat.toFixed(2),
           idempotencyKey: `manual_leg_svat_${idempotencyKey}`,
           type: 'MERCHANT_PAYMENT',
-          note: `System VAT from ${merchant.name}`
+          note: `System VAT from ${merchant.name}`,
+          metadata: { silent: true, parentIdempotencyKey: `manual_leg_net_${idempotencyKey}`, isMerchantPayment: true }
         });
       }
 

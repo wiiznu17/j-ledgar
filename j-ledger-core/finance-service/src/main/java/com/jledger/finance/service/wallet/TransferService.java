@@ -69,7 +69,8 @@ public class TransferService {
                         Transaction transaction = walletService.transferByWalletId(
                             request.fromAccountId(),
                             request.toAccountId(),
-                            normalizedAmount
+                            normalizedAmount,
+                            request.metadata()
                         );
 
                         // 2. Cache successful result

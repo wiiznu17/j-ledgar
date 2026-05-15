@@ -33,6 +33,8 @@ public class P2pTransferRequest {
     @Pattern(regexp = "^[A-Z]{3}$", message = "currency must be 3-letter code (e.g., THB)")
     private String currency;
 
+    private Object metadata;
+
     /**
      * Validation: Ensure accounts are different
      */
@@ -52,7 +54,8 @@ public class P2pTransferRequest {
                 fromAccountId,
                 toAccountId,
                 amount,
-                currency
+                currency,
+                metadata
         );
     }
 }

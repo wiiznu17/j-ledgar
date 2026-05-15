@@ -62,6 +62,44 @@ interface GetTransactionsQuery {
   to?: string;
 }
 
+interface MerchantPayRequest {
+  fromWalletId: string;
+  toWalletId: string;
+  amount: string;
+  currency: string;
+  metadata?: Record<string, any>;
+}
+
+interface InternalTransferRequest {
+  idempotencyKey: string;
+  fromAccountId: string;
+  toAccountId: string;
+  amount: string;
+  currency: string;
+  metadata?: Record<string, any>;
+}
+
+interface TransactionResponse {
+  id: number;
+  transactionId: string;
+  type: string;
+  amount: number;
+  status: string;
+  description: string;
+  createdAt: string;
+}
+
+interface PerformTransferPayload {
+  fromAccountId: string;
+  toAccountId: string;
+  amount: string;
+  note?: string;
+  idempotencyKey: string;
+  type?: string;
+  currency?: string;
+  metadata?: Record<string, any>;
+}
+
 @Injectable()
 export class FinanceService {
   private readonly logger = new Logger(FinanceService.name);
@@ -321,43 +359,48 @@ export class FinanceService {
     }
   }
 
-  async performTransfer(payload: {
-    fromAccountId: string;
-    toAccountId: string;
-    amount: string;
-    note?: string;
-    idempotencyKey: string;
-    type?: string;
-    currency?: string;
-  }): Promise<any> {
+  async performTransfer(
+    payload: PerformTransferPayload,
+  ): Promise<TransactionResponse> {
     const isMerchant = payload.type === 'MERCHANT_PAYMENT';
-    const url = isMerchant 
+    const url = isMerchant
       ? `${this.financeServiceUrl}/api/finance/transactions/merchant-pay`
       : `${this.financeServiceUrl}/api/finance/transactions/p2p-transfer`;
-    
-    try {
-      const body = isMerchant ? {
-        fromWalletId: payload.fromAccountId,
-        toWalletId: payload.toAccountId,
-        amount: payload.amount,
-        currency: payload.currency || 'THB'
-      } : {
-        idempotencyKey: payload.idempotencyKey,
-        fromAccountId: payload.fromAccountId,
-        toAccountId: payload.toAccountId,
-        amount: payload.amount,
-        currency: payload.currency || 'THB'
-      };
 
-      const response = await this.httpService.axiosRef.post(url, body, {
-        headers: {
+    try {
+      const body: MerchantPayRequest | InternalTransferRequest = isMerchant
+        ? {
+            fromWalletId: payload.fromAccountId,
+            toWalletId: payload.toAccountId,
+            amount: payload.amount,
+            currency: payload.currency || 'THB',
+            metadata: payload.metadata,
+          }
+        : {
+            idempotencyKey: payload.idempotencyKey,
+            fromAccountId: payload.fromAccountId,
+            toAccountId: payload.toAccountId,
+            amount: payload.amount,
+            currency: payload.currency || 'THB',
+            metadata: payload.metadata,
+          };
+
+      const response = await this.httpService.axiosRef.post<TransactionResponse>(
+        url,
+        body,
+        {
+          headers: {
             ...this.getInternalHeaders(),
-            'Idempotency-Key': payload.idempotencyKey
+            'Idempotency-Key': payload.idempotencyKey,
+          },
         },
-      });
+      );
       return response.data;
     } catch (error: any) {
-      this.logCompactError(`performTransfer from=${payload.fromAccountId} to=${payload.toAccountId}`, error);
+      this.logCompactError(
+        `performTransfer from=${payload.fromAccountId} to=${payload.toAccountId}`,
+        error,
+      );
       this.rethrowAsHttpException(error, 'Failed to perform transfer');
     }
   }

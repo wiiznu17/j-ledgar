@@ -936,7 +936,7 @@ public class WalletService {
     }
 
     @Transactional
-    public Transaction transferByWalletId(String fromUserId, String toWalletId, BigDecimal amount) {
+    public Transaction transferByWalletId(String fromUserId, String toWalletId, BigDecimal amount, Object metadata) {
         // 1. Fetch source wallet ID to determine lock order
         Wallet fromWalletInfo = walletRepository.findByUserId(fromUserId)
                 .orElseThrow(() -> new RuntimeException("Source wallet not found"));
@@ -947,7 +947,7 @@ public class WalletService {
             toWalletIdLong = Long.parseLong(toWalletId);
         } catch (NumberFormatException e) {
             // It's a UUID (Account), delegate to the appropriate method
-            return transferWalletToAccount(fromUserId, toWalletId, amount);
+            return transferWalletToAccount(fromUserId, toWalletId, amount, metadata);
         }
         
         Long fromWalletId = fromWalletInfo.getId();
@@ -1022,7 +1022,22 @@ public class WalletService {
         transaction.setFromAccountId(senderAccount.getId());
         transaction.setToAccountId(receiverAccount.getId());
         transaction.setDescription("Transfer to wallet " + toWalletId);
-        transaction.setMetadata("{\"toWalletId\":\"" + toWalletId + "\"}");
+        
+        // Handle Metadata
+        Map<String, Object> metaMap = new HashMap<>();
+        metaMap.put("toWalletId", toWalletId);
+        if (metadata != null) {
+            if (metadata instanceof Map) {
+                metaMap.putAll((Map) metadata);
+            } else {
+                metaMap.put("extra", metadata);
+            }
+        }
+        try {
+            transaction.setMetadata(objectMapper.writeValueAsString(metaMap));
+        } catch (Exception e) {
+            logger.warn("Failed to serialize metadata for transfer: {}", e.getMessage());
+        }
 
         Transaction savedTransaction = transactionRepository.save(transaction);
         
@@ -1037,7 +1052,7 @@ public class WalletService {
     }
 
     @Transactional
-    public Transaction transferWalletToAccount(String fromUserId, String toAccountId, BigDecimal amount) {
+    public Transaction transferWalletToAccount(String fromUserId, String toAccountId, BigDecimal amount, Object metadata) {
         // 1. Fetch source wallet
         Wallet fromWallet = walletRepository.findByUserIdForUpdate(fromUserId)
                 .orElseThrow(() -> new RuntimeException("Source wallet not found"));
@@ -1081,7 +1096,22 @@ public class WalletService {
         transaction.setFromAccountId(senderAccount.getId());
         transaction.setToAccountId(UUID.fromString(toAccountId));
         transaction.setDescription("Merchant payment to account " + toAccountId);
-        transaction.setMetadata("{\"toAccountId\":\"" + toAccountId + "\"}");
+        
+        // Handle Metadata
+        Map<String, Object> metaMap = new HashMap<>();
+        metaMap.put("toAccountId", toAccountId);
+        if (metadata != null) {
+            if (metadata instanceof Map) {
+                metaMap.putAll((Map<String, Object>) metadata);
+            } else {
+                metaMap.put("extra", metadata);
+            }
+        }
+        try {
+            transaction.setMetadata(objectMapper.writeValueAsString(metaMap));
+        } catch (Exception e) {
+            logger.warn("Failed to serialize metadata for wallet-to-account: {}", e.getMessage());
+        }
 
         Transaction savedTransaction = transactionRepository.save(transaction);
 
@@ -1095,12 +1125,11 @@ public class WalletService {
         return savedTransaction;
     }
 
-    @Transactional
     public Transaction transferByQR(String fromUserId, String qrData, BigDecimal amount) {
         // Mock: Parse QR data to get wallet ID
         String toWalletId = qrData; // Simplified for mock
 
-        return transferByWalletId(fromUserId, toWalletId, amount);
+        return transferByWalletId(fromUserId, toWalletId, amount, null);
     }
 
     public String generateQR(String userId, BigDecimal amount) {

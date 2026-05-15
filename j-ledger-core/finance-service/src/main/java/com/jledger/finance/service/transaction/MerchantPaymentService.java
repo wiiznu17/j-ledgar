@@ -70,7 +70,8 @@ public class MerchantPaymentService {
                 Transaction transaction = walletService.transferWalletToAccount(
                     fromWallet.getUserId(),
                     request.toWalletId(),
-                    request.amount()
+                    request.amount(),
+                    request.metadata()
                 );
 
                 // 2. Calculate and Issue Rewards

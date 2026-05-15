@@ -24,7 +24,23 @@ export class NotificationService {
       `[HandleEvent] topic=${topic} eventType=${payload.eventType || payload.status} userId=${payload.userId}`,
     );
     try {
-      const { userId, eventType, referenceId, metadata, status } = payload;
+      let { userId, eventType, referenceId, metadata, status } = payload;
+      
+      // Ensure metadata is an object if it arrives as a string
+      if (typeof metadata === 'string') {
+        try {
+          metadata = JSON.parse(metadata);
+        } catch (e) {
+          this.logger.warn(`Failed to parse metadata string: ${metadata}`);
+        }
+      }
+
+      this.logger.debug(`[HandleEvent] metadata=${JSON.stringify(metadata || {})}`);
+
+      if (metadata?.silent === true || metadata?.silent === 'true') {
+        this.logger.debug(`Silent notification for user ${userId}, skipping.`);
+        return;
+      }
 
       // Map legacy status if coming from KYC events
       const actualEventType = eventType || payload.status || 'NOTIFICATION';
@@ -89,7 +105,7 @@ export class NotificationService {
       let pushSuccess = false;
 
       // Push Strategy
-      if (isSecurityEvent || prefs?.pushEnabled !== false) {
+      if (isSecurityEvent || (prefs?.pushEnabled !== false && metadata?.silent !== true)) {
         if (devices.length > 0) {
           pushAttempted = true;
           for (const device of devices) {
@@ -163,11 +179,17 @@ export class NotificationService {
     if (type === NotificationEventType.TOPUP) return 'Wallet Top-up';
     if (type === NotificationEventType.TRANSFER) {
       // Check if user is receiver based on metadata
+      if (metadata?.isMerchantPayment) return 'Merchant Payment';
       return metadata?.isReceiver ? 'Money Received' : 'Payment Sent';
     }
 
     if (type === NotificationEventType.LOYALTY_EARN) {
       return '🏆 ได้รับคะแนนสะสม!';
+    }
+
+    if (type === NotificationEventType.FINANCE || type === 'FINANCE') {
+      if (metadata?.isMerchantPayment) return 'Merchant Payment Successful';
+      return 'Account Activity Update';
     }
 
     return 'J-Ledger Notification';
@@ -178,7 +200,8 @@ export class NotificationService {
     eventType: string,
     metadata: any,
   ): Promise<string> {
-    const amount = Number(metadata?.amount || 0).toLocaleString(undefined, {
+    const displayAmount = metadata?.totalAmount || metadata?.amount || 0;
+    const amount = Number(displayAmount).toLocaleString(undefined, {
       minimumFractionDigits: 2,
       maximumFractionDigits: 2,
     });
@@ -232,10 +255,17 @@ export class NotificationService {
           }
 
           const sender = senderName || 'a J-Ledger user';
+          if (metadata?.isMerchantPayment) {
+             return `You have received a payment of ฿${amount} from ${sender}.${refText}`;
+          }
           return `You have received ฿${amount} from ${sender}.${refText}`;
         } else {
           const recipient =
             metadata?.recipientName || metadata?.recipientPhone || 'Recipient';
+          
+          if (metadata?.isMerchantPayment) {
+            return `Payment of ฿${amount} to ${recipient} was successful.${refText}`;
+          }
           return `Payment of ฿${amount} to ${recipient} has been processed successfully.${refText}`;
         }
 
@@ -246,6 +276,14 @@ export class NotificationService {
           metadata?.source === 'TOPUP' ? 'การเติมเงิน' : 'การโอนเงิน';
         const expiry = metadata?.expiresPeriod || 'เร็วๆ นี้';
         return `คุณได้รับ ${pts} แต้มจาก${sourceName} แต้มสะสมรวม ${total} แต้ม (หมดอายุ ${expiry})`;
+
+      case NotificationEventType.FINANCE:
+      case 'FINANCE':
+        if (metadata?.isMerchantPayment) {
+          const merchantName = metadata?.recipientName || 'Merchant';
+          return `Payment of ฿${amount} to ${merchantName} was successful.${refText}`;
+        }
+        return `Your transaction of ฿${amount} has been processed successfully.${refText}`;
 
       default:
         return `You have a new update regarding your account activities.`;

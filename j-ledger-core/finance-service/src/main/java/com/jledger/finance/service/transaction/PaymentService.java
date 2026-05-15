@@ -85,7 +85,8 @@ public class PaymentService {
                     SYSTEM_BANK_ACCOUNT_ID.toString(),
                     payment.getAccountId().toString(),
                     payment.getAmount(),
-                    DEFAULT_CURRENCY
+                    DEFAULT_CURRENCY,
+                    null
             );
 
             // Use reference_id as idempotency key for the ledger transfer to ensure one-to-one mapping

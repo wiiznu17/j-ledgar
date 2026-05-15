@@ -25,15 +25,20 @@ export class BillingService {
     const { items, ...rest } = dto;
 
     try {
-      // Calculate totals
+      // Calculate totals with consistent rounding
       const subtotal = items.reduce(
         (sum, item) => sum + item.unitPrice * item.quantity,
         0,
       );
-      const tax = subtotal * 0.07;
+      const tax = Number((subtotal * 0.07).toFixed(2));
       const total = subtotal + tax;
+
+      if (total < 5.00) {
+        throw new BadRequestException('Minimum invoice amount is ฿5.00');
+      }
+
       this.logger.log(
-        `[createInvoice] Totals calculated: subtotal=${subtotal}, total=${total}`,
+        `[createInvoice] Totals calculated: subtotal=${subtotal.toFixed(2)}, tax=${tax.toFixed(2)}, total=${total.toFixed(2)}`,
       );
 
       // Generate Invoice Number: INV-YYYYMMDD-XXXXXX-RAND
@@ -59,10 +64,10 @@ export class BillingService {
         });
         if (partner) {
           feeRate = partner.feeRate;
-          // Calculate fee from TOTAL amount (Gross) as per recommendation
-          feeAmount = total * Number(feeRate);
-          feeTax = feeAmount * 0.07;
-          this.logger.log(`[createInvoice] Platform fees calculated: feeAmount=${feeAmount}, feeTax=${feeTax}`);
+          // Calculate fee from TOTAL amount (Gross) and round to 2 decimals
+          feeAmount = Number((total * Number(feeRate)).toFixed(2));
+          feeTax = Number((feeAmount * 0.07).toFixed(2));
+          this.logger.log(`[createInvoice] Platform fees calculated: feeAmount=${feeAmount.toFixed(2)}, feeTax=${feeTax.toFixed(2)}`);
         }
       }
 
@@ -157,14 +162,16 @@ export class BillingService {
         const mAcc = partner.financeAccounts as any;
         const sAcc = systemPartner.financeAccounts as any;
 
-        // Calculate Split (All based on recorded values at creation)
+        // Calculate Split (All based on rounded values recorded at creation)
         const total = Number(invoice.total);
         const merchantVat = Number(invoice.tax);
         const systemFee = Number(invoice.feeAmount || 0);
         const systemVat = Number(invoice.feeTax || 0);
+        
+        // Merchant Net is the residual to ensure total balance
         const merchantNet = total - merchantVat - systemFee - systemVat;
-
-        this.logger.log(`[payInvoice] Executing 4-way split for invoice=${invoice.id}: Net=${merchantNet}, MVAT=${merchantVat}, Fee=${systemFee}, SVAT=${systemVat}`);
+ 
+        this.logger.log(`[payInvoice] Executing 4-way split for invoice=${invoice.id}: Total=${total.toFixed(2)}, Net=${merchantNet.toFixed(2)}, MVAT=${merchantVat.toFixed(2)}, Fee=${systemFee.toFixed(2)}, SVAT=${systemVat.toFixed(2)}`);
 
         // Leg 1: Merchant Net (To Pending)
         await this.financeService.performTransfer({
@@ -173,42 +180,49 @@ export class BillingService {
           amount: merchantNet.toFixed(2),
           idempotencyKey: `pay_leg_net_${invoice.id}`,
           type: 'MERCHANT_PAYMENT',
-          note: `Payment for INV ${invoice.invoiceNumber}`
+          note: `Payment for INV ${invoice.invoiceNumber}`,
+          metadata: { 
+            isMerchantPayment: true,
+            totalAmount: total.toFixed(2)
+          }
         });
 
         // Leg 2: Merchant VAT (To VAT)
-        if (merchantVat > 0 && mAcc.vat) {
+        if (Number(merchantVat.toFixed(2)) > 0 && mAcc.vat) {
           await this.financeService.performTransfer({
             fromAccountId: userWallet.walletId,
             toAccountId: mAcc.vat,
             amount: merchantVat.toFixed(2),
             idempotencyKey: `pay_leg_vat_${invoice.id}`,
             type: 'MERCHANT_PAYMENT',
-            note: `VAT for INV ${invoice.invoiceNumber}`
+            note: `VAT for INV ${invoice.invoiceNumber}`,
+            metadata: { silent: true, isMerchantPayment: true, parentIdempotencyKey: `pay_leg_net_${invoice.id}` }
           });
         }
 
         // Leg 3: System Fee (To System Revenue)
-        if (systemFee > 0 && sAcc.revenue) {
+        if (Number(systemFee.toFixed(2)) > 0 && sAcc.revenue) {
           await this.financeService.performTransfer({
             fromAccountId: userWallet.walletId,
             toAccountId: sAcc.revenue,
             amount: systemFee.toFixed(2),
             idempotencyKey: `pay_leg_fee_${invoice.id}`,
             type: 'MERCHANT_PAYMENT',
-            note: `Fee for INV ${invoice.invoiceNumber}`
+            note: `Fee for INV ${invoice.invoiceNumber}`,
+            metadata: { silent: true, isMerchantPayment: true, parentIdempotencyKey: `pay_leg_net_${invoice.id}` }
           });
         }
 
         // Leg 4: System VAT (To System VAT Payable)
-        if (systemVat > 0 && sAcc.vat_payable) {
+        if (Number(systemVat.toFixed(2)) > 0 && sAcc.vat_payable) {
           await this.financeService.performTransfer({
             fromAccountId: userWallet.walletId,
             toAccountId: sAcc.vat_payable,
             amount: systemVat.toFixed(2),
             idempotencyKey: `pay_leg_svat_${invoice.id}`,
             type: 'MERCHANT_PAYMENT',
-            note: `Service VAT for INV ${invoice.invoiceNumber}`
+            note: `Service VAT for INV ${invoice.invoiceNumber}`,
+            metadata: { silent: true, isMerchantPayment: true, parentIdempotencyKey: `pay_leg_net_${invoice.id}` }
           });
         }
       }

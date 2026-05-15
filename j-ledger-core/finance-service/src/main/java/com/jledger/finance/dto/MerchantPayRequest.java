@@ -7,5 +7,6 @@ public record MerchantPayRequest(
     String fromWalletId,
     String toWalletId,
     BigDecimal amount,
-    String currency
+    String currency,
+    Object metadata
 ) {}
