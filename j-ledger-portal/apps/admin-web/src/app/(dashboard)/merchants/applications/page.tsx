@@ -15,6 +15,15 @@ import {
 import { toast } from 'sonner';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { Textarea } from "@/components/ui/textarea";
 
 import { merchantRequester } from '@/lib/requesters';
 import { MerchantApplicationTable } from '@/components/merchants/MerchantApplicationTable';
@@ -70,20 +79,47 @@ export default function ApplicationsPage() {
     setPage(1);
   };
 
+  // Rejection Dialog State
+  const [isRejectDialogOpen, setIsRejectDialogOpen] = useState(false);
+  const [selectedAppId, setSelectedAppId] = useState<string | null>(null);
+  const [rejectionNote, setRejectionNote] = useState('');
+
   const handleReview = async (id: string, newStatus: 'APPROVED' | 'REJECTED') => {
+    if (newStatus === 'REJECTED') {
+      setSelectedAppId(id);
+      setRejectionNote('');
+      setIsRejectDialogOpen(true);
+      return;
+    }
+
+    // Direct approval
+    await processReview(id, 'APPROVED');
+  };
+
+  const processReview = async (id: string, status: 'APPROVED' | 'REJECTED', note?: string) => {
     const promise = merchantRequester.reviewApplication(id, { 
-      status: newStatus,
-      note: `Reviewed via Admin Portal at ${new Date().toLocaleString()}`
+      status,
+      note: note || `Reviewed via Admin Portal at ${new Date().toLocaleString()}`
     });
 
     toast.promise(promise, {
-      loading: `Processing ${newStatus.toLowerCase()}...`,
+      loading: `Processing ${status.toLowerCase()}...`,
       success: () => {
         fetchApplications(); // Refresh list
-        return `Application ${newStatus.toLowerCase()} successfully`;
+        setIsRejectDialogOpen(false);
+        return `Application ${status.toLowerCase()} successfully`;
       },
       error: 'Failed to process application review',
     });
+  };
+
+  const handleConfirmReject = () => {
+    if (!selectedAppId) return;
+    if (!rejectionNote.trim()) {
+      toast.error('Please provide a reason for rejection');
+      return;
+    }
+    processReview(selectedAppId, 'REJECTED', rejectionNote);
   };
 
   return (
@@ -184,6 +220,32 @@ export default function ApplicationsPage() {
           />
         </CardContent>
       </Card>
+
+      <Dialog open={isRejectDialogOpen} onOpenChange={setIsRejectDialogOpen}>
+        <DialogContent className="sm:max-w-[425px]">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2 text-rose-600">
+              <AlertCircle className="w-5 h-5" />
+              Reject Application
+            </DialogTitle>
+            <DialogDescription>
+              Please provide a reason for rejecting this merchant application. This note will be visible to the applicant.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="grid gap-4 py-4">
+            <Textarea
+              placeholder="e.g. Identity documents are blurry, please re-upload."
+              value={rejectionNote}
+              onChange={(e) => setRejectionNote(e.target.value)}
+              className="min-h-[100px]"
+            />
+          </div>
+          <DialogFooter>
+            <Button variant="ghost" onClick={() => setIsRejectDialogOpen(false)}>Cancel</Button>
+            <Button variant="destructive" onClick={handleConfirmReject}>Confirm Rejection</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

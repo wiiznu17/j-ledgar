@@ -224,12 +224,23 @@ export class MerchantService {
     }
 
     if (body.status === 'REJECTED') {
-      return this.prisma.merchantApplication.update({
-        where: { id },
-        data: {
-          status: 'REJECTED',
-          reviewNote: body.note,
-        },
+      return this.prisma.$transaction(async (tx) => {
+        // Update Application
+        const updatedApp = await tx.merchantApplication.update({
+          where: { id },
+          data: {
+            status: 'REJECTED',
+            reviewNote: body.note,
+          },
+        });
+
+        // Update Partner
+        await tx.partner.update({
+          where: { id: application.partnerId },
+          data: { status: 'REJECTED' },
+        });
+
+        return updatedApp;
       });
     }
 
@@ -869,6 +880,19 @@ export class MerchantService {
       };
     }
 
+    if (partner.status === 'REJECTED') {
+      const application = await this.prisma.merchantApplication.findFirst({
+        where: { partnerId: partner.id },
+        orderBy: { createdAt: 'desc' },
+      });
+      return {
+        isMerchant: false,
+        applicationStatus: 'REJECTED',
+        rejectionReason: application?.reviewNote,
+        message: 'Your merchant application was rejected',
+      };
+    }
+
     const merchants = await this.prisma.merchant.findMany({
       where: { partnerId: partner.id },
       select: { id: true },
@@ -938,7 +962,7 @@ export class MerchantService {
       },
     });
 
-    if (existingPartner) {
+    if (existingPartner && existingPartner.status !== 'REJECTED') {
       const message = existingPartner.userId === userId 
         ? 'You already have a merchant account or pending application'
         : 'This Tax ID is already registered by another user';
@@ -951,26 +975,36 @@ export class MerchantService {
       : body.phone;
 
     return this.prisma.$transaction(async (tx) => {
-      // 2. Create Partner record
-      const partner = await tx.partner.create({
-        data: {
-          userId,
-          name: body.businessName,
-          taxId: body.taxId,
-          status: 'PENDING_REVIEW',
-          metadata: {
-            contactName: body.contactName,
-            email: body.email || '',
-            phone: formattedPhone,
-            address: body.address,
-            addressDetail: body.addressDetail,
-            category: body.category,
-            businessNameEn: body.businessNameEn,
-            images: body.images || [],
-            location: body.latitude && body.longitude ? { lat: Number(body.latitude), lng: Number(body.longitude) } : null,
-          } as any,
-        },
-      });
+      // 2. Create or Update Partner record
+      let partner;
+      const partnerData = {
+        userId,
+        name: body.businessName,
+        taxId: body.taxId,
+        status: 'PENDING_REVIEW' as any,
+        metadata: {
+          contactName: body.contactName,
+          email: body.email || '',
+          phone: formattedPhone,
+          address: body.address,
+          addressDetail: body.addressDetail,
+          category: body.category,
+          businessNameEn: body.businessNameEn,
+          images: body.images || [],
+          location: body.latitude && body.longitude ? { lat: Number(body.latitude), lng: Number(body.longitude) } : null,
+        } as any,
+      };
+
+      if (existingPartner) {
+        partner = await tx.partner.update({
+          where: { id: existingPartner.id },
+          data: partnerData,
+        });
+      } else {
+        partner = await tx.partner.create({
+          data: partnerData,
+        });
+      }
 
       // 3. Create MerchantApplication record
       const application = await tx.merchantApplication.create({

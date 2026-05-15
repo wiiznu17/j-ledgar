@@ -52,6 +52,7 @@ export default function MerchantDashboard() {
   // Handle Non-Merchant or Pending status
   if (data && !data.isMerchant) {
     const isPending = data.applicationStatus === 'PENDING';
+    const isRejected = data.applicationStatus === 'REJECTED';
 
     return (
       <SafeAreaView className="flex-1 bg-[#f8f9fe]">
@@ -65,25 +66,36 @@ export default function MerchantDashboard() {
           <MotiView 
             from={{ opacity: 0, scale: 0.5 }}
             animate={{ opacity: 1, scale: 1 }}
-            className="w-24 h-24 bg-pink-50 rounded-[2.5rem] items-center justify-center mb-8 border border-pink-100"
+            className={`w-24 h-24 ${isRejected ? 'bg-red-50 border-red-100' : 'bg-pink-50 border-pink-100'} rounded-[2.5rem] items-center justify-center mb-8 border`}
           >
-            <Store size={48} color="#f48fb1" />
+            {isRejected ? (
+              <AlertTriangle size={48} color="#ef4444" />
+            ) : (
+              <Store size={48} color="#f48fb1" />
+            )}
           </MotiView>
-          <Text className="text-2xl font-black font-manrope text-gray-800 text-center mb-3">
-            {isPending ? 'Application Pending' : 'Become a Partner'}
+          <Text className={`text-2xl font-black font-manrope ${isRejected ? 'text-red-600' : 'text-gray-800'} text-center mb-3`}>
+            {isPending ? 'Application Pending' : isRejected ? 'Application Rejected' : 'Become a Partner'}
           </Text>
-          <Text className="text-sm text-gray-400 font-bold text-center mb-10 px-4 leading-5">
-            {isPending 
-              ? 'Your merchant application is currently being reviewed by our team. We will notify you once it is approved.' 
-              : 'Grow your business with J-Ledger. Accept payments, manage terminals, and run loyalty programs directly from your wallet.'}
-          </Text>
+          
+          <View className="bg-white/50 p-4 rounded-2xl mb-10 w-full border border-gray-100">
+            <Text className="text-sm text-gray-500 font-bold text-center leading-5">
+              {isPending 
+                ? 'Your merchant application is currently being reviewed by our team. We will notify you once it is approved.' 
+                : isRejected 
+                ? `Reason: ${data.rejectionReason || 'Please review your information and try again.'}`
+                : 'Grow your business with J-Ledger. Accept payments, manage terminals, and run loyalty programs directly from your wallet.'}
+            </Text>
+          </View>
           
           {!isPending ? (
             <TouchableOpacity 
               onPress={() => router.push('/merchant/apply' as any)}
-              className="bg-[#f48fb1] w-full py-5 rounded-2xl shadow-lg shadow-pink-200 active:scale-95"
+              className={`${isRejected ? 'bg-gray-900' : 'bg-[#f48fb1]'} w-full py-5 rounded-2xl shadow-lg active:scale-95`}
             >
-              <Text className="text-white text-center font-black font-manrope text-base">Start Application</Text>
+              <Text className="text-white text-center font-black font-manrope text-base">
+                {isRejected ? 'Edit & Resubmit' : 'Start Application'}
+              </Text>
             </TouchableOpacity>
           ) : (
             <TouchableOpacity 

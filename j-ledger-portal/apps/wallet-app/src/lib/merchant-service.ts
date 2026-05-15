@@ -4,6 +4,7 @@ export interface MerchantDashboardData {
   isMerchant: boolean;
   merchantId?: string;
   applicationStatus: string | null;
+  rejectionReason?: string;
   message?: string;
   totalRevenue?: number;
   totalTransactions?: number;

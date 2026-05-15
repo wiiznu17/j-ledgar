@@ -922,6 +922,7 @@ enum PartnerStatus {
   ACTIVE
   INACTIVE
   SUSPENDED
+  REJECTED
 
   @@schema("merchant")
 }
