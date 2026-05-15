@@ -54,8 +54,8 @@ export default function MerchantManualPayScreen() {
   };
 
   const handleNext = () => {
-    if (!amount || parseFloat(amount) <= 0) {
-      Alert.alert('Invalid Amount', 'Please enter a valid amount.');
+    if (!amount || parseFloat(amount) < 5.00) {
+      Alert.alert('Invalid Amount', 'Minimum payment amount is ฿5.00.');
       return;
     }
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
@@ -145,6 +145,12 @@ export default function MerchantManualPayScreen() {
             style={{ fontSize: 44, minWidth: 120 }}
           />
         </View>
+
+        {amount !== '' && parseFloat(amount) < 5.00 && (
+          <Text className="text-[10px] font-manrope font-bold text-red-400 mb-6 uppercase tracking-wider">
+            Minimum payment is ฿5.00
+          </Text>
+        )}
 
         <View className="flex-row gap-3">
           {['100', '500', '1,000'].map((val) => (

@@ -48,8 +48,8 @@ export default function MerchantPaymentQRScreen() {
   }, []);
 
   const handleGenerateDynamicQR = async () => {
-    if (!amount || parseFloat(amount || '0') <= 0) {
-      Alert.alert('Invalid Amount', 'Please enter a valid amount.');
+    if (!amount || parseFloat(amount || '0') < 5.00) {
+      Alert.alert('Invalid Amount', 'Minimum payment amount is ฿5.00.');
       return;
     }
     if (!merchantId) return;
@@ -162,6 +162,11 @@ export default function MerchantPaymentQRScreen() {
                   />
                   <TouchableOpacity onPress={() => setShowAmountInput(false)}><X size={20} color="#9ca3af" /></TouchableOpacity>
                 </View>
+                {amount && parseFloat(amount) < 5.00 && (
+                  <Text style={{ fontSize: 11, fontFamily: 'Manrope_600SemiBold', color: '#f87171', marginBottom: 12, marginLeft: 4 }}>
+                    * Minimum amount is ฿5.00
+                  </Text>
+                )}
                 <TouchableOpacity
                   onPress={handleGenerateDynamicQR}
                   disabled={isGenerating || !amount}

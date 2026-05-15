@@ -1517,11 +1517,12 @@ export class IdentityService {
       ? JSON.parse(profileSetting.value)
       : null;
 
-    // Decrypt ID card number if available
+    // Decrypt and mask ID card number if available
     let idNumber = null;
     if (kycData?.idCardNumberEncrypted) {
       try {
-        idNumber = this.decryptPii(kycData.idCardNumberEncrypted);
+        const fullId = this.decryptPii(kycData.idCardNumberEncrypted);
+        idNumber = this.maskIdCardNumber(fullId);
       } catch (e) {
         this.logger.warn(
           `Failed to decrypt ID number for status check: ${user.id}`,
@@ -2109,5 +2110,11 @@ export class IdentityService {
       this.logger.error(`Decryption failed: ${error.message}`);
       throw new Error('Could not decrypt PII data');
     }
+  }
+
+  private maskIdCardNumber(id: string): string {
+    if (!id || id.length < 13) return id;
+    // Format: X-XXXX-XXXXX-XX-X -> 1-2345-XXXXX-01-2
+    return `${id.slice(0, 1)}-${id.slice(1, 5)}-XXXXX-${id.slice(10, 12)}-${id.slice(12)}`;
   }
 }

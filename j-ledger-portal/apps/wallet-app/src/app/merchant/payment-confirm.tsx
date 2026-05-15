@@ -254,6 +254,23 @@ export default function MerchantPaymentConfirmScreen() {
             </View>
           </View>
 
+          {/* Minimum Amount Warning */}
+          {totalAmount < 5.00 && (
+            <View className="bg-red-50 p-5 rounded-2xl border border-red-100 flex-row items-center gap-4 mb-4">
+              <View className="w-10 h-10 rounded-xl bg-white items-center justify-center border border-red-100">
+                <Text className="text-xl">⚠️</Text>
+              </View>
+              <View className="flex-1">
+                <Text className="text-[10px] font-manrope font-black text-red-600 uppercase tracking-widest mb-1">
+                  Minimum Amount Required
+                </Text>
+                <Text className="text-xs font-manrope font-bold text-red-500 leading-relaxed">
+                  Merchant payments must be at least ฿5.00. Please contact the merchant.
+                </Text>
+              </View>
+            </View>
+          )}
+
           {/* Trust Banner */}
           <View className="bg-green-50/50 p-5 rounded-2xl border border-green-100/50 flex-row items-center gap-4 mb-4">
             <View className="w-10 h-10 rounded-xl bg-white items-center justify-center border border-green-100">
@@ -323,10 +340,10 @@ export default function MerchantPaymentConfirmScreen() {
         style={{ paddingBottom: Platform.OS === 'ios' ? 34 : 24 }}
       >
         <TouchableOpacity
-          disabled={isProcessing || isConfirming || !paymentDetail}
+          disabled={isProcessing || isConfirming || !paymentDetail || totalAmount < 5.00}
           onPress={handleConfirm}
           className={`w-full h-16 rounded-2xl flex-row items-center justify-center gap-3 transition-all ${
-            isProcessing || isConfirming || !paymentDetail
+            isProcessing || isConfirming || !paymentDetail || totalAmount < 5.00
               ? 'bg-pink-300'
               : 'bg-[#f48fb1] active:scale-95'
           }`}

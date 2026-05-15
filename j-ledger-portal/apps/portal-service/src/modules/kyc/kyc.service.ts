@@ -748,7 +748,7 @@ export class KycService {
 
     return {
       extractedData: {
-        idCardNumber: idCardNumber,
+        idCardNumber: this.maskIdCardNumber(idCardNumber),
         ...extraction, // Spread names, dates, etc.
       },
       livenessSessionId,
@@ -1305,5 +1305,11 @@ export class KycService {
 
   private hashString(str: string): string {
     return createHash('sha256').update(str, 'utf8').digest('hex');
+  }
+
+  private maskIdCardNumber(id: string): string {
+    if (!id || id.length < 13) return id;
+    // Format: X-XXXX-XXXXX-XX-X -> 1-2345-XXXXX-01-2
+    return `${id.slice(0, 1)}-${id.slice(1, 5)}-XXXXX-${id.slice(10, 12)}-${id.slice(12)}`;
   }
 }

@@ -135,11 +135,26 @@ api.interceptors.response.use(
   },
   async (error) => {
     const originalRequest = error.config;
-    console.error(`[Axios] Error: [${originalRequest?.method?.toUpperCase()}] ${originalRequest?.url}`, {
-      status: error.response?.status,
-      message: error.message,
-      data: error.response?.data
-    });
+    const status = error.response?.status;
+
+    // Differentiate between initial 401 (warn) and retry 401 (error)
+    if (status === 401) {
+      if (!originalRequest._retry) {
+        console.warn(`[Axios] Potential token expiry (401): [${originalRequest?.method?.toUpperCase()}] ${originalRequest?.url}`);
+      } else {
+        console.error(`[Axios] Critical Unauthorized (401): [${originalRequest?.method?.toUpperCase()}] ${originalRequest?.url}`, {
+          status,
+          message: error.message,
+          data: error.response?.data
+        });
+      }
+    } else {
+      console.error(`[Axios] Error: [${originalRequest?.method?.toUpperCase()}] ${originalRequest?.url}`, {
+        status,
+        message: error.message,
+        data: error.response?.data
+      });
+    }
 
     // If error is 401 and we haven't retried yet
     // Do NOT auto-lock or refresh if the request was to login, register or initial auth flows
