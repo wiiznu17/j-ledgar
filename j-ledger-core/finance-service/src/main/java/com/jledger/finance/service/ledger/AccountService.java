@@ -1,5 +1,6 @@
 package com.jledger.finance.service.ledger;
 
+import com.jledger.finance.exception.ResourceNotFoundException;
 import com.jledger.finance.domain.entity.Account;
 import com.jledger.finance.repository.ledger.AccountRepository;
 import lombok.RequiredArgsConstructor;
@@ -19,7 +20,7 @@ public class AccountService {
     @Transactional
     public Account updateAccountStatus(UUID id, String status) {
         Account account = accountRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Account not found"));
+                .orElseThrow(() -> new ResourceNotFoundException("Account not found"));
         
         account.setStatus(status);
         Account updated = accountRepository.save(account);

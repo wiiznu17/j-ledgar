@@ -27,6 +27,8 @@ export interface HistoryItem {
   paymentIntentId?: string;
   orderId?: string;
   reference?: string;
+  netAmount?: string;
+  feeAmount?: string;
 }
 
 export interface HistoryFilter {

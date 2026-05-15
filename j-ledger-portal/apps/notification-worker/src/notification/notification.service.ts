@@ -72,7 +72,7 @@ export class NotificationService {
       }
 
       const title = await this.generateTitle(topic, actualEventType, metadata);
-      const body = await this.generateBody(topic, actualEventType, metadata);
+      const body = await this.generateBody(topic, actualEventType, metadata, payload.amount);
       const { category, path } = this.getCategoryAndPath(
         actualEventType,
         metadata,
@@ -199,8 +199,9 @@ export class NotificationService {
     topic: string,
     eventType: string,
     metadata: any,
+    topLevelAmount?: number | string
   ): Promise<string> {
-    const displayAmount = metadata?.totalAmount || metadata?.amount || 0;
+    const displayAmount = metadata?.totalAmount || metadata?.amount || topLevelAmount || 0;
     const amount = Number(displayAmount).toLocaleString(undefined, {
       minimumFractionDigits: 2,
       maximumFractionDigits: 2,

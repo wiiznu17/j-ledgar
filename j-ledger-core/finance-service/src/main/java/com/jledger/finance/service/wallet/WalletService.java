@@ -17,6 +17,8 @@ import com.jledger.finance.repository.ledger.AccountRepository;
 import com.jledger.finance.repository.ledger.LedgerEntryRepository;
 import com.jledger.finance.domain.entity.LedgerEntry;
 
+import com.jledger.finance.exception.ResourceNotFoundException;
+import com.jledger.finance.exception.ConflictException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -26,6 +28,8 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.transaction.support.TransactionSynchronization;
+import org.springframework.transaction.support.TransactionSynchronizationManager;
 
 import org.springframework.dao.DataIntegrityViolationException;
 import java.math.BigDecimal;
@@ -77,7 +81,7 @@ public class WalletService {
 
     public Wallet createWallet(String userId, String currency) {
         if (walletRepository.existsByUserId(userId)) {
-            throw new RuntimeException("Wallet already exists for user");
+            throw new ConflictException("Wallet already exists for user");
         }
 
         Wallet wallet = new Wallet();
@@ -122,15 +126,15 @@ public class WalletService {
     @Transactional
     public Wallet updateBalance(String userId, BigDecimal amount) {
         Wallet wallet = walletRepository.findByUserId(userId)
-                .orElseThrow(() -> new RuntimeException("Wallet not found"));
+                .orElseThrow(() -> new ResourceNotFoundException("Wallet not found"));
 
         if (!wallet.getIsActive()) {
-            throw new RuntimeException("Wallet is inactive");
+            throw new IllegalArgumentException("Wallet is inactive");
         }
 
         BigDecimal newBalance = wallet.getBalance().add(amount);
         if (newBalance.compareTo(BigDecimal.ZERO) < 0) {
-            throw new RuntimeException("Insufficient balance");
+            throw new IllegalArgumentException("Insufficient balance");
         }
 
         wallet.setBalance(newBalance);
@@ -140,14 +144,14 @@ public class WalletService {
     }
 
     public boolean validateTransaction(String userId, BigDecimal amount) {
-        Wallet wallet = getWallet(userId).orElseThrow(() -> new RuntimeException("Wallet not found"));
+        Wallet wallet = getWallet(userId).orElseThrow(() -> new ResourceNotFoundException("Wallet not found"));
 
         if (amount.compareTo(TRANSACTION_LIMIT) > 0) {
-            throw new RuntimeException("Transaction amount exceeds limit");
+            throw new IllegalArgumentException("Transaction amount exceeds limit");
         }
 
         if (wallet.getBalance().compareTo(amount) < 0) {
-            throw new RuntimeException("Insufficient balance");
+            throw new IllegalArgumentException("Insufficient balance");
         }
 
         return true;
@@ -155,7 +159,7 @@ public class WalletService {
 
     public Wallet deactivateWallet(String userId) {
         Wallet wallet = walletRepository.findByUserId(userId)
-                .orElseThrow(() -> new RuntimeException("Wallet not found"));
+                .orElseThrow(() -> new ResourceNotFoundException("Wallet not found"));
         wallet.setIsActive(false);
         return walletRepository.save(Objects.requireNonNull(wallet));
     }
@@ -169,41 +173,41 @@ public class WalletService {
 
     public Wallet activateWallet(String userId) {
         Wallet wallet = walletRepository.findByUserId(userId)
-                .orElseThrow(() -> new RuntimeException("Wallet not found"));
+                .orElseThrow(() -> new ResourceNotFoundException("Wallet not found"));
         wallet.setIsActive(true);
         return walletRepository.save(Objects.requireNonNull(wallet));
     }
 
     public Wallet freezeWallet(String userId) {
         Wallet wallet = walletRepository.findByUserId(userId)
-                .orElseThrow(() -> new RuntimeException("Wallet not found"));
+                .orElseThrow(() -> new ResourceNotFoundException("Wallet not found"));
         wallet.setStatus("FROZEN");
         return walletRepository.save(Objects.requireNonNull(wallet));
     }
 
     public Wallet unfreezeWallet(String userId) {
         Wallet wallet = walletRepository.findByUserId(userId)
-                .orElseThrow(() -> new RuntimeException("Wallet not found"));
+                .orElseThrow(() -> new ResourceNotFoundException("Wallet not found"));
         wallet.setStatus("ACTIVE");
         return walletRepository.save(Objects.requireNonNull(wallet));
     }
 
     public List<Transaction> getTopUpHistory(String userId) {
         Wallet wallet = walletRepository.findByUserId(userId)
-                .orElseThrow(() -> new RuntimeException("Wallet not found"));
+                .orElseThrow(() -> new ResourceNotFoundException("Wallet not found"));
         Account userAccount = getOrCreateLedgerAccount(userId, wallet.getCurrency());
         return transactionRepository.findByAccountIdAndType(userAccount.getId(), TransactionType.TOPUP, PageRequest.of(0, 50));
     }
 
     public String generateStaticQR(String userId) {
         Wallet wallet = walletRepository.findByUserId(userId)
-                .orElseThrow(() -> new RuntimeException("Wallet not found"));
+                .orElseThrow(() -> new ResourceNotFoundException("Wallet not found"));
         return "jledger|static|" + wallet.getId();
     }
 
     public List<Transaction> getTransactions(String userId) {
         Wallet wallet = walletRepository.findByUserId(userId)
-                .orElseThrow(() -> new RuntimeException("Wallet not found"));
+                .orElseThrow(() -> new ResourceNotFoundException("Wallet not found"));
         Account userAccount = getOrCreateLedgerAccount(userId, wallet.getCurrency());
         return transactionRepository.findByAccountId(userAccount.getId(), PageRequest.of(0, 50));
     }
@@ -217,7 +221,7 @@ public class WalletService {
             LocalDateTime to
     ) {
         Wallet wallet = walletRepository.findByUserId(userId)
-                .orElseThrow(() -> new RuntimeException("Wallet not found"));
+                .orElseThrow(() -> new ResourceNotFoundException("Wallet not found"));
 
         // Get the UUID account to query by
         Account userAccount = getOrCreateLedgerAccount(userId, wallet.getCurrency());
@@ -246,7 +250,7 @@ public class WalletService {
 
     public List<Transaction> getQRHistory(String userId) {
         Wallet wallet = walletRepository.findByUserId(userId)
-                .orElseThrow(() -> new RuntimeException("Wallet not found"));
+                .orElseThrow(() -> new ResourceNotFoundException("Wallet not found"));
         Account userAccount = getOrCreateLedgerAccount(userId, wallet.getCurrency());
         // For QR history, we typically want payments
         return transactionRepository.findByAccountIdAndType(userAccount.getId(), TransactionType.PAYMENT, PageRequest.of(0, 50));
@@ -254,16 +258,17 @@ public class WalletService {
 
     public Wallet getWalletById(Long id) {
         return walletRepository.findById(Objects.requireNonNull(id))
-                .orElseThrow(() -> new RuntimeException("Wallet not found"));
+                .orElseThrow(() -> new ResourceNotFoundException("Wallet not found"));
     }
 
     @Transactional
     public Wallet adjustBalanceById(Long id, BigDecimal amount, String reason) {
         Wallet wallet = walletRepository.findById(Objects.requireNonNull(id))
-                .orElseThrow(() -> new RuntimeException("Wallet not found"));
+                .orElseThrow(() -> new ResourceNotFoundException("Wallet not found"));
 
         wallet.setBalance(wallet.getBalance().add(amount));
         Wallet updated = walletRepository.save(Objects.requireNonNull(wallet));
+        cacheWallet(updated);
 
         // Update Ledger Account
         Account userAccount = getOrCreateLedgerAccount(wallet.getUserId(), wallet.getCurrency());
@@ -272,7 +277,7 @@ public class WalletService {
 
         // Update System Account (for reconciliation)
         Account systemAccount = accountRepository.findByIdForUpdate(UUID.fromString(SYSTEM_ACCOUNT_ID))
-                .orElseThrow(() -> new RuntimeException("System account not found"));
+                .orElseThrow(() -> new ResourceNotFoundException("System account not found"));
         systemAccount.setBalance(systemAccount.getBalance().add(amount));
         accountRepository.save(systemAccount);
 
@@ -309,21 +314,21 @@ public class WalletService {
 
     public Wallet deactivateWalletById(Long id) {
         Wallet wallet = walletRepository.findById(Objects.requireNonNull(id))
-                .orElseThrow(() -> new RuntimeException("Wallet not found"));
+                .orElseThrow(() -> new ResourceNotFoundException("Wallet not found"));
         wallet.setIsActive(false);
         return walletRepository.save(Objects.requireNonNull(wallet));
     }
 
     public Wallet activateWalletById(Long id) {
         Wallet wallet = walletRepository.findById(Objects.requireNonNull(id))
-                .orElseThrow(() -> new RuntimeException("Wallet not found"));
+                .orElseThrow(() -> new ResourceNotFoundException("Wallet not found"));
         wallet.setIsActive(true);
         return walletRepository.save(Objects.requireNonNull(wallet));
     }
 
     public Wallet updateLimits(Long id, BigDecimal dailyLimit, BigDecimal monthlyLimit) {
         Wallet wallet = walletRepository.findById(Objects.requireNonNull(id))
-                .orElseThrow(() -> new RuntimeException("Wallet not found"));
+                .orElseThrow(() -> new ResourceNotFoundException("Wallet not found"));
         wallet.setDailyLimit(dailyLimit);
         wallet.setMonthlyLimit(monthlyLimit);
         return walletRepository.save(Objects.requireNonNull(wallet));
@@ -336,20 +341,20 @@ public class WalletService {
         }
 
         Wallet wallet = walletRepository.findByUserId(userId)
-                .orElseThrow(() -> new RuntimeException("Wallet not found"));
+                .orElseThrow(() -> new ResourceNotFoundException("Wallet not found"));
 
         if (!wallet.getIsActive()) {
-            throw new RuntimeException("Wallet is inactive");
+            throw new IllegalArgumentException("Wallet is inactive");
         }
 
         LinkedBankAccount bankAccount = findOwnedLinkedBankAccount(userId, bankAccountId);
         if (!Boolean.TRUE.equals(bankAccount.getIsVerified())) {
-            throw new RuntimeException("Bank account is not verified");
+            throw new IllegalArgumentException("Bank account is not verified");
         }
 
         // 2. Lock System Account & User Wallet
         Account systemAccount = accountRepository.findByIdForUpdate(UUID.fromString(SYSTEM_ACCOUNT_ID))
-                .orElseThrow(() -> new RuntimeException("System account not found"));
+                .orElseThrow(() -> new ResourceNotFoundException("System account not found"));
 
         wallet.setBalance(wallet.getBalance().add(amount));
         Wallet updatedWallet = walletRepository.save(Objects.requireNonNull(wallet));
@@ -408,13 +413,13 @@ public class WalletService {
         try {
             // 2. Lock System Account & User Wallet
             Account systemAccount = accountRepository.findByIdForUpdate(UUID.fromString(SYSTEM_ACCOUNT_ID))
-                    .orElseThrow(() -> new RuntimeException("System account not found"));
+                    .orElseThrow(() -> new ResourceNotFoundException("System account not found"));
 
             Wallet wallet = walletRepository.findByUserIdForUpdate(userId)
-                    .orElseThrow(() -> new RuntimeException("Wallet not found"));
+                    .orElseThrow(() -> new ResourceNotFoundException("Wallet not found"));
 
             if (!wallet.getIsActive()) {
-                throw new RuntimeException("Wallet is inactive");
+                throw new IllegalArgumentException("Wallet is inactive");
             }
 
             if (currency != null && !currency.isBlank() && wallet.getCurrency() != null
@@ -476,7 +481,7 @@ public class WalletService {
         } catch (DataIntegrityViolationException e) {
             // 5. Hard Idempotency Check (DB level conflict handling)
             return transactionRepository.findByTransactionId(externalRef)
-                    .orElseThrow(() -> new RuntimeException("Transaction conflict detected but record not found", e));
+                    .orElseThrow(() -> new ConflictException("Transaction conflict detected but record not found", e));
         }
     }
 
@@ -534,7 +539,7 @@ public class WalletService {
             throw new IllegalArgumentException("bankAccountId is required");
         }
         return linkedBankAccountRepository.findByIdAndUserId(Objects.requireNonNull(bankAccountId), userId)
-                .orElseThrow(() -> new RuntimeException("Bank account not found"));
+                .orElseThrow(() -> new ResourceNotFoundException("Bank account not found"));
     }
 
     @Transactional
@@ -542,7 +547,7 @@ public class WalletService {
         LinkedBankAccount target = findOwnedLinkedBankAccount(userId, bankAccountId);
         normalizeDefaultAccount(userId, Objects.requireNonNull(target.getId()));
         return linkedBankAccountRepository.findById(Objects.requireNonNull(target.getId()))
-                .orElseThrow(() -> new RuntimeException("Bank account not found"));
+                .orElseThrow(() -> new ResourceNotFoundException("Bank account not found"));
     }
 
     @Transactional
@@ -562,6 +567,19 @@ public class WalletService {
     }
 
     private void cacheWallet(Wallet wallet) {
+        if (TransactionSynchronizationManager.isActualTransactionActive()) {
+            TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronization() {
+                @Override
+                public void afterCommit() {
+                    doCacheWallet(wallet);
+                }
+            });
+        } else {
+            doCacheWallet(wallet);
+        }
+    }
+
+    private void doCacheWallet(Wallet wallet) {
         String cacheKey = CACHE_PREFIX + wallet.getUserId();
         redisTemplate.opsForValue().set(cacheKey, Objects.requireNonNull(wallet), 5, TimeUnit.MINUTES);
     }
@@ -621,16 +639,16 @@ public class WalletService {
     @Transactional
     public Transaction topUpCounter(String userId, BigDecimal amount, String counterCode) {
         Wallet wallet = walletRepository.findByUserId(userId)
-                .orElseThrow(() -> new RuntimeException("Wallet not found"));
+                .orElseThrow(() -> new ResourceNotFoundException("Wallet not found"));
 
         if (!wallet.getIsActive()) {
-            throw new RuntimeException("Wallet is inactive");
+            throw new IllegalArgumentException("Wallet is inactive");
         }
 
         // Fetch User Account & Lock System Account
         Account userAccount = getOrCreateLedgerAccount(userId, wallet.getCurrency());
         Account systemAccount = accountRepository.findByIdForUpdate(UUID.fromString(SYSTEM_ACCOUNT_ID))
-                .orElseThrow(() -> new RuntimeException("System account not found"));
+                .orElseThrow(() -> new ResourceNotFoundException("System account not found"));
 
         // Mock counter top-up
         wallet.setBalance(wallet.getBalance().add(amount));
@@ -668,16 +686,16 @@ public class WalletService {
     @Transactional
     public Transaction topUpCash(String userId, BigDecimal amount, String agentId) {
         Wallet wallet = walletRepository.findByUserId(userId)
-                .orElseThrow(() -> new RuntimeException("Wallet not found"));
+                .orElseThrow(() -> new ResourceNotFoundException("Wallet not found"));
 
         if (!wallet.getIsActive()) {
-            throw new RuntimeException("Wallet is inactive");
+            throw new IllegalArgumentException("Wallet is inactive");
         }
 
         // Fetch User Account & Lock System Account
         Account userAccount = getOrCreateLedgerAccount(userId, wallet.getCurrency());
         Account systemAccount = accountRepository.findByIdForUpdate(UUID.fromString(SYSTEM_ACCOUNT_ID))
-                .orElseThrow(() -> new RuntimeException("System account not found"));
+                .orElseThrow(() -> new ResourceNotFoundException("System account not found"));
 
         // Mock cash top-up
         wallet.setBalance(wallet.getBalance().add(amount));
@@ -727,9 +745,9 @@ public class WalletService {
         }
 
         Wallet fromWallet = walletRepository.findByUserId(fromUserId)
-                .orElseThrow(() -> new RuntimeException("Source wallet not found"));
+                .orElseThrow(() -> new ResourceNotFoundException("Source wallet not found"));
         if (!fromWallet.getIsActive()) {
-            throw new RuntimeException("Source wallet is inactive");
+            throw new IllegalArgumentException("Source wallet is inactive");
         }
 
         String recipientUserId = findUserIdByPhone(recipientPhone);
@@ -739,12 +757,12 @@ public class WalletService {
         }
 
         Wallet toWallet = walletRepository.findByUserId(recipientUserId)
-                .orElseThrow(() -> new RuntimeException("Recipient wallet not found"));
+                .orElseThrow(() -> new ResourceNotFoundException("Recipient wallet not found"));
         if (!toWallet.getIsActive()) {
-            throw new RuntimeException("Recipient wallet is inactive");
+            throw new IllegalArgumentException("Recipient wallet is inactive");
         }
         if (fromWallet.getBalance().compareTo(amount) < 0) {
-            throw new RuntimeException("Insufficient balance");
+            throw new IllegalArgumentException("Insufficient balance");
         }
 
         BigDecimal fee = BigDecimal.ZERO.setScale(4);
@@ -805,25 +823,25 @@ public class WalletService {
             Wallet fromWallet, toWallet;
             if (fromUserId.compareTo(recipientUserId) < 0) {
                 fromWallet = walletRepository.findByUserIdForUpdate(fromUserId)
-                        .orElseThrow(() -> new RuntimeException("Source wallet not found"));
+                        .orElseThrow(() -> new ResourceNotFoundException("Source wallet not found"));
                 toWallet = walletRepository.findByUserIdForUpdate(recipientUserId)
-                        .orElseThrow(() -> new RuntimeException("Recipient wallet not found"));
+                        .orElseThrow(() -> new ResourceNotFoundException("Recipient wallet not found"));
             } else {
                 toWallet = walletRepository.findByUserIdForUpdate(recipientUserId)
-                        .orElseThrow(() -> new RuntimeException("Recipient wallet not found"));
+                        .orElseThrow(() -> new ResourceNotFoundException("Recipient wallet not found"));
                 fromWallet = walletRepository.findByUserIdForUpdate(fromUserId)
-                        .orElseThrow(() -> new RuntimeException("Source wallet not found"));
+                        .orElseThrow(() -> new ResourceNotFoundException("Source wallet not found"));
             }
 
             // 2. Validations
             if (!fromWallet.getIsActive()) {
-                throw new RuntimeException("Source wallet is inactive");
+                throw new IllegalArgumentException("Source wallet is inactive");
             }
             if (!toWallet.getIsActive()) {
-                throw new RuntimeException("Recipient wallet is inactive");
+                throw new IllegalArgumentException("Recipient wallet is inactive");
             }
             if (fromWallet.getBalance().compareTo(amount) < 0) {
-                throw new RuntimeException("Insufficient balance");
+                throw new IllegalArgumentException("Insufficient balance");
             }
 
             // 3. Update Balances
@@ -898,7 +916,7 @@ public class WalletService {
             // 8. Handle DB level conflict
             if (idempotencyKey != null) {
                 return transactionRepository.findByTransactionId(idempotencyKey)
-                        .orElseThrow(() -> new RuntimeException("Transaction conflict detected but record not found", e));
+                        .orElseThrow(() -> new ConflictException("Transaction conflict detected but record not found", e));
             }
             throw e;
         }
@@ -939,7 +957,7 @@ public class WalletService {
     public Transaction transferByWalletId(String fromUserId, String toWalletId, BigDecimal amount, Object metadata) {
         // 1. Fetch source wallet ID to determine lock order
         Wallet fromWalletInfo = walletRepository.findByUserId(fromUserId)
-                .orElseThrow(() -> new RuntimeException("Source wallet not found"));
+                .orElseThrow(() -> new ResourceNotFoundException("Source wallet not found"));
 
         // If toWalletId is not a long, it must be an account UUID
         Long toWalletIdLong;
@@ -957,28 +975,28 @@ public class WalletService {
         Wallet toWallet;
         if (fromWalletId < toWalletIdLong) {
             fromWallet = walletRepository.findByIdForUpdate(fromWalletId)
-                    .orElseThrow(() -> new RuntimeException("Source wallet not found"));
+                    .orElseThrow(() -> new ResourceNotFoundException("Source wallet not found"));
             toWallet = walletRepository.findByIdForUpdate(toWalletIdLong)
-                    .orElseThrow(() -> new RuntimeException("Recipient wallet not found"));
+                    .orElseThrow(() -> new ResourceNotFoundException("Recipient wallet not found"));
         } else if (fromWalletId > toWalletIdLong) {
             toWallet = walletRepository.findByIdForUpdate(toWalletIdLong)
-                    .orElseThrow(() -> new RuntimeException("Recipient wallet not found"));
+                    .orElseThrow(() -> new ResourceNotFoundException("Recipient wallet not found"));
             fromWallet = walletRepository.findByIdForUpdate(fromWalletId)
-                    .orElseThrow(() -> new RuntimeException("Source wallet not found"));
+                    .orElseThrow(() -> new ResourceNotFoundException("Source wallet not found"));
         } else {
             throw new IllegalArgumentException("Cannot transfer to the same wallet");
         }
 
         if (!fromWallet.getIsActive()) {
-            throw new RuntimeException("Source wallet is inactive");
+            throw new IllegalArgumentException("Source wallet is inactive");
         }
 
         if (fromWallet.getBalance().compareTo(amount) < 0) {
-            throw new RuntimeException("Insufficient balance");
+            throw new IllegalArgumentException("Insufficient balance");
         }
 
         if (!toWallet.getIsActive()) {
-            throw new RuntimeException("Recipient wallet is inactive");
+            throw new IllegalArgumentException("Recipient wallet is inactive");
         }
 
         // 3. Acquire Ledger Account locks in consistent order
@@ -1010,6 +1028,8 @@ public class WalletService {
 
         walletRepository.save(Objects.requireNonNull(fromWallet));
         walletRepository.save(Objects.requireNonNull(toWallet));
+        cacheWallet(fromWallet);
+        cacheWallet(toWallet);
 
         String txId = UUID.randomUUID().toString();
         Transaction transaction = new Transaction();
@@ -1027,8 +1047,10 @@ public class WalletService {
         Map<String, Object> metaMap = new HashMap<>();
         metaMap.put("toWalletId", toWalletId);
         if (metadata != null) {
-            if (metadata instanceof Map) {
-                metaMap.putAll((Map) metadata);
+            if (metadata instanceof Map<?, ?> map) {
+                for (Map.Entry<?, ?> entry : map.entrySet()) {
+                    metaMap.put(String.valueOf(entry.getKey()), entry.getValue());
+                }
             } else {
                 metaMap.put("extra", metadata);
             }
@@ -1055,20 +1077,20 @@ public class WalletService {
     public Transaction transferWalletToAccount(String fromUserId, String toAccountId, BigDecimal amount, Object metadata) {
         // 1. Fetch source wallet
         Wallet fromWallet = walletRepository.findByUserIdForUpdate(fromUserId)
-                .orElseThrow(() -> new RuntimeException("Source wallet not found"));
+                .orElseThrow(() -> new ResourceNotFoundException("Source wallet not found"));
 
         if (!fromWallet.getIsActive()) {
-            throw new RuntimeException("Source wallet is inactive");
+            throw new IllegalArgumentException("Source wallet is inactive");
         }
 
         if (fromWallet.getBalance().compareTo(amount) < 0) {
-            throw new RuntimeException("Insufficient balance");
+            throw new IllegalArgumentException("Insufficient balance");
         }
 
         // 2. Fetch destination account (UUID)
         UUID toAccountUuid = UUID.fromString(toAccountId);
         Account receiverAccount = accountRepository.findByIdForUpdate(toAccountUuid)
-                .orElseThrow(() -> new RuntimeException("Recipient account not found: " + toAccountId));
+                .orElseThrow(() -> new ResourceNotFoundException("Recipient account not found: " + toAccountId));
 
         // 3. Get Source Ledger Account
         Account senderAccount = getOrCreateLedgerAccount(fromUserId, fromWallet.getCurrency());
@@ -1081,6 +1103,7 @@ public class WalletService {
 
         // 5. Save State
         walletRepository.save(fromWallet);
+        cacheWallet(fromWallet);
         accountRepository.save(senderAccount);
         accountRepository.save(receiverAccount);
 
@@ -1101,8 +1124,10 @@ public class WalletService {
         Map<String, Object> metaMap = new HashMap<>();
         metaMap.put("toAccountId", toAccountId);
         if (metadata != null) {
-            if (metadata instanceof Map) {
-                metaMap.putAll((Map<String, Object>) metadata);
+            if (metadata instanceof Map<?, ?> map) {
+                for (Map.Entry<?, ?> entry : map.entrySet()) {
+                    metaMap.put(String.valueOf(entry.getKey()), entry.getValue());
+                }
             } else {
                 metaMap.put("extra", metadata);
             }
@@ -1135,7 +1160,7 @@ public class WalletService {
     public String generateQR(String userId, BigDecimal amount) {
         // Mock: Generate QR code data
         Wallet wallet = walletRepository.findByUserId(userId)
-                .orElseThrow(() -> new RuntimeException("Wallet not found"));
+                .orElseThrow(() -> new ResourceNotFoundException("Wallet not found"));
 
         return "jledger|qr|" + wallet.getId() + "|" + amount.toString();
     }
@@ -1149,19 +1174,20 @@ public class WalletService {
     @Transactional
     public Transaction payUtilityBill(String userId, String billerCode, String accountNumber, BigDecimal amount) {
         Wallet wallet = walletRepository.findByUserId(userId)
-                .orElseThrow(() -> new RuntimeException("Wallet not found"));
+                .orElseThrow(() -> new ResourceNotFoundException("Wallet not found"));
 
         if (!wallet.getIsActive()) {
-            throw new RuntimeException("Wallet is inactive");
+            throw new IllegalArgumentException("Wallet is inactive");
         }
 
         if (wallet.getBalance().compareTo(amount) < 0) {
-            throw new RuntimeException("Insufficient balance");
+            throw new IllegalArgumentException("Insufficient balance");
         }
 
         // Mock bill payment
         wallet.setBalance(wallet.getBalance().subtract(amount));
         walletRepository.save(Objects.requireNonNull(wallet));
+        cacheWallet(wallet);
 
         Transaction transaction = new Transaction();
         transaction.setType(TransactionType.BILL_PAYMENT);
@@ -1181,18 +1207,19 @@ public class WalletService {
     @Transactional
     public Transaction payCreditCardBill(String userId, String cardNumber, BigDecimal amount) {
         Wallet wallet = walletRepository.findByUserId(userId)
-                .orElseThrow(() -> new RuntimeException("Wallet not found"));
+                .orElseThrow(() -> new ResourceNotFoundException("Wallet not found"));
 
         if (!wallet.getIsActive()) {
-            throw new RuntimeException("Wallet is inactive");
+            throw new IllegalArgumentException("Wallet is inactive");
         }
 
         if (wallet.getBalance().compareTo(amount) < 0) {
-            throw new RuntimeException("Insufficient balance");
+            throw new IllegalArgumentException("Insufficient balance");
         }
 
         wallet.setBalance(wallet.getBalance().subtract(amount));
         walletRepository.save(Objects.requireNonNull(wallet));
+        cacheWallet(wallet);
 
         Transaction transaction = new Transaction();
         transaction.setType(TransactionType.BILL_PAYMENT);
@@ -1212,18 +1239,19 @@ public class WalletService {
     @Transactional
     public Transaction payMobileTopup(String userId, String phoneNumber, BigDecimal amount) {
         Wallet wallet = walletRepository.findByUserId(userId)
-                .orElseThrow(() -> new RuntimeException("Wallet not found"));
+                .orElseThrow(() -> new ResourceNotFoundException("Wallet not found"));
 
         if (!wallet.getIsActive()) {
-            throw new RuntimeException("Wallet is inactive");
+            throw new IllegalArgumentException("Wallet is inactive");
         }
 
         if (wallet.getBalance().compareTo(amount) < 0) {
-            throw new RuntimeException("Insufficient balance");
+            throw new IllegalArgumentException("Insufficient balance");
         }
 
         wallet.setBalance(wallet.getBalance().subtract(amount));
         walletRepository.save(Objects.requireNonNull(wallet));
+        cacheWallet(wallet);
 
         Transaction transaction = new Transaction();
         transaction.setType(TransactionType.MOBILE_TOPUP);
@@ -1263,10 +1291,11 @@ public class WalletService {
     @Transactional
     public Wallet adjustBalance(String userId, BigDecimal amount, String reason) {
         Wallet wallet = walletRepository.findByUserId(userId)
-                .orElseThrow(() -> new RuntimeException("Wallet not found"));
+                .orElseThrow(() -> new ResourceNotFoundException("Wallet not found"));
 
         wallet.setBalance(wallet.getBalance().add(amount));
         Wallet updated = walletRepository.save(Objects.requireNonNull(wallet));
+        cacheWallet(updated);
 
         // Record adjustment transaction
         Transaction transaction = new Transaction();
@@ -1315,7 +1344,7 @@ public class WalletService {
         }
         
         logger.error("=== findUserIdByPhone END (NOT FOUND) ===");
-        throw new RuntimeException("Recipient not found");
+        throw new ResourceNotFoundException("Recipient not found");
     }
 
     private List<String> getPhoneCandidates(String e164Phone) {
@@ -1393,7 +1422,7 @@ public class WalletService {
                     .transactionId(transactionId)
                     .description(description != null ? description : "Ledger Transfer (Debit)")
                     .build();
-            ledgerEntryRepository.save(debitEntry);
+            ledgerEntryRepository.save(Objects.requireNonNull(debitEntry));
         }
 
         if (toAccount != null) {
@@ -1404,7 +1433,7 @@ public class WalletService {
                     .transactionId(transactionId)
                     .description(description != null ? description : "Ledger Transfer (Credit)")
                     .build();
-            ledgerEntryRepository.save(creditEntry);
+            ledgerEntryRepository.save(Objects.requireNonNull(creditEntry));
         }
     }
 

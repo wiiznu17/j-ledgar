@@ -405,6 +405,44 @@ export class FinanceService {
     }
   }
 
+  async performMerchantMultiPay(payload: {
+    fromWalletId: string;
+    currency?: string;
+    idempotencyKey: string;
+    legs: Array<{
+      toWalletId: string;
+      amount: string;
+      note?: string;
+      metadata?: Record<string, any>;
+    }>;
+  }): Promise<TransactionResponse> {
+    const url = `${this.financeServiceUrl}/api/finance/transactions/merchant-pay-atomic`;
+
+    try {
+      const response = await this.httpService.axiosRef.post<TransactionResponse>(
+        url,
+        {
+          fromWalletId: payload.fromWalletId,
+          currency: payload.currency || 'THB',
+          legs: payload.legs,
+        },
+        {
+          headers: {
+            ...this.getInternalHeaders(),
+            'Idempotency-Key': payload.idempotencyKey,
+          },
+        },
+      );
+      return response.data;
+    } catch (error: any) {
+      this.logCompactError(
+        `performMerchantMultiPay from=${payload.fromWalletId} legs=${payload.legs.length}`,
+        error,
+      );
+      this.rethrowAsHttpException(error, 'Failed to perform multi-leg merchant payment');
+    }
+  }
+
   private getInternalHeaders() {
     const internalSecret = this.configService.get<string>(
       'JLEDGER_INTERNAL_SECRET',

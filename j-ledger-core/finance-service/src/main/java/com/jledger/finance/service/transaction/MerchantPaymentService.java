@@ -7,6 +7,8 @@ import com.jledger.finance.dto.MerchantPayRequest;
 import com.jledger.finance.repository.ledger.AccountRepository;
 import com.jledger.finance.repository.ledger.RewardAccountRepository;
 import com.jledger.finance.repository.wallet.WalletRepository;
+import com.jledger.finance.dto.MerchantMultiPayRequest;
+import com.jledger.finance.dto.MerchantPayLeg;
 import com.jledger.finance.service.system.RedisIdempotencyService;
 import com.jledger.finance.service.wallet.WalletService;
 
@@ -35,69 +37,119 @@ public class MerchantPaymentService {
 
     @Transactional
     public Transaction processMerchantPayment(String idempotencyKey, MerchantPayRequest request) {
-        if (request.amount().compareTo(BigDecimal.ZERO) <= 0) {
-            throw new IllegalArgumentException("Payment amount must be greater than zero");
+        return processMultiLegMerchantPayment(idempotencyKey, new MerchantMultiPayRequest(
+            request.fromWalletId(),
+            request.currency(),
+            java.util.List.of(new MerchantPayLeg(
+                request.toWalletId(),
+                request.amount(),
+                "Merchant Payment",
+                request.metadata()
+            ))
+        ));
+    }
+
+    @Transactional
+    public Transaction processMultiLegMerchantPayment(String idempotencyKey, MerchantMultiPayRequest request) {
+        if (request.legs() == null || request.legs().isEmpty()) {
+            throw new IllegalArgumentException("Payment must have at least one leg");
         }
 
-        // 0. Check Idempotency
         return redisIdempotencyService.getIfProcessed(idempotencyKey)
             .map(tx -> {
                 LOGGER.info("Returning cached transaction for idempotency key: {}", idempotencyKey);
                 return tx;
             })
             .orElseGet(() -> {
-                LOGGER.info("Processing merchant payment: {} -> {} amount={}",
-                    request.fromWalletId(), request.toWalletId(), request.amount());
+                LOGGER.info("Processing atomic multi-leg payment for user from wallet: {}. Total legs: {}",
+                    request.fromWalletId(), request.legs().size());
 
                 // 0. Resolve Source Wallet
-                Wallet fromWallet;
-                if (request.fromWalletId().startsWith("W")) {
-                    fromWallet = walletRepository.findByWalletId(request.fromWalletId())
-                        .orElseThrow(() -> new IllegalArgumentException("Source wallet not found: " + request.fromWalletId()));
-                } else {
-                    try {
-                        Long id = Long.parseLong(request.fromWalletId());
-                        fromWallet = walletRepository.findById(id)
-                            .orElseThrow(() -> new IllegalArgumentException("Source wallet not found ID: " + id));
-                    } catch (NumberFormatException e) {
-                         // Try as UUID if it's not a W-prefix or Long
-                         fromWallet = walletRepository.findByUserId(request.fromWalletId())
-                            .orElseThrow(() -> new IllegalArgumentException("Source wallet not found for user: " + request.fromWalletId()));
+                Wallet fromWallet = resolveWallet(request.fromWalletId());
+                Transaction primaryTransaction = null;
+                BigDecimal totalAmountForRewards = BigDecimal.ZERO;
+
+                // 1. Process each leg
+                for (int i = 0; i < request.legs().size(); i++) {
+                    MerchantPayLeg leg = request.legs().get(i);
+                    
+                    LOGGER.info("Processing leg {}: -> {} amount={}", i + 1, leg.toWalletId(), leg.amount());
+
+                    Transaction tx = walletService.transferWalletToAccount(
+                        fromWallet.getUserId(),
+                        leg.toWalletId(),
+                        leg.amount(),
+                        leg.metadata()
+                    );
+
+                    // First leg or leg with totalAmount metadata is considered primary for rewards
+                    if (i == 0) {
+                        primaryTransaction = tx;
+                        // Extract total amount for rewards calculation if provided in metadata
+                        if (leg.metadata() instanceof java.util.Map) {
+                            java.util.Map<String, Object> meta = (java.util.Map<String, Object>) leg.metadata();
+                            if (meta.containsKey("totalAmount")) {
+                                try {
+                                    totalAmountForRewards = new BigDecimal(meta.get("totalAmount").toString());
+                                } catch (Exception e) {
+                                    totalAmountForRewards = leg.amount();
+                                }
+                            } else {
+                                totalAmountForRewards = leg.amount();
+                            }
+                        } else {
+                            totalAmountForRewards = leg.amount();
+                        }
                     }
                 }
 
-                // 1. Perform Fund Transfer using specialized Merchant method
-                Transaction transaction = walletService.transferWalletToAccount(
-                    fromWallet.getUserId(),
-                    request.toWalletId(),
-                    request.amount(),
-                    request.metadata()
-                );
+                // 2. Calculate and Issue Rewards (based on totalAmount of the primary transaction)
+                if (primaryTransaction != null && totalAmountForRewards.compareTo(BigDecimal.ZERO) > 0) {
+                    awardPoints(fromWallet.getUserId(), totalAmountForRewards);
+                }
 
-                // 2. Calculate and Issue Rewards
-                BigDecimal pointsToAward = request.amount().multiply(POINTS_RATIO).setScale(2, RoundingMode.HALF_UP);
+                // 3. Cache the primary transaction for idempotency
+                redisIdempotencyService.cacheResponse(idempotencyKey, primaryTransaction);
 
-                UUID userId = UUID.fromString(fromWallet.getUserId());
-                UUID accountId = accountRepository.findByUserId(userId).stream()
-                    .findFirst()
-                    .map(account -> account.getId())
-                    .orElseThrow(() -> new IllegalStateException("Ledger account not found for userId: " + userId));
-
-                RewardAccount rewardAccount = rewardAccountRepository.findById(accountId)
-                    .orElse(RewardAccount.builder()
-                        .accountId(accountId)
-                        .pointsBalance(BigDecimal.ZERO)
-                        .build());
-
-                rewardAccount.setPointsBalance(rewardAccount.getPointsBalance().add(pointsToAward));
-                rewardAccountRepository.save(rewardAccount);
-
-                LOGGER.info("Awarded {} points to account {}", pointsToAward, accountId);
-
-                // 3. Cache response for idempotency
-                redisIdempotencyService.cacheResponse(idempotencyKey, transaction);
-
-                return transaction;
+                return primaryTransaction;
             });
+    }
+
+    private Wallet resolveWallet(String walletId) {
+        if (walletId.startsWith("W")) {
+            return walletRepository.findByWalletId(walletId)
+                .orElseThrow(() -> new IllegalArgumentException("Source wallet not found: " + walletId));
+        } else {
+            try {
+                Long id = Long.parseLong(walletId);
+                return walletRepository.findById(id)
+                    .orElseThrow(() -> new IllegalArgumentException("Source wallet not found ID: " + id));
+            } catch (NumberFormatException e) {
+                return walletRepository.findByUserId(walletId)
+                    .orElseThrow(() -> new IllegalArgumentException("Source wallet not found for user: " + walletId));
+            }
+        }
+    }
+
+    private void awardPoints(String userIdString, BigDecimal amount) {
+        BigDecimal pointsToAward = amount.multiply(POINTS_RATIO).setScale(2, RoundingMode.HALF_UP);
+        if (pointsToAward.compareTo(BigDecimal.ZERO) <= 0) return;
+
+        UUID userId = UUID.fromString(userIdString);
+        UUID accountId = accountRepository.findByUserId(userId).stream()
+            .findFirst()
+            .map(account -> account.getId())
+            .orElseThrow(() -> new IllegalStateException("Ledger account not found for userId: " + userId));
+
+        RewardAccount rewardAccount = rewardAccountRepository.findById(accountId)
+            .orElse(RewardAccount.builder()
+                .accountId(accountId)
+                .pointsBalance(BigDecimal.ZERO)
+                .build());
+
+        rewardAccount.setPointsBalance(rewardAccount.getPointsBalance().add(pointsToAward));
+        rewardAccountRepository.save(rewardAccount);
+
+        LOGGER.info("Awarded {} points to account {}", pointsToAward, accountId);
     }
 }

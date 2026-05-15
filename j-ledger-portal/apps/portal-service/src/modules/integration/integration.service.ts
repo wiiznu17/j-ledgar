@@ -964,14 +964,20 @@ export class IntegrationService {
     const createdAt = tx?.createdAt
       ? new Date(tx.createdAt).toISOString()
       : new Date().toISOString();
-    const amount = Number(tx?.amount || 0);
+    
+    // Prioritize gross amount from metadata for merchant payments
+    const rawAmount = Number(tx?.amount || 0);
+    const grossAmount = Number(metadata.totalAmount || rawAmount);
+    const feeAmount = grossAmount - rawAmount;
 
     return {
       id: tx?.transactionId || String(tx?.id || randomUUID()),
       type,
       title: this.formatTransactionTitle(tx),
       description: tx?.description || undefined,
-      amount: amount.toFixed(2),
+      amount: grossAmount.toFixed(2),
+      netAmount: rawAmount.toFixed(2),
+      feeAmount: feeAmount > 0 ? feeAmount.toFixed(2) : undefined,
       currency: tx?.currency || 'THB',
       direction: isIncome ? 'IN' : 'OUT',
       status: tx?.status === 'FAILED' ? 'FAILED' : 'COMPLETED',

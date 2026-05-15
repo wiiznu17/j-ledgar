@@ -12,6 +12,7 @@ export type ErrorCode =
   | 'TRANSFER_FAILED'
   | 'SERVER_ERROR'
   | 'TIMEOUT'
+  | 'INSUFFICIENT_FUNDS'
   | 'UNKNOWN';
 
 export interface TransferError {
@@ -138,6 +139,11 @@ export const getErrorInfo = (
         'The request took too long. Please check your connection and try again.',
       actionLabel: 'Retry',
     },
+    INSUFFICIENT_FUNDS: {
+      title: 'Insufficient Balance',
+      message: 'Your wallet balance is not enough for this transaction.',
+      actionLabel: 'Top Up',
+    },
     UNKNOWN: {
       title: 'Unexpected Error',
       message: 'An unexpected error occurred. Please try again.',
@@ -145,7 +151,14 @@ export const getErrorInfo = (
     },
   };
 
-  return errorMap[error.code] || errorMap.UNKNOWN;
+  const info = errorMap[error.code] || errorMap.UNKNOWN;
+  
+  return {
+    title: info.title,
+    // Use the specific message from backend if available, otherwise fallback to map
+    message: error.message || info.message,
+    actionLabel: info.actionLabel,
+  };
 };
 
 /**
@@ -166,6 +179,8 @@ export const getRecoveryPath = (
     case 'TIMEOUT':
     case 'TRANSFER_FAILED':
       return 'retry';
+    case 'INSUFFICIENT_FUNDS':
+      return 'edit'; // Allow user to edit amount or go back to topup
     default:
       return 'home';
   }
@@ -188,10 +203,20 @@ export const parseBackendError = (error: any): TransferError => {
     const data = error.response.data;
 
     if (status === 400) {
+      const rawMessage = data.message || '';
+      const message = Array.isArray(rawMessage) ? rawMessage[0] : rawMessage;
+      
+      const isInsufficientFunds = 
+        typeof message === 'string' && (
+          message.toLowerCase().includes('insufficient') || 
+          message.includes('ไม่เพียงพอ')
+        );
+
       return {
-        code: 'INVALID_QR',
-        message: data.message || 'Invalid request',
+        code: isInsufficientFunds ? 'INSUFFICIENT_FUNDS' : 'INVALID_QR',
+        message: message || 'Invalid request',
         details: data.details,
+        recoveryAction: isInsufficientFunds ? 'EDIT' : 'RETRY',
       };
     } else if (status === 401) {
       return {

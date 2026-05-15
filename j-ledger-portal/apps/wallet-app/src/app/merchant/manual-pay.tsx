@@ -15,6 +15,8 @@ import { ChevronLeft, Info, ArrowRight, Store, ShoppingBag, CheckCircle2, Calend
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import { MotiView, AnimatePresence } from 'moti';
 import { MerchantService } from '@/lib/merchant-service';
+import { parseBackendError, TransferError, getErrorInfo } from '@/lib/error-handling';
+import { ErrorRecovery } from '@/components/error/ErrorRecovery';
 import * as Haptics from 'expo-haptics';
 
 type Step = 'INPUT' | 'REVIEW' | 'SUCCESS';
@@ -30,6 +32,7 @@ export default function MerchantManualPayScreen() {
   const [note, setNote] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [paymentResult, setPaymentResult] = useState<any>(null);
+  const [error, setError] = useState<TransferError | null>(null);
 
   useEffect(() => {
     if (merchantId) {
@@ -59,6 +62,7 @@ export default function MerchantManualPayScreen() {
       return;
     }
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+    setError(null);
     setStep('REVIEW');
   };
 
@@ -79,9 +83,26 @@ export default function MerchantManualPayScreen() {
         });
         setStep('SUCCESS');
       }
-    } catch (error: any) {
+    } catch (err: any) {
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
-      Alert.alert('Payment Error', error.message || 'Failed to process payment');
+      const parsedError = parseBackendError(err);
+      setError(parsedError);
+      
+      // Show as a proper dialog
+      const errorInfo = getErrorInfo(parsedError);
+      Alert.alert(
+        errorInfo.title,
+        errorInfo.message,
+        [
+          { 
+            text: errorInfo.actionLabel, 
+            onPress: () => {
+              if (parsedError.recoveryAction === 'EDIT') setStep('INPUT');
+            }
+          },
+          { text: 'OK', style: 'cancel' }
+        ]
+      );
     } finally {
       setIsSubmitting(false);
     }
@@ -298,6 +319,17 @@ export default function MerchantManualPayScreen() {
       <TouchableOpacity onPress={() => setStep('INPUT')} className="mt-6 items-center">
         <Text className="text-gray-400 font-manrope font-bold text-sm">Edit Amount</Text>
       </TouchableOpacity>
+      
+      {error && (
+        <View className="mt-6">
+          <ErrorRecovery 
+            error={error} 
+            onRetry={handleConfirm}
+            onEdit={() => setStep('INPUT')}
+            onDismiss={() => setError(null)}
+          />
+        </View>
+      )}
     </MotiView>
   );
 

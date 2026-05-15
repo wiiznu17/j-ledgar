@@ -610,16 +610,15 @@ export class MerchantService {
 
     this.logger.log(`[processQRPayment] Executing split for payment=${paymentId}: Total=${total.toFixed(2)}, Net=${merchantNet.toFixed(2)}, MVAT=${merchantVat.toFixed(2)}, Fee=${systemFee.toFixed(2)}, SVAT=${systemVat.toFixed(2)}`);
 
-    // 4. Perform Transfers (Ledger Commands)
+    // 4. Perform Atomic Multi-Leg Transfer
     try {
+        const legs = [];
+        
         // Leg 1: Merchant Net (To Pending)
-        const tx = await this.financeService.performTransfer({
-            fromAccountId: customerWallet.walletId, 
-            toAccountId: mAcc.pending,
+        legs.push({
+            toWalletId: mAcc.pending,
             amount: merchantNet.toFixed(2),
-            idempotencyKey: `qr_pay_net_${payment.id}`,
             note: `QR Payment to ${payment.merchant.name}`,
-            type: 'MERCHANT_PAYMENT',
             metadata: { 
               isMerchantPayment: true,
               recipientName: payment.merchant.name,
@@ -629,42 +628,39 @@ export class MerchantService {
 
         // Leg 2: Merchant VAT (To VAT)
         if (Number(merchantVat.toFixed(2)) > 0 && mAcc.vat) {
-          await this.financeService.performTransfer({
-            fromAccountId: customerWallet.walletId,
-            toAccountId: mAcc.vat,
+          legs.push({
+            toWalletId: mAcc.vat,
             amount: merchantVat.toFixed(2),
-            idempotencyKey: `qr_pay_vat_${payment.id}`,
-            type: 'MERCHANT_PAYMENT',
             note: `Merchant VAT for QR ${payment.id}`,
-            metadata: { silent: true, isMerchantPayment: true, parentIdempotencyKey: `qr_pay_net_${payment.id}` }
+            metadata: { silent: true, isMerchantPayment: true }
           });
         }
 
         // Leg 3: System Fee (To System Revenue)
         if (Number(systemFee.toFixed(2)) > 0 && sAcc.revenue) {
-          await this.financeService.performTransfer({
-            fromAccountId: customerWallet.walletId,
-            toAccountId: sAcc.revenue,
+          legs.push({
+            toWalletId: sAcc.revenue,
             amount: systemFee.toFixed(2),
-            idempotencyKey: `qr_pay_fee_${payment.id}`,
-            type: 'MERCHANT_PAYMENT',
             note: `System Fee for QR ${payment.id}`,
-            metadata: { silent: true, isMerchantPayment: true, parentIdempotencyKey: `qr_pay_net_${payment.id}` }
+            metadata: { silent: true, isMerchantPayment: true }
           });
         }
 
         // Leg 4: System VAT (To System VAT Payable)
         if (Number(systemVat.toFixed(2)) > 0 && sAcc.vat_payable) {
-          await this.financeService.performTransfer({
-            fromAccountId: customerWallet.walletId,
-            toAccountId: sAcc.vat_payable,
+          legs.push({
+            toWalletId: sAcc.vat_payable,
             amount: systemVat.toFixed(2),
-            idempotencyKey: `qr_pay_svat_${payment.id}`,
-            type: 'MERCHANT_PAYMENT',
             note: `Service VAT for QR ${payment.id}`,
-            metadata: { silent: true, isMerchantPayment: true, parentIdempotencyKey: `qr_pay_net_${payment.id}` }
+            metadata: { silent: true, isMerchantPayment: true }
           });
         }
+
+        const tx = await this.financeService.performMerchantMultiPay({
+          fromWalletId: customerWallet.walletId,
+          idempotencyKey: `qr_pay_atomic_${payment.id}`,
+          legs
+        });
 
         // 4. Update Status
         await this.prisma.merchantPayment.update({
@@ -774,14 +770,13 @@ export class MerchantService {
     const idempotencyKey = `manual_pay_${merchantId}_${userId}_${Date.now()}`;
 
     try {
+      const legs = [];
+
       // Leg 1: Merchant Net
-      const tx = await this.financeService.performTransfer({
-        fromAccountId: customerWallet.walletId,
-        toAccountId: mAcc.pending,
+      legs.push({
+        toWalletId: mAcc.pending,
         amount: merchantNet.toFixed(2),
-        idempotencyKey: `manual_leg_net_${idempotencyKey}`,
         note: note || `Manual Payment to ${merchant.name}`,
-        type: 'MERCHANT_PAYMENT',
         metadata: { 
           isMerchantPayment: true,
           recipientName: merchant.name,
@@ -791,42 +786,39 @@ export class MerchantService {
 
       // Leg 2: Merchant VAT
       if (Number(merchantVat.toFixed(2)) > 0 && mAcc.vat) {
-        await this.financeService.performTransfer({
-          fromAccountId: customerWallet.walletId,
-          toAccountId: mAcc.vat,
+        legs.push({
+          toWalletId: mAcc.vat,
           amount: merchantVat.toFixed(2),
-          idempotencyKey: `manual_leg_vat_${idempotencyKey}`,
-          type: 'MERCHANT_PAYMENT',
           note: `VAT for ${merchant.name}`,
-          metadata: { silent: true, parentIdempotencyKey: `manual_leg_net_${idempotencyKey}`, isMerchantPayment: true }
+          metadata: { silent: true, isMerchantPayment: true }
         });
       }
 
       // Leg 3: System Fee
       if (Number(systemFee.toFixed(2)) > 0 && sAcc.revenue) {
-        await this.financeService.performTransfer({
-          fromAccountId: customerWallet.walletId,
-          toAccountId: sAcc.revenue,
+        legs.push({
+          toWalletId: sAcc.revenue,
           amount: systemFee.toFixed(2),
-          idempotencyKey: `manual_leg_fee_${idempotencyKey}`,
-          type: 'MERCHANT_PAYMENT',
           note: `System Fee from ${merchant.name}`,
-          metadata: { silent: true, parentIdempotencyKey: `manual_leg_net_${idempotencyKey}`, isMerchantPayment: true }
+          metadata: { silent: true, isMerchantPayment: true }
         });
       }
 
       // Leg 4: System VAT
       if (Number(systemVat.toFixed(2)) > 0 && sAcc.vat_payable) {
-        await this.financeService.performTransfer({
-          fromAccountId: customerWallet.walletId,
-          toAccountId: sAcc.vat_payable,
+        legs.push({
+          toWalletId: sAcc.vat_payable,
           amount: systemVat.toFixed(2),
-          idempotencyKey: `manual_leg_svat_${idempotencyKey}`,
-          type: 'MERCHANT_PAYMENT',
           note: `System VAT from ${merchant.name}`,
-          metadata: { silent: true, parentIdempotencyKey: `manual_leg_net_${idempotencyKey}`, isMerchantPayment: true }
+          metadata: { silent: true, isMerchantPayment: true }
         });
       }
+
+      const tx = await this.financeService.performMerchantMultiPay({
+        fromWalletId: customerWallet.walletId,
+        idempotencyKey: `manual_pay_atomic_${idempotencyKey}`,
+        legs
+      });
 
       // Log Audit
       await this.auditService.log({

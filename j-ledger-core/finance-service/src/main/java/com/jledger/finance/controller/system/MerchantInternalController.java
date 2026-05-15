@@ -1,6 +1,7 @@
 package com.jledger.finance.controller.system;
 
 import com.jledger.finance.domain.entity.Transaction;
+import com.jledger.finance.dto.MerchantMultiPayRequest;
 import com.jledger.finance.dto.MerchantPayRequest;
 import com.jledger.finance.service.transaction.MerchantPaymentService;
 
@@ -23,6 +24,16 @@ public class MerchantInternalController {
             @RequestBody MerchantPayRequest request
     ) {
         Transaction transaction = merchantPaymentService.processMerchantPayment(idempotencyKey, request);
+        return ResponseEntity.ok(transaction);
+    }
+
+    @PostMapping("/merchant-pay-atomic")
+    @PreAuthorize("hasRole('INTERNAL')")
+    public ResponseEntity<Transaction> merchantMultiPay(
+            @RequestHeader("Idempotency-Key") String idempotencyKey,
+            @RequestBody MerchantMultiPayRequest request
+    ) {
+        Transaction transaction = merchantPaymentService.processMultiLegMerchantPayment(idempotencyKey, request);
         return ResponseEntity.ok(transaction);
     }
 }
