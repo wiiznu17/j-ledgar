@@ -10,36 +10,77 @@ import {
   Alert,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { ChevronLeft, Info, ArrowRight, X } from 'lucide-react-native';
 import { useRouter, useLocalSearchParams } from 'expo-router';
-import { MotiView } from 'moti';
+import { MotiView, AnimatePresence } from 'moti';
 import { TransferParamsSchema } from '../../types/transfer';
 import { api } from '@/lib/axios';
+import { MerchantService } from '@/lib/merchant-service';
 import { TransactionAmountCard } from '@/components/transaction/TransactionAmountCard';
 import { StickyActionArea } from '@/components/transaction/StickyActionArea';
+import { Store, User, Search, SearchIcon, ChevronLeft, Info, X } from 'lucide-react-native';
 
 export default function TransferScreen() {
   const router = useRouter();
-  const params = useLocalSearchParams();
+  const params = useLocalSearchParams<{ 
+    merchantId?: string, 
+    paymentId?: string,
+    recipient?: string, 
+    amount?: string,
+    merchantName?: string 
+  }>();
 
   const [recipient, setRecipient] = React.useState('');
   const [amount, setAmount] = React.useState('');
-  const [note, setNote] = React.useState((params.merchantName as string) || '');
+  const [note, setNote] = React.useState('');
   const [isSubmitting, setIsSubmitting] = React.useState(false);
   const [recipientNotFound, setRecipientNotFound] = React.useState(false);
+  const [merchant, setMerchant] = React.useState<any>(null);
+  const [isLoadingMerchant, setIsLoadingMerchant] = React.useState(false);
 
   React.useEffect(() => {
     // Handle params from QR scan (validated by qr-validation)
     if (params.recipient) {
-      setRecipient(params.recipient as string);
+      setRecipient(params.recipient);
     }
     if (params.amount) {
-      setAmount(params.amount as string);
+      setAmount(params.amount);
     }
-    if (params.merchantName) {
-      setNote(params.merchantName as string);
+    if (params.merchantId) {
+      loadMerchantInfo(params.merchantId);
+    } else if (params.paymentId) {
+      loadPaymentDetails(params.paymentId);
     }
-  }, [params]);
+  }, [params.merchantId, params.paymentId, params.recipient, params.amount]);
+
+  const loadPaymentDetails = async (id: string) => {
+    try {
+      setIsLoadingMerchant(true);
+      const data = await MerchantService.getPaymentDetail(id);
+      setMerchant({
+        merchantName: data.merchantName,
+        category: 'Merchant Payment',
+      });
+      setAmount(data.amount.toString());
+    } catch (err) {
+      console.error('Failed to load payment details:', err);
+      Alert.alert('Error', 'Invalid or expired payment request');
+    } finally {
+      setIsLoadingMerchant(false);
+    }
+  };
+
+  const loadMerchantInfo = async (id: string) => {
+    try {
+      setIsLoadingMerchant(true);
+      const data = await MerchantService.previewManualPayment(id);
+      setMerchant(data);
+    } catch (err) {
+      console.error('Failed to load merchant:', err);
+      Alert.alert('Error', 'Could not find merchant information');
+    } finally {
+      setIsLoadingMerchant(false);
+    }
+  };
 
   const handleRecipientChange = (text: string) => {
     const cleaned = text.replace(/\D/g, '');
@@ -55,6 +96,21 @@ export default function TransferScreen() {
 
   const handleNext = () => {
     if (isSubmitting) return;
+
+    if (params.merchantId || params.paymentId) {
+      // Merchant Pay doesn't need preview, go straight to review
+      router.push({
+        pathname: '/transfer/review',
+        params: {
+          merchantId: params.merchantId || params.paymentId, // Use either as key
+          amount,
+          note,
+          merchantName: merchant?.merchantName,
+        },
+      } as any);
+      return;
+    }
+
     setRecipientNotFound(false);
 
     // Validate transfer params using Zod schema
@@ -147,31 +203,58 @@ export default function TransferScreen() {
             showsVerticalScrollIndicator={false}
             contentContainerStyle={{ paddingBottom: 20 }}
           >
-            <View className="mb-6 mt-4">
-              <Text className="text-[10px] font-manrope font-black text-gray-400 uppercase tracking-widest px-1 mb-3">
-                Recipient Phone Number
-              </Text>
-              <View className="bg-white rounded-2xl px-5 py-4 flex-row items-center border border-gray-50 shadow-sm">
-                <TextInput
-                  placeholder="08X-XXX-XXXX"
-                  placeholderTextColor="#d1d5db"
-                  value={recipient}
-                  onChangeText={handleRecipientChange}
-                  keyboardType="number-pad"
-                  className="flex-1 font-manrope font-black text-gray-800 text-lg tracking-[0.05em]"
-                  style={{ paddingVertical: 0 }}
-                  maxLength={12}
-                />
-                {recipient.length > 0 && (
-                  <TouchableOpacity
-                    onPress={() => setRecipient('')}
-                    className="w-6 h-6 bg-gray-100 rounded-full items-center justify-center p-1"
-                  >
-                    <X size={14} color="#9ca3af" />
-                  </TouchableOpacity>
-                )}
-              </View>
-            </View>
+            <MotiView
+              from={{ opacity: 0, translateY: 10 }}
+              animate={{ opacity: 1, translateY: 0 }}
+              className="mt-4 mb-6"
+            >
+              {params.merchantId || params.paymentId ? (
+                /* Unified Merchant Header */
+                <View className="bg-white rounded-[2.5rem] p-6 border border-gray-100 flex-row items-center shadow-sm">
+                  <View className="w-16 h-16 bg-pink-50 rounded-[1.5rem] items-center justify-center border border-pink-100">
+                    <Store size={32} color="#f48fb1" />
+                  </View>
+                  <View className="ml-4 flex-1">
+                    <Text className="text-[10px] font-manrope font-black text-gray-400 uppercase tracking-widest mb-1">
+                      {params.paymentId ? 'Payment Request' : 'Paying To Merchant'}
+                    </Text>
+                    <Text className="text-xl font-manrope font-black text-gray-800" numberOfLines={1}>
+                      {merchant?.merchantName || 'Loading...'}
+                    </Text>
+                    <Text className="text-xs font-manrope font-bold text-gray-400">
+                      {merchant?.category || 'Verified Business'}
+                    </Text>
+                  </View>
+                </View>
+              ) : (
+                /* Original P2P Input */
+                <View>
+                  <Text className="text-[10px] font-manrope font-black text-gray-400 uppercase tracking-widest px-1 mb-3">
+                    Recipient Phone Number
+                  </Text>
+                  <View className="bg-white rounded-2xl px-5 py-4 flex-row items-center border border-gray-50 shadow-sm">
+                    <TextInput
+                      placeholder="08X-XXX-XXXX"
+                      placeholderTextColor="#d1d5db"
+                      value={recipient}
+                      onChangeText={handleRecipientChange}
+                      keyboardType="number-pad"
+                      className="flex-1 font-manrope font-black text-gray-800 text-lg tracking-[0.05em]"
+                      style={{ paddingVertical: 0 }}
+                      maxLength={12}
+                    />
+                    {recipient.length > 0 && (
+                      <TouchableOpacity
+                        onPress={() => setRecipient('')}
+                        className="w-6 h-6 bg-gray-100 rounded-full items-center justify-center p-1"
+                      >
+                        <X size={14} color="#9ca3af" />
+                      </TouchableOpacity>
+                    )}
+                  </View>
+                </View>
+              )}
+            </MotiView>
 
             {/* Amount Card */}
             <TransactionAmountCard 
@@ -234,7 +317,7 @@ export default function TransferScreen() {
         isVisible={true}
         label={isSubmitting ? 'Processing...' : 'Next Step'}
         onPress={handleNext}
-        disabled={isSubmitting || !recipient || !amount || parseFloat(amount) <= 0}
+        disabled={isSubmitting || (!params.merchantId && !params.paymentId && !recipient) || !amount || parseFloat(amount) <= 0}
         isLoading={isSubmitting}
       />
     </SafeAreaView>

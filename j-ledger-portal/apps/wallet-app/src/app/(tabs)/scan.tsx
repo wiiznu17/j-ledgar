@@ -81,12 +81,12 @@ export default function ScanScreen() {
 
           if (rawData.type === 'MERCHANT_PAYMENT') {
             router.push({
-              pathname: '/merchant/payment-confirm',
+              pathname: '/transfer',
               params: { paymentId: rawData.paymentId },
             } as any);
           } else if (rawData.type === 'MERCHANT_STATIC') {
             router.push({
-              pathname: '/merchant/manual-pay',
+              pathname: '/transfer',
               params: { merchantId: rawData.merchantId },
             } as any);
           } else {

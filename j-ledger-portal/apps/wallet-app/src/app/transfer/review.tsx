@@ -35,6 +35,7 @@ import {
 import { NotificationService } from '../../lib/notification-service';
 import { useScreenCaptureProtection } from '@/hooks/useScreenCaptureProtection';
 import { api } from '@/lib/axios';
+import { MerchantService } from '@/lib/merchant-service';
 import { TransactionReviewCard } from '@/components/transaction/TransactionReviewCard';
 import { StickyActionArea } from '@/components/transaction/StickyActionArea';
 import { ProcessingPortal } from '@/components/transaction/ProcessingPortal';
@@ -47,13 +48,22 @@ export default function ReviewTransferScreen() {
 
   const router = useRouter();
   const {
+    merchantId,
     recipient,
     amount,
     note,
     merchantName,
     recipientName,
     recipientMasked,
-  } = useLocalSearchParams();
+  } = useLocalSearchParams<{
+    merchantId?: string;
+    recipient?: string;
+    amount: string;
+    note?: string;
+    merchantName?: string;
+    recipientName?: string;
+    recipientMasked?: string;
+  }>();
   const [isProcessing, setIsProcessing] = useState(false);
   const [isConfirming, setIsConfirming] = useState(false);
 
@@ -135,34 +145,31 @@ export default function ReviewTransferScreen() {
     setError(null);
 
     try {
-      // Log transfer initiation
-      logTransaction({
-        id: '',
-        timestamp: Date.now(),
-        type: 'TRANSFER',
-        status: 'SUCCESS',
-        recipient: recipient as string,
-        amount: amount as string,
-        details: { merchantName, note },
-      });
-
-      const idempotencyKey = `p2p_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
-      const transferRes = await api.post('/integration/p2p/transfer', {
-        recipientPhone: recipient,
-        amount: transferAmount,
-        note: note || undefined,
-        idempotencyKey,
-      });
-      const transferData = transferRes.data || {};
+      let result: any;
+      
+      if (merchantId) {
+        // Merchant Payment Flow
+        result = await MerchantService.confirmManualPayment({
+          merchantId,
+          amount: transferAmount,
+          note: note as string,
+        });
+      } else {
+        // P2P Transfer Flow
+        const idempotencyKey = `p2p_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
+        const transferRes = await api.post('/integration/p2p/transfer', {
+          recipientPhone: recipient,
+          amount: transferAmount,
+          note: note || undefined,
+          idempotencyKey,
+        });
+        result = transferRes.data;
+      }
 
       setIsProcessing(false);
 
       // Send success notification
-      const recipientDisplay =
-        (Array.isArray(recipient) ? recipient[0] : recipient)?.replace(
-          /-/g,
-          '',
-        ) || 'Recipient';
+      const recipientDisplay = (merchantName as string) || (recipientName as string) || (recipient as string) || 'Recipient';
       NotificationService.transferSuccess(recipientDisplay, amount as string);
 
       router.push({
@@ -171,12 +178,11 @@ export default function ReviewTransferScreen() {
           recipient,
           amount,
           note,
-          merchantName,
-          transactionId: transferData.transactionId,
-          createdAt: transferData.createdAt,
-          recipientName: transferData?.recipient?.displayName || recipientName,
-          recipientMasked:
-            transferData?.recipient?.phoneMasked || recipientMasked,
+          merchantName: merchantName || (merchantId ? recipientName : undefined),
+          transactionId: result.transactionId,
+          createdAt: result.createdAt || new Date().toISOString(),
+          recipientName: result?.recipient?.displayName || recipientName,
+          recipientMasked: result?.recipient?.phoneMasked || recipientMasked,
         },
       } as any);
     } catch (err: any) {
@@ -256,9 +262,9 @@ export default function ReviewTransferScreen() {
           {/* Main Review Card */}
           <TransactionReviewCard 
             amount={transferAmount}
-            toName={recipientName as string || recipient as string}
-            toType="user"
-            transactionType="Peer-to-Peer"
+            toName={(merchantName as string) || (recipientName as string) || (recipient as string)}
+            toType={merchantId ? 'merchant' : 'user'}
+            transactionType={merchantId ? 'Merchant Payment' : 'Peer-to-Peer'}
             fee={fee}
             note={note as string}
           />
