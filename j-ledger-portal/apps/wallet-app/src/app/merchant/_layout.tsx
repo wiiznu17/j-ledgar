@@ -22,57 +22,68 @@ export default function MerchantLayout() {
     return pathname.startsWith(path);
   };
 
+  // Pages where the tab bar should be hidden
+  const hideTabBarPages = [
+    '/merchant/manual-pay',
+    '/merchant/apply',
+    '/merchant/payment-confirm'
+  ];
+
+  const shouldHideTabBar = hideTabBarPages.some(page => pathname.startsWith(page));
+
   return (
     <View style={{ flex: 1, backgroundColor: '#f8f9fe' }}>
       <View style={{ flex: 1 }}>
         <Slot />
       </View>
 
-      {/* Dynamic Tab Bar */}
-      <View 
-        style={{
-          backgroundColor: '#ffffff',
-          borderTopWidth: 1,
-          borderTopColor: '#f1f5f9',
-          height: Platform.OS === 'ios' ? 88 : 68,
-          paddingBottom: Platform.OS === 'ios' ? 28 : 12,
-          paddingTop: 12,
-          flexDirection: 'row',
-          borderTopLeftRadius: 30,
-          borderTopRightRadius: 30,
-          shadowColor: '#000',
-          shadowOffset: { width: 0, height: -4 },
-          shadowOpacity: 0.05,
-          shadowRadius: 10,
-          elevation: 10,
-        }}
-      >
-        {tabs.map((tab) => {
-          const active = isTabActive(tab.path);
-          const activeColor = '#f48fb1'; // Pink
-          const inactiveColor = '#94a3b8'; // Gray
+      {/* Dynamic Tab Bar - Hidden on specific pages */}
+      {!shouldHideTabBar && (
+        <View 
+          style={{
+            backgroundColor: '#ffffff',
+            borderTopWidth: 1,
+            borderTopColor: '#f1f5f9',
+            height: Platform.OS === 'ios' ? 88 : 68,
+            paddingBottom: Platform.OS === 'ios' ? 28 : 12,
+            paddingTop: 12,
+            flexDirection: 'row',
+            borderTopLeftRadius: 30,
+            borderTopRightRadius: 30,
+            shadowColor: '#000',
+            shadowOffset: { width: 0, height: -4 },
+            shadowOpacity: 0.05,
+            shadowRadius: 10,
+            elevation: 10,
+          }}
+        >
+          {tabs.map((tab) => {
+            const active = isTabActive(tab.path);
+            const activeColor = '#f48fb1'; // Pink
+            const inactiveColor = '#94a3b8'; // Gray
 
-          return (
-            <TouchableOpacity
-              key={tab.name}
-              onPress={() => router.replace(tab.path as any)}
-              style={{ flex: 1, alignItems: 'center', justifyContent: 'center' }}
-            >
-              <tab.icon size={20} color={active ? activeColor : inactiveColor} />
-              <Text 
-                style={{ 
-                  fontSize: 10, 
-                  fontFamily: 'Manrope_700Bold', 
-                  color: active ? activeColor : inactiveColor, 
-                  marginTop: 4 
-                }}
+            return (
+              <TouchableOpacity
+                key={tab.name}
+                onPress={() => router.replace(tab.path as any)}
+                style={{ flex: 1, alignItems: 'center', justifyContent: 'center' }}
               >
-                {tab.label}
-              </Text>
-            </TouchableOpacity>
-          );
-        })}
-      </View>
+                <tab.icon size={20} color={active ? activeColor : inactiveColor} />
+                <Text 
+                  style={{ 
+                    fontSize: 10, 
+                    fontFamily: 'Manrope_700Bold', 
+                    color: active ? activeColor : inactiveColor, 
+                    marginTop: 4 
+                  }}
+                >
+                  {tab.label}
+                </Text>
+              </TouchableOpacity>
+            );
+          })}
+        </View>
+      )}
     </View>
   );
 }
