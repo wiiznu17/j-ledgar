@@ -12,6 +12,7 @@ import {
 } from '@nestjs/common';
 import { MerchantService } from '../../modules/merchant/merchant.service';
 import { JwtAuthGuard } from '../../core/common/guards/jwt-auth.guard';
+import { PinVerifiedGuard } from '../../core/common/guards/pin-verified.guard';
 import { ApplyMerchantDto } from './dto/apply-merchant.dto';
 import { FilesInterceptor } from '@nestjs/platform-express';
 import { StorageService } from '../../core/storage/storage.service';
@@ -89,6 +90,7 @@ export class MerchantController {
   }
 
   @Post('payments/:paymentId/confirm')
+  @UseGuards(JwtAuthGuard, PinVerifiedGuard)
   async confirmPayment(@Req() req: any, @Param('paymentId') paymentId: string) {
     const userId = req.user?.sub;
     return this.merchantService.processQRPayment(userId, paymentId);
@@ -100,6 +102,7 @@ export class MerchantController {
   }
 
   @Post('manual-pay/confirm')
+  @UseGuards(JwtAuthGuard, PinVerifiedGuard)
   async confirmManualPayment(@Req() req: any, @Body() body: { merchantId: string; amount: number; note?: string }) {
     const userId = req.user?.sub;
     return this.merchantService.processManualPayment(userId, body.merchantId, body.amount, body.note);

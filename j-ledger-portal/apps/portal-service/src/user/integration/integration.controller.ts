@@ -12,6 +12,7 @@ import {
 } from '@nestjs/common';
 import { IntegrationService } from '../../modules/integration/integration.service';
 import { JwtAuthGuard } from '../../core/common/guards/jwt-auth.guard';
+import { PinVerifiedGuard } from '../../core/common/guards/pin-verified.guard';
 
 interface TopUpBody {
   amount: number;
@@ -94,6 +95,7 @@ export class IntegrationController {
   }
 
   @Post('p2p/transfer')
+  @UseGuards(JwtAuthGuard, PinVerifiedGuard)
   async transferP2P(@Req() req: any, @Body() body: P2PTransferBody) {
     const userId = req.user?.sub;
     return this.integrationService.transferP2P(userId, body);

@@ -52,6 +52,7 @@ interface AccessTokenPayload {
   typ?: 'access';
   jti: string;
   scope?: 'wallet';
+  pvn: boolean; // PIN Verified Now
   exp?: number;
 }
 
@@ -599,6 +600,7 @@ export class IdentityService {
     userId: string,
     sessionId: string,
     deviceId: string,
+    isPinVerified: boolean = false,
   ): Promise<string> {
     const payload: AccessTokenPayload = {
       sub: userId,
@@ -607,6 +609,7 @@ export class IdentityService {
       typ: 'access',
       jti: randomUUID(),
       scope: 'wallet',
+      pvn: isPinVerified,
     };
 
     return this.jwtService.signAsync(payload, {
@@ -1765,24 +1768,26 @@ export class IdentityService {
       data: { pinAttempts: 0, pinLockedUntil: null },
     });
 
-    // Generate fresh tokens for the unlocked session
+    // Generate fresh tokens for the unlocked session (Marked as PIN Verified)
     const device = await this.prisma.userDevice.findFirst({
       where: { userId, deviceIdentifier: dto.deviceId },
     });
 
-    return this.generateAuthResponse(user, device?.id);
+    return this.generateAuthResponse(user, device?.id, null, true);
   }
 
   private async generateAuthResponse(
     user: any,
     deviceId?: string,
     context?: any,
+    isPinVerified: boolean = false,
   ) {
     const sessionId = randomUUID();
     const accessToken = await this.signAccessToken(
       user.id,
       sessionId,
       deviceId,
+      isPinVerified,
     );
     const refreshToken = await this.signRefreshToken(
       user.id,
