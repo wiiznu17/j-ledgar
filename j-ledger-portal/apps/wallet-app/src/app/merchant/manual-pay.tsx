@@ -18,6 +18,17 @@ import { MerchantService } from '@/lib/merchant-service';
 import { parseBackendError, TransferError, getErrorInfo } from '@/lib/error-handling';
 import { ErrorRecovery } from '@/components/error/ErrorRecovery';
 import * as Haptics from 'expo-haptics';
+import { useAuthStore } from '@/store/auth';
+import { BiometricAuth } from '@/components/auth/BiometricAuth';
+import { PINVerification } from '@/components/auth/PINVerification';
+import {
+  isBiometricAvailable,
+  isBiometricEnrolled,
+} from '@/lib/biometric-auth';
+import { TransactionAmountCard } from '@/components/transaction/TransactionAmountCard';
+import { TransactionReviewCard } from '@/components/transaction/TransactionReviewCard';
+import { StickyActionArea } from '@/components/transaction/StickyActionArea';
+import { ProcessingPortal } from '@/components/transaction/ProcessingPortal';
 
 type Step = 'INPUT' | 'REVIEW' | 'SUCCESS';
 
@@ -31,8 +42,15 @@ export default function MerchantManualPayScreen() {
   const [amount, setAmount] = useState('');
   const [note, setNote] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isConfirming, setIsConfirming] = useState(false);
   const [paymentResult, setPaymentResult] = useState<any>(null);
   const [error, setError] = useState<TransferError | null>(null);
+
+  // Authentication states
+  const [showBiometric, setShowBiometric] = useState(false);
+  const [showPIN, setShowPIN] = useState(false);
+  const [biometricAvailable, setBiometricAvailable] = useState(false);
+  const biometricEnabled = useAuthStore((state) => state.biometricEnabled);
 
   useEffect(() => {
     if (merchantId) {
@@ -40,6 +58,13 @@ export default function MerchantManualPayScreen() {
     } else {
       Alert.alert('Error', 'Invalid merchant ID', [{ text: 'OK', onPress: () => router.back() }]);
     }
+
+    const checkBiometric = async () => {
+      const available = await isBiometricAvailable();
+      const enrolled = await isBiometricEnrolled();
+      setBiometricAvailable(available && enrolled);
+    };
+    checkBiometric();
   }, [merchantId]);
 
   const loadMerchantPreview = async () => {
@@ -67,6 +92,32 @@ export default function MerchantManualPayScreen() {
   };
 
   const handleConfirm = async () => {
+    if (isSubmitting || isConfirming) return;
+
+    if (biometricAvailable && biometricEnabled) {
+      setIsConfirming(true);
+      setShowBiometric(true);
+      return;
+    }
+
+    setIsConfirming(true);
+    setShowPIN(true);
+  };
+
+  const handleAuthSuccess = () => {
+    setShowBiometric(false);
+    setShowPIN(false);
+    setIsConfirming(false);
+    performPayment();
+  };
+
+  const handleAuthCancel = () => {
+    setShowBiometric(false);
+    setShowPIN(false);
+    setIsConfirming(false);
+  };
+
+  const performPayment = async () => {
     setIsSubmitting(true);
     try {
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
@@ -120,9 +171,11 @@ export default function MerchantManualPayScreen() {
 
   const renderInput = () => (
     <MotiView
-      from={{ opacity: 0, translateX: -20 }}
+      key="input"
+      from={{ opacity: 0, translateX: 50 }}
       animate={{ opacity: 1, translateX: 0 }}
-      exit={{ opacity: 0, translateX: 20 }}
+      exit={{ opacity: 0, translateX: -50 }}
+      transition={{ type: 'timing', duration: 400 }}
     >
       {/* Merchant Card */}
       <MotiView
@@ -144,52 +197,11 @@ export default function MerchantManualPayScreen() {
       </MotiView>
 
       {/* Amount Input */}
-      <View className="bg-white rounded-[2.5rem] p-8 mb-6 items-center border border-gray-50 shadow-sm">
-        <Text className="text-[10px] font-manrope font-black text-gray-400 uppercase tracking-widest mb-4">
-          Enter Amount to Pay
-        </Text>
-
-        <View className="flex-row items-center justify-center border-b-2 border-pink-100 pb-2 mb-6 w-full max-w-[220px]">
-          <Text className="text-2xl font-manrope font-black text-gray-400 mr-2">฿</Text>
-          <TextInput
-            placeholder="0.00"
-            placeholderTextColor="#d1d5db"
-            value={amount}
-            onChangeText={(text) => {
-              const filtered = text.replace(/[^0-9.]/g, '');
-              if (filtered.split('.').length > 2) return;
-              setAmount(filtered);
-            }}
-            keyboardType="decimal-pad"
-            selectionColor="#f48fb1"
-            className="font-manrope font-black text-[#f48fb1] text-center"
-            style={{ fontSize: 44, minWidth: 120 }}
-          />
-        </View>
-
-        {amount !== '' && parseFloat(amount) < 5.00 && (
-          <Text className="text-[10px] font-manrope font-bold text-red-400 mb-6 uppercase tracking-wider">
-            Minimum payment is ฿5.00
-          </Text>
-        )}
-
-        <View className="flex-row gap-3">
-          {['100', '500', '1,000'].map((val) => (
-            <TouchableOpacity
-              key={val}
-              onPress={() => {
-                setAmount(val.replace(',', ''));
-                Haptics.selectionAsync();
-              }}
-              className="px-5 py-3 rounded-2xl bg-pink-50 border border-pink-100 active:scale-95"
-            >
-              <Text className="text-[11px] font-manrope font-black text-[#f48fb1]">
-                {val}
-              </Text>
-            </TouchableOpacity>
-          ))}
-        </View>
-      </View>
+      <TransactionAmountCard 
+        amount={amount}
+        onAmountChange={setAmount}
+        label="Enter Amount to Pay"
+      />
 
       {/* Note Input */}
       <View className="bg-white rounded-2xl px-5 py-4 border border-gray-50 shadow-sm mb-6 flex-row items-center">
@@ -203,93 +215,27 @@ export default function MerchantManualPayScreen() {
         />
       </View>
 
-      <TouchableOpacity
-        onPress={handleNext}
-        className={`w-full h-16 rounded-2xl flex-row items-center justify-center gap-3 shadow-lg 
-          ${!amount || parseFloat(amount) <= 0 ? 'bg-gray-200' : 'bg-[#f48fb1] shadow-pink-200 active:scale-95'}`}
-      >
-        <Text className={`font-manrope font-black text-base ${!amount ? 'text-gray-400' : 'text-white'}`}>
-          Review Payment
-        </Text>
-        <ArrowRight size={20} color={!amount ? '#9ca3af' : 'white'} />
-      </TouchableOpacity>
-    </MotiView>
+      </MotiView>
   );
 
   const renderReview = () => (
     <MotiView
-      from={{ opacity: 0, translateY: 10 }}
-      animate={{ opacity: 1, translateY: 0 }}
+      key="review"
+      from={{ opacity: 0, translateX: 50 }}
+      animate={{ opacity: 1, translateX: 0 }}
+      exit={{ opacity: 0, translateX: -50 }}
+      transition={{ type: 'timing', duration: 400 }}
       className="flex-1"
     >
       {/* Main Review Card */}
-      <View className="bg-white rounded-[2.5rem] p-7 border border-gray-100 relative overflow-hidden mb-6 shadow-sm">
-        <View className="absolute top-0 left-0 right-0 h-2 bg-[#f48fb1]" />
-
-        <View className="items-center mb-8 pt-4">
-          <Text className="text-[10px] font-manrope font-black text-gray-400 uppercase tracking-widest mb-3">
-            Payment Amount
-          </Text>
-          <View className="flex-row items-baseline w-full justify-center">
-            <Text className="text-2xl font-manrope font-black text-gray-400 mr-2">฿</Text>
-            <Text
-              numberOfLines={1}
-              adjustsFontSizeToFit
-              className="text-5xl font-manrope font-black text-gray-800 tracking-tighter"
-            >
-              {parseFloat(amount).toLocaleString(undefined, { minimumFractionDigits: 2 })}
-            </Text>
-          </View>
-        </View>
-
-        {/* Transfer Direction Container */}
-        <View className="bg-gray-50/80 rounded-[2rem] p-5 border border-gray-100/50 mb-8 relative">
-          <View className="absolute left-10 top-12 bottom-12 w-[2px] bg-gray-200 border-dashed border-l-[2px] border-gray-200 z-0" />
-
-          {/* From User */}
-          <View className="flex-row items-center relative z-10 mb-6">
-            <View className="w-10 h-10 bg-white rounded-xl items-center justify-center border border-gray-100">
-              <Wallet size={20} color="#9ca3af" />
-            </View>
-            <View className="ml-4 flex-1">
-              <Text className="text-[10px] font-manrope font-black text-gray-400 uppercase tracking-widest mb-0.5">
-                From
-              </Text>
-              <Text className="text-sm font-manrope font-black text-gray-800">My E-Wallet</Text>
-            </View>
-          </View>
-
-          {/* To Merchant */}
-          <View className="flex-row items-center relative z-10">
-            <View className="w-10 h-10 bg-pink-50 rounded-xl items-center justify-center border border-pink-100">
-              <Store size={20} color="#f48fb1" />
-            </View>
-            <View className="ml-4 flex-1">
-              <Text className="text-[10px] font-manrope font-black text-gray-400 uppercase tracking-widest mb-0.5">
-                To Merchant
-              </Text>
-              <Text className="text-sm font-manrope font-black text-gray-800" numberOfLines={1}>
-                {merchant?.merchantName}
-              </Text>
-            </View>
-          </View>
-        </View>
-
-        {/* Summary Board */}
-        <View>
-          <SummaryRow label="Transaction Type" value="Merchant Payment" />
-          <SummaryRow label="Payment Fee" value="FREE" isHighlight />
-
-          <View className="mt-2 pt-5 border-t border-gray-100 flex-row justify-between items-center">
-            <Text className="text-[10px] font-manrope font-black text-gray-400 uppercase tracking-widest">
-              Total Payment
-            </Text>
-            <Text className="text-xl font-manrope font-black text-[#f48fb1]">
-              ฿{parseFloat(amount).toLocaleString(undefined, { minimumFractionDigits: 2 })}
-            </Text>
-          </View>
-        </View>
-      </View>
+      <TransactionReviewCard 
+        amount={parseFloat(amount)}
+        toName={merchant?.merchantName}
+        toType="merchant"
+        transactionType="Merchant Payment"
+        fee={0}
+        note={note}
+      />
 
       {/* Trust Banner */}
       <View className="bg-green-50/50 p-5 rounded-2xl border border-green-100/50 flex-row items-center gap-4 mb-8">
@@ -301,22 +247,11 @@ export default function MerchantManualPayScreen() {
         </Text>
       </View>
 
-      <TouchableOpacity
+      <TouchableOpacity 
+        onPress={() => setStep('INPUT')} 
+        className="mt-6 mb-20 items-center"
         disabled={isSubmitting}
-        onPress={handleConfirm}
-        className={`w-full h-16 rounded-2xl flex-row items-center justify-center gap-3 shadow-xl active:scale-95 ${isSubmitting ? 'bg-pink-300' : 'bg-[#f48fb1]'}`}
       >
-        {isSubmitting ? (
-          <ActivityIndicator color="white" />
-        ) : (
-          <>
-            <Text className="font-manrope font-black text-white text-base">Confirm Payment</Text>
-            <ArrowRight size={20} color="white" />
-          </>
-        )}
-      </TouchableOpacity>
-
-      <TouchableOpacity onPress={() => setStep('INPUT')} className="mt-6 items-center">
         <Text className="text-gray-400 font-manrope font-bold text-sm">Edit Amount</Text>
       </TouchableOpacity>
       
@@ -335,8 +270,10 @@ export default function MerchantManualPayScreen() {
 
   const renderSuccess = () => (
     <MotiView
-      from={{ opacity: 0, scale: 0.5 }}
-      animate={{ opacity: 1, scale: 1 }}
+      key="success"
+      from={{ opacity: 0, scale: 0.9, translateY: 20 }}
+      animate={{ opacity: 1, scale: 1, translateY: 0 }}
+      transition={{ type: 'spring', damping: 15 }}
       className="flex-1"
     >
       <View className="bg-white rounded-[3rem] p-8 border border-gray-50 shadow-2xl shadow-pink-200/30 overflow-hidden">
@@ -451,31 +388,62 @@ export default function MerchantManualPayScreen() {
           </ScrollView>
         </View>
       </KeyboardAvoidingView>
+
+      {/* Authentication Modals */}
+      <AnimatePresence>
+        {isConfirming && !error && (
+          <MotiView
+            from={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="absolute inset-0 bg-white items-center justify-center z-40"
+          >
+            {showBiometric && (
+              <BiometricAuth
+                onSuccess={handleAuthSuccess}
+                onFailure={() => {
+                  setShowBiometric(false);
+                  setShowPIN(true);
+                }}
+                onUsePIN={() => {
+                  setShowBiometric(false);
+                  setShowPIN(true);
+                }}
+              />
+            )}
+
+            {showPIN && (
+              <PINVerification
+                onSuccess={handleAuthSuccess}
+                onFailure={() => {
+                    setShowPIN(false);
+                    setIsConfirming(false);
+                }}
+                onCancel={handleAuthCancel}
+              />
+            )}
+          </MotiView>
+        )}
+      </AnimatePresence>
+
+      {/* Shared Sticky Action Area */}
+      {step !== 'SUCCESS' && (
+        <StickyActionArea 
+          isVisible={true}
+          label={step === 'INPUT' ? 'Review Payment' : (isConfirming ? 'Authenticating...' : 'Confirm Payment')}
+          onPress={step === 'INPUT' ? handleNext : handleConfirm}
+          disabled={!amount || parseFloat(amount) < 5.00 || isSubmitting || isConfirming}
+          isLoading={isSubmitting}
+          isAuthenticating={isConfirming}
+        />
+      )}
+
+      {/* Shared Processing Portal */}
+      <ProcessingPortal 
+        isVisible={isSubmitting}
+        subtitle="We're securing your transaction and confirming with the merchant..."
+      />
     </SafeAreaView>
   );
 }
 
-function SummaryRow({
-  label,
-  value,
-  isHighlight,
-}: {
-  label: string;
-  value: string;
-  isHighlight?: boolean;
-}) {
-  return (
-    <View className="flex-row justify-between items-center mb-4">
-      <Text className="text-[10px] font-manrope font-black text-gray-400 uppercase tracking-widest">
-        {label}
-      </Text>
-      <Text
-        className={`text-sm font-manrope font-black ${
-          isHighlight ? 'text-green-500' : 'text-gray-800'
-        }`}
-      >
-        {value}
-      </Text>
-    </View>
-  );
-}

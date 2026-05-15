@@ -15,6 +15,8 @@ import { useRouter, useLocalSearchParams } from 'expo-router';
 import { MotiView } from 'moti';
 import { TransferParamsSchema } from '../../types/transfer';
 import { api } from '@/lib/axios';
+import { TransactionAmountCard } from '@/components/transaction/TransactionAmountCard';
+import { StickyActionArea } from '@/components/transaction/StickyActionArea';
 
 export default function TransferScreen() {
   const router = useRouter();
@@ -172,56 +174,11 @@ export default function TransferScreen() {
             </View>
 
             {/* Amount Card */}
-            <View className="bg-white rounded-[2rem] p-6 mb-6 items-center border border-gray-50 shadow-sm relative overflow-hidden">
-              <View className="absolute -top-10 -right-10 w-24 h-24 bg-pink-50 rounded-full opacity-60" />
-
-              <Text className="text-[10px] font-manrope font-black text-gray-400 uppercase tracking-widest mb-4">
-                Total Amount to Send
-              </Text>
-
-              <View className="flex-row items-center justify-center border-b-2 border-pink-100 pb-2 mb-6 w-full max-w-[220px]">
-                <Text className="text-2xl font-manrope font-black text-gray-400 mr-2">
-                  ฿
-                </Text>
-                <TextInput
-                  placeholder="0.00"
-                  placeholderTextColor="#d1d5db"
-                  value={amount}
-                  onChangeText={(text) => {
-                    const filtered = text.replace(/[^0-9.]/g, '');
-                    if (filtered.split('.').length > 2) return;
-                    setAmount(filtered);
-                  }}
-                  keyboardType="decimal-pad"
-                  selectionColor="#f48fb1"
-                  className="font-manrope font-black text-[#f48fb1] text-center"
-                  style={{
-                    fontSize: 40,
-                    lineHeight: 48,
-                    paddingVertical: 0,
-                    marginVertical: 0,
-                    includeFontPadding: false,
-                    minWidth: 120,
-                    height: 50,
-                  }}
-                  maxLength={9}
-                />
-              </View>
-
-              <View className="flex-row gap-3">
-                {['100', '500', '1,000'].map((val) => (
-                  <TouchableOpacity
-                    key={val}
-                    onPress={() => handleQuickAmount(val.replace(',', ''))}
-                    className="px-4 py-2 rounded-xl bg-pink-50 border border-pink-100 active:scale-95"
-                  >
-                    <Text className="text-[10px] font-manrope font-black text-[#f48fb1]">
-                      {val}
-                    </Text>
-                  </TouchableOpacity>
-                ))}
-              </View>
-            </View>
+            <TransactionAmountCard 
+              amount={amount}
+              onAmountChange={setAmount}
+              label="Total Amount to Send"
+            />
 
             {/* Note Input */}
             <View className="mb-6">
@@ -268,46 +225,18 @@ export default function TransferScreen() {
                 refunded.
               </Text>
             </View>
-
-            {/* Submit Button */}
-            <MotiView
-              from={{ opacity: 0, translateY: 10 }}
-              animate={{ opacity: 1, translateY: 0 }}
-            >
-              <TouchableOpacity
-                disabled={
-                  isSubmitting ||
-                  !recipient ||
-                  !amount ||
-                  parseFloat(amount) <= 0
-                }
-                onPress={handleNext}
-                className={`w-full h-14 rounded-2xl flex-row items-center justify-center gap-2 shadow-lg transition-all
-                  ${
-                    isSubmitting ||
-                    !recipient ||
-                    !amount ||
-                    parseFloat(amount) <= 0
-                      ? 'bg-gray-200 shadow-none'
-                      : 'bg-[#f48fb1] shadow-pink-200 active:scale-95'
-                  }`}
-              >
-                <Text
-                  className={`font-manrope font-black text-sm ${!recipient || !amount || isSubmitting ? 'text-gray-400' : 'text-white'}`}
-                >
-                  {isSubmitting ? 'Processing...' : 'Next Step'}
-                </Text>
-                {!isSubmitting && (
-                  <ArrowRight
-                    size={18}
-                    color={!recipient || !amount ? '#9ca3af' : 'white'}
-                  />
-                )}
-              </TouchableOpacity>
-            </MotiView>
           </ScrollView>
         </View>
       </KeyboardAvoidingView>
+
+      {/* Sticky Action Area */}
+      <StickyActionArea 
+        isVisible={true}
+        label={isSubmitting ? 'Processing...' : 'Next Step'}
+        onPress={handleNext}
+        disabled={isSubmitting || !recipient || !amount || parseFloat(amount) <= 0}
+        isLoading={isSubmitting}
+      />
     </SafeAreaView>
   );
 }
