@@ -253,10 +253,10 @@ export class MerchantService {
       try {
         const bizName = application.businessName || `Merchant ${application.partnerId}`;
         const [availableAcc, pendingAcc, feeAcc, vatAcc] = await Promise.all([
-          this.financeService.createAccount(application.partnerId, `${bizName} - Available`),
-          this.financeService.createAccount(application.partnerId, `${bizName} - Pending`),
-          this.financeService.createAccount(application.partnerId, `${bizName} - Fee`),
-          this.financeService.createAccount(application.partnerId, `${bizName} - VAT`),
+          this.financeService.createAccount(application.partnerId, `${bizName} - Available`, 'THB', 'AVAILABLE'),
+          this.financeService.createAccount(application.partnerId, `${bizName} - Pending`, 'THB', 'PENDING'),
+          this.financeService.createAccount(application.partnerId, `${bizName} - Fee`, 'THB', 'FEE'),
+          this.financeService.createAccount(application.partnerId, `${bizName} - VAT`, 'THB', 'VAT'),
         ]);
         
         if (!availableAcc?.id || !pendingAcc?.id || !feeAcc?.id || !vatAcc?.id) {

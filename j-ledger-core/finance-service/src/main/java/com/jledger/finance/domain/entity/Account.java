@@ -41,6 +41,10 @@ public class Account {
     @Column(name = "account_name", nullable = false, length = 100)
     private String accountName;
 
+    @Enumerated(EnumType.STRING)
+    @Column(name = "account_type", length = 50)
+    private com.jledger.finance.domain.enums.AccountType accountType;
+
     @Column(nullable = false, precision = 20, scale = 4)
     private BigDecimal balance;
 

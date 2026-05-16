@@ -475,7 +475,8 @@ async function main() {
           await axios.post(`${financeUrl}/api/v1/accounts`, {
             user_id: '00000000-0000-0000-0000-000000000000',
             account_name: 'SYSTEM_BANK_ACCOUNT',
-            currency: 'THB'
+            currency: 'THB',
+            account_type: 'BANK_CLEARING'
           }, { headers });
           console.log('✅ SYSTEM_BANK_ACCOUNT created.');
         } else {
@@ -496,7 +497,8 @@ async function main() {
           const res = await axios.post(`${financeUrl}/api/v1/accounts`, {
             user_id: systemPartner.id,
             account_name: 'SYSTEM_REVENUE',
-            currency: 'THB'
+            currency: 'THB',
+            account_type: 'SYSTEM_REVENUE'
           }, { headers });
           systemAccounts.revenue = res.data.id;
         }
@@ -510,7 +512,8 @@ async function main() {
           const res = await axios.post(`${financeUrl}/api/v1/accounts`, {
             user_id: systemPartner.id,
             account_name: 'SYSTEM_VAT_PAYABLE',
-            currency: 'THB'
+            currency: 'THB',
+            account_type: 'SYSTEM_VAT_PAYABLE'
           }, { headers });
           systemAccounts.vat_payable = res.data.id;
         }
@@ -551,7 +554,8 @@ async function main() {
           await axios.post(`${financeUrl}/api/v1/accounts`, {
             user_id: merchantUser.id,
             account_name: 'BUSINESS_OPERATIONAL',
-            currency: 'THB'
+            currency: 'THB',
+            account_type: 'AVAILABLE'
           }, { headers });
           console.log('✅ Merchant Owner BUSINESS_OPERATIONAL account created.');
         }

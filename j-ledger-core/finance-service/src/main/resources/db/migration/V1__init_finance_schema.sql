@@ -77,6 +77,7 @@ CREATE TABLE IF NOT EXISTS accounts (
     id UUID PRIMARY KEY,
     user_id UUID NOT NULL,
     account_name VARCHAR(100) NOT NULL,
+    account_type VARCHAR(50), -- ตัวใหม่: PENDING, VAT, FEE, REVENUE, etc.
     balance DECIMAL(20, 4) NOT NULL DEFAULT 0.0000,
     daily_limit DECIMAL(20, 4) NOT NULL DEFAULT 500000.0000,
     currency VARCHAR(3) NOT NULL,
@@ -272,5 +273,5 @@ CREATE TRIGGER update_limits_updated_at BEFORE UPDATE ON transaction_limits FOR 
 
 
 -- Seed System Bank Account (Double-entry core)
-INSERT INTO finance.accounts (id, user_id, account_name, balance, currency, status, created_at, updated_at, version)
-VALUES ('00000000-0000-0000-0000-000000000000', '00000000-0000-0000-0000-000000000000', 'SYSTEM_BANK_ACCOUNT', 0, 'THB', 'ACTIVE', NOW(), NOW(), 0);
+INSERT INTO finance.accounts (id, user_id, account_name, account_type, balance, currency, status, created_at, updated_at, version)
+VALUES ('00000000-0000-0000-0000-000000000000', '00000000-0000-0000-0000-000000000000', 'SYSTEM_BANK_ACCOUNT', 'BANK_CLEARING', 0, 'THB', 'ACTIVE', NOW(), NOW(), 0);

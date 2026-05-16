@@ -30,12 +30,13 @@ public class AccountService {
     }
 
     @Transactional
-    public Account createAccount(UUID userId, String accountName, String currency) {
-        log.info("Creating new account for user: {}, name: {}", userId, accountName);
+    public Account createAccount(UUID userId, String accountName, String currency, com.jledger.finance.domain.enums.AccountType accountType) {
+        log.info("Creating new account for user: {}, name: {}, type: {}", userId, accountName, accountType);
         
         Account account = Account.builder()
                 .userId(userId)
                 .accountName(accountName)
+                .accountType(accountType)
                 .balance(java.math.BigDecimal.ZERO)
                 .currency(currency != null ? currency : "THB")
                 .status("ACTIVE")

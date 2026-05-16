@@ -951,6 +951,7 @@ public class WalletService {
                     Account newAcc = Account.builder()
                             .userId(userUuid)
                             .accountName(accountName)
+                            .accountType(userId.startsWith("00000000") ? com.jledger.finance.domain.enums.AccountType.SYSTEM_REVENUE : com.jledger.finance.domain.enums.AccountType.WALLET)
                             .balance(BigDecimal.ZERO)
                             .currency(currency != null ? currency : "THB")
                             .status("ACTIVE")

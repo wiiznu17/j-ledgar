@@ -142,12 +142,14 @@ export class FinanceService {
     ownerId: string,
     accountName: string,
     currency: string = 'THB',
+    accountType?: string,
   ): Promise<{ id: string }> {
     const url = `${this.financeServiceUrl}/api/v1/accounts`;
     const body = {
       user_id: ownerId, // The Java service uses user_id as the field name in the database
       account_name: accountName,
       currency,
+      account_type: accountType,
     };
 
     try {

@@ -66,8 +66,18 @@ public class AccountController {
         UUID userId = UUID.fromString(request.get("user_id"));
         String accountName = request.get("account_name");
         String currency = request.get("currency");
+        String typeStr = request.get("account_type");
         
-        Account created = accountService.createAccount(userId, accountName, currency);
+        com.jledger.finance.domain.enums.AccountType accountType = null;
+        if (typeStr != null) {
+            try {
+                accountType = com.jledger.finance.domain.enums.AccountType.valueOf(typeStr.toUpperCase());
+            } catch (IllegalArgumentException e) {
+                // Fallback or ignore
+            }
+        }
+        
+        Account created = accountService.createAccount(userId, accountName, currency, accountType);
         return ResponseEntity.status(org.springframework.http.HttpStatus.CREATED).body(created);
     }
 }
