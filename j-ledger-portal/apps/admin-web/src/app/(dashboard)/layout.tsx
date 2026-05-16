@@ -1,4 +1,5 @@
 import { cookies } from 'next/headers';
+import { redirect } from 'next/navigation';
 import { Toaster } from '@/components/ui/sonner';
 import { DashboardWrapper } from '@/components/layout/DashboardWrapper';
 import { verifyToken } from '@/lib/auth/jwt';
@@ -17,7 +18,13 @@ export default async function DashboardLayout({
   }
 
   const payload = await verifyToken(token);
-  const userRole = payload?.role || 'SUPPORT_STAFF';
+  
+  if (!payload) {
+    // Token is invalid or expired
+    redirect('/login');
+  }
+
+  const userRole = payload.role || 'SUPPORT_STAFF';
 
   const permissionsCookie = cookieStore.get('user_permissions')?.value;
   let permissions: string[] = [];

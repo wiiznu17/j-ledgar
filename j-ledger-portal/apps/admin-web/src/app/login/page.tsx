@@ -1,7 +1,20 @@
+import { cookies } from 'next/headers';
+import { redirect } from 'next/navigation';
+import { verifyToken } from '@/lib/auth/jwt';
 import { login } from '@/app/actions/auth';
 import { LoginForm } from '@/components/auth/LoginForm';
 
-export default function LoginPage() {
+export default async function LoginPage() {
+  const cookieStore = await cookies();
+  const token = cookieStore.get('admin_session')?.value;
+
+  if (token) {
+    const payload = await verifyToken(token);
+    if (payload) {
+      redirect('/dashboard');
+    }
+  }
+
   return (
     <div className="min-h-screen flex items-center justify-center bg-gray-50/50">
       <div className="flex flex-col lg:flex-row w-full max-w-5xl rounded-2xl overflow-hidden shadow-2xl bg-white border border-border">
