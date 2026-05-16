@@ -264,16 +264,3 @@ CREATE TRIGGER update_payment_updated_at BEFORE UPDATE ON payment_transactions F
 CREATE TRIGGER update_suspicious_updated_at BEFORE UPDATE ON suspicious_activities FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
 CREATE TRIGGER update_limits_updated_at BEFORE UPDATE ON transaction_limits FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
 
--- -----------------------------------------------------------------------------
--- 7. Seeds
--- -----------------------------------------------------------------------------
-
--- Default System Settings
-INSERT INTO system_settings (system_name, company_name, support_email, support_phone, default_currency, business_hours_start, business_hours_end, email_notifications_enabled, sms_notifications_enabled, kyc_required, two_factor_auth_required, default_language, timezone, session_timeout_minutes, registration_mode, transfer_fee_fixed, transfer_fee_percentage, top_up_fee_fixed, top_up_fee_percentage, bill_payment_fee_fixed, bill_payment_fee_percentage, withdrawal_fee_fixed, withdrawal_fee_percentage, minimum_fee, daily_transaction_limit, monthly_transaction_limit, per_transaction_limit, wallet_balance_limit, daily_top_up_limit)
-VALUES ('J-Ledger', 'J-Ledger Co., Ltd.', 'support@jledger.com', '+66-2-123-4567', 'THB', '09:00', '17:00', true, true, true, false, 'th', 'Asia/Bangkok', 30, 'open', 5.0000, 0.0100, 0.0000, 0.0000, 10.0000, 0.0050, 25.0000, 0.0200, 1.0000, 500000.0000, 5000000.0000, 100000.0000, 1000000.0000, 200000.0000)
-ON CONFLICT DO NOTHING;
-
--- System Bank Account (Double-entry core)
-INSERT INTO accounts (id, user_id, account_name, balance, currency, status, kyc_status, version, created_at, updated_at)
-VALUES ('00000000-0000-0000-0000-000000000000', '00000000-0000-0000-0000-000000000000', 'SYSTEM_BANK_ACCOUNT', 0.0000, 'THB', 'ACTIVE', 'APPROVED', 0, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
-ON CONFLICT (id) DO NOTHING;

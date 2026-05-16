@@ -41,9 +41,3 @@ CREATE TRIGGER update_treasury_payouts_updated_at
     BEFORE UPDATE ON treasury_payouts
     FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
 
--- Seed Initial Data
-INSERT INTO treasury_bank_accounts (name, bank_name, account_number, provider, balance)
-VALUES 
-    ('SCB Operational', 'Siam Commercial Bank', '123-4-56789-0', 'SCB', 1000000.0000),
-    ('KBank Reserve', 'Kasikorn Bank', '098-7-65432-1', 'KBANK', 500000.0000),
-    ('Stripe Operational', 'Stripe', 'STRIPE_MOCK_ACC', 'STRIPE', 0.0000);

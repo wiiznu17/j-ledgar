@@ -910,12 +910,6 @@ enum BankStatus {
   @@schema("integration")
 }
 
-enum MerchantStatus {
-  ACTIVE
-  INACTIVE
-
-  @@schema("integration")
-}
 
 enum PartnerStatus {
   PENDING_REVIEW

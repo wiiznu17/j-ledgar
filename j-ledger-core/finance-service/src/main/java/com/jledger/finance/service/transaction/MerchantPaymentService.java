@@ -1,11 +1,9 @@
 package com.jledger.finance.service.transaction;
 
-import com.jledger.finance.domain.entity.RewardAccount;
 import com.jledger.finance.domain.entity.Transaction;
 import com.jledger.finance.domain.entity.Wallet;
 import com.jledger.finance.dto.MerchantPayRequest;
 import com.jledger.finance.repository.ledger.AccountRepository;
-import com.jledger.finance.repository.ledger.RewardAccountRepository;
 import com.jledger.finance.repository.wallet.WalletRepository;
 import com.jledger.finance.dto.MerchantMultiPayRequest;
 import com.jledger.finance.dto.MerchantPayLeg;
@@ -27,10 +25,8 @@ import java.util.UUID;
 public class MerchantPaymentService {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(MerchantPaymentService.class);
-    private static final BigDecimal POINTS_RATIO = new BigDecimal("0.01"); // 1% or 1 point per 100 THB
 
     private final WalletService walletService;
-    private final RewardAccountRepository rewardAccountRepository;
     private final WalletRepository walletRepository;
     private final AccountRepository accountRepository;
     private final RedisIdempotencyService redisIdempotencyService;
@@ -103,10 +99,6 @@ public class MerchantPaymentService {
                     }
                 }
 
-                // 2. Calculate and Issue Rewards (based on totalAmount of the primary transaction)
-                if (primaryTransaction != null && totalAmountForRewards.compareTo(BigDecimal.ZERO) > 0) {
-                    awardPoints(fromWallet.getUserId(), totalAmountForRewards);
-                }
 
                 // 3. Cache the primary transaction for idempotency
                 redisIdempotencyService.cacheResponse(idempotencyKey, primaryTransaction);
@@ -129,27 +121,5 @@ public class MerchantPaymentService {
                     .orElseThrow(() -> new IllegalArgumentException("Source wallet not found for user: " + walletId));
             }
         }
-    }
-
-    private void awardPoints(String userIdString, BigDecimal amount) {
-        BigDecimal pointsToAward = amount.multiply(POINTS_RATIO).setScale(2, RoundingMode.HALF_UP);
-        if (pointsToAward.compareTo(BigDecimal.ZERO) <= 0) return;
-
-        UUID userId = UUID.fromString(userIdString);
-        UUID accountId = accountRepository.findByUserId(userId).stream()
-            .findFirst()
-            .map(account -> account.getId())
-            .orElseThrow(() -> new IllegalStateException("Ledger account not found for userId: " + userId));
-
-        RewardAccount rewardAccount = rewardAccountRepository.findById(accountId)
-            .orElse(RewardAccount.builder()
-                .accountId(accountId)
-                .pointsBalance(BigDecimal.ZERO)
-                .build());
-
-        rewardAccount.setPointsBalance(rewardAccount.getPointsBalance().add(pointsToAward));
-        rewardAccountRepository.save(rewardAccount);
-
-        LOGGER.info("Awarded {} points to account {}", pointsToAward, accountId);
     }
 }
