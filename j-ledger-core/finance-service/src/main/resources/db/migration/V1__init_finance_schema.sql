@@ -265,6 +265,7 @@ CREATE TRIGGER update_suspicious_updated_at BEFORE UPDATE ON suspicious_activiti
 CREATE TRIGGER update_limits_updated_at BEFORE UPDATE ON transaction_limits FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
 
 
+
 -- Seed System Bank Account (Double-entry core)
 INSERT INTO finance.accounts (id, user_id, account_name, balance, currency, status, created_at, updated_at, version)
 VALUES ('00000000-0000-0000-0000-000000000000', '00000000-0000-0000-0000-000000000000', 'SYSTEM_BANK_ACCOUNT', 0, 'THB', 'ACTIVE', NOW(), NOW(), 0);

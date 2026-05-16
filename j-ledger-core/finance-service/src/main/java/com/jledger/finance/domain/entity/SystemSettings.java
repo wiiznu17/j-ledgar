@@ -27,48 +27,63 @@ public class SystemSettings {
 
     // System Settings
     @Column(nullable = false)
+    @Builder.Default
     private String systemName = "J-Ledger";
 
     @Column
+    @Builder.Default
     private String companyName = "J-Ledger Co., Ltd.";
 
     @Column
+    @Builder.Default
     private String supportEmail = "support@jledger.com";
 
     @Column
+    @Builder.Default
     private String supportPhone = "+66-2-123-4567";
 
     @Column(nullable = false)
+    @Builder.Default
     private String defaultCurrency = "THB";
 
     @Column
+    @Builder.Default
     private String businessHoursStart = "09:00";
 
     @Column
+    @Builder.Default
     private String businessHoursEnd = "17:00";
 
     @Column(nullable = false)
+    @Builder.Default
     private Boolean emailNotificationsEnabled = true;
 
     @Column(nullable = false)
+    @Builder.Default
     private Boolean smsNotificationsEnabled = true;
 
     @Column(nullable = false)
+    @Builder.Default
     private Boolean kycRequired = true;
 
     @Column(nullable = false)
+    @Builder.Default
     private Boolean twoFactorAuthRequired = false;
 
     @Column(nullable = false)
+    @Builder.Default
     private String defaultLanguage = "th";
 
     @Column(nullable = false)
+    @Builder.Default
     private String timezone = "Asia/Bangkok";
 
     @Column(nullable = false)
+    @Builder.Default
     private Integer sessionTimeoutMinutes = 30;
 
     @Column(nullable = false)
+    @Builder.Default
     private String registrationMode = "open"; // open or closed
 
     // Fee Configuration
