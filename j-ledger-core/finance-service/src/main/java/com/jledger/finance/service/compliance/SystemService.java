@@ -106,6 +106,25 @@ public class SystemService {
         if (settings.getTimezone() != null) existing.setTimezone(settings.getTimezone());
         if (settings.getSessionTimeoutMinutes() != null) existing.setSessionTimeoutMinutes(settings.getSessionTimeoutMinutes());
         if (settings.getRegistrationMode() != null) existing.setRegistrationMode(settings.getRegistrationMode());
+        if (settings.getMerchantFeeRate() != null) existing.setMerchantFeeRate(settings.getMerchantFeeRate());
+        if (settings.getVatRate() != null) existing.setVatRate(settings.getVatRate());
+        if (settings.getMinMerchantPayment() != null) existing.setMinMerchantPayment(settings.getMinMerchantPayment());
+        if (settings.getMinP2pTransfer() != null) existing.setMinP2pTransfer(settings.getMinP2pTransfer());
+        
+        // Fee Settings
+        if (settings.getTransferFeeFixed() != null) existing.setTransferFeeFixed(settings.getTransferFeeFixed());
+        if (settings.getTransferFeePercentage() != null) existing.setTransferFeePercentage(settings.getTransferFeePercentage());
+        if (settings.getWithdrawalFeeFixed() != null) existing.setWithdrawalFeeFixed(settings.getWithdrawalFeeFixed());
+        if (settings.getWithdrawalFeePercentage() != null) existing.setWithdrawalFeePercentage(settings.getWithdrawalFeePercentage());
+        if (settings.getBillPaymentFeeFixed() != null) existing.setBillPaymentFeeFixed(settings.getBillPaymentFeeFixed());
+        if (settings.getBillPaymentFeePercentage() != null) existing.setBillPaymentFeePercentage(settings.getBillPaymentFeePercentage());
+        
+        // Limit Settings
+        if (settings.getDailyTransactionLimit() != null) existing.setDailyTransactionLimit(settings.getDailyTransactionLimit());
+        if (settings.getMonthlyTransactionLimit() != null) existing.setMonthlyTransactionLimit(settings.getMonthlyTransactionLimit());
+        if (settings.getPerTransactionLimit() != null) existing.setPerTransactionLimit(settings.getPerTransactionLimit());
+        if (settings.getWalletBalanceLimit() != null) existing.setWalletBalanceLimit(settings.getWalletBalanceLimit());
+        if (settings.getDailyTopUpLimit() != null) existing.setDailyTopUpLimit(settings.getDailyTopUpLimit());
 
         SystemSettings updated = systemSettingsRepository.save(existing);
         invalidateCache();
@@ -134,6 +153,8 @@ public class SystemService {
             "fixed", cachedSettings.getWithdrawalFeeFixed(),
             "percentage", cachedSettings.getWithdrawalFeePercentage()
         ));
+        fees.put("merchantFeeRate", cachedSettings.getMerchantFeeRate());
+        fees.put("vatRate", cachedSettings.getVatRate());
         fees.put("minimumFee", cachedSettings.getMinimumFee());
         return fees;
     }

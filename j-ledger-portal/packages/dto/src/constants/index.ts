@@ -71,6 +71,8 @@ export const API_PATHS = {
       TREASURY_PAYOUTS: '/api/admin/treasury/payouts',
     },
     SYSTEM: {
+      SETTINGS: '/api/admin/system/settings',
+      FEES: '/api/admin/system/fees',
       OUTBOX: '/api/admin/system/outbox',
       OUTBOX_RETRY: (id: string) => `/api/admin/system/outbox/${id}/retry`,
     },

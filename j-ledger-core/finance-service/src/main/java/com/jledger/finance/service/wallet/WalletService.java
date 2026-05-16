@@ -16,6 +16,9 @@ import com.jledger.finance.repository.wallet.WalletRepository;
 import com.jledger.finance.repository.ledger.AccountRepository;
 import com.jledger.finance.repository.ledger.LedgerEntryRepository;
 import com.jledger.finance.domain.entity.LedgerEntry;
+import com.jledger.finance.service.compliance.SystemService;
+import com.jledger.finance.domain.entity.SystemSettings;
+import java.math.RoundingMode;
 
 import com.jledger.finance.exception.ResourceNotFoundException;
 import com.jledger.finance.exception.ConflictException;
@@ -74,6 +77,9 @@ public class WalletService {
 
     @Autowired
     private JdbcTemplate jdbcTemplate;
+
+    @Autowired
+    private SystemService systemService;
 
     private static final String CACHE_PREFIX = "wallet:";
     private static final BigDecimal DAILY_LIMIT = new BigDecimal("1000000");
@@ -1189,16 +1195,28 @@ public class WalletService {
             throw new IllegalArgumentException("Wallet is inactive");
         }
 
-        if (wallet.getBalance().compareTo(amount) < 0) {
-            throw new IllegalArgumentException("Insufficient balance");
+        // 1. Get System Settings for Fees
+        SystemSettings settings = systemService.getSystemSettings();
+        BigDecimal fixedFee = settings.getBillPaymentFeeFixed() != null ? settings.getBillPaymentFeeFixed() : BigDecimal.ZERO;
+        BigDecimal percentFee = settings.getBillPaymentFeePercentage() != null ? settings.getBillPaymentFeePercentage() : BigDecimal.ZERO;
+        
+        // 2. Calculate Total Fee: Fixed + (Amount * Percentage / 100)
+        BigDecimal percentageFeeAmount = amount.multiply(percentFee).divide(new BigDecimal("100"), 4, RoundingMode.HALF_UP);
+        BigDecimal totalFee = fixedFee.add(percentageFeeAmount);
+        BigDecimal totalDebit = amount.add(totalFee);
+
+        if (wallet.getBalance().compareTo(totalDebit) < 0) {
+            throw new IllegalArgumentException("Insufficient balance to cover bill and fees. Required: " + totalDebit);
         }
 
-        // Mock bill payment
-        wallet.setBalance(wallet.getBalance().subtract(amount));
+        // 3. Process Debit
+        wallet.setBalance(wallet.getBalance().subtract(totalDebit));
         walletRepository.save(Objects.requireNonNull(wallet));
         cacheWallet(wallet);
 
+        // 4. Record Main Transaction (Bill Payment)
         Transaction transaction = new Transaction();
+        transaction.setTransactionId(UUID.randomUUID().toString());
         transaction.setType(TransactionType.BILL_PAYMENT);
         transaction.setAmount(amount);
         transaction.setStatus(TransactionStatus.COMPLETED);
@@ -1208,6 +1226,23 @@ public class WalletService {
         transaction.setMetadata("{\"billersCode\":\"" + billerCode + "\",\"accountNumber\":\"" + accountNumber + "\"}");
 
         Transaction savedTransaction = transactionRepository.save(transaction);
+
+        // 5. Record Fee Transaction if any
+        if (totalFee.compareTo(BigDecimal.ZERO) > 0) {
+            Transaction feeTx = new Transaction();
+            feeTx.setTransactionId(UUID.randomUUID().toString());
+            feeTx.setType(TransactionType.BILL_PAYMENT);
+            feeTx.setAmount(totalFee);
+            feeTx.setStatus(TransactionStatus.COMPLETED);
+            feeTx.setFromWalletId(wallet.getId());
+            feeTx.setToWalletId(null);
+            feeTx.setDescription("Service fee for bill payment: " + billerCode);
+            feeTx.setMetadata("{\"isFee\":true,\"parentTransactionId\":\"" + savedTransaction.getTransactionId() + "\"}");
+            transactionRepository.save(feeTx);
+
+            // Record Revenue in System Account (Omitted here for brevity, assuming existing ledger logic handles it or should be added)
+        }
+
         publishTransactionEvent(userId, savedTransaction, false);
 
         return savedTransaction;
@@ -1222,24 +1257,51 @@ public class WalletService {
             throw new IllegalArgumentException("Wallet is inactive");
         }
 
-        if (wallet.getBalance().compareTo(amount) < 0) {
-            throw new IllegalArgumentException("Insufficient balance");
+        // 1. Get System Settings for Fees
+        SystemSettings settings = systemService.getSystemSettings();
+        BigDecimal fixedFee = settings.getBillPaymentFeeFixed() != null ? settings.getBillPaymentFeeFixed() : BigDecimal.ZERO;
+        BigDecimal percentFee = settings.getBillPaymentFeePercentage() != null ? settings.getBillPaymentFeePercentage() : BigDecimal.ZERO;
+        
+        // 2. Calculate Total Fee: Fixed + (Amount * Percentage / 100)
+        BigDecimal percentageFeeAmount = amount.multiply(percentFee).divide(new BigDecimal("100"), 4, RoundingMode.HALF_UP);
+        BigDecimal totalFee = fixedFee.add(percentageFeeAmount);
+        BigDecimal totalDebit = amount.add(totalFee);
+
+        if (wallet.getBalance().compareTo(totalDebit) < 0) {
+            throw new IllegalArgumentException("Insufficient balance to cover bill and fees. Required: " + totalDebit);
         }
 
-        wallet.setBalance(wallet.getBalance().subtract(amount));
+        // 3. Process Debit
+        wallet.setBalance(wallet.getBalance().subtract(totalDebit));
         walletRepository.save(Objects.requireNonNull(wallet));
         cacheWallet(wallet);
 
         Transaction transaction = new Transaction();
+        transaction.setTransactionId(UUID.randomUUID().toString());
         transaction.setType(TransactionType.BILL_PAYMENT);
         transaction.setAmount(amount);
         transaction.setStatus(TransactionStatus.COMPLETED);
         transaction.setFromWalletId(wallet.getId());
         transaction.setToWalletId(null);
-        transaction.setDescription("Credit card payment for " + cardNumber);
+        transaction.setDescription("Credit card payment: " + cardNumber);
         transaction.setMetadata("{\"cardNumber\":\"" + cardNumber + "\"}");
 
         Transaction savedTransaction = transactionRepository.save(transaction);
+
+        // 4. Record Fee Transaction if any
+        if (totalFee.compareTo(BigDecimal.ZERO) > 0) {
+            Transaction feeTx = new Transaction();
+            feeTx.setTransactionId(UUID.randomUUID().toString());
+            feeTx.setType(TransactionType.BILL_PAYMENT);
+            feeTx.setAmount(totalFee);
+            feeTx.setStatus(TransactionStatus.COMPLETED);
+            feeTx.setFromWalletId(wallet.getId());
+            feeTx.setToWalletId(null);
+            feeTx.setDescription("Service fee for credit card payment: " + cardNumber);
+            feeTx.setMetadata("{\"isFee\":true,\"parentTransactionId\":\"" + savedTransaction.getTransactionId() + "\"}");
+            transactionRepository.save(feeTx);
+        }
+
         publishTransactionEvent(userId, savedTransaction, false);
 
         return savedTransaction;

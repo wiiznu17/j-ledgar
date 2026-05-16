@@ -165,6 +165,58 @@ export class FinanceService {
     }
   }
 
+  async getSystemSettings(): Promise<any> {
+    const url = `${this.financeServiceUrl}/api/v1/system/settings`;
+    try {
+      const response = await this.httpService.axiosRef.get(url, {
+        headers: this.getInternalHeaders(),
+      });
+      return response.data;
+    } catch (error: any) {
+      this.logCompactError('getSystemSettings', error);
+      this.rethrowAsHttpException(error, 'Failed to get system settings');
+    }
+  }
+
+  async updateSystemSettings(settings: any): Promise<any> {
+    const url = `${this.financeServiceUrl}/api/v1/system/settings`;
+    try {
+      const response = await this.httpService.axiosRef.put(url, settings, {
+        headers: this.getInternalHeaders(),
+      });
+      return response.data;
+    } catch (error: any) {
+      this.logCompactError('updateSystemSettings', error);
+      this.rethrowAsHttpException(error, 'Failed to update system settings');
+    }
+  }
+
+  async getFeeConfiguration(): Promise<any> {
+    const url = `${this.financeServiceUrl}/api/v1/system/settings/fees`;
+    try {
+      const response = await this.httpService.axiosRef.get(url, {
+        headers: this.getInternalHeaders(),
+      });
+      return response.data;
+    } catch (error: any) {
+      this.logCompactError('getFeeConfiguration', error);
+      this.rethrowAsHttpException(error, 'Failed to get fee configuration');
+    }
+  }
+
+  async updateFeeConfiguration(fees: any): Promise<any> {
+    const url = `${this.financeServiceUrl}/api/v1/system/settings/fees`;
+    try {
+      const response = await this.httpService.axiosRef.put(url, fees, {
+        headers: this.getInternalHeaders(),
+      });
+      return response.data;
+    } catch (error: any) {
+      this.logCompactError('updateFeeConfiguration', error);
+      this.rethrowAsHttpException(error, 'Failed to update fee configuration');
+    }
+  }
+
   async getAccountDetail(accountId: string): Promise<any> {
     const url = `${this.financeServiceUrl}/api/v1/accounts/${accountId}`;
     try {

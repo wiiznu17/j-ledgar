@@ -297,7 +297,7 @@ export class MerchantService {
           data: { 
             status: 'ACTIVE',
             type: 'SME',
-            feeRate: 0.03, // Default fee rate for new partners
+            feeRate: (await this.financeService.getSystemSettings()).merchantFeeRate || 0.03, // Use system default
             financeAccounts: financeAccounts as any,
             profile: {
               create: {
@@ -606,16 +606,63 @@ export class MerchantService {
     // 3. Calculate 4-Way Split with Residual Adjustment
     const total = Number(payment.amount);
     
-    if (total < 5.00) {
-        throw new HttpException('Minimum payment amount is ฿5.00', HttpStatus.BAD_REQUEST);
+    const settings = await this.financeService.getSystemSettings();
+    if (!settings) {
+      throw new HttpException('System settings could not be retrieved', HttpStatus.INTERNAL_SERVER_ERROR);
     }
 
-    const feeRate = Number(merchantPartner.feeRate || 0);
+    if (settings.minMerchantPayment === undefined || settings.minMerchantPayment === null) {
+      throw new HttpException('Merchant minimum payment is not configured', HttpStatus.INTERNAL_SERVER_ERROR);
+    }
+
+    const minPayment = Number(settings.minMerchantPayment);
+    if (total < minPayment) {
+        throw new HttpException(`Minimum payment amount is ฿${minPayment.toFixed(2)}`, HttpStatus.BAD_REQUEST);
+    }
+
+    // 4. Limit Validations
+    // 4.1 System Per-Transaction Limit
+    if (!settings.perTransactionLimit) {
+      throw new HttpException('System transaction limit is not configured', HttpStatus.INTERNAL_SERVER_ERROR);
+    }
+
+    if (total > Number(settings.perTransactionLimit)) {
+        throw new HttpException(`Transaction exceeds system limit of ฿${Number(settings.perTransactionLimit).toLocaleString()}`, HttpStatus.BAD_REQUEST);
+    }
+
+    // 4.2 User Daily Limit
+    if (customerWallet.dailyLimit === undefined || customerWallet.dailyLimit === null) {
+      throw new HttpException('User daily limit is not configured', HttpStatus.INTERNAL_SERVER_ERROR);
+    }
+
+    if (total > Number(customerWallet.dailyLimit)) {
+        throw new HttpException(`Transaction exceeds your wallet's daily limit of ฿${Number(customerWallet.dailyLimit).toLocaleString()}`, HttpStatus.BAD_REQUEST);
+    }
+
+    // 4.3 Merchant Receive Limit
+    if (merchantPartner.dailyReceiveLimit === undefined || merchantPartner.dailyReceiveLimit === null) {
+      throw new HttpException('Merchant receiving limit is not configured', HttpStatus.INTERNAL_SERVER_ERROR);
+    }
+
+    if (total > Number(merchantPartner.dailyReceiveLimit)) {
+        throw new HttpException(`Transaction exceeds merchant's receiving limit`, HttpStatus.BAD_REQUEST);
+    }
+
+    // Fee & VAT Strict Calculation
+    if (settings.merchantFeeRate === undefined || settings.merchantFeeRate === null) {
+      throw new HttpException('Default merchant fee rate is not configured', HttpStatus.INTERNAL_SERVER_ERROR);
+    }
+    if (settings.vatRate === undefined || settings.vatRate === null) {
+      throw new HttpException('System VAT rate is not configured', HttpStatus.INTERNAL_SERVER_ERROR);
+    }
+
+    const feeRate = Number(merchantPartner.feeRate ?? settings.merchantFeeRate);
+    const vatRate = Number(settings.vatRate);
     
     // 3.1 Calculate and round sub-legs (VAT and Fees) to 2 decimals
-    const merchantVat = Number((total * (7 / 107)).toFixed(2)); // vat 7% for merchant
-    const systemFee = Number((total * feeRate).toFixed(2)); // fee 3%
-    const systemVat = Number((systemFee * 0.07).toFixed(2)); // vat 7% for system
+    const merchantVat = Number((total * (vatRate / (1 + vatRate))).toFixed(2)); // vat from total (inclusive)
+    const systemFee = Number((total * feeRate).toFixed(2)); 
+    const systemVat = Number((systemFee * vatRate).toFixed(2)); // vat on fee (exclusive)
     
     // 3.2 Merchant Net is the residual (ensures sum is exactly equal to total)
     const merchantNet = total - merchantVat - systemFee - systemVat;
@@ -767,16 +814,63 @@ export class MerchantService {
     // Calculate Split with Residual Adjustment
     const total = Number(amount);
 
-    if (total < 5.00) {
-      throw new HttpException('Minimum payment amount is ฿5.00', HttpStatus.BAD_REQUEST);
+    const settings = await this.financeService.getSystemSettings();
+    if (!settings) {
+      throw new HttpException('System settings could not be retrieved', HttpStatus.INTERNAL_SERVER_ERROR);
     }
 
-    const feeRate = Number(partner.feeRate || 0);
+    if (settings.minMerchantPayment === undefined || settings.minMerchantPayment === null) {
+      throw new HttpException('Merchant minimum payment is not configured', HttpStatus.INTERNAL_SERVER_ERROR);
+    }
+
+    const minPayment = Number(settings.minMerchantPayment);
+    if (total < minPayment) {
+      throw new HttpException(`Minimum payment amount is ฿${minPayment.toFixed(2)}`, HttpStatus.BAD_REQUEST);
+    }
+
+    // Limit Validations
+    // 1. System Per-Transaction Limit
+    if (!settings.perTransactionLimit) {
+      throw new HttpException('System transaction limit is not configured', HttpStatus.INTERNAL_SERVER_ERROR);
+    }
+
+    if (total > Number(settings.perTransactionLimit)) {
+        throw new HttpException(`Transaction exceeds system limit of ฿${Number(settings.perTransactionLimit).toLocaleString()}`, HttpStatus.BAD_REQUEST);
+    }
+
+    // 2. User Daily Limit
+    if (customerWallet.dailyLimit === undefined || customerWallet.dailyLimit === null) {
+      throw new HttpException('User daily limit is not configured', HttpStatus.INTERNAL_SERVER_ERROR);
+    }
+
+    if (total > Number(customerWallet.dailyLimit)) {
+        throw new HttpException(`Transaction exceeds your wallet's daily limit of ฿${Number(customerWallet.dailyLimit).toLocaleString()}`, HttpStatus.BAD_REQUEST);
+    }
+
+    // 3. Merchant Receive Limit
+    if (partner.dailyReceiveLimit === undefined || partner.dailyReceiveLimit === null) {
+      throw new HttpException('Merchant receiving limit is not configured', HttpStatus.INTERNAL_SERVER_ERROR);
+    }
+
+    if (total > Number(partner.dailyReceiveLimit)) {
+        throw new HttpException(`Transaction exceeds merchant's receiving limit`, HttpStatus.BAD_REQUEST);
+    }
+
+    // Fee & VAT Strict Calculation
+    if (settings.merchantFeeRate === undefined || settings.merchantFeeRate === null) {
+      throw new HttpException('Default merchant fee rate is not configured', HttpStatus.INTERNAL_SERVER_ERROR);
+    }
+    if (settings.vatRate === undefined || settings.vatRate === null) {
+      throw new HttpException('System VAT rate is not configured', HttpStatus.INTERNAL_SERVER_ERROR);
+    }
+
+    const feeRate = Number(partner.feeRate ?? settings.merchantFeeRate);
+    const vatRate = Number(settings.vatRate);
     
     // 1. Calculate and round sub-legs (VAT and Fees) to 2 decimals
-    const merchantVat = Number((total * (7 / 107)).toFixed(2));
+    const merchantVat = Number((total * (vatRate / (1 + vatRate))).toFixed(2));
     const systemFee = Number((total * feeRate).toFixed(2));
-    const systemVat = Number((systemFee * 0.07).toFixed(2));
+    const systemVat = Number((systemFee * vatRate).toFixed(2));
     
     // 2. Merchant Net is the residual (ensures sum is exactly equal to total)
     const merchantNet = total - merchantVat - systemFee - systemVat;

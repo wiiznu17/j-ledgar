@@ -1,12 +1,36 @@
-import { Controller, Post, Get, UseGuards, Query, Param } from '@nestjs/common';
+import { Controller, Post, Get, Put, UseGuards, Query, Param, Body } from '@nestjs/common';
 import { AdminJwtGuard } from '../guards/admin-jwt.guard';
 import { ReportingService } from '../../modules/reporting/reporting.service';
+import { FinanceService } from '../../modules/integration/finance.service';
 import { AdminPaginatedResponse } from '@repo/dto';
 
 @Controller('admin/system')
 @UseGuards(AdminJwtGuard)
 export class AdminSystemController {
-  constructor(private readonly reportingService: ReportingService) {}
+  constructor(
+    private readonly reportingService: ReportingService,
+    private readonly financeService: FinanceService,
+  ) {}
+
+  @Get('settings')
+  async getSettings() {
+    return this.financeService.getSystemSettings();
+  }
+
+  @Put('settings')
+  async updateSettings(@Body() body: any) {
+    return this.financeService.updateSystemSettings(body);
+  }
+
+  @Get('fees')
+  async getFees() {
+    return this.financeService.getFeeConfiguration();
+  }
+
+  @Put('fees')
+  async updateFees(@Body() body: any) {
+    return this.financeService.updateFeeConfiguration(body);
+  }
 
   @Get('outbox')
   async getOutbox(

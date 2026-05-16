@@ -514,10 +514,44 @@ export class IntegrationService {
     body: { recipientPhone: string; amount: number },
   ) {
     const recipientPhone = this.normalizePhone(body.recipientPhone);
-    const amount = Number(body.amount || 0);
-    if (amount <= 0) {
+    const amount = Number(body.amount);
+    if (isNaN(amount) || amount <= 0) {
+      throw new HttpException('Invalid transfer amount', HttpStatus.BAD_REQUEST);
+    }
+
+    const settings = await this.financeService.getSystemSettings();
+    if (!settings) {
+      throw new HttpException('System settings could not be retrieved', HttpStatus.INTERNAL_SERVER_ERROR);
+    }
+
+    const minP2p = Number(settings.minP2pTransfer);
+    if (settings.minP2pTransfer === undefined || settings.minP2pTransfer === null) {
+      throw new HttpException('P2P minimum transfer limit is not configured', HttpStatus.INTERNAL_SERVER_ERROR);
+    }
+
+    if (amount < minP2p) {
       throw new HttpException(
-        { message: 'Amount must be greater than zero' },
+        { message: `Minimum transfer amount is ฿${minP2p.toFixed(2)}` },
+        HttpStatus.BAD_REQUEST,
+      );
+    }
+
+    // Limit Validations
+    if (!settings.perTransactionLimit) {
+      throw new HttpException('System transaction limit is not configured', HttpStatus.INTERNAL_SERVER_ERROR);
+    }
+
+    if (amount > Number(settings.perTransactionLimit)) {
+      throw new HttpException(
+        { message: `Transfer exceeds system limit of ฿${Number(settings.perTransactionLimit).toLocaleString()}` },
+        HttpStatus.BAD_REQUEST,
+      );
+    }
+
+    const userWallet = await this.financeService.getWallet(userId);
+    if (userWallet?.dailyLimit && amount > Number(userWallet.dailyLimit)) {
+      throw new HttpException(
+        { message: `Transfer exceeds your wallet's daily limit of ฿${Number(userWallet.dailyLimit).toLocaleString()}` },
         HttpStatus.BAD_REQUEST,
       );
     }
@@ -601,13 +635,49 @@ export class IntegrationService {
     },
   ) {
     const recipientPhone = this.normalizePhone(body.recipientPhone);
-    const amount = Number(body.amount || 0);
-    if (amount <= 0) {
+    const amount = Number(body.amount);
+    if (isNaN(amount) || amount <= 0) {
+      throw new HttpException('Invalid transfer amount', HttpStatus.BAD_REQUEST);
+    }
+
+    const settings = await this.financeService.getSystemSettings();
+    if (!settings) {
+      throw new HttpException('System settings could not be retrieved', HttpStatus.INTERNAL_SERVER_ERROR);
+    }
+
+    const minP2p = Number(settings.minP2pTransfer);
+    if (settings.minP2pTransfer === undefined || settings.minP2pTransfer === null) {
+      throw new HttpException('P2P minimum transfer limit is not configured', HttpStatus.INTERNAL_SERVER_ERROR);
+    }
+
+    if (amount < minP2p) {
       throw new HttpException(
-        { message: 'Amount must be greater than zero' },
+        { message: `Minimum transfer amount is ฿${minP2p.toFixed(2)}` },
         HttpStatus.BAD_REQUEST,
       );
     }
+
+    // Limit Validations
+    if (!settings.perTransactionLimit) {
+      throw new HttpException('System transaction limit is not configured', HttpStatus.INTERNAL_SERVER_ERROR);
+    }
+
+    if (amount > Number(settings.perTransactionLimit)) {
+      throw new HttpException(
+        { message: `Transfer exceeds system limit of ฿${Number(settings.perTransactionLimit).toLocaleString()}` },
+        HttpStatus.BAD_REQUEST,
+      );
+    }
+
+    // 2. User Daily Limit
+    const userWallet = await this.financeService.getWallet(userId);
+    if (userWallet?.dailyLimit && amount > Number(userWallet.dailyLimit)) {
+      throw new HttpException(
+        { message: `Transfer exceeds your wallet's daily limit of ฿${Number(userWallet.dailyLimit).toLocaleString()}` },
+        HttpStatus.BAD_REQUEST,
+      );
+    }
+
     if (!body.idempotencyKey) {
       throw new HttpException(
         { message: 'idempotencyKey is required' },

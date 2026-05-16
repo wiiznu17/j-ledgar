@@ -507,6 +507,7 @@ model Partner {
   isPaymentEnabled Boolean             @default(true)
   isLoyaltyEnabled Boolean             @default(true)
   feeRate         Decimal              @default(0.03) @db.Decimal(19, 4)
+  dailyReceiveLimit Decimal            @default(1000000) @db.Decimal(19, 4)
   status          PartnerStatus        @default(PENDING_REVIEW)
   metadata        Json?
   createdAt       DateTime             @default(now())

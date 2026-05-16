@@ -123,6 +123,22 @@ public class SystemSettings {
     @Builder.Default
     private BigDecimal minimumFee = BigDecimal.ONE;
 
+    @Column(nullable = false, precision = 5, scale = 4)
+    @Builder.Default
+    private BigDecimal merchantFeeRate = BigDecimal.valueOf(0.03);
+
+    @Column(nullable = false, precision = 5, scale = 4)
+    @Builder.Default
+    private BigDecimal vatRate = BigDecimal.valueOf(0.07);
+
+    @Column(name = "min_merchant_payment", nullable = false)
+    @Builder.Default
+    private BigDecimal minMerchantPayment = BigDecimal.valueOf(5.0);
+
+    @Column(name = "min_p2p_transfer", nullable = false)
+    @Builder.Default
+    private BigDecimal minP2pTransfer = BigDecimal.ZERO;
+
     // Limit Configuration
     @Column(nullable = false)
     @Builder.Default

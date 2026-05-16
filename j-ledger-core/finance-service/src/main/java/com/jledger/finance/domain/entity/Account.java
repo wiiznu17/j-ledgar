@@ -44,6 +44,10 @@ public class Account {
     @Column(nullable = false, precision = 20, scale = 4)
     private BigDecimal balance;
 
+    @Column(name = "daily_limit", nullable = false, precision = 20, scale = 4)
+    @Builder.Default
+    private BigDecimal dailyLimit = new BigDecimal("500000.0000");
+
     @Column(nullable = false, length = 3)
     private String currency;
 

@@ -25,20 +25,24 @@ export class BillingService {
     const { items, ...rest } = dto;
 
     try {
+      const settings = await this.financeService.getSystemSettings();
+      const vatRate = Number(settings.vatRate || 0.07);
+      const minAmount = Number(settings.minMerchantPayment || 5.00);
+
       // Calculate totals with consistent rounding
       const subtotal = items.reduce(
         (sum, item) => sum + item.unitPrice * item.quantity,
         0,
       );
-      const tax = Number((subtotal * 0.07).toFixed(2));
+      const tax = Number((subtotal * vatRate).toFixed(2));
       const total = subtotal + tax;
 
-      if (total < 5.00) {
-        throw new BadRequestException('Minimum invoice amount is ฿5.00');
+      if (total < minAmount) {
+        throw new BadRequestException(`Minimum invoice amount is ฿${minAmount.toFixed(2)}`);
       }
 
       this.logger.log(
-        `[createInvoice] Totals calculated: subtotal=${subtotal.toFixed(2)}, tax=${tax.toFixed(2)}, total=${total.toFixed(2)}`,
+        `[createInvoice] Totals calculated: subtotal=${subtotal.toFixed(2)}, tax=${tax.toFixed(2)}, total=${total.toFixed(2)} (VAT Rate: ${vatRate})`,
       );
 
       // Generate Invoice Number: INV-YYYYMMDD-XXXXXX-RAND
@@ -66,8 +70,8 @@ export class BillingService {
           feeRate = partner.feeRate;
           // Calculate fee from TOTAL amount (Gross) and round to 2 decimals
           feeAmount = Number((total * Number(feeRate)).toFixed(2));
-          feeTax = Number((feeAmount * 0.07).toFixed(2));
-          this.logger.log(`[createInvoice] Platform fees calculated: feeAmount=${feeAmount.toFixed(2)}, feeTax=${feeTax.toFixed(2)}`);
+          feeTax = Number((feeAmount * vatRate).toFixed(2));
+          this.logger.log(`[createInvoice] Platform fees calculated: feeAmount=${feeAmount.toFixed(2)}, feeTax=${feeTax.toFixed(2)} (VAT Rate: ${vatRate})`);
         }
       }
 

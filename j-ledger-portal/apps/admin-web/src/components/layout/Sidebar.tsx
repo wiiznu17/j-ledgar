@@ -87,13 +87,6 @@ const navigationGroups: NavigationGroup[] = [
         isSoon: true,
       },
       {
-        name: 'Fees & Limits',
-        href: '/finance/fees',
-        icon: SlidersHorizontal,
-        requiredPermission: Permission.VIEW_DASHBOARD,
-        isSoon: true,
-      },
-      {
         name: 'Customer Wallets',
         href: '/wallets',
         icon: Wallet,
@@ -230,11 +223,10 @@ const navigationGroups: NavigationGroup[] = [
         isSoon: true,
       },
       {
-        name: 'Security Settings',
-        href: '/system/security',
-        icon: Lock,
+        name: 'System Settings',
+        href: '/system/settings',
+        icon: Settings,
         requiredPermission: Permission.VIEW_DASHBOARD,
-        isSoon: true,
       },
       {
         name: 'Admins',
