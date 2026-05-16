@@ -52,6 +52,7 @@ interface P2PPreviewRequest {
 interface P2PTransferRequest extends P2PPreviewRequest {
   note?: string;
   idempotencyKey: string;
+  metadata?: Record<string, any>;
 }
 
 interface GetTransactionsQuery {
@@ -352,6 +353,7 @@ export class FinanceService {
       const response = await this.httpService.axiosRef.post(url, payload, {
         headers: this.getInternalHeaders(),
       });
+      console.log("transferByPhone", response.data);
       return response.data;
     } catch (error: any) {
       this.logCompactError(`transferByPhone user=${fromUserId}`, error);

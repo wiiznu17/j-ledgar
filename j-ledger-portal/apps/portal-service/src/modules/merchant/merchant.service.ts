@@ -251,7 +251,7 @@ export class MerchantService {
       let financeAccounts = { available: null, pending: null, fee: null, vat: null };
       
       try {
-        const bizName = application.businessName || 'Merchant';
+        const bizName = application.businessName || `Merchant ${application.partnerId}`;
         const [availableAcc, pendingAcc, feeAcc, vatAcc] = await Promise.all([
           this.financeService.createAccount(application.partnerId, `${bizName} - Available`),
           this.financeService.createAccount(application.partnerId, `${bizName} - Pending`),
@@ -259,6 +259,14 @@ export class MerchantService {
           this.financeService.createAccount(application.partnerId, `${bizName} - VAT`),
         ]);
         
+        if (!availableAcc?.id || !pendingAcc?.id || !feeAcc?.id || !vatAcc?.id) {
+          throw new Error('Finance service returned invalid account IDs');
+        }
+
+        if (availableAcc.id === '0' || pendingAcc.id === '0' || feeAcc.id === '0' || vatAcc.id === '0') {
+          throw new Error('Received invalid "0" account ID from finance service');
+        }
+
         financeAccounts = {
           available: availableAcc.id,
           pending: pendingAcc.id,
@@ -266,7 +274,11 @@ export class MerchantService {
           vat: vatAcc.id,
         };
       } catch (error) {
-        this.logger.error(`Failed to create finance accounts for partner ${application.partnerId}: ${error.message}`);
+        this.logger.error(`Merchant approval failed at account creation: ${error.message}`);
+        throw new HttpException(
+          `ไม่สามารถอนุมัติได้: ระบบบัญชีกลางขัดข้อง (${error.message})`,
+          HttpStatus.SERVICE_UNAVAILABLE,
+        );
       }
 
       return await this.prisma.$transaction(async (tx) => {
@@ -615,15 +627,19 @@ export class MerchantService {
         const legs = [];
         
         // Leg 1: Merchant Net (To Pending)
+        const idempotencyKey = `qr_pay_atomic_${payment.id}`;
+        const commonMeta = {
+          idempotencyKey,
+          isMerchantPayment: true,
+          merchantName: payment.merchant.name,
+          totalAmount: total.toFixed(2),
+        };
+
         legs.push({
             toWalletId: mAcc.pending,
             amount: merchantNet.toFixed(2),
             note: `QR Payment to ${payment.merchant.name}`,
-            metadata: { 
-              isMerchantPayment: true,
-              recipientName: payment.merchant.name,
-              totalAmount: total.toFixed(2)
-            }
+            metadata: commonMeta
         });
 
         // Leg 2: Merchant VAT (To VAT)
@@ -632,7 +648,7 @@ export class MerchantService {
             toWalletId: mAcc.vat,
             amount: merchantVat.toFixed(2),
             note: `Merchant VAT for QR ${payment.id}`,
-            metadata: { silent: true, isMerchantPayment: true }
+            metadata: { ...commonMeta, silent: true }
           });
         }
 
@@ -642,7 +658,7 @@ export class MerchantService {
             toWalletId: sAcc.revenue,
             amount: systemFee.toFixed(2),
             note: `System Fee for QR ${payment.id}`,
-            metadata: { silent: true, isMerchantPayment: true }
+            metadata: { ...commonMeta, silent: true }
           });
         }
 
@@ -652,13 +668,13 @@ export class MerchantService {
             toWalletId: sAcc.vat_payable,
             amount: systemVat.toFixed(2),
             note: `Service VAT for QR ${payment.id}`,
-            metadata: { silent: true, isMerchantPayment: true }
+            metadata: { ...commonMeta, silent: true }
           });
         }
 
         const tx = await this.financeService.performMerchantMultiPay({
           fromWalletId: customerWallet.walletId,
-          idempotencyKey: `qr_pay_atomic_${payment.id}`,
+          idempotencyKey,
           legs
         });
 
@@ -772,47 +788,56 @@ export class MerchantService {
     try {
       const legs = [];
 
-      // Leg 1: Merchant Net
-      legs.push({
-        toWalletId: mAcc.pending,
-        amount: merchantNet.toFixed(2),
-        note: note || `Manual Payment to ${merchant.name}`,
-        metadata: { 
+        const commonMeta = {
+          idempotencyKey,
           isMerchantPayment: true,
-          recipientName: merchant.name,
-          totalAmount: total.toFixed(2)
+          merchantName: merchant.name,
+          totalAmount: total.toFixed(2),
+        };
+
+        // Leg 1: Merchant Net
+        if (mAcc.pending && mAcc.pending !== '0') {
+          legs.push({
+            toWalletId: mAcc.pending,
+            amount: merchantNet.toFixed(2),
+            note: note || `Manual Payment to ${merchant.name}`,
+            metadata: commonMeta
+          });
         }
-      });
 
-      // Leg 2: Merchant VAT
-      if (Number(merchantVat.toFixed(2)) > 0 && mAcc.vat) {
-        legs.push({
-          toWalletId: mAcc.vat,
-          amount: merchantVat.toFixed(2),
-          note: `VAT for ${merchant.name}`,
-          metadata: { silent: true, isMerchantPayment: true }
-        });
-      }
+        // Leg 2: Merchant VAT
+        if (Number(merchantVat.toFixed(2)) > 0 && mAcc.vat && mAcc.vat !== '0') {
+          legs.push({
+            toWalletId: mAcc.vat,
+            amount: merchantVat.toFixed(2),
+            note: `VAT for ${merchant.name}`,
+            metadata: { ...commonMeta, silent: true }
+          });
+        }
 
-      // Leg 3: System Fee
-      if (Number(systemFee.toFixed(2)) > 0 && sAcc.revenue) {
-        legs.push({
-          toWalletId: sAcc.revenue,
-          amount: systemFee.toFixed(2),
-          note: `System Fee from ${merchant.name}`,
-          metadata: { silent: true, isMerchantPayment: true }
-        });
-      }
+        // Leg 3: System Fee
+        if (Number(systemFee.toFixed(2)) > 0 && sAcc.revenue && sAcc.revenue !== '0') {
+          legs.push({
+            toWalletId: sAcc.revenue,
+            amount: systemFee.toFixed(2),
+            note: `System Fee from ${merchant.name}`,
+            metadata: { ...commonMeta, silent: true }
+          });
+        }
 
-      // Leg 4: System VAT
-      if (Number(systemVat.toFixed(2)) > 0 && sAcc.vat_payable) {
-        legs.push({
-          toWalletId: sAcc.vat_payable,
-          amount: systemVat.toFixed(2),
-          note: `System VAT from ${merchant.name}`,
-          metadata: { silent: true, isMerchantPayment: true }
-        });
-      }
+        // Leg 4: System VAT
+        if (Number(systemVat.toFixed(2)) > 0 && sAcc.vat_payable && sAcc.vat_payable !== '0') {
+          legs.push({
+            toWalletId: sAcc.vat_payable,
+            amount: systemVat.toFixed(2),
+            note: `System VAT from ${merchant.name}`,
+            metadata: { ...commonMeta, silent: true }
+          });
+        }
+
+        if (legs.length === 0) {
+          throw new HttpException('No valid destination wallets found for payment legs', HttpStatus.INTERNAL_SERVER_ERROR);
+        }
 
       const tx = await this.financeService.performMerchantMultiPay({
         fromWalletId: customerWallet.walletId,
@@ -1141,7 +1166,11 @@ export class MerchantService {
               idempotencyKey: body.idempotencyKey,
               referenceId: txId,
               note: body.note || 'Terminal Payment',
-              expiresAt: new Date(), // Already completed
+              expiresAt: new Date(), 
+              metadata: {
+                merchantName: terminal.merchant.name,
+                isMerchantPayment: true,
+              }
             }
           });
 

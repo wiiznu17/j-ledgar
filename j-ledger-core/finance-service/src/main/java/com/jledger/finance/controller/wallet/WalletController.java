@@ -112,13 +112,14 @@ public class WalletController {
     @PostMapping("/{fromUserId}/transfer/phone")
     public ResponseEntity<Transaction> transferByPhone(
             @PathVariable String fromUserId,
-            @RequestBody Map<String, String> request
+            @RequestBody Map<String, Object> request
     ) {
-        BigDecimal amount = new BigDecimal(request.get("amount"));
-        String recipientPhone = request.get("recipientPhone");
-        String note = request.get("note");
-        String idempotencyKey = request.get("idempotencyKey");
-        Transaction transaction = walletService.transferByPhoneV1(fromUserId, recipientPhone, amount, note, idempotencyKey);
+        BigDecimal amount = new BigDecimal(request.get("amount").toString());
+        String recipientPhone = (String) request.get("recipientPhone");
+        String note = (String) request.get("note");
+        String idempotencyKey = (String) request.get("idempotencyKey");
+        Object metadata = request.get("metadata");
+        Transaction transaction = walletService.transferByPhoneV1(fromUserId, recipientPhone, amount, note, idempotencyKey, metadata);
         return ResponseEntity.ok(transaction);
     }
 

@@ -735,7 +735,7 @@ public class WalletService {
         logger.info("transferByPhone called: fromUserId={}, toPhone={}, amount={}", fromUserId, toPhone, amount);
         String recipientUserId = findUserIdByPhone(toPhone);
         logger.info("Found recipientUserId: {}", recipientUserId);
-        return transferByPhoneInternal(fromUserId, toPhone, recipientUserId, amount, null, null);
+        return transferByPhoneInternal(fromUserId, toPhone, recipientUserId, amount, null, null, null);
     }
 
     public Map<String, Object> previewTransferByPhone(String fromUserId, String recipientPhone, BigDecimal amount) {
@@ -786,7 +786,8 @@ public class WalletService {
             String recipientPhone,
             BigDecimal amount,
             String note,
-            String idempotencyKey
+            String idempotencyKey,
+            Object metadata
     ) {
         logger.info("transferByPhoneV1 called: fromUserId={}, recipientPhone={}, amount={}, idempotencyKey={}", fromUserId, recipientPhone, amount, idempotencyKey);
         if (idempotencyKey == null || idempotencyKey.isBlank()) {
@@ -799,7 +800,7 @@ public class WalletService {
         }
         String recipientUserId = findUserIdByPhone(recipientPhone);
         logger.info("Found recipientUserId: {}", recipientUserId);
-        return transferByPhoneInternal(fromUserId, recipientPhone, recipientUserId, amount, note, idempotencyKey);
+        return transferByPhoneInternal(fromUserId, recipientPhone, recipientUserId, amount, note, idempotencyKey, metadata);
     }
 
     @Transactional
@@ -809,7 +810,8 @@ public class WalletService {
             String recipientUserId,
             BigDecimal amount,
             String note,
-            String idempotencyKey
+            String idempotencyKey,
+            Object metadata
     ) {
         if (amount == null || amount.compareTo(BigDecimal.ZERO) <= 0) {
             throw new IllegalArgumentException("Transfer amount must be greater than zero");
@@ -899,7 +901,7 @@ public class WalletService {
             transaction.setFromAccountId(senderAccount.getId());
             transaction.setToAccountId(receiverAccount.getId());
             transaction.setDescription("Transfer to phone " + normalizedPhone);
-            transaction.setMetadata(buildTransferMetadata(normalizedPhone, recipientUserId, note, idempotencyKey));
+            transaction.setMetadata(buildTransferMetadata(normalizedPhone, recipientUserId, note, idempotencyKey, metadata));
             
             Transaction savedTransaction = transactionRepository.save(transaction);
 
@@ -1127,6 +1129,13 @@ public class WalletService {
             if (metadata instanceof Map<?, ?> map) {
                 for (Map.Entry<?, ?> entry : map.entrySet()) {
                     metaMap.put(String.valueOf(entry.getKey()), entry.getValue());
+                }
+            } else if (metadata instanceof String strMetadata && !strMetadata.isBlank()) {
+                try {
+                    Map<String, Object> map = objectMapper.readValue(strMetadata, new com.fasterxml.jackson.core.type.TypeReference<Map<String, Object>>() {});
+                    metaMap.putAll(map);
+                } catch (Exception e) {
+                    metaMap.put("extra", metadata);
                 }
             } else {
                 metaMap.put("extra", metadata);
@@ -1402,15 +1411,32 @@ public class WalletService {
         return phone.substring(0, 3) + "-***-" + phone.substring(phone.length() - 3);
     }
 
-    private String buildTransferMetadata(String phone, String recipientUserId, String note, String idempotencyKey) {
+    private String buildTransferMetadata(String phone, String recipientUserId, String note, String idempotencyKey, Object extraMetadata) {
         String escapedNote = note == null ? "" : escapeJson(note);
-        return String.format(
+        Map<String, Object> metaMap = new HashMap<>();
+        metaMap.put("recipientPhone", phone);
+        metaMap.put("recipientUserId", recipientUserId);
+        metaMap.put("note", escapedNote);
+        metaMap.put("idempotencyKey", idempotencyKey == null ? "" : idempotencyKey);
+
+        if (extraMetadata instanceof Map<?, ?> map) {
+            for (Map.Entry<?, ?> entry : map.entrySet()) {
+                metaMap.put(String.valueOf(entry.getKey()), entry.getValue());
+            }
+        }
+
+        try {
+            return objectMapper.writeValueAsString(metaMap);
+        } catch (Exception e) {
+            logger.warn("Failed to serialize P2P metadata: {}", e.getMessage());
+            return String.format(
                 "{\"recipientPhone\":\"%s\",\"recipientUserId\":\"%s\",\"note\":\"%s\",\"idempotencyKey\":\"%s\"}",
                 escapeJson(phone),
                 escapeJson(recipientUserId),
                 escapedNote,
                 idempotencyKey == null ? "" : escapeJson(idempotencyKey)
-        );
+            );
+        }
     }
 
     private void recordLedgerEntries(Account fromAccount, Account toAccount, BigDecimal amount, String transactionId, String description) {

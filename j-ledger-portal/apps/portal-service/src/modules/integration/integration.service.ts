@@ -149,6 +149,10 @@ export class IntegrationService {
       );
       const overFetchSize = size * 3;
 
+      // Fetch user wallet to determine direction (IN/OUT)
+      const userWallet = await this.financeService.getWallet(userId);
+      const userWalletId = userWallet?.walletId;
+
       const walletTransactions = await this.financeService.getTransactions(
         userId,
         {
@@ -161,9 +165,24 @@ export class IntegrationService {
       );
 
       const walletItems = (walletTransactions || []).map((tx: any) =>
-        this.mapWalletTransactionToHistoryItem(tx),
+        this.mapWalletTransactionToHistoryItem(tx, userWalletId),
       );
-      const searched = this.applyHistorySearch(walletItems, query.q);
+
+      // Deduplicate to avoid showing all legs of merchant payments or redundant entries
+      const uniqueItems: any[] = [];
+      const seenKeys = new Set<string>();
+
+      for (const item of walletItems) {
+        // Use idempotencyKey as the primary group identifier, fallback to reference or ID
+        const groupKey = item.idempotencyKey || item.reference || item.id;
+        
+        if (!seenKeys.has(groupKey)) {
+          uniqueItems.push(item);
+          seenKeys.add(groupKey);
+        }
+      }
+
+      const searched = this.applyHistorySearch(uniqueItems, query.q);
       const offset = page * size;
       const pagedItems = searched.slice(offset, offset + size);
 
@@ -338,13 +357,14 @@ export class IntegrationService {
         this.bannerService.getActiveBanners().catch(() => []),
       ]);
 
+    // Fetch user record to get real phone number
+    const user = await this.prisma.user.findUnique({ where: { id: userId } });
+    const userWalletId = wallet?.walletId;
+
     // Format recent transactions for the frontend using unified mapping
     const recentTransactions = (transactions || [])
       .slice(0, 10)
-      .map((tx: any) => this.mapWalletTransactionToHistoryItem(tx));
-
-    // Fetch user record to get real phone number
-    const user = await this.prisma.user.findUnique({ where: { id: userId } });
+      .map((tx: any) => this.mapWalletTransactionToHistoryItem(tx, userWalletId));
 
     return {
       user: {
@@ -611,20 +631,31 @@ export class IntegrationService {
     }
 
     try {
+      // Fetch names for metadata enrichment
+      const [senderProfile, recipientProfile] = await Promise.all([
+        this.prisma.kYCData.findUnique({ where: { userId } }).catch(() => null),
+        this.prisma.kYCData.findUnique({ where: { userId: recipientUser.id } }).catch(() => null),
+      ]);
+
+      const senderName = senderProfile?.idCardName || 'User';
+      const recipientName = recipientProfile?.idCardName || recipientPhone;
+
       const tx = await this.financeService.transferByPhone(userId, {
         recipientPhone,
         amount: amount.toFixed(4),
         note: body.note,
         idempotencyKey: body.idempotencyKey,
+        metadata: {
+          senderName,
+          recipientName,
+          senderPhone: (await this.prisma.user.findUnique({ where: { id: userId } }))?.phoneNumber,
+          recipientPhone: recipientPhone,
+        }
       });
 
       const metadata = this.parseMetadata(tx?.metadata);
-      const recipientUserId = metadata?.recipientUserId;
-      const recipientProfile = recipientUserId
-        ? await this.prisma.kYCData
-            .findUnique({ where: { userId: recipientUserId } })
-            .catch(() => null)
-        : null;
+      const recipientUserId = metadata?.recipientUserId || recipientUser.id;
+      // recipientProfile was already fetched at the start of the try block
 
       const finalTxId = tx?.transactionId || tx?.id?.toString();
 
@@ -920,47 +951,71 @@ export class IntegrationService {
     });
   }
 
-  private formatTransactionTitle(tx: any): string {
-    switch (tx.type) {
+  private formatTransactionTitle(tx: any, isIncome: boolean): string {
+    const type = tx.type || tx.transactionType;
+    const metadata = this.parseMetadata(tx.metadata);
+    const amount = Number(metadata.totalAmount || tx.amount || 0).toFixed(2);
+
+    switch (type) {
       case 'TOPUP':
-        return 'เติมเงินเข้าบัญชี';
+        return `Top up ${amount}฿ to wallet`;
       case 'PAYMENT':
-        return 'ชำระเงิน';
-      case 'TRANSFER':
-        return 'โอนเงิน';
+      case 'MERCHANT_PAYMENT': {
+        const merchant = metadata.merchantName || metadata.merchant_name || 'Merchant';
+        return `Purchase ${amount}฿ to ${merchant}`;
+      }
+      case 'TRANSFER': {
+        if (isIncome) {
+          const sender = metadata.senderPhone || '0xx-xxx-xxxx';
+          return `Receive ${amount}฿ from ${this.maskPhone(sender)}`;
+        } else {
+          const recipient = metadata.recipientPhone || '0xx-xxx-xxxx';
+          return `Transfer ${amount}฿ to ${this.maskPhone(recipient)}`;
+        }
+      }
       case 'WITHDRAWAL':
-        return 'ถอนเงิน';
+        return `Withdraw ${amount}฿ from wallet`;
       default:
-        return tx.description || 'ธุรกรรมอื่นๆ';
+        return tx.description || 'Other Transaction';
     }
   }
 
   private parseMetadata(raw: unknown): Record<string, any> {
-    if (!raw) {
+    const parsed = (() => {
+      if (!raw) return {};
+      if (typeof raw === 'object') return raw as Record<string, any>;
+      if (typeof raw === 'string') {
+        try { return JSON.parse(raw); } catch { return {}; }
+      }
       return {};
-    }
-    if (typeof raw === 'object') {
-      return raw as Record<string, any>;
-    }
-    if (typeof raw === 'string') {
+    })();
+
+    // Handle nested 'extra' if it exists as a string
+    if (parsed.extra && typeof parsed.extra === 'string') {
       try {
-        return JSON.parse(raw);
+        const extra = JSON.parse(parsed.extra);
+        return { ...parsed, ...extra };
       } catch {
-        return {};
+        // ignore
       }
     }
-    return {};
+    return parsed;
   }
 
-  private mapWalletTransactionToHistoryItem(tx: any) {
-    const type = (tx?.type || 'PAYMENT') as
+  private mapWalletTransactionToHistoryItem(tx: any, userWalletId?: string) {
+    const type = (tx?.type || tx?.transactionType || 'PAYMENT') as
       | 'TOPUP'
       | 'TRANSFER'
       | 'PAYMENT'
+      | 'MERCHANT_PAYMENT'
       | 'WITHDRAWAL';
     const metadata = this.parseMetadata(tx?.metadata);
-    const isIncome =
-      type === 'TOPUP' || (!tx?.fromWalletId && !!tx?.toWalletId);
+    
+    // Determine income/outcome based on userWalletId if available
+    const isIncome = userWalletId 
+      ? (tx.toWalletId === userWalletId)
+      : (type === 'TOPUP' || (!tx?.fromWalletId && !!tx?.toWalletId));
+
     const createdAt = tx?.createdAt
       ? new Date(tx.createdAt).toISOString()
       : new Date().toISOString();
@@ -968,15 +1023,20 @@ export class IntegrationService {
     // Prioritize gross amount from metadata for merchant payments
     const rawAmount = Number(tx?.amount || 0);
     const grossAmount = Number(metadata.totalAmount || rawAmount);
-    const feeAmount = grossAmount - rawAmount;
+    
+    // For merchant payments, the "rawAmount" of a single leg is misleading for the customer.
+    // We should show the gross amount as the net amount for the customer.
+    const isPayment = type === 'PAYMENT' || type === 'MERCHANT_PAYMENT';
+    const displayNetAmount = isPayment ? grossAmount : rawAmount;
+    const feeAmount = isPayment ? 0 : (grossAmount - rawAmount);
 
     return {
       id: tx?.transactionId || String(tx?.id || randomUUID()),
       type,
-      title: this.formatTransactionTitle(tx),
+      title: this.formatTransactionTitle(tx, isIncome),
       description: tx?.description || undefined,
       amount: grossAmount.toFixed(2),
-      netAmount: rawAmount.toFixed(2),
+      netAmount: displayNetAmount.toFixed(2),
       feeAmount: feeAmount > 0 ? feeAmount.toFixed(2) : undefined,
       currency: tx?.currency || 'THB',
       direction: isIncome ? 'IN' : 'OUT',
@@ -987,6 +1047,7 @@ export class IntegrationService {
       paymentIntentId: metadata.paymentIntentId || undefined,
       orderId: metadata.orderId || undefined,
       reference: tx?.transactionId || undefined,
+      idempotencyKey: metadata.idempotencyKey || tx?.idempotencyKey || undefined,
     };
   }
 
