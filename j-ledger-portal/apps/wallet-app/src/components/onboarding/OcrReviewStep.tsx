@@ -71,7 +71,7 @@ export const OcrReviewStep: React.FC<OcrReviewStepProps> = ({
     setData(pickerConfig.field, dateStr);
   };
   const isValid =
-    data.idNumber.length === 13 &&
+    data.idNumber.replace(/\D/g, '').length === 13 &&
     data.firstNameTh.trim().length > 0 &&
     data.lastNameTh.trim().length > 0 &&
     data.firstNameEn.trim().length > 0 &&
@@ -272,6 +272,18 @@ export const OcrReviewStep: React.FC<OcrReviewStepProps> = ({
             disabled={!isValid}
             onPress={onConfirm}
           />
+          {!isValid && (
+            <Text className="text-[10px] text-red-400 text-center mt-2">
+              Missing: {[
+                data.idNumber.replace(/\D/g, '').length !== 13 && "ID(13)",
+                !data.firstNameTh.trim() && "NameTH",
+                !data.lastNameTh.trim() && "LastTH",
+                !data.firstNameEn.trim() && "NameEN",
+                !data.lastNameEn.trim() && "LastEN",
+                !data.dateOfBirth.trim() && "DOB"
+              ].filter(Boolean).join(', ')}
+            </Text>
+          )}
           <AppButton title="Rescan" variant="outline" onPress={onRescan} />
         </View>
       </ScrollView>

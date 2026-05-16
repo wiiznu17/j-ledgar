@@ -1525,7 +1525,7 @@ export class IdentityService {
     if (kycData?.idCardNumberEncrypted) {
       try {
         const fullId = this.decryptPii(kycData.idCardNumberEncrypted);
-        idNumber = this.maskIdCardNumber(fullId);
+        idNumber = fullId; // real id number for check 
       } catch (e) {
         this.logger.warn(
           `Failed to decrypt ID number for status check: ${user.id}`,

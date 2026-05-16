@@ -745,11 +745,11 @@ export class KycService {
       where: { id: userId },
       data: { registrationState: RegistrationState.ID_CARD_UPLOADED },
     });
-
+    console.log("idCardNumber", idCardNumber)
     return {
       extractedData: {
-        idCardNumber: this.maskIdCardNumber(idCardNumber),
-        ...extraction, // Spread names, dates, etc.
+        idNumber: idCardNumber, // ส่งเลขจริงกลับไปให้ตรวจ
+        ...extraction,
       },
       livenessSessionId,
     };
@@ -1048,15 +1048,18 @@ export class KycService {
     ]);
     this.logger.log(`[KYC] STEP 5.5: Confirming OCR data for user ${userId}`);
 
+    // Sanitize ID Number (Remove dashes/spaces)
+    const cleanIdNumber = dto.idNumber ? dto.idNumber.replace(/\D/g, '') : null;
+
     // Encrypt sensitive fields
-    const encryptedId = dto.idNumber ? this.encryptPii(dto.idNumber) : null;
+    const encryptedId = cleanIdNumber ? this.encryptPii(cleanIdNumber) : null;
     const thaiName =
       `${dto.prefixTh || ''}${dto.firstNameTh || ''} ${dto.lastNameTh || ''}`.trim();
     const encryptedThaiName = thaiName ? this.encryptPii(thaiName) : null;
     // In mock/simple mode, we use userId in the token to allow multiple users to test with the same mock ID
     // TODO: For production, remove + userId to enforce global deduplication of ID cards
-    const idCardToken = dto.idNumber
-      ? this.hashString(dto.idNumber + userId)
+    const idCardToken = cleanIdNumber
+      ? this.hashString(cleanIdNumber + userId)
       : null;
 
     try {
