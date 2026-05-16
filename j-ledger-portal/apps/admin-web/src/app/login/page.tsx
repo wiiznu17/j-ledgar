@@ -3,12 +3,18 @@ import { redirect } from 'next/navigation';
 import { verifyToken } from '@/lib/auth/jwt';
 import { login } from '@/app/actions/auth';
 import { LoginForm } from '@/components/auth/LoginForm';
+import { AUTH_COOKIE_NAME } from '@/lib/api-config';
 
-export default async function LoginPage() {
+export default async function LoginPage(props: {
+  searchParams: Promise<{ error?: string }>;
+}) {
+  const searchParams = await props.searchParams;
+  const error = searchParams.error;
+  
   const cookieStore = await cookies();
-  const token = cookieStore.get('admin_session')?.value;
+  const token = cookieStore.get(AUTH_COOKIE_NAME)?.value;
 
-  if (token) {
+  if (token && !error) {
     const payload = await verifyToken(token);
     if (payload) {
       redirect('/dashboard');

@@ -21,4 +21,10 @@ export const getApiBaseUrl = () => {
   return '';
 };
 
+
 export const API_BASE_URL = getApiBaseUrl();
+
+// Cookie Names
+export const AUTH_COOKIE_NAME = 'admin_session';
+export const REFRESH_TOKEN_COOKIE_NAME = 'admin_refresh_token';
+export const PERMISSIONS_COOKIE_NAME = 'user_permissions';

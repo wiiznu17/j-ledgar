@@ -4,7 +4,7 @@ import axios, {
   AxiosRequestConfig,
   AxiosResponse,
 } from 'axios';
-import { API_BASE_URL } from './api-config';
+import { API_BASE_URL, AUTH_COOKIE_NAME, PERMISSIONS_COOKIE_NAME } from './api-config';
 
 /**
  * Type-safe API Client for J-Ledger Admin Web using Axios
@@ -49,7 +49,7 @@ const createAxiosInstance = (): AxiosInstance => {
     if (isServer) {
       const { cookies } = await import('next/headers');
       const cookieStore = await cookies();
-      const token = cookieStore.get('admin_session')?.value;
+      const token = cookieStore.get(AUTH_COOKIE_NAME)?.value;
 
       // Only inject auth header if token exists and not a public endpoint
       if (token && !config.url?.includes('/auth/login')) {
@@ -69,8 +69,14 @@ const createAxiosInstance = (): AxiosInstance => {
         const data = error.response.data;
 
         if (status === 401 && !(error.config as any)?._retry) {
-          // Attempt refresh token for client-side fetches
+          (error.config as any)._retry = true;
+
+          // In a full implementation, we would attempt a refresh token call here.
+          // For now, if we get a 401, we treat it as an unrecoverable session error
+          // (especially common during dev DB resets) and clear the session to prevent loops.
           if (typeof window !== 'undefined') {
+            // Force redirect to login with error param
+            // The LoginPage will handle stopping the redirect loop
             window.location.href = '/login?error=Session expired';
           }
           throw new ApiError(401, 'Unauthorized', data);

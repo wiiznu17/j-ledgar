@@ -4,6 +4,7 @@ import { cookies, headers } from 'next/headers';
 import { redirect } from 'next/navigation';
 import { authRequester } from '@/lib/requesters';
 import { LoginRequest, RefreshTokenRequest } from '@repo/dto';
+import { AUTH_COOKIE_NAME, PERMISSIONS_COOKIE_NAME } from '@/lib/api-config';
 import { logLoginAttempt, logLogoutAttempt } from '@/lib/auth/audit';
 import { checkRateLimit } from '@/lib/auth/rate-limit';
 
@@ -46,7 +47,7 @@ export async function login(formData: FormData) {
     const cookieStore = await cookies();
 
     // Access Token (short-lived)
-    cookieStore.set('admin_session', data.token, {
+    cookieStore.set(AUTH_COOKIE_NAME, data.token, {
       httpOnly: true,
       secure: process.env.NODE_ENV === 'production',
       maxAge: 60 * 60 * 8, // 8 hours
@@ -80,7 +81,7 @@ export async function login(formData: FormData) {
     });
     console.log('[admin-web] login - Set user_role cookie');
 
-    cookieStore.set('user_permissions', JSON.stringify(data.permissions), {
+    cookieStore.set(PERMISSIONS_COOKIE_NAME, JSON.stringify(data.permissions), {
       httpOnly: true,
       secure: process.env.NODE_ENV === 'production',
       maxAge: 60 * 60 * 24 * 7,
@@ -131,7 +132,8 @@ export async function logout() {
   // Log logout attempt
   await logLogoutAttempt(userId, ipAddress, userAgent);
 
-  cookieStore.delete('admin_session');
+  cookieStore.delete(AUTH_COOKIE_NAME);
+  cookieStore.delete(PERMISSIONS_COOKIE_NAME);
   cookieStore.delete('refresh_token');
   cookieStore.delete('user_id');
   cookieStore.delete('user_role');
@@ -171,7 +173,7 @@ export async function refreshSession() {
       path: '/',
     });
 
-    cookieStore.set('user_permissions', JSON.stringify(data.permissions), {
+    cookieStore.set(PERMISSIONS_COOKIE_NAME, JSON.stringify(data.permissions), {
       httpOnly: true,
       secure: process.env.NODE_ENV === 'production',
       maxAge: 60 * 60 * 24 * 7,

@@ -106,17 +106,25 @@ docker compose -f docker-compose.yml -f docker-compose.dev.yml down -v
 # For Mode 2 (Local Test)
 docker compose -f docker-compose.yml -f docker-compose.test.yml down -v
 
-### Manual Finance Schema Reset (Start Ledger Fresh)
+### 🔄 Unified System Reset (Recommended for Dev)
 
-If you only want to wipe the **finance** ledger data (for testing reconciliation or clearing balances) without deleting users and other system data:
+To completely wipe both **Finance Service (Java)** and **Portal Service (Node)** and start from a clean state (0 balance, 4 core accounts):
 
 ```bash
-# Wipe finance schema and recreate it
-docker exec -e PGPASSWORD=ledger_password jledger-postgres psql -U ledger_admin -d jledger_db -c "DROP SCHEMA IF EXISTS finance CASCADE; CREATE SCHEMA finance; GRANT ALL ON SCHEMA finance TO ledger_admin;"
-
-# Rerun migrations to restore tables and seed system account
-docker compose -f docker-compose.yml -f docker-compose.dev.yml run --rm finance-migration
+cd j-ledger-portal
+npm run system:reset
 ```
+
+**This single command will:**
+1. Wipe the Finance DB and rerun Flyway migrations (Creating `SYSTEM_BANK_ACCOUNT`).
+2. Wipe the Portal DB and rerun Prisma migrations.
+3. Run the Smart Seeder to link system accounts and create a test Merchant.
+
+---
+
+### Manual Finance Schema Reset (Start Ledger Fresh)
+
+If you only want to wipe the **finance** ledger data manually:
 
 **Warning:** This deletes all data including:
 

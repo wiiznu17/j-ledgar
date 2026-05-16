@@ -10,7 +10,8 @@
     "lint": "turbo run lint",
     "format": "prettier --write \"**/*.{ts,tsx,md}\"",
     "check-types": "turbo run check-types",
-    "postinstall": "turbo run generate"
+    "postinstall": "turbo run generate",
+    "system:reset": "docker exec -e PGPASSWORD=ledger_password jledger-postgres psql -U ledger_admin -d jledger_db -c 'DROP SCHEMA IF EXISTS finance CASCADE; CREATE SCHEMA finance; GRANT ALL ON SCHEMA finance TO ledger_admin;' && cd .. && docker compose -f docker-compose.yml -f docker-compose.dev.yml run --rm finance-migration && cd j-ledger-portal/apps/portal-service && npx prisma migrate reset --force"
   },
   "devDependencies": {
     "@next/swc-darwin-arm64": "^16.2.4",
