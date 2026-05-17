@@ -388,7 +388,7 @@ export default function UserDetailPage({
                 </div>
                 <div className="pt-4 border-t border-border">
                   <Link
-                    href={`/support/users/activity?userId=${user.id}`}
+                    href={`/support/user-activity?userId=${user.id}`}
                     className="block"
                   >
                     <Button

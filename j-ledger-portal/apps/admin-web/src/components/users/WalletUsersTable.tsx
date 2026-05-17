@@ -109,7 +109,7 @@ export function WalletUsersTable({ users, loading }: WalletUsersTableProps) {
                     Manage
                   </a>
                   <a
-                    href={`/support/users/activity?userId=${user.id}`}
+                    href={`/support/user-activity?userId=${user.id}`}
                     className={cn(
                       buttonVariants({ variant: 'ghost', size: 'sm' }),
                       'text-muted-foreground hover:text-foreground hover:bg-muted font-bold text-[10px] uppercase tracking-tighter',

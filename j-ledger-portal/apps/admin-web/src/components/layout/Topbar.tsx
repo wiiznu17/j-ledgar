@@ -45,7 +45,7 @@ const routeTitles: RouteTitle[] = [
   { pattern: '/finance/wallets', title: 'Customer Wallets' },
   { pattern: '/finance/reconcile', title: 'Reconcile' },
   { pattern: '/audit', title: 'Audit Logs' },
-  { pattern: '/support/users/activity', title: 'User Activity' },
+  { pattern: '/support/user-activity', title: 'User Activity' },
   { pattern: '/support/users/[id]', title: 'User Details' },
   { pattern: '/support/users', title: 'Users' },
   { pattern: '/support/merchants/applications', title: 'Merchant Applications' },

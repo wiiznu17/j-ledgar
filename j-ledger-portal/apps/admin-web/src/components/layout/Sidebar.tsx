@@ -195,7 +195,7 @@ const navigationGroups: NavigationGroup[] = [
       },
       {
         name: 'User Activity',
-        href: '/support/users/activity',
+        href: '/support/user-activity',
         icon: History,
         requiredPermission: Permission.VIEW_AUDIT_LOGS,
       },
