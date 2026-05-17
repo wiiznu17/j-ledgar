@@ -84,7 +84,7 @@ export async function proxy(request: NextRequest) {
     const role = jwtPayload.role as string;
 
     // RBAC Redirect Logic
-    if (role === 'SUPPORT_STAFF' && pathname === '/reconcile') {
+    if (role === 'SUPPORT_STAFF' && pathname === '/finance/reconcile') {
       return NextResponse.redirect(new URL('/dashboard', request.url));
     }
 

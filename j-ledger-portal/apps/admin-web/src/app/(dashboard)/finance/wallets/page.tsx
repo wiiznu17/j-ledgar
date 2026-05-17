@@ -249,7 +249,7 @@ export default function WalletAccountsPage() {
                       </TableCell>
                       <TableCell className="font-mono text-xs font-bold text-indigo-600 dark:text-indigo-400">
                         <Link
-                          href={`/wallets/${wallet.id}`}
+                          href={`/finance/wallets/${wallet.id}`}
                           className="hover:underline underline-offset-4"
                         >
                           {wallet.walletId}
@@ -320,7 +320,7 @@ export default function WalletAccountsPage() {
                               </div>
                               <div className="h-px bg-border my-1" />
                               <Link
-                                href={`/wallets/${wallet.id}`}
+                                href={`/finance/wallets/${wallet.id}`}
                                 className="flex items-center w-full px-3 py-2 text-sm font-medium text-muted-foreground hover:text-foreground hover:bg-muted rounded-lg transition-colors"
                               >
                                 <Search className="w-4 h-4 mr-2 text-muted-foreground" />{' '}

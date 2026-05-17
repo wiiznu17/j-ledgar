@@ -144,7 +144,7 @@ export default function InternalLedgerPage() {
                       key={account.id}
                       className="border-border hover:bg-muted/30 transition-colors group cursor-pointer"
                       onClick={() =>
-                        router.push(`/system/ledger/${account.id}`)
+                        router.push(`/finance/ledger/${account.id}`)
                       }
                     >
                       <TableCell className="pl-6">

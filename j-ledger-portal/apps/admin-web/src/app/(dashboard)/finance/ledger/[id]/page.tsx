@@ -97,7 +97,7 @@ export default function InternalLedgerDetailPage({
           <span>System</span>
           <ChevronRight className="w-3 h-3" />
           <Link
-            href="/system/ledger"
+            href="/finance/ledger"
             className="hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors"
           >
             Internal Ledger

@@ -138,7 +138,7 @@ export default function WalletDetailPage({
       <div className="flex flex-col gap-3">
         <div className="flex items-center text-[10px] font-bold text-muted-foreground uppercase tracking-widest gap-2">
           <button
-            onClick={() => router.push('/wallets')}
+            onClick={() => router.push('/finance/wallets')}
             className="hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors uppercase tracking-widest font-bold text-[10px]"
           >
             Customer Wallets

@@ -91,19 +91,19 @@ const navigationGroups: NavigationGroup[] = [
       },
       {
         name: 'Customer Wallets',
-        href: '/wallets',
+        href: '/finance/wallets',
         icon: Wallet,
         requiredPermission: Permission.VIEW_USERS,
       },
       {
         name: 'Internal Ledger',
-        href: '/system/ledger',
+        href: '/finance/ledger',
         icon: Landmark,
         requiredPermission: Permission.VIEW_LEDGER_ENTRIES,
       },
       {
         name: 'Reconcile',
-        href: '/reconcile',
+        href: '/finance/reconcile',
         icon: ShieldCheck,
         requiredPermission: Permission.RUN_RECONCILIATION,
       },

@@ -298,7 +298,7 @@ export default function UserDetailPage({
                       </span>
                     </div>
                     <Link
-                      href={`/wallets/${account.id}`}
+                      href={`/finance/wallets/${account.id}`}
                       className="relative z-10 flex items-center gap-1.5 text-[10px] font-black text-indigo-600 dark:text-indigo-400 uppercase hover:gap-2 transition-all"
                     >
                       View Wallet Details <ArrowRight className="w-3 h-3" />
