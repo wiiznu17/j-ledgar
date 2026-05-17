@@ -481,6 +481,18 @@ export class IntegrationService {
       },
     });
 
+    const wallet = await this.financeService.getWallet(userId);
+    if (wallet) {
+      await this.financeService.createPaymentIntent(
+        wallet.accountId,
+        paymentIntent.id,
+        amount.toFixed(4),
+        'TOPUP',
+      ).catch((err) => {
+        this.logger.error(`Failed to register payment intent in finance-service: ${err.message}`);
+      });
+    }
+
     return {
       orderId: order.id,
       clientSecret: paymentIntent.client_secret,
@@ -923,19 +935,8 @@ export class IntegrationService {
       data: { status: TopupOrderStatus.PROCESSING, processedEventId: event.id },
     });
 
-    let creditResult: any;
     try {
-      creditResult = await this.financeService.creditStripeTopUp(order.userId, {
-        amount: Number(order.amount).toFixed(4),
-        currency: order.currency,
-        externalRef: paymentIntentId,
-        provider: 'STRIPE',
-        metadata: {
-          provider: 'STRIPE',
-          paymentIntentId,
-          orderId: order.id,
-        },
-      });
+      await this.financeService.processPaymentWebhook(paymentIntentId, 'SUCCESS');
     } catch (error: any) {
       this.logger.error(
         `[StripeWebhook] credit failed order=${order.id} paymentIntent=${paymentIntentId} message="${error?.message || 'unknown'}"`,
@@ -954,7 +955,7 @@ export class IntegrationService {
       where: { id: order.id },
       data: {
         status: TopupOrderStatus.PAID,
-        financeTransactionId: creditResult?.transactionId ?? null,
+        financeTransactionId: `PAY-${paymentIntentId}`,
         processedEventId: event.id,
       },
     });
@@ -1014,6 +1015,12 @@ export class IntegrationService {
       event.type === 'payment_intent.canceled'
         ? TopupOrderStatus.CANCELED
         : TopupOrderStatus.FAILED;
+
+    try {
+      await this.financeService.processPaymentWebhook(paymentIntentId, 'FAILED');
+    } catch (err) {
+      this.logger.error(`Failed to register payment intent failure in finance-service: ${err.message}`);
+    }
 
     await this.prisma.topupOrder.update({
       where: { id: order.id },

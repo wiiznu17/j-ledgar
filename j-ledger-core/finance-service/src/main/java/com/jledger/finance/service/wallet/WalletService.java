@@ -51,6 +51,13 @@ public class WalletService {
     private static final Logger logger = LoggerFactory.getLogger(WalletService.class);
     private static final String SYSTEM_ACCOUNT_ID = "00000000-0000-0000-0000-000000000000";
 
+    private String generateReadableTransactionId() {
+        java.time.format.DateTimeFormatter formatter = java.time.format.DateTimeFormatter.ofPattern("yyMMdd");
+        String dateStr = java.time.LocalDate.now().format(formatter);
+        int randomNum = (int) (Math.random() * 900000) + 100000;
+        return "TXN" + dateStr + randomNum;
+    }
+
     @Autowired
     private WalletRepository walletRepository;
 
@@ -288,7 +295,7 @@ public class WalletService {
         accountRepository.save(systemAccount);
 
         // Record adjustment transaction
-        String txId = UUID.randomUUID().toString();
+        String txId = generateReadableTransactionId();
         Transaction transaction = new Transaction();
         transaction.setTransactionId(txId);
         transaction.setType(amount.compareTo(BigDecimal.ZERO) > 0 ? TransactionType.TOPUP : TransactionType.WITHDRAWAL);
@@ -371,7 +378,7 @@ public class WalletService {
         accountRepository.save(systemAccount);
 
         // Record Ledger Entries
-        String txId = UUID.randomUUID().toString();
+        String txId = generateReadableTransactionId();
         Account userAccount = getOrCreateLedgerAccount(userId, wallet.getCurrency());
         recordLedgerEntries(systemAccount, userAccount, amount, txId, String.format("Bank top-up from %s", bankAccount.getBankName()));
 
@@ -668,7 +675,7 @@ public class WalletService {
         userAccount.setBalance(userAccount.getBalance().add(amount));
         accountRepository.save(userAccount);
 
-        String txId = UUID.randomUUID().toString();
+        String txId = generateReadableTransactionId();
         Transaction transaction = new Transaction();
         transaction.setTransactionId(txId);
         transaction.setType(TransactionType.TOPUP);
@@ -715,7 +722,7 @@ public class WalletService {
         userAccount.setBalance(userAccount.getBalance().add(amount));
         accountRepository.save(userAccount);
 
-        String txId = UUID.randomUUID().toString();
+        String txId = generateReadableTransactionId();
         Transaction transaction = new Transaction();
         transaction.setTransactionId(txId);
         transaction.setType(TransactionType.TOPUP);
@@ -867,7 +874,7 @@ public class WalletService {
             accountRepository.save(receiverAccount);
             
             // 5. Record Ledger Entries
-            String txId = idempotencyKey != null ? idempotencyKey : UUID.randomUUID().toString();
+            String txId = generateReadableTransactionId();
             
             // Debit Sender
             LedgerEntry senderEntry = LedgerEntry.builder()
@@ -896,9 +903,7 @@ public class WalletService {
 
             // 6. Create Transaction Record
             Transaction transaction = new Transaction();
-            if (idempotencyKey != null && !idempotencyKey.isBlank()) {
-                transaction.setTransactionId(idempotencyKey);
-            }
+            transaction.setTransactionId(txId);
             transaction.setType(TransactionType.TRANSFER);
             transaction.setAmount(amount);
             transaction.setStatus(TransactionStatus.COMPLETED);
@@ -1040,7 +1045,7 @@ public class WalletService {
         cacheWallet(fromWallet);
         cacheWallet(toWallet);
 
-        String txId = UUID.randomUUID().toString();
+        String txId = generateReadableTransactionId();
         Transaction transaction = new Transaction();
         transaction.setTransactionId(txId);
         transaction.setType(TransactionType.TRANSFER);
@@ -1117,7 +1122,7 @@ public class WalletService {
         accountRepository.save(receiverAccount);
 
         // 6. Record Transaction
-        String txId = UUID.randomUUID().toString();
+        String txId = generateReadableTransactionId();
         Transaction transaction = new Transaction();
         transaction.setTransactionId(txId);
         transaction.setType(TransactionType.PAYMENT);
@@ -1217,7 +1222,7 @@ public class WalletService {
 
         // 4. Record Main Transaction (Bill Payment)
         Transaction transaction = new Transaction();
-        transaction.setTransactionId(UUID.randomUUID().toString());
+        transaction.setTransactionId(generateReadableTransactionId());
         transaction.setType(TransactionType.BILL_PAYMENT);
         transaction.setAmount(amount);
         transaction.setStatus(TransactionStatus.COMPLETED);
@@ -1231,7 +1236,7 @@ public class WalletService {
         // 5. Record Fee Transaction if any
         if (totalFee.compareTo(BigDecimal.ZERO) > 0) {
             Transaction feeTx = new Transaction();
-            feeTx.setTransactionId(UUID.randomUUID().toString());
+            feeTx.setTransactionId(generateReadableTransactionId());
             feeTx.setType(TransactionType.BILL_PAYMENT);
             feeTx.setAmount(totalFee);
             feeTx.setStatus(TransactionStatus.COMPLETED);
@@ -1278,7 +1283,7 @@ public class WalletService {
         cacheWallet(wallet);
 
         Transaction transaction = new Transaction();
-        transaction.setTransactionId(UUID.randomUUID().toString());
+        transaction.setTransactionId(generateReadableTransactionId());
         transaction.setType(TransactionType.BILL_PAYMENT);
         transaction.setAmount(amount);
         transaction.setStatus(TransactionStatus.COMPLETED);
@@ -1292,7 +1297,7 @@ public class WalletService {
         // 4. Record Fee Transaction if any
         if (totalFee.compareTo(BigDecimal.ZERO) > 0) {
             Transaction feeTx = new Transaction();
-            feeTx.setTransactionId(UUID.randomUUID().toString());
+            feeTx.setTransactionId(generateReadableTransactionId());
             feeTx.setType(TransactionType.BILL_PAYMENT);
             feeTx.setAmount(totalFee);
             feeTx.setStatus(TransactionStatus.COMPLETED);

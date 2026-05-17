@@ -67,7 +67,8 @@ public interface TransactionRepository extends JpaRepository<Transaction, Long> 
            "(CAST(:type AS string) IS NULL OR t.type = :type) AND " +
            "(CAST(:startDate AS timestamp) IS NULL OR t.createdAt >= :startDate) AND " +
            "(CAST(:endDate AS timestamp) IS NULL OR t.createdAt <= :endDate) AND " +
-           "(:userId IS NULL OR EXISTS (SELECT w FROM Wallet w WHERE w.userId = :userId AND (w.id = t.fromWalletId OR w.id = t.toWalletId))) " +
+           "(:userId IS NULL OR EXISTS (SELECT w FROM Wallet w WHERE w.userId = :userId AND (w.id = t.fromWalletId OR w.id = t.toWalletId))) AND " +
+           "(:reference IS NULL OR :reference = '' OR LOWER(t.transactionId) LIKE LOWER(CONCAT('%', :reference, '%'))) " +
            "ORDER BY t.createdAt DESC")
     org.springframework.data.domain.Page<Transaction> findAllWithFilters(
             @Param("status") TransactionStatus status,
@@ -75,6 +76,7 @@ public interface TransactionRepository extends JpaRepository<Transaction, Long> 
             @Param("startDate") LocalDateTime startDate,
             @Param("endDate") LocalDateTime endDate,
             @Param("userId") String userId,
+            @Param("reference") String reference,
             Pageable pageable
     );
 

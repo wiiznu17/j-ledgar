@@ -19,7 +19,7 @@ import {
   DollarSign,
   X,
 } from 'lucide-react';
-import { useSearchParams } from 'next/navigation';
+import { useSearchParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -67,6 +67,7 @@ export default function TransactionsPage() {
   const [totalPages, setTotalPages] = useState(1);
   const [totalItems, setTotalItems] = useState(0);
 
+  const router = useRouter();
   const searchParams = useSearchParams();
   const userIdParam = searchParams.get('userId');
 
@@ -109,14 +110,15 @@ export default function TransactionsPage() {
   }, [activeFilters]);
 
   useEffect(() => {
-    if (userIdParam !== activeFilters.userId) {
+    const normalizedUserIdParam = userIdParam || '';
+    if (normalizedUserIdParam !== activeFilters.userId) {
       setActiveFilters((prev) => ({
         ...prev,
-        userId: userIdParam || '',
+        userId: normalizedUserIdParam,
         page: 1,
       }));
     }
-  }, [userIdParam]);
+  }, [userIdParam, activeFilters.userId]);
 
   useEffect(() => {
     fetchTransactions();
@@ -161,7 +163,7 @@ export default function TransactionsPage() {
           </h2>
           <div className="flex flex-wrap items-center gap-2 mt-1">
             <p className="text-slate-500">
-              Monitor and manage all financial activities across the platform.
+              Monitor and manage all financial activities
             </p>
             {activeFilters.userId && (
               <Badge
@@ -199,13 +201,13 @@ export default function TransactionsPage() {
           >
             <FilterSearchInput
               label="Reference ID"
-              placeholder="TXN-XXXXXX"
+              placeholder="Search by Reference ID..."
               value={reference}
               onChange={(e) => setReference(e.target.value)}
             />
 
             <FilterSelect
-              label="Transaction Status"
+              label="Status"
               value={status}
               onValueChange={(val) => setStatus(val || 'ALL')}
               options={[
@@ -218,7 +220,7 @@ export default function TransactionsPage() {
             />
 
             <FilterSelect
-              label="Transaction Type"
+              label="Type"
               value={type}
               onValueChange={(val) => setType(val || 'ALL')}
               options={[
@@ -262,12 +264,12 @@ export default function TransactionsPage() {
           <table className="w-full text-left border-collapse">
             <thead>
               <tr className="border-b border-slate-100 bg-slate-50/30 text-slate-400 text-[10px] uppercase font-bold tracking-widest">
-                <th className="px-6 py-4">Transaction ID / Reference</th>
+                <th className="px-6 py-4 w-12 text-center">No.</th>
+                <th className="px-6 py-4">Reference ID</th>
                 <th className="px-6 py-4">Type</th>
                 <th className="px-6 py-4 text-right">Amount</th>
                 <th className="px-6 py-4">Status</th>
                 <th className="px-6 py-4">Created At</th>
-                <th className="px-6 py-4 text-right">Action</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-50">
@@ -314,22 +316,19 @@ export default function TransactionsPage() {
                   </td>
                 </tr>
               ) : (
-                transactions.map((txn) => (
+                transactions.map((txn, index) => (
                   <tr
                     key={txn.id}
-                    className="hover:bg-slate-50/50 transition-colors"
+                    onClick={() => router.push(`/transactions/${txn.id}`)}
+                    className="hover:bg-slate-50 transition-colors cursor-pointer"
                   >
-                    <td className="px-6 py-5">
-                      <div>
-                        <p className="text-sm font-bold text-slate-800 tabular-nums">
-                          {String(txn.transactionId || txn.id)
-                            .slice(0, 12)
-                            .toUpperCase()}
-                        </p>
-                        <p className="text-[10px] text-slate-400 font-medium truncate max-w-[150px]">
-                          Ref: {String(txn.transactionId || txn.id)}
-                        </p>
-                      </div>
+                    <td className="px-6 py-5 text-center font-bold text-xs text-slate-400">
+                      {(currentPage - 1) * 10 + index + 1}
+                    </td>
+                    <td className="px-6 py-5" onClick={(e) => e.stopPropagation()}>
+                      <span className="text-xs font-mono font-semibold text-slate-700 select-all">
+                        {String(txn.transactionId || txn.id).toUpperCase()}
+                      </span>
                     </td>
                     <td className="px-6 py-5">
                       <div className="flex items-center gap-2.5">
@@ -392,18 +391,6 @@ export default function TransactionsPage() {
                     </td>
                     <td className="px-6 py-5 text-xs text-slate-500 font-medium tabular-nums">
                       {format(new Date(txn.createdAt), 'MMM d, yyyy HH:mm')}
-                    </td>
-                    <td className="px-6 py-5 text-right">
-                      <Link href={`/transactions/${txn.id}`}>
-                        <Button
-                          size="sm"
-                          variant="ghost"
-                          className="h-8 text-indigo-600 hover:text-indigo-700 hover:bg-indigo-50 font-bold text-xs rounded-lg"
-                        >
-                          <Eye className="w-3.5 h-3.5 mr-1.5" />
-                          Details
-                        </Button>
-                      </Link>
                     </td>
                   </tr>
                 ))

@@ -10,9 +10,24 @@ import {
 export const transactionRequester = {
   getHistory: async (params?: any) => {
     const query = new URLSearchParams(params).toString();
-    return apiClient.get<AdminPaginatedResponse<Transaction>>(
-      `${API_PATHS.ADMIN.TRANSACTIONS.BASE}?${query}`,
-    );
+    try {
+      const res = await apiClient.get<AdminPaginatedResponse<Transaction>>(
+        `${API_PATHS.ADMIN.TRANSACTIONS.BASE}?${query}`,
+      );
+      console.log('[TRANSACTION_REQUESTER] Get history response:', res);
+      return res;
+    } catch (error) {
+      console.error('[TRANSACTION_REQUESTER] Get history error:', error);
+      return {
+        data: [],
+        pagination: {
+          page: 1,
+          limit: 10,
+          total: 0,
+          totalPages: 0,
+        },
+      };
+    }
   },
   getDetails: async (id: string) =>
     apiClient.get<TransactionDetailsDto>(

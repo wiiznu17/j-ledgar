@@ -379,6 +379,53 @@ export class FinanceService {
     }
   }
 
+  async createPaymentIntent(
+    accountId: string,
+    referenceId: string,
+    amount: string,
+    type: 'TOPUP' | 'WITHDRAW',
+  ): Promise<any> {
+    const url = `${this.financeServiceUrl}/api/finance/payments`;
+    try {
+      const response = await this.httpService.axiosRef.post(
+        url,
+        {
+          accountId,
+          referenceId,
+          amount,
+          type,
+        },
+        { headers: this.getInternalHeaders() },
+      );
+      return response.data;
+    } catch (error: any) {
+      this.logCompactError(`createPaymentIntent account=${accountId} ref=${referenceId}`, error);
+      this.rethrowAsHttpException(error, 'Failed to create payment intent');
+    }
+  }
+
+  async processPaymentWebhook(
+    referenceId: string,
+    status: 'SUCCESS' | 'FAILED',
+  ): Promise<any> {
+    const url = `${this.financeServiceUrl}/api/finance/webhooks/payment`;
+    try {
+      const response = await this.httpService.axiosRef.post(
+        url,
+        {
+          reference_id: referenceId,
+          status,
+          signature: 'mock_signature_verified',
+        },
+        { headers: this.getInternalHeaders() },
+      );
+      return response.data;
+    } catch (error: any) {
+      this.logCompactError(`processPaymentWebhook ref=${referenceId} status=${status}`, error);
+      this.rethrowAsHttpException(error, 'Failed to process payment webhook');
+    }
+  }
+
   async creditStripeTopUp(
     userId: string,
     payload: CreditTopUpRequest,
