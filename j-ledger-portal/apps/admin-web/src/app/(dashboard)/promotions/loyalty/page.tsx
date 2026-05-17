@@ -13,8 +13,8 @@ import {
   XCircle
 } from 'lucide-react';
 import { loyaltyRequester } from '@/lib/requesters';
-import { RulesTable } from './_components/RulesTable';
-import { ExpirySchedule } from './_components/ExpirySchedule';
+import { RulesTable } from '@/components/promotions/RulesTable';
+import { ExpirySchedule } from '@/components/promotions/ExpirySchedule';
 // Removed missing Alert imports
 
 export default function LoyaltyPage() {

@@ -37,7 +37,7 @@ const routeTitles: RouteTitle[] = [
   { pattern: '/promotions/banners', title: 'Banners' },
   { pattern: '/promotions/redemptions', title: 'Redemptions' },
   { pattern: '/promotions/settings', title: 'Promotion Settings' },
-  { pattern: '/loyalty', title: 'Loyalty Program' },
+  { pattern: '/promotions/loyalty', title: 'Loyalty Program' },
   { pattern: '/risk/kyc/[userId]', title: 'KYC Details' },
   { pattern: '/risk/kyc', title: 'KYC Verification' },
   { pattern: '/risk/aml', title: 'AML Monitor' },

@@ -171,7 +171,7 @@ const navigationGroups: NavigationGroup[] = [
       },
       {
         name: 'Loyalty Points',
-        href: '/loyalty',
+        href: '/promotions/loyalty',
         icon: Coins,
         requiredPermission: Permission.VIEW_DASHBOARD,
         isNew: true,
