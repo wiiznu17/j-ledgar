@@ -114,13 +114,13 @@ const navigationGroups: NavigationGroup[] = [
     items: [
       {
         name: 'KYC Verification',
-        href: '/kyc',
+        href: '/risk/kyc',
         icon: ShieldCheck,
         requiredPermission: Permission.VIEW_USERS,
       },
       {
         name: 'AML Monitor',
-        href: '/aml',
+        href: '/risk/aml',
         icon: AlertTriangle,
         requiredPermission: Permission.VIEW_SUSPICIOUS_ACTIVITIES,
         isSoon: true,

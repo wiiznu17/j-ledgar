@@ -98,7 +98,7 @@ export default function KycDetailPage() {
       try {
         await kycRequester.approve(userId as string);
         Swal.fire('Approved!', 'User identity has been verified.', 'success');
-        router.push('/kyc');
+        router.push('/risk/kyc');
       } catch (err) {
         Swal.fire('Error', 'Failed to approve KYC', 'error');
       }
@@ -119,7 +119,7 @@ export default function KycDetailPage() {
       try {
         await kycRequester.reject(userId as string, reason);
         Swal.fire('Rejected', 'User has been notified.', 'info');
-        router.push('/kyc');
+        router.push('/risk/kyc');
       } catch (err) {
         Swal.fire('Error', 'Failed to reject KYC', 'error');
       }

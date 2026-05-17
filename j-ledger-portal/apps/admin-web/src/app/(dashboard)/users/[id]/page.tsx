@@ -199,7 +199,7 @@ export default function UserDetailPage({
                       <Badge className="bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-none text-[10px] font-black rounded-lg px-2 py-0.5 uppercase tracking-tighter">
                         Verified
                       </Badge>
-                      <Link href={`/kyc/${user.id}`}>
+                      <Link href={`/risk/kyc/${user.id}`}>
                         <Button
                           variant="ghost"
                           size="sm"

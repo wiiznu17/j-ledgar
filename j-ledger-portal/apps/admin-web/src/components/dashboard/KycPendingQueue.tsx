@@ -73,7 +73,7 @@ export function KycPendingQueue() {
               pendingUsers.map((item) => (
                 <Link
                   key={item.userId}
-                  href={`/kyc/${item.userId}`}
+                  href={`/risk/kyc/${item.userId}`}
                   className="flex items-center gap-3 p-4 hover:bg-muted/50 transition-colors group"
                 >
                   <Avatar className="h-9 w-9 border border-border">
@@ -104,7 +104,7 @@ export function KycPendingQueue() {
       </CardContent>
       <div className="p-3 bg-muted/20 border-t border-border mt-auto">
         <Link
-          href="/kyc"
+          href="/risk/kyc"
           className="text-[11px] font-bold text-indigo-600 dark:text-indigo-400 hover:text-indigo-700 flex items-center justify-center gap-1"
         >
           View full list

@@ -325,7 +325,7 @@ export default function KycListPage() {
                       {format(new Date(doc.createdAt), 'MMM d, yyyy HH:mm')}
                     </td>
                     <td className="px-6 py-4 text-right">
-                      <Link href={`/kyc/${doc.userId}`}>
+                      <Link href={`/risk/kyc/${doc.userId}`}>
                         <Button
                           size="sm"
                           variant="ghost"
