@@ -155,17 +155,16 @@ export default function RoleDetailPage({
               <Shield className="w-6 h-6" />
             </div>
             <div>
-              <h1 className="text-2xl font-bold text-foreground tracking-tight flex items-center gap-3">
-                {role.name}
+              <div className="flex items-center gap-2 mt-1">
                 {role.isSystem && (
                   <Badge className="bg-foreground text-background border-0 font-black text-[9px] px-2 py-0.5 tracking-widest">
                     <Lock className="w-2.5 h-2.5 mr-1" /> SYSTEM PROTECTED
                   </Badge>
                 )}
-              </h1>
-              <p className="text-muted-foreground text-sm italic">
-                {role.description || 'No description provided.'}
-              </p>
+                <p className="text-muted-foreground text-sm italic">
+                  {role.description || 'No description provided.'}
+                </p>
+              </div>
             </div>
           </div>
           <div className="flex items-center gap-3">

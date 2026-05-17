@@ -59,15 +59,6 @@ export default function EditDealPage() {
         <span className="text-foreground">Edit</span>
       </div>
 
-      <div>
-        <h2 className="text-3xl font-black tracking-tight text-foreground">
-          Edit Deal
-        </h2>
-        <p className="text-muted-foreground font-medium">
-          Update the promotion details for <span className="text-indigo-600 dark:text-indigo-400 font-bold">{deal?.title}</span>
-        </p>
-      </div>
-
       <div className="bg-card rounded-[2rem] shadow-xs border border-border overflow-hidden">
         <DealForm initialData={deal} isPage={true} />
       </div>

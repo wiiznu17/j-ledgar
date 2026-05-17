@@ -42,13 +42,6 @@ export default async function ReconcilePage() {
               Financial Integrity
             </span>
           </div>
-          <h2 className="text-3xl font-black tracking-tight text-foreground">
-            System Reconciliation
-          </h2>
-          <p className="text-muted-foreground mt-1 text-sm font-medium max-w-xl">
-            Mathematical auditing of the double-entry ledger. Ensuring that
-            every digital Baht in circulation is backed by real-world assets.
-          </p>
         </div>
         <TriggerAuditButton />
       </div>

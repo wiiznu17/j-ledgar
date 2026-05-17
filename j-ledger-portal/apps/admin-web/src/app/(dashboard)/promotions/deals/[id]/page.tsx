@@ -69,9 +69,6 @@ export default function DealDetailPage() {
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
           <div className="flex items-center gap-2">
-              <h2 className="text-3xl font-black tracking-tight text-foreground">
-              {deal.title}
-              </h2>
               <Badge className={deal.isActive ? 'bg-emerald-500/20 text-emerald-600 dark:text-emerald-400 border border-emerald-500/30' : 'bg-muted text-muted-foreground border border-border'}>
                   {deal.isActive ? 'ACTIVE' : 'INACTIVE'}
               </Badge>

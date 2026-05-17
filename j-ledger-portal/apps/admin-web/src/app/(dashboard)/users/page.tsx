@@ -133,16 +133,6 @@ export default function UsersPage() {
 
   return (
     <div className="space-y-4 pb-10 text-foreground">
-      {/* Header & Title */}
-      <div>
-        <h2 className="text-2xl font-bold tracking-tight text-foreground">
-          User Registry
-        </h2>
-        <p className="text-sm text-muted-foreground mt-1">
-          Monitor and manage e-wallet participants across the ecosystem.
-        </p>
-      </div>
-
       {/* Compact Overview Row */}
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 bg-card p-4 rounded-xl shadow-xs border border-border text-card-foreground">
         <div className="flex items-center gap-2">

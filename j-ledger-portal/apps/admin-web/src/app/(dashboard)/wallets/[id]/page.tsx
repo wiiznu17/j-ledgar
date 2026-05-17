@@ -147,13 +147,7 @@ export default function WalletDetailPage({
           <span className="text-foreground">Wallet Details</span>
         </div>
         <div className="flex items-center justify-between">
-          <div className="flex items-center gap-4">
-            <div>
-              <h1 className="text-2xl font-bold text-foreground tracking-tight">
-                Account Detail
-              </h1>
-            </div>
-          </div>
+          <div className="flex items-center gap-4" />
           <div className="flex items-center gap-2">
             <Button
               onClick={() => fetchWalletData(true)}

@@ -152,9 +152,6 @@ export default function TransactionDetailsPage() {
           </span>
         </div>
         <div className="flex flex-wrap items-center gap-3">
-          <h1 className="text-2xl font-bold text-foreground tracking-tight">
-            Transaction Details
-          </h1>
           {getStatusBadge(transaction.status)}
         </div>
       </div>

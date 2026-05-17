@@ -158,20 +158,7 @@ export default function WalletAccountsPage() {
   return (
     <div className="space-y-6 pb-10 text-foreground">
       {/* Page Header */}
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-        <div>
-          <div className="flex items-center gap-2 mb-1">
-            <div className="p-1.5 bg-indigo-500/10 rounded-lg">
-              <Wallet className="w-5 h-5 text-indigo-600 dark:text-indigo-400" />
-            </div>
-            <h2 className="text-3xl font-bold tracking-tight text-foreground">
-              Customer Wallets
-            </h2>
-          </div>
-          <p className="text-muted-foreground">
-            Monitor and manage all user wallets and their financial states.
-          </p>
-        </div>
+      <div className="flex justify-end">
         <div className="flex items-center gap-3">
           <Badge
             variant="outline"

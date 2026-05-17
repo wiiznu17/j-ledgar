@@ -58,8 +58,8 @@ export default function TreasuryPage() {
   const status = summary ? getReserveStatus(summary.reserveRatio) : null;
 
   return (
-    <div className="space-y-8 pb-10 text-foreground">
-      <div className="flex flex-col gap-3">
+    <div className="space-y-6 pb-10 text-foreground">
+      <div className="flex items-center justify-between">
         {/* Breadcrumbs */}
         <div className="flex items-center text-[10px] font-bold text-muted-foreground uppercase tracking-widest gap-2">
           <span className="opacity-60">Finance</span>
@@ -67,22 +67,16 @@ export default function TreasuryPage() {
           <span className="text-foreground">Treasury Dashboard</span>
         </div>
 
-        <div className="flex items-center justify-between">
-          <div>
-            <h2 className="text-3xl font-black tracking-tight text-foreground">Treasury Management</h2>
-            <p className="text-muted-foreground mt-1">Monitor company liquidity and manage financial reserves.</p>
-          </div>
-          <Button 
-            onClick={fetchData} 
-            variant="outline" 
-            size="sm" 
-            className="h-9 rounded-xl border-border bg-card shadow-xs hover:bg-muted text-card-foreground font-bold text-xs"
-            disabled={isLoading}
-          >
-            <RefreshCcw className={`w-3.5 h-3.5 mr-2 ${isLoading ? 'animate-spin' : ''}`} />
-            Refresh Data
-          </Button>
-        </div>
+        <Button 
+          onClick={fetchData} 
+          variant="outline" 
+          size="sm" 
+          className="h-9 rounded-xl border-border bg-card shadow-xs hover:bg-muted text-card-foreground font-bold text-xs"
+          disabled={isLoading}
+        >
+          <RefreshCcw className={`w-3.5 h-3.5 mr-2 ${isLoading ? 'animate-spin' : ''}`} />
+          Refresh Data
+        </Button>
       </div>
 
       {/* Summary Stat Cards */}

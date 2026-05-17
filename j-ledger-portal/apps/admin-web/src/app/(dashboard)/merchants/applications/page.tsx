@@ -141,15 +141,14 @@ export default function ApplicationsPage() {
             </Button>
           </Link>
           <div>
-            <h2 className="text-2xl font-bold tracking-tight text-foreground flex items-center gap-2">
-              Application Queue
-              <Badge variant="outline" className="ml-2 bg-amber-500/10 text-amber-600 dark:text-amber-400 border-amber-500/20 font-bold px-2 py-0.5 rounded-lg">
+            <div className="flex items-center gap-2 mt-1">
+              <Badge variant="outline" className="bg-amber-500/10 text-amber-600 dark:text-amber-400 border-amber-500/20 font-bold px-2 py-0.5 rounded-lg">
                 {total} Pending
               </Badge>
-            </h2>
-            <p className="text-sm text-muted-foreground mt-1">
-              Review and approve new merchant partnership requests.
-            </p>
+              <p className="text-sm text-muted-foreground">
+                Review and approve new merchant partnership requests.
+              </p>
+            </div>
           </div>
         </div>
       </div>

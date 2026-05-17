@@ -9,7 +9,7 @@ import {
   CardTitle,
 } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Plus, Loader2 } from 'lucide-react';
+import { Plus, Loader2, Image as BannerIcon } from 'lucide-react';
 import { promotionsRequester } from '@/lib/requesters';
 import { BannersTable } from '@/components/promotions/BannersTable';
 import {
@@ -59,31 +59,26 @@ export default function BannersPage() {
   };
 
   return (
-    <div className="space-y-6 text-foreground">
-      <div className="flex items-center justify-between">
-        <div>
-          <h2 className="text-3xl font-bold tracking-tight text-foreground">
-            Home Banners
-          </h2>
-          <p className="text-muted-foreground mt-1">
-            Manage promotional carousels shown on the mobile app home screen.
-          </p>
+    <div className="space-y-4 text-foreground">
+      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 bg-card p-4 rounded-xl shadow-xs border border-border text-card-foreground">
+        <div className="flex items-center gap-2">
+          <BannerIcon className="w-4 h-4 text-indigo-500" />
+          <span className="text-sm font-bold text-foreground">
+            Promotions & Banners
+          </span>
         </div>
+
         <Button
           onClick={handleCreate}
-          className="bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl shadow-xs transition-all active:scale-95"
+          className="bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl shadow-xs transition-all active:scale-95 h-9 text-xs font-bold px-4"
         >
-          <Plus className="mr-2 h-4 w-4" /> Add Banner
+          <Plus className="mr-1.5 h-4 w-4" /> Add Banner
         </Button>
       </div>
 
       <Card className="border border-border bg-card text-card-foreground shadow-xs">
         <CardHeader>
           <CardTitle className="text-foreground">Active Banners</CardTitle>
-          <CardDescription className="text-muted-foreground">
-            These banners are currently visible to users. Higher priority items
-            appear first.
-          </CardDescription>
         </CardHeader>
         <CardContent>
           {loading ? (

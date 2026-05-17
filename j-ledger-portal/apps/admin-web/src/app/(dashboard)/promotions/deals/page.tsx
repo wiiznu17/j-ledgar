@@ -121,21 +121,20 @@ export default function DealsPage() {
   };
 
   return (
-    <div className="space-y-6 text-foreground">
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-        <div>
-          <h2 className="text-3xl font-black tracking-tight text-foreground">
-            Deals & Rewards
-          </h2>
-          <p className="text-muted-foreground font-medium text-sm">
-            Manage points-based rewards and promotional offers for customers.
-          </p>
+    <div className="space-y-4 text-foreground">
+      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 bg-card p-4 rounded-xl shadow-xs border border-border text-card-foreground">
+        <div className="flex items-center gap-2">
+          <Ticket className="w-4 h-4 text-indigo-500" />
+          <span className="text-sm font-bold text-foreground">
+            Promotions & Deals
+          </span>
         </div>
+
         <Button 
-            className="bg-indigo-600 hover:bg-indigo-700 text-white shadow-xs rounded-xl px-6 h-11 font-black transition-all active:scale-95"
-            onClick={() => router.push('/promotions/deals/new')}
+          className="bg-indigo-600 hover:bg-indigo-700 text-white shadow-xs rounded-xl px-4 h-9 font-bold text-xs transition-all active:scale-95"
+          onClick={() => router.push('/promotions/deals/new')}
         >
-          <Plus className="mr-2 h-5 w-5" /> New Deal
+          <Plus className="mr-1.5 h-4 w-4" /> New Deal
         </Button>
       </div>
 

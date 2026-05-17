@@ -88,17 +88,6 @@ export default function RedemptionsPage() {
 
   return (
     <div className="space-y-6 text-foreground">
-      <div className="flex items-center justify-between">
-        <div>
-          <h2 className="text-3xl font-bold tracking-tight text-foreground">
-            Redemption History
-          </h2>
-          <p className="text-muted-foreground mt-1">
-            Monitor all user reward claims and usage status.
-          </p>
-        </div>
-      </div>
-
       <Card className="border border-border bg-card text-card-foreground shadow-xs overflow-hidden">
         {/* Filter Toolbar */}
         <div className="p-4 bg-muted/30 border-b border-border">

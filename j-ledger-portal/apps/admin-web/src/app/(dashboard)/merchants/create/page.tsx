@@ -112,7 +112,6 @@ export default function CreatePartnerPage() {
               <Building2 className="w-6 h-6" />
             </div>
             <div>
-              <h1 className="text-2xl font-black text-foreground tracking-tight">Onboard Corporate Partner</h1>
               <p className="text-xs text-muted-foreground mt-0.5 flex items-center gap-2">
                 <Info className="w-3.5 h-3.5 text-indigo-600 dark:text-indigo-400" />
                 Registering a big brand will automatically set status to <span className="text-emerald-600 dark:text-emerald-400 font-bold">ACTIVE</span>.

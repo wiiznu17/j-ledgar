@@ -88,13 +88,10 @@ export default function InternalLedgerPage() {
             <div className="p-1.5 bg-indigo-500/10 rounded-lg">
               <Landmark className="w-5 h-5 text-indigo-600 dark:text-indigo-400" />
             </div>
-            <h2 className="text-3xl font-bold tracking-tight text-foreground">
-              Internal Ledger
-            </h2>
+            <p className="text-muted-foreground">
+              System-level accounting and master treasury management.
+            </p>
           </div>
-          <p className="text-muted-foreground">
-            System-level accounting and master treasury management.
-          </p>
         </div>
         <div className="flex items-center gap-3">
           <Badge

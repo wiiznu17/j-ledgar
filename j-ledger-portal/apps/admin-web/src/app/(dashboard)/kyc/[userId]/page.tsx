@@ -157,9 +157,7 @@ export default function KycDetailPage() {
         </div>
         <div className="flex items-center justify-between">
           <div>
-            <h1 className="text-2xl font-bold text-foreground tracking-tight">
-              Verification Detail
-            </h1>
+
             <div className="flex items-center gap-2 mt-0.5">
               <span className="text-xs text-muted-foreground font-medium">
                 Reviewing identity for{' '}

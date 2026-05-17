@@ -108,17 +108,16 @@ export default function TerminalsPage({
               </Button>
             </Link>
             <div>
-              <h1 className="text-3xl font-black text-foreground tracking-tight flex items-center gap-3">
-                Managed Terminals
+              <div className="flex items-center gap-2 mt-1">
                 {partner && (
-                  <Badge variant="outline" className="ml-2 bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 border-indigo-500/20 font-bold uppercase text-[10px] tracking-widest px-2 py-0.5 rounded-lg">
+                  <Badge variant="outline" className="bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 border-indigo-500/20 font-bold uppercase text-[10px] tracking-widest px-2 py-0.5 rounded-lg">
                     {partner.name}
                   </Badge>
                 )}
-              </h1>
-              <p className="text-sm text-muted-foreground mt-1">
-                Configure nodes and hardware for payment processing and point redemptions.
-              </p>
+                <p className="text-sm text-muted-foreground">
+                  Configure nodes and hardware for payment processing and point redemptions.
+                </p>
+              </div>
             </div>
           </div>
           

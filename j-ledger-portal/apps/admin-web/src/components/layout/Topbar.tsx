@@ -21,22 +21,63 @@ interface TopbarProps {
   onToggleMobile?: () => void;
 }
 
-const routeTitles: Record<string, string> = {
-  '/dashboard': 'Dashboard',
-  '/transactions': 'Transactions',
-  '/promotions/deals': 'Deals',
-  '/promotions/banners': 'Banners',
-  '/promotions/redemptions': 'Redemptions',
-  '/aml': 'AML Monitor',
-  '/wallets': 'Customer Wallets',
-  '/system/ledger': 'Internal Ledger',
-  '/kyc': 'KYC Verification',
-  '/system/outbox': 'System Outbox',
-  '/reconcile': 'Reconcile',
-  '/audit': 'Audit Logs',
-  '/users': 'Users',
-  '/users/activity': 'User Activity',
-  '/system/admins': 'Admins',
+interface RouteTitle {
+  pattern: string;
+  title: string;
+}
+
+const routeTitles: RouteTitle[] = [
+  { pattern: '/dashboard', title: 'Dashboard' },
+  { pattern: '/transactions/[id]', title: 'Transaction Details' },
+  { pattern: '/transactions', title: 'Transactions' },
+  { pattern: '/promotions/deals/new', title: 'Create Deal' },
+  { pattern: '/promotions/deals/[id]/edit', title: 'Edit Deal' },
+  { pattern: '/promotions/deals/[id]', title: 'Deal Details' },
+  { pattern: '/promotions/deals', title: 'Deals & Coupons' },
+  { pattern: '/promotions/banners', title: 'Banners' },
+  { pattern: '/promotions/redemptions', title: 'Redemptions' },
+  { pattern: '/promotions/settings', title: 'Promotion Settings' },
+  { pattern: '/loyalty', title: 'Loyalty Program' },
+  { pattern: '/kyc/[userId]', title: 'KYC Details' },
+  { pattern: '/kyc', title: 'KYC Verification' },
+  { pattern: '/aml', title: 'AML Monitor' },
+  { pattern: '/wallets/[id]', title: 'Wallet Details' },
+  { pattern: '/wallets', title: 'Customer Wallets' },
+  { pattern: '/reconcile', title: 'Reconcile' },
+  { pattern: '/audit', title: 'Audit Logs' },
+  { pattern: '/users/activity', title: 'User Activity' },
+  { pattern: '/users/[id]', title: 'User Details' },
+  { pattern: '/users', title: 'Users' },
+  { pattern: '/merchants/applications', title: 'Merchant Applications' },
+  { pattern: '/merchants/create', title: 'Create Partner' },
+  { pattern: '/merchants/[id]/edit', title: 'Edit Merchant' },
+  { pattern: '/merchants/[id]/terminals', title: 'Merchant Terminals' },
+  { pattern: '/merchants/[id]', title: 'Merchant Details' },
+  { pattern: '/merchants', title: 'Merchants' },
+  { pattern: '/finance/treasury', title: 'System Treasury' },
+  { pattern: '/system/profile', title: 'My Profile' },
+  { pattern: '/system/admins/[id]', title: 'Admin Details' },
+  { pattern: '/system/admins', title: 'Admin Management' },
+  { pattern: '/system/roles/[id]', title: 'Role Details' },
+  { pattern: '/system/roles', title: 'Role Management' },
+  { pattern: '/system/ledger/[id]', title: 'Ledger Transaction Details' },
+  { pattern: '/system/ledger', title: 'Internal Ledger' },
+  { pattern: '/system/outbox', title: 'System Outbox' },
+  { pattern: '/system/settings', title: 'System Settings' },
+];
+
+const matchRoute = (pathname: string, pattern: string) => {
+  const pathParts = pathname.split('/').filter(Boolean);
+  const patternParts = pattern.split('/').filter(Boolean);
+  
+  if (pathParts.length !== patternParts.length) return false;
+  
+  return patternParts.every((part, i) => {
+    if (part.startsWith('[') && part.endsWith(']')) {
+      return true; // Match Dynamic Parameter
+    }
+    return part === pathParts[i];
+  });
 };
 
 export function Topbar({ onLogout, onToggleMobile }: TopbarProps) {
@@ -56,13 +97,14 @@ export function Topbar({ onLogout, onToggleMobile }: TopbarProps) {
     fetchUser();
   }, []);
 
-  // Find the exact match or the closest parent route match
   const getPageTitle = () => {
-    if (routeTitles[pathname]) return routeTitles[pathname];
-    const match = Object.keys(routeTitles).find((route) =>
-      pathname.startsWith(route),
-    );
-    return match ? routeTitles[match] : 'P-wallet Admin';
+    const exactMatch = routeTitles.find((r) => r.pattern === pathname);
+    if (exactMatch) return exactMatch.title;
+
+    const dynamicMatch = routeTitles.find((r) => matchRoute(pathname, r.pattern));
+    if (dynamicMatch) return dynamicMatch.title;
+
+    return 'P-wallet Admin';
   };
 
   return (

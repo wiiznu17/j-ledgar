@@ -151,12 +151,6 @@ export default function AMLPage() {
 
   return (
     <div className="space-y-6 text-foreground">
-      <div className="flex items-center justify-between">
-        <h2 className="text-3xl font-bold tracking-tight text-foreground">
-          AML Suspicious Activity Monitor
-        </h2>
-      </div>
-
       {/* Filters */}
       <Card className="border-border shadow-sm">
         <CardHeader>

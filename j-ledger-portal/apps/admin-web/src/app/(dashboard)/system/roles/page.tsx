@@ -116,23 +116,20 @@ export default function RolesPage() {
   };
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4 text-foreground">
       <div className="flex items-center justify-between">
-        <div>
-          <h2 className="text-3xl font-bold tracking-tight text-foreground">
-            Roles & Permissions
-          </h2>
-          <p className="text-sm text-muted-foreground mt-1">
-            Manage administrative roles and their access levels across the
-            system.
-          </p>
+        <div className="flex items-center gap-2">
+          <Shield className="w-4 h-4 text-indigo-500" />
+          <span className="text-sm font-bold text-foreground">
+            Security Roles
+          </span>
         </div>
 
         <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
           <DialogTrigger
             render={
-              <Button className="bg-indigo-600 hover:bg-indigo-700 dark:bg-indigo-500 dark:hover:bg-indigo-600 text-white border-0 shadow-sm transition-all">
-                <Plus className="mr-2 h-4 w-4" />
+              <Button className="bg-indigo-600 hover:bg-indigo-700 dark:bg-indigo-500 dark:hover:bg-indigo-600 text-white border-0 shadow-sm transition-all h-9 text-xs font-bold rounded-xl">
+                <Plus className="mr-1.5 h-4 w-4" />
                 Create New Role
               </Button>
             }

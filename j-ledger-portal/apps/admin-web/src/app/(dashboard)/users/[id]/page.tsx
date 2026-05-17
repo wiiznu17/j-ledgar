@@ -141,11 +141,7 @@ export default function UserDetailPage({
         </div>
 
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-3">
-          <div>
-            <h1 className="text-3xl font-black text-foreground tracking-tight">
-              Identity Profile
-            </h1>
-          </div>
+          <div />
           <div className="flex items-center gap-3">
             <UserControlActions
               userId={user.id}

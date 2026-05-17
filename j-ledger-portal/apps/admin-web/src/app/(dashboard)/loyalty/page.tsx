@@ -48,14 +48,6 @@ export default function LoyaltyPage() {
 
   return (
     <div className="space-y-8 pb-10 text-foreground">
-      <div>
-        <h2 className="text-3xl font-bold tracking-tight text-foreground">
-          Loyalty & Points
-        </h2>
-        <p className="text-muted-foreground mt-1 font-medium">
-          Manage earning rules, monitor point circulation, and track upcoming expiries.
-        </p>
-      </div>
 
       <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
         <StatCard

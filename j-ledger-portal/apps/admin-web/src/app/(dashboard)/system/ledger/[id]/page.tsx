@@ -105,14 +105,6 @@ export default function InternalLedgerDetailPage({
           <ChevronRight className="w-3 h-3" />
           <span className="text-foreground">Account Statement</span>
         </div>
-
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-4">
-            <h1 className="text-2xl font-bold text-foreground tracking-tight">
-              Ledger Detail
-            </h1>
-          </div>
-        </div>
       </div>
 
       {/* Account Info Cards */}

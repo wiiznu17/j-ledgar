@@ -156,7 +156,6 @@ export default function EditPartnerPage({ params }: EditPartnerPageProps) {
               <Settings className="w-6 h-6" />
             </div>
             <div>
-              <h1 className="text-2xl font-black text-foreground tracking-tight">Edit Corporate Data</h1>
               <p className="text-xs text-muted-foreground mt-0.5 flex items-center gap-2">
                 <Info className="w-3.5 h-3.5 text-amber-500" />
                 Updating this data will reflect across all branches and terminals.

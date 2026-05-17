@@ -59,6 +59,9 @@ export default function UserActivityPage() {
   const [total, setTotal] = useState(0);
   const [selectedLog, setSelectedLog] = useState<any>(null);
 
+  // Robust array fallback helper
+  const logsList = Array.isArray(logs) ? logs : [];
+
   // Filters
   const [userId, setUserId] = useState(searchParams.get('userId') || '');
   const [eventType, setEventType] = useState<string>('ALL');
@@ -76,9 +79,24 @@ export default function UserActivityPage() {
           ...(eventType !== 'ALL' ? { eventType } : {}),
         },
       });
-      setLogs(response.data || []);
-      setTotalPages(response.pagination?.totalPages || 1);
-      setTotal(response.pagination?.total || 0);
+
+      // Robust response parsing
+      const resAny = response as any;
+      const responseData = resAny?.data;
+      let logsArray: any[] = [];
+      if (Array.isArray(responseData)) {
+        logsArray = responseData;
+      } else if (responseData && Array.isArray((responseData as any).data)) {
+        logsArray = (responseData as any).data;
+      } else if (Array.isArray(resAny)) {
+        logsArray = resAny;
+      }
+
+      setLogs(logsArray);
+
+      const pagination = resAny?.pagination || (responseData as any)?.pagination;
+      setTotalPages(pagination?.totalPages || 1);
+      setTotal(pagination?.total || 0);
     } catch (error) {
       console.error('[USER_ACTIVITY_PAGE] Fetch error:', error);
       setLogs([]);
@@ -124,16 +142,6 @@ export default function UserActivityPage() {
 
   return (
     <div className="space-y-4 pb-10 text-foreground">
-      {/* Header */}
-      <div>
-        <h2 className="text-2xl font-bold tracking-tight text-foreground">
-          User Activity Logs
-        </h2>
-        <p className="text-sm text-muted-foreground mt-1">
-          Monitor real-time security events and identity transactions.
-        </p>
-      </div>
-
       {/* Security Overview Row */}
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 bg-card p-4 rounded-xl shadow-xs border border-border text-card-foreground">
         <div className="flex items-center gap-2">
@@ -149,7 +157,7 @@ export default function UserActivityPage() {
             <span className="text-muted-foreground font-medium">
               Failed Logins:{' '}
               <strong className="text-foreground">
-                {logs.filter((l) => l.eventType === 'LOGIN_FAILURE').length}+
+                {logsList.filter((l) => l.eventType === 'LOGIN_FAILURE').length}+
               </strong>
             </span>
           </div>
@@ -158,7 +166,7 @@ export default function UserActivityPage() {
             <span className="text-muted-foreground font-medium">
               Successful Logins:{' '}
               <strong className="text-foreground">
-                {logs.filter((l) => l.eventType === 'LOGIN_SUCCESS').length}+
+                {logsList.filter((l) => l.eventType === 'LOGIN_SUCCESS').length}+
               </strong>
             </span>
           </div>
@@ -167,7 +175,7 @@ export default function UserActivityPage() {
             <span className="text-muted-foreground font-medium">
               Device Changes:{' '}
               <strong className="text-foreground">
-                {logs.filter((l) => l.eventType === 'DEVICE_REGISTERED').length}
+                {logsList.filter((l) => l.eventType === 'DEVICE_REGISTERED').length}
                 +
               </strong>
             </span>
@@ -231,7 +239,7 @@ export default function UserActivityPage() {
                     <td colSpan={5} className="px-6 py-8 h-16 bg-muted/10" />
                   </tr>
                 ))
-              ) : logs.length === 0 ? (
+              ) : logsList.length === 0 ? (
                 <tr>
                   <td
                     colSpan={5}
@@ -241,7 +249,7 @@ export default function UserActivityPage() {
                   </td>
                 </tr>
               ) : (
-                logs.map((log: any) => (
+                logsList.map((log: any) => (
                   <tr
                     key={log.id}
                     className="hover:bg-muted/50 transition-colors group"

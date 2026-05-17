@@ -198,13 +198,7 @@ export default function AdminDetailPage({
           <span className="text-foreground">Admin Profile</span>
         </div>
         <div className="flex items-center justify-between">
-          <div className="flex items-center gap-4">
-            <div>
-              <h1 className="text-2xl font-bold text-foreground tracking-tight">
-                Staff Detail
-              </h1>
-            </div>
-          </div>
+          <div />
           <div className="flex items-center gap-2">
             <Button
               onClick={() => fetchAdminData()}

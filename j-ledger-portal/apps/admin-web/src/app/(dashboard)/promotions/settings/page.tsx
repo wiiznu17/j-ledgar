@@ -205,17 +205,6 @@ export default function PromotionSettingsPage() {
 
   return (
     <div className="space-y-6 pb-10 text-foreground">
-      <div className="flex justify-between items-end">
-        <div>
-            <h2 className="text-3xl font-bold tracking-tight text-foreground">
-            Promotion Metadata
-            </h2>
-            <p className="text-muted-foreground mt-1">
-            Configure system brands and deal categories used across the platform.
-            </p>
-        </div>
-      </div>
-
       <Tabs defaultValue="brands" className="space-y-6">
         <TabsList className="bg-muted p-1 border border-border rounded-xl">
           <TabsTrigger value="brands" className="gap-2 px-6 rounded-lg data-[state=active]:bg-card data-[state=active]:text-foreground data-[state=active]:shadow-xs text-muted-foreground">

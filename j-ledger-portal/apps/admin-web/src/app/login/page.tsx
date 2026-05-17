@@ -4,6 +4,7 @@ import { verifyToken } from '@/lib/auth/jwt';
 import { login } from '@/app/actions/auth';
 import { LoginForm } from '@/components/auth/LoginForm';
 import { AUTH_COOKIE_NAME } from '@/lib/api-config';
+import { ThemeToggle } from '@/components/theme-toggle';
 
 export default async function LoginPage(props: {
   searchParams: Promise<{ error?: string }>;
@@ -22,7 +23,10 @@ export default async function LoginPage(props: {
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-muted/30 text-foreground">
+    <div className="relative min-h-screen flex items-center justify-center bg-muted/30 text-foreground">
+      <div className="absolute top-6 right-6 z-50">
+        <ThemeToggle />
+      </div>
       <div className="flex flex-col lg:flex-row w-full max-w-5xl rounded-2xl overflow-hidden shadow-2xl bg-card border border-border">
         {/* Left Side: Illustration Image */}
         <div className="hidden lg:flex w-1/2 bg-muted items-center justify-center relative overflow-hidden">

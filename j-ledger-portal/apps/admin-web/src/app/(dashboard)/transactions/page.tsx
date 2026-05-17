@@ -159,9 +159,6 @@ export default function TransactionsPage() {
     <div className="space-y-6 pb-10 text-foreground">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div className="flex-1">
-          <h2 className="text-2xl md:text-3xl font-bold tracking-tight text-foreground">
-            Transactions
-          </h2>
           <div className="flex flex-wrap items-center gap-2 mt-1">
             <p className="text-muted-foreground">
               Monitor and manage all financial activities

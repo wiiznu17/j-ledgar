@@ -83,14 +83,6 @@ export default function ProfilePage() {
 
   return (
     <div className="space-y-6 pb-10">
-      <div className="flex flex-col gap-1">
-        <h1 className="text-2xl font-bold tracking-tight text-foreground">
-          Personal Settings
-        </h1>
-        <p className="text-sm text-muted-foreground">
-          Manage your profile information and security preferences.
-        </p>
-      </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 items-stretch">
         {/* Left Column: Profile Card */}

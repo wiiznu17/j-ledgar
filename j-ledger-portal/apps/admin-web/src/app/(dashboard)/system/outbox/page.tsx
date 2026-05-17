@@ -172,13 +172,10 @@ export default function SystemOutboxPage() {
             <div className="p-2 bg-indigo-500/10 rounded-xl">
               <Radio className="w-5 h-5 text-indigo-600 dark:text-indigo-400" />
             </div>
-            <h1 className="text-2xl font-black text-foreground tracking-tight">
-              System Outbox
-            </h1>
+            <p className="text-sm text-muted-foreground font-medium ml-1">
+              Transactional event logs and Kafka integration stream.
+            </p>
           </div>
-          <p className="text-sm text-muted-foreground font-medium ml-1">
-            Transactional event logs and Kafka integration stream.
-          </p>
         </div>
       </div>
 

@@ -116,45 +116,35 @@ export default function MerchantsPage() {
 
   return (
     <div className="space-y-4 pb-10 text-foreground">
-      <div className="flex justify-between items-end">
-        <div>
-          <h2 className="text-2xl font-bold tracking-tight text-foreground">
-            Merchant Partners
-          </h2>
-          <p className="text-sm text-muted-foreground mt-1">
-            Manage your network of merchants, terminals, and business partners.
-          </p>
+      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 bg-card p-4 rounded-xl shadow-xs border border-border text-card-foreground">
+        <div className="flex items-center gap-4">
+          <div className="flex items-center gap-2">
+            <Store className="w-4 h-4 text-indigo-600 dark:text-indigo-400" />
+            <span className="text-sm font-bold text-foreground">
+              Merchant Ecosystem
+            </span>
+          </div>
+          <span className="h-4 w-px bg-border hidden md:inline-block" />
+          <div className="text-xs font-medium text-muted-foreground">
+            Total Partners: <strong className="text-foreground">{total}</strong>
+          </div>
         </div>
-        <div className="flex gap-2">
+
+        <div className="flex items-center gap-2">
           <Link href="/merchants/create">
             <Button 
-              className="h-9 gap-1.5 bg-indigo-600 hover:bg-indigo-700 text-white shadow-xs"
+              className="h-9 gap-1.5 bg-indigo-600 hover:bg-indigo-700 text-white shadow-xs text-xs font-bold"
             >
               <Plus className="w-4 h-4" />
               Create Partner
             </Button>
           </Link>
           <Link href="/merchants/applications">
-            <Button variant="outline" size="sm" className="h-9 gap-1.5 border-border">
+            <Button variant="outline" size="sm" className="h-9 gap-1.5 border-border text-xs font-bold">
               <ClipboardList className="w-4 h-4" />
               Approval Queue
             </Button>
           </Link>
-        </div>
-      </div>
-
-      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 bg-card p-4 rounded-xl shadow-xs border border-border text-card-foreground">
-        <div className="flex items-center gap-2">
-          <Store className="w-4 h-4 text-indigo-600 dark:text-indigo-400" />
-          <span className="text-sm font-bold text-foreground">
-            Merchant Ecosystem
-          </span>
-        </div>
-
-        <div className="flex items-center flex-wrap gap-4 md:gap-6 text-sm">
-          <div className="flex items-center gap-2 text-muted-foreground">
-            Total Partners: <strong className="text-foreground">{total}</strong>
-          </div>
         </div>
       </div>
 

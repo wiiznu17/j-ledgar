@@ -100,13 +100,7 @@ export default function DashboardPage() {
   return (
     <div className="space-y-8 animate-in fade-in duration-700 max-w-[1600px] mx-auto pb-12 text-foreground">
       {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-        <div>
-          <h1 className="text-2xl md:text-3xl font-bold tracking-tight text-foreground">
-            Dashboard
-          </h1>
-        </div>
-        
+      <div className="flex flex-col sm:flex-row sm:items-center justify-end gap-4">
         <div className="flex items-center gap-3">
            <SystemHealthStatus isOnline={isOnline} />
           <Button

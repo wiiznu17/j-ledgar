@@ -80,13 +80,10 @@ export default function SystemSettingsPage() {
             <div className="p-1.5 bg-indigo-500/10 rounded-lg">
               <Settings className="w-5 h-5 text-indigo-600 dark:text-indigo-400" />
             </div>
-            <h2 className="text-3xl font-bold tracking-tight text-foreground">
-              System Settings
-            </h2>
+            <p className="text-muted-foreground">
+              Configure global fees, transaction limits, and regional settings.
+            </p>
           </div>
-          <p className="text-muted-foreground">
-            Configure global fees, transaction limits, and regional settings.
-          </p>
         </div>
         <Button 
           onClick={handleSave} 

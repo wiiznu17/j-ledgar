@@ -20,15 +20,6 @@ export default function NewDealPage() {
         <span className="text-foreground">Create New</span>
       </div>
 
-      <div>
-        <h2 className="text-3xl font-black tracking-tight text-foreground">
-          Create New Deal
-        </h2>
-        <p className="text-muted-foreground font-medium">
-          Publish a new reward or promotion to the consumer app.
-        </p>
-      </div>
-
       <div className="bg-card rounded-[2rem] shadow-xs border border-border overflow-hidden">
         <DealForm isPage={true} />
       </div>

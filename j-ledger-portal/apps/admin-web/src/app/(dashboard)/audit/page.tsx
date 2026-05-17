@@ -180,16 +180,6 @@ export default function AuditPage() {
 
   return (
     <div className="space-y-4 pb-10 text-foreground">
-      {/* Header */}
-      <div>
-        <h2 className="text-2xl font-black tracking-tight text-foreground">
-          Audit Intelligence
-        </h2>
-        <p className="text-sm text-muted-foreground mt-1 font-medium">
-          Traceable history of administrative operations and resource mutations.
-        </p>
-      </div>
-
       {/* Audit Overview Row */}
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 bg-card p-4 rounded-xl shadow-xs border border-border">
         <div className="flex items-center gap-2">

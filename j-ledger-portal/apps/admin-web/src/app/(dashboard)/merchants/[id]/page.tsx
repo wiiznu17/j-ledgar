@@ -144,10 +144,7 @@ export default function PartnerDetailPage({
           <span className="text-foreground">Partner Profile</span>
         </div>
 
-        <div className="flex flex-col md:flex-row md:items-center justify-between gap-3">
-          <h1 className="text-3xl font-black text-foreground tracking-tight">
-            Business Partner Profile
-          </h1>
+          <div />
           <div className="flex items-center gap-2">
             <Link href={`/merchants/${partnerId}/edit`}>
               <Button variant="outline" size="sm" className="h-9 rounded-xl border-border">
@@ -161,12 +158,8 @@ export default function PartnerDetailPage({
                 Manage Terminals
               </Button>
             </Link>
-            <Button size="sm" className="h-9 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white shadow-xs">
-              Update Status
-            </Button>
           </div>
         </div>
-      </div>
 
       <div className="grid gap-5 lg:grid-cols-3">
         <div className="lg:col-span-2 space-y-5">
