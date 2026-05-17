@@ -99,27 +99,25 @@ export default function DashboardPage() {
 
   return (
     <div className="space-y-8 animate-in fade-in duration-700 max-w-[1600px] mx-auto pb-12 text-foreground">
-      {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-end gap-4">
-        <div className="flex items-center gap-3">
-           <SystemHealthStatus isOnline={isOnline} />
-          <Button
-            variant="outline"
-            size="icon"
-            onClick={() => fetchOverview()}
-            disabled={loading}
-            className="h-10 w-10 md:h-11 md:w-11 rounded-lg border-border text-muted-foreground hover:text-indigo-600 hover:border-indigo-500/20 hover:bg-indigo-500/10 transition-all duration-300 shadow-xs"
-          >
-            <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
-          </Button>
-        </div>
-      </div>
-
       {/* Section 1: System Treasury & User Base (Static/Cumulative) */}
       <section className="space-y-4">
-        <div className="flex items-center gap-2">
-          <div className="w-1 h-6 bg-primary rounded-full" />
-          <h2 className="text-lg font-bold text-foreground">System Treasury</h2>
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+          <div className="flex items-center gap-2">
+            <div className="w-1 h-6 bg-primary rounded-full" />
+            <h2 className="text-lg font-bold text-foreground">System Treasury</h2>
+          </div>
+          <div className="flex items-center gap-3">
+             <SystemHealthStatus isOnline={isOnline} />
+            <Button
+              variant="outline"
+              size="icon"
+              onClick={() => fetchOverview()}
+              disabled={loading}
+              className="h-10 w-10 md:h-11 md:w-11 rounded-lg border-border text-muted-foreground hover:text-indigo-600 hover:border-indigo-500/20 hover:bg-indigo-500/10 transition-all duration-300 shadow-xs"
+            >
+              <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
+            </Button>
+          </div>
         </div>
         <div className="grid gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-4">
           <StatCard
