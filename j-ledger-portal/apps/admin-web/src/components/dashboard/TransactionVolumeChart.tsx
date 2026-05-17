@@ -35,12 +35,9 @@ export function TransactionVolumeChart({ data }: TransactionVolumeChartProps) {
 
   if (!mounted) {
     return (
-      <Card className="col-span-4 border-border shadow-sm">
+      <Card className="border-none ring-0 shadow-xl shadow-slate-300/60 rounded-xl">
         <CardHeader>
           <CardTitle>Transaction Volume</CardTitle>
-          <CardDescription>
-            Mock visualization of system load throughout the day
-          </CardDescription>
         </CardHeader>
         <CardContent className="pl-2">
           <div className="h-[300px] w-full mt-4 flex items-center justify-center bg-slate-50/50 rounded-lg animate-pulse" />
@@ -50,12 +47,9 @@ export function TransactionVolumeChart({ data }: TransactionVolumeChartProps) {
   }
 
   return (
-    <Card className="col-span-4 border-border shadow-sm">
+    <Card className="border-none ring-0 shadow-xl shadow-slate-300/60 rounded-xl">
       <CardHeader>
         <CardTitle>Transaction Volume</CardTitle>
-        <CardDescription>
-          Mock visualization of system load throughout the day
-        </CardDescription>
       </CardHeader>
       <CardContent className="pl-2">
         <div className="h-[300px] w-full mt-4">
@@ -68,12 +62,12 @@ export function TransactionVolumeChart({ data }: TransactionVolumeChartProps) {
                 <linearGradient id="colorVolume" x1="0" y1="0" x2="0" y2="1">
                   <stop
                     offset="5%"
-                    stopColor="var(--color-magenta)"
+                    stopColor="#0ea5e9"
                     stopOpacity={0.3}
                   />
                   <stop
                     offset="95%"
-                    stopColor="var(--color-pink)"
+                    stopColor="#0ea5e9"
                     stopOpacity={0}
                   />
                 </linearGradient>
@@ -84,6 +78,7 @@ export function TransactionVolumeChart({ data }: TransactionVolumeChartProps) {
                 fontSize={12}
                 tickLine={false}
                 axisLine={false}
+                interval={data.length === 24 ? 2 : data.length === 12 ? 2 : data.length === 30 ? 4 : 0}
               />
               <YAxis
                 stroke="#718096"
@@ -103,7 +98,7 @@ export function TransactionVolumeChart({ data }: TransactionVolumeChartProps) {
               <Area
                 type="monotone"
                 dataKey="volume"
-                stroke="var(--color-magenta)"
+                stroke="#0ea5e9"
                 strokeWidth={3}
                 fillOpacity={1}
                 fill="url(#colorVolume)"

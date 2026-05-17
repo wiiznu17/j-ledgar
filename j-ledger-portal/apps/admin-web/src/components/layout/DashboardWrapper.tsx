@@ -34,7 +34,7 @@ export function DashboardWrapper({
           className={`flex-1 flex flex-col min-w-0 h-full transition-all duration-300 ease-in-out`}
         >
           <Topbar onLogout={logout} />
-          <main className="flex-1 p-8 overflow-auto bg-white">{children}</main>
+          <main className="flex-1 p-6 overflow-auto bg-slate-200/40">{children}</main>
         </div>
       </div>
     </PermissionProvider>

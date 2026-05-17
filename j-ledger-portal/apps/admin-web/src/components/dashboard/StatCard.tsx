@@ -19,14 +19,14 @@ export function StatCard({
   className,
 }: StatCardProps) {
   return (
-    <Card className={`border-border shadow-sm ${className}`}>
+    <Card className={`border-none ring-0 shadow-xl shadow-slate-300/60 rounded-xl ${className}`}>
       <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
         <CardTitle className="text-sm font-medium">{title}</CardTitle>
         <Icon className={`h-4 w-4 ${iconClassName}`} />
       </CardHeader>
       <CardContent>
-        <div className="text-2xl font-bold">{value}</div>
-        <p className="text-xs text-muted-foreground mt-1">{description}</p>
+        <div className="text-2xl font-bold text-right">{value}</div>
+        <p className="text-xs text-muted-foreground mt-1 text-left">{description}</p>
       </CardContent>
     </Card>
   );

@@ -232,6 +232,19 @@ export class FinanceService {
     }
   }
 
+  async getAccountsByType(type: string): Promise<any[]> {
+    const url = `${this.financeServiceUrl}/api/v1/accounts/type/${type}`;
+    try {
+      const response = await this.httpService.axiosRef.get(url, {
+        headers: this.getInternalHeaders(),
+      });
+      return response.data || [];
+    } catch (error: any) {
+      this.logCompactError(`getAccountsByType type=${type}`, error);
+      return [];
+    }
+  }
+
   async activateWallet(userId: string): Promise<WalletResponse> {
     const url = `${this.financeServiceUrl}/api/finance/wallets/${userId}/activate`;
 

@@ -32,7 +32,7 @@ export function KycPendingQueue() {
 
   if (loading) {
     return (
-      <Card className="border-none shadow-sm ring-1 ring-slate-100">
+      <Card className="border-none ring-0 shadow-xl shadow-slate-300/60 rounded-xl">
         <CardHeader>
           <CardTitle className="text-sm font-bold">KYC Pending Queue</CardTitle>
         </CardHeader>
@@ -51,7 +51,7 @@ export function KycPendingQueue() {
   }
 
   return (
-    <Card className="border-none shadow-sm ring-1 ring-slate-100 overflow-hidden flex flex-col h-full">
+    <Card className="border-none ring-0 shadow-xl shadow-slate-300/60 rounded-xl overflow-hidden flex flex-col h-full">
       <CardHeader className="border-b border-slate-50 bg-white py-4">
         <div className="flex items-center justify-between">
           <CardTitle className="text-sm font-bold flex items-center gap-2">

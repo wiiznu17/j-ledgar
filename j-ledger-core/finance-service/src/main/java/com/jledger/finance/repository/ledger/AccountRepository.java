@@ -12,6 +12,7 @@ import com.jledger.finance.domain.entity.Account;
 
 public interface AccountRepository extends JpaRepository<Account, UUID> {
     List<Account> findByUserId(UUID userId);
+    List<Account> findByAccountType(com.jledger.finance.domain.enums.AccountType accountType);
 
     @Query("SELECT COALESCE(SUM(a.balance), 0) FROM Account a")
     BigDecimal getSumOfAllBalances();

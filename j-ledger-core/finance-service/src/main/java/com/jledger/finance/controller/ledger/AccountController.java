@@ -60,6 +60,19 @@ public class AccountController {
         return ResponseEntity.ok(accounts.get(0));
     }
 
+    @GetMapping("/type/{type}")
+    @Operation(summary = "Get accounts by type", description = "Returns all accounts matching the given type")
+    public ResponseEntity<java.util.List<Account>> getAccountsByType(@PathVariable String type) {
+        try {
+            com.jledger.finance.domain.enums.AccountType accountType = 
+                com.jledger.finance.domain.enums.AccountType.valueOf(type.toUpperCase());
+            java.util.List<Account> accounts = accountRepository.findByAccountType(accountType);
+            return ResponseEntity.ok(accounts);
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.badRequest().build();
+        }
+    }
+
     @PostMapping
     @Operation(summary = "Create a new internal account", description = "Creates a new internal account for a user")
     public ResponseEntity<Account> createAccount(@RequestBody java.util.Map<String, String> request) {

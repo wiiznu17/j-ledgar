@@ -446,25 +446,42 @@ export class KycService {
     };
   }
 
-  async getKYCStats() {
+  async getKYCStats(from?: string, to?: string) {
     const today = new Date();
     today.setHours(0, 0, 0, 0);
+
+    const approvedQuery: Record<string, any> = {
+      verificationStatus: KYCVerificationStatus.APPROVED,
+    };
+    const rejectedQuery: Record<string, any> = {
+      verificationStatus: KYCVerificationStatus.REJECTED,
+    };
+
+    if (from || to) {
+      approvedQuery.verifiedAt = {};
+      rejectedQuery.updatedAt = {};
+      if (from) {
+        approvedQuery.verifiedAt.gte = new Date(from);
+        rejectedQuery.updatedAt.gte = new Date(from);
+      }
+      if (to) {
+        approvedQuery.verifiedAt.lte = new Date(to);
+        rejectedQuery.updatedAt.lte = new Date(to);
+      }
+    } else {
+      approvedQuery.verifiedAt = { gte: today };
+      rejectedQuery.updatedAt = { gte: today };
+    }
 
     const [pending, approvedToday, rejectedToday] = await Promise.all([
       this.prisma.user.count({
         where: { status: UserStatus.PENDING_APPROVAL },
       }),
       this.prisma.kYCData.count({
-        where: {
-          verificationStatus: KYCVerificationStatus.APPROVED,
-          verifiedAt: { gte: today },
-        },
+        where: approvedQuery,
       }),
       this.prisma.kYCData.count({
-        where: {
-          verificationStatus: KYCVerificationStatus.REJECTED,
-          updatedAt: { gte: today },
-        },
+        where: rejectedQuery,
       }),
     ]);
 
