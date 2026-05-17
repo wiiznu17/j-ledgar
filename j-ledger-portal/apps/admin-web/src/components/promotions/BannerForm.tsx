@@ -66,23 +66,24 @@ export function BannerForm({
   };
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-6">
+    <form onSubmit={handleSubmit} className="space-y-6 text-foreground bg-card">
       <div className="space-y-2">
-        <Label htmlFor="title">Banner Title</Label>
+        <Label htmlFor="title" className="text-foreground">Banner Title</Label>
         <Input
           id="title"
           value={formData.title}
           onChange={(e) => setFormData({ ...formData, title: e.target.value })}
           placeholder="e.g. Summer Special 2026"
           required
+          className="bg-muted text-foreground border-border"
         />
       </div>
 
       <div className="space-y-2">
-        <Label>Banner Image (Recommended 1200x600)</Label>
+        <Label className="text-foreground">Banner Image (Recommended 1200x600)</Label>
         <div className="flex flex-col gap-4">
           {formData.imageUrl ? (
-            <div className="relative w-full aspect-video rounded-xl overflow-hidden border bg-slate-50 shadow-inner">
+            <div className="relative w-full aspect-video rounded-xl overflow-hidden border border-border bg-muted shadow-inner">
               <img
                 src={formData.imageUrl}
                 className="w-full h-full object-cover"
@@ -90,19 +91,19 @@ export function BannerForm({
               <button
                 type="button"
                 onClick={() => setFormData({ ...formData, imageUrl: '' })}
-                className="absolute top-3 right-3 bg-white/90 p-2.5 rounded-full shadow-lg hover:bg-white transition-all hover:scale-110 active:scale-95"
+                className="absolute top-3 right-3 bg-card/90 text-card-foreground border border-border p-2.5 rounded-full shadow-lg hover:bg-card transition-all hover:scale-110 active:scale-95"
               >
                 <X size={18} />
               </button>
             </div>
           ) : (
-            <label className="w-full aspect-video flex flex-col items-center justify-center border-2 border-dashed rounded-[2rem] cursor-pointer hover:bg-slate-50 transition-all border-slate-200 group">
+            <label className="w-full aspect-video flex flex-col items-center justify-center border-2 border-dashed border-border rounded-[2rem] cursor-pointer hover:bg-muted transition-all group">
               {uploading ? (
-                <Loader2 className="animate-spin text-pink-300 h-8 w-8" />
+                <Loader2 className="animate-spin text-indigo-600 dark:text-indigo-400 h-8 w-8" />
               ) : (
                 <>
-                  <Upload size={32} className="text-slate-300" />
-                  <span className="text-sm text-slate-400 mt-2 font-medium">
+                  <Upload size={32} className="text-muted-foreground" />
+                  <span className="text-sm text-muted-foreground mt-2 font-medium">
                     Click to upload banner image
                   </span>
                 </>
@@ -122,13 +123,14 @@ export function BannerForm({
             onChange={(e) =>
               setFormData({ ...formData, imageUrl: e.target.value })
             }
+            className="bg-muted text-foreground border-border"
           />
         </div>
       </div>
 
       <div className="grid grid-cols-2 gap-4">
         <div className="space-y-2">
-          <Label htmlFor="action">Action Path (Deep Link)</Label>
+          <Label htmlFor="action" className="text-foreground">Action Path (Deep Link)</Label>
           <Input
             id="action"
             value={formData.actionPath}
@@ -137,10 +139,11 @@ export function BannerForm({
             }
             placeholder="e.g. /(tabs)/deals"
             required
+            className="bg-muted text-foreground border-border"
           />
         </div>
         <div className="space-y-2">
-          <Label htmlFor="priority">Priority (Higher shows first)</Label>
+          <Label htmlFor="priority" className="text-foreground">Priority (Higher shows first)</Label>
           <Input
             id="priority"
             type="number"
@@ -149,22 +152,23 @@ export function BannerForm({
               setFormData({ ...formData, priority: parseInt(e.target.value) })
             }
             required
+            className="bg-muted text-foreground border-border"
           />
         </div>
       </div>
 
-      <div className="flex justify-end gap-3 pt-4 border-t border-slate-100">
+      <div className="flex justify-end gap-3 pt-4 border-t border-border">
         <Button
           type="button"
           variant="ghost"
           onClick={onCancel}
-          className="rounded-xl"
+          className="rounded-xl text-muted-foreground hover:text-foreground"
         >
           Cancel
         </Button>
         <Button
           type="submit"
-          className="bg-[#f48fb1] hover:bg-[#f06292] text-white rounded-xl px-8"
+          className="bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl px-8 shadow-xs"
           disabled={loading || uploading}
         >
           {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}

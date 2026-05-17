@@ -119,10 +119,10 @@ export default function RolesPage() {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h2 className="text-3xl font-bold tracking-tight text-[#2D3748]">
+          <h2 className="text-3xl font-bold tracking-tight text-foreground">
             Roles & Permissions
           </h2>
-          <p className="text-sm text-slate-500 mt-1">
+          <p className="text-sm text-muted-foreground mt-1">
             Manage administrative roles and their access levels across the
             system.
           </p>
@@ -131,19 +131,19 @@ export default function RolesPage() {
         <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
           <DialogTrigger
             render={
-              <Button className="bg-gradient-to-r from-indigo-600 to-violet-600 text-white border-0 shadow-md hover:shadow-lg transition-all">
+              <Button className="bg-indigo-600 hover:bg-indigo-700 dark:bg-indigo-500 dark:hover:bg-indigo-600 text-white border-0 shadow-sm transition-all">
                 <Plus className="mr-2 h-4 w-4" />
                 Create New Role
               </Button>
             }
           />
-          <DialogContent className="sm:max-w-[425px] bg-white rounded-2xl border-0 shadow-2xl">
+          <DialogContent className="sm:max-w-[425px] bg-card text-foreground rounded-2xl border border-border shadow-md">
             <form onSubmit={handleCreateRole}>
               <DialogHeader>
-                <DialogTitle className="text-xl font-bold">
+                <DialogTitle className="text-xl font-bold text-foreground">
                   New Security Role
                 </DialogTitle>
-                <DialogDescription>
+                <DialogDescription className="text-muted-foreground">
                   Define a new role. You can assign specific permissions after
                   creation.
                 </DialogDescription>
@@ -152,7 +152,7 @@ export default function RolesPage() {
                 <div className="grid gap-2">
                   <Label
                     htmlFor="name"
-                    className="text-xs font-black text-slate-400 uppercase tracking-widest ml-1"
+                    className="text-xs font-black text-muted-foreground uppercase tracking-widest ml-1"
                   >
                     Role Name
                   </Label>
@@ -161,17 +161,17 @@ export default function RolesPage() {
                     placeholder="e.g. CUSTOMER_SUPPORT_LEAD"
                     value={newName}
                     onChange={(e) => setNewName(e.target.value)}
-                    className="h-11 rounded-xl border-slate-200 focus:ring-indigo-500 bg-slate-50/50"
+                    className="h-11 rounded-xl border-border focus:ring-indigo-500 bg-muted/30 text-foreground"
                     required
                   />
-                  <p className="text-[10px] text-slate-400 ml-1 italic">
+                  <p className="text-[10px] text-muted-foreground ml-1 italic">
                     * Name will be converted to UPPER_SNAKE_CASE
                   </p>
                 </div>
                 <div className="grid gap-2">
                   <Label
                     htmlFor="description"
-                    className="text-xs font-black text-slate-400 uppercase tracking-widest ml-1"
+                    className="text-xs font-black text-muted-foreground uppercase tracking-widest ml-1"
                   >
                     Description
                   </Label>
@@ -180,7 +180,7 @@ export default function RolesPage() {
                     placeholder="Briefly describe the purpose of this role..."
                     value={newDescription}
                     onChange={(e) => setNewDescription(e.target.value)}
-                    className="min-h-[100px] rounded-xl border-slate-200 focus:ring-indigo-500 bg-slate-50/50 resize-none"
+                    className="min-h-[100px] rounded-xl border-border focus:ring-indigo-500 bg-muted/30 text-foreground resize-none"
                   />
                 </div>
               </div>
@@ -188,7 +188,7 @@ export default function RolesPage() {
                 <Button
                   type="submit"
                   disabled={loading || !newName}
-                  className="w-full h-11 bg-indigo-600 text-white hover:bg-indigo-700 rounded-xl font-bold shadow-lg shadow-indigo-200 transition-all"
+                  className="w-full h-11 bg-indigo-600 hover:bg-indigo-700 dark:bg-indigo-500 dark:hover:bg-indigo-600 text-white rounded-xl font-bold transition-all"
                 >
                   {loading ? 'Creating...' : 'Initialize Role'}
                 </Button>
@@ -199,22 +199,22 @@ export default function RolesPage() {
       </div>
 
       <div className="grid grid-cols-1 gap-6">
-        <Card className="border-0 shadow-xl shadow-slate-200/50 overflow-hidden rounded-2xl bg-white/70 backdrop-blur-sm">
+        <Card className="border border-border shadow-xs overflow-hidden rounded-2xl bg-card/70 backdrop-blur-xs text-card-foreground">
           <CardContent className="p-0">
             <div className="overflow-x-auto">
               <Table>
-                <TableHeader className="bg-slate-50/80">
-                  <TableRow className="hover:bg-transparent border-b border-slate-100">
-                    <TableHead className="w-[300px] py-4 text-[11px] font-black text-slate-400 uppercase tracking-widest pl-6">
+                <TableHeader className="bg-muted/30">
+                  <TableRow className="hover:bg-transparent border-b border-border">
+                    <TableHead className="w-[300px] py-4 text-[11px] font-black text-muted-foreground uppercase tracking-widest pl-6">
                       Role Name
                     </TableHead>
-                    <TableHead className="py-4 text-[11px] font-black text-slate-400 uppercase tracking-widest">
+                    <TableHead className="py-4 text-[11px] font-black text-muted-foreground uppercase tracking-widest">
                       Description
                     </TableHead>
-                    <TableHead className="py-4 text-[11px] font-black text-slate-400 uppercase tracking-widest text-center w-[150px]">
+                    <TableHead className="py-4 text-[11px] font-black text-muted-foreground uppercase tracking-widest text-center w-[150px]">
                       Security Status
                     </TableHead>
-                    <TableHead className="text-right py-4 text-[11px] font-black text-slate-400 uppercase tracking-widest pr-6 w-[200px]">
+                    <TableHead className="text-right py-4 text-[11px] font-black text-muted-foreground uppercase tracking-widest pr-6 w-[200px]">
                       Management
                     </TableHead>
                   </TableRow>
@@ -223,20 +223,20 @@ export default function RolesPage() {
                   {roles.map((role) => (
                     <TableRow
                       key={role.id}
-                      className="group hover:bg-slate-50/50 transition-colors border-b border-slate-50 last:border-0"
+                      className="group hover:bg-muted/30 transition-colors border-b border-border last:border-0"
                     >
                       <TableCell className="py-5 pl-6">
                         <div className="flex items-center gap-3">
                           <div
-                            className={`p-2.5 rounded-xl ${role.isSystem ? 'bg-indigo-50 text-indigo-600' : 'bg-emerald-50 text-emerald-600'}`}
+                            className={`p-2.5 rounded-xl ${role.isSystem ? 'bg-indigo-500/10 text-indigo-600 dark:text-indigo-400' : 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400'}`}
                           >
                             <Shield className="w-5 h-5" />
                           </div>
                           <div>
-                            <span className="text-sm font-bold text-slate-800 tracking-tight block group-hover:text-indigo-600 transition-colors">
+                            <span className="text-sm font-bold text-foreground tracking-tight block group-hover:text-indigo-600 dark:group-hover:text-indigo-400 transition-colors">
                               {role.name}
                             </span>
-                            <span className="text-[10px] font-medium text-slate-400 uppercase tracking-tighter">
+                            <span className="text-[10px] font-medium text-muted-foreground uppercase tracking-tighter">
                               Created{' '}
                               {new Date(role.createdAt).toLocaleDateString()}
                             </span>
@@ -244,17 +244,17 @@ export default function RolesPage() {
                         </div>
                       </TableCell>
                       <TableCell className="py-5">
-                        <p className="text-sm text-slate-600 max-w-md line-clamp-2 leading-relaxed italic">
+                        <p className="text-sm text-muted-foreground max-w-md line-clamp-2 leading-relaxed italic">
                           {role.description || 'No description provided.'}
                         </p>
                       </TableCell>
                       <TableCell className="py-5 text-center">
                         {role.isSystem ? (
-                          <Badge className="bg-slate-100 text-slate-500 border-slate-200 font-black text-[10px] px-2.5 py-0.5 tracking-wider">
+                          <Badge className="bg-muted text-muted-foreground border-border font-black text-[10px] px-2.5 py-0.5 tracking-wider">
                             <Lock className="w-3 h-3 mr-1" /> SYSTEM
                           </Badge>
                         ) : (
-                          <Badge className="bg-emerald-50 text-emerald-600 border-emerald-100 font-black text-[10px] px-2.5 py-0.5 tracking-wider">
+                          <Badge className="bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/20 font-black text-[10px] px-2.5 py-0.5 tracking-wider">
                             CUSTOM
                           </Badge>
                         )}
@@ -264,7 +264,7 @@ export default function RolesPage() {
                           <Button
                             variant="outline"
                             size="sm"
-                            className={`h-9 px-4 rounded-xl font-bold text-xs border-slate-200 hover:border-indigo-500 hover:text-indigo-600 transition-all ${role.isSystem ? 'bg-slate-50' : 'bg-white'}`}
+                            className={`h-9 px-4 rounded-xl font-bold text-xs border-border hover:border-indigo-500 hover:text-indigo-600 dark:hover:text-indigo-400 transition-all ${role.isSystem ? 'bg-muted/50' : 'bg-card'}`}
                           >
                             {role.isSystem ? (
                               <>
@@ -284,7 +284,7 @@ export default function RolesPage() {
                   {loading && (
                     <TableRow>
                       <TableCell colSpan={4} className="h-32 text-center">
-                        <div className="flex items-center justify-center gap-3 text-slate-400 animate-pulse">
+                        <div className="flex items-center justify-center gap-3 text-muted-foreground animate-pulse">
                           <Shield className="w-5 h-5" />
                           <span className="font-bold tracking-widest text-xs uppercase">
                             Loading secure roles...
@@ -308,13 +308,13 @@ export default function RolesPage() {
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mt-4">
-        <div className="md:col-span-2 bg-indigo-50/50 border border-indigo-100 rounded-2xl p-6 flex items-start gap-4">
-          <div className="bg-indigo-100 p-3 rounded-xl text-indigo-600">
+        <div className="md:col-span-2 bg-indigo-500/5 border border-indigo-500/10 rounded-2xl p-6 flex items-start gap-4">
+          <div className="bg-indigo-500/10 p-3 rounded-xl text-indigo-600 dark:text-indigo-400">
             <ShieldAlert className="w-6 h-6" />
           </div>
           <div>
-            <h4 className="font-bold text-indigo-900">Security Note</h4>
-            <p className="text-sm text-indigo-700/80 leading-relaxed mt-1">
+            <h4 className="font-bold text-indigo-900 dark:text-indigo-100">Security Note</h4>
+            <p className="text-sm text-indigo-600/90 dark:text-indigo-400/90 leading-relaxed mt-1">
               System roles are core to the platform's stability and cannot be
               modified or deleted. If you need custom access levels, please
               create a new role and assign permissions manually.

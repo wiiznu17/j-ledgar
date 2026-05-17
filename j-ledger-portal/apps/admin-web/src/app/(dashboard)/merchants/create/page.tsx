@@ -97,25 +97,25 @@ export default function CreatePartnerPage() {
   };
 
   return (
-    <div className="space-y-6 pb-20 max-w-6xl mx-auto px-4 md:px-0">
+    <div className="space-y-6 pb-20 max-w-6xl mx-auto px-4 md:px-0 text-foreground">
       {/* Header & Navigation */}
       <div className="flex flex-col gap-2">
-        <div className="flex items-center text-[10px] font-black text-slate-400 uppercase tracking-widest gap-2">
-          <Link href="/merchants" className="hover:text-indigo-600 transition-colors">Merchants</Link>
+        <div className="flex items-center text-[10px] font-black text-muted-foreground uppercase tracking-widest gap-2">
+          <Link href="/merchants" className="hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors">Merchants</Link>
           <ChevronRight className="w-3 h-3" />
-          <span className="text-slate-900">Onboard Big Brand</span>
+          <span className="text-foreground">Onboard Big Brand</span>
         </div>
 
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
           <div className="flex items-center gap-4">
-            <div className="w-12 h-12 rounded-xl bg-indigo-600 flex items-center justify-center text-white shadow-lg shadow-indigo-100">
+            <div className="w-12 h-12 rounded-xl bg-indigo-600 flex items-center justify-center text-white shadow-xs">
               <Building2 className="w-6 h-6" />
             </div>
             <div>
-              <h1 className="text-2xl font-black text-slate-900 tracking-tight">Onboard Corporate Partner</h1>
-              <p className="text-xs text-slate-500 mt-0.5 flex items-center gap-2">
-                <Info className="w-3.5 h-3.5 text-indigo-500" />
-                Registering a big brand will automatically set status to <span className="text-emerald-600 font-bold">ACTIVE</span>.
+              <h1 className="text-2xl font-black text-foreground tracking-tight">Onboard Corporate Partner</h1>
+              <p className="text-xs text-muted-foreground mt-0.5 flex items-center gap-2">
+                <Info className="w-3.5 h-3.5 text-indigo-600 dark:text-indigo-400" />
+                Registering a big brand will automatically set status to <span className="text-emerald-600 dark:text-emerald-400 font-bold">ACTIVE</span>.
               </p>
             </div>
           </div>
@@ -124,7 +124,7 @@ export default function CreatePartnerPage() {
              <Button 
                 onClick={handleSubmit} 
                 disabled={isLoading}
-                className="h-10 px-8 rounded-lg bg-indigo-600 hover:bg-indigo-700 text-white font-black uppercase text-xs tracking-widest shadow-lg shadow-indigo-100 transition-all active:scale-95"
+                className="h-10 px-8 rounded-lg bg-indigo-600 hover:bg-indigo-700 text-white font-black uppercase text-xs tracking-widest shadow-xs transition-all active:scale-95"
               >
                 {isLoading ? (
                   <div className="w-4 h-4 border-2 border-white/20 border-t-white rounded-full animate-spin" />
@@ -142,17 +142,17 @@ export default function CreatePartnerPage() {
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Row 1: Legal Entity (Left) & Contact (Right) */}
         <div className="lg:col-span-2 flex flex-col">
-          <Card className="flex-1 border-none shadow-sm ring-1 ring-slate-100 bg-white overflow-hidden rounded-2xl">
-            <CardHeader className="bg-slate-50/50 border-b border-slate-100 px-6 py-4">
-              <CardTitle className="text-[10px] font-black uppercase tracking-widest text-slate-400 flex items-center gap-2">
-                <Building2 className="w-3.5 h-3.5 text-indigo-600" />
+          <Card className="flex-1 border-none shadow-xs bg-card text-card-foreground overflow-hidden rounded-2xl">
+            <CardHeader className="bg-muted/30 border-b border-border px-6 py-4">
+              <CardTitle className="text-[10px] font-black uppercase tracking-widest text-muted-foreground flex items-center gap-2">
+                <Building2 className="w-3.5 h-3.5 text-indigo-600 dark:text-indigo-400" />
                 Legal Entity Information
               </CardTitle>
             </CardHeader>
             <CardContent className="p-6 space-y-6">
               <div className="grid grid-cols-1 gap-6">
                 <div className="space-y-2">
-                  <Label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">
+                  <Label className="text-[10px] font-black text-muted-foreground uppercase tracking-widest ml-1">
                     Corporate Name (Thai) <span className="text-rose-500">*</span>
                   </Label>
                   <Input 
@@ -172,14 +172,14 @@ export default function CreatePartnerPage() {
                             setErrors(prev => ({...prev, name: ''}));
                         }
                     }}
-                    className={`h-11 rounded-xl border-slate-200 focus:ring-indigo-500 font-bold text-slate-800 ${errors.name ? 'border-rose-400 bg-rose-50/50' : ''}`}
+                    className={`h-11 rounded-xl border-border focus:ring-indigo-500 font-bold text-foreground bg-muted ${errors.name ? 'border-rose-500 bg-rose-500/10' : ''}`}
                   />
                   {errors.name && <p className="text-[10px] text-rose-500 font-bold ml-1 uppercase">{errors.name}</p>}
                 </div>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <div className="space-y-2">
-                        <Label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">
-                            Business Name (English) <span className="text-slate-300 lowercase font-normal italic">(Optional)</span>
+                        <Label className="text-[10px] font-black text-muted-foreground uppercase tracking-widest ml-1">
+                            Business Name (English) <span className="text-muted-foreground lowercase font-normal italic">(Optional)</span>
                         </Label>
                         <Input 
                             placeholder="Example Corporation Co., Ltd." 
@@ -188,11 +188,11 @@ export default function CreatePartnerPage() {
                                 ...formData, 
                                 profile: {...formData.profile, businessNameEn: e.target.value}
                             })}
-                            className="h-11 rounded-xl border-slate-200 focus:ring-indigo-500 font-bold text-slate-800"
+                            className="h-11 rounded-xl border-border focus:ring-indigo-500 font-bold text-foreground bg-muted"
                         />
                     </div>
                     <div className="space-y-2">
-                        <Label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">
+                        <Label className="text-[10px] font-black text-muted-foreground uppercase tracking-widest ml-1">
                             Tax Identification Number <span className="text-rose-500">*</span>
                         </Label>
                         <Input 
@@ -210,7 +210,7 @@ export default function CreatePartnerPage() {
                                     setErrors(prev => ({...prev, taxId: ''}));
                                 }
                             }}
-                            className={`h-11 rounded-xl border-slate-200 focus:ring-indigo-500 font-mono font-bold text-slate-800 ${errors.taxId ? 'border-rose-400 bg-rose-50/50' : ''}`}
+                            className={`h-11 rounded-xl border-border focus:ring-indigo-500 font-mono font-bold text-foreground bg-muted ${errors.taxId ? 'border-rose-500 bg-rose-500/10' : ''}`}
                         />
                         {errors.taxId && <p className="text-[10px] text-rose-500 font-bold ml-1 uppercase">{errors.taxId}</p>}
                     </div>
@@ -221,20 +221,20 @@ export default function CreatePartnerPage() {
         </div>
 
         <div className="lg:col-span-1 flex flex-col">
-          <Card className="flex-1 border-none shadow-sm ring-1 ring-slate-100 bg-white overflow-hidden rounded-2xl">
-            <CardHeader className="bg-slate-50/50 border-b border-slate-100 px-6 py-4">
-              <CardTitle className="text-[10px] font-black uppercase tracking-widest text-slate-400 flex items-center gap-2">
-                <User className="w-3.5 h-3.5 text-emerald-600" />
+          <Card className="flex-1 border-none shadow-xs bg-card text-card-foreground overflow-hidden rounded-2xl">
+            <CardHeader className="bg-muted/30 border-b border-border px-6 py-4">
+              <CardTitle className="text-[10px] font-black uppercase tracking-widest text-muted-foreground flex items-center gap-2">
+                <User className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" />
                 Contact Person
               </CardTitle>
             </CardHeader>
             <CardContent className="p-6 space-y-4">
               <div className="space-y-1.5">
-                <Label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Full Name <span className="text-rose-500">*</span></Label>
+                <Label className="text-[10px] font-black text-muted-foreground uppercase tracking-widest ml-1">Full Name <span className="text-rose-500">*</span></Label>
                 <div className="relative group">
-                  <User className="absolute left-3 top-3 w-4 h-4 text-slate-300 transition-colors" />
+                  <User className="absolute left-3 top-3 w-4 h-4 text-muted-foreground transition-colors" />
                   <Input 
-                    className={`pl-10 h-10 rounded-xl border-slate-200 focus:ring-indigo-500 font-bold text-slate-800 ${errors.contactName ? 'border-rose-400 bg-rose-50/50' : ''}`}
+                    className={`pl-10 h-10 rounded-xl border-border focus:ring-indigo-500 font-bold text-foreground bg-muted ${errors.contactName ? 'border-rose-500 bg-rose-500/10' : ''}`}
                     placeholder="Manager Name"
                     value={formData.profile.contactName}
                     onChange={(e) => {
@@ -254,11 +254,11 @@ export default function CreatePartnerPage() {
                 {errors.contactName && <p className="text-[10px] text-rose-500 font-bold ml-1 uppercase">{errors.contactName}</p>}
               </div>
               <div className="space-y-1.5">
-                <Label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Email <span className="text-rose-500">*</span></Label>
+                <Label className="text-[10px] font-black text-muted-foreground uppercase tracking-widest ml-1">Email <span className="text-rose-500">*</span></Label>
                 <div className="relative group">
-                <Mail className="absolute left-3 top-3 w-4 h-4 text-slate-300 transition-colors" />
+                <Mail className="absolute left-3 top-3 w-4 h-4 text-muted-foreground transition-colors" />
                 <Input 
-                    className={`pl-10 h-10 rounded-xl border-slate-200 focus:ring-indigo-500 font-bold text-slate-800 ${errors.email ? 'border-rose-400 bg-rose-50/50' : ''}`}
+                    className={`pl-10 h-10 rounded-xl border-border focus:ring-indigo-500 font-bold text-foreground bg-muted ${errors.email ? 'border-rose-500 bg-rose-500/10' : ''}`}
                     placeholder="corporate@brand.com"
                     value={formData.profile.email}
                     onChange={(e) => {
@@ -281,11 +281,11 @@ export default function CreatePartnerPage() {
                 {errors.email && <p className="text-[10px] text-rose-500 font-bold ml-1 uppercase">{errors.email}</p>}
               </div>
               <div className="space-y-1.5">
-                <Label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Phone <span className="text-rose-500">*</span></Label>
+                <Label className="text-[10px] font-black text-muted-foreground uppercase tracking-widest ml-1">Phone <span className="text-rose-500">*</span></Label>
                 <div className="relative group">
-                <Phone className="absolute left-3 top-3 w-4 h-4 text-slate-300 transition-colors" />
+                <Phone className="absolute left-3 top-3 w-4 h-4 text-muted-foreground transition-colors" />
                 <Input 
-                    className={`pl-10 h-10 rounded-xl border-slate-200 focus:ring-indigo-500 font-bold text-slate-800 ${errors.phone ? 'border-rose-400 bg-rose-50/50' : ''}`}
+                    className={`pl-10 h-10 rounded-xl border-border focus:ring-indigo-500 font-bold text-foreground bg-muted ${errors.phone ? 'border-rose-500 bg-rose-500/10' : ''}`}
                     placeholder="08XXXXXXXX"
                     value={formData.profile.phone}
                     onChange={(e) => {
@@ -313,16 +313,16 @@ export default function CreatePartnerPage() {
 
         {/* Row 2: Address (Left) & Branding (Right) */}
         <div className="lg:col-span-2 flex flex-col">
-          <Card className="flex-1 border-none shadow-sm ring-1 ring-slate-100 bg-white overflow-hidden rounded-2xl">
-            <CardHeader className="bg-slate-50/50 border-b border-slate-100 px-6 py-4">
-              <CardTitle className="text-[10px] font-black uppercase tracking-widest text-slate-400 flex items-center gap-2">
-                <MapPin className="w-3.5 h-3.5 text-rose-600" />
+          <Card className="flex-1 border-none shadow-xs bg-card text-card-foreground overflow-hidden rounded-2xl">
+            <CardHeader className="bg-muted/30 border-b border-border px-6 py-4">
+              <CardTitle className="text-[10px] font-black uppercase tracking-widest text-muted-foreground flex items-center gap-2">
+                <MapPin className="w-3.5 h-3.5 text-rose-600 dark:text-rose-400" />
                 Registered Address
               </CardTitle>
             </CardHeader>
             <CardContent className="p-6 space-y-6">
               <div className="space-y-2">
-                <Label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">
+                <Label className="text-[10px] font-black text-muted-foreground uppercase tracking-widest ml-1">
                   Full Address <span className="text-rose-500">*</span>
                 </Label>
                 <Input 
@@ -335,13 +335,13 @@ export default function CreatePartnerPage() {
                     });
                     if (errors.address) setErrors({...errors, address: ''});
                   }}
-                  className={`h-11 rounded-xl border-slate-200 focus:ring-indigo-500 font-bold text-slate-800 ${errors.address ? 'border-rose-400 bg-rose-50/50' : ''}`}
+                  className={`h-11 rounded-xl border-border focus:ring-indigo-500 font-bold text-foreground bg-muted ${errors.address ? 'border-rose-500 bg-rose-500/10' : ''}`}
                 />
                 {errors.address && <p className="text-[10px] text-rose-500 font-bold ml-1 uppercase">{errors.address}</p>}
               </div>
               <div className="space-y-2">
-                <Label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">
-                  Additional Details <span className="text-slate-300 lowercase font-normal italic">(Optional)</span>
+                <Label className="text-[10px] font-black text-muted-foreground uppercase tracking-widest ml-1">
+                  Additional Details <span className="text-muted-foreground lowercase font-normal italic">(Optional)</span>
                 </Label>
                 <Input 
                   placeholder="e.g. 25th Floor, Ocean Tower 2" 
@@ -350,7 +350,7 @@ export default function CreatePartnerPage() {
                     ...formData, 
                     profile: {...formData.profile, addressDetail: e.target.value}
                   })}
-                  className="h-11 rounded-xl border-slate-200 focus:ring-indigo-500 font-bold text-slate-800"
+                  className="h-11 rounded-xl border-border focus:ring-indigo-500 font-bold text-foreground bg-muted"
                 />
               </div>
             </CardContent>
@@ -358,20 +358,20 @@ export default function CreatePartnerPage() {
         </div>
 
         <div className="lg:col-span-1 flex flex-col">
-          <Card className="flex-1 border-none shadow-sm ring-1 ring-slate-100 bg-white overflow-hidden rounded-2xl">
-            <CardHeader className="bg-slate-50/50 border-b border-slate-100 px-6 py-4">
-              <CardTitle className="text-[10px] font-black uppercase tracking-widest text-slate-400 flex items-center gap-2">
-                <Globe className="w-3.5 h-3.5 text-amber-600" />
+          <Card className="flex-1 border-none shadow-xs bg-card text-card-foreground overflow-hidden rounded-2xl">
+            <CardHeader className="bg-muted/30 border-b border-border px-6 py-4">
+              <CardTitle className="text-[10px] font-black uppercase tracking-widest text-muted-foreground flex items-center gap-2">
+                <Globe className="w-3.5 h-3.5 text-amber-600 dark:text-amber-400" />
                 Branding & Online
               </CardTitle>
             </CardHeader>
             <CardContent className="p-6 space-y-4">
               <div className="space-y-1.5">
-                <Label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Website <span className="text-slate-300 lowercase font-normal italic">(Optional)</span></Label>
+                <Label className="text-[10px] font-black text-muted-foreground uppercase tracking-widest ml-1">Website <span className="text-muted-foreground lowercase font-normal italic">(Optional)</span></Label>
                 <div className="relative group">
-                  <Globe className="absolute left-3 top-3 w-4 h-4 text-slate-300 transition-colors" />
+                  <Globe className="absolute left-3 top-3 w-4 h-4 text-muted-foreground transition-colors" />
                   <Input 
-                    className="pl-10 h-10 rounded-xl border-slate-200 focus:ring-indigo-500 font-bold text-slate-800"
+                    className="pl-10 h-10 rounded-xl border-border focus:ring-indigo-500 font-bold text-foreground bg-muted"
                     placeholder="https://www.brand.com"
                     value={formData.profile.website}
                     onChange={(e) => setFormData({
@@ -382,11 +382,11 @@ export default function CreatePartnerPage() {
                 </div>
               </div>
               <div className="space-y-1.5">
-                <Label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Logo URL <span className="text-slate-300 lowercase font-normal italic">(Optional)</span></Label>
+                <Label className="text-[10px] font-black text-muted-foreground uppercase tracking-widest ml-1">Logo URL <span className="text-muted-foreground lowercase font-normal italic">(Optional)</span></Label>
                 <div className="relative group">
-                  <Store className="absolute left-3 top-3 w-4 h-4 text-slate-300 transition-colors" />
+                  <Store className="absolute left-3 top-3 w-4 h-4 text-muted-foreground transition-colors" />
                   <Input 
-                    className="pl-10 h-10 rounded-xl border-slate-200 focus:ring-indigo-500 font-bold text-slate-800"
+                    className="pl-10 h-10 rounded-xl border-border focus:ring-indigo-500 font-bold text-foreground bg-muted"
                     placeholder="https://img.brand.com/logo.png"
                     value={formData.profile.logoUrl}
                     onChange={(e) => setFormData({
@@ -400,8 +400,6 @@ export default function CreatePartnerPage() {
           </Card>
         </div>
       </div>
-
-
     </div>
   );
 }

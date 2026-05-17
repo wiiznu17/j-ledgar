@@ -73,63 +73,63 @@ export default function InternalLedgerPage() {
 
   const getAccountIcon = (userId: string) => {
     if (userId === '00000000-0000-0000-0000-000000000000')
-      return <Landmark className="w-5 h-5 text-indigo-600" />;
+      return <Landmark className="w-5 h-5 text-indigo-600 dark:text-indigo-400" />;
     if (userId.includes('reward'))
-      return <TrendingUp className="w-5 h-5 text-emerald-600" />;
-    return <Database className="w-5 h-5 text-slate-600" />;
+      return <TrendingUp className="w-5 h-5 text-emerald-600 dark:text-emerald-400" />;
+    return <Database className="w-5 h-5 text-muted-foreground" />;
   };
 
   return (
-    <div className="space-y-6 pb-10">
+    <div className="space-y-6 pb-10 text-foreground">
       {/* Page Header */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
           <div className="flex items-center gap-2 mb-1">
-            <div className="p-1.5 bg-indigo-50 rounded-lg">
-              <Landmark className="w-5 h-5 text-indigo-600" />
+            <div className="p-1.5 bg-indigo-500/10 rounded-lg">
+              <Landmark className="w-5 h-5 text-indigo-600 dark:text-indigo-400" />
             </div>
-            <h2 className="text-3xl font-bold tracking-tight text-slate-900">
+            <h2 className="text-3xl font-bold tracking-tight text-foreground">
               Internal Ledger
             </h2>
           </div>
-          <p className="text-slate-500">
+          <p className="text-muted-foreground">
             System-level accounting and master treasury management.
           </p>
         </div>
         <div className="flex items-center gap-3">
           <Badge
             variant="outline"
-            className="bg-white border-slate-200 text-slate-500 px-3 py-1 text-[10px] font-bold uppercase tracking-wider"
+            className="bg-card border-border text-muted-foreground px-3 py-1 text-[10px] font-bold uppercase tracking-wider"
           >
             Total Internal Accounts: {total}
           </Badge>
         </div>
       </div>
 
-      <Card className="border-none shadow-sm ring-1 ring-slate-100 overflow-hidden bg-white">
-        <CardHeader className="bg-slate-50/30 border-b border-slate-100">
-          <CardTitle className="text-sm font-bold text-slate-600">
+      <Card className="border-none shadow-xs overflow-hidden bg-card text-card-foreground">
+        <CardHeader className="bg-muted/30 border-b border-border">
+          <CardTitle className="text-sm font-bold text-foreground">
             Chart of Internal Accounts
           </CardTitle>
         </CardHeader>
         <CardContent className="p-0">
           <div className="overflow-x-auto">
             <Table>
-              <TableHeader className="bg-slate-50/50">
-                <TableRow className="border-slate-100 hover:bg-transparent">
-                  <TableHead className="w-[200px] text-[11px] font-bold text-slate-500 uppercase tracking-wider pl-6">
+              <TableHeader className="bg-muted/30">
+                <TableRow className="border-border hover:bg-transparent">
+                  <TableHead className="w-[200px] text-[11px] font-bold text-muted-foreground uppercase tracking-wider pl-6">
                     Account Identity
                   </TableHead>
-                  <TableHead className="text-[11px] font-bold text-slate-500 uppercase tracking-wider">
+                  <TableHead className="text-[11px] font-bold text-muted-foreground uppercase tracking-wider">
                     Internal Mapping (User ID)
                   </TableHead>
-                  <TableHead className="text-[11px] font-bold text-slate-500 uppercase tracking-wider text-right">
+                  <TableHead className="text-[11px] font-bold text-muted-foreground uppercase tracking-wider text-right">
                     Balance
                   </TableHead>
-                  <TableHead className="text-[11px] font-bold text-slate-500 uppercase tracking-wider text-center">
+                  <TableHead className="text-[11px] font-bold text-muted-foreground uppercase tracking-wider text-center">
                     Status
                   </TableHead>
-                  <TableHead className="text-[11px] font-bold text-slate-500 uppercase tracking-wider text-right pr-6">
+                  <TableHead className="text-[11px] font-bold text-muted-foreground uppercase tracking-wider text-right pr-6">
                     Last Transaction
                   </TableHead>
                 </TableRow>
@@ -137,15 +137,15 @@ export default function InternalLedgerPage() {
               <TableBody>
                 {loading ? (
                   Array.from({ length: 3 }).map((_, i) => (
-                    <TableRow key={i} className="animate-pulse border-slate-50">
-                      <TableCell colSpan={5} className="h-16 bg-slate-50/20" />
+                    <TableRow key={i} className="animate-pulse border-border">
+                      <TableCell colSpan={5} className="h-16 bg-muted/20" />
                     </TableRow>
                   ))
                 ) : accounts.length > 0 ? (
                   accounts.map((account) => (
                     <TableRow
                       key={account.id}
-                      className="border-slate-50 hover:bg-slate-50/30 transition-colors group cursor-pointer"
+                      className="border-border hover:bg-muted/30 transition-colors group cursor-pointer"
                       onClick={() =>
                         router.push(`/system/ledger/${account.id}`)
                       }
@@ -157,26 +157,26 @@ export default function InternalLedgerPage() {
                               'p-2 rounded-xl shadow-sm',
                               account.userId ===
                                 '00000000-0000-0000-0000-000000000000'
-                                ? 'bg-indigo-50'
-                                : 'bg-slate-50',
+                                ? 'bg-indigo-500/10'
+                                : 'bg-muted',
                             )}
                           >
                             {getAccountIcon(account.userId)}
                           </div>
                           <div className="flex flex-col">
-                            <span className="text-sm font-bold text-slate-900 leading-tight">
+                            <span className="text-sm font-bold text-foreground leading-tight">
                               {account.userId === '00000000-0000-0000-0000-000000000000' 
                                 ? 'Master Treasury' 
                                 : account.accountName || 'Internal Account'}
                             </span>
-                            <span className="text-[10px] font-bold text-slate-400 uppercase tracking-tight">
+                            <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-tight">
                               UID: {account.userId.substring(0, 8)}...
                             </span>
                           </div>
                         </div>
                       </TableCell>
                       <TableCell>
-                        <span className="font-mono text-xs text-slate-500 bg-slate-50 px-2 py-1 rounded border border-slate-100">
+                        <span className="font-mono text-xs text-muted-foreground bg-muted px-2 py-1 rounded border border-border">
                           {account.userId}
                         </span>
                       </TableCell>
@@ -185,8 +185,8 @@ export default function InternalLedgerPage() {
                           className={cn(
                             'text-lg font-black tabular-nums tracking-tight',
                             account.balance < 0
-                              ? 'text-rose-600'
-                              : 'text-slate-900',
+                              ? 'text-rose-600 dark:text-rose-400'
+                              : 'text-foreground',
                           )}
                         >
                           {account.balance.toLocaleString(undefined, {
@@ -194,7 +194,7 @@ export default function InternalLedgerPage() {
                             maximumFractionDigits: 2,
                           })}
                         </span>
-                        <span className="ml-1 text-[10px] font-bold text-slate-400">
+                        <span className="ml-1 text-[10px] font-bold text-muted-foreground">
                           {account.currency}
                         </span>
                       </TableCell>
@@ -203,15 +203,15 @@ export default function InternalLedgerPage() {
                           className={cn(
                             'rounded-lg px-2 py-0.5 text-[10px] font-bold border-none',
                             account.status === 'ACTIVE' &&
-                              'bg-emerald-50 text-emerald-600 hover:bg-emerald-50',
+                              'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 hover:bg-emerald-500/10',
                             account.status === 'FROZEN' &&
-                              'bg-rose-50 text-rose-600 hover:bg-rose-50',
+                              'bg-rose-500/10 text-rose-600 dark:text-rose-400 hover:bg-rose-500/10',
                           )}
                         >
                           {account.status}
                         </Badge>
                       </TableCell>
-                      <TableCell className="text-right pr-6 text-xs text-slate-400">
+                      <TableCell className="text-right pr-6 text-xs text-muted-foreground">
                         {new Date(account.updatedAt).toLocaleDateString()}{' '}
                         {new Date(account.updatedAt).toLocaleTimeString([], {
                           hour: '2-digit',
@@ -224,7 +224,7 @@ export default function InternalLedgerPage() {
                   <TableRow>
                     <TableCell
                       colSpan={5}
-                      className="h-32 text-center text-slate-400"
+                      className="h-32 text-center text-muted-foreground"
                     >
                       No internal accounts found
                     </TableCell>
@@ -245,15 +245,15 @@ export default function InternalLedgerPage() {
       </Card>
 
       {/* Reconciliation Tip */}
-      <div className="bg-amber-50/50 border border-amber-100 rounded-2xl p-4 flex items-start gap-4">
-        <div className="p-2 bg-amber-100 rounded-xl">
-          <ShieldCheck className="w-5 h-5 text-amber-600" />
+      <div className="bg-amber-500/10 border border-amber-500/20 rounded-2xl p-4 flex items-start gap-4 text-amber-600 dark:text-amber-400">
+        <div className="p-2 bg-amber-500/25 rounded-xl">
+          <ShieldCheck className="w-5 h-5 text-amber-600 dark:text-amber-400" />
         </div>
         <div>
-          <h4 className="text-sm font-bold text-amber-900 mb-1">
+          <h4 className="text-sm font-bold text-amber-600 dark:text-amber-400 mb-1">
             Accounting Integrity Tip
           </h4>
-          <p className="text-xs text-amber-800 leading-relaxed">
+          <p className="text-xs text-amber-600/90 dark:text-amber-400/90 leading-relaxed">
             In a healthy double-entry system, the negative balance of the{' '}
             <strong>Master Treasury</strong> account should equal the sum of all
             customer wallet balances. If there is a discrepancy, run a manual

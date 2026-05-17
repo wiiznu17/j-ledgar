@@ -55,28 +55,28 @@ export function DealsTable({ deals, onRefresh }: DealsTableProps) {
   };
 
   return (
-    <div className="border rounded-lg overflow-hidden border-border bg-white text-[#2D3748]">
+    <div className="border rounded-lg overflow-hidden border-border bg-card text-card-foreground">
       <Table>
-        <TableHeader className="bg-secondary/50">
+        <TableHeader className="bg-muted/30">
           <TableRow>
-            <TableHead>Deal Info</TableHead>
-            <TableHead>Brand / Category</TableHead>
-            <TableHead>Points Required</TableHead>
-            <TableHead>Stock Status</TableHead>
-            <TableHead>Status</TableHead>
-            <TableHead>Priority</TableHead>
-            <TableHead className="text-right">Actions</TableHead>
+            <TableHead className="text-foreground">Deal Info</TableHead>
+            <TableHead className="text-foreground">Brand / Category</TableHead>
+            <TableHead className="text-foreground">Points Required</TableHead>
+            <TableHead className="text-foreground">Stock Status</TableHead>
+            <TableHead className="text-foreground">Status</TableHead>
+            <TableHead className="text-foreground">Priority</TableHead>
+            <TableHead className="text-right text-foreground">Actions</TableHead>
           </TableRow>
         </TableHeader>
         <TableBody>
           {deals.map((deal) => (
             <TableRow
               key={deal.id}
-              className="hover:bg-secondary/30 transition-colors"
+              className="hover:bg-muted/30 border-b border-border transition-colors"
             >
               <TableCell>
                 <div className="flex items-center gap-3">
-                  <div className="w-24 aspect-video rounded-lg overflow-hidden bg-slate-100 border border-slate-200 shadow-sm">
+                  <div className="w-24 aspect-video rounded-lg overflow-hidden bg-muted border border-border shadow-xs">
                     <img
                       src={deal.imageUrl}
                       alt={deal.title}
@@ -89,7 +89,7 @@ export function DealsTable({ deals, onRefresh }: DealsTableProps) {
                   </div>
                   <div>
                     <div 
-                        className="font-bold text-sm text-slate-800 hover:text-blue-600 cursor-pointer transition-colors"
+                        className="font-bold text-sm text-foreground hover:text-indigo-600 dark:hover:text-indigo-400 cursor-pointer transition-colors"
                         onClick={() => router.push(`/promotions/deals/${deal.id}`)}
                     >
                         {deal.title}
@@ -98,7 +98,7 @@ export function DealsTable({ deals, onRefresh }: DealsTableProps) {
                       {deal.description}
                     </div>
                     {(deal.startDate || deal.endDate) && (
-                      <div className="flex items-center gap-1 text-[9px] text-pink-400 mt-0.5">
+                      <div className="flex items-center gap-1 text-[9px] text-indigo-600 dark:text-indigo-400 mt-0.5 font-semibold">
                         <Calendar size={10} />
                         {deal.startDate
                           ? new Date(deal.startDate).toLocaleDateString()
@@ -116,7 +116,7 @@ export function DealsTable({ deals, onRefresh }: DealsTableProps) {
                 <div className="space-y-1">
                   <Badge
                     variant="outline"
-                    className="bg-blue-50 text-blue-600 border-blue-100 text-[10px]"
+                    className="bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 border border-indigo-500/20 text-[10px]"
                   >
                     {deal.brand?.name || 'No Brand'}
                   </Badge>
@@ -126,19 +126,19 @@ export function DealsTable({ deals, onRefresh }: DealsTableProps) {
                 </div>
               </TableCell>
               <TableCell>
-                <div className="flex items-center gap-1 font-bold text-pink-500">
+                <div className="flex items-center gap-1 font-bold text-indigo-600 dark:text-indigo-400">
                   {deal.pointsRequired.toLocaleString()}{' '}
                   <span className="text-[10px] text-muted-foreground">pts</span>
                 </div>
               </TableCell>
               <TableCell>
                 <div className="space-y-1">
-                  <div className="text-xs font-medium">
+                  <div className="text-xs font-medium text-foreground">
                     {deal.remainingStock} / {deal.stock}
                   </div>
-                  <div className="w-24 h-1 bg-slate-100 rounded-full overflow-hidden">
+                  <div className="w-24 h-1 bg-muted rounded-full overflow-hidden">
                     <div
-                      className={`h-full ${deal.remainingStock < 50 ? 'bg-orange-400' : 'bg-green-400'}`}
+                      className={`h-full ${deal.remainingStock < 50 ? 'bg-orange-500' : 'bg-emerald-500'}`}
                       style={{
                         width: `${(deal.remainingStock / deal.stock) * 100}%`,
                       }}
@@ -150,7 +150,7 @@ export function DealsTable({ deals, onRefresh }: DealsTableProps) {
                 <Button
                   variant="ghost"
                   size="sm"
-                  className={`h-7 px-2 text-[10px] gap-1 ${deal.isActive ? 'text-green-600 bg-green-50' : 'text-slate-400 bg-slate-50'}`}
+                  className={`h-7 px-2 text-[10px] gap-1 ${deal.isActive ? 'text-emerald-600 dark:text-emerald-400 bg-emerald-500/10' : 'text-muted-foreground bg-muted border border-border'}`}
                   disabled={togglingId === deal.id}
                   onClick={() => handleToggle(deal.id)}
                 >
@@ -168,7 +168,7 @@ export function DealsTable({ deals, onRefresh }: DealsTableProps) {
                 </Button>
               </TableCell>
               <TableCell>
-                <Badge variant="secondary" className="text-[10px]">
+                <Badge variant="secondary" className="text-[10px] bg-muted text-muted-foreground border-border">
                   P{deal.priority}
                 </Badge>
               </TableCell>
@@ -177,7 +177,7 @@ export function DealsTable({ deals, onRefresh }: DealsTableProps) {
                   <Button
                     variant="ghost"
                     size="icon"
-                    className="h-8 w-8 text-slate-400 hover:text-blue-600"
+                    className="h-8 w-8 text-muted-foreground hover:text-indigo-600 dark:hover:text-indigo-400"
                     onClick={() => router.push(`/promotions/deals/${deal.id}`)}
                     title="View Details"
                   >
@@ -186,7 +186,7 @@ export function DealsTable({ deals, onRefresh }: DealsTableProps) {
                   <Button
                     variant="ghost"
                     size="icon"
-                    className="h-8 w-8 text-slate-400 hover:text-amber-600"
+                    className="h-8 w-8 text-muted-foreground hover:text-amber-600 dark:hover:text-amber-400"
                     onClick={() => router.push(`/promotions/deals/${deal.id}/edit`)}
                     title="Edit Deal"
                   >
@@ -195,7 +195,7 @@ export function DealsTable({ deals, onRefresh }: DealsTableProps) {
                   <Button
                     variant="ghost"
                     size="icon"
-                    className="h-8 w-8 text-slate-400 hover:text-red-600"
+                    className="h-8 w-8 text-muted-foreground hover:text-destructive"
                     disabled={deletingId === deal.id}
                     onClick={() => handleDelete(deal.id)}
                     title="Delete Deal"
@@ -213,7 +213,7 @@ export function DealsTable({ deals, onRefresh }: DealsTableProps) {
           {deals.length === 0 && (
             <TableRow>
               <TableCell
-                colSpan={6}
+                colSpan={7}
                 className="h-24 text-center text-muted-foreground"
               >
                 No deals found. Create your first promotional offer!

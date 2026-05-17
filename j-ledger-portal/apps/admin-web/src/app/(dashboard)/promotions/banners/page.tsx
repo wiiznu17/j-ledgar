@@ -59,10 +59,10 @@ export default function BannersPage() {
   };
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 text-foreground">
       <div className="flex items-center justify-between">
         <div>
-          <h2 className="text-3xl font-bold tracking-tight text-[#2D3748]">
+          <h2 className="text-3xl font-bold tracking-tight text-foreground">
             Home Banners
           </h2>
           <p className="text-muted-foreground mt-1">
@@ -71,16 +71,16 @@ export default function BannersPage() {
         </div>
         <Button
           onClick={handleCreate}
-          className="bg-pink-500 hover:bg-pink-600 text-white rounded-lg shadow-md shadow-pink-100 transition-all active:scale-95"
+          className="bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl shadow-xs transition-all active:scale-95"
         >
           <Plus className="mr-2 h-4 w-4" /> Add Banner
         </Button>
       </div>
 
-      <Card className="border-border shadow-sm">
+      <Card className="border border-border bg-card text-card-foreground shadow-xs">
         <CardHeader>
-          <CardTitle>Active Banners</CardTitle>
-          <CardDescription>
+          <CardTitle className="text-foreground">Active Banners</CardTitle>
+          <CardDescription className="text-muted-foreground">
             These banners are currently visible to users. Higher priority items
             appear first.
           </CardDescription>
@@ -88,7 +88,7 @@ export default function BannersPage() {
         <CardContent>
           {loading ? (
             <div className="h-64 flex items-center justify-center">
-              <Loader2 className="h-8 w-8 animate-spin text-pink-300" />
+              <Loader2 className="h-8 w-8 animate-spin text-indigo-600 dark:text-indigo-400" />
             </div>
           ) : (
             <BannersTable
@@ -101,12 +101,12 @@ export default function BannersPage() {
       </Card>
 
       <Dialog open={isModalOpen} onOpenChange={setIsModalOpen}>
-        <DialogContent className="max-w-xl">
+        <DialogContent className="max-w-xl bg-card text-card-foreground border-border">
           <DialogHeader>
-            <DialogTitle>
+            <DialogTitle className="text-foreground">
               {editingBanner ? 'Edit Banner' : 'Create New Banner'}
             </DialogTitle>
-            <DialogDescription>
+            <DialogDescription className="text-muted-foreground">
               This banner will appear in the home screen carousel for all users.
             </DialogDescription>
           </DialogHeader>

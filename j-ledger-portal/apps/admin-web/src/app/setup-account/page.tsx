@@ -106,9 +106,9 @@ function SetupAccountForm() {
 
   if (isValidating) {
     return (
-      <div className="min-h-screen bg-[#F7FAFC] flex flex-col items-center justify-center p-4">
-        <Loader2 className="w-8 h-8 text-indigo-600 animate-spin mb-4" />
-        <p className="text-slate-500 font-medium animate-pulse">
+      <div className="min-h-screen bg-muted/30 flex flex-col items-center justify-center p-4">
+        <Loader2 className="w-8 h-8 text-indigo-600 dark:text-indigo-400 animate-spin mb-4" />
+        <p className="text-muted-foreground font-medium animate-pulse">
           Verifying invitation...
         </p>
       </div>
@@ -117,17 +117,17 @@ function SetupAccountForm() {
 
   if (!isValid && !isSuccess) {
     return (
-      <div className="min-h-screen bg-[#F7FAFC] flex items-center justify-center p-4">
-        <Card className="max-w-md w-full border-none shadow-2xl rounded-3xl overflow-hidden bg-white">
+      <div className="min-h-screen bg-muted/30 flex items-center justify-center p-4">
+        <Card className="max-w-md w-full border border-border shadow-2xl rounded-3xl overflow-hidden bg-card text-card-foreground">
           <div className="h-2 bg-rose-500" />
           <CardHeader className="pt-10 pb-6 text-center">
-            <div className="w-16 h-16 bg-rose-50 rounded-2xl flex items-center justify-center mx-auto mb-6">
+            <div className="w-16 h-16 bg-rose-500/10 rounded-2xl flex items-center justify-center mx-auto mb-6">
               <AlertCircle className="w-8 h-8 text-rose-500" />
             </div>
-            <CardTitle className="text-2xl font-bold text-slate-900 tracking-tight">
+            <CardTitle className="text-2xl font-bold text-foreground tracking-tight">
               Expired Invitation
             </CardTitle>
-            <CardDescription className="text-slate-500 mt-2 px-4">
+            <CardDescription className="text-muted-foreground mt-2 px-4">
               This invitation link is no longer valid or has expired. Please
               contact your system administrator to request a new invitation.
             </CardDescription>
@@ -135,7 +135,7 @@ function SetupAccountForm() {
           <CardContent className="pb-10 px-8">
             <Button
               variant="outline"
-              className="w-full h-12 rounded-xl border-slate-200 font-bold text-slate-600"
+              className="w-full h-12 rounded-xl border-border font-bold text-muted-foreground hover:bg-muted hover:text-foreground"
               onClick={() => router.push('/login')}
             >
               Back to Login
@@ -148,24 +148,24 @@ function SetupAccountForm() {
 
   if (isSuccess) {
     return (
-      <div className="min-h-screen bg-[#F7FAFC] flex items-center justify-center p-4">
-        <Card className="max-w-md w-full border-none shadow-2xl rounded-3xl overflow-hidden bg-white">
+      <div className="min-h-screen bg-muted/30 flex items-center justify-center p-4">
+        <Card className="max-w-md w-full border border-border shadow-2xl rounded-3xl overflow-hidden bg-card text-card-foreground">
           <div className="h-2 bg-gradient-to-r from-indigo-500 to-purple-500" />
           <CardHeader className="pt-10 pb-6 text-center">
-            <div className="w-16 h-16 bg-indigo-50 rounded-2xl flex items-center justify-center mx-auto mb-6">
-              <Sparkles className="w-8 h-8 text-indigo-600" />
+            <div className="w-16 h-16 bg-indigo-500/10 rounded-2xl flex items-center justify-center mx-auto mb-6">
+              <Sparkles className="w-8 h-8 text-indigo-600 dark:text-indigo-400" />
             </div>
-            <CardTitle className="text-2xl font-bold text-slate-900 tracking-tight">
+            <CardTitle className="text-2xl font-bold text-foreground tracking-tight">
               Account Activated!
             </CardTitle>
-            <CardDescription className="text-slate-500 mt-2 px-4">
+            <CardDescription className="text-muted-foreground mt-2 px-4">
               Welcome aboard! Your administrator account is now active and
               ready. You can now log in to the portal.
             </CardDescription>
           </CardHeader>
           <CardContent className="pb-10 px-8">
             <Button
-              className="w-full h-12 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white font-bold shadow-lg shadow-indigo-200"
+              className="w-full h-12 rounded-xl bg-indigo-600 hover:bg-indigo-700 dark:bg-indigo-500 dark:hover:bg-indigo-600 text-white font-bold shadow-xs"
               onClick={() => router.push('/login')}
             >
               Enter Dashboard <ArrowRight className="w-4 h-4 ml-2" />
@@ -177,32 +177,32 @@ function SetupAccountForm() {
   }
 
   return (
-    <div className="min-h-screen bg-[#F7FAFC] flex items-center justify-center p-4">
-      <div className="absolute top-0 left-0 w-full h-1/2 bg-gradient-to-b from-indigo-50/50 to-transparent pointer-events-none" />
+    <div className="min-h-screen bg-muted/30 flex items-center justify-center p-4 text-foreground">
+      <div className="absolute top-0 left-0 w-full h-1/2 bg-gradient-to-b from-indigo-500/5 to-transparent pointer-events-none" />
 
-      <Card className="max-w-md w-full border-none shadow-2xl rounded-3xl overflow-hidden bg-white relative z-10">
+      <Card className="max-w-md w-full border border-border shadow-2xl rounded-3xl overflow-hidden bg-card text-card-foreground relative z-10">
         <div className="h-2 bg-indigo-600" />
         <CardHeader className="pt-10 pb-4 px-8">
-          <div className="flex items-center gap-2 text-indigo-600 mb-6">
+          <div className="flex items-center gap-2 text-indigo-600 dark:text-indigo-400 mb-6">
             <ShieldCheck className="w-6 h-6" />
             <span className="font-black text-sm uppercase tracking-widest">
               J-Ledger Onboarding
             </span>
           </div>
-          <CardTitle className="text-2xl font-bold text-slate-900 tracking-tight text-center md:text-left">
+          <CardTitle className="text-2xl font-bold text-foreground tracking-tight text-center md:text-left">
             Welcome to the Team!
           </CardTitle>
-          <CardDescription className="text-slate-500 text-center md:text-left">
+          <CardDescription className="text-muted-foreground text-center md:text-left">
             You've been invited as an administrator. Please set up your password
             to activate your account.
           </CardDescription>
 
           {email && (
-            <div className="mt-6 p-3 rounded-2xl bg-slate-50 border border-slate-100 flex items-center gap-3">
-              <div className="w-8 h-8 bg-white rounded-lg flex items-center justify-center shadow-sm">
-                <UserCircle className="w-4 h-4 text-slate-400" />
+            <div className="mt-6 p-3 rounded-2xl bg-muted/50 border border-border flex items-center gap-3">
+              <div className="w-8 h-8 bg-card border border-border rounded-lg flex items-center justify-center shadow-sm">
+                <UserCircle className="w-4 h-4 text-muted-foreground/60" />
               </div>
-              <span className="text-xs font-bold text-slate-600 truncate">
+              <span className="text-xs font-bold text-foreground truncate">
                 {email}
               </span>
             </div>
@@ -213,20 +213,20 @@ function SetupAccountForm() {
             <div className="space-y-2">
               <Label htmlFor="password">Create Password</Label>
               <div className="relative">
-                <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+                <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground/60" />
                 <Input
                   id="password"
                   type="password"
                   placeholder="••••••••"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
-                  className="pl-10 h-12 border-slate-200 rounded-xl focus:ring-indigo-500 font-medium"
+                  className="pl-10 h-12 bg-card text-foreground border-border rounded-xl focus:ring-indigo-500 font-medium"
                   required
                 />
               </div>
 
               {/* Password Rules Checklist */}
-              <div className="mt-3 grid grid-cols-2 gap-2 p-3 bg-slate-50 rounded-2xl border border-slate-100">
+              <div className="mt-3 grid grid-cols-2 gap-2 p-3 bg-muted/50 rounded-2xl border border-border">
                 <RuleItem label="8+ Characters" met={passwordRules.length} />
                 <RuleItem label="Uppercase" met={passwordRules.upper} />
                 <RuleItem label="Lowercase" met={passwordRules.lower} />
@@ -237,14 +237,14 @@ function SetupAccountForm() {
             <div className="space-y-2">
               <Label htmlFor="confirmPassword">Confirm Password</Label>
               <div className="relative">
-                <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+                <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground/60" />
                 <Input
                   id="confirmPassword"
                   type="password"
                   placeholder="••••••••"
                   value={confirmPassword}
                   onChange={(e) => setConfirmPassword(e.target.value)}
-                  className="pl-10 h-12 border-slate-200 rounded-xl focus:ring-indigo-500 font-medium"
+                  className="pl-10 h-12 bg-card text-foreground border-border rounded-xl focus:ring-indigo-500 font-medium"
                   required
                 />
               </div>
@@ -254,7 +254,7 @@ function SetupAccountForm() {
               <Button
                 type="submit"
                 disabled={isSubmitting}
-                className="w-full h-12 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white font-bold shadow-lg shadow-indigo-200 transition-all active:scale-[0.98]"
+                className="w-full h-12 rounded-xl bg-indigo-600 hover:bg-indigo-700 dark:bg-indigo-500 dark:hover:bg-indigo-600 text-white font-bold shadow-xs transition-all active:scale-[0.98]"
               >
                 {isSubmitting ? (
                   <Loader2 className="w-4 h-4 animate-spin" />
@@ -274,9 +274,9 @@ export default function SetupAccountPage() {
   return (
     <Suspense
       fallback={
-        <div className="min-h-screen bg-[#F7FAFC] flex flex-col items-center justify-center p-4">
-          <Loader2 className="w-8 h-8 text-indigo-600 animate-spin mb-4" />
-          <p className="text-slate-500 font-medium">Loading invitation...</p>
+        <div className="min-h-screen bg-muted/30 flex flex-col items-center justify-center p-4">
+          <Loader2 className="w-8 h-8 text-indigo-600 dark:text-indigo-400 animate-spin mb-4" />
+          <p className="text-muted-foreground font-medium">Loading invitation...</p>
         </div>
       }
     >
@@ -291,10 +291,10 @@ function RuleItem({ label, met }: { label: string; met: boolean }) {
       {met ? (
         <CheckCircle2 className="w-3 h-3 text-emerald-500" />
       ) : (
-        <Circle className="w-3 h-3 text-slate-300" />
+        <Circle className="w-3 h-3 text-muted-foreground/40" />
       )}
       <span
-        className={`text-[10px] font-bold uppercase tracking-wider ${met ? 'text-emerald-600' : 'text-slate-400'}`}
+        className={`text-[10px] font-bold uppercase tracking-wider ${met ? 'text-emerald-600' : 'text-muted-foreground'}`}
       >
         {label}
       </span>

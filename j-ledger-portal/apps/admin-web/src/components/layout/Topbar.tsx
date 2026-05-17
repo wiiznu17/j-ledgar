@@ -1,6 +1,6 @@
 'use client';
 
-import { LogOut, User, Settings, ChevronDown, UserCircle } from 'lucide-react';
+import { LogOut, User, Settings, ChevronDown, UserCircle, Menu } from 'lucide-react';
 import { usePathname, useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
 import { authRequester } from '@/lib/requesters';
@@ -18,6 +18,7 @@ import { ThemeToggle } from '@/components/theme-toggle';
 
 interface TopbarProps {
   onLogout?: (formData: FormData) => void;
+  onToggleMobile?: () => void;
 }
 
 const routeTitles: Record<string, string> = {
@@ -38,7 +39,7 @@ const routeTitles: Record<string, string> = {
   '/system/admins': 'Admins',
 };
 
-export function Topbar({ onLogout }: TopbarProps) {
+export function Topbar({ onLogout, onToggleMobile }: TopbarProps) {
   const pathname = usePathname();
   const router = useRouter();
   const [user, setUser] = useState<AdminUser | null>(null);
@@ -65,9 +66,18 @@ export function Topbar({ onLogout }: TopbarProps) {
   };
 
   return (
-    <header className="h-16 bg-white border-b border-border flex items-center justify-between pl-8 pr-8 flex-shrink-0">
-      <div className="flex items-center gap-4">
-        <h1 className="text-xl font-black text-slate-800 tracking-tight">
+    <header className="h-16 bg-card border-b border-border flex items-center justify-between px-4 md:px-8 flex-shrink-0 text-foreground transition-colors duration-200">
+      <div className="flex items-center gap-2 md:gap-4">
+        {onToggleMobile && (
+          <button
+            onClick={onToggleMobile}
+            className="p-2 -ml-2 rounded-lg lg:hidden text-muted-foreground hover:bg-muted transition-colors cursor-pointer"
+            aria-label="Toggle Menu"
+          >
+            <Menu className="w-5 h-5" />
+          </button>
+        )}
+        <h1 className="text-lg md:text-xl font-black text-foreground tracking-tight">
           {getPageTitle()}
         </h1>
       </div>
@@ -77,58 +87,58 @@ export function Topbar({ onLogout }: TopbarProps) {
         {user ? (
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
-              <button className="flex items-center gap-3 p-1 pr-3 rounded-full hover:bg-slate-50 transition-all border border-transparent hover:border-slate-100 group">
-                <div className="w-9 h-9 rounded-full bg-slate-100 flex items-center justify-center text-slate-400 overflow-hidden">
+              <button className="flex items-center gap-3 p-1 pr-3 rounded-full hover:bg-muted transition-all border border-transparent hover:border-border group">
+                <div className="w-9 h-9 rounded-full bg-muted flex items-center justify-center text-muted-foreground overflow-hidden">
                   <UserCircle className="w-7 h-7" />
                 </div>
                 <div className="hidden md:flex flex-col items-start">
-                  <span className="text-xs font-bold text-slate-800 leading-tight">
+                  <span className="text-xs font-bold text-foreground leading-tight">
                     {user.firstName} {user.lastName}
                   </span>
-                  <span className="text-[10px] font-medium text-slate-400 uppercase tracking-tighter">
+                  <span className="text-[10px] font-medium text-muted-foreground uppercase tracking-tighter">
                     {user.role}
                   </span>
                 </div>
-                <ChevronDown className="w-4 h-4 text-slate-300 group-hover:text-slate-500 transition-colors" />
+                <ChevronDown className="w-4 h-4 text-muted-foreground/60 group-hover:text-muted-foreground transition-colors" />
               </button>
             </DropdownMenuTrigger>
             <DropdownMenuContent
               align="end"
-              className="w-56 mt-1 rounded-2xl border-slate-100 shadow-2xl p-2 bg-white"
+              className="w-56 mt-1 rounded-2xl border-border shadow-2xl p-2 bg-card text-foreground"
             >
               <DropdownMenuLabel className="px-3 py-2">
                 <div className="flex flex-col">
-                  <span className="text-xs font-black text-slate-400 uppercase tracking-widest mb-1">
+                  <span className="text-xs font-black text-muted-foreground uppercase tracking-widest mb-1">
                     Authenticated Account
                   </span>
-                  <span className="text-sm font-bold text-slate-900 truncate">
+                  <span className="text-sm font-bold text-foreground truncate">
                     {user.email}
                   </span>
                 </div>
               </DropdownMenuLabel>
-              <DropdownMenuSeparator className="bg-slate-50 my-1" />
+              <DropdownMenuSeparator className="bg-border/60 my-1" />
               <DropdownMenuItem
                 asChild
-                className="rounded-xl focus:bg-indigo-50 focus:text-indigo-600 py-2.5 cursor-pointer"
+                className="rounded-xl focus:bg-indigo-500/10 focus:text-indigo-500 dark:focus:bg-indigo-500/20 dark:focus:text-indigo-400 py-2.5 cursor-pointer"
               >
                 <Link
                   href="/system/profile"
                   className="flex items-center w-full"
                 >
-                  <User className="w-4 h-4 mr-3 text-slate-400 group-focus:text-indigo-600" />
+                  <User className="w-4 h-4 mr-3 text-muted-foreground" />
                   <span className="font-semibold text-xs">My Profile</span>
                 </Link>
               </DropdownMenuItem>
-              <DropdownMenuItem className="rounded-xl focus:bg-indigo-50 focus:text-indigo-600 py-2.5 cursor-pointer">
-                <Settings className="w-4 h-4 mr-3 text-slate-400" />
+              <DropdownMenuItem className="rounded-xl focus:bg-indigo-500/10 focus:text-indigo-500 dark:focus:bg-indigo-500/20 dark:focus:text-indigo-400 py-2.5 cursor-pointer">
+                <Settings className="w-4 h-4 mr-3 text-muted-foreground" />
                 <span className="font-semibold text-xs">Settings</span>
               </DropdownMenuItem>
-              <DropdownMenuSeparator className="bg-slate-50 my-1" />
+              <DropdownMenuSeparator className="bg-border/60 my-1" />
               {onLogout && (
                 <form action={onLogout}>
                   <button
                     type="submit"
-                    className="flex items-center w-full px-2 py-2.5 text-rose-600 hover:bg-rose-50 rounded-xl transition-colors text-left group"
+                    className="flex items-center w-full px-2 py-2.5 text-rose-600 hover:bg-rose-500/10 dark:hover:bg-rose-500/20 rounded-xl transition-colors text-left group cursor-pointer"
                   >
                     <LogOut className="w-4 h-4 mr-3 text-rose-400 group-hover:text-rose-600" />
                     <span className="font-bold text-xs">Sign out</span>
@@ -138,7 +148,7 @@ export function Topbar({ onLogout }: TopbarProps) {
             </DropdownMenuContent>
           </DropdownMenu>
         ) : (
-          <div className="w-9 h-9 rounded-full bg-slate-100 animate-pulse" />
+          <div className="w-9 h-9 rounded-full bg-muted animate-pulse" />
         )}
       </div>
     </header>

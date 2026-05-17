@@ -130,12 +130,12 @@ export default function KycListPage() {
   };
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-4 text-foreground">
       {/* Compact Stats Row */}
-      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 bg-white p-4 rounded-xl shadow-sm border border-slate-100">
+      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 bg-card p-4 rounded-xl shadow-xs border border-border text-card-foreground">
         <div className="flex items-center gap-2">
           <Clock className="w-4 h-4 text-indigo-500" />
-          <span className="text-sm font-bold text-slate-700">
+          <span className="text-sm font-bold text-foreground">
             Today's Overview
           </span>
         </div>
@@ -143,25 +143,25 @@ export default function KycListPage() {
         <div className="flex items-center flex-wrap gap-4 md:gap-6 text-sm">
           <div className="flex items-center gap-2">
             <div className="w-2 h-2 rounded-full bg-amber-500" />
-            <span className="text-slate-500 font-medium">
+            <span className="text-muted-foreground font-medium">
               Pending:{' '}
-              <strong className="text-slate-800">{stats?.pending || 0}</strong>
+              <strong className="text-foreground">{stats?.pending || 0}</strong>
             </span>
           </div>
           <div className="flex items-center gap-2">
             <div className="w-2 h-2 rounded-full bg-emerald-500" />
-            <span className="text-slate-500 font-medium">
+            <span className="text-muted-foreground font-medium">
               Approved Today:{' '}
-              <strong className="text-slate-800">
+              <strong className="text-foreground">
                 {stats?.approvedToday || 0}
               </strong>
             </span>
           </div>
           <div className="flex items-center gap-2">
             <div className="w-2 h-2 rounded-full bg-rose-500" />
-            <span className="text-slate-500 font-medium">
+            <span className="text-muted-foreground font-medium">
               Rejected Today:{' '}
-              <strong className="text-slate-800">
+              <strong className="text-foreground">
                 {stats?.rejectedToday || 0}
               </strong>
             </span>
@@ -169,9 +169,9 @@ export default function KycListPage() {
         </div>
       </div>
 
-      <Card className="border-none shadow-sm ring-1 ring-slate-100 overflow-hidden">
+      <Card className="border-none shadow-xs rounded-xl overflow-hidden bg-card text-card-foreground">
         {/* Filter Toolbar */}
-        <div className="p-3 bg-white border-b border-slate-100">
+        <div className="p-3 bg-card border-b border-border">
           <form
             onSubmit={handleApplyFilter}
             className="grid grid-cols-1 md:grid-cols-5 gap-4 items-end"
@@ -230,7 +230,7 @@ export default function KycListPage() {
         <div className="overflow-x-auto">
           <table className="w-full text-left">
             <thead>
-              <tr className="border-b border-slate-100 bg-slate-50/30 text-slate-400 text-[10px] uppercase font-bold tracking-widest">
+              <tr className="border-b border-border bg-muted/30 text-muted-foreground text-[10px] uppercase font-bold tracking-widest">
                 <th className="px-6 py-4">User</th>
                 <th className="px-6 py-4">Type</th>
                 <th className="px-6 py-4">User Status</th>
@@ -239,21 +239,21 @@ export default function KycListPage() {
                 <th className="px-6 py-4 text-right">Actions</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-slate-50">
+            <tbody className="divide-y divide-border">
               {isLoading ? (
                 Array.from({ length: 3 }).map((_, i) => (
                   <tr key={i} className="animate-pulse">
-                    <td colSpan={5} className="px-6 py-8 h-20 bg-slate-50/20" />
+                    <td colSpan={6} className="px-6 py-8 h-20 bg-muted/20" />
                   </tr>
                 ))
               ) : documents.length === 0 ? (
                 <tr>
                   <td
-                    colSpan={5}
-                    className="px-6 py-12 text-center text-slate-400"
+                    colSpan={6}
+                    className="px-6 py-12 text-center text-muted-foreground"
                   >
                     <div className="flex flex-col items-center gap-2">
-                      <CheckCircle2 className="w-12 h-12 text-slate-200" />
+                      <CheckCircle2 className="w-12 h-12 text-muted-foreground/30" />
                       <span>No records found for this status.</span>
                     </div>
                   </td>
@@ -262,15 +262,15 @@ export default function KycListPage() {
                 documents.map((doc) => (
                   <tr
                     key={doc.id}
-                    className="hover:bg-slate-50/50 transition-colors"
+                    className="hover:bg-muted/50 transition-colors"
                   >
                     <td className="px-6 py-4">
                       <div className="flex items-center gap-3">
-                        <div className="w-8 h-8 rounded-full bg-indigo-100 flex items-center justify-center">
-                          <User className="w-4 h-4 text-indigo-600" />
+                        <div className="w-8 h-8 rounded-full bg-indigo-500/10 flex items-center justify-center">
+                          <User className="w-4 h-4 text-indigo-600 dark:text-indigo-400" />
                         </div>
                         <div>
-                          <p className="text-sm font-semibold text-slate-700">
+                          <p className="text-sm font-semibold text-foreground">
                             {doc.user?.email ||
                               doc.user?.phoneNumber ||
                               'Unknown User'}
@@ -281,7 +281,7 @@ export default function KycListPage() {
                     <td className="px-6 py-4">
                       <Badge
                         variant="outline"
-                        className="bg-slate-100 text-slate-600 border-none font-bold text-[10px] uppercase"
+                        className="bg-muted text-muted-foreground border-none font-bold text-[10px] uppercase"
                       >
                         {doc.documentType}
                       </Badge>
@@ -293,10 +293,10 @@ export default function KycListPage() {
                           font-bold text-[10px] uppercase border-none
                           ${
                             doc.user?.status === 'ACTIVE'
-                              ? 'bg-emerald-100 text-emerald-700'
+                              ? 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400'
                               : doc.user?.status === 'REJECTED'
-                                ? 'bg-rose-100 text-rose-700'
-                                : 'bg-amber-100 text-amber-700'
+                                ? 'bg-rose-500/10 text-rose-600 dark:text-rose-400'
+                                : 'bg-amber-500/10 text-amber-600 dark:text-amber-400'
                           }
                         `}
                       >
@@ -305,23 +305,23 @@ export default function KycListPage() {
                     </td>
                     <td className="px-6 py-4">
                       {doc.status === 'APPROVED' ? (
-                        <div className="flex items-center gap-2 text-emerald-600 font-bold text-xs uppercase tracking-wider">
+                        <div className="flex items-center gap-2 text-emerald-600 dark:text-emerald-400 font-bold text-xs uppercase tracking-wider">
                           <CheckCircle2 className="w-4 h-4" />
                           Approved
                         </div>
                       ) : doc.status === 'REJECTED' ? (
-                        <div className="flex items-center gap-2 text-rose-500 font-bold text-xs uppercase tracking-wider">
+                        <div className="flex items-center gap-2 text-rose-500 dark:text-rose-400 font-bold text-xs uppercase tracking-wider">
                           <XCircle className="w-4 h-4" />
                           Rejected
                         </div>
                       ) : (
-                        <div className="flex items-center gap-2 text-amber-600 font-bold text-xs uppercase tracking-wider">
+                        <div className="flex items-center gap-2 text-amber-600 dark:text-amber-400 font-bold text-xs uppercase tracking-wider">
                           <Clock className="w-4 h-4" />
                           Pending
                         </div>
                       )}
                     </td>
-                    <td className="px-6 py-4 text-sm text-slate-500">
+                    <td className="px-6 py-4 text-sm text-muted-foreground">
                       {format(new Date(doc.createdAt), 'MMM d, yyyy HH:mm')}
                     </td>
                     <td className="px-6 py-4 text-right">
@@ -329,7 +329,7 @@ export default function KycListPage() {
                         <Button
                           size="sm"
                           variant="ghost"
-                          className="text-indigo-600 hover:text-indigo-700 hover:bg-indigo-50"
+                          className="text-indigo-600 dark:text-indigo-400 hover:bg-indigo-500/10"
                         >
                           <Eye className="w-4 h-4 mr-2" />
                           Review

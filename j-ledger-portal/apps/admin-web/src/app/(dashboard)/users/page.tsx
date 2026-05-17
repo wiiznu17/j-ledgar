@@ -132,22 +132,22 @@ export default function UsersPage() {
   };
 
   return (
-    <div className="space-y-4 pb-10">
+    <div className="space-y-4 pb-10 text-foreground">
       {/* Header & Title */}
       <div>
-        <h2 className="text-2xl font-bold tracking-tight text-slate-900">
+        <h2 className="text-2xl font-bold tracking-tight text-foreground">
           User Registry
         </h2>
-        <p className="text-sm text-slate-500 mt-1">
+        <p className="text-sm text-muted-foreground mt-1">
           Monitor and manage e-wallet participants across the ecosystem.
         </p>
       </div>
 
       {/* Compact Overview Row */}
-      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 bg-white p-4 rounded-xl shadow-sm border border-slate-100">
+      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 bg-card p-4 rounded-xl shadow-xs border border-border text-card-foreground">
         <div className="flex items-center gap-2">
           <History className="w-4 h-4 text-indigo-500" />
-          <span className="text-sm font-bold text-slate-700">
+          <span className="text-sm font-bold text-foreground">
             Registry Snapshot
           </span>
         </div>
@@ -155,30 +155,30 @@ export default function UsersPage() {
         <div className="flex items-center flex-wrap gap-4 md:gap-6 text-sm">
           <div className="flex items-center gap-2">
             <div className="w-2 h-2 rounded-full bg-indigo-500" />
-            <span className="text-slate-500 font-medium">
+            <span className="text-muted-foreground font-medium">
               Total Users:{' '}
-              <strong className="text-slate-800">{stats.total}</strong>
+              <strong className="text-foreground">{stats.total}</strong>
             </span>
           </div>
           <div className="flex items-center gap-2">
             <div className="w-2 h-2 rounded-full bg-emerald-500" />
-            <span className="text-slate-500 font-medium">
-              Active: <strong className="text-slate-800">{stats.active}</strong>
+            <span className="text-muted-foreground font-medium">
+              Active: <strong className="text-foreground">{stats.active}</strong>
             </span>
           </div>
           <div className="flex items-center gap-2">
             <div className="w-2 h-2 rounded-full bg-amber-500" />
-            <span className="text-slate-500 font-medium">
+            <span className="text-muted-foreground font-medium">
               Pending:{' '}
-              <strong className="text-slate-800">{stats.pending}</strong>
+              <strong className="text-foreground">{stats.pending}</strong>
             </span>
           </div>
         </div>
       </div>
 
-      <Card className="border-none shadow-sm ring-1 ring-slate-100 overflow-hidden bg-white">
+      <Card className="border-none shadow-xs rounded-xl overflow-hidden bg-card text-card-foreground">
         {/* Filter Toolbar - KYC Style */}
-        <div className="p-3 bg-white border-b border-slate-100">
+        <div className="p-3 bg-card border-b border-border">
           <form
             onSubmit={handleFilter}
             className="grid grid-cols-1 md:grid-cols-5 gap-4 items-end"

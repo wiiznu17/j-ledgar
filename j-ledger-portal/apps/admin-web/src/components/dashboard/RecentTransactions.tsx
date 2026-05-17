@@ -48,7 +48,7 @@ export function RecentTransactions({ className }: { className?: string }) {
   if (loading) {
     return (
       <Card
-        className={`border-none ring-0 shadow-xl shadow-slate-300/60 rounded-xl ${className}`}
+        className={`border-none ring-0 shadow-xs rounded-xl bg-card text-card-foreground ${className}`}
       >
         <CardHeader>
           <CardTitle className="text-sm font-bold">
@@ -60,7 +60,7 @@ export function RecentTransactions({ className }: { className?: string }) {
             {[1, 2, 3, 4, 5].map((i) => (
               <div
                 key={i}
-                className="h-10 bg-slate-50 animate-pulse rounded-lg"
+                className="h-10 bg-muted animate-pulse rounded-lg"
               />
             ))}
           </div>
@@ -71,9 +71,9 @@ export function RecentTransactions({ className }: { className?: string }) {
 
   return (
     <Card
-      className={`border-none ring-0 shadow-xl shadow-slate-300/60 rounded-xl overflow-hidden flex flex-col ${className}`}
+      className={`border-none ring-0 shadow-xs rounded-xl overflow-hidden flex flex-col bg-card text-card-foreground ${className}`}
     >
-      <CardHeader className="border-b border-slate-50 bg-white py-4">
+      <CardHeader className="border-b border-border bg-card py-4">
         <div className="flex items-center justify-between">
           <CardTitle className="text-sm font-bold flex items-center gap-2">
             <CreditCard className="w-4 h-4 text-emerald-500" />
@@ -81,7 +81,7 @@ export function RecentTransactions({ className }: { className?: string }) {
           </CardTitle>
           <Link
             href="/transactions"
-            className="text-xs font-bold text-indigo-600 hover:underline flex items-center gap-1"
+            className="text-xs font-bold text-indigo-600 dark:text-indigo-400 hover:underline flex items-center gap-1"
           >
             View All
             <ExternalLink className="w-3 h-3" />
@@ -90,21 +90,21 @@ export function RecentTransactions({ className }: { className?: string }) {
       </CardHeader>
       <CardContent className="p-0 flex-1">
         <Table>
-          <TableHeader className="bg-slate-50/50">
-            <TableRow className="border-b border-slate-50">
-              <TableHead className="text-[10px] font-extrabold uppercase tracking-widest text-slate-400 pl-6 py-3">
+          <TableHeader className="bg-muted/30">
+            <TableRow className="border-b border-border hover:bg-transparent">
+              <TableHead className="text-[10px] font-extrabold uppercase tracking-widest text-muted-foreground pl-6 py-3">
                 Type
               </TableHead>
-              <TableHead className="text-[10px] font-extrabold uppercase tracking-widest text-slate-400 py-3">
+              <TableHead className="text-[10px] font-extrabold uppercase tracking-widest text-muted-foreground py-3">
                 User / Reference
               </TableHead>
-              <TableHead className="text-[10px] font-extrabold uppercase tracking-widest text-slate-400 py-3">
+              <TableHead className="text-[10px] font-extrabold uppercase tracking-widest text-muted-foreground py-3">
                 Amount
               </TableHead>
-              <TableHead className="text-[10px] font-extrabold uppercase tracking-widest text-slate-400 py-3">
+              <TableHead className="text-[10px] font-extrabold uppercase tracking-widest text-muted-foreground py-3">
                 Status
               </TableHead>
-              <TableHead className="text-[10px] font-extrabold uppercase tracking-widest text-slate-400 pr-6 py-3 text-right">
+              <TableHead className="text-[10px] font-extrabold uppercase tracking-widest text-muted-foreground pr-6 py-3 text-right">
                 Date
               </TableHead>
             </TableRow>
@@ -114,12 +114,12 @@ export function RecentTransactions({ className }: { className?: string }) {
               transactions.map((tx) => (
                 <TableRow
                   key={tx.id}
-                  className="border-b border-slate-50 hover:bg-slate-50/30 transition-colors"
+                  className="border-b border-border hover:bg-muted/30 transition-colors"
                 >
                   <TableCell className="pl-6 py-4">
                     <div className="flex items-center gap-2">
                       <div
-                        className={`p-1.5 rounded-full ${tx.transactionType === TransactionType.TOPUP ? 'bg-emerald-50 text-emerald-600' : 'bg-blue-50 text-blue-600'}`}
+                        className={`p-1.5 rounded-full ${tx.transactionType === TransactionType.TOPUP ? 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400' : 'bg-blue-500/10 text-blue-600 dark:text-blue-400'}`}
                       >
                         {tx.transactionType === TransactionType.TOPUP ? (
                           <ArrowDownLeft size={14} />
@@ -127,24 +127,24 @@ export function RecentTransactions({ className }: { className?: string }) {
                           <ArrowUpRight size={14} />
                         )}
                       </div>
-                      <span className="text-xs font-bold text-slate-700">
+                      <span className="text-xs font-bold text-foreground">
                         {tx.transactionType}
                       </span>
                     </div>
                   </TableCell>
                   <TableCell className="py-4">
                     <div className="flex flex-col">
-                      <span className="text-xs font-bold text-slate-800 truncate max-w-[150px]">
+                      <span className="text-xs font-bold text-foreground truncate max-w-[150px]">
                         {tx.id}
                       </span>
-                      <span className="text-[10px] text-slate-400">
+                      <span className="text-[10px] text-muted-foreground">
                         {tx.currency} Wallet
                       </span>
                     </div>
                   </TableCell>
                   <TableCell className="py-4">
                     <span
-                      className={`text-xs font-bold ${tx.transactionType === TransactionType.TOPUP ? 'text-emerald-600' : 'text-slate-800'}`}
+                      className={`text-xs font-bold ${tx.transactionType === TransactionType.TOPUP ? 'text-emerald-600 dark:text-emerald-400' : 'text-foreground'}`}
                     >
                       {tx.transactionType === TransactionType.TOPUP ? '+' : '-'}
                       {tx.amount} {tx.currency}
@@ -153,13 +153,13 @@ export function RecentTransactions({ className }: { className?: string }) {
                   <TableCell className="py-4">
                     <Badge
                       variant="secondary"
-                      className="bg-emerald-50 text-emerald-600 border-emerald-100 text-[10px] font-bold px-2 py-0"
+                      className="bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20 text-[10px] font-bold px-2 py-0"
                     >
                       SUCCESS
                     </Badge>
                   </TableCell>
                   <TableCell className="pr-6 py-4 text-right">
-                    <span className="text-[10px] font-medium text-slate-400">
+                    <span className="text-[10px] font-medium text-muted-foreground">
                       {format(new Date(tx.createdAt), 'dd MMM, HH:mm')}
                     </span>
                   </TableCell>
@@ -169,7 +169,7 @@ export function RecentTransactions({ className }: { className?: string }) {
               <TableRow>
                 <TableCell
                   colSpan={5}
-                  className="py-12 text-center text-slate-400 text-xs font-medium"
+                  className="py-12 text-center text-muted-foreground text-xs font-medium"
                 >
                   No recent transactions found
                 </TableCell>

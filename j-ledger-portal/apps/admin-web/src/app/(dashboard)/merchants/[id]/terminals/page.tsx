@@ -85,38 +85,38 @@ export default function TerminalsPage({
   };
 
   return (
-    <div className="space-y-6 pb-20 max-w-7xl mx-auto px-4 md:px-0">
+    <div className="space-y-6 pb-20 max-w-7xl mx-auto px-4 md:px-0 text-foreground">
       {/* Breadcrumbs & Header */}
       <div className="flex flex-col gap-3">
-        <div className="flex items-center text-[10px] font-bold text-slate-400 uppercase tracking-widest gap-2">
-          <Link href="/merchants" className="hover:text-indigo-600 transition-colors">
+        <div className="flex items-center text-[10px] font-bold text-muted-foreground uppercase tracking-widest gap-2">
+          <Link href="/merchants" className="hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors">
             Merchants
           </Link>
           <ChevronRight className="w-3 h-3" />
-          <Link href={`/merchants/${partnerId}`} className="hover:text-indigo-600 transition-colors">
+          <Link href={`/merchants/${partnerId}`} className="hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors">
             Partner Profile
           </Link>
           <ChevronRight className="w-3 h-3" />
-          <span className="text-slate-900">Terminal Infrastructure</span>
+          <span className="text-foreground">Terminal Infrastructure</span>
         </div>
 
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
           <div className="flex items-center gap-4">
             <Link href={`/merchants/${partnerId}`}>
-              <Button variant="ghost" size="sm" className="h-10 w-10 p-0 text-slate-500 hover:text-indigo-600 rounded-xl bg-white shadow-sm ring-1 ring-slate-100">
+              <Button variant="ghost" size="sm" className="h-10 w-10 p-0 text-muted-foreground hover:text-indigo-600 dark:hover:text-indigo-400 rounded-xl bg-card shadow-xs border border-border">
                 <ArrowLeft className="w-5 h-5" />
               </Button>
             </Link>
             <div>
-              <h1 className="text-3xl font-black text-slate-900 tracking-tight flex items-center gap-3">
+              <h1 className="text-3xl font-black text-foreground tracking-tight flex items-center gap-3">
                 Managed Terminals
                 {partner && (
-                  <Badge variant="outline" className="ml-2 bg-indigo-50 text-indigo-600 border-indigo-100 font-bold uppercase text-[10px] tracking-widest px-2 py-0.5 rounded-lg">
+                  <Badge variant="outline" className="ml-2 bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 border-indigo-500/20 font-bold uppercase text-[10px] tracking-widest px-2 py-0.5 rounded-lg">
                     {partner.name}
                   </Badge>
                 )}
               </h1>
-              <p className="text-sm text-slate-500 mt-1">
+              <p className="text-sm text-muted-foreground mt-1">
                 Configure nodes and hardware for payment processing and point redemptions.
               </p>
             </div>
@@ -126,7 +126,7 @@ export default function TerminalsPage({
             variant="outline" 
             onClick={fetchData} 
             disabled={loading}
-            className="h-10 rounded-xl border-slate-200 text-slate-600 font-bold text-xs uppercase tracking-wider bg-white"
+            className="h-10 rounded-xl border-border text-muted-foreground font-bold text-xs uppercase tracking-wider bg-card"
           >
             <RefreshCcw className={`w-3.5 h-3.5 mr-2 ${loading ? 'animate-spin' : ''}`} />
             Refresh Network
@@ -135,7 +135,7 @@ export default function TerminalsPage({
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
-        <div className="bg-indigo-600 rounded-[2rem] p-6 text-white shadow-xl shadow-indigo-100 relative overflow-hidden group">
+        <div className="bg-indigo-600 rounded-[2rem] p-6 text-white shadow-xs relative overflow-hidden group">
           <div className="absolute -right-4 -bottom-4 opacity-10 group-hover:scale-110 transition-transform duration-500">
             <Smartphone className="w-32 h-32" />
           </div>
@@ -143,20 +143,20 @@ export default function TerminalsPage({
             <div className="w-10 h-10 rounded-xl bg-white/20 flex items-center justify-center mb-4 backdrop-blur-sm">
               <Smartphone className="w-5 h-5" />
             </div>
-            <div className="text-3xl font-black tracking-tight leading-none">
+            <div className="text-3xl font-black tracking-tight leading-none text-white">
               {merchants.reduce((acc, m) => acc + (m.terminals?.length || 0), 0)}
             </div>
-            <div className="text-[10px] font-black uppercase tracking-widest mt-2 opacity-70">Total Active Nodes</div>
+            <div className="text-[10px] font-black uppercase tracking-widest mt-2 opacity-70 text-white/80">Total Active Nodes</div>
           </div>
         </div>
 
-        <div className="md:col-span-2 bg-white rounded-[2rem] p-6 ring-1 ring-slate-100 shadow-sm flex items-center gap-6">
-          <div className="w-16 h-16 rounded-[1.5rem] bg-emerald-50 flex items-center justify-center text-emerald-600 shrink-0">
+        <div className="md:col-span-2 bg-card text-card-foreground rounded-[2rem] p-6 border border-border shadow-xs flex items-center gap-6">
+          <div className="w-16 h-16 rounded-[1.5rem] bg-emerald-500/10 flex items-center justify-center text-emerald-600 dark:text-emerald-400 shrink-0">
             <ShieldCheck className="w-8 h-8" />
           </div>
           <div className="space-y-1">
-            <h4 className="text-sm font-black text-slate-900 uppercase tracking-tight">Security Protocol</h4>
-            <p className="text-xs text-slate-500 leading-relaxed">
+            <h4 className="text-sm font-black text-foreground uppercase tracking-tight">Security Protocol</h4>
+            <p className="text-xs text-muted-foreground leading-relaxed">
               Every terminal uses a unique HMAC-SHA256 secret key. Ensure hardware IDs are mapped correctly to prevent unauthorized transaction attempts.
             </p>
           </div>
@@ -186,22 +186,22 @@ export default function TerminalsPage({
 
       {/* Rotate Secret Result Modal */}
       <Dialog open={isRotateModalOpen} onOpenChange={setIsRotateModalOpen}>
-        <DialogContent className="sm:max-w-[450px] rounded-[2rem] border-none shadow-2xl p-8 text-center">
+        <DialogContent className="sm:max-w-[450px] rounded-[2rem] border-none shadow-2xl p-8 text-center bg-card text-card-foreground">
             {rotatedTerminal && (
                 <div className="space-y-6">
-                    <div className="w-20 h-20 bg-amber-50 rounded-[2rem] flex items-center justify-center text-amber-500 mx-auto">
+                    <div className="w-20 h-20 bg-amber-500/10 rounded-[2rem] flex items-center justify-center text-amber-600 dark:text-amber-400 mx-auto">
                         <Key className="w-10 h-10" />
                     </div>
                     <div>
-                        <h3 className="text-2xl font-black text-slate-900 tracking-tight">Secret Key Rotated</h3>
-                        <p className="text-sm text-slate-500 mt-2">
-                            New secret key for <span className="font-bold text-slate-700">{rotatedTerminal.name}</span>.
+                        <h3 className="text-2xl font-black text-foreground tracking-tight">Secret Key Rotated</h3>
+                        <p className="text-sm text-muted-foreground mt-2">
+                            New secret key for <span className="font-bold text-foreground">{rotatedTerminal.name}</span>.
                             Update your terminal configuration immediately.
                         </p>
                     </div>
                     <div className="w-full space-y-4">
-                        <div className="p-6 bg-slate-900 rounded-[2rem] text-left">
-                            <label className="text-[10px] font-black text-indigo-300 uppercase tracking-[0.2em] block mb-3">New HMAC Secret Key</label>
+                        <div className="p-6 bg-slate-950 dark:bg-black rounded-[2rem] text-left">
+                            <label className="text-[10px] font-black text-indigo-400 uppercase tracking-[0.2em] block mb-3">New HMAC Secret Key</label>
                             <div className="flex items-center gap-3">
                                 <div className="flex-1 font-mono text-xs text-white bg-white/5 p-3 rounded-xl border border-white/10 break-all select-all">
                                     {rotatedTerminal.secretKey}
@@ -217,10 +217,10 @@ export default function TerminalsPage({
                                 >
                                     <Copy className="w-4 h-4" />
                                 </Button>
-                            </div>
+                             </div>
                         </div>
                     </div>
-                    <Button onClick={() => setIsRotateModalOpen(false)} className="w-full h-12 rounded-xl font-black uppercase tracking-wider bg-slate-900 hover:bg-slate-800">
+                    <Button onClick={() => setIsRotateModalOpen(false)} className="w-full h-12 rounded-xl font-black uppercase tracking-wider bg-indigo-600 hover:bg-indigo-700 text-white shadow-xs">
                         Done, I've Updated the terminal
                     </Button>
                 </div>
@@ -234,8 +234,8 @@ export default function TerminalsPage({
 // Reuse Badge from previous page
 function Badge({ children, className, variant = 'default' }: any) {
   const variants: any = {
-    default: 'bg-slate-100 text-slate-800',
-    outline: 'border border-slate-200 text-slate-600',
+    default: 'bg-muted text-muted-foreground border-border',
+    outline: 'border border-border text-muted-foreground',
   };
   return (
     <span className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-semibold transition-colors ${variants[variant]} ${className}`}>

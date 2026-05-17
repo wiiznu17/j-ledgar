@@ -24,7 +24,7 @@ interface WalletUsersTableProps {
 export function WalletUsersTable({ users, loading }: WalletUsersTableProps) {
   if (loading) {
     return (
-      <div className="p-8 text-center text-slate-500 font-medium bg-white">
+      <div className="p-8 text-center text-muted-foreground font-medium bg-card">
         <div className="flex flex-col items-center gap-3">
           <div className="w-8 h-8 border-4 border-indigo-600 border-t-transparent rounded-full animate-spin" />
           <p>Syncing user records...</p>
@@ -34,26 +34,26 @@ export function WalletUsersTable({ users, loading }: WalletUsersTableProps) {
   }
 
   return (
-    <div className="overflow-hidden bg-white text-slate-900">
+    <div className="overflow-hidden bg-card text-foreground">
       <Table>
-        <TableHeader className="bg-slate-50/50">
-          <TableRow className="border-b border-slate-100">
-            <TableHead className="font-bold text-slate-500 uppercase text-[10px] tracking-widest py-4">
+        <TableHeader className="bg-muted/30">
+          <TableRow className="border-b border-border">
+            <TableHead className="font-bold text-muted-foreground uppercase text-[10px] tracking-widest py-4">
               User Email
             </TableHead>
-            <TableHead className="font-bold text-slate-500 uppercase text-[10px] tracking-widest hidden md:table-cell py-4">
+            <TableHead className="font-bold text-muted-foreground uppercase text-[10px] tracking-widest hidden md:table-cell py-4">
               Phone Number
             </TableHead>
-            <TableHead className="font-bold text-slate-500 uppercase text-[10px] tracking-widest py-4">
+            <TableHead className="font-bold text-muted-foreground uppercase text-[10px] tracking-widest py-4">
               Status
             </TableHead>
-            <TableHead className="font-bold text-slate-500 uppercase text-[10px] tracking-widest py-4">
+            <TableHead className="font-bold text-muted-foreground uppercase text-[10px] tracking-widest py-4">
               Joined Date
             </TableHead>
-            <TableHead className="font-bold text-slate-500 uppercase text-[10px] tracking-widest py-4">
+            <TableHead className="font-bold text-muted-foreground uppercase text-[10px] tracking-widest py-4">
               Activity
             </TableHead>
-            <TableHead className="font-bold text-slate-500 uppercase text-[10px] tracking-widest text-right py-4">
+            <TableHead className="font-bold text-muted-foreground uppercase text-[10px] tracking-widest text-right py-4">
               Fraud Control
             </TableHead>
           </TableRow>
@@ -62,17 +62,17 @@ export function WalletUsersTable({ users, loading }: WalletUsersTableProps) {
           {users.map((user) => (
             <TableRow
               key={user.id}
-              className="hover:bg-slate-50/50 transition-colors border-b border-slate-50 group"
+              className="hover:bg-muted/50 transition-colors border-b border-border group"
             >
-              <TableCell className="font-semibold text-slate-900">
+              <TableCell className="font-semibold text-foreground">
                 <a
                   href={`/users/${user.id}`}
-                  className="hover:text-indigo-600 hover:underline transition-colors"
+                  className="hover:text-indigo-600 dark:hover:text-indigo-400 hover:underline transition-colors"
                 >
                   {user.email}
                 </a>
               </TableCell>
-              <TableCell className="font-mono text-xs text-slate-600 hidden md:table-cell">
+              <TableCell className="font-mono text-xs text-muted-foreground hidden md:table-cell">
                 {user.phoneNumber}
               </TableCell>
               <TableCell>
@@ -90,7 +90,7 @@ export function WalletUsersTable({ users, loading }: WalletUsersTableProps) {
                   {user.status}
                 </Badge>
               </TableCell>
-              <TableCell className="text-sm text-slate-500 font-medium">
+              <TableCell className="text-sm text-muted-foreground font-medium">
                 {new Date(user.createdAt).toLocaleDateString('en-GB', {
                   day: '2-digit',
                   month: 'short',
@@ -103,7 +103,7 @@ export function WalletUsersTable({ users, loading }: WalletUsersTableProps) {
                     href={`/users/${user.id}`}
                     className={cn(
                       buttonVariants({ variant: 'ghost', size: 'sm' }),
-                      'text-indigo-600 hover:text-indigo-700 hover:bg-indigo-50 font-bold text-xs',
+                      'text-indigo-600 dark:text-indigo-400 hover:text-indigo-700 hover:bg-indigo-500/10 font-bold text-xs',
                     )}
                   >
                     Manage
@@ -112,7 +112,7 @@ export function WalletUsersTable({ users, loading }: WalletUsersTableProps) {
                     href={`/users/activity?userId=${user.id}`}
                     className={cn(
                       buttonVariants({ variant: 'ghost', size: 'sm' }),
-                      'text-slate-400 hover:text-slate-600 hover:bg-slate-50 font-bold text-[10px] uppercase tracking-tighter',
+                      'text-muted-foreground hover:text-foreground hover:bg-muted font-bold text-[10px] uppercase tracking-tighter',
                     )}
                   >
                     Logs
@@ -132,7 +132,7 @@ export function WalletUsersTable({ users, loading }: WalletUsersTableProps) {
             <TableRow>
               <TableCell
                 colSpan={6}
-                className="h-32 text-center text-slate-400 font-medium"
+                className="h-32 text-center text-muted-foreground font-medium"
               >
                 No registered wallet users found matching your criteria.
               </TableCell>

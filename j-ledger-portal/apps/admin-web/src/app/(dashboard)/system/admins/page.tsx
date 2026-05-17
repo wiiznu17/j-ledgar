@@ -224,24 +224,24 @@ export default function UsersPage() {
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
-        <h2 className="text-3xl font-bold tracking-tight text-[#2D3748]">
+        <h2 className="text-3xl font-bold tracking-tight text-foreground">
           User Management
         </h2>
 
         <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
           <DialogTrigger
             render={
-              <Button className="bg-gradient-to-r from-[var(--color-magenta)] to-[var(--color-pink)] text-white border-0">
+              <Button className="bg-indigo-600 hover:bg-indigo-700 dark:bg-indigo-500 dark:hover:bg-indigo-600 text-white border-0 shadow-sm">
                 <UserPlus className="mr-2 h-4 w-4" />
                 Create User
               </Button>
             }
           />
-          <DialogContent className="sm:max-w-[425px] bg-white">
+          <DialogContent className="sm:max-w-[425px] bg-card text-foreground border-border">
             <form onSubmit={handleCreateUser}>
               <DialogHeader>
                 <DialogTitle>Add New Admin</DialogTitle>
-                <DialogDescription>
+                <DialogDescription className="text-muted-foreground">
                   Create a new administrator account with specific role-based
                   access.
                 </DialogDescription>
@@ -255,6 +255,7 @@ export default function UsersPage() {
                     placeholder="name@jledger.io"
                     value={newEmail}
                     onChange={(e) => setNewEmail(e.target.value)}
+                    className="bg-card border-border"
                     required
                   />
                 </div>
@@ -266,6 +267,7 @@ export default function UsersPage() {
                       placeholder="John"
                       value={newFirstName}
                       onChange={(e) => setNewFirstName(e.target.value)}
+                      className="bg-card border-border"
                       required
                     />
                   </div>
@@ -276,6 +278,7 @@ export default function UsersPage() {
                       placeholder="Doe"
                       value={newLastName}
                       onChange={(e) => setNewLastName(e.target.value)}
+                      className="bg-card border-border"
                       required
                     />
                   </div>
@@ -286,10 +289,10 @@ export default function UsersPage() {
                     value={newRole}
                     onValueChange={(val) => val && setNewRole(val)}
                   >
-                    <SelectTrigger id="role" className="bg-white">
+                    <SelectTrigger id="role" className="bg-card border-border">
                       <SelectValue placeholder="Select a role" />
                     </SelectTrigger>
-                    <SelectContent className="bg-white">
+                    <SelectContent className="bg-card border-border text-foreground">
                       {availableRoles.map((role) => (
                         <SelectItem key={role.id} value={role.name}>
                           {role.name}
@@ -316,7 +319,7 @@ export default function UsersPage() {
                 <Button
                   type="submit"
                   disabled={loading}
-                  className="w-full bg-primary text-white hover:bg-primary/90"
+                  className="w-full bg-indigo-600 hover:bg-indigo-700 dark:bg-indigo-500 dark:hover:bg-indigo-600 text-white font-bold"
                 >
                   {loading ? 'Creating...' : 'Confirm Registration'}
                 </Button>
@@ -326,8 +329,8 @@ export default function UsersPage() {
         </Dialog>
       </div>
 
-      <Card className="border-border shadow-sm overflow-hidden">
-        <div className="p-4 bg-white border-b border-slate-100">
+      <Card className="border border-border shadow-xs overflow-hidden bg-card text-card-foreground">
+        <div className="p-4 bg-muted/10 border-b border-border">
           <form
             onSubmit={handleApplyFilter}
             className="grid grid-cols-1 md:grid-cols-4 gap-4 items-end"
@@ -382,14 +385,14 @@ export default function UsersPage() {
         </div>
 
         <CardContent className="p-0">
-          <div className="overflow-x-auto bg-white text-[#2D3748]">
+          <div className="overflow-x-auto bg-card text-foreground">
             <Table>
-              <TableHeader className="bg-slate-50/50">
-                <TableRow>
-                  <TableHead>Staff</TableHead>
-                  <TableHead>Role</TableHead>
-                  <TableHead>Status</TableHead>
-                  <TableHead className="text-right">Actions</TableHead>
+              <TableHeader className="bg-muted/30">
+                <TableRow className="border-border hover:bg-transparent">
+                  <TableHead className="text-muted-foreground">Staff</TableHead>
+                  <TableHead className="text-muted-foreground">Role</TableHead>
+                  <TableHead className="text-muted-foreground">Status</TableHead>
+                  <TableHead className="text-right text-muted-foreground">Actions</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -397,11 +400,11 @@ export default function UsersPage() {
                   users.map((user) => (
                     <TableRow
                       key={user.id}
-                      className="hover:bg-secondary/30 transition-colors"
+                      className="hover:bg-muted/30 transition-colors border-border"
                     >
                       <TableCell>
                         <div className="flex flex-col">
-                          <span className="font-medium">
+                          <span className="font-medium text-foreground">
                             {user.firstName} {user.lastName}
                           </span>
                           <span className="text-xs text-muted-foreground">
@@ -414,8 +417,8 @@ export default function UsersPage() {
                           variant="outline"
                           className={
                             user.role === AdminRole.SUPER_ADMIN
-                              ? 'border-primary text-primary bg-primary/5'
-                              : 'text-slate-600'
+                              ? 'border-indigo-500/30 text-indigo-600 dark:text-indigo-400 bg-indigo-500/10'
+                              : 'text-muted-foreground border-border bg-muted/10'
                           }
                         >
                           {user.role}
@@ -425,14 +428,14 @@ export default function UsersPage() {
                         {user.isInvited && user.isActive ? (
                           new Date(user.inviteExpiry || 0) < new Date() ? (
                             <Badge
-                              className="bg-rose-50 text-rose-700 border-rose-200 font-bold"
+                              className="bg-rose-500/10 text-rose-600 dark:text-rose-400 border-rose-500/20 font-bold"
                               variant="outline"
                             >
                               EXPIRED INVITE
                             </Badge>
                           ) : (
                             <Badge
-                              className="bg-amber-50 text-amber-700 border-amber-200 font-bold"
+                              className="bg-amber-500/10 text-amber-600 dark:text-amber-400 border-amber-500/20 font-bold"
                               variant="outline"
                             >
                               PENDING INVITE
@@ -442,8 +445,8 @@ export default function UsersPage() {
                           <Badge
                             className={
                               user.isActive
-                                ? 'bg-emerald-50 text-emerald-700 border-emerald-200 font-bold'
-                                : 'bg-rose-50 text-rose-700 border-rose-200 font-bold'
+                                ? 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/20 font-bold'
+                                : 'bg-rose-500/10 text-rose-600 dark:text-rose-400 border-rose-500/20 font-bold'
                             }
                             variant="outline"
                           >
@@ -453,7 +456,7 @@ export default function UsersPage() {
                       </TableCell>
                       <TableCell className="text-right flex justify-end gap-2">
                         <Link href={`/system/admins/${user.id}`}>
-                          <Button variant="outline" size="sm" className="h-8">
+                          <Button variant="outline" size="sm" className="h-8 border-border hover:bg-muted/50">
                             <Eye className="h-4 w-4 mr-1" /> View
                           </Button>
                         </Link>
@@ -464,7 +467,7 @@ export default function UsersPage() {
                               variant="ghost"
                               size="icon"
                               onClick={() => handleDeleteUser(user.id)}
-                              className="text-destructive hover:bg-destructive/5 h-8 w-8"
+                              className="text-destructive hover:bg-destructive/10 h-8 w-8"
                             >
                               <Trash2 className="h-4 w-4" />
                             </Button>
@@ -473,23 +476,23 @@ export default function UsersPage() {
                     </TableRow>
                   ))}
                 {loading && users.length === 0 && (
-                  <TableRow>
+                  <TableRow className="border-border">
                     <TableCell
                       colSpan={4}
-                      className="h-24 text-center text-slate-400"
+                      className="h-24 text-center text-muted-foreground"
                     >
                       Loading directory...
                     </TableCell>
                   </TableRow>
                 )}
                 {!loading && users.length === 0 && (
-                  <TableRow>
+                  <TableRow className="border-border">
                     <TableCell
                       colSpan={4}
-                      className="h-32 text-center text-slate-400"
+                      className="h-32 text-center text-muted-foreground"
                     >
                       <div className="flex flex-col items-center justify-center gap-2">
-                        <Search className="h-8 w-8 text-slate-200" />
+                        <Search className="h-8 w-8 text-muted-foreground/30" />
                         <p>No admin users found.</p>
                       </div>
                     </TableCell>

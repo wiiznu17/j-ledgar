@@ -127,37 +127,43 @@ export default function KycDetailPage() {
   };
 
   if (isLoading)
-    return <div className="p-8 text-center">Loading KYC Details...</div>;
+    return (
+      <div className="p-8 text-center text-muted-foreground bg-card rounded-2xl">
+        Loading KYC Details...
+      </div>
+    );
   if (!details || !details.kycData)
     return (
-      <div className="p-8 text-center text-red-500">KYC Data not found</div>
+      <div className="p-8 text-center text-rose-500 bg-card rounded-2xl border border-rose-500/10">
+        KYC Data not found
+      </div>
     );
 
   const { kycData, user } = details;
 
   return (
-    <div className="space-y-6 pb-20">
+    <div className="space-y-6 pb-20 text-foreground">
       {/* Header with Breadcrumbs */}
       <div className="flex flex-col gap-3">
-        <div className="flex items-center text-[10px] font-bold text-slate-400 uppercase tracking-widest gap-2">
+        <div className="flex items-center text-[10px] font-bold text-muted-foreground uppercase tracking-widest gap-2">
           <button
             onClick={() => router.back()}
-            className="hover:text-indigo-600 transition-colors uppercase tracking-widest font-bold text-[10px]"
+            className="hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors uppercase tracking-widest font-bold text-[10px]"
           >
             KYC Verification
           </button>
           <ChevronRight className="w-3 h-3" />
-          <span className="text-slate-900">Verification Details</span>
+          <span className="text-foreground">Verification Details</span>
         </div>
         <div className="flex items-center justify-between">
           <div>
-            <h1 className="text-2xl font-bold text-slate-900 tracking-tight">
+            <h1 className="text-2xl font-bold text-foreground tracking-tight">
               Verification Detail
             </h1>
             <div className="flex items-center gap-2 mt-0.5">
-              <span className="text-xs text-slate-500 font-medium">
+              <span className="text-xs text-muted-foreground font-medium">
                 Reviewing identity for{' '}
-                <span className="font-bold text-slate-700">
+                <span className="font-bold text-foreground">
                   {user?.email || user?.phoneNumber}
                 </span>
               </span>
@@ -168,10 +174,10 @@ export default function KycDetailPage() {
 
       {/* Top Row: Actions & Images */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 items-start">
-        <Card className="border-none shadow-lg shadow-indigo-100 ring-1 ring-indigo-50 overflow-hidden">
+        <Card className="border-none shadow-xs overflow-hidden bg-card text-card-foreground">
           <div className="p-6 space-y-4">
-            <h3 className="font-bold text-slate-800">Final Decision</h3>
-            <p className="text-xs text-slate-500 leading-relaxed">
+            <h3 className="font-bold text-foreground">Final Decision</h3>
+            <p className="text-xs text-muted-foreground leading-relaxed">
               Please verify that the ID card belongs to the user in the selfie
               and that all data matches the government records.
             </p>
@@ -197,7 +203,7 @@ export default function KycDetailPage() {
             ) : (
               <div className="pt-6 text-center space-y-4">
                 {kycData.verificationStatus === 'APPROVED' ? (
-                  <div className="bg-emerald-50 text-emerald-700 p-4 rounded-xl border border-emerald-100 space-y-2">
+                  <div className="bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 p-4 rounded-xl border border-emerald-500/20 space-y-2">
                     <div className="flex items-center justify-center gap-2 font-black text-sm uppercase">
                       <CheckCircle2 className="w-5 h-5" />
                       Verified Successfully
@@ -213,13 +219,13 @@ export default function KycDetailPage() {
                     </p>
                   </div>
                 ) : (
-                  <div className="bg-rose-50 text-rose-700 p-4 rounded-xl border border-rose-100 space-y-2">
+                  <div className="bg-rose-500/10 text-rose-600 dark:text-rose-400 p-4 rounded-xl border border-rose-500/20 space-y-2">
                     <div className="flex items-center justify-center gap-2 font-black text-sm uppercase">
                       <XCircle className="w-5 h-5" />
                       Verification Rejected
                     </div>
                     {kycData.reviewNote && (
-                      <p className="text-xs font-medium italic border-t border-rose-100 pt-2 mt-2">
+                      <p className="text-xs font-medium italic border-t border-rose-500/20 pt-2 mt-2">
                         "{kycData.reviewNote}"
                       </p>
                     )}
@@ -228,22 +234,22 @@ export default function KycDetailPage() {
               </div>
             )}
           </div>
-          <div className="bg-slate-50 p-4 border-t border-slate-100 text-center">
-            <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">
+          <div className="bg-muted/50 p-4 border-t border-border text-center">
+            <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">
               Action will be logged in audit trail
             </span>
           </div>
         </Card>
 
-        <Card className="overflow-hidden border-none shadow-sm ring-1 ring-slate-100">
-          <CardHeader className="bg-slate-50/50 py-3">
-            <CardTitle className="text-sm font-bold flex items-center gap-2">
+        <Card className="overflow-hidden border-none shadow-xs bg-card text-card-foreground">
+          <CardHeader className="bg-muted/30 py-3">
+            <CardTitle className="text-sm font-bold flex items-center gap-2 text-foreground">
               <CreditCard className="w-4 h-4 text-indigo-500" />
               ID Card Document
             </CardTitle>
           </CardHeader>
           <CardContent className="p-0">
-            <div className="aspect-[3/2] bg-slate-100 relative group">
+            <div className="aspect-[3/2] bg-muted relative group">
               {kycData.idCardImageUrl ? (
                 <img
                   src={kycData.idCardImageUrl}
@@ -251,7 +257,7 @@ export default function KycDetailPage() {
                   className="w-full h-full object-contain"
                 />
               ) : (
-                <div className="flex flex-col items-center justify-center h-full text-slate-400">
+                <div className="flex flex-col items-center justify-center h-full text-muted-foreground">
                   <AlertCircle className="w-12 h-12 mb-2" />
                   <span>No ID image</span>
                 </div>
@@ -260,15 +266,15 @@ export default function KycDetailPage() {
                 <a
                   href={kycData.idCardImageUrl || '#'}
                   target="_blank"
-                  className="bg-white text-slate-900 px-4 py-2 rounded-full text-xs font-bold flex items-center gap-2"
+                  className="bg-card text-card-foreground border border-border px-4 py-2 rounded-full text-xs font-bold flex items-center gap-2"
                 >
                   <ExternalLink className="w-3 h-3" />
                   Open Original
                 </a>
               </div>
             </div>
-            <div className="p-4 bg-indigo-50/30 flex justify-between items-center border-t border-indigo-50">
-              <span className="text-xs font-bold text-indigo-700">
+            <div className="p-4 bg-indigo-500/10 flex justify-between items-center border-t border-indigo-500/20">
+              <span className="text-xs font-bold text-indigo-600 dark:text-indigo-400">
                 OCR CONFIDENCE
               </span>
               <Badge className="bg-indigo-500">
@@ -278,15 +284,15 @@ export default function KycDetailPage() {
           </CardContent>
         </Card>
 
-        <Card className="overflow-hidden border-none shadow-sm ring-1 ring-slate-100">
-          <CardHeader className="bg-slate-50/50 py-3">
-            <CardTitle className="text-sm font-bold flex items-center gap-2">
+        <Card className="overflow-hidden border-none shadow-xs bg-card text-card-foreground">
+          <CardHeader className="bg-muted/30 py-3">
+            <CardTitle className="text-sm font-bold flex items-center gap-2 text-foreground">
               <UserIcon className="w-4 h-4 text-pink-500" />
               Selfie / Liveness
             </CardTitle>
           </CardHeader>
           <CardContent className="p-0">
-            <div className="aspect-[3/2] bg-slate-100 relative group">
+            <div className="aspect-[3/2] bg-muted relative group">
               {kycData.selfieImageUrl ? (
                 <img
                   src={kycData.selfieImageUrl}
@@ -294,14 +300,14 @@ export default function KycDetailPage() {
                   className="w-full h-full object-contain"
                 />
               ) : (
-                <div className="flex flex-col items-center justify-center h-full text-slate-400">
+                <div className="flex flex-col items-center justify-center h-full text-muted-foreground">
                   <Fingerprint className="w-12 h-12 mb-2" />
                   <span>No Selfie image</span>
                 </div>
               )}
             </div>
-            <div className="p-4 bg-pink-50/30 flex justify-between items-center border-t border-pink-50">
-              <span className="text-xs font-bold text-pink-700">
+            <div className="p-4 bg-pink-500/10 flex justify-between items-center border-t border-pink-500/20">
+              <span className="text-xs font-bold text-pink-600 dark:text-pink-400">
                 FACE MATCH SCORE
               </span>
               <Badge
@@ -315,9 +321,9 @@ export default function KycDetailPage() {
       </div>
 
       {/* Middle Row: Identity Data */}
-      <Card className="border-none shadow-sm ring-1 ring-slate-100">
-        <CardHeader className="border-b border-slate-50 bg-white">
-          <CardTitle className="text-lg flex items-center gap-2">
+      <Card className="border-none shadow-xs bg-card text-card-foreground">
+        <CardHeader className="border-b border-border bg-card">
+          <CardTitle className="text-lg flex items-center gap-2 text-foreground">
             <ShieldCheck className="w-5 h-5 text-indigo-500" />
             Extracted Identity Data
           </CardTitle>
@@ -325,7 +331,7 @@ export default function KycDetailPage() {
         <CardContent className="p-6">
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
             <div className="space-y-4">
-              <label className="text-[10px] font-extrabold uppercase tracking-widest text-slate-400">
+              <label className="text-[10px] font-extrabold uppercase tracking-widest text-muted-foreground">
                 Personal Information (TH)
               </label>
               <div className="space-y-3">
@@ -356,7 +362,7 @@ export default function KycDetailPage() {
               </div>
             </div>
             <div className="space-y-4">
-              <label className="text-[10px] font-extrabold uppercase tracking-widest text-slate-400">
+              <label className="text-[10px] font-extrabold uppercase tracking-widest text-muted-foreground">
                 Personal Information (EN)
               </label>
               <div className="space-y-3">
@@ -383,7 +389,7 @@ export default function KycDetailPage() {
               </div>
             </div>
             <div className="space-y-4">
-              <label className="text-[10px] font-extrabold uppercase tracking-widest text-slate-400">
+              <label className="text-[10px] font-extrabold uppercase tracking-widest text-muted-foreground">
                 Document Metadata
               </label>
               <div className="space-y-3">
@@ -419,7 +425,7 @@ export default function KycDetailPage() {
               </div>
             </div>
             <div className="space-y-4">
-              <label className="text-[10px] font-extrabold uppercase tracking-widest text-slate-400">
+              <label className="text-[10px] font-extrabold uppercase tracking-widest text-muted-foreground">
                 Verification Status
               </label>
               <div className="space-y-3">
@@ -447,9 +453,9 @@ export default function KycDetailPage() {
           </div>
 
           {/* Profile & Address Section */}
-          <div className="mt-8 pt-8 border-t border-slate-50 grid grid-cols-1 md:grid-cols-2 gap-8">
+          <div className="mt-8 pt-8 border-t border-border grid grid-cols-1 md:grid-cols-2 gap-8">
             <div className="space-y-4">
-              <label className="text-[10px] font-extrabold uppercase tracking-widest text-slate-400 block">
+              <label className="text-[10px] font-extrabold uppercase tracking-widest text-muted-foreground block">
                 Professional Profile
               </label>
               {details.profile ? (
@@ -476,14 +482,14 @@ export default function KycDetailPage() {
                   />
                 </div>
               ) : (
-                <div className="p-4 bg-slate-50/50 rounded-xl border border-slate-100 italic text-slate-400 text-sm">
+                <div className="p-4 bg-muted/50 rounded-xl border border-border italic text-muted-foreground text-sm">
                   No profile information provided
                 </div>
               )}
             </div>
 
             <div className="space-y-4">
-              <label className="text-[10px] font-extrabold uppercase tracking-widest text-slate-400 block">
+              <label className="text-[10px] font-extrabold uppercase tracking-widest text-muted-foreground block">
                 Addresses
               </label>
               <div className="space-y-3">
@@ -491,30 +497,30 @@ export default function KycDetailPage() {
                   details.addresses.map((addr, idx) => (
                     <div
                       key={idx}
-                      className="p-3 bg-slate-50/50 rounded-lg border border-slate-100"
+                      className="p-3 bg-muted/50 rounded-lg border border-border"
                     >
                       <div className="flex items-center gap-2 mb-1">
                         <span
                           className={`text-[9px] uppercase font-black px-1.5 py-0.5 rounded ${
                             addr.type === 'REGISTERED'
-                              ? 'text-emerald-600 bg-emerald-50'
+                              ? 'text-emerald-600 bg-emerald-500/10'
                               : addr.type === 'CURRENT'
-                                ? 'text-blue-600 bg-blue-50'
-                                : 'text-indigo-500 bg-indigo-50'
+                                ? 'text-blue-600 bg-blue-500/10'
+                                : 'text-indigo-600 bg-indigo-500/10'
                           }`}
                         >
                           {addr.type}
                         </span>
                         {addr.label && (
-                          <span className="text-[10px] text-slate-400 font-medium">
+                          <span className="text-[10px] text-muted-foreground font-medium">
                             ({addr.label})
                           </span>
                         )}
                       </div>
-                      <p className="text-xs text-slate-700 font-medium">
+                      <p className="text-xs text-foreground font-medium">
                         {addr.line1}
                       </p>
-                      <p className="text-[11px] text-slate-500 mt-0.5">
+                      <p className="text-[11px] text-muted-foreground mt-0.5">
                         {addr.subdistrict ? `${addr.subdistrict}, ` : ''}
                         {addr.district ? `${addr.district}, ` : ''}
                         {addr.province ? `${addr.province} ` : ''}
@@ -523,7 +529,7 @@ export default function KycDetailPage() {
                     </div>
                   ))
                 ) : (
-                  <div className="p-4 bg-slate-50/50 rounded-xl border border-slate-100 italic text-slate-400 text-sm">
+                  <div className="p-4 bg-muted/50 rounded-xl border border-border italic text-muted-foreground text-sm">
                     No address information recorded
                   </div>
                 )}
@@ -535,34 +541,34 @@ export default function KycDetailPage() {
 
       {/* Bottom Row: Review History */}
       {details.history && details.history.length > 0 && (
-        <Card className="border-none shadow-sm ring-1 ring-slate-100 overflow-hidden">
-          <CardHeader className="bg-slate-50/50 py-3 border-b border-slate-100">
-            <CardTitle className="text-sm font-bold flex items-center gap-2">
+        <Card className="border-none shadow-xs rounded-xl overflow-hidden bg-card text-card-foreground">
+          <CardHeader className="bg-muted/30 py-3 border-b border-border">
+            <CardTitle className="text-sm font-bold flex items-center gap-2 text-foreground">
               <Clock className="w-4 h-4 text-indigo-500" />
               Review History
             </CardTitle>
           </CardHeader>
-          <CardContent className="p-4">
+          <CardContent className="p-4 bg-card text-card-foreground">
             <div className="space-y-4">
               {details.history.map((log: any, idx: number) => (
                 <div key={log.id} className="relative pl-6 pb-2 last:pb-0">
                   {/* Timeline Line */}
                   {idx !== details.history.length - 1 && (
-                    <div className="absolute left-[7px] top-[18px] bottom-0 w-[2px] bg-slate-100" />
+                    <div className="absolute left-[7px] top-[18px] bottom-0 w-[2px] bg-border" />
                   )}
                   {/* Timeline Dot */}
-                  <div className="absolute left-0 top-1 w-4 h-4 rounded-full border-2 border-white bg-indigo-500 shadow-sm" />
+                  <div className="absolute left-0 top-1 w-4 h-4 rounded-full border-2 border-border bg-indigo-500 shadow-xs" />
 
                   <div className="space-y-1">
                     <div className="flex justify-between items-start">
-                      <p className="text-xs font-bold text-slate-700">
+                      <p className="text-xs font-bold text-foreground">
                         {log.adminUser?.firstName} {log.adminUser?.lastName}
                       </p>
-                      <span className="text-[9px] text-slate-400 font-medium">
+                      <span className="text-[9px] text-muted-foreground font-medium">
                         {format(new Date(log.createdAt), 'MMM d, HH:mm')}
                       </span>
                     </div>
-                    <p className="text-[11px] text-slate-500 leading-tight">
+                    <p className="text-[11px] text-muted-foreground leading-tight">
                       {log.reason || 'No description provided'}
                     </p>
                   </div>
@@ -578,16 +584,16 @@ export default function KycDetailPage() {
 
 function InfoRow({ label, value, icon: Icon, status }: any) {
   return (
-    <div className="flex items-start gap-3">
+    <div className="flex items-start gap-3 text-foreground">
       <div className="mt-1">
-        <Icon className="w-4 h-4 text-slate-400" />
+        <Icon className="w-4 h-4 text-muted-foreground" />
       </div>
       <div>
-        <p className="text-[10px] font-bold text-slate-400 uppercase tracking-tighter">
+        <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-tighter">
           {label}
         </p>
         <p
-          className={`text-sm font-semibold ${status === 'APPROVED' ? 'text-emerald-600' : status === 'REJECTED' ? 'text-red-600' : 'text-slate-700'}`}
+          className={`text-sm font-semibold ${status === 'APPROVED' ? 'text-emerald-600' : status === 'REJECTED' ? 'text-red-600' : 'text-foreground'}`}
         >
           {value}
         </p>

@@ -37,15 +37,15 @@ export function ExpirySchedule({ data }: ExpiryScheduleProps) {
 
   if (!mounted) {
     return (
-      <Card className="border-none shadow-sm ring-1 ring-slate-100">
+      <Card className="border-none shadow-xs bg-card text-card-foreground">
         <CardHeader>
-          <CardTitle className="text-lg">Points Expiry Schedule</CardTitle>
-          <CardDescription>
+          <CardTitle className="text-lg text-foreground">Points Expiry Schedule</CardTitle>
+          <CardDescription className="text-muted-foreground">
             Estimated points that will expire at the end of each month
           </CardDescription>
         </CardHeader>
         <CardContent>
-          <div className="h-[300px] w-full flex items-center justify-center bg-slate-50/50 rounded-lg animate-pulse" />
+          <div className="h-[300px] w-full flex items-center justify-center bg-muted rounded-lg animate-pulse" />
         </CardContent>
       </Card>
     );
@@ -54,10 +54,10 @@ export function ExpirySchedule({ data }: ExpiryScheduleProps) {
   const COLORS = ['#6366f1', '#a855f7', '#ec4899', '#f43f5e'];
 
   return (
-    <Card className="border-none shadow-sm ring-1 ring-slate-100">
+    <Card className="border-none shadow-xs bg-card text-card-foreground">
       <CardHeader>
-        <CardTitle className="text-lg">Points Expiry Schedule</CardTitle>
-        <CardDescription>
+        <CardTitle className="text-lg text-foreground">Points Expiry Schedule</CardTitle>
+        <CardDescription className="text-muted-foreground">
           Estimated points that will expire at the end of each month
         </CardDescription>
       </CardHeader>
@@ -68,29 +68,32 @@ export function ExpirySchedule({ data }: ExpiryScheduleProps) {
               data={data}
               margin={{ top: 20, right: 30, left: 0, bottom: 0 }}
             >
-              <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
+              <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="hsl(var(--border))" />
               <XAxis
                 dataKey="period"
-                stroke="#94a3b8"
+                stroke="hsl(var(--muted-foreground))"
                 fontSize={12}
                 tickLine={false}
                 axisLine={false}
               />
               <YAxis
-                stroke="#94a3b8"
+                stroke="hsl(var(--muted-foreground))"
                 fontSize={12}
                 tickLine={false}
                 axisLine={false}
                 tickFormatter={(value) => `${value.toLocaleString()}`}
               />
               <Tooltip
-                cursor={{ fill: '#f8fafc' }}
+                cursor={{ fill: 'hsl(var(--muted))', opacity: 0.1 }}
                 contentStyle={{
-                  backgroundColor: '#FFF',
+                  backgroundColor: 'hsl(var(--card))',
                   borderRadius: '12px',
-                  border: 'none',
-                  boxShadow: '0 10px 15px -3px rgb(0 0 0 / 0.1)',
+                  border: '1px solid hsl(var(--border))',
+                  color: 'hsl(var(--foreground))',
+                  boxShadow: 'var(--shadow-xs)',
                 }}
+                labelStyle={{ color: 'hsl(var(--muted-foreground))' }}
+                itemStyle={{ color: 'hsl(var(--foreground))' }}
                 formatter={(value: any) => [`${Number(value || 0).toLocaleString()} Points`, 'Expiring']}
               />
               <Bar dataKey="amount" radius={[6, 6, 0, 0]} barSize={40}>

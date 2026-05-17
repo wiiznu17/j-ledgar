@@ -35,27 +35,27 @@ export function MerchantTable({ partners, loading }: MerchantTableProps) {
     switch (status) {
       case 'ACTIVE':
         return (
-          <Badge className="bg-emerald-50 text-emerald-700 border-emerald-100 flex items-center gap-1 w-fit">
-            <ShieldCheck className="w-3 h-3" />
+          <Badge className="bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/20 flex items-center gap-1 w-fit border shadow-xs">
+            <ShieldCheck className="w-3.5 h-3.5" />
             ACTIVE
           </Badge>
         );
       case 'PENDING_REVIEW':
         return (
-          <Badge className="bg-amber-50 text-amber-700 border-amber-100 flex items-center gap-1 w-fit">
+          <Badge className="bg-amber-500/10 text-amber-600 dark:text-amber-400 border-amber-500/20 flex items-center gap-1 w-fit border shadow-xs">
             PENDING REVIEW
           </Badge>
         );
       case 'SUSPENDED':
         return (
-          <Badge className="bg-rose-50 text-rose-700 border-rose-100 flex items-center gap-1 w-fit">
-            <ShieldAlert className="w-3 h-3" />
+          <Badge className="bg-rose-500/10 text-rose-600 dark:text-rose-400 border-rose-500/20 flex items-center gap-1 w-fit border shadow-xs">
+            <ShieldAlert className="w-3.5 h-3.5" />
             SUSPENDED
           </Badge>
         );
       case 'INACTIVE':
         return (
-          <Badge className="bg-slate-100 text-slate-700 border-slate-200 flex items-center gap-1 w-fit">
+          <Badge className="bg-muted text-muted-foreground border-border flex items-center gap-1 w-fit border shadow-xs">
             INACTIVE
           </Badge>
         );
@@ -76,50 +76,50 @@ export function MerchantTable({ partners, loading }: MerchantTableProps) {
 
   return (
     <Table>
-      <TableHeader className="bg-slate-50/50">
-        <TableRow className="hover:bg-transparent border-slate-100">
-          <TableHead className="text-slate-500 font-bold py-4">Partner Name</TableHead>
-          <TableHead className="text-slate-500 font-bold py-4">Tax ID</TableHead>
-          <TableHead className="text-slate-500 font-bold py-4 text-center">Merchants</TableHead>
-          <TableHead className="text-slate-500 font-bold py-4">Status</TableHead>
-          <TableHead className="text-slate-500 font-bold py-4">Created At</TableHead>
+      <TableHeader className="bg-muted/30">
+        <TableRow className="hover:bg-transparent border-border">
+          <TableHead className="text-muted-foreground font-bold py-4">Partner Name</TableHead>
+          <TableHead className="text-muted-foreground font-bold py-4">Tax ID</TableHead>
+          <TableHead className="text-muted-foreground font-bold py-4 text-center">Merchants</TableHead>
+          <TableHead className="text-muted-foreground font-bold py-4">Status</TableHead>
+          <TableHead className="text-muted-foreground font-bold py-4">Created At</TableHead>
           <TableHead className="text-right py-4"></TableHead>
         </TableRow>
       </TableHeader>
       <TableBody>
         {partners.length === 0 ? (
           <TableRow>
-            <TableCell colSpan={6} className="h-40 text-center text-slate-400">
+            <TableCell colSpan={6} className="h-40 text-center text-muted-foreground">
               No partners found matching the filters.
             </TableCell>
           </TableRow>
         ) : (
           partners.map((partner) => (
-            <TableRow key={partner.id} className="hover:bg-slate-50/50 border-slate-100 transition-colors">
+            <TableRow key={partner.id} className="hover:bg-muted/30 border-border transition-colors">
               <TableCell className="py-4">
-                <div className="font-semibold text-slate-800">{partner.name}</div>
-                <div className="text-xs text-slate-400 font-mono mt-0.5">{partner.id}</div>
+                <div className="font-semibold text-foreground">{partner.name}</div>
+                <div className="text-xs text-muted-foreground font-mono mt-0.5">{partner.id}</div>
               </TableCell>
-              <TableCell className="py-4 font-medium text-slate-600">{partner.taxId}</TableCell>
+              <TableCell className="py-4 font-medium text-muted-foreground">{partner.taxId}</TableCell>
               <TableCell className="py-4 text-center">
-                <Badge variant="outline" className="text-slate-500 bg-slate-50">
+                <Badge variant="outline" className="text-muted-foreground bg-muted border-border">
                   <Store className="w-3 h-3 mr-1" />
                   {partner._count?.merchants || 0}
                 </Badge>
               </TableCell>
               <TableCell className="py-4">{getStatusBadge(partner.status)}</TableCell>
-              <TableCell className="py-4 text-slate-500 text-sm">
+              <TableCell className="py-4 text-muted-foreground text-sm">
                 {new Date(partner.createdAt).toLocaleDateString()}
               </TableCell>
               <TableCell className="py-4 text-right">
                 <div className="flex justify-end gap-2">
                   <Link href={`/merchants/${partner.id}`}>
-                    <Button variant="ghost" size="sm" className="h-8 w-8 p-0 text-slate-400 hover:text-indigo-600">
+                    <Button variant="ghost" size="sm" className="h-8 w-8 p-0 text-muted-foreground hover:text-indigo-600 dark:hover:text-indigo-400">
                       <Eye className="h-4 w-4" />
                     </Button>
                   </Link>
                   <Link href={`/merchants/${partner.id}/terminals`}>
-                    <Button variant="ghost" size="sm" className="h-8 text-xs gap-1.5 text-slate-500 hover:text-indigo-600">
+                    <Button variant="ghost" size="sm" className="h-8 text-xs gap-1.5 text-muted-foreground hover:text-indigo-600 dark:hover:text-indigo-400">
                       <ExternalLink className="h-3.5 w-3.5" />
                       Terminals
                     </Button>

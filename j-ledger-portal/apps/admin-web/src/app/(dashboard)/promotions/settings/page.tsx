@@ -50,7 +50,7 @@ const SectionHeader = ({ icon: Icon, title, colorClass }: { icon: any, title: st
 );
 
 const CharCounter = ({ current, max }: { current: number, max: number }) => (
-  <div className={`text-[8px] font-bold text-right mt-0.5 ${current > max ? 'text-red-500' : 'text-slate-300'}`}>
+  <div className={`text-[8px] font-bold text-right mt-0.5 ${current > max ? 'text-red-500' : 'text-muted-foreground/40'}`}>
     {current} / {max}
   </div>
 );
@@ -204,82 +204,82 @@ export default function PromotionSettingsPage() {
   };
 
   return (
-    <div className="space-y-6 pb-10">
+    <div className="space-y-6 pb-10 text-foreground">
       <div className="flex justify-between items-end">
         <div>
-            <h2 className="text-3xl font-bold tracking-tight text-slate-900">
+            <h2 className="text-3xl font-bold tracking-tight text-foreground">
             Promotion Metadata
             </h2>
-            <p className="text-slate-500 mt-1">
+            <p className="text-muted-foreground mt-1">
             Configure system brands and deal categories used across the platform.
             </p>
         </div>
       </div>
 
       <Tabs defaultValue="brands" className="space-y-6">
-        <TabsList className="bg-slate-100/80 p-1 border border-slate-200 rounded-xl">
-          <TabsTrigger value="brands" className="gap-2 px-6 rounded-lg data-[state=active]:bg-white data-[state=active]:shadow-sm">
-            <Globe size={14} className="text-blue-500" /> <span className="font-bold text-xs uppercase tracking-tight">Brands</span>
+        <TabsList className="bg-muted p-1 border border-border rounded-xl">
+          <TabsTrigger value="brands" className="gap-2 px-6 rounded-lg data-[state=active]:bg-card data-[state=active]:text-foreground data-[state=active]:shadow-xs text-muted-foreground">
+            <Globe size={14} className="text-indigo-600 dark:text-indigo-400" /> <span className="font-bold text-xs uppercase tracking-tight">Brands</span>
           </TabsTrigger>
-          <TabsTrigger value="categories" className="gap-2 px-6 rounded-lg data-[state=active]:bg-white data-[state=active]:shadow-sm">
-            <Tag size={14} className="text-purple-500" /> <span className="font-bold text-xs uppercase tracking-tight">Categories</span>
+          <TabsTrigger value="categories" className="gap-2 px-6 rounded-lg data-[state=active]:bg-card data-[state=active]:text-foreground data-[state=active]:shadow-xs text-muted-foreground">
+            <Tag size={14} className="text-indigo-600 dark:text-indigo-400" /> <span className="font-bold text-xs uppercase tracking-tight">Categories</span>
           </TabsTrigger>
         </TabsList>
 
         <TabsContent value="brands">
-          <Card className="border-none shadow-sm ring-1 ring-slate-100 overflow-hidden bg-white">
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 p-6 bg-slate-50/50">
+          <Card className="border border-border shadow-xs overflow-hidden bg-card text-card-foreground">
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 p-6 bg-muted/30 border-b border-border">
               <div>
                 <CardTitle className="text-lg font-bold">Partner Brands</CardTitle>
-                <CardDescription>
+                <CardDescription className="text-muted-foreground">
                   Manage the brand identities that partner with our rewards program.
                 </CardDescription>
               </div>
-              <Button size="sm" className="bg-blue-600 hover:bg-blue-700 text-white shadow-lg shadow-blue-100 rounded-xl px-4" onClick={() => handleOpenBrandModal()}>
+              <Button size="sm" className="bg-indigo-600 hover:bg-indigo-700 dark:bg-indigo-500 dark:hover:bg-indigo-600 text-white shadow-xs rounded-xl px-4 border-0" onClick={() => handleOpenBrandModal()}>
                 <Plus className="mr-2 h-4 w-4" /> Add Brand
               </Button>
             </CardHeader>
             <CardContent className="p-0">
               {loading ? (
                 <div className="h-64 flex items-center justify-center">
-                  <Loader2 className="h-8 w-8 animate-spin text-blue-300" />
+                  <Loader2 className="h-8 w-8 animate-spin text-indigo-500" />
                 </div>
               ) : (
                 <Table>
-                  <TableHeader className="bg-slate-50/30">
-                    <TableRow className="border-b border-slate-100">
-                      <TableHead className="px-6 text-[10px] font-black text-slate-400 uppercase tracking-widest">Brand</TableHead>
-                      <TableHead className="px-6 text-[10px] font-black text-slate-400 uppercase tracking-widest">Partner</TableHead>
-                      <TableHead className="px-6 text-[10px] font-black text-slate-400 uppercase tracking-widest">Description</TableHead>
-                      <TableHead className="px-6 text-[10px] font-black text-slate-400 uppercase tracking-widest">Website</TableHead>
-                      <TableHead className="px-6 text-right text-[10px] font-black text-slate-400 uppercase tracking-widest">Action</TableHead>
+                  <TableHeader className="bg-muted/20">
+                    <TableRow className="border-b border-border">
+                      <TableHead className="px-6 text-[10px] font-black text-muted-foreground uppercase tracking-widest">Brand</TableHead>
+                      <TableHead className="px-6 text-[10px] font-black text-muted-foreground uppercase tracking-widest">Partner</TableHead>
+                      <TableHead className="px-6 text-[10px] font-black text-muted-foreground uppercase tracking-widest">Description</TableHead>
+                      <TableHead className="px-6 text-[10px] font-black text-muted-foreground uppercase tracking-widest">Website</TableHead>
+                      <TableHead className="px-6 text-right text-[10px] font-black text-muted-foreground uppercase tracking-widest">Action</TableHead>
                     </TableRow>
                   </TableHeader>
-                  <TableBody className="divide-y divide-slate-50">
+                  <TableBody className="divide-y divide-border">
                     {brands.map((b) => (
-                      <TableRow key={b.id} className="hover:bg-slate-50/50 transition-colors">
+                      <TableRow key={b.id} className="hover:bg-muted/40 transition-colors border-b border-border">
                         <TableCell className="px-6 py-4 font-medium">
                           <div className="flex items-center gap-3">
-                              <div className="w-10 h-10 rounded-xl border border-slate-100 bg-white overflow-hidden flex-shrink-0 shadow-sm p-1">
+                              <div className="w-10 h-10 rounded-xl border border-border bg-card overflow-hidden flex-shrink-0 shadow-xs p-1">
                                   {b.logoUrl ? (
                                       <img src={b.logoUrl} className="w-full h-full object-contain" />
                                   ) : (
-                                      <div className="w-full h-full flex items-center justify-center text-[10px] text-slate-300">LOGO</div>
+                                      <div className="w-full h-full flex items-center justify-center text-[10px] text-muted-foreground/30">LOGO</div>
                                   )}
                               </div>
-                              <span className="font-bold text-slate-700">{b.name}</span>
+                              <span className="font-bold text-foreground">{b.name}</span>
                           </div>
                         </TableCell>
                         <TableCell className="px-6 py-4">
                            {b.partner ? (
-                             <Badge variant="outline" className="bg-blue-50 text-blue-700 border-blue-100 font-bold px-2 py-0.5 rounded-lg text-[9px]">
+                             <Badge variant="outline" className="bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 border-indigo-500/20 font-bold px-2 py-0.5 rounded-lg text-[9px]">
                                {b.partner.name}
                              </Badge>
                            ) : (
-                             <span className="text-[10px] text-slate-300 font-bold italic">NO PARTNER</span>
+                             <span className="text-[10px] text-muted-foreground/30 font-bold italic">NO PARTNER</span>
                            )}
                         </TableCell>
-                        <TableCell className="px-6 py-4 text-xs text-slate-500 max-w-[300px] leading-relaxed">
+                        <TableCell className="px-6 py-4 text-xs text-muted-foreground max-w-[300px] leading-relaxed">
                           {b.description || '-'}
                         </TableCell>
                         <TableCell className="px-6 py-4">
@@ -288,7 +288,7 @@ export default function PromotionSettingsPage() {
                               href={b.website}
                               target="_blank"
                               rel="noreferrer"
-                              className="text-blue-500 flex items-center gap-1.5 text-[10px] font-bold hover:underline bg-blue-50 px-2 py-1 rounded-full w-fit"
+                              className="text-indigo-600 dark:text-indigo-400 flex items-center gap-1.5 text-[10px] font-bold hover:underline bg-indigo-500/10 px-2.5 py-1 rounded-full w-fit"
                             >
                               {new URL(b.website).hostname} <ExternalLink size={10} />
                             </a>
@@ -297,7 +297,7 @@ export default function PromotionSettingsPage() {
                           )}
                         </TableCell>
                         <TableCell className="px-6 py-4 text-right">
-                          <Button variant="ghost" size="icon" className="h-9 w-9 text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded-xl transition-all" onClick={() => handleOpenBrandModal(b)}>
+                          <Button variant="ghost" size="icon" className="h-9 w-9 text-muted-foreground hover:text-indigo-600 hover:bg-indigo-500/10 dark:hover:text-indigo-400 dark:hover:bg-indigo-500/20 rounded-xl transition-all" onClick={() => handleOpenBrandModal(b)}>
                               <Edit2 size={14} />
                           </Button>
                         </TableCell>
@@ -311,51 +311,51 @@ export default function PromotionSettingsPage() {
         </TabsContent>
 
         <TabsContent value="categories">
-          <Card className="border-none shadow-sm ring-1 ring-slate-100 overflow-hidden bg-white">
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 p-6 bg-slate-50/50">
+          <Card className="border border-border shadow-xs overflow-hidden bg-card text-card-foreground">
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 p-6 bg-muted/30 border-b border-border">
               <div>
                 <CardTitle className="text-lg font-bold">Deal Categories</CardTitle>
-                <CardDescription>
+                <CardDescription className="text-muted-foreground">
                   Group deals into meaningful sections for user navigation.
                 </CardDescription>
               </div>
-              <Button size="sm" className="bg-purple-600 hover:bg-purple-700 text-white shadow-lg shadow-purple-100 rounded-xl px-4" onClick={() => handleOpenCategoryModal()}>
+              <Button size="sm" className="bg-indigo-600 hover:bg-indigo-700 dark:bg-indigo-500 dark:hover:bg-indigo-600 text-white shadow-xs rounded-xl px-4 border-0" onClick={() => handleOpenCategoryModal()}>
                 <Plus className="mr-2 h-4 w-4" /> Add Category
               </Button>
             </CardHeader>
             <CardContent className="p-0">
               {loading ? (
                 <div className="h-64 flex items-center justify-center">
-                  <Loader2 className="h-8 w-8 animate-spin text-purple-300" />
+                  <Loader2 className="h-8 w-8 animate-spin text-indigo-500" />
                 </div>
               ) : (
                 <Table>
-                  <TableHeader className="bg-slate-50/30">
-                    <TableRow className="border-b border-slate-100">
-                      <TableHead className="px-6 text-[10px] font-black text-slate-400 uppercase tracking-widest">Category</TableHead>
-                      <TableHead className="px-6 text-[10px] font-black text-slate-400 uppercase tracking-widest">Order</TableHead>
-                      <TableHead className="px-6 text-[10px] font-black text-slate-400 uppercase tracking-widest">Description</TableHead>
-                      <TableHead className="px-6 text-right text-[10px] font-black text-slate-400 uppercase tracking-widest">Action</TableHead>
+                  <TableHeader className="bg-muted/20">
+                    <TableRow className="border-b border-border">
+                      <TableHead className="px-6 text-[10px] font-black text-muted-foreground uppercase tracking-widest">Category</TableHead>
+                      <TableHead className="px-6 text-[10px] font-black text-muted-foreground uppercase tracking-widest">Order</TableHead>
+                      <TableHead className="px-6 text-[10px] font-black text-muted-foreground uppercase tracking-widest">Description</TableHead>
+                      <TableHead className="px-6 text-right text-[10px] font-black text-muted-foreground uppercase tracking-widest">Action</TableHead>
                     </TableRow>
                   </TableHeader>
-                  <TableBody className="divide-y divide-slate-50">
+                  <TableBody className="divide-y divide-border">
                     {categories.map((c) => (
-                      <TableRow key={c.id} className="hover:bg-slate-50/50 transition-colors">
+                      <TableRow key={c.id} className="hover:bg-muted/40 transition-colors border-b border-border">
                         <TableCell className="px-6 py-4 font-medium">
-                          <Badge variant="outline" className="bg-purple-50 text-purple-700 border-purple-100 font-bold px-3 py-1 rounded-lg">
+                          <Badge variant="outline" className="bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 border-indigo-500/20 font-bold px-3 py-1 rounded-lg">
                               {c.name.toUpperCase()}
                           </Badge>
                         </TableCell>
                         <TableCell className="px-6 py-4">
-                          <div className="w-8 h-8 rounded-full bg-slate-100 flex items-center justify-center text-xs font-black text-slate-500 tabular-nums border border-slate-200">
+                          <div className="w-8 h-8 rounded-full bg-muted flex items-center justify-center text-xs font-black text-foreground tabular-nums border border-border">
                             {c.order}
                           </div>
                         </TableCell>
-                        <TableCell className="px-6 py-4 text-xs text-slate-500 leading-relaxed">
+                        <TableCell className="px-6 py-4 text-xs text-muted-foreground leading-relaxed">
                           {c.description || '-'}
                         </TableCell>
                         <TableCell className="px-6 py-4 text-right">
-                          <Button variant="ghost" size="icon" className="h-9 w-9 text-slate-400 hover:text-purple-600 hover:bg-purple-50 rounded-xl transition-all" onClick={() => handleOpenCategoryModal(c)}>
+                          <Button variant="ghost" size="icon" className="h-9 w-9 text-muted-foreground hover:text-indigo-600 hover:bg-indigo-500/10 dark:hover:text-indigo-400 dark:hover:bg-indigo-500/20 rounded-xl transition-all" onClick={() => handleOpenCategoryModal(c)}>
                               <Edit2 size={14} />
                           </Button>
                         </TableCell>
@@ -371,12 +371,12 @@ export default function PromotionSettingsPage() {
 
       {/* Brand Modal */}
       <Dialog open={isBrandModalOpen} onOpenChange={setIsBrandModalOpen}>
-        <DialogContent className="sm:max-w-[800px] w-[95vw] p-0 overflow-hidden rounded-3xl border-none shadow-2xl">
+        <DialogContent className="sm:max-w-[800px] w-[95vw] p-0 overflow-hidden rounded-3xl border border-border bg-card text-card-foreground shadow-2xl">
           <form onSubmit={handleBrandSubmit}>
             <div className="p-8 pb-4">
                 <DialogHeader>
-                <DialogTitle className="text-2xl font-black text-slate-800">{editingItem ? 'Edit Brand' : 'Add New Brand'}</DialogTitle>
-                <DialogDescription className="text-slate-500 font-medium">
+                <DialogTitle className="text-2xl font-black text-foreground">{editingItem ? 'Edit Brand' : 'Add New Brand'}</DialogTitle>
+                <DialogDescription className="text-muted-foreground font-medium">
                     Configure the identity of a partner merchant or brand.
                 </DialogDescription>
                 </DialogHeader>
@@ -398,22 +398,22 @@ export default function PromotionSettingsPage() {
               </div>
               <div className="md:col-span-3 space-y-6">
                 <div>
-                    <SectionHeader icon={Info} title="Basic Details" colorClass="bg-blue-50 text-blue-700" />
+                    <SectionHeader icon={Info} title="Basic Details" colorClass="bg-indigo-500/10 text-indigo-600 dark:text-indigo-400" />
                     <div className="space-y-4">
                         <div className="grid grid-cols-2 gap-4">
                             <div className="space-y-2">
-                                <Label htmlFor="b-name" className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Brand Name</Label>
-                                <Input id="b-name" maxLength={100} value={brandForm.name} onChange={(e) => setBrandForm({...brandForm, name: e.target.value})} placeholder="e.g. Starbucks" required className="rounded-xl border-slate-200 focus:ring-blue-500" />
+                                <Label htmlFor="b-name" className="text-[10px] font-black text-muted-foreground uppercase tracking-widest ml-1">Brand Name</Label>
+                                <Input id="b-name" maxLength={100} value={brandForm.name} onChange={(e) => setBrandForm({...brandForm, name: e.target.value})} placeholder="e.g. Starbucks" required className="rounded-xl bg-card text-foreground border-border focus:ring-indigo-500" />
                                 <CharCounter current={brandForm.name.length} max={100} />
                             </div>
                             <div className="space-y-2">
-                                <Label htmlFor="b-partner" className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Associated Partner</Label>
+                                <Label htmlFor="b-partner" className="text-[10px] font-black text-muted-foreground uppercase tracking-widest ml-1">Associated Partner</Label>
                                 <Select value={brandForm.partnerId} onValueChange={(val: string | null) => setBrandForm(prev => ({...prev, partnerId: val || 'none'}))}>
-                                    <SelectTrigger id="b-partner" className="rounded-xl border-slate-200">
+                                    <SelectTrigger id="b-partner" className="rounded-xl bg-card text-foreground border-border focus:ring-indigo-500">
                                         <SelectValue placeholder="Select Partner" />
                                     </SelectTrigger>
-                                    <SelectContent className="rounded-xl border-slate-100 shadow-xl">
-                                        <SelectItem value="none" className="text-slate-400 italic">None (Independent Brand)</SelectItem>
+                                    <SelectContent className="rounded-xl bg-card text-foreground border-border shadow-xl">
+                                        <SelectItem value="none" className="text-muted-foreground/60 italic">None (Independent Brand)</SelectItem>
                                         {partners.map(p => (
                                             <SelectItem key={p.id} value={p.id || ''}>{p.name}</SelectItem>
                                         ))}
@@ -422,10 +422,10 @@ export default function PromotionSettingsPage() {
                             </div>
                         </div>
                         <div className="space-y-2">
-                            <Label htmlFor="b-web" className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Website URL</Label>
+                            <Label htmlFor="b-web" className="text-[10px] font-black text-muted-foreground uppercase tracking-widest ml-1">Website URL</Label>
                             <div className="relative">
-                                <Input id="b-web" maxLength={255} value={brandForm.website} onChange={(e) => setBrandForm({...brandForm, website: e.target.value})} placeholder="https://..." className="rounded-xl border-slate-200 pl-10 focus:ring-blue-500" />
-                                <LinkIcon size={14} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-300" />
+                                <Input id="b-web" maxLength={255} value={brandForm.website} onChange={(e) => setBrandForm({...brandForm, website: e.target.value})} placeholder="https://..." className="rounded-xl bg-card text-foreground border-border pl-10 focus:ring-indigo-500" />
+                                <LinkIcon size={14} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-muted-foreground/40" />
                             </div>
                             <CharCounter current={brandForm.website.length} max={255} />
                         </div>
@@ -433,20 +433,20 @@ export default function PromotionSettingsPage() {
                 </div>
 
                 <div>
-                    <SectionHeader icon={Layers} title="Additional Info" colorClass="bg-slate-100 text-slate-700" />
+                    <SectionHeader icon={Layers} title="Additional Info" colorClass="bg-muted text-muted-foreground" />
                     <div className="space-y-2">
-                        <Label htmlFor="b-desc" className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Description</Label>
-                        <Textarea id="b-desc" rows={3} maxLength={500} value={brandForm.description} onChange={(e) => setBrandForm({...brandForm, description: e.target.value})} placeholder="Brief info about the brand" className="rounded-xl border-slate-200 resize-none" />
+                        <Label htmlFor="b-desc" className="text-[10px] font-black text-muted-foreground uppercase tracking-widest ml-1">Description</Label>
+                        <Textarea id="b-desc" rows={3} maxLength={500} value={brandForm.description} onChange={(e) => setBrandForm({...brandForm, description: e.target.value})} placeholder="Brief info about the brand" className="rounded-xl bg-card text-foreground border-border resize-none focus:ring-indigo-500" />
                         <CharCounter current={brandForm.description.length} max={500} />
                     </div>
                 </div>
               </div>
             </div>
 
-            <div className="p-8 pt-4 bg-slate-50 border-t border-slate-100">
+            <div className="p-8 pt-4 bg-muted/30 border-t border-border">
                 <DialogFooter>
-                <Button type="button" variant="ghost" onClick={() => setIsBrandModalOpen(false)} className="rounded-xl font-bold text-slate-400">Cancel</Button>
-                <Button type="submit" className="bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white rounded-xl px-8 font-bold shadow-lg shadow-blue-100 transition-all active:scale-95" disabled={submitting}>
+                <Button type="button" variant="ghost" onClick={() => setIsBrandModalOpen(false)} className="rounded-xl font-bold text-muted-foreground hover:text-foreground hover:bg-muted">Cancel</Button>
+                <Button type="submit" className="bg-indigo-600 hover:bg-indigo-700 dark:bg-indigo-500 dark:hover:bg-indigo-600 text-white rounded-xl px-8 font-bold shadow-xs transition-all active:scale-95 border-0" disabled={submitting}>
                     {submitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                     {editingItem ? 'Save Changes' : 'Create Brand'}
                 </Button>
@@ -458,12 +458,12 @@ export default function PromotionSettingsPage() {
 
       {/* Category Modal */}
       <Dialog open={isCategoryModalOpen} onOpenChange={setIsCategoryModalOpen}>
-        <DialogContent className="sm:max-w-[600px] w-[95vw] p-0 overflow-hidden rounded-3xl border-none shadow-2xl">
+        <DialogContent className="sm:max-w-[600px] w-[95vw] p-0 overflow-hidden rounded-3xl border border-border bg-card text-card-foreground shadow-2xl">
           <form onSubmit={handleCategorySubmit}>
             <div className="p-8 pb-4">
                 <DialogHeader>
-                <DialogTitle className="text-2xl font-black text-slate-800">{editingItem ? 'Edit Category' : 'Add New Category'}</DialogTitle>
-                <DialogDescription className="text-slate-500 font-medium">
+                <DialogTitle className="text-2xl font-black text-foreground">{editingItem ? 'Edit Category' : 'Add New Category'}</DialogTitle>
+                <DialogDescription className="text-muted-foreground font-medium">
                     Group deals into categories to help users find rewards.
                 </DialogDescription>
                 </DialogHeader>
@@ -472,27 +472,27 @@ export default function PromotionSettingsPage() {
             <div className="p-8 pt-2 space-y-6">
               <div className="grid grid-cols-2 gap-6">
                 <div className="space-y-2">
-                    <Label htmlFor="c-name" className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Category Name</Label>
-                    <Input id="c-name" maxLength={100} value={categoryForm.name} onChange={(e) => setCategoryForm({...categoryForm, name: e.target.value})} placeholder="e.g. Food & Beverage" required className="rounded-xl border-slate-200 focus:ring-purple-500 font-bold" />
+                    <Label htmlFor="c-name" className="text-[10px] font-black text-muted-foreground uppercase tracking-widest ml-1">Category Name</Label>
+                    <Input id="c-name" maxLength={100} value={categoryForm.name} onChange={(e) => setCategoryForm({...categoryForm, name: e.target.value})} placeholder="e.g. Food & Beverage" required className="rounded-xl bg-card text-foreground border-border focus:ring-indigo-500 font-bold" />
                     <CharCounter current={categoryForm.name.length} max={100} />
                 </div>
                 <div className="space-y-2">
-                    <Label htmlFor="c-order" className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Display Order</Label>
-                    <Input id="c-order" type="number" min={0} value={categoryForm.order} onChange={(e) => setCategoryForm({...categoryForm, order: parseInt(e.target.value)})} className="rounded-xl border-slate-200" />
+                    <Label htmlFor="c-order" className="text-[10px] font-black text-muted-foreground uppercase tracking-widest ml-1">Display Order</Label>
+                    <Input id="c-order" type="number" min={0} value={categoryForm.order} onChange={(e) => setCategoryForm({...categoryForm, order: parseInt(e.target.value)})} className="rounded-xl bg-card text-foreground border-border focus:ring-indigo-500" />
                 </div>
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="c-desc" className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Description</Label>
-                <Textarea id="c-desc" rows={3} maxLength={500} value={categoryForm.description} onChange={(e) => setCategoryForm({...categoryForm, description: e.target.value})} placeholder="Describe what this category covers" className="rounded-xl border-slate-200 resize-none" />
+                <Label htmlFor="c-desc" className="text-[10px] font-black text-muted-foreground uppercase tracking-widest ml-1">Description</Label>
+                <Textarea id="c-desc" rows={3} maxLength={500} value={categoryForm.description} onChange={(e) => setCategoryForm({...categoryForm, description: e.target.value})} placeholder="Describe what this category covers" className="rounded-xl bg-card text-foreground border-border resize-none focus:ring-indigo-500" />
                 <CharCounter current={categoryForm.description.length} max={500} />
               </div>
             </div>
 
-            <div className="p-8 pt-4 bg-slate-50 border-t border-slate-100">
+            <div className="p-8 pt-4 bg-muted/30 border-t border-border">
                 <DialogFooter>
-                <Button type="button" variant="ghost" onClick={() => setIsCategoryModalOpen(false)} className="rounded-xl font-bold text-slate-400">Cancel</Button>
-                <Button type="submit" className="bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white rounded-xl px-8 font-bold shadow-lg shadow-purple-200 transition-all active:scale-95" disabled={submitting}>
+                <Button type="button" variant="ghost" onClick={() => setIsCategoryModalOpen(false)} className="rounded-xl font-bold text-muted-foreground hover:text-foreground hover:bg-muted">Cancel</Button>
+                <Button type="submit" className="bg-indigo-600 hover:bg-indigo-700 dark:bg-indigo-500 dark:hover:bg-indigo-600 text-white rounded-xl px-8 font-bold shadow-xs transition-all active:scale-95 border-0" disabled={submitting}>
                     {submitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                     {editingItem ? 'Save Changes' : 'Create Category'}
                 </Button>

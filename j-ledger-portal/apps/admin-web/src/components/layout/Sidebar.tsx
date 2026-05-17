@@ -32,6 +32,7 @@ import {
   Coins,
   Settings,
   Store,
+  X,
 } from 'lucide-react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
@@ -60,6 +61,8 @@ interface SidebarProps {
   isCollapsed?: boolean;
   userRole?: string;
   permissions?: string[];
+  mobileOpen?: boolean;
+  onMobileClose?: () => void;
 }
 
 const navigationGroups: NavigationGroup[] = [
@@ -274,28 +277,37 @@ export function Sidebar({
   isCollapsed = false,
   userRole = 'SUPPORT_STAFF',
   permissions = [],
+  mobileOpen = false,
+  onMobileClose,
 }: SidebarProps) {
   const pathname = usePathname();
 
   return (
     <aside
-      className={`bg-gradient-to-b from-[#E0F2FE] via-white to-[#FCE7F3] border-r border-border flex-col hidden lg:flex h-full transition-all duration-300 ease-in-out ${
-        isCollapsed ? 'w-20' : 'w-64'
-      }`}
+      className={cn(
+        "border-r border-border flex-col flex h-full transition-all duration-300 ease-in-out bg-gradient-to-b from-sidebar-gradient-from via-sidebar-gradient-via to-sidebar-gradient-to text-foreground select-none",
+        // Desktop Layout
+        "lg:flex",
+        isCollapsed ? "lg:w-20" : "lg:w-64",
+        // Mobile Drawer Layout
+        "fixed inset-y-0 left-0 z-50 w-64 lg:static lg:translate-x-0",
+        mobileOpen ? "translate-x-0 shadow-2xl" : "-translate-x-full lg:translate-x-0"
+      )}
     >
       <div
-        className={`h-16 flex items-center justify-between border-b border-border/50 flex-shrink-0 transition-all duration-300 ${
-          isCollapsed ? 'px-0 justify-center' : 'px-6'
-        }`}
+        className={cn(
+          "h-16 flex items-center justify-between border-b border-border/50 flex-shrink-0 transition-all duration-300 px-6",
+          (isCollapsed && !mobileOpen) && "lg:px-0 lg:justify-center"
+        )}
       >
-        {!isCollapsed ? (
+        {(!isCollapsed || mobileOpen) ? (
           <div className="flex items-center">
             <img
               src="/logo/logo.png"
               alt="P-wallet"
               className="h-8 w-auto object-contain"
             />
-            <span className="ml-3 text-xl font-bold text-slate-800 animate-in fade-in duration-500">
+            <span className="ml-3 text-xl font-bold text-foreground tracking-tight animate-in fade-in duration-500">
               P-wallet
             </span>
           </div>
@@ -307,14 +319,30 @@ export function Sidebar({
           />
         )}
 
-        <Button
-          variant="ghost"
-          size="icon"
-          onClick={onToggle}
-          className="text-slate-500 hover:text-slate-900 transition-colors"
-        >
-          <Menu className="h-5 w-5" />
-        </Button>
+        {/* Dynamic Desktop Hamburger vs Mobile Close button */}
+        <div className="flex items-center gap-1">
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={onToggle}
+            className="text-muted-foreground hover:text-foreground hover:bg-muted/50 hidden lg:flex"
+            aria-label="Toggle Sidebar"
+          >
+            <Menu className="h-5 w-5" />
+          </Button>
+
+          {onMobileClose && (
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={onMobileClose}
+              className="text-muted-foreground hover:text-foreground hover:bg-muted/50 lg:hidden"
+              aria-label="Close Sidebar"
+            >
+              <X className="h-5 w-5" />
+            </Button>
+          )}
+        </div>
       </div>
 
       <nav className="flex-1 px-3 py-6 space-y-8 overflow-y-auto custom-scrollbar text-pretty">
@@ -332,8 +360,8 @@ export function Sidebar({
 
           return (
             <div key={group.title} className="space-y-2">
-              {!isCollapsed && (
-                <h3 className="px-4 text-[10px] font-bold text-slate-400 uppercase tracking-[0.2em] mb-2">
+              {(!isCollapsed || mobileOpen) && (
+                <h3 className="px-4 text-[10px] font-bold text-muted-foreground uppercase tracking-[0.2em] mb-2">
                   {group.title}
                 </h3>
               )}
@@ -355,32 +383,42 @@ export function Sidebar({
                     <Link
                       key={item.name}
                       href={item.isSoon ? '#' : item.href}
-                      title={isCollapsed ? item.name : ''}
+                      title={(isCollapsed && !mobileOpen) ? item.name : ''}
                       onClick={(e) => {
-                        if (item.isSoon) e.preventDefault();
+                        if (item.isSoon) {
+                          e.preventDefault();
+                        } else {
+                          onMobileClose?.();
+                        }
                       }}
-                      className={`flex items-center rounded-xl transition-all duration-200 group ${
-                        isCollapsed ? 'justify-center px-0 py-3' : 'px-4 py-2'
-                      } ${
+                      className={cn(
+                        "flex items-center rounded-xl transition-all duration-200 group",
+                        (isCollapsed && !mobileOpen) ? "justify-center px-0 py-3" : "px-4 py-2",
                         isActive
-                          ? 'bg-gradient-to-r from-[#BFDBFE] to-[#E9D5FF] text-slate-800 shadow-[0_4px_0_0_#A5B4FC] border-t border-[#FFFFFF/60]'
+                          ? "bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 border border-indigo-500/20 shadow-xs dark:bg-indigo-500/20"
                           : item.isSoon
-                            ? 'text-slate-300 cursor-not-allowed opacity-70'
-                            : 'text-slate-600 hover:bg-slate-500/10 hover:text-slate-900'
-                      }`}
+                            ? "text-muted-foreground/40 cursor-not-allowed opacity-50"
+                            : "text-muted-foreground hover:bg-muted hover:text-foreground"
+                      )}
                     >
                       <item.icon
-                        className={`flex-shrink-0 transition-colors ${
-                          isCollapsed ? 'h-6 w-6' : 'mr-3 h-4 w-4'
-                        } ${isActive ? 'text-slate-800' : item.isSoon ? 'text-slate-200' : 'text-slate-500 group-hover:text-slate-900'}`}
+                        className={cn(
+                          "flex-shrink-0 transition-colors",
+                          (isCollapsed && !mobileOpen) ? "h-6 w-6" : "mr-3 h-4 w-4",
+                          isActive
+                            ? "text-indigo-600 dark:text-indigo-400"
+                            : item.isSoon
+                              ? "text-muted-foreground/30"
+                              : "text-muted-foreground group-hover:text-foreground"
+                        )}
                         aria-hidden="true"
                       />
-                      {!isCollapsed && (
+                      {(!isCollapsed || mobileOpen) && (
                         <div className="flex items-center justify-between flex-1 min-w-0">
                           <span
                             className={cn(
                               'text-sm font-semibold truncate animate-in fade-in slide-in-from-left-2 duration-300',
-                              item.isSoon && 'text-slate-300',
+                              item.isSoon && 'text-muted-foreground/40',
                             )}
                           >
                             {item.name}
@@ -391,7 +429,7 @@ export function Sidebar({
                             </span>
                           )}
                           {item.isSoon && (
-                            <span className="ml-2 px-1.5 py-0.5 rounded-md bg-slate-100 text-[8px] font-bold text-slate-400 tracking-tighter border border-slate-200 uppercase">
+                            <span className="ml-2 px-1.5 py-0.5 rounded-md bg-slate-100 dark:bg-slate-800 text-[8px] font-bold text-slate-400 tracking-tighter border border-slate-200 dark:border-slate-700 uppercase">
                               SOON
                             </span>
                           )}
@@ -407,22 +445,27 @@ export function Sidebar({
       </nav>
 
       <div
-        className={`p-4 border-t border-border/50 flex-shrink-0 transition-all duration-300 ${
-          isCollapsed ? 'flex justify-center' : ''
-        }`}
+        className={cn(
+          "p-4 border-t border-border/50 flex-shrink-0 transition-all duration-300",
+          (isCollapsed && !mobileOpen) ? "flex justify-center" : ""
+        )}
       >
-        <form action={onLogout} className="w-full">
+        <form action={onLogout} className="w-full" onSubmit={() => onMobileClose?.()}>
           <Button
             type="submit"
             variant="ghost"
-            className={`text-slate-600 hover:bg-slate-500/5 hover:text-slate-900 w-full transition-all ${
-              isCollapsed ? 'px-0 justify-center' : 'justify-start'
-            }`}
+            className={cn(
+              "text-muted-foreground hover:bg-muted hover:text-foreground w-full transition-all cursor-pointer",
+              (isCollapsed && !mobileOpen) ? "px-0 justify-center" : "justify-start"
+            )}
           >
             <LogOut
-              className={`flex-shrink-0 ${isCollapsed ? 'h-6 w-6' : 'mr-3 w-5 h-5 text-slate-500'}`}
+              className={cn(
+                "flex-shrink-0",
+                (isCollapsed && !mobileOpen) ? "h-6 w-6" : "mr-3 w-5 h-5 text-muted-foreground"
+              )}
             />
-            {!isCollapsed && (
+            {(!isCollapsed || mobileOpen) && (
               <span className="font-semibold text-sm">Sign out</span>
             )}
           </Button>

@@ -131,28 +131,28 @@ export default function AMLPage() {
   };
 
   const getRiskScoreColor = (score: number) => {
-    if (score >= 75) return 'bg-red-100 text-red-800';
-    if (score >= 50) return 'bg-yellow-100 text-yellow-800';
-    return 'bg-green-100 text-green-800';
+    if (score >= 75) return 'bg-rose-500/10 text-rose-600 dark:text-rose-400';
+    if (score >= 50) return 'bg-amber-500/10 text-amber-600 dark:text-amber-400';
+    return 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400';
   };
 
   const getStatusColor = (stat: string) => {
     switch (stat) {
       case 'REVIEWED':
-        return 'bg-green-100 text-green-800';
+        return 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400';
       case 'PENDING':
-        return 'bg-yellow-100 text-yellow-800';
+        return 'bg-amber-500/10 text-amber-600 dark:text-amber-400';
       case 'REPORTED':
-        return 'bg-red-100 text-red-800';
+        return 'bg-rose-500/10 text-rose-600 dark:text-rose-400';
       default:
-        return 'bg-gray-100 text-gray-800';
+        return 'bg-muted text-muted-foreground';
     }
   };
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 text-foreground">
       <div className="flex items-center justify-between">
-        <h2 className="text-3xl font-bold tracking-tight text-[#2D3748]">
+        <h2 className="text-3xl font-bold tracking-tight text-foreground">
           AML Suspicious Activity Monitor
         </h2>
       </div>
@@ -453,8 +453,8 @@ export default function AMLPage() {
                                 )}
 
                                 {selectedActivity.status === 'REPORTED' && (
-                                  <div className="p-4 bg-yellow-50 border border-yellow-200 rounded-md">
-                                    <p className="text-sm text-yellow-800">
+                                  <div className="p-4 bg-amber-500/10 border border-amber-500/20 rounded-md">
+                                    <p className="text-sm text-amber-600 dark:text-amber-400 font-medium">
                                       This activity has already been reported to
                                       AMLO.
                                     </p>

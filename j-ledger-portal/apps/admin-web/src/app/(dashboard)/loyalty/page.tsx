@@ -47,12 +47,12 @@ export default function LoyaltyPage() {
   }, []);
 
   return (
-    <div className="space-y-8 pb-10">
+    <div className="space-y-8 pb-10 text-foreground">
       <div>
-        <h2 className="text-3xl font-bold tracking-tight text-slate-900">
+        <h2 className="text-3xl font-bold tracking-tight text-foreground">
           Loyalty & Points
         </h2>
-        <p className="text-slate-500 mt-1 font-medium">
+        <p className="text-muted-foreground mt-1 font-medium">
           Manage earning rules, monitor point circulation, and track upcoming expiries.
         </p>
       </div>
@@ -63,7 +63,7 @@ export default function LoyaltyPage() {
           value={stats?.totalActivePoints.toLocaleString() || '0'}
           description="Current points in user wallets"
           icon={Coins}
-          className="bg-white border-none shadow-sm ring-1 ring-slate-100"
+          className="bg-card text-card-foreground border border-border shadow-xs"
         />
 
         <StatCard
@@ -71,7 +71,7 @@ export default function LoyaltyPage() {
           value={stats?.totalLifetimePoints.toLocaleString() || '0'}
           description="Total points awarded since launch"
           icon={Calendar}
-          className="bg-white border-none shadow-sm ring-1 ring-slate-100"
+          className="bg-card text-card-foreground border border-border shadow-xs"
         />
 
         <StatCard
@@ -79,7 +79,7 @@ export default function LoyaltyPage() {
           value={stats?.totalRedeemedPoints?.toLocaleString() || '0'}
           description="Total points used for rewards/deals"
           icon={Gift}
-          className="bg-emerald-50/30 border-none shadow-sm ring-1 ring-emerald-100/50"
+          className="bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20 shadow-xs"
         />
 
         <StatCard
@@ -87,7 +87,7 @@ export default function LoyaltyPage() {
           value={stats?.totalExpiredPoints?.toLocaleString() || '0'}
           description="Points removed due to expiry"
           icon={XCircle}
-          className="bg-amber-50/30 border-none shadow-sm ring-1 ring-amber-100/50"
+          className="bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/20 shadow-xs"
         />
 
         <StatCard
@@ -95,7 +95,7 @@ export default function LoyaltyPage() {
           value={stats?.totalUsersWithPoints || 0}
           description="Active users with point balance"
           icon={Users}
-          className="bg-white border-none shadow-sm ring-1 ring-slate-100"
+          className="bg-card text-card-foreground border border-border shadow-xs"
         />
 
         <StatCard
@@ -103,21 +103,21 @@ export default function LoyaltyPage() {
           value={stats?.activeRules || 0}
           description="Currently enabled earning rules"
           icon={Settings}
-          className="bg-white border-none shadow-sm ring-1 ring-slate-100"
+          className="bg-card text-card-foreground border border-border shadow-xs"
         />
       </div>
 
       <div className="grid gap-8 lg:grid-cols-3">
         <div className="lg:col-span-2 space-y-6">
           <div className="flex items-center justify-between">
-            <h3 className="text-xl font-bold text-slate-800">Earning Rules</h3>
+            <h3 className="text-xl font-bold text-foreground">Earning Rules</h3>
           </div>
           
-          <div className="bg-blue-50/50 border border-blue-100 rounded-xl p-4 flex items-start gap-3">
-            <AlertCircle className="h-5 w-5 text-blue-600 mt-0.5 flex-shrink-0" />
+          <div className="bg-blue-500/10 border border-blue-500/20 rounded-xl p-4 flex items-start gap-3">
+            <AlertCircle className="h-5 w-5 text-blue-600 dark:text-blue-400 mt-0.5 flex-shrink-0" />
             <div>
-              <h4 className="font-bold text-blue-900 text-sm">Maintenance Mode Notice</h4>
-              <p className="text-blue-800 text-xs mt-1 leading-relaxed">
+              <h4 className="font-bold text-blue-900 dark:text-blue-300 text-sm">Maintenance Mode Notice</h4>
+              <p className="text-blue-800 dark:text-blue-400 text-xs mt-1 leading-relaxed">
                 Rules can only be modified when <strong>Unlocked</strong>. Unlocking a rule enables maintenance mode for that specific event trigger.
               </p>
             </div>
@@ -127,15 +127,15 @@ export default function LoyaltyPage() {
         </div>
 
         <div className="space-y-6">
-          <h3 className="text-xl font-bold text-slate-800">Expiry Outlook</h3>
+          <h3 className="text-xl font-bold text-foreground">Expiry Outlook</h3>
           <ExpirySchedule data={expiryData} />
           
-          <div className="bg-amber-50 p-6 rounded-xl border-none shadow-sm ring-1 ring-amber-100">
-            <h4 className="text-sm font-bold text-amber-900 flex items-center gap-2 mb-2">
+          <div className="bg-amber-500/10 p-6 rounded-xl border border-amber-500/20 shadow-xs">
+            <h4 className="text-sm font-bold text-amber-900 dark:text-amber-300 flex items-center gap-2 mb-2">
               <Calendar className="w-4 h-4" />
               Monthly Cycle Info
             </h4>
-            <p className="text-xs text-amber-800 leading-relaxed">
+            <p className="text-xs text-amber-800 dark:text-amber-400 leading-relaxed">
               Points earned are valid for 1 year, expiring at the end of the same month of the following year. 
               The cleanup job runs automatically every day at midnight to process any expired balances.
             </p>

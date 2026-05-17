@@ -29,7 +29,7 @@ export function LoginForm({ action }: LoginFormProps) {
               placeholder="admin@jledger.com"
               defaultValue="admin@jledger.com"
               required
-              className="pl-10 h-12 border-border focus:border-ring focus:ring-1 focus:ring-ring"
+              className="pl-10 h-12 bg-card text-foreground border-border focus:border-ring focus:ring-1 focus:ring-ring"
             />
           </div>
         </div>
@@ -47,7 +47,7 @@ export function LoginForm({ action }: LoginFormProps) {
               placeholder="••••••••"
               defaultValue="password123"
               required
-              className="pl-10 pr-10 h-12 border-border focus:border-ring focus:ring-1 focus:ring-ring"
+              className="pl-10 pr-10 h-12 bg-card text-foreground border-border focus:border-ring focus:ring-1 focus:ring-ring"
             />
             <button
               type="button"
@@ -70,7 +70,7 @@ export function LoginForm({ action }: LoginFormProps) {
             id="remember-me"
             name="remember-me"
             type="checkbox"
-            className="h-4 w-4 rounded border-border text-primary focus:ring-ring"
+            className="h-4 w-4 rounded border-border bg-card text-indigo-600 focus:ring-indigo-500"
           />
           <label
             htmlFor="remember-me"
@@ -80,7 +80,7 @@ export function LoginForm({ action }: LoginFormProps) {
           </label>
         </div>
         <div className="text-sm">
-          <a href="#" className="font-medium text-accent hover:text-accent/80">
+          <a href="#" className="font-medium text-indigo-600 hover:text-indigo-500 dark:text-indigo-400 dark:hover:text-indigo-300 transition-colors">
             Forgot password?
           </a>
         </div>
@@ -88,7 +88,7 @@ export function LoginForm({ action }: LoginFormProps) {
 
       <Button
         type="submit"
-        className="w-full h-12 text-base font-semibold text-white bg-gradient-to-r from-[var(--color-magenta)] to-[var(--color-pink)] hover:opacity-90 transition-opacity border-0"
+        className="w-full h-12 text-base font-semibold text-white bg-indigo-600 hover:bg-indigo-700 dark:bg-indigo-500 dark:hover:bg-indigo-600 shadow-xs transition-all active:scale-[0.98] border-0"
       >
         Sign in
       </Button>

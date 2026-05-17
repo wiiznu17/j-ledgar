@@ -121,27 +121,27 @@ export default function DealsPage() {
   };
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 text-foreground">
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
-          <h2 className="text-3xl font-black tracking-tight text-slate-900">
+          <h2 className="text-3xl font-black tracking-tight text-foreground">
             Deals & Rewards
           </h2>
-          <p className="text-slate-500 font-medium text-sm">
+          <p className="text-muted-foreground font-medium text-sm">
             Manage points-based rewards and promotional offers for customers.
           </p>
         </div>
         <Button 
-            className="bg-blue-600 hover:bg-blue-700 text-white shadow-lg shadow-blue-100 rounded-xl px-6 h-11 font-black transition-all active:scale-95"
+            className="bg-indigo-600 hover:bg-indigo-700 text-white shadow-xs rounded-xl px-6 h-11 font-black transition-all active:scale-95"
             onClick={() => router.push('/promotions/deals/new')}
         >
           <Plus className="mr-2 h-5 w-5" /> New Deal
         </Button>
       </div>
 
-      <Card className="border-none shadow-sm ring-1 ring-slate-100 overflow-hidden bg-white">
+      <Card className="border-none shadow-xs overflow-hidden bg-card text-card-foreground">
         {/* Filter Toolbar */}
-        <div className="p-4 bg-white border-b border-slate-100">
+        <div className="p-4 bg-card border-b border-border">
             <form onSubmit={handleApplyFilter} className="grid grid-cols-1 md:grid-cols-5 gap-4 items-end">
                 <FilterSearchInput
                     label="Search Deals"
@@ -189,15 +189,15 @@ export default function DealsPage() {
             </form>
         </div>
 
-        <CardHeader className="bg-slate-50/30 border-b border-slate-100 px-6 py-4">
+        <CardHeader className="bg-muted/30 border-b border-border px-6 py-4">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
-              <div className="w-8 h-8 rounded-lg bg-blue-50 flex items-center justify-center text-blue-500">
+              <div className="w-8 h-8 rounded-lg bg-indigo-500/10 flex items-center justify-center text-indigo-600 dark:text-indigo-400">
                 <Ticket size={16} />
               </div>
-              <CardTitle className="text-base font-bold text-slate-700">Inventory List</CardTitle>
+              <CardTitle className="text-base font-bold text-foreground">Inventory List</CardTitle>
             </div>
-            <div className="text-xs font-bold text-slate-400 uppercase tracking-widest">
+            <div className="text-xs font-bold text-muted-foreground uppercase tracking-widest">
                 {totalItems} Total Deals
             </div>
           </div>
@@ -206,8 +206,8 @@ export default function DealsPage() {
           {loading ? (
             <div className="h-64 flex items-center justify-center">
               <div className="flex flex-col items-center gap-2">
-                <Loader2 className="h-10 w-10 animate-spin text-blue-400/50" />
-                <span className="text-xs font-bold text-slate-400 uppercase tracking-widest animate-pulse">Fetching Data...</span>
+                <Loader2 className="h-10 w-10 animate-spin text-indigo-600 dark:text-indigo-400" />
+                <span className="text-xs font-bold text-muted-foreground uppercase tracking-widest animate-pulse">Fetching Data...</span>
               </div>
             </div>
           ) : (

@@ -109,16 +109,16 @@ export default function WalletDetailPage({
 
   if (loading) {
     return (
-      <div className="p-8 space-y-6 animate-pulse">
-        <div className="h-8 w-64 bg-slate-100 rounded-lg" />
+      <div className="p-8 space-y-6 animate-pulse text-foreground">
+        <div className="h-8 w-64 bg-muted rounded-lg" />
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
           <div className="lg:col-span-2 space-y-8">
-            <div className="h-64 bg-slate-50 rounded-3xl" />
-            <div className="h-96 bg-slate-50 rounded-3xl" />
+            <div className="h-64 bg-muted/30 rounded-3xl" />
+            <div className="h-96 bg-muted/30 rounded-3xl" />
           </div>
           <div className="space-y-8">
-            <div className="h-48 bg-slate-50 rounded-3xl" />
-            <div className="h-64 bg-slate-50 rounded-3xl" />
+            <div className="h-48 bg-muted/30 rounded-3xl" />
+            <div className="h-64 bg-muted/30 rounded-3xl" />
           </div>
         </div>
       </div>
@@ -127,49 +127,38 @@ export default function WalletDetailPage({
 
   if (!wallet)
     return (
-      <div className="p-20 text-center text-slate-400">Wallet not found</div>
+      <div className="p-20 text-center text-muted-foreground bg-card rounded-2xl">
+        Wallet not found
+      </div>
     );
 
   return (
-    <div className="space-y-4 max-w-6xl mx-auto pb-10">
+    <div className="space-y-4 max-w-6xl mx-auto pb-10 text-foreground">
       {/* Header with Breadcrumbs */}
       <div className="flex flex-col gap-3">
-        <div className="flex items-center text-[10px] font-bold text-slate-400 uppercase tracking-widest gap-2">
+        <div className="flex items-center text-[10px] font-bold text-muted-foreground uppercase tracking-widest gap-2">
           <button
             onClick={() => router.push('/wallets')}
-            className="hover:text-indigo-600 transition-colors uppercase tracking-widest font-bold text-[10px]"
+            className="hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors uppercase tracking-widest font-bold text-[10px]"
           >
             Customer Wallets
           </button>
           <ChevronRight className="w-3 h-3" />
-          <span className="text-slate-900">Wallet Details</span>
+          <span className="text-foreground">Wallet Details</span>
         </div>
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-4">
-            {/* <Button 
-              variant="outline" 
-              size="icon" 
-              onClick={() => router.back()}
-              className="rounded-xl h-9 w-9 border-slate-200 bg-white hover:bg-slate-50 shadow-sm"
-            >
-              <ArrowLeft className="w-4 h-4 text-slate-600" />
-            </Button> */}
             <div>
-              <h1 className="text-2xl font-bold text-slate-900 tracking-tight">
+              <h1 className="text-2xl font-bold text-foreground tracking-tight">
                 Account Detail
               </h1>
-              {/* <div className="flex items-center gap-2 mt-0.5">
-                <span className="text-xs text-slate-500 font-medium">
-                  UUID: <span className="font-mono text-slate-400">{wallet.userId}</span>
-                </span>
-              </div> */}
             </div>
           </div>
           <div className="flex items-center gap-2">
             <Button
               onClick={() => fetchWalletData(true)}
               variant="outline"
-              className="rounded-lg border-slate-200 font-semibold text-xs h-9 px-4 text-slate-600 hover:bg-slate-50"
+              className="rounded-lg border-border font-semibold text-xs h-9 px-4 text-muted-foreground hover:text-foreground hover:bg-muted bg-card"
             >
               <RefreshCcw className="w-3.5 h-3.5 mr-2" /> Sync Data
             </Button>
@@ -177,9 +166,9 @@ export default function WalletDetailPage({
               onClick={handleToggleFreeze}
               variant={wallet.status === 'FROZEN' ? 'default' : 'destructive'}
               className={cn(
-                'rounded-lg font-semibold text-xs h-9 px-4 shadow-sm',
+                'rounded-lg font-semibold text-xs h-9 px-4 shadow-xs',
                 wallet.status === 'FROZEN'
-                  ? 'bg-emerald-600 hover:bg-emerald-700 text-white'
+                  ? 'bg-emerald-600 hover:bg-emerald-700 text-white dark:bg-emerald-500 dark:hover:bg-emerald-600'
                   : '',
               )}
             >
@@ -201,7 +190,7 @@ export default function WalletDetailPage({
         {/* LEFT COLUMN: Main Info & History */}
         <div className="lg:col-span-2 space-y-6">
           {/* PREMIUM BALANCE CARD */}
-          <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-slate-900 to-slate-800 p-6 text-white shadow-lg border border-slate-700/50">
+          <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-slate-900 to-slate-800 dark:from-slate-950 dark:to-slate-900 p-6 text-white shadow-md border border-slate-850">
             <div className="absolute top-0 right-0 w-64 h-64 bg-indigo-500/10 rounded-full blur-3xl -translate-y-1/2 translate-x-1/2" />
 
             <div className="relative z-10 flex flex-col md:flex-row justify-between items-start md:items-center gap-4 border-b border-white/10 pb-6">
@@ -285,10 +274,10 @@ export default function WalletDetailPage({
           </div>
 
           {/* TRANSACTION HISTORY */}
-          <Card className="border-none shadow-sm ring-1 ring-slate-100 rounded-2xl overflow-hidden bg-white">
-            <CardHeader className="p-5 border-b border-slate-100 flex flex-row items-center justify-between">
+          <Card className="border-none shadow-xs rounded-2xl overflow-hidden bg-card text-card-foreground">
+            <CardHeader className="p-5 border-b border-border flex flex-row items-center justify-between">
               <div>
-                <CardTitle className="text-sm font-bold text-slate-900 flex items-center gap-2">
+                <CardTitle className="text-sm font-bold text-foreground flex items-center gap-2">
                   <History className="w-4 h-4 text-indigo-600" /> Transaction
                   Logs
                 </CardTitle>
@@ -297,7 +286,7 @@ export default function WalletDetailPage({
                 <Button
                   variant="ghost"
                   size="sm"
-                  className="h-8 text-xs font-medium text-indigo-600 hover:bg-indigo-50"
+                  className="h-8 text-xs font-medium text-indigo-600 dark:text-indigo-400 hover:bg-indigo-500/10"
                 >
                   View All <ExternalLink className="w-3 h-3 ml-1.5" />
                 </Button>
@@ -307,22 +296,22 @@ export default function WalletDetailPage({
               <div className="overflow-x-auto">
                 <table className="w-full text-left text-sm">
                   <thead>
-                    <tr className="bg-slate-50/50 border-b border-slate-100">
-                      <th className="px-5 py-3 text-[10px] font-semibold text-slate-500 uppercase tracking-wider">
+                    <tr className="bg-muted/30 border-b border-border">
+                      <th className="px-5 py-3 text-[10px] font-semibold text-muted-foreground uppercase tracking-wider">
                         Type
                       </th>
-                      <th className="px-5 py-3 text-[10px] font-semibold text-slate-500 uppercase tracking-wider">
+                      <th className="px-5 py-3 text-[10px] font-semibold text-muted-foreground uppercase tracking-wider">
                         Details
                       </th>
-                      <th className="px-5 py-3 text-[10px] font-semibold text-slate-500 uppercase tracking-wider text-right">
+                      <th className="px-5 py-3 text-[10px] font-semibold text-muted-foreground uppercase tracking-wider text-right">
                         Amount
                       </th>
-                      <th className="px-5 py-3 text-[10px] font-semibold text-slate-500 uppercase tracking-wider text-center">
+                      <th className="px-5 py-3 text-[10px] font-semibold text-muted-foreground uppercase tracking-wider text-center">
                         Status
                       </th>
                     </tr>
                   </thead>
-                  <tbody className="divide-y divide-slate-100">
+                  <tbody className="divide-y divide-border">
                     {transactions.map((tx) => {
                       const description = (tx.description || '').toLowerCase();
                       const isTopup =
@@ -345,12 +334,12 @@ export default function WalletDetailPage({
                       return (
                         <tr
                           key={tx.id}
-                          className="hover:bg-slate-50/50 transition-colors group"
+                          className="hover:bg-muted/50 transition-colors group"
                         >
                           <td className="px-5 py-3">
                             {isIn ? (
                               <div className="flex items-center gap-2">
-                                <div className="w-7 h-7 rounded-lg bg-emerald-50 flex items-center justify-center text-emerald-600">
+                                <div className="w-7 h-7 rounded-lg bg-emerald-500/10 flex items-center justify-center text-emerald-600 dark:text-emerald-400">
                                   <ArrowDownLeft className="w-3.5 h-3.5" />
                                 </div>
                                 <span className="text-[10px] font-bold uppercase text-emerald-600">
@@ -359,7 +348,7 @@ export default function WalletDetailPage({
                               </div>
                             ) : (
                               <div className="flex items-center gap-2">
-                                <div className="w-7 h-7 rounded-lg bg-rose-50 flex items-center justify-center text-rose-600">
+                                <div className="w-7 h-7 rounded-lg bg-rose-5050 bg-rose-500/10 flex items-center justify-center text-rose-600 dark:text-rose-400">
                                   <ArrowUpRight className="w-3.5 h-3.5" />
                                 </div>
                                 <span className="text-[10px] font-bold uppercase text-rose-600">
@@ -370,7 +359,7 @@ export default function WalletDetailPage({
                           </td>
                           <td className="px-5 py-3">
                             <div className="space-y-0.5">
-                              <p className="text-xs font-semibold text-slate-700">
+                              <p className="text-xs font-semibold text-foreground">
                                 {tx.description ||
                                   (isTopup
                                     ? 'Wallet Top-up'
@@ -378,7 +367,7 @@ export default function WalletDetailPage({
                                       ? 'Wallet Withdrawal'
                                       : 'Transfer')}
                               </p>
-                              <div className="flex items-center gap-2 text-[10px] text-slate-400">
+                              <div className="flex items-center gap-2 text-[10px] text-muted-foreground">
                                 <span>
                                   {new Date(tx.createdAt).toLocaleDateString()}
                                 </span>
@@ -396,7 +385,7 @@ export default function WalletDetailPage({
                             <p
                               className={cn(
                                 'text-sm font-bold tabular-nums',
-                                isIn ? 'text-emerald-600' : 'text-slate-700',
+                                isIn ? 'text-emerald-600 dark:text-emerald-400' : 'text-foreground',
                               )}
                             >
                               {isIn ? '+' : '-'}
@@ -409,8 +398,8 @@ export default function WalletDetailPage({
                               className={cn(
                                 'rounded-md px-2 py-0.5 text-[9px] font-bold uppercase border-none',
                                 tx.status === TransactionStatus.COMPLETED
-                                  ? 'bg-emerald-50 text-emerald-600'
-                                  : 'bg-rose-50 text-rose-600',
+                                  ? 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400'
+                                  : 'bg-rose-500/10 text-rose-600 dark:text-rose-400',
                               )}
                             >
                               {tx.status}
@@ -423,7 +412,7 @@ export default function WalletDetailPage({
                       <tr>
                         <td
                           colSpan={4}
-                          className="py-8 text-center text-slate-400 text-xs"
+                          className="py-8 text-center text-muted-foreground text-xs"
                         >
                           No recent transactions found
                         </td>
@@ -439,9 +428,9 @@ export default function WalletDetailPage({
         {/* RIGHT COLUMN: User & Actions */}
         <div className="space-y-6">
           {/* USER CARD */}
-          <Card className="border-none shadow-sm ring-1 ring-slate-100 rounded-2xl bg-white">
-            <CardHeader className="p-5 border-b border-slate-100">
-              <CardTitle className="text-sm font-bold text-slate-800 flex items-center gap-2">
+          <Card className="border-none shadow-xs rounded-2xl bg-card text-card-foreground">
+            <CardHeader className="p-5 border-b border-border">
+              <CardTitle className="text-sm font-bold text-foreground flex items-center gap-2">
                 <UserIcon className="w-4 h-4 text-indigo-500" /> Account Owner
               </CardTitle>
             </CardHeader>
@@ -449,38 +438,38 @@ export default function WalletDetailPage({
               {user ? (
                 <div className="space-y-5">
                   <div className="flex items-center gap-3">
-                    <div className="w-12 h-12 rounded-xl bg-indigo-50 flex items-center justify-center border border-indigo-100">
-                      <span className="text-sm font-bold text-indigo-600">
+                    <div className="w-12 h-12 rounded-xl bg-indigo-500/10 flex items-center justify-center border border-indigo-500/20">
+                      <span className="text-sm font-bold text-indigo-600 dark:text-indigo-400">
                         {user.phoneNumber.slice(-2)}
                       </span>
                     </div>
                     <div>
-                      <p className="text-sm font-bold text-slate-900">
+                      <p className="text-sm font-bold text-foreground">
                         {user.phoneNumber}
                       </p>
                       <Badge
                         variant="outline"
-                        className="rounded-md px-1.5 py-0 text-[9px] font-semibold border-indigo-100 text-indigo-600 uppercase mt-1"
+                        className="rounded-md px-1.5 py-0 text-[9px] font-semibold border-indigo-500/20 text-indigo-600 dark:text-indigo-400 uppercase mt-1"
                       >
                         Verified User
                       </Badge>
                     </div>
                   </div>
 
-                  <div className="space-y-3 pt-3 border-t border-slate-100">
+                  <div className="space-y-3 pt-3 border-t border-border">
                     <div className="flex justify-between items-center">
-                      <span className="text-xs font-medium text-slate-500">
+                      <span className="text-xs font-medium text-muted-foreground">
                         Status
                       </span>
-                      <span className="text-xs font-semibold text-slate-800">
+                      <span className="text-xs font-semibold text-foreground">
                         {user.status}
                       </span>
                     </div>
                     <div className="flex justify-between items-center">
-                      <span className="text-xs font-medium text-slate-500">
+                      <span className="text-xs font-medium text-muted-foreground">
                         Joined
                       </span>
-                      <span className="text-xs font-semibold text-slate-800">
+                      <span className="text-xs font-semibold text-foreground">
                         {new Date(user.createdAt).toLocaleDateString()}
                       </span>
                     </div>
@@ -493,7 +482,7 @@ export default function WalletDetailPage({
                     <Button
                       variant="outline"
                       size="sm"
-                      className="w-full h-8 rounded-lg text-xs font-semibold border-slate-200 text-slate-600 hover:bg-slate-50 hover:text-indigo-600"
+                      className="w-full h-8 rounded-lg text-xs font-semibold border-border text-muted-foreground hover:bg-muted hover:text-indigo-600 dark:hover:text-indigo-400 bg-card"
                     >
                       View User Profile{' '}
                       <ChevronRight className="w-3 h-3 ml-1" />
@@ -502,8 +491,8 @@ export default function WalletDetailPage({
                 </div>
               ) : (
                 <div className="text-center py-8 space-y-2">
-                  <Info className="w-6 h-6 text-slate-300 mx-auto" />
-                  <p className="text-xs font-medium text-slate-500">
+                  <Info className="w-6 h-6 text-muted-foreground/30 mx-auto" />
+                  <p className="text-xs font-medium text-muted-foreground">
                     Profile data unavailable
                   </p>
                 </div>
@@ -512,13 +501,13 @@ export default function WalletDetailPage({
           </Card>
 
           {/* ADMIN ACTIONS */}
-          <Card className="border-none shadow-sm ring-1 ring-slate-100 rounded-2xl bg-white relative overflow-hidden">
-            <CardHeader className="p-5 border-b border-slate-100 flex flex-row items-center justify-between">
-              <CardTitle className="text-sm font-bold text-slate-400 flex items-center gap-2">
-                <TrendingUp className="w-4 h-4 text-slate-300" /> Fund
+          <Card className="border-none shadow-xs rounded-2xl bg-card text-card-foreground relative overflow-hidden">
+            <CardHeader className="p-5 border-b border-border flex flex-row items-center justify-between">
+              <CardTitle className="text-sm font-bold text-muted-foreground flex items-center gap-2">
+                <TrendingUp className="w-4 h-4 text-muted-foreground/50" /> Fund
                 Management
               </CardTitle>
-              <Badge className="bg-slate-100 text-slate-400 border-none font-black text-[9px] uppercase">
+              <Badge className="bg-muted text-muted-foreground border-none font-black text-[9px] uppercase">
                 Soon
               </Badge>
             </CardHeader>
@@ -526,7 +515,7 @@ export default function WalletDetailPage({
               <Button
                 disabled
                 variant="outline"
-                className="w-full rounded-lg font-semibold text-xs border-slate-100 text-slate-300 bg-slate-50 cursor-not-allowed"
+                className="w-full rounded-lg font-semibold text-xs border-border text-muted-foreground/50 bg-muted/50 cursor-not-allowed"
               >
                 Manual Adjustment
               </Button>

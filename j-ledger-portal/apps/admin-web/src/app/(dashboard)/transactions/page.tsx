@@ -43,6 +43,7 @@ import { transactionRequester } from '@/lib/requesters/transactionRequester';
 import { Transaction, TransactionStatus, TransactionType } from '@repo/dto';
 import { toast } from 'sonner';
 import { TablePagination } from '@/components/common/TablePagination';
+import { cn } from '@/lib/utils';
 import {
   FilterSearchInput,
   FilterSelect,
@@ -150,25 +151,25 @@ export default function TransactionsPage() {
       case TransactionType.TRANSFER:
         return <ArrowRightLeft className="w-4 h-4 text-indigo-500" />;
       default:
-        return <DollarSign className="w-4 h-4 text-slate-400" />;
+        return <DollarSign className="w-4 h-4 text-muted-foreground" />;
     }
   };
 
   return (
-    <div className="space-y-6 pb-10">
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+    <div className="space-y-6 pb-10 text-foreground">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div className="flex-1">
-          <h2 className="text-3xl font-bold tracking-tight text-slate-900">
+          <h2 className="text-2xl md:text-3xl font-bold tracking-tight text-foreground">
             Transactions
           </h2>
           <div className="flex flex-wrap items-center gap-2 mt-1">
-            <p className="text-slate-500">
+            <p className="text-muted-foreground">
               Monitor and manage all financial activities
             </p>
             {activeFilters.userId && (
               <Badge
                 variant="secondary"
-                className="bg-indigo-50 text-indigo-600 border-indigo-100 px-2 py-0.5 rounded-md flex items-center gap-1"
+                className="bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 border border-indigo-500/20 px-2 py-0.5 rounded-md flex items-center gap-1"
               >
                 Filtering by User:{' '}
                 <span className="font-mono text-[10px]">
@@ -192,12 +193,12 @@ export default function TransactionsPage() {
         </div>
       </div>
 
-      <Card className="border-none shadow-sm ring-1 ring-slate-100 overflow-hidden bg-white">
+      <Card className="border-none shadow-xs rounded-xl overflow-hidden bg-card text-card-foreground">
         {/* Filter Toolbar */}
-        <div className="p-4 bg-white border-b border-slate-100">
+        <div className="p-4 bg-card border-b border-border">
           <form
             onSubmit={handleApplyFilter}
-            className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-6 gap-4 items-end"
+            className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-6 gap-4 items-end bg-card text-foreground"
           >
             <FilterSearchInput
               label="Reference ID"
@@ -263,7 +264,7 @@ export default function TransactionsPage() {
         <div className="overflow-x-auto">
           <table className="w-full text-left border-collapse">
             <thead>
-              <tr className="border-b border-slate-100 bg-slate-50/30 text-slate-400 text-[10px] uppercase font-bold tracking-widest">
+              <tr className="border-b border-border bg-muted/30 text-muted-foreground text-[10px] uppercase font-bold tracking-widest">
                 <th className="px-6 py-4 w-12 text-center">No.</th>
                 <th className="px-6 py-4">Reference ID</th>
                 <th className="px-6 py-4">Type</th>
@@ -272,21 +273,21 @@ export default function TransactionsPage() {
                 <th className="px-6 py-4">Created At</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-slate-50">
+            <tbody className="divide-y divide-border">
               {isLoading ? (
                 Array.from({ length: 5 }).map((_, i) => (
                   <tr key={i} className="animate-pulse">
-                    <td colSpan={6} className="px-6 py-8 bg-slate-50/10" />
+                    <td colSpan={6} className="px-6 py-8 bg-muted/10" />
                   </tr>
                 ))
               ) : transactions.length === 0 ? (
                 <tr>
                   <td colSpan={6} className="px-6 py-20 text-center">
                     <div className="flex flex-col items-center gap-3">
-                      <div className="w-16 h-16 rounded-full bg-slate-50 flex items-center justify-center">
-                        <Activity className="w-8 h-8 text-slate-200" />
+                      <div className="w-16 h-16 rounded-full bg-muted flex items-center justify-center">
+                        <Activity className="w-8 h-8 text-muted-foreground/30" />
                       </div>
-                      <p className="text-slate-400 font-medium">
+                      <p className="text-muted-foreground font-medium">
                         No transactions found matching your criteria.
                       </p>
                       <Button
@@ -320,43 +321,45 @@ export default function TransactionsPage() {
                   <tr
                     key={txn.id}
                     onClick={() => router.push(`/transactions/${txn.id}`)}
-                    className="hover:bg-slate-50 transition-colors cursor-pointer"
+                    className="hover:bg-muted/30 transition-colors cursor-pointer"
                   >
-                    <td className="px-6 py-5 text-center font-bold text-xs text-slate-400">
+                    <td className="px-6 py-5 text-center font-bold text-xs text-muted-foreground">
                       {(currentPage - 1) * 10 + index + 1}
                     </td>
                     <td className="px-6 py-5" onClick={(e) => e.stopPropagation()}>
-                      <span className="text-xs font-mono font-semibold text-slate-700 select-all">
+                      <span className="text-xs font-mono font-semibold text-foreground select-all">
                         {String(txn.transactionId || txn.id).toUpperCase()}
                       </span>
                     </td>
                     <td className="px-6 py-5">
                       <div className="flex items-center gap-2.5">
                         <div
-                          className={`w-8 h-8 rounded-lg flex items-center justify-center ${
+                          className={cn(
+                            "w-8 h-8 rounded-lg flex items-center justify-center",
                             txn.transactionType === TransactionType.TOPUP
-                              ? 'bg-emerald-50'
+                              ? 'bg-emerald-500/10'
                               : txn.transactionType === TransactionType.WITHDRAW
-                                ? 'bg-rose-50'
-                                : 'bg-indigo-50'
-                          }`}
+                                ? 'bg-rose-500/10'
+                                : 'bg-indigo-500/10'
+                          )}
                         >
                           {getTransactionIcon(txn.transactionType)}
                         </div>
-                        <span className="text-xs font-bold text-slate-600 uppercase tracking-tight">
+                        <span className="text-xs font-bold text-foreground uppercase tracking-tight">
                           {txn.transactionType}
                         </span>
                       </div>
                     </td>
                     <td className="px-6 py-5 text-right">
                       <p
-                        className={`text-sm font-black tabular-nums ${
+                        className={cn(
+                          "text-sm font-black tabular-nums",
                           txn.transactionType === TransactionType.TOPUP
-                            ? 'text-emerald-600'
+                            ? 'text-emerald-600 dark:text-emerald-400'
                             : txn.transactionType === TransactionType.WITHDRAW
-                              ? 'text-rose-600'
-                              : 'text-slate-800'
-                        }`}
+                              ? 'text-rose-600 dark:text-rose-400'
+                              : 'text-foreground'
+                        )}
                       >
                         {txn.transactionType === TransactionType.TOPUP
                           ? '+'
@@ -373,23 +376,23 @@ export default function TransactionsPage() {
                     </td>
                     <td className="px-6 py-5">
                       {txn.status === TransactionStatus.COMPLETED ? (
-                        <div className="inline-flex items-center px-2.5 py-0.5 rounded-full bg-emerald-50 text-emerald-600 text-[10px] font-black uppercase tracking-wider border border-emerald-100">
+                        <div className="inline-flex items-center px-2.5 py-0.5 rounded-full bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 text-[10px] font-black uppercase tracking-wider border border-emerald-500/20">
                           <CheckCircle2 className="w-3 h-3 mr-1" />
                           Completed
                         </div>
                       ) : txn.status === TransactionStatus.FAILED ? (
-                        <div className="inline-flex items-center px-2.5 py-0.5 rounded-full bg-rose-50 text-rose-600 text-[10px] font-black uppercase tracking-wider border border-rose-100">
+                        <div className="inline-flex items-center px-2.5 py-0.5 rounded-full bg-rose-500/10 text-rose-600 dark:text-rose-400 text-[10px] font-black uppercase tracking-wider border border-rose-500/20">
                           <XCircle className="w-3 h-3 mr-1" />
                           Failed
                         </div>
                       ) : (
-                        <div className="inline-flex items-center px-2.5 py-0.5 rounded-full bg-amber-50 text-amber-600 text-[10px] font-black uppercase tracking-wider border border-amber-100">
+                        <div className="inline-flex items-center px-2.5 py-0.5 rounded-full bg-amber-500/10 text-amber-600 dark:text-amber-400 text-[10px] font-black uppercase tracking-wider border border-amber-500/20">
                           <Clock className="w-3 h-3 mr-1" />
                           {txn.status}
                         </div>
                       )}
                     </td>
-                    <td className="px-6 py-5 text-xs text-slate-500 font-medium tabular-nums">
+                    <td className="px-6 py-5 text-xs text-muted-foreground font-medium tabular-nums">
                       {format(new Date(txn.createdAt), 'MMM d, yyyy HH:mm')}
                     </td>
                   </tr>

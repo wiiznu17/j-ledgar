@@ -87,10 +87,10 @@ export default function RedemptionsPage() {
   }, []);
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 text-foreground">
       <div className="flex items-center justify-between">
         <div>
-          <h2 className="text-3xl font-bold tracking-tight text-[#2D3748]">
+          <h2 className="text-3xl font-bold tracking-tight text-foreground">
             Redemption History
           </h2>
           <p className="text-muted-foreground mt-1">
@@ -99,16 +99,16 @@ export default function RedemptionsPage() {
         </div>
       </div>
 
-      <Card className="border-border shadow-sm overflow-hidden">
+      <Card className="border border-border bg-card text-card-foreground shadow-xs overflow-hidden">
         {/* Filter Toolbar */}
-        <div className="p-4 bg-slate-50/50 border-b border-slate-100">
+        <div className="p-4 bg-muted/30 border-b border-border">
           <form onSubmit={handleApplyFilter} className="grid grid-cols-1 md:grid-cols-4 gap-4 items-end">
             <FilterSearchInput
               label="User or Deal Search"
               placeholder="Email, Phone, or Deal..."
               value={search}
               onChange={(e: React.ChangeEvent<HTMLInputElement>) => setSearch(e.target.value)}
-              className="md:col-span-2"
+              className="md:col-span-2 text-foreground"
             />
             
             <FilterSelect
@@ -134,12 +134,12 @@ export default function RedemptionsPage() {
         <CardContent className="p-0">
           {loading && redemptions.length === 0 ? (
             <div className="h-64 flex items-center justify-center">
-              <Loader2 className="h-8 w-8 animate-spin text-pink-300" />
+              <Loader2 className="h-8 w-8 animate-spin text-indigo-600 dark:text-indigo-400" />
             </div>
           ) : (
             <>
               <RedemptionsTable redemptions={redemptions} />
-              <div className="p-4 border-t border-slate-100">
+              <div className="p-4 border-t border-border bg-card">
                 <TablePagination
                   currentPage={page}
                   totalPages={totalPages}

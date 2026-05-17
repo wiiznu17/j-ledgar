@@ -156,35 +156,35 @@ export default function WalletAccountsPage() {
   const isSuperAdmin = userRole === 'SUPER_ADMIN';
 
   return (
-    <div className="space-y-6 pb-10">
+    <div className="space-y-6 pb-10 text-foreground">
       {/* Page Header */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
           <div className="flex items-center gap-2 mb-1">
-            <div className="p-1.5 bg-indigo-50 rounded-lg">
-              <Wallet className="w-5 h-5 text-indigo-600" />
+            <div className="p-1.5 bg-indigo-500/10 rounded-lg">
+              <Wallet className="w-5 h-5 text-indigo-600 dark:text-indigo-400" />
             </div>
-            <h2 className="text-3xl font-bold tracking-tight text-slate-900">
+            <h2 className="text-3xl font-bold tracking-tight text-foreground">
               Customer Wallets
             </h2>
           </div>
-          <p className="text-slate-500">
+          <p className="text-muted-foreground">
             Monitor and manage all user wallets and their financial states.
           </p>
         </div>
         <div className="flex items-center gap-3">
           <Badge
             variant="outline"
-            className="bg-white border-slate-200 text-slate-500 px-3 py-1 text-[10px] font-bold uppercase tracking-wider"
+            className="bg-muted border-border text-muted-foreground px-3 py-1 text-[10px] font-bold uppercase tracking-wider"
           >
             Total Wallets: {total}
           </Badge>
         </div>
       </div>
 
-      <Card className="border-none shadow-sm ring-1 ring-slate-100 overflow-hidden bg-white">
+      <Card className="border-none shadow-xs overflow-hidden bg-card text-card-foreground">
         {/* Filter Toolbar */}
-        <div className="p-4 bg-white border-b border-slate-100">
+        <div className="p-4 bg-card border-b border-border">
           <form
             onSubmit={handleApplyFilter}
             className="grid grid-cols-1 md:grid-cols-4 gap-4 items-end"
@@ -221,24 +221,24 @@ export default function WalletAccountsPage() {
         <CardContent className="p-0">
           <div className="overflow-x-auto">
             <Table>
-              <TableHeader className="bg-slate-50/50">
-                <TableRow className="border-slate-100 hover:bg-transparent">
-                  <TableHead className="w-[60px] text-[11px] font-bold text-slate-500 uppercase tracking-wider pl-6">
+              <TableHeader className="bg-muted/30">
+                <TableRow className="border-border hover:bg-transparent">
+                  <TableHead className="w-[60px] text-[11px] font-bold text-muted-foreground uppercase tracking-wider pl-6">
                     No.
                   </TableHead>
-                  <TableHead className="w-[180px] text-[11px] font-bold text-slate-500 uppercase tracking-wider">
+                  <TableHead className="w-[180px] text-[11px] font-bold text-muted-foreground uppercase tracking-wider">
                     Wallet ID
                   </TableHead>
-                  <TableHead className="text-[11px] font-bold text-slate-500 uppercase tracking-wider">
+                  <TableHead className="text-[11px] font-bold text-muted-foreground uppercase tracking-wider">
                     Owner (User ID)
                   </TableHead>
-                  <TableHead className="text-[11px] font-bold text-slate-500 uppercase tracking-wider text-right">
+                  <TableHead className="text-[11px] font-bold text-muted-foreground uppercase tracking-wider text-right">
                     Balance
                   </TableHead>
-                  <TableHead className="text-[11px] font-bold text-slate-500 uppercase tracking-wider text-center">
+                  <TableHead className="text-[11px] font-bold text-muted-foreground uppercase tracking-wider text-center">
                     Status
                   </TableHead>
-                  <TableHead className="text-[11px] font-bold text-slate-500 uppercase tracking-wider text-right">
+                  <TableHead className="text-[11px] font-bold text-muted-foreground uppercase tracking-wider text-right">
                     Last Updated
                   </TableHead>
                   <TableHead className="w-[80px]"></TableHead>
@@ -247,20 +247,20 @@ export default function WalletAccountsPage() {
               <TableBody>
                 {loading ? (
                   Array.from({ length: 5 }).map((_, i) => (
-                    <TableRow key={i} className="animate-pulse border-slate-50">
-                      <TableCell colSpan={7} className="h-16 bg-slate-50/20" />
+                    <TableRow key={i} className="animate-pulse border-border">
+                      <TableCell colSpan={7} className="h-16 bg-muted/20" />
                     </TableRow>
                   ))
                 ) : wallets.length > 0 ? (
                   wallets.map((wallet, index) => (
                     <TableRow
                       key={wallet.id}
-                      className="border-slate-50 hover:bg-slate-50/30 transition-colors group"
+                      className="border-border hover:bg-muted/50 transition-colors group"
                     >
-                      <TableCell className="pl-6 text-xs font-bold text-slate-400 tabular-nums">
+                      <TableCell className="pl-6 text-xs font-bold text-muted-foreground tabular-nums">
                         {(page - 1) * 10 + index + 1}
                       </TableCell>
-                      <TableCell className="font-mono text-xs font-bold text-indigo-600">
+                      <TableCell className="font-mono text-xs font-bold text-indigo-600 dark:text-indigo-400">
                         <Link
                           href={`/wallets/${wallet.id}`}
                           className="hover:underline underline-offset-4"
@@ -271,7 +271,7 @@ export default function WalletAccountsPage() {
                       <TableCell>
                         <div className="flex flex-col">
                           <span
-                            className="text-xs font-mono text-slate-400 truncate w-40"
+                            className="text-xs font-mono text-muted-foreground truncate w-40"
                             title={wallet.userId}
                           >
                             {wallet.userId}
@@ -283,8 +283,8 @@ export default function WalletAccountsPage() {
                           className={cn(
                             'font-bold tabular-nums',
                             wallet.balance > 0
-                              ? 'text-emerald-600'
-                              : 'text-slate-900',
+                              ? 'text-emerald-600 dark:text-emerald-400'
+                              : 'text-foreground',
                           )}
                         >
                           {wallet.balance.toLocaleString(undefined, {
@@ -292,7 +292,7 @@ export default function WalletAccountsPage() {
                             maximumFractionDigits: 2,
                           })}
                         </span>
-                        <span className="ml-1 text-[10px] font-bold text-slate-400">
+                        <span className="ml-1 text-[10px] font-bold text-muted-foreground">
                           {wallet.currency}
                         </span>
                       </TableCell>
@@ -301,17 +301,17 @@ export default function WalletAccountsPage() {
                           className={cn(
                             'rounded-lg px-2 py-0.5 text-[10px] font-bold border-none',
                             wallet.status === 'ACTIVE' &&
-                              'bg-emerald-50 text-emerald-600 hover:bg-emerald-50',
+                              'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 hover:bg-emerald-500/20',
                             wallet.status === 'FROZEN' &&
-                              'bg-rose-50 text-rose-600 hover:bg-rose-50',
+                              'bg-rose-500/10 text-rose-600 dark:text-rose-400 hover:bg-rose-500/20',
                             wallet.status === 'INACTIVE' &&
-                              'bg-slate-100 text-slate-500 hover:bg-slate-100',
+                              'bg-muted text-muted-foreground hover:bg-muted',
                           )}
                         >
                           {wallet.status}
                         </Badge>
                       </TableCell>
-                      <TableCell className="text-right text-xs text-slate-400">
+                      <TableCell className="text-right text-xs text-muted-foreground">
                         {new Date(wallet.updatedAt).toLocaleDateString()}{' '}
                         {new Date(wallet.updatedAt).toLocaleTimeString([], {
                           hour: '2-digit',
@@ -321,34 +321,34 @@ export default function WalletAccountsPage() {
                       <TableCell>
                         <div className="flex justify-end">
                           <Popover>
-                            <PopoverTrigger className="h-8 w-8 inline-flex items-center justify-center rounded-lg hover:bg-slate-100 text-slate-400 transition-colors outline-none focus-visible:ring-2 focus-visible:ring-indigo-500">
+                            <PopoverTrigger className="h-8 w-8 inline-flex items-center justify-center rounded-lg hover:bg-muted text-muted-foreground transition-colors outline-none focus-visible:ring-2 focus-visible:ring-indigo-500">
                               <MoreHorizontal className="h-4 w-4" />
                             </PopoverTrigger>
                             <PopoverContent
                               align="end"
-                              className="w-48 p-2 rounded-xl border-slate-100 shadow-xl bg-white"
+                              className="w-48 p-2 border-border shadow-xl bg-card text-card-foreground"
                             >
-                              <div className="text-[10px] font-bold text-slate-400 uppercase tracking-widest px-3 py-2">
+                              <div className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest px-3 py-2">
                                 Management
                               </div>
-                              <div className="h-px bg-slate-50 my-1" />
+                              <div className="h-px bg-border my-1" />
                               <Link
                                 href={`/wallets/${wallet.id}`}
-                                className="flex items-center w-full px-3 py-2 text-sm font-medium text-slate-600 hover:bg-slate-50 rounded-lg transition-colors"
+                                className="flex items-center w-full px-3 py-2 text-sm font-medium text-muted-foreground hover:text-foreground hover:bg-muted rounded-lg transition-colors"
                               >
-                                <Search className="w-4 h-4 mr-2 text-slate-400" />{' '}
+                                <Search className="w-4 h-4 mr-2 text-muted-foreground" />{' '}
                                 View Detail
                               </Link>
 
                               {isSuperAdmin && (
                                 <>
-                                  <div className="h-px bg-slate-50 my-1" />
+                                  <div className="h-px bg-border my-1" />
                                   <button
                                     className={cn(
                                       'flex items-center w-full px-3 py-2 text-sm font-bold rounded-lg transition-colors',
                                       wallet.status === 'FROZEN'
-                                        ? 'text-emerald-600 hover:bg-emerald-50'
-                                        : 'text-rose-600 hover:bg-rose-50',
+                                        ? 'text-emerald-600 dark:text-emerald-400 hover:bg-emerald-500/10'
+                                        : 'text-rose-600 dark:text-rose-400 hover:bg-rose-500/10',
                                     )}
                                     onClick={() => handleToggleFreeze(wallet)}
                                   >
@@ -375,7 +375,7 @@ export default function WalletAccountsPage() {
                 ) : (
                   <TableRow>
                     <TableCell colSpan={6} className="h-32 text-center">
-                      <div className="flex flex-col items-center justify-center text-slate-400">
+                      <div className="flex flex-col items-center justify-center text-muted-foreground">
                         <Wallet className="w-8 h-8 mb-2 opacity-20" />
                         <p className="text-sm font-medium">
                           No wallet accounts found

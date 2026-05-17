@@ -123,31 +123,31 @@ export default function ApplicationsPage() {
   };
 
   return (
-    <div className="space-y-4 pb-10 max-w-7xl mx-auto px-4 md:px-0">
+    <div className="space-y-4 pb-10 max-w-7xl mx-auto px-4 md:px-0 text-foreground">
       <div className="flex flex-col gap-3">
         {/* Breadcrumbs */}
-        <div className="flex items-center text-[10px] font-bold text-slate-400 uppercase tracking-widest gap-2">
-          <Link href="/merchants" className="hover:text-indigo-600 transition-colors">
+        <div className="flex items-center text-[10px] font-bold text-muted-foreground uppercase tracking-widest gap-2">
+          <Link href="/merchants" className="hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors">
             Merchants
           </Link>
           <ChevronRight className="w-3 h-3" />
-          <span className="text-slate-900">Application Queue</span>
+          <span className="text-foreground">Application Queue</span>
         </div>
 
         <div className="flex items-center gap-4">
           <Link href="/merchants">
-            <Button variant="ghost" size="sm" className="h-8 w-8 p-0 text-slate-500 hover:text-indigo-600">
+            <Button variant="ghost" size="sm" className="h-8 w-8 p-0 text-muted-foreground hover:text-indigo-600 dark:hover:text-indigo-400">
               <ChevronLeft className="w-5 h-5" />
             </Button>
           </Link>
           <div>
-            <h2 className="text-2xl font-bold tracking-tight text-slate-900 flex items-center gap-2">
+            <h2 className="text-2xl font-bold tracking-tight text-foreground flex items-center gap-2">
               Application Queue
-              <Badge variant="outline" className="ml-2 bg-amber-50 text-amber-600 border-amber-100 font-bold">
+              <Badge variant="outline" className="ml-2 bg-amber-500/10 text-amber-600 dark:text-amber-400 border-amber-500/20 font-bold px-2 py-0.5 rounded-lg">
                 {total} Pending
               </Badge>
             </h2>
-            <p className="text-sm text-slate-500 mt-1">
+            <p className="text-sm text-muted-foreground mt-1">
               Review and approve new merchant partnership requests.
             </p>
           </div>
@@ -155,29 +155,29 @@ export default function ApplicationsPage() {
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        <div className="bg-emerald-50/50 border border-emerald-100 rounded-xl p-4 flex items-start gap-4">
-          <div className="p-2 bg-emerald-100 rounded-lg">
-            <CheckCircle2 className="w-5 h-5 text-emerald-600" />
+        <div className="bg-emerald-500/10 border border-emerald-500/20 rounded-xl p-4 flex items-start gap-4">
+          <div className="p-2 bg-emerald-500/20 rounded-lg">
+            <CheckCircle2 className="w-5 h-5 text-emerald-600 dark:text-emerald-400" />
           </div>
           <div>
-            <div className="text-xs font-bold text-emerald-700 uppercase tracking-wider">Fast-Track Policy</div>
-            <div className="text-xs text-emerald-600/80 mt-1">Applications with complete tax documents are prioritized for review.</div>
+            <div className="text-xs font-bold text-emerald-700 dark:text-emerald-300 uppercase tracking-wider">Fast-Track Policy</div>
+            <div className="text-xs text-emerald-600/80 dark:text-emerald-400/80 mt-1">Applications with complete tax documents are prioritized for review.</div>
           </div>
         </div>
         
-        <div className="bg-amber-50/50 border border-amber-100 rounded-xl p-4 flex items-start gap-4 md:col-span-2">
-          <div className="p-2 bg-amber-100 rounded-lg">
-            <AlertCircle className="w-5 h-5 text-amber-600" />
+        <div className="bg-amber-500/10 border border-amber-500/20 rounded-xl p-4 flex items-start gap-4 md:col-span-2">
+          <div className="p-2 bg-amber-500/20 rounded-lg">
+            <AlertCircle className="w-5 h-5 text-amber-600 dark:text-amber-400" />
           </div>
           <div>
-            <div className="text-xs font-bold text-amber-700 uppercase tracking-wider">Verification Notice</div>
-            <div className="text-xs text-amber-600/80 mt-1">Ensure the business name matches the tax registration before approving. Approval grants access to create terminals and accept payments.</div>
+            <div className="text-xs font-bold text-amber-700 dark:text-amber-300 uppercase tracking-wider">Verification Notice</div>
+            <div className="text-xs text-amber-600/80 dark:text-amber-400/80 mt-1">Ensure the business name matches the tax registration before approving. Approval grants access to create terminals and accept payments.</div>
           </div>
         </div>
       </div>
 
-      <Card className="border-none shadow-sm ring-1 ring-slate-100 overflow-hidden bg-white">
-        <div className="p-3 bg-white border-b border-slate-100">
+      <Card className="border-none shadow-xs overflow-hidden bg-card text-card-foreground">
+        <div className="p-3 bg-card border-b border-border">
           <form
             onSubmit={handleFilter}
             className="flex flex-wrap items-end gap-4"
@@ -222,13 +222,13 @@ export default function ApplicationsPage() {
       </Card>
 
       <Dialog open={isRejectDialogOpen} onOpenChange={setIsRejectDialogOpen}>
-        <DialogContent className="sm:max-w-[425px]">
+        <DialogContent className="sm:max-w-[425px] bg-card text-card-foreground border border-border">
           <DialogHeader>
-            <DialogTitle className="flex items-center gap-2 text-rose-600">
+            <DialogTitle className="flex items-center gap-2 text-rose-600 dark:text-rose-400">
               <AlertCircle className="w-5 h-5" />
               Reject Application
             </DialogTitle>
-            <DialogDescription>
+            <DialogDescription className="text-muted-foreground">
               Please provide a reason for rejecting this merchant application. This note will be visible to the applicant.
             </DialogDescription>
           </DialogHeader>
@@ -237,11 +237,11 @@ export default function ApplicationsPage() {
               placeholder="e.g. Identity documents are blurry, please re-upload."
               value={rejectionNote}
               onChange={(e) => setRejectionNote(e.target.value)}
-              className="min-h-[100px]"
+              className="min-h-[100px] bg-muted border-border text-foreground placeholder:text-muted-foreground"
             />
           </div>
           <DialogFooter>
-            <Button variant="ghost" onClick={() => setIsRejectDialogOpen(false)}>Cancel</Button>
+            <Button variant="ghost" onClick={() => setIsRejectDialogOpen(false)} className="text-muted-foreground">Cancel</Button>
             <Button variant="destructive" onClick={handleConfirmReject}>Confirm Rejection</Button>
           </DialogFooter>
         </DialogContent>
@@ -253,8 +253,8 @@ export default function ApplicationsPage() {
 // Add Badge import (helper)
 function Badge({ children, className, variant = 'default' }: any) {
   const variants: any = {
-    default: 'bg-slate-100 text-slate-800',
-    outline: 'border border-slate-200 text-slate-600',
+    default: 'bg-muted text-muted-foreground border-border',
+    outline: 'border border-border text-muted-foreground',
   };
   return (
     <span className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-semibold transition-colors ${variants[variant]} ${className}`}>

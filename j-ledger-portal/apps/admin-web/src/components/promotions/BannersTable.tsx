@@ -44,25 +44,25 @@ export function BannersTable({
   };
 
   return (
-    <div className="border rounded-lg overflow-hidden border-border bg-white text-[#2D3748]">
+    <div className="border rounded-lg overflow-hidden border-border bg-card text-card-foreground">
       <Table>
-        <TableHeader className="bg-secondary/50">
+        <TableHeader className="bg-muted/30">
           <TableRow>
-            <TableHead>Preview</TableHead>
-            <TableHead>Title</TableHead>
-            <TableHead>Action Path</TableHead>
-            <TableHead>Priority</TableHead>
-            <TableHead className="text-right">Actions</TableHead>
+            <TableHead className="text-foreground">Preview</TableHead>
+            <TableHead className="text-foreground">Title</TableHead>
+            <TableHead className="text-foreground">Action Path</TableHead>
+            <TableHead className="text-foreground">Priority</TableHead>
+            <TableHead className="text-right text-foreground">Actions</TableHead>
           </TableRow>
         </TableHeader>
         <TableBody>
           {banners.map((banner) => (
             <TableRow
               key={banner.id}
-              className="hover:bg-secondary/30 transition-colors"
+              className="hover:bg-muted/30 border-b border-border transition-colors"
             >
               <TableCell>
-                <div className="w-32 aspect-video rounded-lg overflow-hidden bg-slate-100 border border-slate-200">
+                <div className="w-32 aspect-video rounded-lg overflow-hidden bg-muted border border-border">
                   <img
                     src={banner.imageUrl}
                     alt={banner.title}
@@ -74,7 +74,7 @@ export function BannersTable({
                   />
                 </div>
               </TableCell>
-              <TableCell className="font-semibold">{banner.title}</TableCell>
+              <TableCell className="font-semibold text-foreground">{banner.title}</TableCell>
               <TableCell>
                 <div className="flex items-center gap-2 text-xs font-mono text-muted-foreground">
                   <ExternalLink size={12} />
@@ -84,7 +84,7 @@ export function BannersTable({
               <TableCell>
                 <Badge
                   variant="outline"
-                  className="bg-slate-50 border-slate-200"
+                  className="bg-muted text-muted-foreground border-border"
                 >
                   P{banner.priority}
                 </Badge>
@@ -94,7 +94,7 @@ export function BannersTable({
                   <Button
                     variant="ghost"
                     size="icon"
-                    className="h-8 w-8 text-slate-400 hover:text-blue-600"
+                    className="h-8 w-8 text-muted-foreground hover:text-indigo-600 dark:hover:text-indigo-400"
                     onClick={() => onEdit(banner)}
                   >
                     <Edit2 size={14} />
@@ -102,7 +102,7 @@ export function BannersTable({
                   <Button
                     variant="ghost"
                     size="icon"
-                    className="h-8 w-8 text-slate-400 hover:text-red-600"
+                    className="h-8 w-8 text-muted-foreground hover:text-destructive"
                     disabled={deletingId === banner.id}
                     onClick={() => handleDelete(banner.id)}
                   >

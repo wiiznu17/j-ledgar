@@ -98,11 +98,11 @@ export default function DashboardPage() {
   }, [dateRange]);
 
   return (
-    <div className="space-y-8 animate-in fade-in duration-700 max-w-[1600px] mx-auto pb-12">
+    <div className="space-y-8 animate-in fade-in duration-700 max-w-[1600px] mx-auto pb-12 text-foreground">
       {/* Header */}
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <h1 className="text-3xl font-bold tracking-tight text-slate-900">
+          <h1 className="text-2xl md:text-3xl font-bold tracking-tight text-foreground">
             Dashboard
           </h1>
         </div>
@@ -114,7 +114,7 @@ export default function DashboardPage() {
             size="icon"
             onClick={() => fetchOverview()}
             disabled={loading}
-            className="h-11 w-11 rounded-lg border-slate-200 text-slate-600 hover:text-indigo-600 hover:border-indigo-100 hover:bg-indigo-50 transition-all duration-300 shadow-sm"
+            className="h-10 w-10 md:h-11 md:w-11 rounded-lg border-border text-muted-foreground hover:text-indigo-600 hover:border-indigo-500/20 hover:bg-indigo-500/10 transition-all duration-300 shadow-xs"
           >
             <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
           </Button>
@@ -124,49 +124,49 @@ export default function DashboardPage() {
       {/* Section 1: System Treasury & User Base (Static/Cumulative) */}
       <section className="space-y-4">
         <div className="flex items-center gap-2">
-          <div className="w-1 h-6 bg-slate-900 rounded-full" />
-          <h2 className="text-lg font-bold text-slate-900">System Treasury</h2>
+          <div className="w-1 h-6 bg-primary rounded-full" />
+          <h2 className="text-lg font-bold text-foreground">System Treasury</h2>
         </div>
-        <div className="grid gap-4 md:grid-cols-4 lg:grid-cols-4">
+        <div className="grid gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-4">
           <StatCard
             title="Total System Liquidity"
             value={(kycStats?.financial?.totalSystemBalance || 0).toLocaleString()}
             description="Total funds circulating across all ledgers"
             icon={DollarSign}
-            className="bg-white border-none ring-0 md:col-span-2"
+            className="bg-card text-card-foreground border-none ring-0 sm:col-span-2"
           />
           <StatCard
             title="Active Users"
             value={totalAccounts.toLocaleString()}
             description="Verified registered accounts"
             icon={Users}
-            className="bg-white border-none ring-0"
+            className="bg-card text-card-foreground border-none ring-0"
           />
           <StatCard
             title="VAT Payable"
             value={(kycStats?.financial?.totalVatPayable || 0).toLocaleString()}
             description="Accumulated tax settlement"
             icon={CreditCard}
-            className="bg-white border-none ring-0"
+            className="bg-card text-card-foreground border-none ring-0"
           />
         </div>
       </section>
 
       {/* Section 2: Performance Overview (Filtered by Date) */}
-      <section className="p-6 bg-slate-50/50 rounded-xl border border-slate-300 space-y-6">
-        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+      <section className="p-4 md:p-6 bg-muted/20 dark:bg-muted/10 rounded-xl border border-border space-y-6">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <div className="flex items-center gap-2">
             <div className="w-1 h-6 bg-indigo-500 rounded-full" />
             <div>
-              <h2 className="text-lg font-bold text-slate-900">Performance Overview</h2>
-              <p className="text-xs text-slate-500 font-medium">Metrics based on selected time range</p>
+              <h2 className="text-lg font-bold text-foreground">Performance Overview</h2>
+              <p className="text-xs text-muted-foreground font-medium">Metrics based on selected time range</p>
             </div>
           </div>
 
-          <div className="flex items-center bg-white rounded-lg border border-slate-200 p-1 shadow-sm hover:border-slate-300 transition-colors">
+          <div className="flex items-center bg-card rounded-lg border border-border p-1 shadow-xs hover:border-muted-foreground/30 transition-colors self-start sm:self-auto">
             <Select value={dateRange} onValueChange={(val) => val && setDateRange(val)}>
-              <SelectTrigger className="w-[160px] border-none focus:ring-0 shadow-none h-9 text-slate-700 font-medium">
-                <CalendarIcon className="w-4 h-4 mr-2 text-slate-400" />
+              <SelectTrigger className="w-[160px] border-none focus:ring-0 focus:outline-hidden focus-visible:ring-0 shadow-none h-9 text-foreground font-medium bg-transparent">
+                <CalendarIcon className="w-4 h-4 mr-2 text-muted-foreground" />
                 <SelectValue placeholder="Select Range" />
               </SelectTrigger>
               <SelectContent>
@@ -179,27 +179,27 @@ export default function DashboardPage() {
           </div>
         </div>
 
-        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+        <div className="grid gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3">
           <StatCard
             title="Revenue Collected"
             value={(kycStats?.financial?.totalRevenue || 0).toLocaleString()}
             description="Fees earned in this period"
             icon={TrendingUp}
-            className="bg-white border-none ring-0"
+            className="bg-card text-card-foreground border-none ring-0"
           />
           <StatCard
             title="Transactions Processed"
             value={totalTransactions.toLocaleString()}
             description="Activity count in this period"
             icon={ArrowRightLeft}
-            className="bg-white border-none ring-0"
+            className="bg-card text-card-foreground border-none ring-0"
           />
           <StatCard
             title="KYC Approved"
             value={kycStats?.kyc?.approvedToday || 0}
             description="Success rate this period"
             icon={ShieldCheck}
-            className="bg-white border-none ring-0"
+            className="bg-card text-card-foreground border-none ring-0"
           />
         </div>
 
@@ -214,19 +214,19 @@ export default function DashboardPage() {
       </section>
 
       {/* Section 3: Operations & Queues (Live/Real-time) */}
-      <section className="grid gap-4 lg:grid-cols-3 items-stretch">
+      <section className="grid gap-6 grid-cols-1 lg:grid-cols-3 items-stretch">
         <div className="lg:col-span-2">
           <div className="flex items-center gap-2 mb-6">
             <div className="w-1 h-6 bg-emerald-500 rounded-full" />
-            <h2 className="text-lg font-bold text-slate-900">Recent Activity</h2>
+            <h2 className="text-lg font-bold text-foreground">Recent Activity</h2>
           </div>
-          <RecentTransactions className="h-full bg-white border-none ring-0 shadow-lg shadow-slate-200/50 rounded-xl" />
+          <RecentTransactions className="h-full bg-card text-card-foreground border-none ring-0 shadow-xs rounded-xl" />
         </div>
 
         <div>
           <div className="flex items-center gap-2 mb-6">
             <div className="w-1 h-6 bg-amber-500 rounded-full" />
-            <h2 className="text-lg font-bold text-slate-900">KYC Queue</h2>
+            <h2 className="text-lg font-bold text-foreground">KYC Queue</h2>
           </div>
           <KycPendingQueue />
         </div>

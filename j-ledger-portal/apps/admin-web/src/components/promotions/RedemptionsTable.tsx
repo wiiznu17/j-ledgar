@@ -20,63 +20,63 @@ export function RedemptionsTable({ redemptions }: RedemptionsTableProps) {
     switch (status) {
       case 'REDEEMED':
         return (
-          <Badge className="bg-blue-50 text-blue-600 border-blue-100">
+          <Badge className="bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 border border-indigo-500/20">
             Ready
           </Badge>
         );
       case 'USED':
         return (
-          <Badge className="bg-green-50 text-green-600 border-green-100">
+          <Badge className="bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20">
             Used
           </Badge>
         );
       case 'EXPIRED':
         return (
-          <Badge className="bg-red-50 text-red-600 border-red-100">
+          <Badge className="bg-destructive/10 text-destructive border border-destructive/20">
             Expired
           </Badge>
         );
       default:
-        return <Badge variant="outline">{status}</Badge>;
+        return <Badge variant="outline" className="border-border text-muted-foreground">{status}</Badge>;
     }
   };
 
   return (
-    <div className="border rounded-lg overflow-hidden border-border bg-white text-[#2D3748]">
+    <div className="border rounded-lg overflow-hidden border-border bg-card text-card-foreground">
       <Table>
-        <TableHeader className="bg-secondary/50">
+        <TableHeader className="bg-muted/30">
           <TableRow>
-            <TableHead>User</TableHead>
-            <TableHead>Deal / Reward</TableHead>
-            <TableHead>Code</TableHead>
-            <TableHead>Status</TableHead>
-            <TableHead>Dates</TableHead>
+            <TableHead className="text-foreground">User</TableHead>
+            <TableHead className="text-foreground">Deal / Reward</TableHead>
+            <TableHead className="text-foreground">Code</TableHead>
+            <TableHead className="text-foreground">Status</TableHead>
+            <TableHead className="text-foreground">Dates</TableHead>
           </TableRow>
         </TableHeader>
         <TableBody>
           {redemptions.map((item) => (
             <TableRow
               key={item.id}
-              className="hover:bg-secondary/30 transition-colors"
+              className="hover:bg-muted/30 border-b border-border transition-colors"
             >
               <TableCell>
                 <div className="flex items-center gap-2">
-                  <div className="w-8 h-8 rounded-full bg-slate-100 items-center justify-center flex">
-                    <User size={14} className="text-slate-400" />
+                  <div className="w-8 h-8 rounded-full bg-muted items-center justify-center flex border border-border">
+                    <User size={14} className="text-muted-foreground" />
                   </div>
-                  <div className="text-xs font-medium font-mono truncate max-w-[100px]">
+                  <div className="text-xs font-medium font-mono truncate max-w-[100px] text-foreground">
                     {item.userId}
                   </div>
                 </div>
               </TableCell>
               <TableCell>
-                <div className="font-semibold text-sm">{item.deal?.title}</div>
+                <div className="font-semibold text-sm text-foreground">{item.deal?.title}</div>
                 <div className="text-[10px] text-muted-foreground">
                   {item.deal?.brand?.name}
                 </div>
               </TableCell>
               <TableCell>
-                <code className="bg-slate-50 px-2 py-1 rounded text-[10px] font-bold tracking-wider border border-slate-100">
+                <code className="bg-muted text-foreground px-2 py-1 rounded text-[10px] font-bold tracking-wider border border-border">
                   {item.redemptionCode}
                 </code>
               </TableCell>
@@ -88,7 +88,7 @@ export function RedemptionsTable({ redemptions }: RedemptionsTableProps) {
                     {new Date(item.createdAt).toLocaleDateString()}
                   </div>
                   {item.status === 'USED' && (
-                    <div className="flex items-center gap-1 text-green-500 font-medium">
+                    <div className="flex items-center gap-1 text-emerald-500 font-medium">
                       <CheckCircle2 size={10} /> Used:{' '}
                       {new Date(item.usedAt).toLocaleDateString()}
                     </div>

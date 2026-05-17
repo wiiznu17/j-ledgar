@@ -22,14 +22,14 @@ export default async function LoginPage(props: {
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-50/50">
-      <div className="flex flex-col lg:flex-row w-full max-w-5xl rounded-2xl overflow-hidden shadow-2xl bg-white border border-border">
+    <div className="min-h-screen flex items-center justify-center bg-muted/30 text-foreground">
+      <div className="flex flex-col lg:flex-row w-full max-w-5xl rounded-2xl overflow-hidden shadow-2xl bg-card border border-border">
         {/* Left Side: Illustration Image */}
-        <div className="hidden lg:flex w-1/2 bg-secondary items-center justify-center relative overflow-hidden">
+        <div className="hidden lg:flex w-1/2 bg-muted items-center justify-center relative overflow-hidden">
           <img
             src="/login/Data_security_05.jpg"
             alt="Data Security"
-            className="absolute inset-0 w-full h-full object-cover"
+            className="absolute inset-0 w-full h-full object-cover dark:opacity-80"
           />
         </div>
 
@@ -48,7 +48,7 @@ export default async function LoginPage(props: {
               <img
                 src="/logo/logo-text.png"
                 alt="P-wallet Logo"
-                className="h-20 object-contain mix-blend-multiply contrast-[1.1] brightness-[1.05]"
+                className="h-20 object-contain dark:invert mix-blend-multiply dark:mix-blend-normal contrast-[1.1] brightness-[1.05]"
               />
             </div>
 
