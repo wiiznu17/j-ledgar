@@ -78,7 +78,7 @@ export default function EditPartnerPage({ params }: EditPartnerPageProps) {
       } catch (error) {
         console.error('[EDIT_PARTNER] Fetch error:', error);
         toast.error('Failed to load partner details');
-        router.push('/merchants');
+        router.push('/support/merchants');
       } finally {
         setIsLoading(false);
       }
@@ -121,7 +121,7 @@ export default function EditPartnerPage({ params }: EditPartnerPageProps) {
       setIsSubmitting(true);
       await merchantRequester.updatePartner(partnerId, formData);
       toast.success('Partner profile updated successfully');
-      router.push(`/merchants/${partnerId}`);
+      router.push(`/support/merchants/${partnerId}`);
       router.refresh();
     } catch (error) {
       console.error('[EDIT_PARTNER] Submit error:', error);
@@ -143,9 +143,9 @@ export default function EditPartnerPage({ params }: EditPartnerPageProps) {
       {/* Header & Navigation */}
       <div className="flex flex-col gap-2">
         <div className="flex items-center text-[10px] font-black text-muted-foreground uppercase tracking-widest gap-2">
-          <Link href="/merchants" className="hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors">Merchants</Link>
+          <Link href="/support/merchants" className="hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors">Merchants</Link>
           <ChevronRight className="w-3 h-3" />
-          <Link href={`/merchants/${partnerId}`} className="hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors">Partner Profile</Link>
+          <Link href={`/support/merchants/${partnerId}`} className="hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors">Partner Profile</Link>
           <ChevronRight className="w-3 h-3" />
           <span className="text-foreground">Edit Corporate Data</span>
         </div>

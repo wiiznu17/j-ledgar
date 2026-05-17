@@ -470,7 +470,7 @@ export default function WalletDetailPage({
                   </div>
 
                   <Link
-                    href={`/users?search=${user.id}`}
+                    href={`/support/users/${user.id}`}
                     className="block pt-2"
                   >
                     <Button

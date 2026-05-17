@@ -86,7 +86,7 @@ export default function CreatePartnerPage() {
         }
       });
       toast.success('Corporate partner created successfully');
-      router.push('/merchants');
+      router.push('/support/merchants');
       router.refresh();
     } catch (error) {
       console.error('[CREATE_PARTNER] Error:', error);
@@ -101,7 +101,7 @@ export default function CreatePartnerPage() {
       {/* Header & Navigation */}
       <div className="flex flex-col gap-2">
         <div className="flex items-center text-[10px] font-black text-muted-foreground uppercase tracking-widest gap-2">
-          <Link href="/merchants" className="hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors">Merchants</Link>
+          <Link href="/support/merchants" className="hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors">Merchants</Link>
           <ChevronRight className="w-3 h-3" />
           <span className="text-foreground">Onboard Big Brand</span>
         </div>

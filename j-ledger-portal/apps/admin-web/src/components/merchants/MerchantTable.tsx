@@ -113,12 +113,12 @@ export function MerchantTable({ partners, loading }: MerchantTableProps) {
               </TableCell>
               <TableCell className="py-4 text-right">
                 <div className="flex justify-end gap-2">
-                  <Link href={`/merchants/${partner.id}`}>
+                  <Link href={`/support/merchants/${partner.id}`}>
                     <Button variant="ghost" size="sm" className="h-8 w-8 p-0 text-muted-foreground hover:text-indigo-600 dark:hover:text-indigo-400">
                       <Eye className="h-4 w-4" />
                     </Button>
                   </Link>
-                  <Link href={`/merchants/${partner.id}/terminals`}>
+                  <Link href={`/support/merchants/${partner.id}/terminals`}>
                     <Button variant="ghost" size="sm" className="h-8 text-xs gap-1.5 text-muted-foreground hover:text-indigo-600 dark:hover:text-indigo-400">
                       <ExternalLink className="h-3.5 w-3.5" />
                       Terminals

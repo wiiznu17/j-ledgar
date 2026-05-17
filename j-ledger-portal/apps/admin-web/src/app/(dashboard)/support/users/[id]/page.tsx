@@ -131,7 +131,7 @@ export default function UserDetailPage({
       <div className="flex flex-col gap-3">
         <div className="flex items-center text-[10px] font-bold text-muted-foreground uppercase tracking-widest gap-2">
           <Link
-            href="/users"
+            href="/support/users"
             className="hover:text-indigo-600 transition-colors font-bold"
           >
             Users
@@ -388,7 +388,7 @@ export default function UserDetailPage({
                 </div>
                 <div className="pt-4 border-t border-border">
                   <Link
-                    href={`/users/activity?userId=${user.id}`}
+                    href={`/support/users/activity?userId=${user.id}`}
                     className="block"
                   >
                     <Button

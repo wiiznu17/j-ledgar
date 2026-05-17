@@ -131,7 +131,7 @@ export default function MerchantsPage() {
         </div>
 
         <div className="flex items-center gap-2">
-          <Link href="/merchants/create">
+          <Link href="/support/merchants/create">
             <Button 
               className="h-9 gap-1.5 bg-indigo-600 hover:bg-indigo-700 text-white shadow-xs text-xs font-bold"
             >
@@ -139,7 +139,7 @@ export default function MerchantsPage() {
               Create Partner
             </Button>
           </Link>
-          <Link href="/merchants/applications">
+          <Link href="/support/merchants/applications">
             <Button variant="outline" size="sm" className="h-9 gap-1.5 border-border text-xs font-bold">
               <ClipboardList className="w-4 h-4" />
               Approval Queue

@@ -119,7 +119,7 @@ export default function UserActivityPage() {
     setUserId('');
     setEventType('ALL');
     setPage(1);
-    router.push('/users/activity');
+    router.push('/support/users/activity');
   };
 
   const getEventColor = (type: string) => {

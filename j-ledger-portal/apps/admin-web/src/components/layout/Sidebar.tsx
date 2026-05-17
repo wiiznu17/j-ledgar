@@ -183,19 +183,19 @@ const navigationGroups: NavigationGroup[] = [
     items: [
       {
         name: 'Users',
-        href: '/users',
+        href: '/support/users',
         icon: Users,
         requiredPermission: Permission.VIEW_USERS,
       },
       {
         name: 'Merchant Partners',
-        href: '/merchants',
+        href: '/support/merchants',
         icon: Store,
         requiredPermission: Permission.VIEW_MERCHANTS,
       },
       {
         name: 'User Activity',
-        href: '/users/activity',
+        href: '/support/users/activity',
         icon: History,
         requiredPermission: Permission.VIEW_AUDIT_LOGS,
       },

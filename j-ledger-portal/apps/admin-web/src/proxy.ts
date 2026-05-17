@@ -90,12 +90,12 @@ export async function proxy(request: NextRequest) {
 
     if (
       role === 'RECONCILER' &&
-      (pathname === '/accounts' || pathname === '/users')
+      (pathname === '/accounts' || pathname === '/support/users')
     ) {
       return NextResponse.redirect(new URL('/dashboard', request.url));
     }
 
-    if (role !== 'SUPER_ADMIN' && pathname === '/users') {
+    if (role !== 'SUPER_ADMIN' && pathname === '/support/users') {
       return NextResponse.redirect(new URL('/dashboard', request.url));
     }
 

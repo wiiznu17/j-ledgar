@@ -137,7 +137,7 @@ export default function PartnerDetailPage({
       {/* Header & Breadcrumbs */}
       <div className="flex flex-col gap-3">
         <div className="flex items-center text-[10px] font-bold text-muted-foreground uppercase tracking-widest gap-2">
-          <Link href="/merchants" className="hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors">
+          <Link href="/support/merchants" className="hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors">
             Merchants
           </Link>
           <ChevronRight className="w-3 h-3" />
@@ -146,13 +146,13 @@ export default function PartnerDetailPage({
 
           <div />
           <div className="flex items-center gap-2">
-            <Link href={`/merchants/${partnerId}/edit`}>
+            <Link href={`/support/merchants/${partnerId}/edit`}>
               <Button variant="outline" size="sm" className="h-9 rounded-xl border-border">
                 <FileText className="w-4 h-4 mr-2 text-amber-500" />
                 Edit Profile
               </Button>
             </Link>
-            <Link href={`/merchants/${partnerId}/terminals`}>
+            <Link href={`/support/merchants/${partnerId}/terminals`}>
               <Button variant="outline" size="sm" className="h-9 rounded-xl border-border">
                 <Settings className="w-4 h-4 mr-2" />
                 Manage Terminals
@@ -342,7 +342,7 @@ export default function PartnerDetailPage({
                           <div className="text-[10px] text-muted-foreground font-medium">{m.address || 'No address set'}</div>
                         </div>
                       </div>
-                      <Link href={`/merchants/${partnerId}/terminals`}>
+                      <Link href={`/support/merchants/${partnerId}/terminals`}>
                         <Button variant="ghost" size="icon" className="text-muted-foreground hover:text-indigo-600 dark:hover:text-indigo-400">
                           <ChevronRight className="w-5 h-5" />
                         </Button>
@@ -380,7 +380,7 @@ export default function PartnerDetailPage({
                     <span className="text-[10px] font-black text-muted-foreground uppercase tracking-widest">Active Nodes</span>
                     <span className="text-sm font-black text-foreground">{merchants.length} สาขา</span>
                   </div>
-                  <Link href={`/merchants/${partnerId}/terminals`} className="block w-full">
+                  <Link href={`/support/merchants/${partnerId}/terminals`} className="block w-full">
                     <Button variant="outline" className="w-full justify-between h-10 rounded-xl text-muted-foreground border-border font-bold text-[10px] uppercase tracking-wider">
                       Manage Registered Terminals
                       <ChevronRight className="w-4 h-4" />

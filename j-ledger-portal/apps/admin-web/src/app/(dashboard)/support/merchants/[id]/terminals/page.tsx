@@ -89,11 +89,11 @@ export default function TerminalsPage({
       {/* Breadcrumbs & Header */}
       <div className="flex flex-col gap-3">
         <div className="flex items-center text-[10px] font-bold text-muted-foreground uppercase tracking-widest gap-2">
-          <Link href="/merchants" className="hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors">
+          <Link href="/support/merchants" className="hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors">
             Merchants
           </Link>
           <ChevronRight className="w-3 h-3" />
-          <Link href={`/merchants/${partnerId}`} className="hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors">
+          <Link href={`/support/merchants/${partnerId}`} className="hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors">
             Partner Profile
           </Link>
           <ChevronRight className="w-3 h-3" />
@@ -102,7 +102,7 @@ export default function TerminalsPage({
 
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
           <div className="flex items-center gap-4">
-            <Link href={`/merchants/${partnerId}`}>
+            <Link href={`/support/merchants/${partnerId}`}>
               <Button variant="ghost" size="sm" className="h-10 w-10 p-0 text-muted-foreground hover:text-indigo-600 dark:hover:text-indigo-400 rounded-xl bg-card shadow-xs border border-border">
                 <ArrowLeft className="w-5 h-5" />
               </Button>

@@ -66,7 +66,7 @@ export function WalletUsersTable({ users, loading }: WalletUsersTableProps) {
             >
               <TableCell className="font-semibold text-foreground">
                 <a
-                  href={`/users/${user.id}`}
+                  href={`/support/users/${user.id}`}
                   className="hover:text-indigo-600 dark:hover:text-indigo-400 hover:underline transition-colors"
                 >
                   {user.email}
@@ -100,7 +100,7 @@ export function WalletUsersTable({ users, loading }: WalletUsersTableProps) {
               <TableCell>
                 <div className="flex items-center gap-2">
                   <a
-                    href={`/users/${user.id}`}
+                    href={`/support/users/${user.id}`}
                     className={cn(
                       buttonVariants({ variant: 'ghost', size: 'sm' }),
                       'text-indigo-600 dark:text-indigo-400 hover:text-indigo-700 hover:bg-indigo-500/10 font-bold text-xs',
@@ -109,7 +109,7 @@ export function WalletUsersTable({ users, loading }: WalletUsersTableProps) {
                     Manage
                   </a>
                   <a
-                    href={`/users/activity?userId=${user.id}`}
+                    href={`/support/users/activity?userId=${user.id}`}
                     className={cn(
                       buttonVariants({ variant: 'ghost', size: 'sm' }),
                       'text-muted-foreground hover:text-foreground hover:bg-muted font-bold text-[10px] uppercase tracking-tighter',
