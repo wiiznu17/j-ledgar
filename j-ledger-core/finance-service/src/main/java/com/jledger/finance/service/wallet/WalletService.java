@@ -1136,7 +1136,6 @@ public class WalletService {
         
         // Handle Metadata
         Map<String, Object> metaMap = new HashMap<>();
-        metaMap.put("toAccountId", toAccountId);
         if (metadata != null) {
             if (metadata instanceof Map<?, ?> map) {
                 for (Map.Entry<?, ?> entry : map.entrySet()) {

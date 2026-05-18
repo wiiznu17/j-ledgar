@@ -18,6 +18,7 @@ import {
   ArrowRightLeft,
   DollarSign,
   X,
+  Download,
 } from 'lucide-react';
 import { useSearchParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
@@ -51,6 +52,7 @@ import {
   FilterField,
   FilterDatePicker,
 } from '@/components/common/FilterElements';
+import { TransactionDetailDrawer } from '@/components/dashboard/TransactionDetailDrawer';
 
 export default function TransactionsPage() {
   const [transactions, setTransactions] = useState<Transaction[]>([]);
@@ -71,6 +73,46 @@ export default function TransactionsPage() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const userIdParam = searchParams.get('userId');
+
+  // Drawer & Export States
+  const [selectedTransactionId, setSelectedTransactionId] = useState<string | null>(null);
+  const [isDrawerOpen, setIsDrawerOpen] = useState(false);
+
+  const exportToCSV = () => {
+    if (transactions.length === 0) {
+      toast.error('No transactions to export.');
+      return;
+    }
+    
+    // Create CSV content
+    const headers = ['No.', 'Reference ID', 'Type', 'Amount', 'Currency', 'Status', 'Created At'];
+    const rows = transactions.map((txn, index) => [
+      index + 1,
+      String(txn.transactionId || txn.id).toUpperCase(),
+      txn.transactionType,
+      txn.amount,
+      txn.currency || 'THB',
+      txn.status,
+      format(new Date(txn.createdAt), 'yyyy-MM-dd HH:mm:ss')
+    ]);
+    
+    const csvContent = [
+      headers.join(','),
+      ...rows.map(row => row.map(val => `"${String(val).replace(/"/g, '""')}"`).join(','))
+    ].join('\n');
+    
+    // Create download link
+    const blob = new Blob([`\ufeff${csvContent}`], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.setAttribute('href', url);
+    link.setAttribute('download', `transactions-export-${format(new Date(), 'yyyyMMdd-HHmmss')}.csv`);
+    link.style.visibility = 'hidden';
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    toast.success('Transaction history exported successfully!');
+  };
 
   // Active Filters used for API call
   const [activeFilters, setActiveFilters] = useState({
@@ -157,6 +199,24 @@ export default function TransactionsPage() {
 
   return (
     <div className="space-y-6 pb-10 text-foreground">
+      {/* Title Header with Export CSV Action */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+        <div>
+          <h1 className="text-xl font-bold text-foreground">Transaction Logs</h1>
+          <p className="text-xs text-muted-foreground">Monitor ledger movements and double-entry bookkeeping details.</p>
+        </div>
+        <div className="flex items-center gap-3">
+          <Button
+            onClick={exportToCSV}
+            variant="outline"
+            className="h-10 text-indigo-600 dark:text-indigo-400 bg-indigo-500/5 hover:bg-indigo-500/10 border-indigo-500/20 text-xs font-bold rounded-lg transition-all flex items-center gap-2"
+          >
+            <Download className="w-4 h-4" />
+            Export CSV
+          </Button>
+        </div>
+      </div>
+
       {activeFilters.userId && (
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <div className="flex-1">
@@ -314,13 +374,16 @@ export default function TransactionsPage() {
                 transactions.map((txn, index) => (
                   <tr
                     key={txn.id}
-                    onClick={() => router.push(`/transactions/${txn.id}`)}
-                    className="hover:bg-muted/30 transition-colors cursor-pointer"
+                    onClick={() => {
+                      setSelectedTransactionId(String(txn.id));
+                      setIsDrawerOpen(true);
+                    }}
+                    className="hover:bg-slate-100 dark:hover:bg-slate-800/70 transition-colors cursor-pointer"
                   >
                     <td className="px-6 py-5 text-center font-bold text-xs text-muted-foreground">
                       {(currentPage - 1) * 10 + index + 1}
                     </td>
-                    <td className="px-6 py-5" onClick={(e) => e.stopPropagation()}>
+                    <td className="px-6 py-5">
                       <span className="text-xs font-mono font-semibold text-foreground select-all">
                         {String(txn.transactionId || txn.id).toUpperCase()}
                       </span>
@@ -350,22 +413,19 @@ export default function TransactionsPage() {
                           "text-sm font-black tabular-nums",
                           txn.transactionType === TransactionType.TOPUP
                             ? 'text-emerald-600 dark:text-emerald-400'
-                            : txn.transactionType === TransactionType.WITHDRAW
+                            : txn.transactionType === TransactionType.WITHDRAW || txn.transactionType === TransactionType.PAYMENT
                               ? 'text-rose-600 dark:text-rose-400'
                               : 'text-foreground'
                         )}
                       >
                         {txn.transactionType === TransactionType.TOPUP
-                          ? '+'
-                          : txn.transactionType === TransactionType.WITHDRAW
-                            ? '-'
+                          ? '+ '
+                          : txn.transactionType === TransactionType.WITHDRAW || txn.transactionType === TransactionType.PAYMENT
+                            ? '- '
                             : ''}
-                        {Number(txn.amount).toLocaleString(undefined, {
+                        ฿{Number(txn.amount).toLocaleString(undefined, {
                           minimumFractionDigits: 2,
                         })}
-                        <span className="ml-1 text-[10px] font-bold opacity-70">
-                          {txn.currency}
-                        </span>
                       </p>
                     </td>
                     <td className="px-6 py-5">
@@ -404,6 +464,16 @@ export default function TransactionsPage() {
           isLoading={isLoading}
         />
       </Card>
+
+      {/* Slide-over Transaction Detail Panel */}
+      <TransactionDetailDrawer
+        transactionId={selectedTransactionId}
+        isOpen={isDrawerOpen}
+        onClose={() => {
+          setIsDrawerOpen(false);
+          setSelectedTransactionId(null);
+        }}
+      />
     </div>
   );
 }

@@ -108,17 +108,24 @@ docker compose -f docker-compose.yml -f docker-compose.test.yml down -v
 
 ### 🔄 Unified System Reset (Recommended for Dev)
 
-To completely wipe both **Finance Service (Java)** and **Portal Service (Node)** and start from a clean state (0 balance, 4 core accounts):
+To completely wipe both **Finance Service (Java)** and **Portal Service (Node)** and start from a clean state (0 balance, core accounts, and treasury seeds):
 
 ```bash
-cd j-ledger-portal
-npm run system:reset
+# 1. Run the reset script (Wipes DBs and runs migrations)
+cd j-ledger-portal && npm run system:reset
+
+# 2. Start Finance Service (Java)
+cd j-ledger-core/finance-service && ./mvnw spring-boot:run
+
+# 3. Run the Smart Seeder (Run after Java is UP)
+cd j-ledger-portal/apps/portal-service && npx prisma db seed
 ```
 
-**This single command will:**
-1. Wipe the Finance DB and rerun Flyway migrations (Creating `SYSTEM_BANK_ACCOUNT`).
-2. Wipe the Portal DB and rerun Prisma migrations.
-3. Run the Smart Seeder to link system accounts and create a test Merchant.
+**This process ensures:**
+1. Both databases are completely fresh.
+2. Core system settings (MDR, VAT, Limits) are initialized in Java.
+3. Treasury bank accounts (SCB, KBank) are seeded for the dashboard.
+4. Portal accounts are linked to Finance accounts correctly.
 
 ---
 
