@@ -61,7 +61,7 @@ export default function KycListPage() {
   const [documents, setDocuments] = useState<KycDocument[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [status, setStatus] = useState<
-    'PENDING_APPROVAL' | 'ACTIVE' | 'REJECTED'
+    'PENDING_APPROVAL' | 'ACTIVE' | 'REJECTED' | 'ALL'
   >('PENDING_APPROVAL');
   const [stats, setStats] = useState<any>(null);
   const [phoneNumber, setPhoneNumber] = useState('');
@@ -73,7 +73,13 @@ export default function KycListPage() {
   const [totalItems, setTotalItems] = useState(0);
 
   // Values that will be used for the actual fetch
-  const [activeFilters, setActiveFilters] = useState({
+  const [activeFilters, setActiveFilters] = useState<{
+    status: 'PENDING_APPROVAL' | 'ACTIVE' | 'REJECTED' | 'ALL';
+    phoneNumber: string;
+    startDate: string;
+    endDate: string;
+    page: number;
+  }>({
     status: 'PENDING_APPROVAL',
     phoneNumber: '',
     startDate: '',
@@ -181,6 +187,7 @@ export default function KycListPage() {
               value={status}
               onValueChange={(val: any) => setStatus(val)}
               options={[
+                { label: 'ALL STATUS', value: 'ALL' },
                 { label: 'PENDING', value: 'PENDING_APPROVAL' },
                 { label: 'ACTIVE', value: 'ACTIVE' },
                 { label: 'REJECTED', value: 'REJECTED' },

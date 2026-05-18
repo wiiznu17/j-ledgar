@@ -380,7 +380,10 @@ export class KycService {
     );
 
     // 1. Build where clause for User
-    const where: Record<string, any> = { status: status as UserStatus };
+    const where: Record<string, any> = {};
+    if (status !== 'ALL') {
+      where.status = status as UserStatus;
+    }
 
     if (phoneNumber) {
       where.phoneNumber = { contains: phoneNumber };
