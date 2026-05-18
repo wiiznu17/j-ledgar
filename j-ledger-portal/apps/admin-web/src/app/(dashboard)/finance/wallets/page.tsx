@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useState, useCallback } from 'react';
+import { useRouter } from 'next/navigation';
 import {
   Card,
   CardContent,
@@ -34,9 +35,9 @@ import {
   ChevronRight,
   Wallet,
   ShieldAlert,
-  ShieldCheck,
-  MoreHorizontal,
   ArrowRight,
+  Copy,
+  Check,
 } from 'lucide-react';
 import { walletRequester } from '@/lib/requesters/walletRequester';
 import { WalletDto } from '@repo/dto';
@@ -48,20 +49,24 @@ import {
   FilterSelect,
   FilterActions,
 } from '@/components/common/FilterElements';
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from '@/components/ui/popover';
 import { TablePagination } from '@/components/common/TablePagination';
 
 export default function WalletAccountsPage() {
+  const router = useRouter();
   const [wallets, setWallets] = useState<WalletDto[]>([]);
   const [loading, setLoading] = useState(true);
   const [total, setTotal] = useState(0);
   const [page, setPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
   const [userRole, setUserRole] = useState('SUPPORT_STAFF');
+  const [copiedId, setCopiedId] = useState<string | null>(null);
+
+  const handleCopy = (text: string) => {
+    navigator.clipboard.writeText(text);
+    setCopiedId(text);
+    toast.success('Copied User ID to clipboard');
+    setTimeout(() => setCopiedId(null), 2000);
+  };
 
   // Filter Inputs
   const [searchInput, setSearchInput] = useState('');
@@ -153,21 +158,9 @@ export default function WalletAccountsPage() {
     }
   };
 
-  const isSuperAdmin = userRole === 'SUPER_ADMIN';
 
   return (
     <div className="space-y-6 pb-10 text-foreground">
-      {/* Page Header */}
-      <div className="flex justify-end">
-        <div className="flex items-center gap-3">
-          <Badge
-            variant="outline"
-            className="bg-muted border-border text-muted-foreground px-3 py-1 text-[10px] font-bold uppercase tracking-wider"
-          >
-            Total Wallets: {total}
-          </Badge>
-        </div>
-      </div>
 
       <Card className="border-none shadow-xs overflow-hidden bg-card text-card-foreground">
         {/* Filter Toolbar */}
@@ -228,41 +221,52 @@ export default function WalletAccountsPage() {
                   <TableHead className="text-[11px] font-bold text-muted-foreground uppercase tracking-wider text-right">
                     Last Updated
                   </TableHead>
-                  <TableHead className="w-[80px]"></TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
                 {loading ? (
                   Array.from({ length: 5 }).map((_, i) => (
                     <TableRow key={i} className="animate-pulse border-border">
-                      <TableCell colSpan={7} className="h-16 bg-muted/20" />
+                      <TableCell colSpan={6} className="h-16 bg-muted/20" />
                     </TableRow>
                   ))
                 ) : wallets.length > 0 ? (
                   wallets.map((wallet, index) => (
                     <TableRow
                       key={wallet.id}
-                      className="border-border hover:bg-muted/50 transition-colors group"
+                      onClick={() => router.push(`/finance/wallets/${wallet.id}`)}
+                      className="border-border hover:bg-muted/50 transition-colors group cursor-pointer"
                     >
                       <TableCell className="pl-6 text-xs font-bold text-muted-foreground tabular-nums">
                         {(page - 1) * 10 + index + 1}
                       </TableCell>
                       <TableCell className="font-mono text-xs font-bold text-indigo-600 dark:text-indigo-400">
-                        <Link
-                          href={`/finance/wallets/${wallet.id}`}
-                          className="hover:underline underline-offset-4"
-                        >
+                        <span className="hover:underline underline-offset-4">
                           {wallet.walletId}
-                        </Link>
+                        </span>
                       </TableCell>
                       <TableCell>
-                        <div className="flex flex-col">
+                        <div className="flex items-center gap-2 group/id">
                           <span
-                            className="text-xs font-mono text-muted-foreground truncate w-40"
+                            className="text-xs font-mono text-muted-foreground truncate w-28"
                             title={wallet.userId}
                           >
                             {wallet.userId}
                           </span>
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleCopy(wallet.userId);
+                            }}
+                            className="p-1 rounded-md hover:bg-muted text-muted-foreground/40 hover:text-foreground opacity-0 group-hover/id:opacity-100 transition-all focus:opacity-100 outline-none"
+                            title="Copy User ID"
+                          >
+                            {copiedId === wallet.userId ? (
+                              <Check className="w-3.5 h-3.5 text-emerald-500 animate-in fade-in zoom-in" />
+                            ) : (
+                              <Copy className="w-3 h-3" />
+                            )}
+                          </button>
                         </div>
                       </TableCell>
                       <TableCell className="text-right">
@@ -304,58 +308,6 @@ export default function WalletAccountsPage() {
                           hour: '2-digit',
                           minute: '2-digit',
                         })}
-                      </TableCell>
-                      <TableCell>
-                        <div className="flex justify-end">
-                          <Popover>
-                            <PopoverTrigger className="h-8 w-8 inline-flex items-center justify-center rounded-lg hover:bg-muted text-muted-foreground transition-colors outline-none focus-visible:ring-2 focus-visible:ring-indigo-500">
-                              <MoreHorizontal className="h-4 w-4" />
-                            </PopoverTrigger>
-                            <PopoverContent
-                              align="end"
-                              className="w-48 p-2 border-border shadow-xl bg-card text-card-foreground"
-                            >
-                              <div className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest px-3 py-2">
-                                Management
-                              </div>
-                              <div className="h-px bg-border my-1" />
-                              <Link
-                                href={`/finance/wallets/${wallet.id}`}
-                                className="flex items-center w-full px-3 py-2 text-sm font-medium text-muted-foreground hover:text-foreground hover:bg-muted rounded-lg transition-colors"
-                              >
-                                <Search className="w-4 h-4 mr-2 text-muted-foreground" />{' '}
-                                View Detail
-                              </Link>
-
-                              {isSuperAdmin && (
-                                <>
-                                  <div className="h-px bg-border my-1" />
-                                  <button
-                                    className={cn(
-                                      'flex items-center w-full px-3 py-2 text-sm font-bold rounded-lg transition-colors',
-                                      wallet.status === 'FROZEN'
-                                        ? 'text-emerald-600 dark:text-emerald-400 hover:bg-emerald-500/10'
-                                        : 'text-rose-600 dark:text-rose-400 hover:bg-rose-500/10',
-                                    )}
-                                    onClick={() => handleToggleFreeze(wallet)}
-                                  >
-                                    {wallet.status === 'FROZEN' ? (
-                                      <>
-                                        <ShieldCheck className="w-4 h-4 mr-2" />{' '}
-                                        Unfreeze Wallet
-                                      </>
-                                    ) : (
-                                      <>
-                                        <ShieldAlert className="w-4 h-4 mr-2" />{' '}
-                                        Freeze Wallet
-                                      </>
-                                    )}
-                                  </button>
-                                </>
-                              )}
-                            </PopoverContent>
-                          </Popover>
-                        </div>
                       </TableCell>
                     </TableRow>
                   ))
