@@ -69,6 +69,7 @@ export const API_PATHS = {
       TRANSACTION_DETAIL: (id: string) => `/api/admin/transactions/${id}`,
       TREASURY_SUMMARY: '/api/admin/treasury/summary',
       TREASURY_PAYOUTS: '/api/admin/treasury/payouts',
+      TREASURY_PAYOUT_TRIGGER: '/api/admin/treasury/payout',
     },
     SYSTEM: {
       SETTINGS: '/api/admin/system/settings',

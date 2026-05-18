@@ -233,7 +233,7 @@ export function TransactionDetailDrawer({
                 <div className="grid grid-cols-2 gap-4 bg-muted/20 p-4 rounded-xl border border-border/60">
                   <div className="col-span-2">
                     <p className="text-[9px] font-bold text-muted-foreground uppercase tracking-widest mb-1">
-                      Transaction UUID
+                      Transaction ID (Internal)
                     </p>
                     <div className="flex items-center gap-2">
                       <span className="font-mono text-[10px] text-foreground bg-muted/80 px-2 py-1 rounded-md border border-border/50 flex-1 truncate select-all">
@@ -249,6 +249,28 @@ export function TransactionDetailDrawer({
                       </Button>
                     </div>
                   </div>
+
+                  {/* Reference ID when present */}
+                  {(data.transaction as any).referenceId && (
+                    <div className="col-span-2">
+                      <p className="text-[9px] font-bold text-muted-foreground uppercase tracking-widest mb-1">
+                        Gateway Reference ID (Stripe / External)
+                      </p>
+                      <div className="flex items-center gap-2">
+                        <span className="font-mono text-[10px] text-indigo-600 dark:text-indigo-400 bg-indigo-500/5 px-2 py-1 rounded-md border border-indigo-500/10 flex-1 truncate select-all">
+                          {String((data.transaction as any).referenceId)}
+                        </span>
+                        <Button
+                          onClick={() => handleCopyId(String((data.transaction as any).referenceId))}
+                          variant="outline"
+                          size="icon"
+                          className="h-7 w-7 rounded-md border-border/60 hover:bg-muted text-muted-foreground hover:text-foreground shrink-0"
+                        >
+                          {copiedId ? <Check className="w-3 h-3 text-emerald-500" /> : <Copy className="w-3 h-3" />}
+                        </Button>
+                      </div>
+                    </div>
+                  )}
 
                   <div>
                     <p className="text-[9px] font-bold text-muted-foreground uppercase tracking-widest mb-0.5">

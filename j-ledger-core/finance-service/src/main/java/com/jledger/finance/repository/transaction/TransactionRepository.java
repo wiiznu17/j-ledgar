@@ -68,7 +68,7 @@ public interface TransactionRepository extends JpaRepository<Transaction, Long> 
            "(CAST(:startDate AS timestamp) IS NULL OR t.createdAt >= :startDate) AND " +
            "(CAST(:endDate AS timestamp) IS NULL OR t.createdAt <= :endDate) AND " +
            "(:userId IS NULL OR EXISTS (SELECT w FROM Wallet w WHERE w.userId = :userId AND (w.id = t.fromWalletId OR w.id = t.toWalletId))) AND " +
-           "(:reference IS NULL OR :reference = '' OR LOWER(t.transactionId) LIKE LOWER(CONCAT('%', :reference, '%'))) " +
+           "(:reference IS NULL OR :reference = '' OR LOWER(t.transactionId) LIKE LOWER(CONCAT('%', :reference, '%')) OR (t.referenceId IS NOT NULL AND LOWER(t.referenceId) LIKE LOWER(CONCAT('%', :reference, '%')))) " +
            "ORDER BY t.createdAt DESC")
     org.springframework.data.domain.Page<Transaction> findAllWithFilters(
             @Param("status") TransactionStatus status,
@@ -93,6 +93,7 @@ public interface TransactionRepository extends JpaRepository<Transaction, Long> 
     List<Transaction> findByAccountIdAndTypeAndDateRange(@Param("accountId") java.util.UUID accountId, @Param("type") TransactionType type, @Param("from") LocalDateTime from, @Param("to") LocalDateTime to, Pageable pageable);
 
     Optional<Transaction> findByTransactionId(String transactionId);
+    Optional<Transaction> findByReferenceId(String referenceId);
     
     // For AML monitoring
     long countByFromWalletIdAndCreatedAtAfter(Long fromWalletId, LocalDateTime createdAt);

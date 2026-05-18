@@ -51,6 +51,9 @@ public class Transaction {
     @org.hibernate.annotations.ColumnTransformer(write = "?::jsonb")
     private String metadata;
 
+    @Column(name = "reference_id", length = 255)
+    private String referenceId;
+
     @Column(name = "created_at", nullable = false)
     private LocalDateTime createdAt;
 
@@ -119,4 +122,7 @@ public class Transaction {
 
     public LocalDateTime getCompletedAt() { return completedAt; }
     public void setCompletedAt(LocalDateTime completedAt) { this.completedAt = completedAt; }
+
+    public String getReferenceId() { return referenceId; }
+    public void setReferenceId(String referenceId) { this.referenceId = referenceId; }
 }

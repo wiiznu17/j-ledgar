@@ -2,6 +2,7 @@ package com.jledger.finance.service.system;
 
 import com.jledger.finance.domain.entity.TreasuryBankAccount;
 import com.jledger.finance.domain.entity.TreasuryPayout;
+import com.jledger.finance.domain.entity.Transaction;
 import com.jledger.finance.domain.enums.TransactionStatus;
 import com.jledger.finance.domain.enums.TransactionType;
 import com.jledger.finance.dto.TreasurySummaryResponse;
@@ -111,6 +112,26 @@ public class TreasuryService {
         // 4. Update Destination Account Balance
         destinationAccount.setBalance(destinationAccount.getBalance().add(amount));
         bankAccountRepository.save(destinationAccount);
+
+        // 5. Record Transaction Log (Double-entry representation)
+        String txId = generateReadableTransactionId();
+        Transaction tx = new Transaction();
+        tx.setTransactionId(txId);
+        tx.setReferenceId(stripePayoutId);
+        tx.setType(TransactionType.WITHDRAWAL);
+        tx.setAmount(amount);
+        tx.setStatus(TransactionStatus.COMPLETED);
+        tx.setDescription("Stripe payout sweep to corporate bank account: SCB (" + destinationAccount.getAccountNumber() + ")");
+        tx.setCompletedAt(arrivalDate);
+        tx.setMetadata("{\"stripePayoutId\":\"" + stripePayoutId + "\",\"note\":\"Automated payout from Stripe to SCB Main Corporate\"}");
+        transactionRepository.save(tx);
+    }
+    
+    private String generateReadableTransactionId() {
+        java.time.format.DateTimeFormatter formatter = java.time.format.DateTimeFormatter.ofPattern("yyMMdd");
+        String dateStr = java.time.LocalDate.now().format(formatter);
+        int randomNum = (int) (Math.random() * 900000) + 100000;
+        return "TXN" + dateStr + randomNum;
     }
     
     public List<TreasuryPayout> getPayoutHistory() {

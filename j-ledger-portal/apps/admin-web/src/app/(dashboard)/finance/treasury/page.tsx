@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useEffect, useState, useCallback } from 'react';
+import Link from 'next/link';
 import {
   Landmark,
   Wallet,
@@ -13,11 +14,22 @@ import {
   Clock,
   ArrowRight,
   ChevronRight,
-  Info
+  Info,
+  Send
 } from 'lucide-react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+  DialogFooter,
+} from '@/components/ui/dialog';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
 import { TreasurySummary, TreasuryPayout, TreasuryBankAccount } from '@repo/dto';
 import { format } from 'date-fns';
 import { toast } from 'sonner';
@@ -27,6 +39,45 @@ export default function TreasuryPage() {
   const [summary, setSummary] = useState<TreasurySummary | null>(null);
   const [payouts, setPayouts] = useState<TreasuryPayout[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [isOpen, setIsOpen] = useState(false);
+  const [sweepAmount, setSweepAmount] = useState('0.00');
+  const [isSweeping, setIsSweeping] = useState(false);
+
+  // Set default sweep amount when summary loads
+  useEffect(() => {
+    if (summary) {
+      const available = summary.stripeAvailableBalance || 0;
+      setSweepAmount(available > 0 ? available.toFixed(2) : '0.00');
+    }
+  }, [summary]);
+
+  const handleSweep = async (e: React.FormEvent) => {
+    e.preventDefault();
+    const amt = parseFloat(sweepAmount);
+    if (isNaN(amt) || amt <= 0) {
+      toast.error('Please enter a valid amount greater than zero');
+      return;
+    }
+
+    const available = summary?.stripeAvailableBalance || 0;
+    if (amt > available) {
+      toast.error(`Cannot sweep ฿${amt.toLocaleString(undefined, { minimumFractionDigits: 2 })}. Your available Stripe balance is only ฿${available.toLocaleString(undefined, { minimumFractionDigits: 2 })}.`);
+      return;
+    }
+    
+    setIsSweeping(true);
+    try {
+      await treasuryRequester.triggerPayout(amt);
+      toast.success('Stripe sweep completed successfully!');
+      setIsOpen(false);
+      fetchData(); // Reload all statistics
+    } catch (err) {
+      console.error('[SWEEP_ERROR]', err);
+      toast.error('Failed to trigger Stripe payout sweep');
+    } finally {
+      setIsSweeping(false);
+    }
+  };
 
   const fetchData = useCallback(async () => {
     setIsLoading(true);
@@ -50,9 +101,9 @@ export default function TreasuryPage() {
   }, [fetchData]);
 
   const getReserveStatus = (ratio: number) => {
-    if (ratio >= 100) return { label: 'Healthy', color: 'text-emerald-600 dark:text-emerald-400', bg: 'bg-emerald-500/10', border: 'border-emerald-500/20', icon: ShieldCheck };
-    if (ratio >= 90) return { label: 'Warning', color: 'text-amber-600 dark:text-amber-400', bg: 'bg-amber-500/10', border: 'border-amber-500/20', icon: AlertTriangle };
-    return { label: 'Critical', color: 'text-rose-600 dark:text-rose-400', bg: 'bg-rose-500/10', border: 'border-rose-500/20', icon: AlertTriangle };
+    if (ratio >= 100) return { label: 'Healthy', color: 'text-emerald-600 dark:text-emerald-400', bg: 'bg-emerald-500/10', barBg: 'bg-emerald-500 dark:bg-emerald-400', border: 'border-emerald-500/20', icon: ShieldCheck };
+    if (ratio >= 90) return { label: 'Warning', color: 'text-amber-600 dark:text-amber-400', bg: 'bg-amber-500/10', barBg: 'bg-amber-500 dark:bg-amber-400', border: 'border-amber-500/20', icon: AlertTriangle };
+    return { label: 'Critical', color: 'text-rose-600 dark:text-rose-400', bg: 'bg-rose-500/10', barBg: 'bg-rose-500 dark:bg-rose-400', border: 'border-rose-500/20', icon: AlertTriangle };
   };
 
   const status = summary ? getReserveStatus(summary.reserveRatio) : null;
@@ -67,22 +118,33 @@ export default function TreasuryPage() {
           <span className="text-foreground">Treasury Dashboard</span>
         </div>
 
-        <Button 
-          onClick={fetchData} 
-          variant="outline" 
-          size="sm" 
-          className="h-9 rounded-xl border-border bg-card shadow-xs hover:bg-muted text-card-foreground font-bold text-xs"
-          disabled={isLoading}
-        >
-          <RefreshCcw className={`w-3.5 h-3.5 mr-2 ${isLoading ? 'animate-spin' : ''}`} />
-          Refresh Data
-        </Button>
+        <div className="flex items-center gap-3">
+          <Button 
+            onClick={() => setIsOpen(true)}
+            className="h-9 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-xs shadow-md border-none flex items-center gap-1.5 transition-all"
+            disabled={isLoading || isSweeping || !summary || (summary.stripeAvailableBalance || 0) <= 0}
+          >
+            <Send className="w-3.5 h-3.5" />
+            Sweep Stripe Balance
+          </Button>
+
+          <Button 
+            onClick={fetchData} 
+            variant="outline" 
+            size="sm" 
+            className="h-9 rounded-xl border-border bg-card shadow-xs hover:bg-muted text-card-foreground font-bold text-xs"
+            disabled={isLoading}
+          >
+            <RefreshCcw className={`w-3.5 h-3.5 mr-2 ${isLoading ? 'animate-spin' : ''}`} />
+            Refresh Data
+          </Button>
+        </div>
       </div>
 
       {/* Summary Stat Cards */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
         <Card className="border-none shadow-xs bg-card text-card-foreground relative group/card overflow-visible">
-          <CardContent className="p-6">
+          <CardContent className="p-4 pb-3">
             {/* Top Right Info Icon */}
             <div className="absolute top-4 right-4 group/info">
               <Info className="w-4 h-4 text-muted-foreground/40 hover:text-indigo-500 transition-colors cursor-help" />
@@ -95,7 +157,7 @@ export default function TreasuryPage() {
               </div>
             </div>
 
-            <div className="flex items-center justify-between mb-4">
+            <div className="flex items-center justify-between mb-2">
               <div className="w-10 h-10 rounded-xl bg-indigo-500/10 flex items-center justify-center">
                 <RefreshCcw className="w-5 h-5 text-indigo-600 dark:text-indigo-400" />
               </div>
@@ -126,7 +188,7 @@ export default function TreasuryPage() {
             <h3 className="text-2xl font-black text-foreground tabular-nums">
               ฿{((summary?.stripeAvailableBalance || 0) + (summary?.stripePendingBalance || 0)).toLocaleString(undefined, { minimumFractionDigits: 2 })}
             </h3>
-            <div className="mt-2 flex items-center justify-between text-[10px]">
+            <div className="mt-1.5 flex items-center justify-between text-[10px]">
               <span className="text-muted-foreground font-medium">Available: ฿{(summary?.stripeAvailableBalance || 0).toLocaleString()}</span>
               <span className="text-amber-500 font-bold">Incoming: ฿{(summary?.stripePendingBalance || 0).toLocaleString()}</span>
             </div>
@@ -134,7 +196,7 @@ export default function TreasuryPage() {
         </Card>
 
         <Card className="border-none shadow-xs bg-card text-card-foreground relative group/card overflow-visible">
-          <CardContent className="p-6">
+          <CardContent className="p-4 pb-3">
             <div className="absolute top-4 right-4 group/info">
               <Info className="w-4 h-4 text-muted-foreground/40 hover:text-emerald-500 transition-colors cursor-help" />
               <div className="absolute bottom-full right-0 mb-2 w-56 p-3 bg-popover text-popover-foreground border border-border text-[10px] font-medium leading-relaxed rounded-xl shadow-2xl opacity-0 group-hover/info:opacity-100 transition-all transform translate-y-1 group-hover/info:translate-y-0 pointer-events-none z-50">
@@ -146,7 +208,7 @@ export default function TreasuryPage() {
               </div>
             </div>
 
-            <div className="flex items-center justify-between mb-4">
+            <div className="flex items-center justify-between mb-2">
               <div className="w-10 h-10 rounded-xl bg-emerald-500/10 flex items-center justify-center">
                 <Landmark className="w-5 h-5 text-emerald-600 dark:text-emerald-400" />
               </div>
@@ -157,7 +219,7 @@ export default function TreasuryPage() {
             <h3 className="text-2xl font-black text-foreground tabular-nums">
               ฿{summary?.totalBankBalance.toLocaleString(undefined, { minimumFractionDigits: 2 })}
             </h3>
-            <p className="text-[10px] text-emerald-500 mt-2 font-bold flex items-center">
+            <p className="text-[10px] text-emerald-500 mt-1.5 font-bold flex items-center">
               <ArrowUpRight className="w-3 h-3 mr-1" />
               เงินสดสำรองพร้อมใช้
             </p>
@@ -165,7 +227,7 @@ export default function TreasuryPage() {
         </Card>
 
         <Card className="border-none shadow-xs bg-card text-card-foreground relative group/card overflow-visible">
-          <CardContent className="p-6">
+          <CardContent className="p-4 pb-3">
             <div className="absolute top-4 right-4 group/info">
               <Info className="w-4 h-4 text-muted-foreground/40 hover:text-rose-500 transition-colors cursor-help" />
               <div className="absolute bottom-full right-0 mb-2 w-56 p-3 bg-popover text-popover-foreground border border-border text-[10px] font-medium leading-relaxed rounded-xl shadow-2xl opacity-0 group-hover/info:opacity-100 transition-all transform translate-y-1 group-hover/info:translate-y-0 pointer-events-none z-50">
@@ -177,7 +239,7 @@ export default function TreasuryPage() {
               </div>
             </div>
 
-            <div className="flex items-center justify-between mb-4">
+            <div className="flex items-center justify-between mb-2">
               <div className="w-10 h-10 rounded-xl bg-rose-500/10 flex items-center justify-center">
                 <Wallet className="w-5 h-5 text-rose-600 dark:text-rose-400" />
               </div>
@@ -188,13 +250,12 @@ export default function TreasuryPage() {
             <h3 className="text-2xl font-black text-foreground tabular-nums">
               ฿{summary?.totalCustomerLiability.toLocaleString(undefined, { minimumFractionDigits: 2 })}
             </h3>
-            <p className="text-[10px] text-rose-400 mt-2 font-medium italic">ยอดเงินลูกค้ารวมในระบบ</p>
+            <p className="text-[10px] text-rose-400 mt-1.5 font-medium italic">ยอดเงินลูกค้ารวมในระบบ</p>
           </CardContent>
         </Card>
 
-        <Card className={`border-none shadow-xs bg-card text-card-foreground relative group/card overflow-visible`}>
-          <div className={`h-1 ${status?.bg || 'bg-muted'}`} />
-          <CardContent className="p-6">
+        <Card className="border-none shadow-xs bg-card text-card-foreground relative group/card overflow-visible">
+          <CardContent className="p-4 pb-3">
             <div className="absolute top-4 right-4 group/info">
               <Info className="w-4 h-4 text-muted-foreground/40 hover:text-foreground transition-colors cursor-help" />
               <div className="absolute bottom-full right-0 mb-2 w-56 p-3 bg-popover text-popover-foreground border border-border text-[10px] font-medium leading-relaxed rounded-xl shadow-2xl opacity-0 group-hover/info:opacity-100 transition-all transform translate-y-1 group-hover/info:translate-y-0 pointer-events-none z-50">
@@ -206,7 +267,7 @@ export default function TreasuryPage() {
               </div>
             </div>
 
-            <div className="flex items-center justify-between mb-4">
+            <div className="flex items-center justify-between mb-2">
               <div className={`w-10 h-10 rounded-xl ${status?.bg || 'bg-muted'} flex items-center justify-center`}>
                 {status && <status.icon className={`w-5 h-5 ${status.color}`} />}
               </div>
@@ -222,7 +283,7 @@ export default function TreasuryPage() {
             <h3 className={`text-2xl font-black ${status?.color || 'text-foreground'} tabular-nums`}>
               {summary?.reserveRatio}%
             </h3>
-            <p className="text-[10px] text-muted-foreground mt-2 font-medium italic">ความมั่นคงของระบบ</p>
+            <p className="text-[10px] text-muted-foreground mt-1.5 font-medium italic">ความมั่นคงของระบบ</p>
           </CardContent>
         </Card>
       </div>
@@ -318,14 +379,117 @@ export default function TreasuryPage() {
               )}
             </div>
             <div className="p-4 bg-muted/30 border-t border-border">
-              <Button variant="ghost" size="sm" className="w-full text-xs font-bold text-indigo-600 dark:text-indigo-400 hover:bg-indigo-500/10 gap-2">
+              <Link 
+                href="/transactions" 
+                className="w-full h-8 px-3 rounded-md text-xs font-bold text-indigo-600 dark:text-indigo-400 hover:bg-indigo-500/10 flex items-center justify-center gap-2 transition-all"
+              >
                 View All Activity
                 <ArrowRight className="w-3 h-3" />
-              </Button>
+              </Link>
             </div>
           </Card>
         </div>
       </div>
+
+      {/* Sweep Stripe Balance Dialog */}
+      <Dialog open={isOpen} onOpenChange={setIsOpen}>
+        <DialogContent className="max-w-md bg-card text-card-foreground rounded-2xl border border-border shadow-2xl p-6">
+          <DialogHeader className="mb-4">
+            <DialogTitle className="text-lg font-black text-foreground flex items-center gap-2">
+              <Send className="w-5 h-5 text-indigo-600" />
+              Sweep Stripe Balance
+            </DialogTitle>
+            <DialogDescription className="text-xs text-muted-foreground leading-relaxed mt-1">
+              Transfer funds from your Stripe available/incoming balance directly to the corporate reserve bank account. This records double-entry ledger settlement in real-time.
+            </DialogDescription>
+          </DialogHeader>
+
+          <form onSubmit={handleSweep} className="space-y-4">
+            <div className="space-y-1.5 bg-muted/20 p-4 rounded-xl border border-border/50">
+              <div className="flex items-center justify-between text-xs mb-1">
+                <span className="text-muted-foreground font-medium">Stripe Balance (Total):</span>
+                <span className="font-mono font-bold text-indigo-600 dark:text-indigo-400">
+                  ฿{summary ? ((summary.stripeAvailableBalance || 0) + (summary.stripePendingBalance || 0)).toLocaleString(undefined, { minimumFractionDigits: 2 }) : '0.00'}
+                </span>
+              </div>
+              <div className="flex items-center justify-between text-[10px] text-muted-foreground">
+                <span>• Available: ฿{summary ? (summary.stripeAvailableBalance || 0).toLocaleString() : '0'}</span>
+                <span>• Incoming: ฿{summary ? (summary.stripePendingBalance || 0).toLocaleString() : '0'}</span>
+              </div>
+            </div>
+
+            {summary && (summary.stripeAvailableBalance || 0) === 0 && (
+              <div className="p-3 bg-amber-500/10 border border-amber-500/20 rounded-xl text-[10px] leading-relaxed text-amber-600 dark:text-amber-400 flex items-start gap-2">
+                <AlertTriangle className="w-4 h-4 shrink-0 mt-0.5" />
+                <div>
+                  <span className="font-bold">Production Rule:</span> In live mode, Stripe only allows payouts from the <strong>Available</strong> balance (currently ฿0.00). In this local simulator, you can sweep from <strong>Incoming</strong> (฿{(summary?.stripePendingBalance || 0).toLocaleString()}) for testing purposes.
+                </div>
+              </div>
+            )}
+
+            <div className="space-y-1.5">
+              <Label htmlFor="sweep-amount" className="text-xs font-bold uppercase tracking-wider text-muted-foreground">
+                Sweep Amount (฿)
+              </Label>
+              <Input
+                id="sweep-amount"
+                type="number"
+                step="0.01"
+                min="0.01"
+                placeholder="0.00"
+                className="h-10 rounded-xl border-border bg-muted/20 focus:bg-background font-mono font-bold text-sm"
+                value={sweepAmount}
+                onChange={(e) => setSweepAmount(e.target.value)}
+                required
+              />
+            </div>
+
+            <div className="space-y-1.5">
+              <Label className="text-xs font-bold uppercase tracking-wider text-muted-foreground">
+                Destination Bank Account
+              </Label>
+              <div className="flex items-center justify-between p-3 bg-muted/30 border border-border/50 rounded-xl">
+                <div>
+                  <p className="text-xs font-bold text-foreground">SCB Main Corporate</p>
+                  <p className="text-[10px] text-muted-foreground font-mono">111-2-22222-3</p>
+                </div>
+                <Badge variant="outline" className="text-[9px] font-black uppercase bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 border-indigo-500/20">
+                  SCB
+                </Badge>
+              </div>
+            </div>
+
+            <DialogFooter className="pt-2 gap-2 flex sm:flex-row flex-col-reverse justify-end -mx-6 -mb-6 p-4 bg-muted/20 border-t border-border rounded-b-2xl mt-6">
+              <Button
+                type="button"
+                variant="ghost"
+                onClick={() => setIsOpen(false)}
+                className="h-10 rounded-xl font-bold text-xs"
+                disabled={isSweeping}
+              >
+                Cancel
+              </Button>
+              <Button
+                type="submit"
+                className="h-10 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-xs shadow-md border-none flex items-center gap-1.5"
+                disabled={isSweeping}
+              >
+                {isSweeping ? (
+                  <>
+                    <RefreshCcw className="w-3.5 h-3.5 animate-spin mr-1" />
+                    Executing Sweep...
+                  </>
+                ) : (
+                  <>
+                    <Send className="w-3.5 h-3.5 mr-1" />
+                    Execute Sweep
+                  </>
+                )}
+              </Button>
+            </DialogFooter>
+          </form>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

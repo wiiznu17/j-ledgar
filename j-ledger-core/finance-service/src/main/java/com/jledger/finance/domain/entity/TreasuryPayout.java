@@ -23,7 +23,7 @@ public class TreasuryPayout {
     @Column(nullable = false, length = 20)
     private String status = "PENDING"; // PENDING, COMPLETED, FAILED
 
-    @ManyToOne(fetch = FetchType.LAZY)
+    @ManyToOne(fetch = FetchType.EAGER)
     @JoinColumn(name = "destination_account_id")
     private TreasuryBankAccount destinationAccount;
 

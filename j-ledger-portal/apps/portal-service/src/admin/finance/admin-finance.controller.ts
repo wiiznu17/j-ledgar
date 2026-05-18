@@ -8,6 +8,8 @@ import {
   Query,
   UseGuards,
   Logger,
+  HttpException,
+  HttpStatus,
 } from '@nestjs/common';
 import { AdminJwtGuard } from '../guards/admin-jwt.guard';
 import { AdminRolesGuard } from '../guards/admin-roles.guard';
@@ -331,10 +333,11 @@ export class AdminFinanceController {
       this.integrationService.getStripeBalance(),
     ]);
 
-    const totalRealAssets = 
-      (stripeBalance?.available || 0) + 
-      (stripeBalance?.pending || 0) + 
-      (financeSummary.totalBankBalance || 0);
+    const rawAvailable = stripeBalance?.available || 0;
+    const rawPending = stripeBalance?.pending || 0;
+    const stripeTotal = rawAvailable + rawPending;
+
+    const totalRealAssets = stripeTotal + (financeSummary.totalBankBalance || 0);
     
     const realReserveRatio = financeSummary.totalCustomerLiability > 0
       ? Math.round((totalRealAssets / financeSummary.totalCustomerLiability) * 10000) / 100
@@ -342,8 +345,8 @@ export class AdminFinanceController {
 
     return {
       ...financeSummary,
-      stripeAvailableBalance: stripeBalance?.available || 0,
-      stripePendingBalance: stripeBalance?.pending || 0,
+      stripeAvailableBalance: rawAvailable,
+      stripePendingBalance: rawPending,
       reserveRatio: realReserveRatio,
     };
   }
@@ -355,5 +358,34 @@ export class AdminFinanceController {
       'get',
       INTERNAL_API_PATHS.FINANCE.TREASURY.PAYOUTS,
     );
+  }
+
+  @Post('treasury/payout')
+  @Roles(AdminRole.SUPER_ADMIN, AdminRole.AUDITOR)
+  async triggerTreasuryPayout(
+    @Body('amount') amount: number,
+  ): Promise<any> {
+    const stripeBalance = await this.integrationService.getStripeBalance();
+    const available = stripeBalance?.available || 0;
+    if (amount > available) {
+      throw new HttpException(
+        {
+          message: `Cannot sweep ฿${amount.toFixed(2)}. Your available Stripe balance is only ฿${available.toFixed(2)}.`,
+        },
+        HttpStatus.BAD_REQUEST,
+      );
+    }
+
+    const stripePayoutId = `po_mock_${Math.random().toString(36).substring(2, 15)}`;
+    await this.integrationService.forwardToGateway(
+      'post',
+      INTERNAL_API_PATHS.FINANCE.TREASURY.CONFIRM_STRIPE_PAYOUT,
+      {
+        stripePayoutId,
+        amount: Number(amount).toFixed(4),
+        arrivalDate: new Date().toISOString(),
+      },
+    );
+    return { success: true, payoutId: stripePayoutId };
   }
 }

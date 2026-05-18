@@ -418,7 +418,7 @@ public class WalletService {
         }
 
         // 1. Idempotency Check (Soft check first)
-        Optional<Transaction> existing = transactionRepository.findByTransactionId(externalRef);
+        Optional<Transaction> existing = transactionRepository.findByReferenceId(externalRef);
         if (existing.isPresent()) {
             return existing.get();
         }
@@ -451,12 +451,14 @@ public class WalletService {
             userAccount.setBalance(userAccount.getBalance().add(amount));
             accountRepository.save(userAccount);
             
+            String txId = generateReadableTransactionId();
+
             // Record Ledger Entry for System Account (Debit)
             LedgerEntry systemEntry = LedgerEntry.builder()
                     .account(systemAccount)
                     .entryType("DEBIT")
                     .amount(amount)
-                    .transactionId(externalRef)
+                    .transactionId(txId)
                     .description(String.format("%s Top-up credit for user %s", provider, userId))
                     .build();
             ledgerEntryRepository.save(Objects.requireNonNull(systemEntry));
@@ -466,7 +468,7 @@ public class WalletService {
                     .account(userAccount)
                     .entryType("CREDIT")
                     .amount(amount)
-                    .transactionId(externalRef)
+                    .transactionId(txId)
                     .description(String.format("%s Top-up credit", provider == null ? "EXTERNAL" : provider))
                     .build();
             ledgerEntryRepository.save(Objects.requireNonNull(userEntry));
@@ -476,7 +478,8 @@ public class WalletService {
 
             // 4. Create Transaction Record
             Transaction transaction = new Transaction();
-            transaction.setTransactionId(externalRef);
+            transaction.setTransactionId(txId);
+            transaction.setReferenceId(externalRef);
             transaction.setType(TransactionType.TOPUP);
             transaction.setAmount(amount);
             transaction.setStatus(TransactionStatus.COMPLETED);
@@ -493,7 +496,7 @@ public class WalletService {
 
         } catch (DataIntegrityViolationException e) {
             // 5. Hard Idempotency Check (DB level conflict handling)
-            return transactionRepository.findByTransactionId(externalRef)
+            return transactionRepository.findByReferenceId(externalRef)
                     .orElseThrow(() -> new ConflictException("Transaction conflict detected but record not found", e));
         }
     }

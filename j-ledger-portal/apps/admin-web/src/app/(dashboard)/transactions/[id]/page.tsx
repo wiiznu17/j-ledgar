@@ -35,6 +35,7 @@ import {
   FileJson,
   Check,
   TrendingUp,
+  ExternalLink,
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { transactionRequester } from '@/lib/requesters';
@@ -262,6 +263,34 @@ export default function TransactionDetailsPage() {
                   </p>
                 </div>
               </div>
+
+              {/* Gateway Reference ID (External) */}
+              {(transaction as any).referenceId && (
+                <div className="pt-4 border-t border-border">
+                  <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest mb-1 flex items-center gap-1">
+                    <ExternalLink className="w-3.5 h-3.5 text-indigo-500" /> Gateway Reference ID (Stripe / External)
+                  </p>
+                  <div className="flex items-center gap-2">
+                    <span className="font-mono text-xs text-indigo-600 dark:text-indigo-400 bg-indigo-500/5 px-2.5 py-1.5 rounded-lg border border-indigo-500/10 flex-1 truncate select-all">
+                      {String((transaction as any).referenceId)}
+                    </span>
+                    <Button
+                      onClick={() =>
+                        handleCopyId(String((transaction as any).referenceId))
+                      }
+                      variant="outline"
+                      size="icon"
+                      className="h-8 w-8 rounded-lg border-border hover:bg-muted text-muted-foreground hover:text-foreground shrink-0"
+                    >
+                      {copiedId ? (
+                        <Check className="w-3.5 h-3.5 text-emerald-500" />
+                      ) : (
+                        <Copy className="w-3.5 h-3.5 text-muted-foreground" />
+                      )}
+                    </Button>
+                  </div>
+                </div>
+              )}
 
               {/* Sender/Receiver Details if present */}
               {(transaction.senderId || transaction.receiverId) && (
