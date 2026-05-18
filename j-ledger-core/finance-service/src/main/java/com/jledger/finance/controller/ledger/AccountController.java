@@ -27,8 +27,10 @@ public class AccountController {
     @Operation(summary = "List all internal accounts", description = "Returns a paginated list of accounts")
     public ResponseEntity<Page<Account>> getAccounts(
             @RequestParam(defaultValue = "0") int page,
-            @RequestParam(defaultValue = "50") int size) {
-        Page<Account> accounts = accountRepository.findAll(PageRequest.of(page, size));
+            @RequestParam(defaultValue = "50") int size,
+            @RequestParam(required = false) String status,
+            @RequestParam(required = false) String search) {
+        Page<Account> accounts = accountRepository.findAllFiltered(status, search, PageRequest.of(page, size));
         return ResponseEntity.ok(accounts);
     }
 

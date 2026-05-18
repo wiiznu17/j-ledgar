@@ -43,12 +43,21 @@ export class AdminFinanceController {
   async getAccounts(
     @Query('page') page: number = 1,
     @Query('limit') limit: number = 50,
+    @Query('status') status?: string,
+    @Query('search') search?: string,
   ): Promise<AdminPaginatedResponse<Account>> {
     const skipPage = Math.max(0, page - 1);
+    const query = new URLSearchParams({
+      page: skipPage.toString(),
+      size: limit.toString(),
+      ...(status && status !== 'ALL' && { status }),
+      ...(search && { search }),
+    });
+
     // Proxy to finance-service
     const response = await this.integrationService.forwardToGateway<any>(
       'get',
-      `${INTERNAL_API_PATHS.FINANCE.ACCOUNTS.BASE}?page=${skipPage}&size=${limit}`,
+      `${INTERNAL_API_PATHS.FINANCE.ACCOUNTS.BASE}?${query.toString()}`,
     );
 
     const content = Array.isArray(response) ? response : response.content || [];

@@ -94,8 +94,6 @@ export default function InternalLedgerDetailPage({
       {/* Breadcrumb Header */}
       <div className="flex flex-col gap-3">
         <div className="flex items-center text-[10px] font-bold text-muted-foreground uppercase tracking-widest gap-2">
-          <span>System</span>
-          <ChevronRight className="w-3 h-3" />
           <Link
             href="/finance/ledger"
             className="hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors"

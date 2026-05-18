@@ -27,14 +27,27 @@ import { Account, AdminPaginatedResponse } from '@repo/dto';
 import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
 import { TablePagination } from '@/components/common/TablePagination';
+import {
+  FilterSearchInput,
+  FilterSelect,
+  FilterActions,
+} from '@/components/common/FilterElements';
 
 export default function InternalLedgerPage() {
   const router = useRouter();
   const [accounts, setAccounts] = useState<Account[]>([]);
   const [loading, setLoading] = useState(true);
-  const [total, setTotal] = useState(0);
   const [page, setPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
+  const [totalItems, setTotalItems] = useState(0);
+
+  // Filter Inputs
+  const [searchInput, setSearchInput] = useState('');
+  const [statusInput, setStatusInput] = useState('ALL');
+
+  // Applied Filters
+  const [appliedSearch, setAppliedSearch] = useState('');
+  const [appliedStatus, setAppliedStatus] = useState('ALL');
 
   const fetchAccounts = useCallback(async () => {
     setLoading(true);
@@ -42,13 +55,14 @@ export default function InternalLedgerPage() {
       const response = await accountRequester.getAccounts({
         page,
         limit: 10,
+        search: appliedSearch,
+        status: appliedStatus,
       });
 
-      setAccounts(response.data as Account[] || []);
-      
+      setAccounts((response.data as Account[]) || []);
       if (response.pagination) {
-        setTotal(response.pagination.total || 0);
         setTotalPages(response.pagination.totalPages || 1);
+        setTotalItems(response.pagination.total || 0);
       }
     } catch (error) {
       console.error('[INTERNAL_LEDGER] Fetch error:', error);
@@ -56,11 +70,26 @@ export default function InternalLedgerPage() {
     } finally {
       setLoading(false);
     }
-  }, [page]);
+  }, [page, appliedSearch, appliedStatus]);
 
   useEffect(() => {
     fetchAccounts();
   }, [fetchAccounts]);
+
+  const handleApplyFilter = (e: React.FormEvent) => {
+    e.preventDefault();
+    setAppliedSearch(searchInput);
+    setAppliedStatus(statusInput);
+    setPage(1);
+  };
+
+  const handleReset = () => {
+    setSearchInput('');
+    setStatusInput('ALL');
+    setAppliedSearch('');
+    setAppliedStatus('ALL');
+    setPage(1);
+  };
 
   // Identify special accounts for UI decoration
   const getAccountLabel = (userId: string) => {
@@ -81,34 +110,42 @@ export default function InternalLedgerPage() {
 
   return (
     <div className="space-y-6 pb-10 text-foreground">
-      {/* Page Header */}
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-        <div>
-          <div className="flex items-center gap-2 mb-1">
-            <div className="p-1.5 bg-indigo-500/10 rounded-lg">
-              <Landmark className="w-5 h-5 text-indigo-600 dark:text-indigo-400" />
-            </div>
-            <p className="text-muted-foreground">
-              System-level accounting and master treasury management.
-            </p>
-          </div>
-        </div>
-        <div className="flex items-center gap-3">
-          <Badge
-            variant="outline"
-            className="bg-card border-border text-muted-foreground px-3 py-1 text-[10px] font-bold uppercase tracking-wider"
-          >
-            Total Internal Accounts: {total}
-          </Badge>
-        </div>
-      </div>
 
       <Card className="border-none shadow-xs overflow-hidden bg-card text-card-foreground">
-        <CardHeader className="bg-muted/30 border-b border-border">
-          <CardTitle className="text-sm font-bold text-foreground">
-            Chart of Internal Accounts
-          </CardTitle>
-        </CardHeader>
+
+        {/* Filter Toolbar */}
+        <div className="p-4 bg-card border-b border-border">
+          <form
+            onSubmit={handleApplyFilter}
+            className="grid grid-cols-1 md:grid-cols-4 gap-4 items-end"
+          >
+            <FilterSearchInput
+              label="Search Account / User"
+              placeholder="Name or UUID"
+              value={searchInput}
+              onChange={(e) => setSearchInput(e.target.value)}
+            />
+
+            <FilterSelect
+              label="Account Status"
+              value={statusInput}
+              onValueChange={(v: string) => setStatusInput(v || 'ALL')}
+              options={[
+                { label: 'ALL STATUS', value: 'ALL' },
+                { label: 'ACTIVE', value: 'ACTIVE' },
+                { label: 'FROZEN', value: 'FROZEN' },
+              ]}
+            />
+
+            <FilterActions
+              searchLabel="Apply Filters"
+              isLoading={loading}
+              onReset={handleReset}
+              className="md:col-span-2"
+            />
+          </form>
+        </div>
+
         <CardContent className="p-0">
           <div className="overflow-x-auto">
             <Table>
@@ -182,11 +219,11 @@ export default function InternalLedgerPage() {
                           className={cn(
                             'text-lg font-black tabular-nums tracking-tight',
                             account.balance < 0
-                              ? 'text-rose-600 dark:text-rose-400'
+                              ? 'text-rose-500'
                               : 'text-foreground',
                           )}
                         >
-                          {account.balance.toLocaleString(undefined, {
+                          {account.balance.toLocaleString('en-US', {
                             minimumFractionDigits: 2,
                             maximumFractionDigits: 2,
                           })}
@@ -234,7 +271,7 @@ export default function InternalLedgerPage() {
           <TablePagination
             currentPage={page}
             totalPages={totalPages}
-            totalItems={total}
+            totalItems={totalItems}
             onPageChange={setPage}
             isLoading={loading}
           />
