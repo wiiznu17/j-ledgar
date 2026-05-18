@@ -9,6 +9,7 @@ import {
   Wallet,
   Landmark,
   Activity,
+  ChevronRight,
 } from 'lucide-react';
 
 export const dynamic = 'force-dynamic';
@@ -31,17 +32,13 @@ export default async function ReconcilePage() {
   const latestReport = reports[0];
 
   return (
-    <div className="space-y-8 animate-in fade-in duration-500 text-foreground">
-      <div className="flex flex-col md:flex-row md:items-end justify-between gap-4">
-        <div>
-          <div className="flex items-center gap-2 mb-2">
-            <div className="p-1.5 bg-indigo-500/10 rounded-lg">
-              <ShieldCheck className="w-5 h-5 text-indigo-600 dark:text-indigo-400" />
-            </div>
-            <span className="text-[10px] font-black uppercase tracking-[0.2em] text-indigo-600 dark:text-indigo-400">
-              Financial Integrity
-            </span>
-          </div>
+    <div className="space-y-6 pb-10 text-foreground animate-in fade-in duration-500">
+      <div className="flex items-center justify-between">
+        {/* Breadcrumbs */}
+        <div className="flex items-center text-[10px] font-bold text-muted-foreground uppercase tracking-widest gap-2">
+          <span className="opacity-60">Finance</span>
+          <ChevronRight className="w-3 h-3 opacity-60" />
+          <span className="text-foreground">Reconciliation</span>
         </div>
         <TriggerAuditButton />
       </div>

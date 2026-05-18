@@ -15,6 +15,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
+import java.time.ZoneId;
 import java.util.List;
 import java.util.UUID;
 import java.util.concurrent.TimeUnit;
@@ -41,9 +42,9 @@ public class ReconciliationService {
     /**
      * Nightly reconciliation job runs daily at midnight.
      */
-    @Scheduled(cron = "0 0 0 * * ?")
+    @Scheduled(cron = "0 0 0 * * ?", zone = "Asia/Bangkok")
     public void runNightlyReconciliation() {
-        LocalDate reportDate = LocalDate.now().minusDays(1);
+        LocalDate reportDate = LocalDate.now(ZoneId.of("Asia/Bangkok")).minusDays(1);
         runLockedReconciliation(reportDate, "Nightly");
     }
 
