@@ -496,6 +496,27 @@ export class KycService {
     });
   }
 
+  async getActiveUsersCountBefore(date: Date) {
+    return this.prisma.user.count({
+      where: {
+        status: UserStatus.ACTIVE,
+        createdAt: { lt: date },
+      },
+    });
+  }
+
+  async getKycApprovedCountBetween(from: Date, to: Date) {
+    return this.prisma.kYCData.count({
+      where: {
+        verificationStatus: KYCVerificationStatus.APPROVED,
+        verifiedAt: {
+          gte: from,
+          lte: to,
+        },
+      },
+    });
+  }
+
   async getPendingKYCList() {
     const list = await this.getKYCList(UserStatus.PENDING_APPROVAL);
     return list.data;

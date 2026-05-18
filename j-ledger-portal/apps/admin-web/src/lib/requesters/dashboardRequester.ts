@@ -7,7 +7,9 @@ export interface DashboardStats {
     approvedToday: number;
     rejectedToday: number;
   };
-  chartData: Array<{ time: string; volume: number }>;
+  chartData: Array<{ time: string; volume: number; revenue: number }>;
+  balanceTrend?: Array<{ time: string; balance: number }>;
+  revenueTrend?: Array<{ time: string; revenue: number }>;
   financial: {
     totalRevenue: number;
     totalVatPayable: number;
@@ -17,8 +19,22 @@ export interface DashboardStats {
   growth: {
     approvalRate: number;
     volumeGoal: number;
+    liquidityGrowth?: number;
+    revenueGrowth?: number;
+    activeUsersGrowth?: number;
+    kycGrowth?: number;
+    vatGrowth?: number;
+    failedGrowth?: number;
   };
   totalActiveUsers?: number;
+  treasuryHealth?: {
+    healthScore: number;
+    reserveRatio: number;
+    bankFloat: number;
+    settlementPending: number;
+  };
+  failedTransactions?: number;
+  totalTransactions?: number;
 }
 
 export const dashboardRequester = {

@@ -1,6 +1,6 @@
 'use client';
 
-import { LogOut, User, Settings, ChevronDown, UserCircle, Menu } from 'lucide-react';
+import { LogOut, User, Settings, ChevronDown, UserCircle, Menu, Search, Bell } from 'lucide-react';
 import { usePathname, useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
 import { authRequester } from '@/lib/requesters';
@@ -108,7 +108,7 @@ export function Topbar({ onLogout, onToggleMobile }: TopbarProps) {
   };
 
   return (
-    <header className="h-16 bg-card border-b border-border flex items-center justify-between px-4 md:px-8 flex-shrink-0 text-foreground transition-colors duration-200">
+    <header className="h-16 md:h-[72px] bg-card border-b border-border flex items-center justify-between px-4 md:px-8 flex-shrink-0 text-foreground transition-all duration-200">
       <div className="flex items-center gap-2 md:gap-4">
         {onToggleMobile && (
           <button
@@ -119,17 +119,42 @@ export function Topbar({ onLogout, onToggleMobile }: TopbarProps) {
             <Menu className="w-5 h-5" />
           </button>
         )}
-        <h1 className="text-lg md:text-xl font-black text-foreground tracking-tight">
-          {getPageTitle()}
-        </h1>
+        
+        {/* Title and Subtitle block */}
+        <div className="flex flex-col justify-center">
+          <h1 className="text-xl md:text-2xl font-black text-foreground tracking-tight leading-tight">
+            {getPageTitle()}
+          </h1>
+          {getPageTitle() === 'Dashboard' && (
+            <span className="text-[11px] font-medium text-muted-foreground mt-0.5 hidden sm:inline">
+              Overview of system performance and key metrics
+            </span>
+          )}
+        </div>
       </div>
+
       <div className="flex items-center gap-4">
+        {/* Search Input Widget */}
+        <div className="hidden lg:flex items-center bg-slate-50 dark:bg-slate-900 border border-border/80 rounded-xl px-3 py-1.5 gap-2 w-64 text-muted-foreground/80 hover:border-muted-foreground/30 transition-colors shadow-2xs">
+          <Search className="w-4 h-4 text-muted-foreground/75" />
+          <span className="text-xs font-semibold flex-1">Search anything...</span>
+          <kbd className="text-[9px] font-bold bg-background dark:bg-muted/80 border border-border px-1.5 py-0.5 rounded shadow-2xs text-muted-foreground/60 select-none">⌘K</kbd>
+        </div>
+
+        {/* Theme Toggle */}
         <ThemeToggle />
 
+        {/* Notification Bell with Badge */}
+        <button className="relative p-2 text-muted-foreground hover:text-foreground hover:bg-slate-50 dark:hover:bg-slate-900 rounded-xl transition-all border border-transparent hover:border-border cursor-pointer shrink-0">
+          <Bell className="w-4.5 h-4.5" />
+          <span className="absolute top-1.5 right-1.5 w-2 h-2 bg-pink-500 rounded-full border border-card ring-1 ring-pink-500/20" />
+        </button>
+
+        {/* User Admin Account Profile Dropdown */}
         {user ? (
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
-              <button className="flex items-center gap-3 p-1 pr-3 rounded-full hover:bg-muted transition-all border border-transparent hover:border-border group">
+              <button className="flex items-center gap-3 p-1 pr-3 rounded-full hover:bg-muted transition-all border border-transparent hover:border-border group cursor-pointer">
                 <div className="w-9 h-9 rounded-full bg-muted flex items-center justify-center text-muted-foreground overflow-hidden">
                   <UserCircle className="w-7 h-7" />
                 </div>

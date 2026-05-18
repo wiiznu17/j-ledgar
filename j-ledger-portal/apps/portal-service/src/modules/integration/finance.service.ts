@@ -245,6 +245,19 @@ export class FinanceService {
     }
   }
 
+  async getLedgerEntriesForAccount(accountId: string): Promise<any> {
+    const url = `${this.financeServiceUrl}/api/v1/ledger-entries/account/${accountId}?size=1000`;
+    try {
+      const response = await this.httpService.axiosRef.get(url, {
+        headers: this.getInternalHeaders(),
+      });
+      return response.data || { content: [] };
+    } catch (error: any) {
+      this.logCompactError(`getLedgerEntriesForAccount id=${accountId}`, error);
+      return { content: [] };
+    }
+  }
+
   async activateWallet(userId: string): Promise<WalletResponse> {
     const url = `${this.financeServiceUrl}/api/finance/wallets/${userId}/activate`;
 

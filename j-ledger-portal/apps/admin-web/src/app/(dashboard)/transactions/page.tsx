@@ -157,13 +157,10 @@ export default function TransactionsPage() {
 
   return (
     <div className="space-y-6 pb-10 text-foreground">
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-        <div className="flex-1">
-          <div className="flex flex-wrap items-center gap-2 mt-1">
-            <p className="text-muted-foreground">
-              Monitor and manage all financial activities
-            </p>
-            {activeFilters.userId && (
+      {activeFilters.userId && (
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+          <div className="flex-1">
+            <div className="flex flex-wrap items-center gap-2 mt-1">
               <Badge
                 variant="secondary"
                 className="bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 border border-indigo-500/20 px-2 py-0.5 rounded-md flex items-center gap-1"
@@ -185,10 +182,10 @@ export default function TransactionsPage() {
                   <X size={12} />
                 </button>
               </Badge>
-            )}
+            </div>
           </div>
         </div>
-      </div>
+      )}
 
       <Card className="border-none shadow-xs rounded-xl overflow-hidden bg-card text-card-foreground">
         {/* Filter Toolbar */}
