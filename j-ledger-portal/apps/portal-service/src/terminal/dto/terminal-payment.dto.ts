@@ -7,9 +7,14 @@ export class TerminalPaymentDto {
   @Min(0.01, { message: 'Amount must be greater than zero' })
   amount: number;
 
-  @ApiProperty({ example: 'req_1234567890abcdef', description: 'Unique idempotency key' })
+  @ApiProperty({
+    example: 'req_1234567890abcdef',
+    description: 'Unique idempotency key',
+  })
   @IsString()
-  @Length(16, 64, { message: 'Idempotency key must be between 16 and 64 characters' })
+  @Length(16, 64, {
+    message: 'Idempotency key must be between 16 and 64 characters',
+  })
   idempotencyKey: string;
 
   @ApiProperty({ example: 'Lunch payment', required: false })

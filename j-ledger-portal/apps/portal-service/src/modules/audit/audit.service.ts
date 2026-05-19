@@ -93,7 +93,7 @@ export class AuditService {
 
   private maskSensitiveData(data: any): any {
     if (!data) return data;
-    if (Array.isArray(data)) return data.map(i => this.maskSensitiveData(i));
+    if (Array.isArray(data)) return data.map((i) => this.maskSensitiveData(i));
     if (typeof data !== 'object') return data;
 
     const sensitiveFields = [
@@ -108,7 +108,9 @@ export class AuditService {
     const masked = { ...data };
 
     for (const key in masked) {
-      if (sensitiveFields.some(f => key.toLowerCase().includes(f.toLowerCase()))) {
+      if (
+        sensitiveFields.some((f) => key.toLowerCase().includes(f.toLowerCase()))
+      ) {
         masked[key] = '***MASKED***';
       } else if (typeof masked[key] === 'object') {
         masked[key] = this.maskSensitiveData(masked[key]);

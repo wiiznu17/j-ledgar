@@ -63,7 +63,7 @@ export default function InternalLedgerDetailPage({
 
       setAccount(accResponse.data);
       setEntries(entriesResponse.data || []);
-      
+
       if (entriesResponse.pagination) {
         setTotalPages(entriesResponse.pagination.totalPages || 1);
       }

@@ -27,7 +27,7 @@ export class BillingService {
     try {
       const settings = await this.financeService.getSystemSettings();
       const vatRate = dto.partnerId ? Number(settings.vatRate || 0.07) : 0;
-      const minAmount = Number(settings.minMerchantPayment || 5.00);
+      const minAmount = Number(settings.minMerchantPayment || 5.0);
 
       // Calculate totals with consistent rounding
       const subtotal = items.reduce(
@@ -38,7 +38,9 @@ export class BillingService {
       const total = subtotal + tax;
 
       if (dto.partnerId && total < minAmount) {
-        throw new BadRequestException(`Minimum invoice amount is ฿${minAmount.toFixed(2)}`);
+        throw new BadRequestException(
+          `Minimum invoice amount is ฿${minAmount.toFixed(2)}`,
+        );
       }
 
       this.logger.log(
@@ -71,7 +73,9 @@ export class BillingService {
           // Calculate fee from TOTAL amount (Gross) and round to 2 decimals
           feeAmount = Number((total * Number(feeRate)).toFixed(2));
           feeTax = Number((feeAmount * vatRate).toFixed(2));
-          this.logger.log(`[createInvoice] Platform fees calculated: feeAmount=${feeAmount.toFixed(2)}, feeTax=${feeTax.toFixed(2)} (VAT Rate: ${vatRate})`);
+          this.logger.log(
+            `[createInvoice] Platform fees calculated: feeAmount=${feeAmount.toFixed(2)}, feeTax=${feeTax.toFixed(2)} (VAT Rate: ${vatRate})`,
+          );
         }
       }
 
@@ -125,7 +129,11 @@ export class BillingService {
       `[getInvoiceById] Searching invoice for user=${userId} with identifier="${id}"`,
     );
 
-    const searchConditions: any[] = [{ id }, { invoiceNumber: id }, { referenceId: id }];
+    const searchConditions: any[] = [
+      { id },
+      { invoiceNumber: id },
+      { referenceId: id },
+    ];
 
     if (id.startsWith('TXN')) {
       try {
@@ -137,7 +145,9 @@ export class BillingService {
           );
           searchConditions.push({ referenceId: fallbackRef });
           if (fallbackRef.startsWith('PAY-')) {
-            searchConditions.push({ referenceId: fallbackRef.replace('PAY-', '') });
+            searchConditions.push({
+              referenceId: fallbackRef.replace('PAY-', ''),
+            });
           } else {
             searchConditions.push({ referenceId: `PAY-${fallbackRef}` });
           }
@@ -184,9 +194,12 @@ export class BillingService {
           this.prisma.partner.findFirst({ where: { taxId: '0000000000000' } }),
         ]);
 
-        if (!userWallet) throw new BadRequestException('Customer wallet not found');
-        if (!partner || !partner.financeAccounts) throw new BadRequestException('Merchant accounts not found');
-        if (!systemPartner || !systemPartner.financeAccounts) throw new BadRequestException('System accounts not found');
+        if (!userWallet)
+          throw new BadRequestException('Customer wallet not found');
+        if (!partner || !partner.financeAccounts)
+          throw new BadRequestException('Merchant accounts not found');
+        if (!systemPartner || !systemPartner.financeAccounts)
+          throw new BadRequestException('System accounts not found');
 
         const mAcc = partner.financeAccounts as any;
         const sAcc = systemPartner.financeAccounts as any;
@@ -196,11 +209,13 @@ export class BillingService {
         const merchantVat = Number(invoice.tax);
         const systemFee = Number(invoice.feeAmount || 0);
         const systemVat = Number(invoice.feeTax || 0);
-        
+
         // Merchant Net is the residual to ensure total balance
         const merchantNet = total - merchantVat - systemFee - systemVat;
- 
-        this.logger.log(`[payInvoice] Executing 4-way split for invoice=${invoice.id}: Total=${total.toFixed(2)}, Net=${merchantNet.toFixed(2)}, MVAT=${merchantVat.toFixed(2)}, Fee=${systemFee.toFixed(2)}, SVAT=${systemVat.toFixed(2)}`);
+
+        this.logger.log(
+          `[payInvoice] Executing 4-way split for invoice=${invoice.id}: Total=${total.toFixed(2)}, Net=${merchantNet.toFixed(2)}, MVAT=${merchantVat.toFixed(2)}, Fee=${systemFee.toFixed(2)}, SVAT=${systemVat.toFixed(2)}`,
+        );
 
         // Leg 1: Merchant Net (To Pending)
         await this.financeService.performTransfer({
@@ -210,10 +225,10 @@ export class BillingService {
           idempotencyKey: `pay_leg_net_${invoice.id}`,
           type: 'MERCHANT_PAYMENT',
           note: `Payment for INV ${invoice.invoiceNumber}`,
-          metadata: { 
+          metadata: {
             isMerchantPayment: true,
-            totalAmount: total.toFixed(2)
-          }
+            totalAmount: total.toFixed(2),
+          },
         });
 
         // Leg 2: Merchant VAT (To VAT)
@@ -225,7 +240,11 @@ export class BillingService {
             idempotencyKey: `pay_leg_vat_${invoice.id}`,
             type: 'MERCHANT_PAYMENT',
             note: `VAT for INV ${invoice.invoiceNumber}`,
-            metadata: { silent: true, isMerchantPayment: true, parentIdempotencyKey: `pay_leg_net_${invoice.id}` }
+            metadata: {
+              silent: true,
+              isMerchantPayment: true,
+              parentIdempotencyKey: `pay_leg_net_${invoice.id}`,
+            },
           });
         }
 
@@ -238,7 +257,11 @@ export class BillingService {
             idempotencyKey: `pay_leg_fee_${invoice.id}`,
             type: 'MERCHANT_PAYMENT',
             note: `Fee for INV ${invoice.invoiceNumber}`,
-            metadata: { silent: true, isMerchantPayment: true, parentIdempotencyKey: `pay_leg_net_${invoice.id}` }
+            metadata: {
+              silent: true,
+              isMerchantPayment: true,
+              parentIdempotencyKey: `pay_leg_net_${invoice.id}`,
+            },
           });
         }
 
@@ -251,7 +274,11 @@ export class BillingService {
             idempotencyKey: `pay_leg_svat_${invoice.id}`,
             type: 'MERCHANT_PAYMENT',
             note: `Service VAT for INV ${invoice.invoiceNumber}`,
-            metadata: { silent: true, isMerchantPayment: true, parentIdempotencyKey: `pay_leg_net_${invoice.id}` }
+            metadata: {
+              silent: true,
+              isMerchantPayment: true,
+              parentIdempotencyKey: `pay_leg_net_${invoice.id}`,
+            },
           });
         }
       }
@@ -266,10 +293,15 @@ export class BillingService {
         include: { items: true },
       });
 
-      this.logger.log(`[payInvoice] Successfully processed payment for invoice: ${id}`);
+      this.logger.log(
+        `[payInvoice] Successfully processed payment for invoice: ${id}`,
+      );
       return updatedInvoice;
     } catch (error) {
-      this.logger.error(`[payInvoice] Payment failed: ${error.message}`, error.stack);
+      this.logger.error(
+        `[payInvoice] Payment failed: ${error.message}`,
+        error.stack,
+      );
       throw error;
     }
   }

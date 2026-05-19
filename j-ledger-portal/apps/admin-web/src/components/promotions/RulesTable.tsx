@@ -53,11 +53,17 @@ export function RulesTable({ rules, onRefresh }: RulesTableProps) {
   const handleToggleLock = async (rule: Rule) => {
     try {
       setLoading(true);
-      await loyaltyRequester.updateRule(rule.eventType, { isLocked: !rule.isLocked });
-      toast.success(`${rule.eventType} is now ${!rule.isLocked ? 'Locked' : 'Unlocked'}`);
+      await loyaltyRequester.updateRule(rule.eventType, {
+        isLocked: !rule.isLocked,
+      });
+      toast.success(
+        `${rule.eventType} is now ${!rule.isLocked ? 'Locked' : 'Unlocked'}`,
+      );
       onRefresh();
     } catch (error: any) {
-      toast.error(error.response?.data?.message || 'Failed to update rule status');
+      toast.error(
+        error.response?.data?.message || 'Failed to update rule status',
+      );
     } finally {
       setLoading(false);
     }
@@ -70,11 +76,17 @@ export function RulesTable({ rules, onRefresh }: RulesTableProps) {
     }
     try {
       setLoading(true);
-      await loyaltyRequester.updateRule(rule.eventType, { isActive: !rule.isActive });
-      toast.success(`${rule.eventType} is now ${!rule.isActive ? 'Active' : 'Inactive'}`);
+      await loyaltyRequester.updateRule(rule.eventType, {
+        isActive: !rule.isActive,
+      });
+      toast.success(
+        `${rule.eventType} is now ${!rule.isActive ? 'Active' : 'Inactive'}`,
+      );
       onRefresh();
     } catch (error: any) {
-      toast.error(error.response?.data?.message || 'Failed to update active status');
+      toast.error(
+        error.response?.data?.message || 'Failed to update active status',
+      );
     } finally {
       setLoading(false);
     }
@@ -105,23 +117,40 @@ export function RulesTable({ rules, onRefresh }: RulesTableProps) {
       <Table>
         <TableHeader>
           <TableRow className="bg-muted/30">
-            <TableHead className="font-bold text-foreground">Event Type</TableHead>
-            <TableHead className="font-bold text-foreground">Points / THB</TableHead>
-            <TableHead className="font-bold text-foreground">Min Amount</TableHead>
-            <TableHead className="font-bold text-foreground">Max Points</TableHead>
+            <TableHead className="font-bold text-foreground">
+              Event Type
+            </TableHead>
+            <TableHead className="font-bold text-foreground">
+              Points / THB
+            </TableHead>
+            <TableHead className="font-bold text-foreground">
+              Min Amount
+            </TableHead>
+            <TableHead className="font-bold text-foreground">
+              Max Points
+            </TableHead>
             <TableHead className="font-bold text-foreground">Status</TableHead>
-            <TableHead className="font-bold text-right text-foreground">Actions</TableHead>
+            <TableHead className="font-bold text-right text-foreground">
+              Actions
+            </TableHead>
           </TableRow>
         </TableHeader>
         <TableBody>
           {rules.map((rule) => {
             const isEditing = editingKey === rule.eventType;
-            
+
             return (
-              <TableRow key={rule.eventType} className="hover:bg-muted/30 border-b border-border transition-colors">
+              <TableRow
+                key={rule.eventType}
+                className="hover:bg-muted/30 border-b border-border transition-colors"
+              >
                 <TableCell>
-                  <div className="font-bold text-foreground">{rule.eventType}</div>
-                  <div className="text-xs text-muted-foreground mt-0.5">{rule.description}</div>
+                  <div className="font-bold text-foreground">
+                    {rule.eventType}
+                  </div>
+                  <div className="text-xs text-muted-foreground mt-0.5">
+                    {rule.description}
+                  </div>
                 </TableCell>
                 <TableCell>
                   {isEditing ? (
@@ -130,10 +159,18 @@ export function RulesTable({ rules, onRefresh }: RulesTableProps) {
                       step="0.01"
                       className="w-24 h-8 bg-muted text-foreground border-border"
                       value={editForm?.pointsPerThb || 0}
-                      onChange={(e) => setEditForm(f => f ? {...f, pointsPerThb: parseFloat(e.target.value)} : null)}
+                      onChange={(e) =>
+                        setEditForm((f) =>
+                          f
+                            ? { ...f, pointsPerThb: parseFloat(e.target.value) }
+                            : null,
+                        )
+                      }
                     />
                   ) : (
-                    <span className="font-medium text-foreground">{rule.pointsPerThb}</span>
+                    <span className="font-medium text-foreground">
+                      {rule.pointsPerThb}
+                    </span>
                   )}
                 </TableCell>
                 <TableCell>
@@ -142,10 +179,18 @@ export function RulesTable({ rules, onRefresh }: RulesTableProps) {
                       type="number"
                       className="w-24 h-8 bg-muted text-foreground border-border"
                       value={editForm?.minAmount || 0}
-                      onChange={(e) => setEditForm(f => f ? {...f, minAmount: parseFloat(e.target.value)} : null)}
+                      onChange={(e) =>
+                        setEditForm((f) =>
+                          f
+                            ? { ...f, minAmount: parseFloat(e.target.value) }
+                            : null,
+                        )
+                      }
                     />
                   ) : (
-                    <span className="font-medium text-muted-foreground">{rule.minAmount} THB</span>
+                    <span className="font-medium text-muted-foreground">
+                      {rule.minAmount} THB
+                    </span>
                   )}
                 </TableCell>
                 <TableCell>
@@ -155,18 +200,45 @@ export function RulesTable({ rules, onRefresh }: RulesTableProps) {
                       className="w-24 h-8 bg-muted text-foreground border-border"
                       value={editForm?.maxPoints || ''}
                       placeholder="No limit"
-                      onChange={(e) => setEditForm(f => f ? {...f, maxPoints: e.target.value ? parseInt(e.target.value) : null} : null)}
+                      onChange={(e) =>
+                        setEditForm((f) =>
+                          f
+                            ? {
+                                ...f,
+                                maxPoints: e.target.value
+                                  ? parseInt(e.target.value)
+                                  : null,
+                              }
+                            : null,
+                        )
+                      }
                     />
                   ) : (
-                    <span className="font-medium text-muted-foreground">{rule.maxPoints || 'Unlimited'}</span>
+                    <span className="font-medium text-muted-foreground">
+                      {rule.maxPoints || 'Unlimited'}
+                    </span>
                   )}
                 </TableCell>
                 <TableCell>
                   <div className="flex items-center gap-2">
-                    <Badge variant={rule.isActive ? 'default' : 'secondary'} className={rule.isActive ? 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20' : 'bg-muted text-muted-foreground border-border'}>
+                    <Badge
+                      variant={rule.isActive ? 'default' : 'secondary'}
+                      className={
+                        rule.isActive
+                          ? 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20'
+                          : 'bg-muted text-muted-foreground border-border'
+                      }
+                    >
                       {rule.isActive ? 'ACTIVE' : 'INACTIVE'}
                     </Badge>
-                    <Badge variant={rule.isLocked ? 'outline' : 'secondary'} className={rule.isLocked ? 'bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/20' : 'bg-blue-500/10 text-blue-600 dark:text-blue-400 border border-blue-500/20'}>
+                    <Badge
+                      variant={rule.isLocked ? 'outline' : 'secondary'}
+                      className={
+                        rule.isLocked
+                          ? 'bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/20'
+                          : 'bg-blue-500/10 text-blue-600 dark:text-blue-400 border border-blue-500/20'
+                      }
+                    >
                       {rule.isLocked ? 'LOCKED' : 'EDITABLE'}
                     </Badge>
                   </div>
@@ -175,43 +247,67 @@ export function RulesTable({ rules, onRefresh }: RulesTableProps) {
                   <div className="flex items-center justify-end gap-2">
                     {isEditing ? (
                       <>
-                        <Button size="sm" variant="ghost" className="h-8 w-8 p-0 text-emerald-600 dark:text-emerald-400" onClick={handleSave} disabled={loading}>
+                        <Button
+                          size="sm"
+                          variant="ghost"
+                          className="h-8 w-8 p-0 text-emerald-600 dark:text-emerald-400"
+                          onClick={handleSave}
+                          disabled={loading}
+                        >
                           <Save className="h-4 w-4" />
                         </Button>
-                        <Button size="sm" variant="ghost" className="h-8 w-8 p-0 text-muted-foreground" onClick={cancelEditing} disabled={loading}>
+                        <Button
+                          size="sm"
+                          variant="ghost"
+                          className="h-8 w-8 p-0 text-muted-foreground"
+                          onClick={cancelEditing}
+                          disabled={loading}
+                        >
                           <X className="h-4 w-4" />
                         </Button>
                       </>
                     ) : (
                       <>
-                        <Button 
-                          size="sm" 
-                          variant="ghost" 
-                          className="h-8 w-8 p-0 text-muted-foreground hover:text-indigo-600 dark:hover:text-indigo-400" 
+                        <Button
+                          size="sm"
+                          variant="ghost"
+                          className="h-8 w-8 p-0 text-muted-foreground hover:text-indigo-600 dark:hover:text-indigo-400"
                           onClick={() => startEditing(rule)}
                           disabled={rule.isLocked || loading}
                         >
                           <Edit2 className="h-4 w-4" />
                         </Button>
-                        <Button 
-                          size="sm" 
-                          variant="ghost" 
+                        <Button
+                          size="sm"
+                          variant="ghost"
                           className={`h-8 w-8 p-0 ${rule.isActive ? 'text-amber-600 dark:text-amber-400' : 'text-emerald-600 dark:text-emerald-400'}`}
                           onClick={() => handleToggleActive(rule)}
                           disabled={rule.isLocked || loading}
                           title={rule.isActive ? 'Deactivate' : 'Activate'}
                         >
-                          {rule.isActive ? <Pause className="h-4 w-4" /> : <Play className="h-4 w-4" />}
+                          {rule.isActive ? (
+                            <Pause className="h-4 w-4" />
+                          ) : (
+                            <Play className="h-4 w-4" />
+                          )}
                         </Button>
-                        <Button 
-                          size="sm" 
-                          variant="ghost" 
+                        <Button
+                          size="sm"
+                          variant="ghost"
                           className={`h-8 w-8 p-0 ${rule.isLocked ? 'text-blue-600 dark:text-blue-400' : 'text-amber-600 dark:text-amber-400'}`}
                           onClick={() => handleToggleLock(rule)}
                           disabled={loading}
-                          title={rule.isLocked ? 'Unlock (Maintenance Mode)' : 'Lock (Production Mode)'}
+                          title={
+                            rule.isLocked
+                              ? 'Unlock (Maintenance Mode)'
+                              : 'Lock (Production Mode)'
+                          }
                         >
-                          {rule.isLocked ? <Unlock className="h-4 w-4" /> : <Lock className="h-4 w-4" />}
+                          {rule.isLocked ? (
+                            <Unlock className="h-4 w-4" />
+                          ) : (
+                            <Lock className="h-4 w-4" />
+                          )}
                         </Button>
                       </>
                     )}

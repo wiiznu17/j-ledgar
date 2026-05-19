@@ -38,9 +38,17 @@ describe('Merchant Runtime Concurrency (e2e)', () => {
     await app.close();
   });
 
-  const generateHeaders = (method: string, path: string, nonce: string, timestamp: string) => {
+  const generateHeaders = (
+    method: string,
+    path: string,
+    nonce: string,
+    timestamp: string,
+  ) => {
     const message = `${method.toUpperCase()}:${path}:${timestamp}:${nonce}`;
-    const signature = crypto.createHmac('sha256', secretKey).update(message).digest('hex');
+    const signature = crypto
+      .createHmac('sha256', secretKey)
+      .update(message)
+      .digest('hex');
 
     return {
       'x-jledger-terminal-id': terminalId,
@@ -84,7 +92,9 @@ describe('Merchant Runtime Concurrency (e2e)', () => {
 
       // Create a brand and deal for redemption
       const brand = await prisma.brand.create({ data: { name: 'Test Brand' } });
-      const category = await prisma.dealCategory.create({ data: { name: 'Food' } });
+      const category = await prisma.dealCategory.create({
+        data: { name: 'Food' },
+      });
       const deal = await prisma.deal.create({
         data: {
           brandId: brand.id,
@@ -112,7 +122,12 @@ describe('Merchant Runtime Concurrency (e2e)', () => {
       const requests = Array.from({ length: numRequests }).map(async (_, i) => {
         const nonce = `nonce-red-${i}-${crypto.randomBytes(4).toString('hex')}`;
         const ts = Math.floor(Date.now() / 1000).toString();
-        const headers = generateHeaders('POST', '/api/v1/terminal/loyalty/redeem', nonce, ts);
+        const headers = generateHeaders(
+          'POST',
+          '/api/v1/terminal/loyalty/redeem',
+          nonce,
+          ts,
+        );
         const idemKey = `idem-red-${i}-${crypto.randomBytes(4).toString('hex')}`; // Use DIFFERENT idem keys to simulate DIFFERENT requests
 
         return request(app.getHttpServer())
@@ -123,8 +138,8 @@ describe('Merchant Runtime Concurrency (e2e)', () => {
 
       const responses = await Promise.all(requests);
 
-      const successCount = responses.filter(r => r.status === 200).length;
-      const failCount = responses.filter(r => r.status === 400).length;
+      const successCount = responses.filter((r) => r.status === 200).length;
+      const failCount = responses.filter((r) => r.status === 400).length;
 
       expect(successCount).toBe(1);
       expect(failCount).toBe(numRequests - 1);
@@ -175,7 +190,12 @@ describe('Merchant Runtime Concurrency (e2e)', () => {
       const requests = Array.from({ length: numRequests }).map(async (_, i) => {
         const nonce = `nonce-pay-${i}-${crypto.randomBytes(4).toString('hex')}`;
         const ts = Math.floor(Date.now() / 1000).toString();
-        const headers = generateHeaders('POST', '/api/v1/terminal/payment', nonce, ts);
+        const headers = generateHeaders(
+          'POST',
+          '/api/v1/terminal/payment',
+          nonce,
+          ts,
+        );
         const idemKey = `idem-pay-${i}-${crypto.randomBytes(4).toString('hex')}`;
 
         return request(app.getHttpServer())
@@ -185,7 +205,7 @@ describe('Merchant Runtime Concurrency (e2e)', () => {
       });
 
       const responses = await Promise.all(requests);
-      responses.forEach(r => expect(r.status).toBe(201));
+      responses.forEach((r) => expect(r.status).toBe(201));
 
       const updatedPartner = await prisma.partner.findUnique({
         where: { id: partner.id },

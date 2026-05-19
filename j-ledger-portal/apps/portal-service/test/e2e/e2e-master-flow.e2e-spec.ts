@@ -77,9 +77,18 @@ describe('Phase E: E2E Master Flow - Merchant Integration', () => {
     await app.close();
   });
 
-  const generateTerminalHeaders = (method: string, path: string, nonce: string, timestamp: string, secKey: string) => {
+  const generateTerminalHeaders = (
+    method: string,
+    path: string,
+    nonce: string,
+    timestamp: string,
+    secKey: string,
+  ) => {
     const message = `${method.toUpperCase()}:${path}:${timestamp}:${nonce}`;
-    const signature = crypto.createHmac('sha256', secKey).update(message).digest('hex');
+    const signature = crypto
+      .createHmac('sha256', secKey)
+      .update(message)
+      .digest('hex');
     return {
       'x-jledger-terminal-id': actualTerminalId,
       'x-jledger-signature': signature,
@@ -91,7 +100,11 @@ describe('Phase E: E2E Master Flow - Merchant Integration', () => {
   it('should successfully execute the full merchant lifecycle end-to-end', async () => {
     // 1. Setup Initial Partner Application
     const partner = await prisma.partner.create({
-      data: { name: 'Master Flow Partner', userId: testUserId, status: 'ACTIVE' }
+      data: {
+        name: 'Master Flow Partner',
+        userId: testUserId,
+        status: 'ACTIVE',
+      },
     });
     partnerId = partner.id;
 
@@ -106,8 +119,8 @@ describe('Phase E: E2E Master Flow - Merchant Integration', () => {
         email: 'master@example.com',
         phone: '0812345678',
         address: '123 Master St',
-        status: 'PENDING' as any
-      }
+        status: 'PENDING' as any,
+      },
     });
 
     // 2. Admin Approves Merchant Application
@@ -115,11 +128,13 @@ describe('Phase E: E2E Master Flow - Merchant Integration', () => {
       .put(`/api/admin/merchants/applications/${application.id}/review`)
       .set('Authorization', 'Bearer mock-admin-token')
       .send({ status: 'APPROVED', note: 'Looks good' });
-    
+
     expect(reviewRes.status).toBe(200);
 
     // Get the created merchant ID from the DB
-    const merchant = await prisma.merchant.findFirst({ where: { partnerId: partner.id } });
+    const merchant = await prisma.merchant.findFirst({
+      where: { partnerId: partner.id },
+    });
     expect(merchant).toBeDefined();
     merchantId = merchant!.id;
 
@@ -138,7 +153,13 @@ describe('Phase E: E2E Master Flow - Merchant Integration', () => {
     const idempotencyKey = 'idempotency-flow-master-key-123';
     const ts1 = Math.floor(Date.now() / 1000).toString();
     const nonce1 = crypto.randomBytes(8).toString('hex');
-    const headers1 = generateTerminalHeaders('POST', '/api/v1/terminal/payment', nonce1, ts1, secretKey);
+    const headers1 = generateTerminalHeaders(
+      'POST',
+      '/api/v1/terminal/payment',
+      nonce1,
+      ts1,
+      secretKey,
+    );
 
     const paymentRes1 = await request(app.getHttpServer())
       .post('/api/v1/terminal/payment')
@@ -149,22 +170,34 @@ describe('Phase E: E2E Master Flow - Merchant Integration', () => {
 
     // 4b. Replay Same Request (Idempotent Success)
     const nonce1b = crypto.randomBytes(8).toString('hex');
-    const headers1b = generateTerminalHeaders('POST', '/api/v1/terminal/payment', nonce1b, ts1, secretKey);
+    const headers1b = generateTerminalHeaders(
+      'POST',
+      '/api/v1/terminal/payment',
+      nonce1b,
+      ts1,
+      secretKey,
+    );
     const paymentRes2 = await request(app.getHttpServer())
       .post('/api/v1/terminal/payment')
       .set(headers1b)
       .send({ amount: 1000, idempotencyKey });
-    
+
     expect(paymentRes2.status).toBe(201); // Returns cached success
 
     // 4c. Send Same Key with DIFFERENT payload (Conflict rejection)
     const nonce1c = crypto.randomBytes(8).toString('hex');
-    const headers1c = generateTerminalHeaders('POST', '/api/v1/terminal/payment', nonce1c, ts1, secretKey);
+    const headers1c = generateTerminalHeaders(
+      'POST',
+      '/api/v1/terminal/payment',
+      nonce1c,
+      ts1,
+      secretKey,
+    );
     const paymentRes3 = await request(app.getHttpServer())
       .post('/api/v1/terminal/payment')
       .set(headers1c)
       .send({ amount: 9999, idempotencyKey }); // Different amount
-    
+
     expect(paymentRes3.status).toBe(409); // Conflict rejection
 
     // 5. Merchant Checks Dashboard Data (Wallet App simulation)

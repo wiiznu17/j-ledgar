@@ -1,11 +1,6 @@
 'use client';
 
-import {
-  Card,
-  CardContent,
-  CardHeader,
-  CardTitle,
-} from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import {
   Select,
   SelectContent,
@@ -16,13 +11,7 @@ import {
 import { Calendar as CalendarIcon } from 'lucide-react';
 import { InfoTooltip } from '@/components/ui/info-tooltip';
 import { useEffect, useState } from 'react';
-import {
-  Cell,
-  Pie,
-  PieChart,
-  ResponsiveContainer,
-  Tooltip,
-} from 'recharts';
+import { Cell, Pie, PieChart, ResponsiveContainer, Tooltip } from 'recharts';
 
 interface DistributionData {
   name: string;
@@ -38,11 +27,11 @@ interface TransactionDistributionChartProps {
 
 // Colors matching the mockup exactly
 const COLOR_MAP: Record<string, string> = {
-  'Transfer': '#8b5cf6', // Violet
-  'Payment': '#10b981',  // Green
-  'Top Up': '#f59e0b',   // Amber
-  'Withdrawal': '#3b82f6', // Blue
-  'Other': '#64748b',    // Slate
+  Transfer: '#8b5cf6', // Violet
+  Payment: '#10b981', // Green
+  'Top Up': '#f59e0b', // Amber
+  Withdrawal: '#3b82f6', // Blue
+  Other: '#64748b', // Slate
 };
 
 export function TransactionDistributionChart({
@@ -63,7 +52,7 @@ export function TransactionDistributionChart({
   // Clean data for Recharts Pie
   const displayData = isAllZero
     ? [{ name: 'No Activity', value: 1, color: '#E2E8F0' }]
-    : data.map(item => ({
+    : data.map((item) => ({
         name: item.name,
         value: item.value,
         color: COLOR_MAP[item.name] || '#64748b',
@@ -74,7 +63,9 @@ export function TransactionDistributionChart({
       <Card className="border border-border/80 shadow-md shadow-slate-200/40 dark:shadow-none hover:shadow-lg hover:border-indigo-500/20 transition-all duration-300 rounded-xl bg-card">
         <CardHeader className="flex flex-row items-center justify-between pb-2 space-y-0">
           <div className="flex items-center gap-1.5">
-            <CardTitle className="text-sm font-semibold text-foreground">Transaction Distribution</CardTitle>
+            <CardTitle className="text-sm font-semibold text-foreground">
+              Transaction Distribution
+            </CardTitle>
             <InfoTooltip
               content="สัดส่วนประเภทธุรกรรมทั้งหมด แสดงเปอร์เซ็นต์การเติมเงิน โอน ชำระเงิน และถอนเงิน"
               iconClassName="text-muted-foreground hover:text-foreground"
@@ -93,14 +84,19 @@ export function TransactionDistributionChart({
     <Card className="border border-border/80 shadow-md shadow-slate-200/40 dark:shadow-none hover:shadow-lg hover:border-indigo-500/20 transition-all duration-300 rounded-xl bg-card h-full flex flex-col justify-between">
       <CardHeader className="flex flex-row items-center justify-between pb-2 space-y-0">
         <div className="flex items-center gap-1.5">
-          <CardTitle className="text-sm font-semibold text-foreground">Transaction Distribution</CardTitle>
+          <CardTitle className="text-sm font-semibold text-foreground">
+            Transaction Distribution
+          </CardTitle>
           <InfoTooltip
-              content="สัดส่วนประเภทธุรกรรมทั้งหมด แสดงเปอร์เซ็นต์การเติมเงิน โอน ชำระเงิน และถอนเงิน"
-              iconClassName="text-muted-foreground hover:text-foreground"
-            />
+            content="สัดส่วนประเภทธุรกรรมทั้งหมด แสดงเปอร์เซ็นต์การเติมเงิน โอน ชำระเงิน และถอนเงิน"
+            iconClassName="text-muted-foreground hover:text-foreground"
+          />
         </div>
         <div className="flex items-center bg-card rounded-lg border border-border p-1 shadow-xs hover:border-muted-foreground/30 transition-colors">
-          <Select value={dateRange} onValueChange={(val) => val && onDateRangeChange(val)}>
+          <Select
+            value={dateRange}
+            onValueChange={(val) => val && onDateRangeChange(val)}
+          >
             <SelectTrigger className="w-[100px] border-none focus:ring-0 focus:outline-hidden focus-visible:ring-0 shadow-none h-7 text-xs font-semibold text-foreground bg-transparent py-0">
               <CalendarIcon className="w-3.5 h-3.5 mr-1.5 text-muted-foreground" />
               <SelectValue placeholder="Select Range" />
@@ -151,7 +147,9 @@ export function TransactionDistributionChart({
 
             {/* Center Text displaying dynamic Total */}
             <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
-              <span className="text-[9px] uppercase font-bold tracking-wider text-slate-400">Total</span>
+              <span className="text-[9px] uppercase font-bold tracking-wider text-slate-400">
+                Total
+              </span>
               <span className="text-2xl font-black text-foreground leading-none">
                 {totalValue}
               </span>
@@ -162,17 +160,32 @@ export function TransactionDistributionChart({
           <div className="flex-1 flex flex-col gap-2">
             {data.map((item, idx) => {
               const color = COLOR_MAP[item.name] || '#64748b';
-              const pct = totalValue > 0 ? ((item.value / totalValue) * 100).toFixed(1) : '0.0';
-              
+              const pct =
+                totalValue > 0
+                  ? ((item.value / totalValue) * 100).toFixed(1)
+                  : '0.0';
+
               return (
-                <div key={idx} className="flex items-center justify-between text-xs font-semibold">
+                <div
+                  key={idx}
+                  className="flex items-center justify-between text-xs font-semibold"
+                >
                   <div className="flex items-center gap-2">
-                    <div className="w-2 h-2 rounded-full shrink-0" style={{ backgroundColor: color }} />
-                    <span className="text-slate-500 font-bold">{item.name}</span>
+                    <div
+                      className="w-2 h-2 rounded-full shrink-0"
+                      style={{ backgroundColor: color }}
+                    />
+                    <span className="text-slate-500 font-bold">
+                      {item.name}
+                    </span>
                   </div>
                   <div className="flex items-baseline gap-1 text-right">
-                    <span className="text-foreground font-extrabold">{item.value}</span>
-                    <span className="text-[9px] text-muted-foreground font-medium">({pct}%)</span>
+                    <span className="text-foreground font-extrabold">
+                      {item.value}
+                    </span>
+                    <span className="text-[9px] text-muted-foreground font-medium">
+                      ({pct}%)
+                    </span>
                   </div>
                 </div>
               );

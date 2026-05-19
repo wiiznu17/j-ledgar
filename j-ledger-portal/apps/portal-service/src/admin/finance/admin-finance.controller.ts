@@ -275,15 +275,17 @@ export class AdminFinanceController {
       this.loyaltyService.getPointHistoryByReference(id),
     ]);
 
-    const earnedPoints = pointHistories.find(p => p.amount > 0);
+    const earnedPoints = pointHistories.find((p) => p.amount > 0);
 
     return {
       transaction,
       ledgerEntries,
-      pointsEarned: earnedPoints ? {
-        amount: earnedPoints.amount,
-        expiresAt: earnedPoints.expiresAt,
-      } : undefined,
+      pointsEarned: earnedPoints
+        ? {
+            amount: earnedPoints.amount,
+            expiresAt: earnedPoints.expiresAt,
+          }
+        : undefined,
     };
   }
 
@@ -346,11 +348,15 @@ export class AdminFinanceController {
     const rawPending = stripeBalance?.pending || 0;
     const stripeTotal = rawAvailable + rawPending;
 
-    const totalRealAssets = stripeTotal + (financeSummary.totalBankBalance || 0);
-    
-    const realReserveRatio = financeSummary.totalCustomerLiability > 0
-      ? Math.round((totalRealAssets / financeSummary.totalCustomerLiability) * 10000) / 100
-      : 100;
+    const totalRealAssets =
+      stripeTotal + (financeSummary.totalBankBalance || 0);
+
+    const realReserveRatio =
+      financeSummary.totalCustomerLiability > 0
+        ? Math.round(
+            (totalRealAssets / financeSummary.totalCustomerLiability) * 10000,
+          ) / 100
+        : 100;
 
     return {
       ...financeSummary,
@@ -371,9 +377,7 @@ export class AdminFinanceController {
 
   @Post('treasury/payout')
   @Roles(AdminRole.SUPER_ADMIN, AdminRole.AUDITOR)
-  async triggerTreasuryPayout(
-    @Body('amount') amount: number,
-  ): Promise<any> {
+  async triggerTreasuryPayout(@Body('amount') amount: number): Promise<any> {
     const stripeBalance = await this.integrationService.getStripeBalance();
     const available = stripeBalance?.available || 0;
     if (amount > available) {

@@ -10,10 +10,17 @@ export class TerminalIdempotencyService {
   constructor(private readonly prisma: PrismaService) {}
 
   generateHash(payload: any): string {
-    return crypto.createHash('sha256').update(JSON.stringify(payload)).digest('hex');
+    return crypto
+      .createHash('sha256')
+      .update(JSON.stringify(payload))
+      .digest('hex');
   }
 
-  async getRecord(terminalId: string, operation: string, idempotencyKey: string) {
+  async getRecord(
+    terminalId: string,
+    operation: string,
+    idempotencyKey: string,
+  ) {
     return this.prisma.terminalIdempotencyRecord.findUnique({
       where: {
         terminalId_operation_idempotencyKey: {
@@ -32,7 +39,7 @@ export class TerminalIdempotencyService {
     requestHash: string,
     responsePayload: any,
     status: number,
-    ttlSeconds: number = 86400 // 24 hours default
+    ttlSeconds: number = 86400, // 24 hours default
   ) {
     const expiresAt = new Date();
     expiresAt.setSeconds(expiresAt.getSeconds() + ttlSeconds);
@@ -78,7 +85,7 @@ export class TerminalIdempotencyService {
     operation: string,
     idempotencyKey: string,
     payload: any,
-    processFn: () => Promise<{ status: number; data: any }>
+    processFn: () => Promise<{ status: number; data: any }>,
   ) {
     const currentHash = this.generateHash(payload);
     let isOwner = false;
@@ -98,9 +105,16 @@ export class TerminalIdempotencyService {
     }
 
     if (!isOwner) {
-      const existing = await this.getRecord(terminalId, operation, idempotencyKey);
+      const existing = await this.getRecord(
+        terminalId,
+        operation,
+        idempotencyKey,
+      );
       if (!existing) {
-        throw new HttpException('Idempotency lookup failed', HttpStatus.CONFLICT);
+        throw new HttpException(
+          'Idempotency lookup failed',
+          HttpStatus.CONFLICT,
+        );
       }
       if (existing.requestHash !== currentHash) {
         throw new HttpException(

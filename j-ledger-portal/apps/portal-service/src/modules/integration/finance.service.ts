@@ -162,8 +162,14 @@ export class FinanceService {
       );
       return response.data;
     } catch (error: any) {
-      this.logCompactError(`createAccount owner=${ownerId} name=${accountName}`, error);
-      this.rethrowAsHttpException(error, `Failed to create account ${accountName}`);
+      this.logCompactError(
+        `createAccount owner=${ownerId} name=${accountName}`,
+        error,
+      );
+      this.rethrowAsHttpException(
+        error,
+        `Failed to create account ${accountName}`,
+      );
     }
   }
 
@@ -379,9 +385,9 @@ export class FinanceService {
           accountId: wallet.accountId,
           referenceId: referenceId,
           amount: amount.toString(),
-          type: 'TOPUP'
+          type: 'TOPUP',
         },
-        { headers: this.getInternalHeaders() }
+        { headers: this.getInternalHeaders() },
       );
 
       // Step 2: Simulate Payment Confirmation (Settlement)
@@ -391,16 +397,16 @@ export class FinanceService {
         {
           reference_id: referenceId,
           status: 'SUCCESS',
-          signature: 'mock_signature_verified'
+          signature: 'mock_signature_verified',
         },
-        { headers: this.getInternalHeaders() }
+        { headers: this.getInternalHeaders() },
       );
 
       return {
         success: true,
         referenceId: referenceId,
         message: 'Top-up successfully settled via 2-step process',
-        newBalance: wallet.balance + amount
+        newBalance: wallet.balance + amount,
       };
     } catch (error: any) {
       this.logCompactError(`topUp (2-step) user=${userId}`, error);
@@ -428,7 +434,10 @@ export class FinanceService {
       );
       return response.data;
     } catch (error: any) {
-      this.logCompactError(`createPaymentIntent account=${accountId} ref=${referenceId}`, error);
+      this.logCompactError(
+        `createPaymentIntent account=${accountId} ref=${referenceId}`,
+        error,
+      );
       this.rethrowAsHttpException(error, 'Failed to create payment intent');
     }
   }
@@ -450,7 +459,10 @@ export class FinanceService {
       );
       return response.data;
     } catch (error: any) {
-      this.logCompactError(`processPaymentWebhook ref=${referenceId} status=${status}`, error);
+      this.logCompactError(
+        `processPaymentWebhook ref=${referenceId} status=${status}`,
+        error,
+      );
       this.rethrowAsHttpException(error, 'Failed to process payment webhook');
     }
   }
@@ -496,7 +508,7 @@ export class FinanceService {
       const response = await this.httpService.axiosRef.post(url, payload, {
         headers: this.getInternalHeaders(),
       });
-      console.log("transferByPhone", response.data);
+      console.log('transferByPhone', response.data);
       return response.data;
     } catch (error: any) {
       this.logCompactError(`transferByPhone user=${fromUserId}`, error);
@@ -530,16 +542,13 @@ export class FinanceService {
             metadata: payload.metadata,
           };
 
-      const response = await this.httpService.axiosRef.post<TransactionResponse>(
-        url,
-        body,
-        {
+      const response =
+        await this.httpService.axiosRef.post<TransactionResponse>(url, body, {
           headers: {
             ...this.getInternalHeaders(),
             'Idempotency-Key': payload.idempotencyKey,
           },
-        },
-      );
+        });
       return response.data;
     } catch (error: any) {
       this.logCompactError(
@@ -564,27 +573,31 @@ export class FinanceService {
     const url = `${this.financeServiceUrl}/api/finance/transactions/merchant-pay-atomic`;
 
     try {
-      const response = await this.httpService.axiosRef.post<TransactionResponse>(
-        url,
-        {
-          fromWalletId: payload.fromWalletId,
-          currency: payload.currency || 'THB',
-          legs: payload.legs,
-        },
-        {
-          headers: {
-            ...this.getInternalHeaders(),
-            'Idempotency-Key': payload.idempotencyKey,
+      const response =
+        await this.httpService.axiosRef.post<TransactionResponse>(
+          url,
+          {
+            fromWalletId: payload.fromWalletId,
+            currency: payload.currency || 'THB',
+            legs: payload.legs,
           },
-        },
-      );
+          {
+            headers: {
+              ...this.getInternalHeaders(),
+              'Idempotency-Key': payload.idempotencyKey,
+            },
+          },
+        );
       return response.data;
     } catch (error: any) {
       this.logCompactError(
         `performMerchantMultiPay from=${payload.fromWalletId} legs=${payload.legs.length}`,
         error,
       );
-      this.rethrowAsHttpException(error, 'Failed to perform multi-leg merchant payment');
+      this.rethrowAsHttpException(
+        error,
+        'Failed to perform multi-leg merchant payment',
+      );
     }
   }
 

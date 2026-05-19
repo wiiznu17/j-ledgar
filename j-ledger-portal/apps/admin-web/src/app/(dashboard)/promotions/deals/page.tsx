@@ -61,9 +61,12 @@ export default function DealsPage() {
         limit: 10,
       };
       if (activeFilters.search) params.search = activeFilters.search;
-      if (activeFilters.brandId !== 'all') params.brandId = activeFilters.brandId;
-      if (activeFilters.categoryId !== 'all') params.categoryId = activeFilters.categoryId;
-      if (activeFilters.status !== 'all') params.isActive = activeFilters.status === 'active';
+      if (activeFilters.brandId !== 'all')
+        params.brandId = activeFilters.brandId;
+      if (activeFilters.categoryId !== 'all')
+        params.categoryId = activeFilters.categoryId;
+      if (activeFilters.status !== 'all')
+        params.isActive = activeFilters.status === 'active';
 
       const res = await promotionsRequester.getDeals({ params });
       setDeals(res.data || []);
@@ -130,7 +133,7 @@ export default function DealsPage() {
           </span>
         </div>
 
-        <Button 
+        <Button
           className="bg-indigo-600 hover:bg-indigo-700 text-white shadow-xs rounded-xl px-4 h-9 font-bold text-xs transition-all active:scale-95"
           onClick={() => router.push('/promotions/deals/new')}
         >
@@ -141,51 +144,54 @@ export default function DealsPage() {
       <Card className="border-none shadow-xs overflow-hidden bg-card text-card-foreground">
         {/* Filter Toolbar */}
         <div className="p-4 bg-card border-b border-border">
-            <form onSubmit={handleApplyFilter} className="grid grid-cols-1 md:grid-cols-5 gap-4 items-end">
-                <FilterSearchInput
-                    label="Search Deals"
-                    placeholder="Search by deal name..."
-                    value={search}
-                    onChange={(e) => setSearch(e.target.value)}
-                />
+          <form
+            onSubmit={handleApplyFilter}
+            className="grid grid-cols-1 md:grid-cols-5 gap-4 items-end"
+          >
+            <FilterSearchInput
+              label="Search Deals"
+              placeholder="Search by deal name..."
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+            />
 
-                <FilterSelect
-                    label="Brand"
-                    value={brandId}
-                    onValueChange={setBrandId}
-                    options={[
-                        { label: 'All Brands', value: 'all' },
-                        ...brands.map(b => ({ label: b.name, value: b.id }))
-                    ]}
-                />
+            <FilterSelect
+              label="Brand"
+              value={brandId}
+              onValueChange={setBrandId}
+              options={[
+                { label: 'All Brands', value: 'all' },
+                ...brands.map((b) => ({ label: b.name, value: b.id })),
+              ]}
+            />
 
-                <FilterSelect
-                    label="Category"
-                    value={categoryId}
-                    onValueChange={setCategoryId}
-                    options={[
-                        { label: 'All Categories', value: 'all' },
-                        ...categories.map(c => ({ label: c.name, value: c.id }))
-                    ]}
-                />
+            <FilterSelect
+              label="Category"
+              value={categoryId}
+              onValueChange={setCategoryId}
+              options={[
+                { label: 'All Categories', value: 'all' },
+                ...categories.map((c) => ({ label: c.name, value: c.id })),
+              ]}
+            />
 
-                <FilterSelect
-                    label="Status"
-                    value={status}
-                    onValueChange={setStatus}
-                    options={[
-                        { label: 'All Status', value: 'all' },
-                        { label: 'Active', value: 'active' },
-                        { label: 'Inactive', value: 'inactive' },
-                    ]}
-                />
+            <FilterSelect
+              label="Status"
+              value={status}
+              onValueChange={setStatus}
+              options={[
+                { label: 'All Status', value: 'all' },
+                { label: 'Active', value: 'active' },
+                { label: 'Inactive', value: 'inactive' },
+              ]}
+            />
 
-                <FilterActions
-                    searchLabel="Filter"
-                    isLoading={loading}
-                    onReset={handleReset}
-                />
-            </form>
+            <FilterActions
+              searchLabel="Filter"
+              isLoading={loading}
+              onReset={handleReset}
+            />
+          </form>
         </div>
 
         <CardHeader className="bg-muted/30 border-b border-border px-6 py-4">
@@ -194,10 +200,12 @@ export default function DealsPage() {
               <div className="w-8 h-8 rounded-lg bg-indigo-500/10 flex items-center justify-center text-indigo-600 dark:text-indigo-400">
                 <Ticket size={16} />
               </div>
-              <CardTitle className="text-base font-bold text-foreground">Inventory List</CardTitle>
+              <CardTitle className="text-base font-bold text-foreground">
+                Inventory List
+              </CardTitle>
             </div>
             <div className="text-xs font-bold text-muted-foreground uppercase tracking-widest">
-                {totalItems} Total Deals
+              {totalItems} Total Deals
             </div>
           </div>
         </CardHeader>
@@ -206,24 +214,23 @@ export default function DealsPage() {
             <div className="h-64 flex items-center justify-center">
               <div className="flex flex-col items-center gap-2">
                 <Loader2 className="h-10 w-10 animate-spin text-indigo-600 dark:text-indigo-400" />
-                <span className="text-xs font-bold text-muted-foreground uppercase tracking-widest animate-pulse">Fetching Data...</span>
+                <span className="text-xs font-bold text-muted-foreground uppercase tracking-widest animate-pulse">
+                  Fetching Data...
+                </span>
               </div>
             </div>
           ) : (
-            <DealsTable
-              deals={deals}
-              onRefresh={fetchDeals}
-            />
+            <DealsTable deals={deals} onRefresh={fetchDeals} />
           )}
         </CardContent>
 
         <TablePagination
-            currentPage={currentPage}
-            totalPages={totalPages}
-            totalItems={totalItems}
-            onPageChange={handlePageChange}
-            isLoading={loading}
-            itemName="deals"
+          currentPage={currentPage}
+          totalPages={totalPages}
+          totalItems={totalItems}
+          onPageChange={handlePageChange}
+          isLoading={loading}
+          itemName="deals"
         />
       </Card>
     </div>

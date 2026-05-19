@@ -1,6 +1,15 @@
 'use client';
 
-import { LogOut, User, Settings, ChevronDown, UserCircle, Menu, Search, Bell } from 'lucide-react';
+import {
+  LogOut,
+  User,
+  Settings,
+  ChevronDown,
+  UserCircle,
+  Menu,
+  Search,
+  Bell,
+} from 'lucide-react';
 import { usePathname, useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
 import { authRequester } from '@/lib/requesters';
@@ -49,7 +58,10 @@ const routeTitles: RouteTitle[] = [
   { pattern: '/support/user-activity', title: 'User Activity' },
   { pattern: '/support/users/[id]', title: 'User Details' },
   { pattern: '/support/users', title: 'Users' },
-  { pattern: '/support/merchants/applications', title: 'Merchant Applications' },
+  {
+    pattern: '/support/merchants/applications',
+    title: 'Merchant Applications',
+  },
   { pattern: '/support/merchants/create', title: 'Create Partner' },
   { pattern: '/support/merchants/[id]/edit', title: 'Edit Merchant' },
   { pattern: '/support/merchants/[id]/terminals', title: 'Merchant Terminals' },
@@ -70,9 +82,9 @@ const routeTitles: RouteTitle[] = [
 const matchRoute = (pathname: string, pattern: string) => {
   const pathParts = pathname.split('/').filter(Boolean);
   const patternParts = pattern.split('/').filter(Boolean);
-  
+
   if (pathParts.length !== patternParts.length) return false;
-  
+
   return patternParts.every((part, i) => {
     if (part.startsWith('[') && part.endsWith(']')) {
       return true; // Match Dynamic Parameter
@@ -102,7 +114,9 @@ export function Topbar({ onLogout, onToggleMobile }: TopbarProps) {
     const exactMatch = routeTitles.find((r) => r.pattern === pathname);
     if (exactMatch) return exactMatch.title;
 
-    const dynamicMatch = routeTitles.find((r) => matchRoute(pathname, r.pattern));
+    const dynamicMatch = routeTitles.find((r) =>
+      matchRoute(pathname, r.pattern),
+    );
     if (dynamicMatch) return dynamicMatch.title;
 
     return 'P-wallet Admin';
@@ -120,7 +134,7 @@ export function Topbar({ onLogout, onToggleMobile }: TopbarProps) {
             <Menu className="w-5 h-5" />
           </button>
         )}
-        
+
         {/* Title and Subtitle block */}
         <div className="flex flex-col justify-center">
           <h1 className="text-xl md:text-2xl font-black text-foreground tracking-tight leading-tight">

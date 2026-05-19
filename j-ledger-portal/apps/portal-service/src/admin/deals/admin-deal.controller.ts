@@ -20,18 +20,24 @@ import { Permission } from '@repo/dto';
 import { Permissions as RequirePermissions } from '../decorators/permissions.decorator';
 import { AuditLog } from '../decorators/audit.decorator';
 import { ResourceType } from '../../modules/audit/audit.service';
-import { 
-  CreateBrandDto, 
-  UpdateBrandDto, 
-  CreateCategoryDto, 
-  UpdateCategoryDto, 
-  CreateDealDto, 
-  UpdateDealDto 
+import {
+  CreateBrandDto,
+  UpdateBrandDto,
+  CreateCategoryDto,
+  UpdateCategoryDto,
+  CreateDealDto,
+  UpdateDealDto,
 } from '../../modules/deals/dto/deal-admin.dto';
 
 @Controller('admin/deals')
 @UseGuards(AdminJwtGuard, AdminRolesGuard, AdminPermissionsGuard)
-@UsePipes(new ValidationPipe({ whitelist: true, forbidNonWhitelisted: true, transform: true }))
+@UsePipes(
+  new ValidationPipe({
+    whitelist: true,
+    forbidNonWhitelisted: true,
+    transform: true,
+  }),
+)
 export class AdminDealController {
   constructor(private readonly dealService: DealService) {}
 
@@ -46,12 +52,13 @@ export class AdminDealController {
     @Query('limit') limit?: string,
   ) {
     return this.dealService.getDealsAdmin({
-        categoryId,
-        brandId,
-        search,
-        isActive: isActive === 'true' ? true : isActive === 'false' ? false : undefined,
-        page: page ? parseInt(page) : 1,
-        limit: limit ? parseInt(limit) : 10,
+      categoryId,
+      brandId,
+      search,
+      isActive:
+        isActive === 'true' ? true : isActive === 'false' ? false : undefined,
+      page: page ? parseInt(page) : 1,
+      limit: limit ? parseInt(limit) : 10,
     });
   }
 
@@ -109,7 +116,10 @@ export class AdminDealController {
   @Put('meta/categories/:id')
   @RequirePermissions(Permission.MANAGE_DEALS)
   @AuditLog(null as any, ResourceType.DEAL, 'Updated promotional category')
-  async updateCategory(@Param('id') id: string, @Body() data: UpdateCategoryDto) {
+  async updateCategory(
+    @Param('id') id: string,
+    @Body() data: UpdateCategoryDto,
+  ) {
     return this.dealService.updateCategory(id, data);
   }
 
@@ -135,7 +145,11 @@ export class AdminDealController {
 
   @Patch(':id/toggle')
   @RequirePermissions(Permission.MANAGE_DEALS)
-  @AuditLog(null as any, ResourceType.DEAL, 'Toggled promotional deal active status')
+  @AuditLog(
+    null as any,
+    ResourceType.DEAL,
+    'Toggled promotional deal active status',
+  )
   async toggleDeal(@Param('id') id: string) {
     return this.dealService.toggleDeal(id);
   }

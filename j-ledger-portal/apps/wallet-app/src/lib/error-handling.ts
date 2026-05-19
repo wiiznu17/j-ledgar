@@ -152,7 +152,7 @@ export const getErrorInfo = (
   };
 
   const info = errorMap[error.code] || errorMap.UNKNOWN;
-  
+
   return {
     title: info.title,
     // Use the specific message from backend if available, otherwise fallback to map
@@ -205,12 +205,11 @@ export const parseBackendError = (error: any): TransferError => {
     if (status === 400) {
       const rawMessage = data.message || '';
       const message = Array.isArray(rawMessage) ? rawMessage[0] : rawMessage;
-      
-      const isInsufficientFunds = 
-        typeof message === 'string' && (
-          message.toLowerCase().includes('insufficient') || 
-          message.includes('ไม่เพียงพอ')
-        );
+
+      const isInsufficientFunds =
+        typeof message === 'string' &&
+        (message.toLowerCase().includes('insufficient') ||
+          message.includes('ไม่เพียงพอ'));
 
       return {
         code: isInsufficientFunds ? 'INSUFFICIENT_FUNDS' : 'INVALID_QR',

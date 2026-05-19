@@ -9,9 +9,24 @@ export default function MerchantLayout() {
   // Define tabs with their corresponding paths
   const tabs = [
     { name: 'index', label: 'Dashboard', icon: Home, path: '/merchant' },
-    { name: 'receive', label: 'Receive', icon: QrCode, path: '/merchant/receive' },
-    { name: 'transactions', label: 'History', icon: Activity, path: '/merchant/transactions' },
-    { name: 'terminals', label: 'Terminals', icon: CreditCard, path: '/merchant/terminals' },
+    {
+      name: 'receive',
+      label: 'Receive',
+      icon: QrCode,
+      path: '/merchant/receive',
+    },
+    {
+      name: 'transactions',
+      label: 'History',
+      icon: Activity,
+      path: '/merchant/transactions',
+    },
+    {
+      name: 'terminals',
+      label: 'Terminals',
+      icon: CreditCard,
+      path: '/merchant/terminals',
+    },
   ];
 
   // Helper to check if a tab is active
@@ -26,10 +41,12 @@ export default function MerchantLayout() {
   const hideTabBarPages = [
     '/merchant/manual-pay',
     '/merchant/apply',
-    '/merchant/payment-confirm'
+    '/merchant/payment-confirm',
   ];
 
-  const shouldHideTabBar = hideTabBarPages.some(page => pathname.startsWith(page));
+  const shouldHideTabBar = hideTabBarPages.some((page) =>
+    pathname.startsWith(page),
+  );
 
   return (
     <View style={{ flex: 1, backgroundColor: '#f8f9fe' }}>
@@ -39,7 +56,7 @@ export default function MerchantLayout() {
 
       {/* Dynamic Tab Bar - Hidden on specific pages */}
       {!shouldHideTabBar && (
-        <View 
+        <View
           style={{
             backgroundColor: '#ffffff',
             borderTopWidth: 1,
@@ -66,15 +83,22 @@ export default function MerchantLayout() {
               <TouchableOpacity
                 key={tab.name}
                 onPress={() => router.replace(tab.path as any)}
-                style={{ flex: 1, alignItems: 'center', justifyContent: 'center' }}
+                style={{
+                  flex: 1,
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                }}
               >
-                <tab.icon size={20} color={active ? activeColor : inactiveColor} />
-                <Text 
-                  style={{ 
-                    fontSize: 10, 
-                    fontFamily: 'Manrope_700Bold', 
-                    color: active ? activeColor : inactiveColor, 
-                    marginTop: 4 
+                <tab.icon
+                  size={20}
+                  color={active ? activeColor : inactiveColor}
+                />
+                <Text
+                  style={{
+                    fontSize: 10,
+                    fontFamily: 'Manrope_700Bold',
+                    color: active ? activeColor : inactiveColor,
+                    marginTop: 4,
                   }}
                 >
                   {tab.label}

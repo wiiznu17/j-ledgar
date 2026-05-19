@@ -3,14 +3,14 @@
 import { useEffect, useState } from 'react';
 import { toast } from 'sonner';
 import { StatCard } from '@/components/dashboard/StatCard';
-import { 
-  Coins, 
-  Users, 
-  Settings, 
+import {
+  Coins,
+  Users,
+  Settings,
   Calendar,
   AlertCircle,
   Gift,
-  XCircle
+  XCircle,
 } from 'lucide-react';
 import { loyaltyRequester } from '@/lib/requesters';
 import { RulesTable } from '@/components/promotions/RulesTable';
@@ -48,7 +48,6 @@ export default function LoyaltyPage() {
 
   return (
     <div className="space-y-8 pb-10 text-foreground">
-
       <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
         <StatCard
           title="Active Points"
@@ -104,13 +103,17 @@ export default function LoyaltyPage() {
           <div className="flex items-center justify-between">
             <h3 className="text-xl font-bold text-foreground">Earning Rules</h3>
           </div>
-          
+
           <div className="bg-blue-500/10 border border-blue-500/20 rounded-xl p-4 flex items-start gap-3">
             <AlertCircle className="h-5 w-5 text-blue-600 dark:text-blue-400 mt-0.5 flex-shrink-0" />
             <div>
-              <h4 className="font-bold text-blue-900 dark:text-blue-300 text-sm">Maintenance Mode Notice</h4>
+              <h4 className="font-bold text-blue-900 dark:text-blue-300 text-sm">
+                Maintenance Mode Notice
+              </h4>
               <p className="text-blue-800 dark:text-blue-400 text-xs mt-1 leading-relaxed">
-                Rules can only be modified when <strong>Unlocked</strong>. Unlocking a rule enables maintenance mode for that specific event trigger.
+                Rules can only be modified when <strong>Unlocked</strong>.
+                Unlocking a rule enables maintenance mode for that specific
+                event trigger.
               </p>
             </div>
           </div>
@@ -121,15 +124,17 @@ export default function LoyaltyPage() {
         <div className="space-y-6">
           <h3 className="text-xl font-bold text-foreground">Expiry Outlook</h3>
           <ExpirySchedule data={expiryData} />
-          
+
           <div className="bg-amber-500/10 p-6 rounded-xl border border-amber-500/20 shadow-xs">
             <h4 className="text-sm font-bold text-amber-900 dark:text-amber-300 flex items-center gap-2 mb-2">
               <Calendar className="w-4 h-4" />
               Monthly Cycle Info
             </h4>
             <p className="text-xs text-amber-800 dark:text-amber-400 leading-relaxed">
-              Points earned are valid for 1 year, expiring at the end of the same month of the following year. 
-              The cleanup job runs automatically every day at midnight to process any expired balances.
+              Points earned are valid for 1 year, expiring at the end of the
+              same month of the following year. The cleanup job runs
+              automatically every day at midnight to process any expired
+              balances.
             </p>
           </div>
         </div>

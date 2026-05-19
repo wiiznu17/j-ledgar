@@ -112,7 +112,8 @@ export default function UserDetailPage({
         </div>
         <h2 className="text-2xl font-bold text-foreground">User Not Found</h2>
         <p className="text-muted-foreground mt-2 max-w-xs">
-          The user you are looking for might have been deleted or the ID is incorrect.
+          The user you are looking for might have been deleted or the ID is
+          incorrect.
         </p>
         <Button
           variant="outline"
@@ -132,7 +133,8 @@ export default function UserDetailPage({
   const KycIcon = kycConfig.icon;
 
   const accountAge = Math.floor(
-    (new Date().getTime() - new Date(user.createdAt).getTime()) / (1000 * 60 * 60 * 24),
+    (new Date().getTime() - new Date(user.createdAt).getTime()) /
+      (1000 * 60 * 60 * 24),
   );
 
   return (
@@ -140,18 +142,22 @@ export default function UserDetailPage({
       {/* Breadcrumbs */}
       <div className="flex items-center justify-between">
         <div className="flex items-center text-[10px] font-bold text-muted-foreground uppercase tracking-widest gap-2">
-          <Link href="/support/users" className="hover:text-indigo-600 transition-colors">
+          <Link
+            href="/support/users"
+            className="hover:text-indigo-600 transition-colors"
+          >
             Users
           </Link>
           <ChevronRight className="w-3 h-3" />
-          <span className="text-foreground">{user.email || user.phoneNumber || userId.slice(0, 8)}</span>
+          <span className="text-foreground">
+            {user.email || user.phoneNumber || userId.slice(0, 8)}
+          </span>
         </div>
       </div>
 
       <div className="grid gap-5 lg:grid-cols-3 items-start">
         {/* ── Left column ── */}
         <div className="lg:col-span-2 space-y-5">
-
           {/* Identity Card */}
           <Card className="border-none shadow-xs bg-card text-card-foreground rounded-[2rem] overflow-hidden">
             <CardContent className="p-7">
@@ -182,7 +188,11 @@ export default function UserDetailPage({
                       onClick={() => handleCopy(userId)}
                       className="p-0.5 rounded hover:bg-muted transition-colors text-muted-foreground/50 hover:text-muted-foreground"
                     >
-                      {copied ? <Check className="w-3 h-3 text-emerald-500" /> : <Copy className="w-3 h-3" />}
+                      {copied ? (
+                        <Check className="w-3 h-3 text-emerald-500" />
+                      ) : (
+                        <Copy className="w-3 h-3" />
+                      )}
                     </button>
                   </div>
 
@@ -190,7 +200,10 @@ export default function UserDetailPage({
                   <div className="flex flex-wrap items-center gap-2">
                     <Badge
                       variant="outline"
-                      className={cn('text-[10px] font-black uppercase tracking-wider flex items-center gap-1 px-2.5 py-0.5', statusConfig.color)}
+                      className={cn(
+                        'text-[10px] font-black uppercase tracking-wider flex items-center gap-1 px-2.5 py-0.5',
+                        statusConfig.color,
+                      )}
                     >
                       <StatusIcon className="w-3 h-3" />
                       {user.status}
@@ -198,7 +211,10 @@ export default function UserDetailPage({
 
                     <Badge
                       variant="outline"
-                      className={cn('text-[10px] font-black uppercase tracking-wider flex items-center gap-1 px-2.5 py-0.5', kycConfig.color)}
+                      className={cn(
+                        'text-[10px] font-black uppercase tracking-wider flex items-center gap-1 px-2.5 py-0.5',
+                        kycConfig.color,
+                      )}
                     >
                       <KycIcon className="w-3 h-3" />
                       KYC: {kycStatus.replace('_', ' ')}
@@ -216,7 +232,12 @@ export default function UserDetailPage({
 
                     <span className="text-[10px] text-muted-foreground font-medium flex items-center gap-1">
                       <Calendar className="w-3 h-3" />
-                      Joined {new Date(user.createdAt).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' })}
+                      Joined{' '}
+                      {new Date(user.createdAt).toLocaleDateString('en-GB', {
+                        day: '2-digit',
+                        month: 'short',
+                        year: 'numeric',
+                      })}
                     </span>
                   </div>
                 </div>
@@ -247,14 +268,25 @@ export default function UserDetailPage({
               </CardHeader>
               <CardContent className="p-6 pt-0 space-y-4">
                 <div className="space-y-1">
-                  <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider">Phone Number</p>
+                  <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider">
+                    Phone Number
+                  </p>
                   <p className="text-lg font-black text-foreground tracking-tight font-mono">
                     {user.phoneNumber || '—'}
                   </p>
                 </div>
                 <div className="space-y-1">
-                  <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider">Email Address</p>
-                  <p className={cn('text-sm font-bold', user.email ? 'text-foreground' : 'text-muted-foreground italic')}>
+                  <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider">
+                    Email Address
+                  </p>
+                  <p
+                    className={cn(
+                      'text-sm font-bold',
+                      user.email
+                        ? 'text-foreground'
+                        : 'text-muted-foreground italic',
+                    )}
+                  >
                     {user.email || 'Not set'}
                   </p>
                 </div>
@@ -280,7 +312,9 @@ export default function UserDetailPage({
                 {account ? (
                   <div className="space-y-3">
                     <div className="flex items-center justify-between">
-                      <span className="text-[10px] font-bold text-muted-foreground uppercase">Balance</span>
+                      <span className="text-[10px] font-bold text-muted-foreground uppercase">
+                        Balance
+                      </span>
                       <Badge
                         variant="outline"
                         className="text-[9px] font-black border-border text-muted-foreground"
@@ -290,14 +324,18 @@ export default function UserDetailPage({
                     </div>
                     <div className="flex items-baseline gap-2">
                       <span className="text-3xl font-black text-foreground tabular-nums">
-                        {account.balance.toLocaleString('th-TH', { minimumFractionDigits: 2 })}
+                        {account.balance.toLocaleString('th-TH', {
+                          minimumFractionDigits: 2,
+                        })}
                       </span>
                       <span className="text-xs font-black text-muted-foreground uppercase">
                         {account.currency}
                       </span>
                     </div>
                     {account.walletId && (
-                      <p className="text-[10px] font-mono text-muted-foreground">{account.walletId}</p>
+                      <p className="text-[10px] font-mono text-muted-foreground">
+                        {account.walletId}
+                      </p>
                     )}
                     <Link
                       href={`/finance/wallets/${account.id}`}
@@ -334,7 +372,9 @@ export default function UserDetailPage({
                   <Calendar className="w-4 h-4 text-indigo-600 dark:text-indigo-400" />
                 </div>
                 <div>
-                  <p className="text-[10px] font-black text-muted-foreground uppercase tracking-tight">Account Age</p>
+                  <p className="text-[10px] font-black text-muted-foreground uppercase tracking-tight">
+                    Account Age
+                  </p>
                   <p className="text-sm font-bold text-foreground">
                     {accountAge === 0 ? 'Today' : `${accountAge} days`}
                   </p>
@@ -346,9 +386,12 @@ export default function UserDetailPage({
                   <Shield className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
                 </div>
                 <div>
-                  <p className="text-[10px] font-black text-muted-foreground uppercase tracking-tight">Trusted Devices</p>
+                  <p className="text-[10px] font-black text-muted-foreground uppercase tracking-tight">
+                    Trusted Devices
+                  </p>
                   <p className="text-sm font-bold text-foreground">
-                    {activity?.devices?.length || 0} device{(activity?.devices?.length || 0) !== 1 ? 's' : ''}
+                    {activity?.devices?.length || 0} device
+                    {(activity?.devices?.length || 0) !== 1 ? 's' : ''}
                   </p>
                 </div>
               </div>
@@ -358,12 +401,19 @@ export default function UserDetailPage({
                   <Clock className="w-4 h-4 text-amber-600 dark:text-amber-400" />
                 </div>
                 <div>
-                  <p className="text-[10px] font-black text-muted-foreground uppercase tracking-tight">Last Active</p>
+                  <p className="text-[10px] font-black text-muted-foreground uppercase tracking-tight">
+                    Last Active
+                  </p>
                   <p className="text-sm font-bold text-foreground">
                     {activity?.lastLoginAt
-                      ? new Date(activity.lastLoginAt).toLocaleDateString('en-GB', {
-                          day: '2-digit', month: 'short', year: 'numeric',
-                        })
+                      ? new Date(activity.lastLoginAt).toLocaleDateString(
+                          'en-GB',
+                          {
+                            day: '2-digit',
+                            month: 'short',
+                            year: 'numeric',
+                          },
+                        )
                       : 'No activity'}
                   </p>
                 </div>
@@ -443,16 +493,28 @@ export default function UserDetailPage({
                         <div className="space-y-4 pt-2">
                           <div className="p-4 bg-muted/50 rounded-2xl space-y-3">
                             {[
-                              { label: 'Hardware Model', value: device.deviceName || 'Unknown' },
-                              { label: 'Platform / OS', value: device.osVersion || 'Unknown' },
+                              {
+                                label: 'Hardware Model',
+                                value: device.deviceName || 'Unknown',
+                              },
+                              {
+                                label: 'Platform / OS',
+                                value: device.osVersion || 'Unknown',
+                              },
                             ].map(({ label, value }) => (
                               <div key={label}>
-                                <p className="text-[10px] font-black text-muted-foreground uppercase mb-0.5">{label}</p>
-                                <p className="text-sm font-bold text-foreground">{value}</p>
+                                <p className="text-[10px] font-black text-muted-foreground uppercase mb-0.5">
+                                  {label}
+                                </p>
+                                <p className="text-sm font-bold text-foreground">
+                                  {value}
+                                </p>
                               </div>
                             ))}
                             <div>
-                              <p className="text-[10px] font-black text-muted-foreground uppercase mb-0.5">Device UID</p>
+                              <p className="text-[10px] font-black text-muted-foreground uppercase mb-0.5">
+                                Device UID
+                              </p>
                               <p className="text-[10px] font-mono font-bold text-indigo-600 dark:text-indigo-400 bg-indigo-500/10 p-2 rounded-lg break-all">
                                 {device.deviceIdentifier}
                               </p>
@@ -460,15 +522,26 @@ export default function UserDetailPage({
                           </div>
                           <div className="grid grid-cols-2 gap-3">
                             <div className="p-3 border border-border rounded-xl">
-                              <p className="text-[9px] font-black text-muted-foreground uppercase mb-1">Trust Level</p>
+                              <p className="text-[9px] font-black text-muted-foreground uppercase mb-1">
+                                Trust Level
+                              </p>
                               <Badge className="bg-emerald-500 text-white border-none text-[9px] font-black rounded-md">
                                 {device.trustLevel}
                               </Badge>
                             </div>
                             <div className="p-3 border border-border rounded-xl">
-                              <p className="text-[9px] font-black text-muted-foreground uppercase mb-1">Last Seen</p>
+                              <p className="text-[9px] font-black text-muted-foreground uppercase mb-1">
+                                Last Seen
+                              </p>
                               <p className="text-[10px] font-bold text-foreground">
-                                {new Date(device.lastSeenAt).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' })}
+                                {new Date(device.lastSeenAt).toLocaleDateString(
+                                  'en-GB',
+                                  {
+                                    day: '2-digit',
+                                    month: 'short',
+                                    year: 'numeric',
+                                  },
+                                )}
                               </p>
                             </div>
                           </div>

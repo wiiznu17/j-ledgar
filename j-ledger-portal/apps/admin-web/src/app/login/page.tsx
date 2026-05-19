@@ -11,7 +11,7 @@ export default async function LoginPage(props: {
 }) {
   const searchParams = await props.searchParams;
   const error = searchParams.error;
-  
+
   const cookieStore = await cookies();
   const token = cookieStore.get(AUTH_COOKIE_NAME)?.value;
 

@@ -17,17 +17,21 @@ export class TerminalAuthGuard implements CanActivate {
 
   async canActivate(context: ExecutionContext): Promise<boolean> {
     const request = context.switchToHttp().getRequest();
-    
+
     const terminalId = request.headers['x-jledger-terminal-id'];
     const signature = request.headers['x-jledger-signature'];
     const timestamp = request.headers['x-jledger-timestamp'];
     const nonce = request.headers['x-jledger-nonce'];
 
     if (
-      typeof terminalId !== 'string' || !terminalId ||
-      typeof signature !== 'string' || !signature ||
-      typeof timestamp !== 'string' || !timestamp ||
-      typeof nonce !== 'string' || !nonce
+      typeof terminalId !== 'string' ||
+      !terminalId ||
+      typeof signature !== 'string' ||
+      !signature ||
+      typeof timestamp !== 'string' ||
+      !timestamp ||
+      typeof nonce !== 'string' ||
+      !nonce
     ) {
       throw new HttpException(
         'Missing or invalid terminal authentication headers',
@@ -56,7 +60,7 @@ export class TerminalAuthGuard implements CanActivate {
 
     // Attach terminalId to request for use in controllers
     request.terminalId = terminalId;
-    
+
     return true;
   }
 }

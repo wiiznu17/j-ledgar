@@ -3,13 +3,13 @@ import { PrismaService } from '../../core/prisma/prisma.service';
 import { LoyaltyService } from '../loyalty/loyalty.service';
 import { RedemptionStatus } from '@prisma/client';
 import { v4 as uuidv4 } from 'uuid';
-import { 
-  CreateBrandDto, 
-  UpdateBrandDto, 
-  CreateCategoryDto, 
-  UpdateCategoryDto, 
-  CreateDealDto, 
-  UpdateDealDto 
+import {
+  CreateBrandDto,
+  UpdateBrandDto,
+  CreateCategoryDto,
+  UpdateCategoryDto,
+  CreateDealDto,
+  UpdateDealDto,
 } from './dto/deal-admin.dto';
 
 @Injectable()
@@ -82,7 +82,10 @@ export class DealService {
       // Check date availability
       const now = new Date();
       if (deal.startDate && deal.startDate > now) {
-        throw new HttpException('Deal has not started yet', HttpStatus.BAD_REQUEST);
+        throw new HttpException(
+          'Deal has not started yet',
+          HttpStatus.BAD_REQUEST,
+        );
       }
       if (deal.endDate && deal.endDate < now) {
         throw new HttpException('Deal has expired', HttpStatus.BAD_REQUEST);
@@ -102,35 +105,41 @@ export class DealService {
 
       // 3. Deduct Points via Atomic Conditional Update (Race Condition Protection)
       const pointUpdate = await tx.userPoint.updateMany({
-        where: { 
-          userId, 
-          balance: { gte: deal.pointsRequired } 
+        where: {
+          userId,
+          balance: { gte: deal.pointsRequired },
         },
-        data: { 
-          balance: { decrement: deal.pointsRequired } 
-        }
+        data: {
+          balance: { decrement: deal.pointsRequired },
+        },
       });
 
       if (pointUpdate.count === 0) {
-        throw new HttpException('Insufficient points or account error', HttpStatus.BAD_REQUEST);
+        throw new HttpException(
+          'Insufficient points or account error',
+          HttpStatus.BAD_REQUEST,
+        );
       }
 
       // 4. Update Stock via Atomic Conditional Update (Race Condition Protection)
       if (deal.stock > 0) {
         const stockUpdate = await tx.deal.updateMany({
-          where: { 
-            id: dealId, 
-            remainingStock: { gt: 0 } 
+          where: {
+            id: dealId,
+            remainingStock: { gt: 0 },
           },
-          data: { 
-            remainingStock: { decrement: 1 } 
-          }
+          data: {
+            remainingStock: { decrement: 1 },
+          },
         });
 
         if (stockUpdate.count === 0) {
-          // Note: If we reach here, we've already deducted points! 
+          // Note: If we reach here, we've already deducted points!
           // But since we are in a $transaction, it will ROLLBACK. Safe!
-          throw new HttpException('Deal is out of stock', HttpStatus.BAD_REQUEST);
+          throw new HttpException(
+            'Deal is out of stock',
+            HttpStatus.BAD_REQUEST,
+          );
         }
       }
 
@@ -139,7 +148,9 @@ export class DealService {
       const charset = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
       let redemptionCode = 'JL';
       for (let i = 0; i < 10; i++) {
-        redemptionCode += charset.charAt(Math.floor(Math.random() * charset.length));
+        redemptionCode += charset.charAt(
+          Math.floor(Math.random() * charset.length),
+        );
       }
 
       const redemption = await tx.dealRedemption.create({
@@ -325,7 +336,8 @@ export class DealService {
 
     return this.prisma.$transaction(async (tx) => {
       const currentDeal = await tx.deal.findUnique({ where: { id } });
-      if (!currentDeal) throw new HttpException('Deal not found', HttpStatus.NOT_FOUND);
+      if (!currentDeal)
+        throw new HttpException('Deal not found', HttpStatus.NOT_FOUND);
 
       const { pointsRequired, ...updateDataWithoutPoints } = rest;
 
@@ -368,13 +380,15 @@ export class DealService {
     });
   }
 
-  async getAllRedemptions(query: { 
-    page?: number; 
-    limit?: number;
-    status?: string;
-    dealId?: string;
-    search?: string;
-  } = {}) {
+  async getAllRedemptions(
+    query: {
+      page?: number;
+      limit?: number;
+      status?: string;
+      dealId?: string;
+      search?: string;
+    } = {},
+  ) {
     const page = query.page || 1;
     const limit = query.limit || 10;
     const skip = (page - 1) * limit;

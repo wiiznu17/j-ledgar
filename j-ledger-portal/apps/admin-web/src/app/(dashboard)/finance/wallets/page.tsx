@@ -158,10 +158,8 @@ export default function WalletAccountsPage() {
     }
   };
 
-
   return (
     <div className="space-y-6 pb-10 text-foreground">
-
       <Card className="border-none shadow-xs overflow-hidden bg-card text-card-foreground">
         {/* Filter Toolbar */}
         <div className="p-4 bg-card border-b border-border">
@@ -234,7 +232,9 @@ export default function WalletAccountsPage() {
                   wallets.map((wallet, index) => (
                     <TableRow
                       key={wallet.id}
-                      onClick={() => router.push(`/finance/wallets/${wallet.id}`)}
+                      onClick={() =>
+                        router.push(`/finance/wallets/${wallet.id}`)
+                      }
                       className="border-border hover:bg-muted/50 transition-colors group cursor-pointer"
                     >
                       <TableCell className="pl-6 text-xs font-bold text-muted-foreground tabular-nums">

@@ -35,7 +35,8 @@ export function TablePagination({
     <div className="p-4 bg-card border-t border-border flex items-center justify-between">
       <div className="flex items-center gap-4">
         <p className="text-xs text-muted-foreground font-medium">
-          Showing page <strong className="text-foreground">{currentPage}</strong> of{' '}
+          Showing page{' '}
+          <strong className="text-foreground">{currentPage}</strong> of{' '}
           <strong className="text-foreground">{totalPages}</strong>
           <span className="hidden sm:inline">
             {' '}
@@ -45,7 +46,9 @@ export function TablePagination({
 
         {onLimitChange && limit && (
           <div className="flex items-center gap-2 border-l border-border pl-4 ml-2">
-            <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-tight">Show:</span>
+            <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-tight">
+              Show:
+            </span>
             <Select
               value={limit.toString()}
               onValueChange={(v) => v && onLimitChange(parseInt(v))}
@@ -55,7 +58,11 @@ export function TablePagination({
               </SelectTrigger>
               <SelectContent className="bg-card border-border shadow-xl text-card-foreground">
                 {[10, 20, 50, 100].map((l) => (
-                  <SelectItem key={l} value={l.toString()} className="text-xs font-medium">
+                  <SelectItem
+                    key={l}
+                    value={l.toString()}
+                    className="text-xs font-medium"
+                  >
                     {l}
                   </SelectItem>
                 ))}
@@ -82,32 +89,39 @@ export function TablePagination({
           {(() => {
             const pages = [];
             const showEllipsis = totalPages > 7;
-            
+
             if (!showEllipsis) {
               for (let i = 1; i <= totalPages; i++) pages.push(i);
             } else {
               // Always show page 1
               pages.push(1);
-              
+
               if (currentPage > 3) pages.push('ellipsis-start');
-              
+
               // Show 1 page before and after current
               const start = Math.max(2, currentPage - 1);
               const end = Math.min(totalPages - 1, currentPage + 1);
-              
+
               for (let i = start; i <= end; i++) {
                 if (!pages.includes(i)) pages.push(i);
               }
-              
+
               if (currentPage < totalPages - 2) pages.push('ellipsis-end');
-              
+
               // Always show last page
               if (!pages.includes(totalPages)) pages.push(totalPages);
             }
 
             return pages.map((p, idx) => {
               if (typeof p === 'string') {
-                return <span key={p + idx} className="px-2 text-muted-foreground/50 font-bold text-[10px]">...</span>;
+                return (
+                  <span
+                    key={p + idx}
+                    className="px-2 text-muted-foreground/50 font-bold text-[10px]"
+                  >
+                    ...
+                  </span>
+                );
               }
               return (
                 <Button
@@ -117,8 +131,8 @@ export function TablePagination({
                   onClick={() => onPageChange(p)}
                   disabled={isLoading}
                   className={`h-8 w-8 p-0 text-xs font-bold rounded-lg transition-all ${
-                    currentPage === p 
-                      ? 'bg-indigo-600 text-white shadow-xs hover:bg-indigo-700' 
+                    currentPage === p
+                      ? 'bg-indigo-600 text-white shadow-xs hover:bg-indigo-700'
                       : 'text-muted-foreground hover:text-indigo-600 dark:hover:text-indigo-400 hover:bg-muted'
                   }`}
                 >

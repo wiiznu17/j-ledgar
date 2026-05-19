@@ -61,7 +61,10 @@ export const userRequester = {
 
   // Roles & Permissions
   getAllRoles: async (options?: RequestOptions) =>
-    apiClient.get<AdminPaginatedResponse<any>>(API_PATHS.ADMIN.ROLES.BASE, options),
+    apiClient.get<AdminPaginatedResponse<any>>(
+      API_PATHS.ADMIN.ROLES.BASE,
+      options,
+    ),
   getRoleDetail: async (id: string) =>
     apiClient.get<any>(API_PATHS.ADMIN.ROLES.DETAIL(id)),
   createRole: async (data: any) =>

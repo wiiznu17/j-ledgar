@@ -175,7 +175,7 @@ export class IntegrationService {
       for (const item of walletItems) {
         // Use idempotencyKey as the primary group identifier, fallback to reference or ID
         const groupKey = item.idempotencyKey || item.reference || item.id;
-        
+
         if (!seenKeys.has(groupKey)) {
           uniqueItems.push(item);
           seenKeys.add(groupKey);
@@ -364,7 +364,9 @@ export class IntegrationService {
     // Format recent transactions for the frontend using unified mapping
     const recentTransactions = (transactions || [])
       .slice(0, 10)
-      .map((tx: any) => this.mapWalletTransactionToHistoryItem(tx, userWalletId));
+      .map((tx: any) =>
+        this.mapWalletTransactionToHistoryItem(tx, userWalletId),
+      );
 
     return {
       user: {
@@ -373,8 +375,12 @@ export class IntegrationService {
         kycStatus: kycData?.verificationStatus || 'NOT_STARTED',
         points: userPoint?.balance || 0,
         // Send real data for merchant onboarding auto-fill
-        idCardNumber: kycData?.idCardNumber || null, 
-        birthDate: kycData?.dateOfBirth ? kycData.dateOfBirth.toISOString() : (kycData ? '2003-11-17T00:00:00Z' : null),
+        idCardNumber: kycData?.idCardNumber || null,
+        birthDate: kycData?.dateOfBirth
+          ? kycData.dateOfBirth.toISOString()
+          : kycData
+            ? '2003-11-17T00:00:00Z'
+            : null,
         phone: user?.phoneNumber || null,
       },
       wallet: wallet
@@ -485,14 +491,18 @@ export class IntegrationService {
 
     const wallet = await this.financeService.getWallet(userId);
     if (wallet) {
-      await this.financeService.createPaymentIntent(
-        wallet.accountId,
-        paymentIntent.id,
-        amount.toFixed(4),
-        'TOPUP',
-      ).catch((err) => {
-        this.logger.error(`Failed to register payment intent in finance-service: ${err.message}`);
-      });
+      await this.financeService
+        .createPaymentIntent(
+          wallet.accountId,
+          paymentIntent.id,
+          amount.toFixed(4),
+          'TOPUP',
+        )
+        .catch((err) => {
+          this.logger.error(
+            `Failed to register payment intent in finance-service: ${err.message}`,
+          );
+        });
     }
 
     return {
@@ -516,13 +526,23 @@ export class IntegrationService {
 
     // Secure Active Polling Fallback: If status is still PENDING, query Stripe API directly
     // to reconcile/verify in case webhooks are delayed or blocked (e.g. no ngrok in dev).
-    if (order.status === TopupOrderStatus.PENDING && order.stripePaymentIntentId && this.stripe) {
+    if (
+      order.status === TopupOrderStatus.PENDING &&
+      order.stripePaymentIntentId &&
+      this.stripe
+    ) {
       try {
-        this.logger.log(`[TopupOrderStatus] Actively querying Stripe for intent: ${order.stripePaymentIntentId}`);
-        const paymentIntent = await this.stripe.paymentIntents.retrieve(order.stripePaymentIntentId);
-        
+        this.logger.log(
+          `[TopupOrderStatus] Actively querying Stripe for intent: ${order.stripePaymentIntentId}`,
+        );
+        const paymentIntent = await this.stripe.paymentIntents.retrieve(
+          order.stripePaymentIntentId,
+        );
+
         if (paymentIntent.status === 'succeeded') {
-          this.logger.log(`[TopupOrderStatus] Stripe payment succeeded! Running dynamic reconciliation for order: ${order.id}`);
+          this.logger.log(
+            `[TopupOrderStatus] Stripe payment succeeded! Running dynamic reconciliation for order: ${order.id}`,
+          );
           // Trigger the standard payment fulfillment pipeline immediately!
           await this.handlePaymentIntentSucceeded({
             id: `direct_recon_${randomUUID()}`,
@@ -539,7 +559,9 @@ export class IntegrationService {
           }
         }
       } catch (stripeErr: any) {
-        this.logger.warn(`[TopupOrderStatus] Failed active Stripe verification check: ${stripeErr.message}`);
+        this.logger.warn(
+          `[TopupOrderStatus] Failed active Stripe verification check: ${stripeErr.message}`,
+        );
       }
     }
 
@@ -560,17 +582,29 @@ export class IntegrationService {
     const recipientPhone = this.normalizePhone(body.recipientPhone);
     const amount = Number(body.amount);
     if (isNaN(amount) || amount <= 0) {
-      throw new HttpException('Invalid transfer amount', HttpStatus.BAD_REQUEST);
+      throw new HttpException(
+        'Invalid transfer amount',
+        HttpStatus.BAD_REQUEST,
+      );
     }
 
     const settings = await this.financeService.getSystemSettings();
     if (!settings) {
-      throw new HttpException('System settings could not be retrieved', HttpStatus.INTERNAL_SERVER_ERROR);
+      throw new HttpException(
+        'System settings could not be retrieved',
+        HttpStatus.INTERNAL_SERVER_ERROR,
+      );
     }
 
     const minP2p = Number(settings.minP2pTransfer);
-    if (settings.minP2pTransfer === undefined || settings.minP2pTransfer === null) {
-      throw new HttpException('P2P minimum transfer limit is not configured', HttpStatus.INTERNAL_SERVER_ERROR);
+    if (
+      settings.minP2pTransfer === undefined ||
+      settings.minP2pTransfer === null
+    ) {
+      throw new HttpException(
+        'P2P minimum transfer limit is not configured',
+        HttpStatus.INTERNAL_SERVER_ERROR,
+      );
     }
 
     if (amount < minP2p) {
@@ -582,12 +616,17 @@ export class IntegrationService {
 
     // Limit Validations
     if (!settings.perTransactionLimit) {
-      throw new HttpException('System transaction limit is not configured', HttpStatus.INTERNAL_SERVER_ERROR);
+      throw new HttpException(
+        'System transaction limit is not configured',
+        HttpStatus.INTERNAL_SERVER_ERROR,
+      );
     }
 
     if (amount > Number(settings.perTransactionLimit)) {
       throw new HttpException(
-        { message: `Transfer exceeds system limit of ฿${Number(settings.perTransactionLimit).toLocaleString()}` },
+        {
+          message: `Transfer exceeds system limit of ฿${Number(settings.perTransactionLimit).toLocaleString()}`,
+        },
         HttpStatus.BAD_REQUEST,
       );
     }
@@ -595,7 +634,9 @@ export class IntegrationService {
     const userWallet = await this.financeService.getWallet(userId);
     if (userWallet?.dailyLimit && amount > Number(userWallet.dailyLimit)) {
       throw new HttpException(
-        { message: `Transfer exceeds your wallet's daily limit of ฿${Number(userWallet.dailyLimit).toLocaleString()}` },
+        {
+          message: `Transfer exceeds your wallet's daily limit of ฿${Number(userWallet.dailyLimit).toLocaleString()}`,
+        },
         HttpStatus.BAD_REQUEST,
       );
     }
@@ -681,17 +722,29 @@ export class IntegrationService {
     const recipientPhone = this.normalizePhone(body.recipientPhone);
     const amount = Number(body.amount);
     if (isNaN(amount) || amount <= 0) {
-      throw new HttpException('Invalid transfer amount', HttpStatus.BAD_REQUEST);
+      throw new HttpException(
+        'Invalid transfer amount',
+        HttpStatus.BAD_REQUEST,
+      );
     }
 
     const settings = await this.financeService.getSystemSettings();
     if (!settings) {
-      throw new HttpException('System settings could not be retrieved', HttpStatus.INTERNAL_SERVER_ERROR);
+      throw new HttpException(
+        'System settings could not be retrieved',
+        HttpStatus.INTERNAL_SERVER_ERROR,
+      );
     }
 
     const minP2p = Number(settings.minP2pTransfer);
-    if (settings.minP2pTransfer === undefined || settings.minP2pTransfer === null) {
-      throw new HttpException('P2P minimum transfer limit is not configured', HttpStatus.INTERNAL_SERVER_ERROR);
+    if (
+      settings.minP2pTransfer === undefined ||
+      settings.minP2pTransfer === null
+    ) {
+      throw new HttpException(
+        'P2P minimum transfer limit is not configured',
+        HttpStatus.INTERNAL_SERVER_ERROR,
+      );
     }
 
     if (amount < minP2p) {
@@ -703,12 +756,17 @@ export class IntegrationService {
 
     // Limit Validations
     if (!settings.perTransactionLimit) {
-      throw new HttpException('System transaction limit is not configured', HttpStatus.INTERNAL_SERVER_ERROR);
+      throw new HttpException(
+        'System transaction limit is not configured',
+        HttpStatus.INTERNAL_SERVER_ERROR,
+      );
     }
 
     if (amount > Number(settings.perTransactionLimit)) {
       throw new HttpException(
-        { message: `Transfer exceeds system limit of ฿${Number(settings.perTransactionLimit).toLocaleString()}` },
+        {
+          message: `Transfer exceeds system limit of ฿${Number(settings.perTransactionLimit).toLocaleString()}`,
+        },
         HttpStatus.BAD_REQUEST,
       );
     }
@@ -717,7 +775,9 @@ export class IntegrationService {
     const userWallet = await this.financeService.getWallet(userId);
     if (userWallet?.dailyLimit && amount > Number(userWallet.dailyLimit)) {
       throw new HttpException(
-        { message: `Transfer exceeds your wallet's daily limit of ฿${Number(userWallet.dailyLimit).toLocaleString()}` },
+        {
+          message: `Transfer exceeds your wallet's daily limit of ฿${Number(userWallet.dailyLimit).toLocaleString()}`,
+        },
         HttpStatus.BAD_REQUEST,
       );
     }
@@ -748,7 +808,9 @@ export class IntegrationService {
       // Fetch names for metadata enrichment
       const [senderProfile, recipientProfile] = await Promise.all([
         this.prisma.kYCData.findUnique({ where: { userId } }).catch(() => null),
-        this.prisma.kYCData.findUnique({ where: { userId: recipientUser.id } }).catch(() => null),
+        this.prisma.kYCData
+          .findUnique({ where: { userId: recipientUser.id } })
+          .catch(() => null),
       ]);
 
       const senderName = senderProfile?.idCardName || 'User';
@@ -762,9 +824,11 @@ export class IntegrationService {
         metadata: {
           senderName,
           recipientName,
-          senderPhone: (await this.prisma.user.findUnique({ where: { id: userId } }))?.phoneNumber,
+          senderPhone: (
+            await this.prisma.user.findUnique({ where: { id: userId } })
+          )?.phoneNumber,
           recipientPhone: recipientPhone,
-        }
+        },
       });
 
       const metadata = this.parseMetadata(tx?.metadata);
@@ -968,7 +1032,10 @@ export class IntegrationService {
     });
 
     try {
-      await this.financeService.processPaymentWebhook(paymentIntentId, 'SUCCESS');
+      await this.financeService.processPaymentWebhook(
+        paymentIntentId,
+        'SUCCESS',
+      );
     } catch (error: any) {
       this.logger.error(
         `[StripeWebhook] credit failed order=${order.id} paymentIntent=${paymentIntentId} message="${error?.message || 'unknown'}"`,
@@ -1049,9 +1116,14 @@ export class IntegrationService {
         : TopupOrderStatus.FAILED;
 
     try {
-      await this.financeService.processPaymentWebhook(paymentIntentId, 'FAILED');
+      await this.financeService.processPaymentWebhook(
+        paymentIntentId,
+        'FAILED',
+      );
     } catch (err) {
-      this.logger.error(`Failed to register payment intent failure in finance-service: ${err.message}`);
+      this.logger.error(
+        `Failed to register payment intent failure in finance-service: ${err.message}`,
+      );
     }
 
     await this.prisma.topupOrder.update({
@@ -1070,7 +1142,8 @@ export class IntegrationService {
         return `Top up ${amount}฿ to wallet`;
       case 'PAYMENT':
       case 'MERCHANT_PAYMENT': {
-        const merchant = metadata.merchantName || metadata.merchant_name || 'Merchant';
+        const merchant =
+          metadata.merchantName || metadata.merchant_name || 'Merchant';
         return `Purchase ${amount}฿ to ${merchant}`;
       }
       case 'TRANSFER': {
@@ -1094,7 +1167,11 @@ export class IntegrationService {
       if (!raw) return {};
       if (typeof raw === 'object') return raw as Record<string, any>;
       if (typeof raw === 'string') {
-        try { return JSON.parse(raw); } catch { return {}; }
+        try {
+          return JSON.parse(raw);
+        } catch {
+          return {};
+        }
       }
       return {};
     })();
@@ -1119,25 +1196,25 @@ export class IntegrationService {
       | 'MERCHANT_PAYMENT'
       | 'WITHDRAWAL';
     const metadata = this.parseMetadata(tx?.metadata);
-    
+
     // Determine income/outcome based on userWalletId if available
-    const isIncome = userWalletId 
-      ? (tx.toWalletId === userWalletId)
-      : (type === 'TOPUP' || (!tx?.fromWalletId && !!tx?.toWalletId));
+    const isIncome = userWalletId
+      ? tx.toWalletId === userWalletId
+      : type === 'TOPUP' || (!tx?.fromWalletId && !!tx?.toWalletId);
 
     const createdAt = tx?.createdAt
       ? new Date(tx.createdAt).toISOString()
       : new Date().toISOString();
-    
+
     // Prioritize gross amount from metadata for merchant payments
     const rawAmount = Number(tx?.amount || 0);
     const grossAmount = Number(metadata.totalAmount || rawAmount);
-    
+
     // For merchant payments, the "rawAmount" of a single leg is misleading for the customer.
     // We should show the gross amount as the net amount for the customer.
     const isPayment = type === 'PAYMENT' || type === 'MERCHANT_PAYMENT';
     const displayNetAmount = isPayment ? grossAmount : rawAmount;
-    const feeAmount = isPayment ? 0 : (grossAmount - rawAmount);
+    const feeAmount = isPayment ? 0 : grossAmount - rawAmount;
 
     return {
       id: tx?.transactionId || String(tx?.id || randomUUID()),
@@ -1156,7 +1233,8 @@ export class IntegrationService {
       paymentIntentId: metadata.paymentIntentId || undefined,
       orderId: metadata.orderId || undefined,
       reference: tx?.transactionId || undefined,
-      idempotencyKey: metadata.idempotencyKey || tx?.idempotencyKey || undefined,
+      idempotencyKey:
+        metadata.idempotencyKey || tx?.idempotencyKey || undefined,
     };
   }
 

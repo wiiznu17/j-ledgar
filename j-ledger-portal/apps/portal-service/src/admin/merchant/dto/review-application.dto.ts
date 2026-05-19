@@ -8,7 +8,9 @@ export enum ReviewStatus {
 
 export class ReviewApplicationDto {
   @ApiProperty({ enum: ReviewStatus, example: ReviewStatus.APPROVED })
-  @IsEnum(ReviewStatus, { message: 'Status must be either APPROVED or REJECTED' })
+  @IsEnum(ReviewStatus, {
+    message: 'Status must be either APPROVED or REJECTED',
+  })
   status: ReviewStatus;
 
   @ApiProperty({ example: 'KYC verified successfully', required: false })

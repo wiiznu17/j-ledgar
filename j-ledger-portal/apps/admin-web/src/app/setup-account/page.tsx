@@ -276,7 +276,9 @@ export default function SetupAccountPage() {
       fallback={
         <div className="min-h-screen bg-muted/30 flex flex-col items-center justify-center p-4">
           <Loader2 className="w-8 h-8 text-indigo-600 dark:text-indigo-400 animate-spin mb-4" />
-          <p className="text-muted-foreground font-medium">Loading invitation...</p>
+          <p className="text-muted-foreground font-medium">
+            Loading invitation...
+          </p>
         </div>
       }
     >

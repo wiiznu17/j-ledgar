@@ -68,10 +68,7 @@ export class AdminMerchantController {
 
   @Put('partners/:id')
   @Permissions(Permission.MANAGE_MERCHANTS)
-  async updatePartner(
-    @Param('id') id: string,
-    @Body() body: UpdatePartnerDto
-  ) {
+  async updatePartner(@Param('id') id: string, @Body() body: UpdatePartnerDto) {
     return this.merchantService.updatePartner(id, body);
   }
 

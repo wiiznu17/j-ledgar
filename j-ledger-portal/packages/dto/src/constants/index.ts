@@ -108,17 +108,21 @@ export const API_PATHS = {
     },
     LOYALTY: {
       RULES: '/api/admin/loyalty/rules',
-      RULE_DETAIL: (eventType: string) => `/api/admin/loyalty/rules/${eventType}`,
+      RULE_DETAIL: (eventType: string) =>
+        `/api/admin/loyalty/rules/${eventType}`,
       STATS: '/api/admin/loyalty/stats',
       EXPIRY_SCHEDULE: '/api/admin/loyalty/expiry-schedule',
     },
     MERCHANT: {
       PARTNERS: '/api/admin/merchants/partners',
       APPLICATIONS: '/api/admin/merchants/applications',
-      APPLICATION_REVIEW: (id: string) => `/api/admin/merchants/applications/${id}/review`,
+      APPLICATION_REVIEW: (id: string) =>
+        `/api/admin/merchants/applications/${id}/review`,
       PARTNER_DETAIL: (id: string) => `/api/admin/merchants/partners/${id}`,
-      PARTNER_STATUS: (id: string) => `/api/admin/merchants/partners/${id}/status`,
-      TERMINALS: (merchantId: string) => `/api/admin/merchants/${merchantId}/terminals`,
+      PARTNER_STATUS: (id: string) =>
+        `/api/admin/merchants/partners/${id}/status`,
+      TERMINALS: (merchantId: string) =>
+        `/api/admin/merchants/${merchantId}/terminals`,
     },
   },
   PORTAL: {
@@ -255,21 +259,42 @@ export const INTERNAL_API_PATHS = {
     TREASURY: {
       SUMMARY: '/api/admin/treasury/summary',
       PAYOUTS: '/api/admin/treasury/payouts',
-      CONFIRM_STRIPE_PAYOUT: '/api/admin/treasury/internal/payouts/stripe-confirmed',
+      CONFIRM_STRIPE_PAYOUT:
+        '/api/admin/treasury/internal/payouts/stripe-confirmed',
     },
   },
 };
 
 export const MERCHANT_CATEGORIES = [
-  { id: 'FOOD_BEVERAGE', label: 'อาหารและเครื่องดื่ม', labelEn: 'Food & Beverage' },
+  {
+    id: 'FOOD_BEVERAGE',
+    label: 'อาหารและเครื่องดื่ม',
+    labelEn: 'Food & Beverage',
+  },
   { id: 'RETAIL', label: 'ค้าปลีกทั่วไป', labelEn: 'General Retail' },
-  { id: 'FASHION', label: 'แฟชั่นและเครื่องแต่งกาย', labelEn: 'Fashion & Apparel' },
-  { id: 'ELECTRONICS', label: 'เครื่องใช้ไฟฟ้าและไอที', labelEn: 'Electronics & IT' },
-  { id: 'HEALTH_BEAUTY', label: 'สุขภาพและความงาม', labelEn: 'Health & Beauty' },
+  {
+    id: 'FASHION',
+    label: 'แฟชั่นและเครื่องแต่งกาย',
+    labelEn: 'Fashion & Apparel',
+  },
+  {
+    id: 'ELECTRONICS',
+    label: 'เครื่องใช้ไฟฟ้าและไอที',
+    labelEn: 'Electronics & IT',
+  },
+  {
+    id: 'HEALTH_BEAUTY',
+    label: 'สุขภาพและความงาม',
+    labelEn: 'Health & Beauty',
+  },
   { id: 'SERVICES', label: 'การบริการ', labelEn: 'Services' },
   { id: 'OTHERS', label: 'อื่นๆ', labelEn: 'Others' },
 ];
 
 export const SALES_CHANNELS = [
-  { id: 'PHYSICAL_STORE', label: 'หน้าร้าน (Physical Store)', labelEn: 'Physical Store' },
+  {
+    id: 'PHYSICAL_STORE',
+    label: 'หน้าร้าน (Physical Store)',
+    labelEn: 'Physical Store',
+  },
 ];

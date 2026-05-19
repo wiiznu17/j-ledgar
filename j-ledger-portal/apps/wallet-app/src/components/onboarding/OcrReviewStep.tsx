@@ -274,14 +274,17 @@ export const OcrReviewStep: React.FC<OcrReviewStepProps> = ({
           />
           {!isValid && (
             <Text className="text-[10px] text-red-400 text-center mt-2">
-              Missing: {[
-                data.idNumber.replace(/\D/g, '').length !== 13 && "ID(13)",
-                !data.firstNameTh.trim() && "NameTH",
-                !data.lastNameTh.trim() && "LastTH",
-                !data.firstNameEn.trim() && "NameEN",
-                !data.lastNameEn.trim() && "LastEN",
-                !data.dateOfBirth.trim() && "DOB"
-              ].filter(Boolean).join(', ')}
+              Missing:{' '}
+              {[
+                data.idNumber.replace(/\D/g, '').length !== 13 && 'ID(13)',
+                !data.firstNameTh.trim() && 'NameTH',
+                !data.lastNameTh.trim() && 'LastTH',
+                !data.firstNameEn.trim() && 'NameEN',
+                !data.lastNameEn.trim() && 'LastEN',
+                !data.dateOfBirth.trim() && 'DOB',
+              ]
+                .filter(Boolean)
+                .join(', ')}
             </Text>
           )}
           <AppButton title="Rescan" variant="outline" onPress={onRescan} />

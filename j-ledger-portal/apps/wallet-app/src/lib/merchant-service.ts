@@ -41,8 +41,8 @@ export const MerchantService = {
     return response.data;
   },
 
-  apply: async (data: { 
-    businessName: string; 
+  apply: async (data: {
+    businessName: string;
     taxId: string;
     category: string;
     contactName: string;
@@ -53,7 +53,6 @@ export const MerchantService = {
     longitude?: string;
     images?: string[];
   }): Promise<any> => {
-
     const response = await api.post('/merchant/apply', data);
     return response.data;
   },
@@ -70,7 +69,12 @@ export const MerchantService = {
     if (Array.isArray(response.data)) {
       return {
         data: response.data,
-        pagination: { total: response.data.length, page: 1, limit: 10, totalPages: 1 },
+        pagination: {
+          total: response.data.length,
+          page: 1,
+          limit: 10,
+          totalPages: 1,
+        },
       };
     }
     return response.data;
@@ -83,13 +87,21 @@ export const MerchantService = {
 
   // ==================== Merchant Payments (QR) ====================
 
-  generatePaymentQR: async (merchantId: string, amount: number): Promise<any> => {
-    const response = await api.post('/merchant/payments/qr', { merchantId, amount });
+  generatePaymentQR: async (
+    merchantId: string,
+    amount: number,
+  ): Promise<any> => {
+    const response = await api.post('/merchant/payments/qr', {
+      merchantId,
+      amount,
+    });
     return response.data;
   },
 
   getStaticQR: async (merchantId: string): Promise<any> => {
-    const response = await api.get('/merchant/payments/static-qr', { params: { merchantId } });
+    const response = await api.get('/merchant/payments/static-qr', {
+      params: { merchantId },
+    });
     return response.data;
   },
 
@@ -104,13 +116,18 @@ export const MerchantService = {
   },
 
   previewManualPayment: async (merchantId: string): Promise<any> => {
-    const response = await api.get('/merchant/manual-pay/preview', { params: { merchantId } });
+    const response = await api.get('/merchant/manual-pay/preview', {
+      params: { merchantId },
+    });
     return response.data;
   },
 
-  confirmManualPayment: async (data: { merchantId: string; amount: number; note?: string }): Promise<any> => {
+  confirmManualPayment: async (data: {
+    merchantId: string;
+    amount: number;
+    note?: string;
+  }): Promise<any> => {
     const response = await api.post('/merchant/manual-pay/confirm', data);
     return response.data;
   },
 };
-

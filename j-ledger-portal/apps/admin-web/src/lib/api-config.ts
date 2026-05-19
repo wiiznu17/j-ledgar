@@ -21,7 +21,6 @@ export const getApiBaseUrl = () => {
   return '';
 };
 
-
 export const API_BASE_URL = getApiBaseUrl();
 
 // Cookie Names

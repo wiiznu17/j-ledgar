@@ -285,22 +285,24 @@ export function Sidebar({
   return (
     <aside
       className={cn(
-        "border-r border-border flex-col flex h-full transition-all duration-300 ease-in-out bg-gradient-to-b from-sidebar-gradient-from via-sidebar-gradient-via to-sidebar-gradient-to text-foreground select-none",
+        'border-r border-border flex-col flex h-full transition-all duration-300 ease-in-out bg-gradient-to-b from-sidebar-gradient-from via-sidebar-gradient-via to-sidebar-gradient-to text-foreground select-none',
         // Desktop Layout
-        "lg:flex",
-        isCollapsed ? "lg:w-20" : "lg:w-64",
+        'lg:flex',
+        isCollapsed ? 'lg:w-20' : 'lg:w-64',
         // Mobile Drawer Layout
-        "fixed inset-y-0 left-0 z-50 w-64 lg:static lg:translate-x-0",
-        mobileOpen ? "translate-x-0 shadow-2xl" : "-translate-x-full lg:translate-x-0"
+        'fixed inset-y-0 left-0 z-50 w-64 lg:static lg:translate-x-0',
+        mobileOpen
+          ? 'translate-x-0 shadow-2xl'
+          : '-translate-x-full lg:translate-x-0',
       )}
     >
       <div
         className={cn(
-          "h-16 flex items-center justify-between border-b border-border/50 flex-shrink-0 transition-all duration-300 px-6",
-          (isCollapsed && !mobileOpen) && "lg:px-0 lg:justify-center"
+          'h-16 flex items-center justify-between border-b border-border/50 flex-shrink-0 transition-all duration-300 px-6',
+          isCollapsed && !mobileOpen && 'lg:px-0 lg:justify-center',
         )}
       >
-        {(!isCollapsed || mobileOpen) ? (
+        {!isCollapsed || mobileOpen ? (
           <div className="flex items-center">
             <img
               src="/logo/logo.png"
@@ -383,7 +385,7 @@ export function Sidebar({
                     <Link
                       key={item.name}
                       href={item.isSoon ? '#' : item.href}
-                      title={(isCollapsed && !mobileOpen) ? item.name : ''}
+                      title={isCollapsed && !mobileOpen ? item.name : ''}
                       onClick={(e) => {
                         if (item.isSoon) {
                           e.preventDefault();
@@ -392,24 +394,28 @@ export function Sidebar({
                         }
                       }}
                       className={cn(
-                        "flex items-center rounded-xl transition-all duration-200 group",
-                        (isCollapsed && !mobileOpen) ? "justify-center px-0 py-3" : "px-4 py-2",
+                        'flex items-center rounded-xl transition-all duration-200 group',
+                        isCollapsed && !mobileOpen
+                          ? 'justify-center px-0 py-3'
+                          : 'px-4 py-2',
                         isActive
-                          ? "bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 border border-indigo-500/20 shadow-xs dark:bg-indigo-500/20"
+                          ? 'bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 border border-indigo-500/20 shadow-xs dark:bg-indigo-500/20'
                           : item.isSoon
-                            ? "text-muted-foreground/40 cursor-not-allowed opacity-50"
-                            : "text-muted-foreground hover:bg-muted hover:text-foreground"
+                            ? 'text-muted-foreground/40 cursor-not-allowed opacity-50'
+                            : 'text-muted-foreground hover:bg-muted hover:text-foreground',
                       )}
                     >
                       <item.icon
                         className={cn(
-                          "flex-shrink-0 transition-colors",
-                          (isCollapsed && !mobileOpen) ? "h-6 w-6" : "mr-3 h-4 w-4",
+                          'flex-shrink-0 transition-colors',
+                          isCollapsed && !mobileOpen
+                            ? 'h-6 w-6'
+                            : 'mr-3 h-4 w-4',
                           isActive
-                            ? "text-indigo-600 dark:text-indigo-400"
+                            ? 'text-indigo-600 dark:text-indigo-400'
                             : item.isSoon
-                              ? "text-muted-foreground/30"
-                              : "text-muted-foreground group-hover:text-foreground"
+                              ? 'text-muted-foreground/30'
+                              : 'text-muted-foreground group-hover:text-foreground',
                         )}
                         aria-hidden="true"
                       />
@@ -446,23 +452,31 @@ export function Sidebar({
 
       <div
         className={cn(
-          "p-4 border-t border-border/50 flex-shrink-0 transition-all duration-300",
-          (isCollapsed && !mobileOpen) ? "flex justify-center" : ""
+          'p-4 border-t border-border/50 flex-shrink-0 transition-all duration-300',
+          isCollapsed && !mobileOpen ? 'flex justify-center' : '',
         )}
       >
-        <form action={onLogout} className="w-full" onSubmit={() => onMobileClose?.()}>
+        <form
+          action={onLogout}
+          className="w-full"
+          onSubmit={() => onMobileClose?.()}
+        >
           <Button
             type="submit"
             variant="ghost"
             className={cn(
-              "text-muted-foreground hover:bg-muted hover:text-foreground w-full transition-all cursor-pointer",
-              (isCollapsed && !mobileOpen) ? "px-0 justify-center" : "justify-start"
+              'text-muted-foreground hover:bg-muted hover:text-foreground w-full transition-all cursor-pointer',
+              isCollapsed && !mobileOpen
+                ? 'px-0 justify-center'
+                : 'justify-start',
             )}
           >
             <LogOut
               className={cn(
-                "flex-shrink-0",
-                (isCollapsed && !mobileOpen) ? "h-6 w-6" : "mr-3 w-5 h-5 text-muted-foreground"
+                'flex-shrink-0',
+                isCollapsed && !mobileOpen
+                  ? 'h-6 w-6'
+                  : 'mr-3 w-5 h-5 text-muted-foreground',
               )}
             />
             {(!isCollapsed || mobileOpen) && (

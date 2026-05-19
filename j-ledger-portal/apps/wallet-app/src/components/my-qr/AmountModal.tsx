@@ -106,7 +106,7 @@ export function AmountModal({
             <Text className="text-[11px] font-manrope font-bold text-gray-400 mt-6 tracking-wide text-center">
               Leave blank for any amount
             </Text>
-            {tempAmount !== '' && parseFloat(tempAmount) < 5.00 && (
+            {tempAmount !== '' && parseFloat(tempAmount) < 5.0 && (
               <Text className="text-[10px] font-manrope font-bold text-red-400 mt-2 text-center uppercase tracking-wider">
                 Minimum amount is ฿5.00
               </Text>

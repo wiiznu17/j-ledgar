@@ -68,7 +68,9 @@ export function BannerForm({
   return (
     <form onSubmit={handleSubmit} className="space-y-6 text-foreground bg-card">
       <div className="space-y-2">
-        <Label htmlFor="title" className="text-foreground">Banner Title</Label>
+        <Label htmlFor="title" className="text-foreground">
+          Banner Title
+        </Label>
         <Input
           id="title"
           value={formData.title}
@@ -80,7 +82,9 @@ export function BannerForm({
       </div>
 
       <div className="space-y-2">
-        <Label className="text-foreground">Banner Image (Recommended 1200x600)</Label>
+        <Label className="text-foreground">
+          Banner Image (Recommended 1200x600)
+        </Label>
         <div className="flex flex-col gap-4">
           {formData.imageUrl ? (
             <div className="relative w-full aspect-video rounded-xl overflow-hidden border border-border bg-muted shadow-inner">
@@ -130,7 +134,9 @@ export function BannerForm({
 
       <div className="grid grid-cols-2 gap-4">
         <div className="space-y-2">
-          <Label htmlFor="action" className="text-foreground">Action Path (Deep Link)</Label>
+          <Label htmlFor="action" className="text-foreground">
+            Action Path (Deep Link)
+          </Label>
           <Input
             id="action"
             value={formData.actionPath}
@@ -143,7 +149,9 @@ export function BannerForm({
           />
         </div>
         <div className="space-y-2">
-          <Label htmlFor="priority" className="text-foreground">Priority (Higher shows first)</Label>
+          <Label htmlFor="priority" className="text-foreground">
+            Priority (Higher shows first)
+          </Label>
           <Input
             id="priority"
             type="number"

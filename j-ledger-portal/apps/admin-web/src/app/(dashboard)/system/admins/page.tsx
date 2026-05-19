@@ -45,7 +45,7 @@ import {
   ShieldCheck,
   Mail,
   User,
-  ShieldAlert
+  ShieldAlert,
 } from 'lucide-react';
 import { showConfirm, showSuccess, showError } from '@/lib/swal';
 import { AdminUser, AdminRole } from '@repo/dto';
@@ -231,9 +231,12 @@ export default function UsersPage() {
             <Users className="w-6 h-6 animate-pulse" />
           </div>
           <div>
-            <h3 className="text-xl font-black tracking-tight text-foreground">Admin Management</h3>
+            <h3 className="text-xl font-black tracking-tight text-foreground">
+              Admin Management
+            </h3>
             <p className="text-xs text-muted-foreground mt-0.5">
-              Manage system administrators, support agents, compliance officers, and role assignments.
+              Manage system administrators, support agents, compliance officers,
+              and role assignments.
             </p>
           </div>
         </div>
@@ -255,13 +258,19 @@ export default function UsersPage() {
                   Add New Admin
                 </DialogTitle>
                 <DialogDescription className="text-xs text-muted-foreground mt-1">
-                  Create a new administrator account with specific role-based permissions.
+                  Create a new administrator account with specific role-based
+                  permissions.
                 </DialogDescription>
               </DialogHeader>
 
               <div className="space-y-4 py-2">
                 <div className="space-y-1.5">
-                  <Label htmlFor="email" className="text-[10px] font-black uppercase text-muted-foreground tracking-wider">Email Address</Label>
+                  <Label
+                    htmlFor="email"
+                    className="text-[10px] font-black uppercase text-muted-foreground tracking-wider"
+                  >
+                    Email Address
+                  </Label>
                   <div className="relative flex items-center">
                     <Mail className="w-4 h-4 absolute left-3.5 text-muted-foreground/60" />
                     <Input
@@ -278,7 +287,12 @@ export default function UsersPage() {
 
                 <div className="grid grid-cols-2 gap-4">
                   <div className="space-y-1.5">
-                    <Label htmlFor="firstName" className="text-[10px] font-black uppercase text-muted-foreground tracking-wider">First Name</Label>
+                    <Label
+                      htmlFor="firstName"
+                      className="text-[10px] font-black uppercase text-muted-foreground tracking-wider"
+                    >
+                      First Name
+                    </Label>
                     <div className="relative flex items-center">
                       <User className="w-4 h-4 absolute left-3.5 text-muted-foreground/60" />
                       <Input
@@ -292,7 +306,12 @@ export default function UsersPage() {
                     </div>
                   </div>
                   <div className="space-y-1.5">
-                    <Label htmlFor="lastName" className="text-[10px] font-black uppercase text-muted-foreground tracking-wider">Last Name</Label>
+                    <Label
+                      htmlFor="lastName"
+                      className="text-[10px] font-black uppercase text-muted-foreground tracking-wider"
+                    >
+                      Last Name
+                    </Label>
                     <div className="relative flex items-center">
                       <User className="w-4 h-4 absolute left-3.5 text-muted-foreground/60" />
                       <Input
@@ -308,12 +327,20 @@ export default function UsersPage() {
                 </div>
 
                 <div className="space-y-1.5">
-                  <Label htmlFor="role" className="text-[10px] font-black uppercase text-muted-foreground tracking-wider">Role Assignment</Label>
+                  <Label
+                    htmlFor="role"
+                    className="text-[10px] font-black uppercase text-muted-foreground tracking-wider"
+                  >
+                    Role Assignment
+                  </Label>
                   <Select
                     value={newRole}
                     onValueChange={(val) => val && setNewRole(val)}
                   >
-                    <SelectTrigger id="role" className="bg-muted/20 border-border rounded-xl h-11 focus-visible:ring-indigo-500">
+                    <SelectTrigger
+                      id="role"
+                      className="bg-muted/20 border-border rounded-xl h-11 focus-visible:ring-indigo-500"
+                    >
                       <SelectValue placeholder="Select a role" />
                     </SelectTrigger>
                     <SelectContent className="bg-card border-border text-foreground rounded-xl">
@@ -368,7 +395,9 @@ export default function UsersPage() {
               label="Staff Name / Email"
               placeholder="Enter keyword..."
               value={searchQuery}
-              onChange={(e: React.ChangeEvent<HTMLInputElement>) => setSearchQuery(e.target.value)}
+              onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
+                setSearchQuery(e.target.value)
+              }
             />
 
             <FilterSelect
@@ -422,10 +451,18 @@ export default function UsersPage() {
             <Table>
               <TableHeader className="bg-muted/30">
                 <TableRow className="border-border hover:bg-transparent">
-                  <TableHead className="text-[10px] font-black uppercase tracking-widest text-muted-foreground py-4 pl-6">Staff Profile</TableHead>
-                  <TableHead className="text-[10px] font-black uppercase tracking-widest text-muted-foreground py-4">Role Assignment</TableHead>
-                  <TableHead className="text-[10px] font-black uppercase tracking-widest text-muted-foreground py-4">Account Status</TableHead>
-                  <TableHead className="text-right text-[10px] font-black uppercase tracking-widest text-muted-foreground py-4 pr-6">Management</TableHead>
+                  <TableHead className="text-[10px] font-black uppercase tracking-widest text-muted-foreground py-4 pl-6">
+                    Staff Profile
+                  </TableHead>
+                  <TableHead className="text-[10px] font-black uppercase tracking-widest text-muted-foreground py-4">
+                    Role Assignment
+                  </TableHead>
+                  <TableHead className="text-[10px] font-black uppercase tracking-widest text-muted-foreground py-4">
+                    Account Status
+                  </TableHead>
+                  <TableHead className="text-right text-[10px] font-black uppercase tracking-widest text-muted-foreground py-4 pr-6">
+                    Management
+                  </TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -452,10 +489,10 @@ export default function UsersPage() {
                             user.role === AdminRole.SUPER_ADMIN
                               ? 'border-indigo-500/20 text-indigo-600 dark:text-indigo-400 bg-indigo-500/10 font-bold text-[10px] rounded-lg'
                               : user.role === AdminRole.AUDITOR
-                              ? 'border-purple-500/20 text-purple-600 dark:text-purple-400 bg-purple-500/10 font-bold text-[10px] rounded-lg'
-                              : user.role === AdminRole.COMPLIANCE_OFFICER
-                              ? 'border-amber-500/20 text-amber-600 dark:text-amber-400 bg-amber-500/10 font-bold text-[10px] rounded-lg'
-                              : 'border-sky-500/20 text-sky-600 dark:text-sky-400 bg-sky-500/10 font-bold text-[10px] rounded-lg'
+                                ? 'border-purple-500/20 text-purple-600 dark:text-purple-400 bg-purple-500/10 font-bold text-[10px] rounded-lg'
+                                : user.role === AdminRole.COMPLIANCE_OFFICER
+                                  ? 'border-amber-500/20 text-amber-600 dark:text-amber-400 bg-amber-500/10 font-bold text-[10px] rounded-lg'
+                                  : 'border-sky-500/20 text-sky-600 dark:text-sky-400 bg-sky-500/10 font-bold text-[10px] rounded-lg'
                           }
                         >
                           {user.role}
@@ -494,7 +531,11 @@ export default function UsersPage() {
                       <TableCell className="text-right pr-6 py-4">
                         <div className="flex justify-end items-center gap-2">
                           <Link href={`/system/admins/${user.id}`}>
-                            <Button variant="outline" size="sm" className="h-8 border-border hover:bg-muted/50 rounded-lg text-xs font-bold gap-1 px-3">
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              className="h-8 border-border hover:bg-muted/50 rounded-lg text-xs font-bold gap-1 px-3"
+                            >
                               <Eye className="h-3.5 w-3.5" /> View
                             </Button>
                           </Link>
@@ -532,7 +573,9 @@ export default function UsersPage() {
                     >
                       <div className="flex flex-col items-center justify-center gap-2">
                         <Search className="h-8 w-8 text-muted-foreground/30" />
-                        <p className="text-sm font-semibold">No admin users found.</p>
+                        <p className="text-sm font-semibold">
+                          No admin users found.
+                        </p>
                       </div>
                     </TableCell>
                   </TableRow>

@@ -1,5 +1,12 @@
 import { useEffect } from 'react';
-import { View, StyleSheet, Text, Image, Alert, ActivityIndicator } from 'react-native';
+import {
+  View,
+  StyleSheet,
+  Text,
+  Image,
+  Alert,
+  ActivityIndicator,
+} from 'react-native';
 import {
   DarkTheme,
   DefaultTheme,
@@ -109,8 +116,8 @@ export default function RootLayout() {
 
       // 1. Handle Incomplete Registration Flow
       // Users who are PENDING_APPROVAL or ACTIVE are considered to have finished their part of onboarding.
-      const isRegistrationDone = 
-        user.registrationState === RegistrationState.COMPLETED || 
+      const isRegistrationDone =
+        user.registrationState === RegistrationState.COMPLETED ||
         user.status === UserStatus.PENDING_APPROVAL ||
         user.status === UserStatus.ACTIVE;
 
@@ -161,10 +168,13 @@ export default function RootLayout() {
 
   if ((!fontsLoaded && !fontError) || isAuthLoading) {
     return (
-      <SafeAreaView style={{ flex: 1, backgroundColor: '#f8cec2' }} edges={['top']}>
+      <SafeAreaView
+        style={{ flex: 1, backgroundColor: '#f8cec2' }}
+        edges={['top']}
+      >
         <BackgroundGradient />
         <View className="flex-1 items-center justify-center">
-           <ActivityIndicator color="#f48fb1" size="large" />
+          <ActivityIndicator color="#f48fb1" size="large" />
         </View>
       </SafeAreaView>
     );
@@ -222,7 +232,7 @@ export default function RootLayout() {
                   <View style={StyleSheet.absoluteFill}>
                     <BackgroundGradient />
                   </View>
-                  
+
                   <PINVerification
                     onSuccess={() => {
                       console.log('[RootLayout] Overlay Unlock Successful');

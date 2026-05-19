@@ -45,29 +45,29 @@ export const validateAndParseQR = (rawData: string): ValidationResult => {
 
     // Handle Merchant Payments - Skip phone number validation
     if (parsed.type === 'MERCHANT_PAYMENT') {
-        return {
-            success: true,
-            data: {
-                type: 'MERCHANT_PAYMENT',
-                recipient: 'MERCHANT',
-                paymentId: parsed.paymentId,
-                amount: parsed.amount || '',
-                merchantName: parsed.merchantName,
-            },
-        };
+      return {
+        success: true,
+        data: {
+          type: 'MERCHANT_PAYMENT',
+          recipient: 'MERCHANT',
+          paymentId: parsed.paymentId,
+          amount: parsed.amount || '',
+          merchantName: parsed.merchantName,
+        },
+      };
     }
 
     // Handle Merchant Static QR
     if (parsed.type === 'MERCHANT_STATIC') {
       return {
-          success: true,
-          data: {
-              type: 'MERCHANT_STATIC',
-              recipient: 'MERCHANT',
-              merchantId: parsed.merchantId,
-              amount: '',
-              merchantName: parsed.merchantName,
-          },
+        success: true,
+        data: {
+          type: 'MERCHANT_STATIC',
+          recipient: 'MERCHANT',
+          merchantId: parsed.merchantId,
+          amount: '',
+          merchantName: parsed.merchantName,
+        },
       };
     }
 

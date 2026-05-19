@@ -1548,7 +1548,7 @@ export class IdentityService {
     if (kycData?.idCardNumberEncrypted) {
       try {
         const fullId = this.decryptPii(kycData.idCardNumberEncrypted);
-        idNumber = fullId; // real id number for check 
+        idNumber = fullId; // real id number for check
       } catch (e) {
         this.logger.warn(
           `Failed to decrypt ID number for status check: ${user.id}`,
@@ -1643,7 +1643,6 @@ export class IdentityService {
     const walletId = user.ledgerAccountId;
 
     try {
-
       // Update user with wallet info and final state
       // Status Protection: Move to PENDING_APPROVAL if currently INACTIVE or REJECTED (retry case).
       // If user is already ACTIVE or BLOCKED, we MUST preserve that status.
@@ -1773,7 +1772,9 @@ export class IdentityService {
 
     // Check if PIN is currently locked
     if (user.pinLockedUntil && user.pinLockedUntil > new Date()) {
-      const timeLeft = Math.ceil((user.pinLockedUntil.getTime() - Date.now()) / 1000);
+      const timeLeft = Math.ceil(
+        (user.pinLockedUntil.getTime() - Date.now()) / 1000,
+      );
       throw new ForbiddenException({
         statusCode: 403,
         message: `PIN is locked. Please try again in ${timeLeft} seconds.`,
@@ -1789,21 +1790,29 @@ export class IdentityService {
       const updatedUser = await this.handlePinFailure(userId);
       const remainingAttempts = 3 - updatedUser.pinAttempts;
 
-      if (updatedUser.pinLockedUntil && updatedUser.pinLockedUntil > new Date()) {
+      if (
+        updatedUser.pinLockedUntil &&
+        updatedUser.pinLockedUntil > new Date()
+      ) {
         await this.logSecurityEvent(userId, NotificationEventType.PIN_LOCKED, {
           deviceId: dto.deviceId,
           attempts: updatedUser.pinAttempts,
         });
 
-        await this.logSecurityEvent(userId, NotificationEventType.ACCOUNT_LOCKED, {
-          action: 'ACCOUNT_LOCKED',
-          reason: 'PIN locked due to 3 consecutive failures',
-          deviceId: dto.deviceId,
-        });
+        await this.logSecurityEvent(
+          userId,
+          NotificationEventType.ACCOUNT_LOCKED,
+          {
+            action: 'ACCOUNT_LOCKED',
+            reason: 'PIN locked due to 3 consecutive failures',
+            deviceId: dto.deviceId,
+          },
+        );
 
         throw new ForbiddenException({
           statusCode: 403,
-          message: 'PIN locked due to too many incorrect attempts. Please try again in 5 minutes.',
+          message:
+            'PIN locked due to too many incorrect attempts. Please try again in 5 minutes.',
           error: 'Forbidden',
           timeLeft: 300,
         });
@@ -1813,7 +1822,9 @@ export class IdentityService {
           attempts: updatedUser.pinAttempts,
           remainingAttempts: remainingAttempts > 0 ? remainingAttempts : 0,
         });
-        throw new UnauthorizedException(`Invalid PIN. You have ${remainingAttempts} attempts remaining.`);
+        throw new UnauthorizedException(
+          `Invalid PIN. You have ${remainingAttempts} attempts remaining.`,
+        );
       }
     }
 

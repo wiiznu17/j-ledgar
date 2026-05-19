@@ -6,7 +6,10 @@ interface ScannerOverlayProps {
   children: React.ReactNode;
 }
 
-export const ScannerOverlay: React.FC<ScannerOverlayProps> = ({ frameSize, children }) => {
+export const ScannerOverlay: React.FC<ScannerOverlayProps> = ({
+  frameSize,
+  children,
+}) => {
   return (
     <View
       style={[StyleSheet.absoluteFillObject, { zIndex: 10 }]}

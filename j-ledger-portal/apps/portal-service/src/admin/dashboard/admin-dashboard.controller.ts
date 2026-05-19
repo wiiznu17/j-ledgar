@@ -21,7 +21,9 @@ export class AdminDashboardController {
     @Query('from') from?: string,
     @Query('to') to?: string,
   ) {
-    this.logger.log(`[AdminDashboard] Fetching aggregated stats from=${from} to=${to}`);
+    this.logger.log(
+      `[AdminDashboard] Fetching aggregated stats from=${from} to=${to}`,
+    );
 
     // 1. Fetch KYC Stats (filtered by date)
     const kycStats = await this.kycService.getKYCStats(from, to);
@@ -45,36 +47,71 @@ export class AdminDashboardController {
     const [vatAccounts, revenueAccounts, allAccounts] = await Promise.all([
       this.financeService.getAccountsByType('SYSTEM_VAT_PAYABLE'),
       this.financeService.getAccountsByType('SYSTEM_REVENUE'),
-      this.integrationService.forwardToGateway<any>('get', '/api/v1/accounts?page=0&size=1000'),
+      this.integrationService.forwardToGateway<any>(
+        'get',
+        '/api/v1/accounts?page=0&size=1000',
+      ),
     ]);
 
-    const totalVatPayable = vatAccounts.reduce((sum, acc) => sum + Number(acc.balance), 0);
-    const totalRevenue = revenueAccounts.reduce((sum, acc) => sum + Number(acc.balance), 0);
-    
-    const accountsList = Array.isArray(allAccounts) ? allAccounts : allAccounts.content || [];
+    const totalVatPayable = vatAccounts.reduce(
+      (sum, acc) => sum + Number(acc.balance),
+      0,
+    );
+    const totalRevenue = revenueAccounts.reduce(
+      (sum, acc) => sum + Number(acc.balance),
+      0,
+    );
+
+    const accountsList = Array.isArray(allAccounts)
+      ? allAccounts
+      : allAccounts.content || [];
     // Filter out BANK_CLEARING accounts (like SYSTEM_BANK_ACCOUNT) to prevent double counting assets vs liabilities
     const totalSystemBalance = accountsList
-      .filter((acc) => acc.accountType !== 'BANK_CLEARING' && acc.accountName !== 'SYSTEM_BANK_ACCOUNT')
+      .filter(
+        (acc) =>
+          acc.accountType !== 'BANK_CLEARING' &&
+          acc.accountName !== 'SYSTEM_BANK_ACCOUNT',
+      )
       .reduce((sum, acc) => sum + Number(acc.balance), 0);
 
     // Dynamic Sparkline trends and advanced calculations
     const chartData = this.processTransactionVolume(transactions, from, to);
-    const balanceTrend = this.calculateBalanceTrend(transactions, totalSystemBalance, from, to);
+    const balanceTrend = this.calculateBalanceTrend(
+      transactions,
+      totalSystemBalance,
+      from,
+      to,
+    );
 
     // Fetch actual CREDIT ledger entries for all SYSTEM_REVENUE accounts to build accurate revenue trend
-    const revenueLedgerEntries: Array<{ amount: number; createdAt: string }> = [];
+    const revenueLedgerEntries: Array<{ amount: number; createdAt: string }> =
+      [];
     for (const acc of revenueAccounts) {
       try {
-        const entriesRes = await this.financeService.getLedgerEntriesForAccount(acc.id);
-        const entries: any[] = Array.isArray(entriesRes) ? entriesRes : entriesRes?.content || [];
+        const entriesRes = await this.financeService.getLedgerEntriesForAccount(
+          acc.id,
+        );
+        const entries: any[] = Array.isArray(entriesRes)
+          ? entriesRes
+          : entriesRes?.content || [];
         entries
           .filter((e: any) => e.entryType === 'CREDIT')
-          .forEach((e: any) => revenueLedgerEntries.push({ amount: Number(e.amount), createdAt: e.createdAt }));
+          .forEach((e: any) =>
+            revenueLedgerEntries.push({
+              amount: Number(e.amount),
+              createdAt: e.createdAt,
+            }),
+          );
       } catch {
         // Silently skip if account has no ledger history
       }
     }
-    const revenueTrend = this.calculateRevenueTrend(revenueLedgerEntries, totalRevenue, from, to);
+    const revenueTrend = this.calculateRevenueTrend(
+      revenueLedgerEntries,
+      totalRevenue,
+      from,
+      to,
+    );
     const distribution = this.calculateTransactionDistribution(transactions);
 
     // 4. Fetch Total Active Users
@@ -89,20 +126,34 @@ export class AdminDashboardController {
 
     // Calculate Treasury Health
     const pendingSettlementCount = kycStats.pending; // Use pending KYC queue as active settlement queue indicator
-    const reserveRatio = totalVatPayable > 0 ? Math.round((totalSystemBalance / totalVatPayable) * 100) : 124;
-    
+    const reserveRatio =
+      totalVatPayable > 0
+        ? Math.round((totalSystemBalance / totalVatPayable) * 100)
+        : 124;
+
     // Compute real bank float from SYSTEM_BANK_ACCOUNT and BANK_CLEARING accounts in database
     const bankFloatAccounts = accountsList.filter(
-      (acc) => acc.accountType === 'BANK_CLEARING' || acc.accountName === 'SYSTEM_BANK_ACCOUNT'
+      (acc) =>
+        acc.accountType === 'BANK_CLEARING' ||
+        acc.accountName === 'SYSTEM_BANK_ACCOUNT',
     );
-    const calculatedBankFloat = bankFloatAccounts.reduce((sum, acc) => sum + Number(acc.balance || 0), 0);
-    const bankFloat = calculatedBankFloat > 0 ? Math.round(calculatedBankFloat) : Math.round(totalSystemBalance * 0.45);
-    
-    const healthScore = Math.min(100, Math.max(0, 100 - pendingSettlementCount * 2));
+    const calculatedBankFloat = bankFloatAccounts.reduce(
+      (sum, acc) => sum + Number(acc.balance || 0),
+      0,
+    );
+    const bankFloat =
+      calculatedBankFloat > 0
+        ? Math.round(calculatedBankFloat)
+        : Math.round(totalSystemBalance * 0.45);
+
+    const healthScore = Math.min(
+      100,
+      Math.max(0, 100 - pendingSettlementCount * 2),
+    );
 
     // Calculate real failed and total transactions counts
     const failedTransactions = transactions.filter(
-      (tx) => tx.status === 'FAILED' || tx.transactionStatus === 'FAILED'
+      (tx) => tx.status === 'FAILED' || tx.transactionStatus === 'FAILED',
     ).length;
     const totalTransactions = transactions.length;
 
@@ -116,7 +167,9 @@ export class AdminDashboardController {
       const startBal = balanceTrend[0].balance;
       const endBal = balanceTrend[balanceTrend.length - 1].balance;
       if (startBal > 0) {
-        liquidityGrowth = Number((((endBal - startBal) / startBal) * 100).toFixed(1));
+        liquidityGrowth = Number(
+          (((endBal - startBal) / startBal) * 100).toFixed(1),
+        );
       } else {
         liquidityGrowth = endBal > 0 ? 100.0 : 0.0;
       }
@@ -125,16 +178,22 @@ export class AdminDashboardController {
     // 2. Revenue Growth (first half of selected range vs second half)
     let revenueGrowth = 18.2; // Default fallback
     if (fromDate && transactions.length > 0) {
-      const midTime = fromDate.getTime() + (toDate.getTime() - fromDate.getTime()) / 2;
+      const midTime =
+        fromDate.getTime() + (toDate.getTime() - fromDate.getTime()) / 2;
       const firstHalfRevenue = transactions
         .filter((tx) => new Date(tx.createdAt).getTime() < midTime)
         .reduce((sum, tx) => sum + Number(tx.fee || 0), 0);
       const secondHalfRevenue = transactions
         .filter((tx) => new Date(tx.createdAt).getTime() >= midTime)
         .reduce((sum, tx) => sum + Number(tx.fee || 0), 0);
-      
+
       if (firstHalfRevenue > 0) {
-        revenueGrowth = Number((((secondHalfRevenue - firstHalfRevenue) / firstHalfRevenue) * 100).toFixed(1));
+        revenueGrowth = Number(
+          (
+            ((secondHalfRevenue - firstHalfRevenue) / firstHalfRevenue) *
+            100
+          ).toFixed(1),
+        );
       } else {
         revenueGrowth = secondHalfRevenue > 0 ? 100.0 : 0.0;
       }
@@ -143,9 +202,14 @@ export class AdminDashboardController {
     // 3. Active Users Growth (users created before from vs total active users)
     let activeUsersGrowth = 20.0; // Default fallback
     if (fromDate) {
-      const startingUsers = await this.kycService.getActiveUsersCountBefore(fromDate);
+      const startingUsers =
+        await this.kycService.getActiveUsersCountBefore(fromDate);
       if (startingUsers > 0) {
-        activeUsersGrowth = Number((((activeUsersCount - startingUsers) / startingUsers) * 100).toFixed(1));
+        activeUsersGrowth = Number(
+          (((activeUsersCount - startingUsers) / startingUsers) * 100).toFixed(
+            1,
+          ),
+        );
       } else {
         activeUsersGrowth = activeUsersCount > 0 ? 100.0 : 0.0;
       }
@@ -154,12 +218,26 @@ export class AdminDashboardController {
     // 4. KYC Approval Velocity Growth (approvals in first half of selected range vs second half)
     let kycGrowth = 8.3; // Default fallback
     if (fromDate) {
-      const midTime = fromDate.getTime() + (toDate.getTime() - fromDate.getTime()) / 2;
-      const approvedFirstHalf = await this.kycService.getKycApprovedCountBetween(fromDate, new Date(midTime));
-      const approvedSecondHalf = await this.kycService.getKycApprovedCountBetween(new Date(midTime), toDate);
-      
+      const midTime =
+        fromDate.getTime() + (toDate.getTime() - fromDate.getTime()) / 2;
+      const approvedFirstHalf =
+        await this.kycService.getKycApprovedCountBetween(
+          fromDate,
+          new Date(midTime),
+        );
+      const approvedSecondHalf =
+        await this.kycService.getKycApprovedCountBetween(
+          new Date(midTime),
+          toDate,
+        );
+
       if (approvedFirstHalf > 0) {
-        kycGrowth = Number((((approvedSecondHalf - approvedFirstHalf) / approvedFirstHalf) * 100).toFixed(1));
+        kycGrowth = Number(
+          (
+            ((approvedSecondHalf - approvedFirstHalf) / approvedFirstHalf) *
+            100
+          ).toFixed(1),
+        );
       } else {
         kycGrowth = approvedSecondHalf > 0 ? 100.0 : 0.0;
       }
@@ -168,16 +246,19 @@ export class AdminDashboardController {
     // 5. VAT Growth (VAT in first half of selected range vs second half)
     let vatGrowth = -4.8; // Default fallback
     if (fromDate && transactions.length > 0) {
-      const midTime = fromDate.getTime() + (toDate.getTime() - fromDate.getTime()) / 2;
+      const midTime =
+        fromDate.getTime() + (toDate.getTime() - fromDate.getTime()) / 2;
       const firstHalfVat = transactions
         .filter((tx) => new Date(tx.createdAt).getTime() < midTime)
         .reduce((sum, tx) => sum + Number(tx.fee || 0) * 0.07, 0);
       const secondHalfVat = transactions
         .filter((tx) => new Date(tx.createdAt).getTime() >= midTime)
         .reduce((sum, tx) => sum + Number(tx.fee || 0) * 0.07, 0);
-      
+
       if (firstHalfVat > 0) {
-        vatGrowth = Number((((secondHalfVat - firstHalfVat) / firstHalfVat) * 100).toFixed(1));
+        vatGrowth = Number(
+          (((secondHalfVat - firstHalfVat) / firstHalfVat) * 100).toFixed(1),
+        );
       } else {
         vatGrowth = secondHalfVat > 0 ? 100.0 : 0.0;
       }
@@ -186,20 +267,26 @@ export class AdminDashboardController {
     // 6. Failed Transactions Growth (failures in first half vs second half)
     let failedGrowth = -100.0; // Default fallback
     if (fromDate && transactions.length > 0) {
-      const midTime = fromDate.getTime() + (toDate.getTime() - fromDate.getTime()) / 2;
-      const firstHalfFailed = transactions
-        .filter(
-          (tx) => new Date(tx.createdAt).getTime() < midTime && 
-          (tx.status === 'FAILED' || tx.transactionStatus === 'FAILED')
-        ).length;
-      const secondHalfFailed = transactions
-        .filter(
-          (tx) => new Date(tx.createdAt).getTime() >= midTime && 
-          (tx.status === 'FAILED' || tx.transactionStatus === 'FAILED')
-        ).length;
-      
+      const midTime =
+        fromDate.getTime() + (toDate.getTime() - fromDate.getTime()) / 2;
+      const firstHalfFailed = transactions.filter(
+        (tx) =>
+          new Date(tx.createdAt).getTime() < midTime &&
+          (tx.status === 'FAILED' || tx.transactionStatus === 'FAILED'),
+      ).length;
+      const secondHalfFailed = transactions.filter(
+        (tx) =>
+          new Date(tx.createdAt).getTime() >= midTime &&
+          (tx.status === 'FAILED' || tx.transactionStatus === 'FAILED'),
+      ).length;
+
       if (firstHalfFailed > 0) {
-        failedGrowth = Number((((secondHalfFailed - firstHalfFailed) / firstHalfFailed) * 100).toFixed(1));
+        failedGrowth = Number(
+          (
+            ((secondHalfFailed - firstHalfFailed) / firstHalfFailed) *
+            100
+          ).toFixed(1),
+        );
       } else {
         failedGrowth = secondHalfFailed > 0 ? 100.0 : -100.0;
       }
@@ -249,7 +336,7 @@ export class AdminDashboardController {
 
     transactions.forEach((tx) => {
       const rawType = tx.transactionType || tx.type || '';
-      
+
       let mappedType = rawType;
       if (rawType === 'TRANSFER') {
         mappedType = 'P2P_TRANSFER';
@@ -279,7 +366,12 @@ export class AdminDashboardController {
       });
   }
 
-  private calculateBalanceTrend(transactions: any[], totalSystemBalance: number, from?: string, to?: string) {
+  private calculateBalanceTrend(
+    transactions: any[],
+    totalSystemBalance: number,
+    from?: string,
+    to?: string,
+  ) {
     const fromDate = from ? new Date(from) : null;
     const toDate = to ? new Date(to) : new Date();
 
@@ -290,14 +382,29 @@ export class AdminDashboardController {
     }
 
     const netChangeMap: Record<string, number> = {};
-    const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+    const months = [
+      'Jan',
+      'Feb',
+      'Mar',
+      'Apr',
+      'May',
+      'Jun',
+      'Jul',
+      'Aug',
+      'Sep',
+      'Oct',
+      'Nov',
+      'Dec',
+    ];
 
     // Initialize maps
     if (diffDays === -1) {
       let minYear = new Date().getFullYear();
       let maxYear = new Date().getFullYear();
       if (transactions.length > 0) {
-        const years = transactions.map((tx) => new Date(tx.createdAt).getFullYear());
+        const years = transactions.map((tx) =>
+          new Date(tx.createdAt).getFullYear(),
+        );
         minYear = Math.min(...years);
         maxYear = Math.max(...years);
       }
@@ -354,16 +461,19 @@ export class AdminDashboardController {
     const result: Array<{ time: string; balance: number | null }> = [];
     let currentBalance = totalSystemBalance;
     const currentHour = new Date().getHours();
-    
+
     // We map backwards
     for (let i = labels.length - 1; i >= 0; i--) {
       const label = labels[i];
       const isTodayHour = diffDays <= 1 && label.includes(':00');
       const hourNum = isTodayHour ? parseInt(label.split(':')[0], 10) : -1;
-      
+
       result.unshift({
         time: label,
-        balance: isTodayHour && hourNum > currentHour ? null : Math.max(0, currentBalance),
+        balance:
+          isTodayHour && hourNum > currentHour
+            ? null
+            : Math.max(0, currentBalance),
       });
       currentBalance -= netChangeMap[label];
     }
@@ -371,7 +481,12 @@ export class AdminDashboardController {
     return result;
   }
 
-  private calculateRevenueTrend(ledgerEntries: Array<{ amount: number; createdAt: string }>, totalRevenue: number, from?: string, to?: string) {
+  private calculateRevenueTrend(
+    ledgerEntries: Array<{ amount: number; createdAt: string }>,
+    totalRevenue: number,
+    from?: string,
+    to?: string,
+  ) {
     const fromDate = from ? new Date(from) : null;
     const toDate = to ? new Date(to) : new Date();
 
@@ -382,13 +497,28 @@ export class AdminDashboardController {
     }
 
     const netChangeMap: Record<string, number> = {};
-    const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+    const months = [
+      'Jan',
+      'Feb',
+      'Mar',
+      'Apr',
+      'May',
+      'Jun',
+      'Jul',
+      'Aug',
+      'Sep',
+      'Oct',
+      'Nov',
+      'Dec',
+    ];
 
     if (diffDays === -1) {
       let minYear = new Date().getFullYear();
       let maxYear = new Date().getFullYear();
       if (ledgerEntries.length > 0) {
-        const years = ledgerEntries.map((e) => new Date(e.createdAt).getFullYear());
+        const years = ledgerEntries.map((e) =>
+          new Date(e.createdAt).getFullYear(),
+        );
         minYear = Math.min(...years);
         maxYear = Math.max(...years);
       }
@@ -443,10 +573,13 @@ export class AdminDashboardController {
       const label = labels[i];
       const isTodayHour = diffDays <= 1 && label.includes(':00');
       const hourNum = isTodayHour ? parseInt(label.split(':')[0], 10) : -1;
-      
+
       result.unshift({
         time: label,
-        revenue: isTodayHour && hourNum > currentHour ? null : Math.max(0, currentRevenue),
+        revenue:
+          isTodayHour && hourNum > currentHour
+            ? null
+            : Math.max(0, currentRevenue),
       });
       currentRevenue -= netChangeMap[label];
     }
@@ -454,7 +587,11 @@ export class AdminDashboardController {
     return result;
   }
 
-  private processTransactionVolume(transactions: any[], from?: string, to?: string) {
+  private processTransactionVolume(
+    transactions: any[],
+    from?: string,
+    to?: string,
+  ) {
     const fromDate = from ? new Date(from) : null;
     const toDate = to ? new Date(to) : new Date();
 
@@ -465,14 +602,29 @@ export class AdminDashboardController {
     }
 
     const volumeMap: Record<string, { volume: number; revenue: number }> = {};
-    const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+    const months = [
+      'Jan',
+      'Feb',
+      'Mar',
+      'Apr',
+      'May',
+      'Jun',
+      'Jul',
+      'Aug',
+      'Sep',
+      'Oct',
+      'Nov',
+      'Dec',
+    ];
 
     if (diffDays === -1) {
       let minYear = new Date().getFullYear();
       let maxYear = new Date().getFullYear();
 
       if (transactions.length > 0) {
-        const years = transactions.map((tx) => new Date(tx.createdAt).getFullYear());
+        const years = transactions.map((tx) =>
+          new Date(tx.createdAt).getFullYear(),
+        );
         minYear = Math.min(...years);
         maxYear = Math.max(...years);
       }
@@ -495,7 +647,10 @@ export class AdminDashboardController {
       });
     } else if (diffDays <= 1) {
       for (let hour = 0; hour < 24; hour++) {
-        volumeMap[`${String(hour).padStart(2, '0')}:00`] = { volume: 0, revenue: 0 };
+        volumeMap[`${String(hour).padStart(2, '0')}:00`] = {
+          volume: 0,
+          revenue: 0,
+        };
       }
 
       transactions.forEach((tx) => {

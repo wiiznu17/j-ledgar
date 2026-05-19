@@ -7,11 +7,27 @@ async function main() {
 
   // 1. Categories
   const categories = [
-    { name: 'Food & Beverage', description: 'Dining, cafes, and food delivery', order: 1 },
-    { name: 'Shopping', description: 'Retail, fashion, and lifestyle', order: 2 },
+    {
+      name: 'Food & Beverage',
+      description: 'Dining, cafes, and food delivery',
+      order: 1,
+    },
+    {
+      name: 'Shopping',
+      description: 'Retail, fashion, and lifestyle',
+      order: 2,
+    },
     { name: 'Travel', description: 'Flights, hotels, and tours', order: 3 },
-    { name: 'Entertainment', description: 'Movies, games, and events', order: 4 },
-    { name: 'Services', description: 'Utility, telco, and insurance', order: 5 },
+    {
+      name: 'Entertainment',
+      description: 'Movies, games, and events',
+      order: 4,
+    },
+    {
+      name: 'Services',
+      description: 'Utility, telco, and insurance',
+      order: 5,
+    },
   ];
 
   for (const cat of categories) {
@@ -25,11 +41,31 @@ async function main() {
 
   // 2. Brands
   const brands = [
-    { name: 'Starbucks', website: 'https://www.starbucks.co.th', description: 'Coffee and snacks' },
-    { name: 'Grab', website: 'https://www.grab.com', description: 'Transport and food' },
-    { name: 'Major Cineplex', website: 'https://www.majorcineplex.com', description: 'Movies and entertainment' },
-    { name: 'Lazada', website: 'https://www.lazada.co.th', description: 'Online shopping' },
-    { name: 'AIS', website: 'https://www.ais.th', description: 'Telecommunication' },
+    {
+      name: 'Starbucks',
+      website: 'https://www.starbucks.co.th',
+      description: 'Coffee and snacks',
+    },
+    {
+      name: 'Grab',
+      website: 'https://www.grab.com',
+      description: 'Transport and food',
+    },
+    {
+      name: 'Major Cineplex',
+      website: 'https://www.majorcineplex.com',
+      description: 'Movies and entertainment',
+    },
+    {
+      name: 'Lazada',
+      website: 'https://www.lazada.co.th',
+      description: 'Online shopping',
+    },
+    {
+      name: 'AIS',
+      website: 'https://www.ais.th',
+      description: 'Telecommunication',
+    },
   ];
 
   for (const brand of brands) {

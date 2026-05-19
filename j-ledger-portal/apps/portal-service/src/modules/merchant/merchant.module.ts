@@ -12,8 +12,17 @@ import { TerminalIdempotencyService } from './security/terminal-idempotency.serv
 
 @Module({
   imports: [IntegrationModule, AuditModule, AdminModule],
-  controllers: [TerminalController, AdminMerchantController, MerchantController, MerchantDealController],
-  providers: [MerchantService, TerminalNonceService, TerminalIdempotencyService],
+  controllers: [
+    TerminalController,
+    AdminMerchantController,
+    MerchantController,
+    MerchantDealController,
+  ],
+  providers: [
+    MerchantService,
+    TerminalNonceService,
+    TerminalIdempotencyService,
+  ],
   exports: [MerchantService, TerminalNonceService, TerminalIdempotencyService],
 })
 export class MerchantModule {}

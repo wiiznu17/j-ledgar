@@ -56,7 +56,7 @@ export class MerchantController {
       return { urls: [] };
     }
 
-    const uploadPromises = files.map(file => {
+    const uploadPromises = files.map((file) => {
       const fileName = `${Date.now()}-${file.originalname}`;
       return this.storageService.uploadFile(
         file.buffer,
@@ -73,9 +73,17 @@ export class MerchantController {
   // ==================== Merchant Payments (QR) ====================
 
   @Post('payments/qr')
-  async generateQR(@Req() req: any, @Body() body: { merchantId: string; amount: number; terminalId?: string }) {
+  async generateQR(
+    @Req() req: any,
+    @Body() body: { merchantId: string; amount: number; terminalId?: string },
+  ) {
     const userId = req.user?.sub;
-    return this.merchantService.generatePaymentQR(userId, body.merchantId, body.amount, body.terminalId);
+    return this.merchantService.generatePaymentQR(
+      userId,
+      body.merchantId,
+      body.amount,
+      body.terminalId,
+    );
   }
 
   @Get('payments/static-qr')
@@ -103,8 +111,16 @@ export class MerchantController {
 
   @Post('manual-pay/confirm')
   @UseGuards(JwtAuthGuard, PinVerifiedGuard)
-  async confirmManualPayment(@Req() req: any, @Body() body: { merchantId: string; amount: number; note?: string }) {
+  async confirmManualPayment(
+    @Req() req: any,
+    @Body() body: { merchantId: string; amount: number; note?: string },
+  ) {
     const userId = req.user?.sub;
-    return this.merchantService.processManualPayment(userId, body.merchantId, body.amount, body.note);
+    return this.merchantService.processManualPayment(
+      userId,
+      body.merchantId,
+      body.amount,
+      body.note,
+    );
   }
 }

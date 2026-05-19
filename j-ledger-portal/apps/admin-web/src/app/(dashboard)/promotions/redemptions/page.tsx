@@ -30,24 +30,31 @@ export default function RedemptionsPage() {
   // Filters
   const [search, setSearch] = useState('');
   const [status, setStatus] = useState('ALL');
-  const [appliedFilters, setAppliedFilters] = useState({ search: '', status: 'ALL' });
+  const [appliedFilters, setAppliedFilters] = useState({
+    search: '',
+    status: 'ALL',
+  });
 
-  const fetchRedemptions = async (pageOverride?: number, filterOverride?: any) => {
+  const fetchRedemptions = async (
+    pageOverride?: number,
+    filterOverride?: any,
+  ) => {
     setLoading(true);
     try {
       const currentPage = pageOverride || page;
       const currentFilters = filterOverride || appliedFilters;
-      
+
       const response = await promotionsRequester.getRedemptions({
         params: {
           page: currentPage,
           limit: 10,
           search: currentFilters.search || undefined,
-          status: currentFilters.status === 'ALL' ? undefined : currentFilters.status,
+          status:
+            currentFilters.status === 'ALL' ? undefined : currentFilters.status,
         },
       });
       setRedemptions(response.data || []);
-      
+
       if (response.pagination) {
         setTotalPages(response.pagination.totalPages || 1);
         setTotalItems(response.pagination.total || 0);
@@ -91,15 +98,20 @@ export default function RedemptionsPage() {
       <Card className="border border-border bg-card text-card-foreground shadow-xs overflow-hidden">
         {/* Filter Toolbar */}
         <div className="p-4 bg-muted/30 border-b border-border">
-          <form onSubmit={handleApplyFilter} className="grid grid-cols-1 md:grid-cols-4 gap-4 items-end">
+          <form
+            onSubmit={handleApplyFilter}
+            className="grid grid-cols-1 md:grid-cols-4 gap-4 items-end"
+          >
             <FilterSearchInput
               label="User or Deal Search"
               placeholder="Email, Phone, or Deal..."
               value={search}
-              onChange={(e: React.ChangeEvent<HTMLInputElement>) => setSearch(e.target.value)}
+              onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
+                setSearch(e.target.value)
+              }
               className="md:col-span-2 text-foreground"
             />
-            
+
             <FilterSelect
               label="Claim Status"
               value={status}

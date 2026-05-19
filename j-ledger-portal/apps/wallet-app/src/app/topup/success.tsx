@@ -119,7 +119,9 @@ export default function TopupSuccessScreen() {
           onPress={() => router.replace('/(tabs)')}
           className="mt-8 px-10 py-4 bg-[#f48fb1] rounded-2xl shadow-lg"
         >
-          <Text className="font-manrope font-black text-white">Back to Home</Text>
+          <Text className="font-manrope font-black text-white">
+            Back to Home
+          </Text>
         </TouchableOpacity>
       </SafeAreaView>
     );
@@ -128,7 +130,11 @@ export default function TopupSuccessScreen() {
   return (
     <SafeAreaView className="flex-1 bg-[#f8f9fe]" edges={['top']}>
       <ScrollView
-        contentContainerStyle={{ paddingHorizontal: 20, paddingTop: 20, paddingBottom: 60 }}
+        contentContainerStyle={{
+          paddingHorizontal: 20,
+          paddingTop: 20,
+          paddingBottom: 60,
+        }}
         showsVerticalScrollIndicator={false}
       >
         <MotiView

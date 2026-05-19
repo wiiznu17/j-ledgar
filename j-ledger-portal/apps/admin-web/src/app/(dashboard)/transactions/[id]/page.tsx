@@ -224,7 +224,8 @@ export default function TransactionDetailsPage() {
           <Card className="border-none shadow-xs rounded-2xl bg-card text-card-foreground overflow-hidden">
             <CardHeader className="p-5 border-b border-border bg-card">
               <CardTitle className="text-sm font-bold text-foreground flex items-center gap-2">
-                <Hash className="w-4 h-4 text-indigo-500" /> Transaction Metadata
+                <Hash className="w-4 h-4 text-indigo-500" /> Transaction
+                Metadata
               </CardTitle>
             </CardHeader>
             <CardContent className="p-5 space-y-5">
@@ -235,11 +236,15 @@ export default function TransactionDetailsPage() {
                   </p>
                   <div className="flex items-center gap-2">
                     <span className="font-mono text-xs text-foreground bg-muted px-2.5 py-1.5 rounded-lg border border-border flex-1 truncate select-all">
-                      {String(transaction.transactionId || transaction.id).toUpperCase()}
+                      {String(
+                        transaction.transactionId || transaction.id,
+                      ).toUpperCase()}
                     </span>
                     <Button
                       onClick={() =>
-                        handleCopyId(String(transaction.transactionId || transaction.id))
+                        handleCopyId(
+                          String(transaction.transactionId || transaction.id),
+                        )
                       }
                       variant="outline"
                       size="icon"
@@ -268,7 +273,8 @@ export default function TransactionDetailsPage() {
               {(transaction as any).referenceId && (
                 <div className="pt-4 border-t border-border">
                   <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest mb-1 flex items-center gap-1">
-                    <ExternalLink className="w-3.5 h-3.5 text-indigo-500" /> Gateway Reference ID (Stripe / External)
+                    <ExternalLink className="w-3.5 h-3.5 text-indigo-500" />{' '}
+                    Gateway Reference ID (Stripe / External)
                   </p>
                   <div className="flex items-center gap-2">
                     <span className="font-mono text-xs text-indigo-600 dark:text-indigo-400 bg-indigo-500/5 px-2.5 py-1.5 rounded-lg border border-indigo-500/10 flex-1 truncate select-all">
@@ -305,7 +311,8 @@ export default function TransactionDetailsPage() {
                       </span>
                       {transaction.fromWalletId && (
                         <p className="text-[10px] text-muted-foreground flex items-center gap-1 mt-1">
-                          <Wallet className="w-2.5 h-2.5 text-muted-foreground animate-pulse" /> Wallet Account:{' '}
+                          <Wallet className="w-2.5 h-2.5 text-muted-foreground animate-pulse" />{' '}
+                          Wallet Account:{' '}
                           <span className="font-mono text-foreground font-bold">
                             {transaction.fromWalletId}
                           </span>
@@ -317,14 +324,16 @@ export default function TransactionDetailsPage() {
                   {transaction.receiverId && (
                     <div className="space-y-1">
                       <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest mb-1 flex items-center gap-1">
-                        <User className="w-3 h-3 text-emerald-500" /> Receiver ID
+                        <User className="w-3 h-3 text-emerald-500" /> Receiver
+                        ID
                       </p>
                       <span className="font-mono text-[11px] text-emerald-600 dark:text-emerald-400 bg-emerald-500/10 border border-emerald-500/20 px-2.5 py-1.5 rounded-lg block truncate select-all">
                         {transaction.receiverId}
                       </span>
                       {transaction.toWalletId && (
                         <p className="text-[10px] text-muted-foreground flex items-center gap-1 mt-1">
-                          <Wallet className="w-2.5 h-2.5 text-muted-foreground animate-pulse" /> Wallet Account:{' '}
+                          <Wallet className="w-2.5 h-2.5 text-muted-foreground animate-pulse" />{' '}
+                          Wallet Account:{' '}
                           <span className="font-mono text-foreground font-bold">
                             {transaction.toWalletId}
                           </span>
@@ -348,7 +357,9 @@ export default function TransactionDetailsPage() {
                       </p>
                     </div>
                     <Button
-                      onClick={() => handleCopyId(JSON.stringify(metadataObj, null, 2))}
+                      onClick={() =>
+                        handleCopyId(JSON.stringify(metadataObj, null, 2))
+                      }
                       variant="ghost"
                       size="icon"
                       className="h-7 w-7 rounded-md hover:bg-muted text-muted-foreground hover:text-foreground shrink-0"
@@ -372,7 +383,9 @@ export default function TransactionDetailsPage() {
               <CardHeader className="p-5 pb-2 border-b border-emerald-500/10">
                 <div className="flex items-center gap-2 text-emerald-600 dark:text-emerald-400">
                   <Coins className="h-5 w-5 text-emerald-500 animate-bounce" />
-                  <CardTitle className="text-sm font-bold">Loyalty Points Reward</CardTitle>
+                  <CardTitle className="text-sm font-bold">
+                    Loyalty Points Reward
+                  </CardTitle>
                 </div>
                 <CardDescription className="text-emerald-700/80 dark:text-emerald-400/80 text-xs">
                   Awarded points for loyalty tier eligibility.
@@ -395,11 +408,14 @@ export default function TransactionDetailsPage() {
                       Expires On
                     </p>
                     <p className="font-bold text-emerald-800 dark:text-emerald-300 mt-0.5">
-                      {new Date(pointsEarned.expiresAt).toLocaleDateString(undefined, {
-                        year: 'numeric',
-                        month: 'long',
-                        day: 'numeric',
-                      })}
+                      {new Date(pointsEarned.expiresAt).toLocaleDateString(
+                        undefined,
+                        {
+                          year: 'numeric',
+                          month: 'long',
+                          day: 'numeric',
+                        },
+                      )}
                     </p>
                   </div>
                 </div>
@@ -415,7 +431,8 @@ export default function TransactionDetailsPage() {
               <div className="flex items-center justify-between">
                 <div>
                   <CardTitle className="text-sm font-bold text-foreground flex items-center gap-2">
-                    <Cpu className="w-4 h-4 text-indigo-500" /> Double-Entry Ledger
+                    <Cpu className="w-4 h-4 text-indigo-500" /> Double-Entry
+                    Ledger
                   </CardTitle>
                   <CardDescription className="text-xs text-muted-foreground mt-0.5">
                     Cryptographically integrity-verified debit & credit mapping
@@ -451,7 +468,7 @@ export default function TransactionDetailsPage() {
                             'rounded-md px-2 py-0.5 text-[9px] font-black uppercase border-none tracking-widest shadow-xs',
                             entry.entryType === LedgerEntryType.CREDIT
                               ? 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400'
-                              : 'bg-rose-500/10 text-rose-600 dark:text-rose-400'
+                              : 'bg-rose-500/10 text-rose-600 dark:text-rose-400',
                           )}
                         >
                           {entry.entryType}
@@ -482,15 +499,28 @@ export default function TransactionDetailsPage() {
               {ledgerEntries.length > 0 && (
                 <div className="p-4 bg-muted/30 border-t border-border space-y-3.5">
                   <div className="flex justify-between items-center text-xs font-semibold text-muted-foreground px-1">
-                    <span>Total Debits: <span className="font-mono text-foreground">{totalDebits.toFixed(4)}</span></span>
-                    <span>Total Credits: <span className="font-mono text-foreground">{totalCredits.toFixed(4)}</span></span>
+                    <span>
+                      Total Debits:{' '}
+                      <span className="font-mono text-foreground">
+                        {totalDebits.toFixed(4)}
+                      </span>
+                    </span>
+                    <span>
+                      Total Credits:{' '}
+                      <span className="font-mono text-foreground">
+                        {totalCredits.toFixed(4)}
+                      </span>
+                    </span>
                   </div>
                   <div className="flex items-center gap-2 p-3 bg-emerald-500/10 border border-emerald-500/20 rounded-xl shadow-xs">
                     <CheckCircle2 className="w-4 h-4 text-emerald-500 shrink-0" />
                     <div className="text-[10px]">
-                      <p className="font-bold text-emerald-800 dark:text-emerald-300 uppercase tracking-wider">Verified Balance Match</p>
+                      <p className="font-bold text-emerald-800 dark:text-emerald-300 uppercase tracking-wider">
+                        Verified Balance Match
+                      </p>
                       <p className="text-emerald-700/70 dark:text-emerald-400/70 font-semibold mt-0.5">
-                        Double-entry checksum verified (Debits sum equals Credits sum).
+                        Double-entry checksum verified (Debits sum equals
+                        Credits sum).
                       </p>
                     </div>
                   </div>

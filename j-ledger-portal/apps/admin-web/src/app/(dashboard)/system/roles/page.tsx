@@ -69,7 +69,7 @@ export default function RolesPage() {
         },
       });
       setRoles(response.data || []);
-      
+
       if (response.pagination) {
         setTotalPages(response.pagination.totalPages || 1);
         setTotalItems(response.pagination.total || 0);
@@ -310,7 +310,9 @@ export default function RolesPage() {
             <ShieldAlert className="w-6 h-6" />
           </div>
           <div>
-            <h4 className="font-bold text-indigo-900 dark:text-indigo-100">Security Note</h4>
+            <h4 className="font-bold text-indigo-900 dark:text-indigo-100">
+              Security Note
+            </h4>
             <p className="text-sm text-indigo-600/90 dark:text-indigo-400/90 leading-relaxed mt-1">
               System roles are core to the platform's stability and cannot be
               modified or deleted. If you need custom access levels, please

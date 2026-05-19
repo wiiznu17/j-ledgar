@@ -75,7 +75,9 @@ export default function TransactionsPage() {
   const userIdParam = searchParams.get('userId');
 
   // Drawer & Export States
-  const [selectedTransactionId, setSelectedTransactionId] = useState<string | null>(null);
+  const [selectedTransactionId, setSelectedTransactionId] = useState<
+    string | null
+  >(null);
   const [isDrawerOpen, setIsDrawerOpen] = useState(false);
 
   const exportToCSV = () => {
@@ -83,9 +85,17 @@ export default function TransactionsPage() {
       toast.error('No transactions to export.');
       return;
     }
-    
+
     // Create CSV content
-    const headers = ['No.', 'Reference ID', 'Type', 'Amount', 'Currency', 'Status', 'Created At'];
+    const headers = [
+      'No.',
+      'Reference ID',
+      'Type',
+      'Amount',
+      'Currency',
+      'Status',
+      'Created At',
+    ];
     const rows = transactions.map((txn, index) => [
       index + 1,
       String(txn.transactionId || txn.id).toUpperCase(),
@@ -93,20 +103,27 @@ export default function TransactionsPage() {
       txn.amount,
       txn.currency || 'THB',
       txn.status,
-      format(new Date(txn.createdAt), 'yyyy-MM-dd HH:mm:ss')
+      format(new Date(txn.createdAt), 'yyyy-MM-dd HH:mm:ss'),
     ]);
-    
+
     const csvContent = [
       headers.join(','),
-      ...rows.map(row => row.map(val => `"${String(val).replace(/"/g, '""')}"`).join(','))
+      ...rows.map((row) =>
+        row.map((val) => `"${String(val).replace(/"/g, '""')}"`).join(','),
+      ),
     ].join('\n');
-    
+
     // Create download link
-    const blob = new Blob([`\ufeff${csvContent}`], { type: 'text/csv;charset=utf-8;' });
+    const blob = new Blob([`\ufeff${csvContent}`], {
+      type: 'text/csv;charset=utf-8;',
+    });
     const url = URL.createObjectURL(blob);
     const link = document.createElement('a');
     link.setAttribute('href', url);
-    link.setAttribute('download', `transactions-export-${format(new Date(), 'yyyyMMdd-HHmmss')}.csv`);
+    link.setAttribute(
+      'download',
+      `transactions-export-${format(new Date(), 'yyyyMMdd-HHmmss')}.csv`,
+    );
     link.style.visibility = 'hidden';
     document.body.appendChild(link);
     link.click();
@@ -202,8 +219,12 @@ export default function TransactionsPage() {
       {/* Title Header with Export CSV Action */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <h1 className="text-xl font-bold text-foreground">Transaction Logs</h1>
-          <p className="text-xs text-muted-foreground">Monitor ledger movements and double-entry bookkeeping details.</p>
+          <h1 className="text-xl font-bold text-foreground">
+            Transaction Logs
+          </h1>
+          <p className="text-xs text-muted-foreground">
+            Monitor ledger movements and double-entry bookkeeping details.
+          </p>
         </div>
         <div className="flex items-center gap-3">
           <Button
@@ -392,12 +413,12 @@ export default function TransactionsPage() {
                       <div className="flex items-center gap-2.5">
                         <div
                           className={cn(
-                            "w-8 h-8 rounded-lg flex items-center justify-center",
+                            'w-8 h-8 rounded-lg flex items-center justify-center',
                             txn.transactionType === TransactionType.TOPUP
                               ? 'bg-emerald-500/10'
                               : txn.transactionType === TransactionType.WITHDRAW
                                 ? 'bg-rose-500/10'
-                                : 'bg-indigo-500/10'
+                                : 'bg-indigo-500/10',
                           )}
                         >
                           {getTransactionIcon(txn.transactionType)}
@@ -410,20 +431,24 @@ export default function TransactionsPage() {
                     <td className="px-6 py-5 text-right">
                       <p
                         className={cn(
-                          "text-sm font-black tabular-nums",
+                          'text-sm font-black tabular-nums',
                           txn.transactionType === TransactionType.TOPUP
                             ? 'text-emerald-600 dark:text-emerald-400'
-                            : txn.transactionType === TransactionType.WITHDRAW || txn.transactionType === TransactionType.PAYMENT
+                            : txn.transactionType ===
+                                  TransactionType.WITHDRAW ||
+                                txn.transactionType === TransactionType.PAYMENT
                               ? 'text-rose-600 dark:text-rose-400'
-                              : 'text-foreground'
+                              : 'text-foreground',
                         )}
                       >
                         {txn.transactionType === TransactionType.TOPUP
                           ? '+ '
-                          : txn.transactionType === TransactionType.WITHDRAW || txn.transactionType === TransactionType.PAYMENT
+                          : txn.transactionType === TransactionType.WITHDRAW ||
+                              txn.transactionType === TransactionType.PAYMENT
                             ? '- '
                             : ''}
-                        ฿{Number(txn.amount).toLocaleString(undefined, {
+                        ฿
+                        {Number(txn.amount).toLocaleString(undefined, {
                           minimumFractionDigits: 2,
                         })}
                       </p>

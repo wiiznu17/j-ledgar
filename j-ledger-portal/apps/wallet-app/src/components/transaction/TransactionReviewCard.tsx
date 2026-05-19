@@ -30,20 +30,20 @@ export const TransactionReviewCard: React.FC<TransactionReviewCardProps> = ({
   const totalAmount = amount + fee;
 
   return (
-    <View 
+    <View
       className="bg-white rounded-[2.5rem] p-7 border border-gray-100 relative overflow-hidden mb-6"
       style={{
         shadowColor: '#000',
         shadowOffset: { width: 0, height: 2 },
         shadowOpacity: 0.05,
         shadowRadius: 10,
-        elevation: 1
+        elevation: 1,
       }}
     >
       {/* Top Accent Bar */}
-      <View 
-        className="absolute top-0 left-0 right-0 h-2" 
-        style={{ backgroundColor: accentColor }} 
+      <View
+        className="absolute top-0 left-0 right-0 h-2"
+        style={{ backgroundColor: accentColor }}
       />
 
       {/* Amount Display Section */}
@@ -52,7 +52,9 @@ export const TransactionReviewCard: React.FC<TransactionReviewCardProps> = ({
           Payment Amount
         </Text>
         <View className="flex-row items-baseline w-full justify-center">
-          <Text className="text-2xl font-manrope font-black text-gray-400 mr-2">฿</Text>
+          <Text className="text-2xl font-manrope font-black text-gray-400 mr-2">
+            ฿
+          </Text>
           <Text
             numberOfLines={1}
             adjustsFontSizeToFit
@@ -67,7 +69,7 @@ export const TransactionReviewCard: React.FC<TransactionReviewCardProps> = ({
       </View>
 
       {/* From -> To Direction Section */}
-      <View 
+      <View
         className="rounded-[2rem] p-5 border border-gray-100/50 mb-8 relative"
         style={{ backgroundColor: 'rgba(249, 250, 251, 0.8)' }}
       >
@@ -90,11 +92,11 @@ export const TransactionReviewCard: React.FC<TransactionReviewCardProps> = ({
 
         {/* Recipient Information */}
         <View className="flex-row items-center relative z-10">
-          <View 
+          <View
             className="w-10 h-10 rounded-xl items-center justify-center border shadow-sm"
-            style={{ 
+            style={{
               backgroundColor: toType === 'merchant' ? '#fff1f2' : '#fdf2f8',
-              borderColor: toType === 'merchant' ? '#ffe4e6' : '#fce7f3'
+              borderColor: toType === 'merchant' ? '#ffe4e6' : '#fce7f3',
             }}
           >
             {toType === 'merchant' ? (
@@ -120,10 +122,10 @@ export const TransactionReviewCard: React.FC<TransactionReviewCardProps> = ({
       {/* Detailed Summary Section */}
       <View className="space-y-4">
         <SummaryRow label="Transaction Type" value={transactionType} />
-        <SummaryRow 
-          label="Transaction Fee" 
-          value={fee === 0 ? 'FREE' : `฿${fee.toFixed(2)}`} 
-          isHighlight={fee === 0} 
+        <SummaryRow
+          label="Transaction Fee"
+          value={fee === 0 ? 'FREE' : `฿${fee.toFixed(2)}`}
+          isHighlight={fee === 0}
         />
         {note ? <SummaryRow label="Note" value={note} /> : null}
 
@@ -132,11 +134,14 @@ export const TransactionReviewCard: React.FC<TransactionReviewCardProps> = ({
           <Text className="text-[10px] font-manrope font-black text-gray-400 uppercase tracking-widest">
             Total Payment
           </Text>
-          <Text 
+          <Text
             className="text-xl font-manrope font-black"
             style={{ color: accentColor }}
           >
-            ฿{totalAmount.toLocaleString(undefined, { minimumFractionDigits: 2 })}
+            ฿
+            {totalAmount.toLocaleString(undefined, {
+              minimumFractionDigits: 2,
+            })}
           </Text>
         </View>
       </View>

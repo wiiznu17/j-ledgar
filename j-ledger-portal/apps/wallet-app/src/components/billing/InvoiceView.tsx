@@ -1,6 +1,12 @@
 import React from 'react';
 import { View, Text } from 'react-native';
-import { CheckCircle2, ArrowDown, Store, User, CreditCard } from 'lucide-react-native';
+import {
+  CheckCircle2,
+  ArrowDown,
+  Store,
+  User,
+  CreditCard,
+} from 'lucide-react-native';
 import { format } from 'date-fns';
 
 interface InvoiceItem {
@@ -51,15 +57,20 @@ export const InvoiceView: React.FC<InvoiceViewProps> = ({ invoice }) => {
     return { location: 'Bangkok, Thailand', note: rawNote };
   };
 
-  const { location: dynamicLocation, note: cleanedNote } = extractLocationAndNote();
+  const { location: dynamicLocation, note: cleanedNote } =
+    extractLocationAndNote();
 
   // Determine transaction details dynamically to handle P2P, Top Up, and Merchant payments perfectly
   const getTransferDetails = () => {
     const sender = invoice.senderName || '';
     const firstItemName = invoice.items?.[0]?.name || '';
-    
-    const isTopUp = sender.toLowerCase().includes('top-up') || firstItemName.toLowerCase().includes('top-up');
-    const isP2P = sender.toLowerCase().includes('wallet') && firstItemName.toLowerCase().includes('p2p transfer');
+
+    const isTopUp =
+      sender.toLowerCase().includes('top-up') ||
+      firstItemName.toLowerCase().includes('top-up');
+    const isP2P =
+      sender.toLowerCase().includes('wallet') &&
+      firstItemName.toLowerCase().includes('p2p transfer');
 
     if (isTopUp) {
       return {
@@ -75,7 +86,8 @@ export const InvoiceView: React.FC<InvoiceViewProps> = ({ invoice }) => {
     }
 
     if (isP2P) {
-      const recipientName = firstItemName.replace('P2P Transfer to ', '').trim() || 'Recipient';
+      const recipientName =
+        firstItemName.replace('P2P Transfer to ', '').trim() || 'Recipient';
       return {
         type: 'TRANSFER',
         title: 'Transfer Successful',
@@ -139,7 +151,10 @@ export const InvoiceView: React.FC<InvoiceViewProps> = ({ invoice }) => {
             <Text className="text-[9px] font-manrope font-black text-gray-400 uppercase tracking-widest mb-0.5">
               Sender
             </Text>
-            <Text className="text-sm font-manrope font-black text-gray-800" numberOfLines={1}>
+            <Text
+              className="text-sm font-manrope font-black text-gray-800"
+              numberOfLines={1}
+            >
               {details.sourceName}
             </Text>
             <Text className="text-[10px] font-manrope font-bold text-gray-400">
@@ -157,7 +172,10 @@ export const InvoiceView: React.FC<InvoiceViewProps> = ({ invoice }) => {
             <Text className="text-[9px] font-manrope font-black text-gray-400 uppercase tracking-widest mb-0.5">
               Recipient
             </Text>
-            <Text className="text-sm font-manrope font-black text-gray-800" numberOfLines={1}>
+            <Text
+              className="text-sm font-manrope font-black text-gray-800"
+              numberOfLines={1}
+            >
               {details.destName}
             </Text>
             <Text className="text-[10px] font-manrope font-bold text-gray-400">
@@ -174,7 +192,9 @@ export const InvoiceView: React.FC<InvoiceViewProps> = ({ invoice }) => {
             Payment Method
           </Text>
           <Text className="text-xs font-manrope font-black text-gray-800">
-            {details.type === 'TOPUP' ? 'Linked Bank Account' : 'P-wallet Account'}
+            {details.type === 'TOPUP'
+              ? 'Linked Bank Account'
+              : 'P-wallet Account'}
           </Text>
         </View>
 
@@ -183,7 +203,11 @@ export const InvoiceView: React.FC<InvoiceViewProps> = ({ invoice }) => {
             Transaction Type
           </Text>
           <Text className="text-xs font-manrope font-black text-gray-800">
-            {details.type === 'TOPUP' ? 'Wallet Top-up' : details.type === 'TRANSFER' ? 'P2P Transfer' : 'Merchant Payment'}
+            {details.type === 'TOPUP'
+              ? 'Wallet Top-up'
+              : details.type === 'TRANSFER'
+                ? 'P2P Transfer'
+                : 'Merchant Payment'}
           </Text>
         </View>
 
@@ -191,8 +215,12 @@ export const InvoiceView: React.FC<InvoiceViewProps> = ({ invoice }) => {
           <Text className="text-[10px] font-manrope font-black text-gray-400 uppercase tracking-widest">
             Transaction ID
           </Text>
-          <Text className="text-xs font-manrope font-bold text-gray-800" numberOfLines={1}>
-            {invoice.referenceId || invoice.invoiceNumber.slice(-16).toUpperCase()}
+          <Text
+            className="text-xs font-manrope font-bold text-gray-800"
+            numberOfLines={1}
+          >
+            {invoice.referenceId ||
+              invoice.invoiceNumber.slice(-16).toUpperCase()}
           </Text>
         </View>
 
@@ -241,7 +269,11 @@ export const InvoiceView: React.FC<InvoiceViewProps> = ({ invoice }) => {
             Amount Paid
           </Text>
           <Text className="text-2xl font-manrope font-black text-[#f48fb1]">
-            {formatCurrency(details.type === 'PAYMENT' ? Number(invoice.total) : Number(invoice.amount))}
+            {formatCurrency(
+              details.type === 'PAYMENT'
+                ? Number(invoice.total)
+                : Number(invoice.amount),
+            )}
           </Text>
         </View>
       </View>
@@ -252,7 +284,8 @@ export const InvoiceView: React.FC<InvoiceViewProps> = ({ invoice }) => {
           Disclaimer
         </Text>
         <Text className="text-[9px] font-manrope font-bold text-gray-400 leading-relaxed">
-          Once completed successfully, this transaction is processed instantly and cannot be reversed or cancelled under any circumstances.
+          Once completed successfully, this transaction is processed instantly
+          and cannot be reversed or cancelled under any circumstances.
         </Text>
       </View>
     </View>

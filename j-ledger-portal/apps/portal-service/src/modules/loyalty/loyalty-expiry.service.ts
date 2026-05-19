@@ -18,7 +18,9 @@ export class LoyaltyExpiryService {
     this.logger.log('Starting daily loyalty points expiry check...');
     try {
       const result = await this.loyaltyService.processExpiries();
-      this.logger.log(`Loyalty points expiry check completed. Users processed: ${result.usersProcessed}, Total points expired: ${result.totalPointsExpired}`);
+      this.logger.log(
+        `Loyalty points expiry check completed. Users processed: ${result.usersProcessed}, Total points expired: ${result.totalPointsExpired}`,
+      );
     } catch (error) {
       this.logger.error('Error during loyalty points expiry check:', error);
     }

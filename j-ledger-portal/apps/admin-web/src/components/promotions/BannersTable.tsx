@@ -52,7 +52,9 @@ export function BannersTable({
             <TableHead className="text-foreground">Title</TableHead>
             <TableHead className="text-foreground">Action Path</TableHead>
             <TableHead className="text-foreground">Priority</TableHead>
-            <TableHead className="text-right text-foreground">Actions</TableHead>
+            <TableHead className="text-right text-foreground">
+              Actions
+            </TableHead>
           </TableRow>
         </TableHeader>
         <TableBody>
@@ -74,7 +76,9 @@ export function BannersTable({
                   />
                 </div>
               </TableCell>
-              <TableCell className="font-semibold text-foreground">{banner.title}</TableCell>
+              <TableCell className="font-semibold text-foreground">
+                {banner.title}
+              </TableCell>
               <TableCell>
                 <div className="flex items-center gap-2 text-xs font-mono text-muted-foreground">
                   <ExternalLink size={12} />

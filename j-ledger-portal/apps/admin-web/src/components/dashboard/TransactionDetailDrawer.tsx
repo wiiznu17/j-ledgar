@@ -15,15 +15,33 @@ import {
   ArrowRightLeft,
   Cpu,
   Check,
-  ExternalLink
+  ExternalLink,
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from '@/components/ui/card';
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from '@/components/ui/table';
 import { transactionRequester } from '@/lib/requesters';
-import { TransactionDetailsDto, TransactionStatus, LedgerEntryType, TransactionType } from '@repo/dto';
+import {
+  TransactionDetailsDto,
+  TransactionStatus,
+  LedgerEntryType,
+  TransactionType,
+} from '@repo/dto';
 import { cn } from '@/lib/utils';
 import { useRouter } from 'next/navigation';
 
@@ -36,7 +54,7 @@ interface TransactionDetailDrawerProps {
 export function TransactionDetailDrawer({
   transactionId,
   isOpen,
-  onClose
+  onClose,
 }: TransactionDetailDrawerProps) {
   const router = useRouter();
   const [data, setData] = useState<TransactionDetailsDto | null>(null);
@@ -117,7 +135,8 @@ export function TransactionDetailDrawer({
 
   const parsedMetadata = () => {
     if (!data?.transaction.metadata) return null;
-    if (typeof data.transaction.metadata === 'object') return data.transaction.metadata;
+    if (typeof data.transaction.metadata === 'object')
+      return data.transaction.metadata;
     try {
       return JSON.parse(data.transaction.metadata);
     } catch {
@@ -154,8 +173,12 @@ export function TransactionDetailDrawer({
           <div className="flex items-center gap-2">
             <Cpu className="w-5 h-5 text-indigo-500" />
             <div>
-              <h2 className="text-sm font-bold text-foreground">Ledger Entry Details</h2>
-              <p className="text-[10px] text-muted-foreground font-medium">Double-entry ledger journal node</p>
+              <h2 className="text-sm font-bold text-foreground">
+                Ledger Entry Details
+              </h2>
+              <p className="text-[10px] text-muted-foreground font-medium">
+                Double-entry ledger journal node
+              </p>
             </div>
           </div>
           <div className="flex items-center gap-1.5">
@@ -210,25 +233,36 @@ export function TransactionDetailDrawer({
                     </div>
                     <div className="flex items-baseline gap-1.5">
                       <span className="text-2xl font-black tracking-tight tabular-nums">
-                        {data.transaction.transactionType === TransactionType.TOPUP ? '+' : data.transaction.transactionType === TransactionType.WITHDRAW || data.transaction.transactionType === TransactionType.PAYMENT ? '-' : ''} ฿{data.transaction.amount.toLocaleString(undefined, {
+                        {data.transaction.transactionType ===
+                        TransactionType.TOPUP
+                          ? '+'
+                          : data.transaction.transactionType ===
+                                TransactionType.WITHDRAW ||
+                              data.transaction.transactionType ===
+                                TransactionType.PAYMENT
+                            ? '-'
+                            : ''}{' '}
+                        ฿
+                        {data.transaction.amount.toLocaleString(undefined, {
                           minimumFractionDigits: 2,
                         })}
                       </span>
                     </div>
                     {data.transaction.description && (
-                      <p className="text-xs font-medium text-slate-300">{data.transaction.description}</p>
+                      <p className="text-xs font-medium text-slate-300">
+                        {data.transaction.description}
+                      </p>
                     )}
                   </div>
-                  <div>
-                    {getStatusBadge(data.transaction.status)}
-                  </div>
+                  <div>{getStatusBadge(data.transaction.status)}</div>
                 </div>
               </div>
 
               {/* Metadata Panel */}
               <div className="space-y-4">
                 <h3 className="text-xs font-bold uppercase tracking-widest text-muted-foreground flex items-center gap-1.5">
-                  <Hash className="w-3.5 h-3.5 text-indigo-500" /> Transaction Metadata
+                  <Hash className="w-3.5 h-3.5 text-indigo-500" /> Transaction
+                  Metadata
                 </h3>
                 <div className="grid grid-cols-2 gap-4 bg-muted/20 p-4 rounded-xl border border-border/60">
                   <div className="col-span-2">
@@ -237,15 +271,28 @@ export function TransactionDetailDrawer({
                     </p>
                     <div className="flex items-center gap-2">
                       <span className="font-mono text-[10px] text-foreground bg-muted/80 px-2 py-1 rounded-md border border-border/50 flex-1 truncate select-all">
-                        {String(data.transaction.transactionId || data.transaction.id).toUpperCase()}
+                        {String(
+                          data.transaction.transactionId || data.transaction.id,
+                        ).toUpperCase()}
                       </span>
                       <Button
-                        onClick={() => handleCopyId(String(data.transaction.transactionId || data.transaction.id))}
+                        onClick={() =>
+                          handleCopyId(
+                            String(
+                              data.transaction.transactionId ||
+                                data.transaction.id,
+                            ),
+                          )
+                        }
                         variant="outline"
                         size="icon"
                         className="h-7 w-7 rounded-md border-border/60 hover:bg-muted text-muted-foreground hover:text-foreground shrink-0"
                       >
-                        {copiedId ? <Check className="w-3 h-3 text-emerald-500" /> : <Copy className="w-3 h-3" />}
+                        {copiedId ? (
+                          <Check className="w-3 h-3 text-emerald-500" />
+                        ) : (
+                          <Copy className="w-3 h-3" />
+                        )}
                       </Button>
                     </div>
                   </div>
@@ -261,12 +308,20 @@ export function TransactionDetailDrawer({
                           {String((data.transaction as any).referenceId)}
                         </span>
                         <Button
-                          onClick={() => handleCopyId(String((data.transaction as any).referenceId))}
+                          onClick={() =>
+                            handleCopyId(
+                              String((data.transaction as any).referenceId),
+                            )
+                          }
                           variant="outline"
                           size="icon"
                           className="h-7 w-7 rounded-md border-border/60 hover:bg-muted text-muted-foreground hover:text-foreground shrink-0"
                         >
-                          {copiedId ? <Check className="w-3 h-3 text-emerald-500" /> : <Copy className="w-3 h-3" />}
+                          {copiedId ? (
+                            <Check className="w-3 h-3 text-emerald-500" />
+                          ) : (
+                            <Copy className="w-3 h-3" />
+                          )}
                         </Button>
                       </div>
                     </div>
@@ -322,7 +377,8 @@ export function TransactionDetailDrawer({
               {/* Double-Entry Ledger */}
               <div className="space-y-3">
                 <h3 className="text-xs font-bold uppercase tracking-widest text-muted-foreground flex items-center gap-1.5">
-                  <Cpu className="w-3.5 h-3.5 text-indigo-500" /> Double-Entry Ledger journal
+                  <Cpu className="w-3.5 h-3.5 text-indigo-500" /> Double-Entry
+                  Ledger journal
                 </h3>
                 <div className="rounded-xl border border-border bg-card overflow-hidden">
                   <Table>
@@ -341,7 +397,10 @@ export function TransactionDetailDrawer({
                     </TableHeader>
                     <TableBody>
                       {data.ledgerEntries.map((entry) => (
-                        <TableRow key={entry.id} className="border-b border-border/40 hover:bg-muted/10 transition-colors">
+                        <TableRow
+                          key={entry.id}
+                          className="border-b border-border/40 hover:bg-muted/10 transition-colors"
+                        >
                           <TableCell className="pl-4 py-3">
                             <Badge
                               variant="outline"
@@ -349,7 +408,7 @@ export function TransactionDetailDrawer({
                                 'rounded-md px-1.5 py-0.5 text-[8px] font-black uppercase border-none tracking-widest shadow-xs',
                                 entry.entryType === LedgerEntryType.CREDIT
                                   ? 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400'
-                                  : 'bg-rose-500/10 text-rose-600 dark:text-rose-400'
+                                  : 'bg-rose-500/10 text-rose-600 dark:text-rose-400',
                               )}
                             >
                               {entry.entryType}
@@ -359,13 +418,19 @@ export function TransactionDetailDrawer({
                             {entry.account?.accountName || 'Unknown Account'}
                           </TableCell>
                           <TableCell className="pr-4 py-3 text-right font-mono text-xs font-bold text-foreground tabular-nums">
-                            ฿{entry.amount.toLocaleString(undefined, { minimumFractionDigits: 4 })}
+                            ฿
+                            {entry.amount.toLocaleString(undefined, {
+                              minimumFractionDigits: 4,
+                            })}
                           </TableCell>
                         </TableRow>
                       ))}
                       {data.ledgerEntries.length === 0 && (
                         <TableRow>
-                          <TableCell colSpan={3} className="py-8 text-center text-muted-foreground text-xs font-medium">
+                          <TableCell
+                            colSpan={3}
+                            className="py-8 text-center text-muted-foreground text-xs font-medium"
+                          >
                             No ledger entries recorded.
                           </TableCell>
                         </TableRow>
@@ -377,15 +442,34 @@ export function TransactionDetailDrawer({
                   {data.ledgerEntries.length > 0 && (
                     <div className="p-3 bg-muted/20 border-t border-border/60 space-y-2">
                       <div className="flex justify-between items-center text-[10px] font-bold text-muted-foreground px-1">
-                        <span>Debits: <span className="font-mono text-foreground">฿{totalDebits.toLocaleString(undefined, { minimumFractionDigits: 4 })}</span></span>
-                        <span>Credits: <span className="font-mono text-foreground">฿{totalCredits.toLocaleString(undefined, { minimumFractionDigits: 4 })}</span></span>
+                        <span>
+                          Debits:{' '}
+                          <span className="font-mono text-foreground">
+                            ฿
+                            {totalDebits.toLocaleString(undefined, {
+                              minimumFractionDigits: 4,
+                            })}
+                          </span>
+                        </span>
+                        <span>
+                          Credits:{' '}
+                          <span className="font-mono text-foreground">
+                            ฿
+                            {totalCredits.toLocaleString(undefined, {
+                              minimumFractionDigits: 4,
+                            })}
+                          </span>
+                        </span>
                       </div>
                       <div className="flex items-start gap-1.5 p-2 bg-emerald-500/5 border border-emerald-500/10 rounded-lg">
                         <CheckCircle2 className="w-3.5 h-3.5 text-emerald-500 shrink-0 mt-0.5" />
                         <div className="text-[9px]">
-                          <p className="font-bold text-emerald-800 dark:text-emerald-300 uppercase tracking-wider">Integrity Verified</p>
+                          <p className="font-bold text-emerald-800 dark:text-emerald-300 uppercase tracking-wider">
+                            Integrity Verified
+                          </p>
                           <p className="text-emerald-700/60 dark:text-emerald-400/60 font-semibold leading-relaxed">
-                            Double-entry balance checksum matches exactly (Debits = Credits).
+                            Double-entry balance checksum matches exactly
+                            (Debits = Credits).
                           </p>
                         </div>
                       </div>
@@ -402,7 +486,9 @@ export function TransactionDetailDrawer({
                       Raw DB Metadata Payload
                     </h3>
                     <Button
-                      onClick={() => handleCopyId(JSON.stringify(metadataObj, null, 2))}
+                      onClick={() =>
+                        handleCopyId(JSON.stringify(metadataObj, null, 2))
+                      }
                       variant="ghost"
                       size="icon"
                       className="h-6 w-6 rounded-md hover:bg-muted text-muted-foreground hover:text-foreground shrink-0"

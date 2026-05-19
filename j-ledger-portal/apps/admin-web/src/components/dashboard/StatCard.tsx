@@ -31,20 +31,22 @@ export function StatCard({
   // Determine trend background and text colors
   const isUp = trendType === 'up';
   const isDown = trendType === 'down';
-  const trendBg = isUp 
-    ? 'bg-emerald-500/10 dark:bg-emerald-500/20' 
-    : isDown 
-    ? 'bg-red-500/10 dark:bg-red-500/20' 
-    : 'bg-slate-500/10';
-  const trendTextColor = isUp 
-    ? 'text-emerald-600 dark:text-emerald-400 font-bold' 
-    : isDown 
-    ? 'text-red-600 dark:text-red-400 font-bold' 
-    : 'text-muted-foreground';
+  const trendBg = isUp
+    ? 'bg-emerald-500/10 dark:bg-emerald-500/20'
+    : isDown
+      ? 'bg-red-500/10 dark:bg-red-500/20'
+      : 'bg-slate-500/10';
+  const trendTextColor = isUp
+    ? 'text-emerald-600 dark:text-emerald-400 font-bold'
+    : isDown
+      ? 'text-red-600 dark:text-red-400 font-bold'
+      : 'text-muted-foreground';
 
   if (isLoading) {
     return (
-      <Card className={`border border-border/80 bg-card text-card-foreground shadow-xs rounded-xl ${className}`}>
+      <Card
+        className={`border border-border/80 bg-card text-card-foreground shadow-xs rounded-xl ${className}`}
+      >
         <CardContent className="p-4 py-3.5 flex items-start gap-4.5 h-full justify-between animate-pulse">
           <div className="flex items-center gap-3 w-full">
             <div className="w-9.5 h-9.5 rounded-full bg-muted shrink-0" />
@@ -64,14 +66,18 @@ export function StatCard({
   }
 
   return (
-    <Card className={`border border-border bg-card text-card-foreground shadow-xs rounded-xl hover:shadow-md transition-all duration-300 ${className}`}>
+    <Card
+      className={`border border-border bg-card text-card-foreground shadow-xs rounded-xl hover:shadow-md transition-all duration-300 ${className}`}
+    >
       <CardContent className="p-4 py-3.5 flex items-start gap-3.5 h-full justify-between">
         {/* Left side: Icon inside circular container */}
         <div className="flex items-center gap-3">
-          <div className={`p-2.5 rounded-full flex items-center justify-center bg-indigo-50/80 dark:bg-indigo-950/40 border border-indigo-100/50 dark:border-indigo-900/30 shrink-0 ${iconClassName}`}>
+          <div
+            className={`p-2.5 rounded-full flex items-center justify-center bg-indigo-50/80 dark:bg-indigo-950/40 border border-indigo-100/50 dark:border-indigo-900/30 shrink-0 ${iconClassName}`}
+          >
             <Icon className="h-4.5 w-4.5" />
           </div>
-          
+
           <div className="space-y-0.5">
             <span className="block text-[10px] font-bold text-muted-foreground tracking-wider uppercase flex items-center gap-1.5">
               {title}
@@ -93,7 +99,9 @@ export function StatCard({
         {/* Right side: Growth Trend Pills */}
         {trendText && (
           <div className="flex flex-col items-end gap-1 self-start pt-0.5">
-            <div className={`px-2 py-0.5 rounded-full text-[9px] ${trendBg} ${trendTextColor}`}>
+            <div
+              className={`px-2 py-0.5 rounded-full text-[9px] ${trendBg} ${trendTextColor}`}
+            >
               {trendText}
             </div>
             {trendSub && (

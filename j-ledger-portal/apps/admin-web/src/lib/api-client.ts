@@ -4,7 +4,11 @@ import axios, {
   AxiosRequestConfig,
   AxiosResponse,
 } from 'axios';
-import { API_BASE_URL, AUTH_COOKIE_NAME, PERMISSIONS_COOKIE_NAME } from './api-config';
+import {
+  API_BASE_URL,
+  AUTH_COOKIE_NAME,
+  PERMISSIONS_COOKIE_NAME,
+} from './api-config';
 
 /**
  * Type-safe API Client for J-Ledger Admin Web using Axios

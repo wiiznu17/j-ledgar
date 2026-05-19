@@ -24,7 +24,6 @@ import {
   Circle,
 } from 'lucide-react';
 
-
 function ResetPasswordForm() {
   const router = useRouter();
   const searchParams = useSearchParams();

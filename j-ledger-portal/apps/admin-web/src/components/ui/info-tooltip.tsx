@@ -22,10 +22,7 @@ export function InfoTooltip({ content, iconClassName }: InfoTooltipProps) {
         <TooltipTrigger asChild>
           <span className="inline-flex items-center cursor-pointer">
             <Info
-              className={cn(
-                'w-3.5 h-3.5 transition-colors',
-                iconClassName,
-              )}
+              className={cn('w-3.5 h-3.5 transition-colors', iconClassName)}
             />
           </span>
         </TooltipTrigger>

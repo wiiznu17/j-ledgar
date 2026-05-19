@@ -23,12 +23,12 @@ import { ChevronLeft, Info } from 'lucide-react-native';
 
 export default function TransferScreen() {
   const router = useRouter();
-  const params = useLocalSearchParams<{ 
-    merchantId?: string, 
-    paymentId?: string,
-    recipient?: string, 
-    amount?: string,
-    merchantName?: string 
+  const params = useLocalSearchParams<{
+    merchantId?: string;
+    paymentId?: string;
+    recipient?: string;
+    amount?: string;
+    merchantName?: string;
   }>();
 
   const [recipient, setRecipient] = React.useState<any>(null);
@@ -57,7 +57,12 @@ export default function TransferScreen() {
 
   // Auto-search when search is populated from params
   React.useEffect(() => {
-    if (params.recipient && search.replace(/\D/g, '').length >= 10 && !recipient && !isSubmitting) {
+    if (
+      params.recipient &&
+      search.replace(/\D/g, '').length >= 10 &&
+      !recipient &&
+      !isSubmitting
+    ) {
       handleSearch();
     }
   }, [search, params.recipient]);
@@ -105,10 +110,10 @@ export default function TransferScreen() {
 
   const handleSearch = async () => {
     if (search.replace(/\D/g, '').length < 10) return;
-    
+
     setIsSubmitting(true);
     setRecipientNotFound(false);
-    
+
     try {
       const res = await api.post('/integration/p2p/preview', {
         recipientPhone: search,
@@ -199,14 +204,17 @@ export default function TransferScreen() {
             >
               {params.merchantId || params.paymentId ? (
                 /* Unified Merchant Mode */
-                <TransactionRecipientCard 
+                <TransactionRecipientCard
                   name={merchant?.merchantName}
-                  subtitle={merchant?.category || (params.paymentId ? 'Payment Request' : 'Verified Business')}
+                  subtitle={
+                    merchant?.category ||
+                    (params.paymentId ? 'Payment Request' : 'Verified Business')
+                  }
                   type="merchant"
                 />
               ) : recipient ? (
                 /* Selected Person Mode */
-                <TransactionRecipientCard 
+                <TransactionRecipientCard
                   name={(recipient as any).displayName}
                   subtitle={(recipient as any).phoneMasked}
                   type="user"
@@ -217,7 +225,7 @@ export default function TransferScreen() {
                 />
               ) : (
                 /* Search Mode */
-                <TransactionSearchArea 
+                <TransactionSearchArea
                   value={search}
                   onChangeText={handleRecipientChange}
                   onSearch={handleSearch}
@@ -228,7 +236,7 @@ export default function TransferScreen() {
             </MotiView>
 
             {/* Amount Card */}
-            <TransactionAmountCard 
+            <TransactionAmountCard
               amount={amount}
               onAmountChange={setAmount}
               label="Total Amount to Send"
@@ -284,11 +292,16 @@ export default function TransferScreen() {
       </KeyboardAvoidingView>
 
       {/* Sticky Action Area */}
-      <StickyActionArea 
+      <StickyActionArea
         isVisible={true}
         label={isSubmitting ? 'Processing...' : 'Next Step'}
         onPress={handleNext}
-        disabled={isSubmitting || (!params.merchantId && !params.paymentId && !recipient) || !amount || parseFloat(amount) <= 0}
+        disabled={
+          isSubmitting ||
+          (!params.merchantId && !params.paymentId && !recipient) ||
+          !amount ||
+          parseFloat(amount) <= 0
+        }
         isLoading={isSubmitting}
       />
     </SafeAreaView>

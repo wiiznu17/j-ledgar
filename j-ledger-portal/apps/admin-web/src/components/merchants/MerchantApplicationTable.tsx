@@ -9,13 +9,7 @@ import {
   TableRow,
 } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
-import { 
-  CheckCircle, 
-  XCircle, 
-  Clock, 
-  User, 
-  Mail 
-} from 'lucide-react';
+import { CheckCircle, XCircle, Clock, User, Mail } from 'lucide-react';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useRouter } from 'next/navigation';
 
@@ -36,7 +30,10 @@ interface MerchantApplicationTableProps {
   loading: boolean;
 }
 
-export function MerchantApplicationTable({ applications, loading }: MerchantApplicationTableProps) {
+export function MerchantApplicationTable({
+  applications,
+  loading,
+}: MerchantApplicationTableProps) {
   const router = useRouter();
 
   const getStatusBadge = (status: string) => {
@@ -81,10 +78,18 @@ export function MerchantApplicationTable({ applications, loading }: MerchantAppl
     <Table>
       <TableHeader className="bg-slate-50/50">
         <TableRow className="hover:bg-transparent border-slate-100">
-          <TableHead className="text-slate-500 font-bold py-4">Business Information</TableHead>
-          <TableHead className="text-slate-500 font-bold py-4">Contact Person</TableHead>
-          <TableHead className="text-slate-500 font-bold py-4">Status</TableHead>
-          <TableHead className="text-slate-500 font-bold py-4">Submitted At</TableHead>
+          <TableHead className="text-slate-500 font-bold py-4">
+            Business Information
+          </TableHead>
+          <TableHead className="text-slate-500 font-bold py-4">
+            Contact Person
+          </TableHead>
+          <TableHead className="text-slate-500 font-bold py-4">
+            Status
+          </TableHead>
+          <TableHead className="text-slate-500 font-bold py-4">
+            Submitted At
+          </TableHead>
         </TableRow>
       </TableHeader>
       <TableBody>
@@ -102,9 +107,15 @@ export function MerchantApplicationTable({ applications, loading }: MerchantAppl
               onClick={() => router.push(`/support/merchants/${app.partnerId}`)}
             >
               <TableCell className="py-4">
-                <div className="font-semibold text-slate-800">{app.businessName}</div>
+                <div className="font-semibold text-slate-800">
+                  {app.businessName}
+                </div>
                 <div className="flex items-center gap-1.5 text-xs text-slate-400 mt-1">
-                  <Badge variant="outline" className="text-[10px] px-1.5 h-4 border-slate-200" onClick={(e) => e.stopPropagation()}>
+                  <Badge
+                    variant="outline"
+                    className="text-[10px] px-1.5 h-4 border-slate-200"
+                    onClick={(e) => e.stopPropagation()}
+                  >
                     {app.category}
                   </Badge>
                   <span className="font-mono">{app.id.substring(0, 8)}...</span>
@@ -122,11 +133,16 @@ export function MerchantApplicationTable({ applications, loading }: MerchantAppl
                   </div>
                 </div>
               </TableCell>
-              <TableCell className="py-4">{getStatusBadge(app.status)}</TableCell>
+              <TableCell className="py-4">
+                {getStatusBadge(app.status)}
+              </TableCell>
               <TableCell className="py-4 text-slate-500 text-sm">
                 {new Date(app.createdAt).toLocaleDateString()}
                 <div className="text-[10px] text-slate-400">
-                  {new Date(app.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                  {new Date(app.createdAt).toLocaleTimeString([], {
+                    hour: '2-digit',
+                    minute: '2-digit',
+                  })}
                 </div>
               </TableCell>
             </TableRow>

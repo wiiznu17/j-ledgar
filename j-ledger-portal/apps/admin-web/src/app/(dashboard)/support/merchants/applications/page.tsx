@@ -2,11 +2,11 @@
 
 import { useEffect, useState, useCallback } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
-import { 
-  ClipboardCheck, 
+import {
+  ClipboardCheck,
   ChevronRight,
   CheckCircle2,
-  AlertCircle
+  AlertCircle,
 } from 'lucide-react';
 import { toast } from 'sonner';
 import Link from 'next/link';
@@ -77,7 +77,10 @@ export default function ApplicationsPage() {
       <div className="flex flex-col gap-3">
         {/* Breadcrumbs */}
         <div className="flex items-center text-[10px] font-bold text-muted-foreground uppercase tracking-widest gap-2">
-          <Link href="/support/merchants" className="hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors">
+          <Link
+            href="/support/merchants"
+            className="hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors"
+          >
             Merchants
           </Link>
           <ChevronRight className="w-3 h-3" />
@@ -91,18 +94,29 @@ export default function ApplicationsPage() {
             <CheckCircle2 className="w-5 h-5 text-emerald-600 dark:text-emerald-400" />
           </div>
           <div>
-            <div className="text-xs font-bold text-emerald-700 dark:text-emerald-300 uppercase tracking-wider">Fast-Track Policy</div>
-            <div className="text-xs text-emerald-600/80 dark:text-emerald-400/80 mt-1">Applications with complete tax documents are prioritized for review.</div>
+            <div className="text-xs font-bold text-emerald-700 dark:text-emerald-300 uppercase tracking-wider">
+              Fast-Track Policy
+            </div>
+            <div className="text-xs text-emerald-600/80 dark:text-emerald-400/80 mt-1">
+              Applications with complete tax documents are prioritized for
+              review.
+            </div>
           </div>
         </div>
-        
+
         <div className="bg-amber-500/10 border border-amber-500/20 rounded-xl p-4 flex items-start gap-4 md:col-span-2">
           <div className="p-2 bg-amber-500/20 rounded-lg">
             <AlertCircle className="w-5 h-5 text-amber-600 dark:text-amber-400" />
           </div>
           <div>
-            <div className="text-xs font-bold text-amber-700 dark:text-amber-300 uppercase tracking-wider">Verification Notice</div>
-            <div className="text-xs text-amber-600/80 dark:text-amber-400/80 mt-1">Ensure the business name matches the tax registration before approving. Approval grants access to create terminals and accept payments.</div>
+            <div className="text-xs font-bold text-amber-700 dark:text-amber-300 uppercase tracking-wider">
+              Verification Notice
+            </div>
+            <div className="text-xs text-amber-600/80 dark:text-amber-400/80 mt-1">
+              Ensure the business name matches the tax registration before
+              approving. Approval grants access to create terminals and accept
+              payments.
+            </div>
           </div>
         </div>
       </div>
@@ -142,9 +156,9 @@ export default function ApplicationsPage() {
         </div>
 
         <CardContent className="p-0">
-          <MerchantApplicationTable 
-            applications={applications} 
-            loading={loading} 
+          <MerchantApplicationTable
+            applications={applications}
+            loading={loading}
           />
 
           <TablePagination

@@ -3,19 +3,26 @@
 import { useEffect, useState, useCallback } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { 
-  Store, 
-  History, 
-  Search, 
-  RotateCcw, 
-  Plus, 
-  ClipboardCheck, 
-  ClipboardList
+import {
+  Store,
+  History,
+  Search,
+  RotateCcw,
+  Plus,
+  ClipboardCheck,
+  ClipboardList,
 } from 'lucide-react';
 import { toast } from 'sonner';
 import Link from 'next/link';
 
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+  DialogFooter,
+} from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 
@@ -54,7 +61,7 @@ export default function MerchantsPage() {
         search: filters.search || undefined,
         status: filters.status !== 'ALL' ? filters.status : undefined,
       });
-      
+
       setPartners(response.data || []);
       setTotal(response.pagination?.total || 0);
       setTotalPages(response.pagination?.totalPages || 1);
@@ -96,12 +103,12 @@ export default function MerchantsPage() {
   const handleCreatePartner = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!createForm.name.trim()) return toast.error('Partner name is required');
-    
+
     setIsCreating(true);
     try {
-      await merchantRequester.createPartner({ 
-        name: createForm.name, 
-        taxId: createForm.taxId || undefined 
+      await merchantRequester.createPartner({
+        name: createForm.name,
+        taxId: createForm.taxId || undefined,
       });
       toast.success('Partner created successfully');
       setIsCreateModalOpen(false);
@@ -132,15 +139,17 @@ export default function MerchantsPage() {
 
         <div className="flex items-center gap-2">
           <Link href="/support/merchants/create">
-            <Button 
-              className="h-9 gap-1.5 bg-indigo-600 hover:bg-indigo-700 text-white shadow-xs text-xs font-bold"
-            >
+            <Button className="h-9 gap-1.5 bg-indigo-600 hover:bg-indigo-700 text-white shadow-xs text-xs font-bold">
               <Plus className="w-4 h-4" />
               Create Partner
             </Button>
           </Link>
           <Link href="/support/merchants/applications">
-            <Button variant="outline" size="sm" className="h-9 gap-1.5 border-border text-xs font-bold">
+            <Button
+              variant="outline"
+              size="sm"
+              className="h-9 gap-1.5 border-border text-xs font-bold"
+            >
               <ClipboardList className="w-4 h-4" />
               Approval Queue
             </Button>

@@ -132,7 +132,8 @@ export default function AMLPage() {
 
   const getRiskScoreColor = (score: number) => {
     if (score >= 75) return 'bg-rose-500/10 text-rose-600 dark:text-rose-400';
-    if (score >= 50) return 'bg-amber-500/10 text-amber-600 dark:text-amber-400';
+    if (score >= 50)
+      return 'bg-amber-500/10 text-amber-600 dark:text-amber-400';
     return 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400';
   };
 

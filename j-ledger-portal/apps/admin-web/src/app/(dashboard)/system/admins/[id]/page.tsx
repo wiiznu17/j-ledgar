@@ -23,7 +23,7 @@ import {
   RefreshCcw,
   Shield,
   Lock,
-  History
+  History,
 } from 'lucide-react';
 import { showConfirm, showSuccess, showError } from '@/lib/swal';
 import { AdminUser, AdminRole } from '@repo/dto';
@@ -197,7 +197,10 @@ export default function AdminDetailPage({
       <div className="flex flex-col gap-4 bg-card p-6 rounded-[2rem] border border-border shadow-xs">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <div className="flex items-center text-[10px] font-bold text-muted-foreground uppercase tracking-widest gap-2">
-            <Link href="/system/admins" className="hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors">
+            <Link
+              href="/system/admins"
+              className="hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors"
+            >
               Admins
             </Link>
             <ChevronRight className="w-3 h-3" />
@@ -231,7 +234,9 @@ export default function AdminDetailPage({
                 <h3 className="text-xl font-black text-foreground tracking-tight">
                   {admin.firstName} {admin.lastName}
                 </h3>
-                <p className="text-sm text-muted-foreground font-medium mt-0.5">{admin.email}</p>
+                <p className="text-sm text-muted-foreground font-medium mt-0.5">
+                  {admin.email}
+                </p>
               </div>
               <Badge
                 variant={
@@ -264,7 +269,9 @@ export default function AdminDetailPage({
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 pt-2">
               <div className="space-y-2">
                 <div className="flex items-center justify-between">
-                  <p className="text-[10px] font-black uppercase text-muted-foreground tracking-wider">System Role</p>
+                  <p className="text-[10px] font-black uppercase text-muted-foreground tracking-wider">
+                    System Role
+                  </p>
                   {!isEditingRole && admin.email !== 'admin@jledger.io' && (
                     <button
                       onClick={() => setIsEditingRole(true)}
@@ -337,19 +344,21 @@ export default function AdminDetailPage({
                       admin.role === AdminRole.SUPER_ADMIN
                         ? 'border-indigo-500/20 text-indigo-600 dark:text-indigo-400 bg-indigo-500/10 font-bold text-[10px] rounded-lg mt-0.5'
                         : admin.role === AdminRole.AUDITOR
-                        ? 'border-purple-500/20 text-purple-600 dark:text-purple-400 bg-purple-500/10 font-bold text-[10px] rounded-lg mt-0.5'
-                        : admin.role === AdminRole.COMPLIANCE_OFFICER
-                        ? 'border-amber-500/20 text-amber-600 dark:text-amber-400 bg-amber-500/10 font-bold text-[10px] rounded-lg mt-0.5'
-                        : 'border-sky-500/20 text-sky-600 dark:text-sky-400 bg-sky-500/10 font-bold text-[10px] rounded-lg mt-0.5'
+                          ? 'border-purple-500/20 text-purple-600 dark:text-purple-400 bg-purple-500/10 font-bold text-[10px] rounded-lg mt-0.5'
+                          : admin.role === AdminRole.COMPLIANCE_OFFICER
+                            ? 'border-amber-500/20 text-amber-600 dark:text-amber-400 bg-amber-500/10 font-bold text-[10px] rounded-lg mt-0.5'
+                            : 'border-sky-500/20 text-sky-600 dark:text-sky-400 bg-sky-500/10 font-bold text-[10px] rounded-lg mt-0.5'
                     }
                   >
                     {admin.role || 'N/A'}
                   </Badge>
                 )}
               </div>
-              
+
               <div>
-                <p className="text-[10px] font-black uppercase text-muted-foreground tracking-wider mb-2">Registration Date</p>
+                <p className="text-[10px] font-black uppercase text-muted-foreground tracking-wider mb-2">
+                  Registration Date
+                </p>
                 <p className="text-sm font-bold text-foreground mt-0.5">
                   {admin.createdAt
                     ? new Date(admin.createdAt).toLocaleString()

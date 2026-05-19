@@ -1,4 +1,12 @@
-import { IsString, IsNotEmpty, IsOptional, IsEmail, IsObject, ValidateNested, Matches } from 'class-validator';
+import {
+  IsString,
+  IsNotEmpty,
+  IsOptional,
+  IsEmail,
+  IsObject,
+  ValidateNested,
+  Matches,
+} from 'class-validator';
 import { Type } from 'class-transformer';
 
 // Thai characters, spaces, numbers, and common symbols like . ( ) / -
@@ -52,8 +60,9 @@ export class PartnerProfileDto {
 export class CreatePartnerDto {
   @IsString()
   @IsNotEmpty({ message: 'Corporate name (Thai) is required' })
-  @Matches(THAI_NAME_REGEX, { 
-    message: 'Corporate name must contain only Thai characters, numbers, and valid symbols' 
+  @Matches(THAI_NAME_REGEX, {
+    message:
+      'Corporate name must contain only Thai characters, numbers, and valid symbols',
   })
   name: string;
 
@@ -72,8 +81,9 @@ export class CreatePartnerDto {
 export class UpdatePartnerDto {
   @IsString()
   @IsOptional()
-  @Matches(THAI_NAME_REGEX, { 
-    message: 'Corporate name must contain only Thai characters, numbers, and valid symbols' 
+  @Matches(THAI_NAME_REGEX, {
+    message:
+      'Corporate name must contain only Thai characters, numbers, and valid symbols',
   })
   name?: string;
 

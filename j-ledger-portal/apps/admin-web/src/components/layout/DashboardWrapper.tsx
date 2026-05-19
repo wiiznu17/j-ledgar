@@ -41,9 +41,7 @@ export function DashboardWrapper({
           onMobileClose={() => setIsMobileOpen(false)}
         />
 
-        <div
-          className="flex-1 flex flex-col min-w-0 h-full transition-all duration-300 ease-in-out"
-        >
+        <div className="flex-1 flex flex-col min-w-0 h-full transition-all duration-300 ease-in-out">
           <Topbar
             onLogout={logout}
             onToggleMobile={() => setIsMobileOpen(!isMobileOpen)}

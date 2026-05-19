@@ -264,9 +264,7 @@ export default function OnboardingScreen() {
         setStep(OnboardingStepUI.SUCCESS);
         break;
       case RegistrationState.COMPLETED:
-        console.log(
-          '[Onboarding] Flow completed, showing success step',
-        );
+        console.log('[Onboarding] Flow completed, showing success step');
         setStep(OnboardingStepUI.SUCCESS);
         break;
       default:
@@ -663,10 +661,10 @@ export default function OnboardingScreen() {
         },
       );
 
-      // DO NOT update auth store yet to prevent RootLayout from redirecting 
+      // DO NOT update auth store yet to prevent RootLayout from redirecting
       // before the user sees the Success animation.
       completionResultRef.current = completeRes.data;
-      
+
       setStep(OnboardingStepUI.SUCCESS);
     } catch (err: any) {
       console.error(
@@ -930,7 +928,9 @@ export default function OnboardingScreen() {
                     if (result?.accessToken && result?.refreshToken) {
                       console.log('[Onboarding] Finalizing login session...');
                       const { useAuthStore } = await import('@/store/auth');
-                      await useAuthStore.getState().setToken(result.accessToken, result.refreshToken);
+                      await useAuthStore
+                        .getState()
+                        .setToken(result.accessToken, result.refreshToken);
                       if (result.user) {
                         useAuthStore.getState().setUser(result.user);
                       }
@@ -940,7 +940,10 @@ export default function OnboardingScreen() {
                     // Proactively redirect to provide smoother UX
                     router.replace('/(auth)/pending-approval');
                   } catch (err) {
-                    console.error('[Onboarding] Error during final redirect:', err);
+                    console.error(
+                      '[Onboarding] Error during final redirect:',
+                      err,
+                    );
                   }
                 }}
               />

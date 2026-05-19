@@ -113,14 +113,20 @@ export default function ScanScreen() {
         NotificationService.qrInvalid(errorMessage);
 
         Alert.alert('Invalid QR Code', errorMessage, [
-          { text: 'Try Again', onPress: () => setTimeout(() => setScanned(false), 300) },
+          {
+            text: 'Try Again',
+            onPress: () => setTimeout(() => setScanned(false), 300),
+          },
         ]);
       }
     } catch (error) {
       console.error('[Scan] Unexpected error:', error);
       setIsProcessing(false);
       Alert.alert('Error', 'An unexpected error occurred. Please try again.', [
-        { text: 'Try Again', onPress: () => setTimeout(() => setScanned(false), 300) },
+        {
+          text: 'Try Again',
+          onPress: () => setTimeout(() => setScanned(false), 300),
+        },
       ]);
     }
   };
@@ -145,7 +151,10 @@ export default function ScanScreen() {
               processQRResult(scanResults[0].data);
             } else {
               setIsProcessing(false);
-              Alert.alert('No QR Code Found', 'No QR code was detected in the selected image.');
+              Alert.alert(
+                'No QR Code Found',
+                'No QR code was detected in the selected image.',
+              );
             }
           }
         } catch (error) {
@@ -172,15 +181,20 @@ export default function ScanScreen() {
         <View className="w-24 h-24 bg-pink-50 rounded-full items-center justify-center mb-6">
           <QrCode size={40} color="#f48fb1" />
         </View>
-        <Text className="text-gray-800 text-center text-2xl font-manrope font-black mb-3">Camera Access</Text>
+        <Text className="text-gray-800 text-center text-2xl font-manrope font-black mb-3">
+          Camera Access
+        </Text>
         <Text className="text-gray-500 text-center text-sm font-manrope font-bold mb-10 leading-relaxed">
-          We need access to your camera to scan QR codes for lightning-fast payments.
+          We need access to your camera to scan QR codes for lightning-fast
+          payments.
         </Text>
         <TouchableOpacity
           onPress={requestPermission}
           className="w-full bg-[#f48fb1] h-16 rounded-2xl items-center justify-center shadow-lg active:scale-95"
         >
-          <Text className="text-white font-manrope font-black text-base">Grant Permission</Text>
+          <Text className="text-white font-manrope font-black text-base">
+            Grant Permission
+          </Text>
         </TouchableOpacity>
       </View>
     );
@@ -192,7 +206,11 @@ export default function ScanScreen() {
         style={StyleSheet.absoluteFillObject}
         facing="back"
         enableTorch={torch}
-        onBarcodeScanned={(!isFocused || scanned || isProcessing) ? undefined : handleBarCodeScanned}
+        onBarcodeScanned={
+          !isFocused || scanned || isProcessing
+            ? undefined
+            : handleBarCodeScanned
+        }
         barcodeScannerSettings={{ barcodeTypes: ['qr'] }}
       />
 

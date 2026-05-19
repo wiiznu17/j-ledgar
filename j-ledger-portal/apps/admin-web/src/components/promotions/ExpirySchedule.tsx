@@ -39,7 +39,9 @@ export function ExpirySchedule({ data }: ExpiryScheduleProps) {
     return (
       <Card className="border-none shadow-xs bg-card text-card-foreground">
         <CardHeader>
-          <CardTitle className="text-lg text-foreground">Points Expiry Schedule</CardTitle>
+          <CardTitle className="text-lg text-foreground">
+            Points Expiry Schedule
+          </CardTitle>
           <CardDescription className="text-muted-foreground">
             Estimated points that will expire at the end of each month
           </CardDescription>
@@ -56,7 +58,9 @@ export function ExpirySchedule({ data }: ExpiryScheduleProps) {
   return (
     <Card className="border-none shadow-xs bg-card text-card-foreground">
       <CardHeader>
-        <CardTitle className="text-lg text-foreground">Points Expiry Schedule</CardTitle>
+        <CardTitle className="text-lg text-foreground">
+          Points Expiry Schedule
+        </CardTitle>
         <CardDescription className="text-muted-foreground">
           Estimated points that will expire at the end of each month
         </CardDescription>
@@ -68,7 +72,11 @@ export function ExpirySchedule({ data }: ExpiryScheduleProps) {
               data={data}
               margin={{ top: 20, right: 30, left: 0, bottom: 0 }}
             >
-              <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="hsl(var(--border))" />
+              <CartesianGrid
+                strokeDasharray="3 3"
+                vertical={false}
+                stroke="hsl(var(--border))"
+              />
               <XAxis
                 dataKey="period"
                 stroke="hsl(var(--muted-foreground))"
@@ -94,11 +102,17 @@ export function ExpirySchedule({ data }: ExpiryScheduleProps) {
                 }}
                 labelStyle={{ color: 'hsl(var(--muted-foreground))' }}
                 itemStyle={{ color: 'hsl(var(--foreground))' }}
-                formatter={(value: any) => [`${Number(value || 0).toLocaleString()} Points`, 'Expiring']}
+                formatter={(value: any) => [
+                  `${Number(value || 0).toLocaleString()} Points`,
+                  'Expiring',
+                ]}
               />
               <Bar dataKey="amount" radius={[6, 6, 0, 0]} barSize={40}>
                 {data.map((entry, index) => (
-                  <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                  <Cell
+                    key={`cell-${index}`}
+                    fill={COLORS[index % COLORS.length]}
+                  />
                 ))}
               </Bar>
             </BarChart>

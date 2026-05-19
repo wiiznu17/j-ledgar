@@ -82,7 +82,9 @@ export default function UserActivityPage() {
           page: String(page),
           limit: String(limit),
           ...(appliedFilters.userId ? { userId: appliedFilters.userId } : {}),
-          ...(appliedFilters.eventType !== 'ALL' ? { eventType: appliedFilters.eventType } : {}),
+          ...(appliedFilters.eventType !== 'ALL'
+            ? { eventType: appliedFilters.eventType }
+            : {}),
         },
       });
 
@@ -100,7 +102,8 @@ export default function UserActivityPage() {
 
       setLogs(logsArray);
 
-      const pagination = resAny?.pagination || (responseData as any)?.pagination;
+      const pagination =
+        resAny?.pagination || (responseData as any)?.pagination;
       setTotalPages(pagination?.totalPages || 1);
       setTotal(pagination?.total || 0);
     } catch (error) {
@@ -170,7 +173,8 @@ export default function UserActivityPage() {
             <span className="text-muted-foreground font-medium">
               Failed Logins:{' '}
               <strong className="text-foreground">
-                {logsList.filter((l) => l.eventType === 'LOGIN_FAILURE').length}+
+                {logsList.filter((l) => l.eventType === 'LOGIN_FAILURE').length}
+                +
               </strong>
             </span>
           </div>
@@ -179,7 +183,8 @@ export default function UserActivityPage() {
             <span className="text-muted-foreground font-medium">
               Successful Logins:{' '}
               <strong className="text-foreground">
-                {logsList.filter((l) => l.eventType === 'LOGIN_SUCCESS').length}+
+                {logsList.filter((l) => l.eventType === 'LOGIN_SUCCESS').length}
+                +
               </strong>
             </span>
           </div>
@@ -188,7 +193,10 @@ export default function UserActivityPage() {
             <span className="text-muted-foreground font-medium">
               Device Changes:{' '}
               <strong className="text-foreground">
-                {logsList.filter((l) => l.eventType === 'DEVICE_REGISTERED').length}
+                {
+                  logsList.filter((l) => l.eventType === 'DEVICE_REGISTERED')
+                    .length
+                }
                 +
               </strong>
             </span>
@@ -207,7 +215,9 @@ export default function UserActivityPage() {
               label="Wallet User Identifier"
               placeholder="ID, Email, or Phone..."
               value={userId}
-              onChange={(e: React.ChangeEvent<HTMLInputElement>) => setUserId(e.target.value)}
+              onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
+                setUserId(e.target.value)
+              }
               className="md:col-span-2"
             />
 

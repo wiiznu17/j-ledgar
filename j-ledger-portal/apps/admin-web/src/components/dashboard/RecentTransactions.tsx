@@ -41,9 +41,13 @@ export function RecentTransactions({ className }: { className?: string }) {
 
   if (loading) {
     return (
-      <Card className={`border border-border/80 shadow-md shadow-slate-200/40 dark:shadow-none hover:shadow-lg transition-all duration-300 rounded-xl bg-card text-card-foreground ${className}`}>
+      <Card
+        className={`border border-border/80 shadow-md shadow-slate-200/40 dark:shadow-none hover:shadow-lg transition-all duration-300 rounded-xl bg-card text-card-foreground ${className}`}
+      >
         <CardHeader className="py-4 border-b border-border/80">
-          <CardTitle className="text-sm font-bold">Recent Transactions</CardTitle>
+          <CardTitle className="text-sm font-bold">
+            Recent Transactions
+          </CardTitle>
         </CardHeader>
         <CardContent className="p-4">
           <div className="space-y-4">
@@ -57,7 +61,9 @@ export function RecentTransactions({ className }: { className?: string }) {
   }
 
   return (
-    <Card className={`border border-border/80 shadow-md shadow-slate-200/40 dark:shadow-none hover:shadow-lg transition-all duration-300 rounded-xl overflow-hidden flex flex-col bg-card text-card-foreground ${className}`}>
+    <Card
+      className={`border border-border/80 shadow-md shadow-slate-200/40 dark:shadow-none hover:shadow-lg transition-all duration-300 rounded-xl overflow-hidden flex flex-col bg-card text-card-foreground ${className}`}
+    >
       <CardHeader className="py-4 border-b border-border/80 flex flex-row items-center justify-between space-y-0">
         <CardTitle className="text-sm font-bold text-foreground">
           Recent Transactions
@@ -69,7 +75,7 @@ export function RecentTransactions({ className }: { className?: string }) {
           View all
         </Link>
       </CardHeader>
-      
+
       <CardContent className="p-0 flex-1 overflow-x-auto">
         <Table>
           <TableHeader className="bg-slate-50/50 dark:bg-slate-900/30 border-b border-border/80">
@@ -95,23 +101,30 @@ export function RecentTransactions({ className }: { className?: string }) {
               <TableHead className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground py-3.5">
                 Channel
               </TableHead>
-              <TableHead className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground pr-6 py-3.5 w-10">
-              </TableHead>
+              <TableHead className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground pr-6 py-3.5 w-10"></TableHead>
             </TableRow>
           </TableHeader>
-          
+
           <TableBody>
             {transactions.length > 0 ? (
               transactions.map((tx) => {
                 // Formatting values for high fidelity representation matching mockup
-                const formattedTime = format(new Date(tx.createdAt), 'MMM dd, yyyy HH:mm');
-                
+                const formattedTime = format(
+                  new Date(tx.createdAt),
+                  'MMM dd, yyyy HH:mm',
+                );
+
                 // Truncate Transaction ID
                 const txIdStr = tx.id.toString();
-                const txnId = txIdStr.length > 18 ? `${txIdStr.substring(0, 14)}...` : txIdStr;
-                
+                const txnId =
+                  txIdStr.length > 18
+                    ? `${txIdStr.substring(0, 14)}...`
+                    : txIdStr;
+
                 // Map User Fallback
-                const username = tx.senderId ? `user_${tx.senderId.substring(0, 3)}` : 'user_001';
+                const username = tx.senderId
+                  ? `user_${tx.senderId.substring(0, 3)}`
+                  : 'user_001';
 
                 // Map transaction status dynamically with beautiful UI badges
                 const status = (tx.status || 'SUCCESS').toUpperCase();
@@ -138,14 +151,17 @@ export function RecentTransactions({ className }: { className?: string }) {
                 const rawType = tx.transactionType || 'TRANSFER';
                 let displayType = 'Transfer';
                 let channel = 'Mobile App';
-                
+
                 if (rawType === TransactionType.TOPUP) {
                   displayType = 'Top Up';
                   channel = 'Web Portal';
                 } else if (rawType === TransactionType.PAYMENT) {
                   displayType = 'Payment';
                   channel = 'Mobile App';
-                } else if (rawType === TransactionType.WITHDRAW || (rawType as string) === 'WITHDRAWAL') {
+                } else if (
+                  rawType === TransactionType.WITHDRAW ||
+                  (rawType as string) === 'WITHDRAWAL'
+                ) {
                   displayType = 'Withdrawal';
                   channel = 'Web Portal';
                 }
@@ -168,11 +184,13 @@ export function RecentTransactions({ className }: { className?: string }) {
                       {displayType}
                     </TableCell>
                     <TableCell className="py-3.5 text-xs font-black text-foreground whitespace-nowrap">
-                      ฿{Number(tx.amount || 0).toLocaleString('th-TH', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                      ฿
+                      {Number(tx.amount || 0).toLocaleString('th-TH', {
+                        minimumFractionDigits: 2,
+                        maximumFractionDigits: 2,
+                      })}
                     </TableCell>
-                    <TableCell className="py-3.5">
-                      {statusBadge}
-                    </TableCell>
+                    <TableCell className="py-3.5">{statusBadge}</TableCell>
                     <TableCell className="py-3.5 text-xs font-semibold text-muted-foreground whitespace-nowrap">
                       {channel}
                     </TableCell>

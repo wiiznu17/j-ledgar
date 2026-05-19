@@ -1,4 +1,13 @@
-import { Controller, Post, Get, Put, UseGuards, Query, Param, Body } from '@nestjs/common';
+import {
+  Controller,
+  Post,
+  Get,
+  Put,
+  UseGuards,
+  Query,
+  Param,
+  Body,
+} from '@nestjs/common';
 import { AdminJwtGuard } from '../guards/admin-jwt.guard';
 import { AdminRolesGuard } from '../guards/admin-roles.guard';
 import { AdminPermissionsGuard } from '../guards/admin-permissions.guard';
@@ -25,7 +34,11 @@ export class AdminSystemController {
 
   @Put('settings')
   @RequirePermissions(Permission.MANAGE_SYSTEM_SETTINGS)
-  @AuditLog(null as any, ResourceType.SYSTEM_SETTINGS, 'Updated system settings')
+  @AuditLog(
+    null as any,
+    ResourceType.SYSTEM_SETTINGS,
+    'Updated system settings',
+  )
   async updateSettings(@Body() body: any) {
     return this.financeService.updateSystemSettings(body);
   }
@@ -38,7 +51,11 @@ export class AdminSystemController {
 
   @Put('fees')
   @RequirePermissions(Permission.MANAGE_SYSTEM_SETTINGS)
-  @AuditLog(null as any, ResourceType.SYSTEM_SETTINGS, 'Updated fee configuration')
+  @AuditLog(
+    null as any,
+    ResourceType.SYSTEM_SETTINGS,
+    'Updated fee configuration',
+  )
   async updateFees(@Body() body: any) {
     return this.financeService.updateFeeConfiguration(body);
   }
@@ -54,7 +71,7 @@ export class AdminSystemController {
     const pageNum = Number(page) || 1;
     const limitNum = Number(limit) || 10;
     const skipPage = Math.max(0, pageNum - 1);
-    
+
     const response = await this.reportingService.getOutbox({
       status,
       eventType,
@@ -62,9 +79,10 @@ export class AdminSystemController {
       limit: limitNum,
     });
 
-    const content = Array.isArray(response) ? response : (response.content || []);
+    const content = Array.isArray(response) ? response : response.content || [];
     const totalElements = response.totalElements || content.length;
-    const totalPages = response.totalPages || Math.ceil(totalElements / limitNum) || 1;
+    const totalPages =
+      response.totalPages || Math.ceil(totalElements / limitNum) || 1;
 
     return {
       data: content,
@@ -79,7 +97,11 @@ export class AdminSystemController {
 
   @Post('outbox/:id/retry')
   @RequirePermissions(Permission.RETRY_SYSTEM_OUTBOX)
-  @AuditLog(null as any, ResourceType.SYSTEM_OUTBOX, 'Retried outbox event delivery')
+  @AuditLog(
+    null as any,
+    ResourceType.SYSTEM_OUTBOX,
+    'Retried outbox event delivery',
+  )
   async retryOutbox(@Param('id') id: string) {
     return this.reportingService.retryOutbox(id);
   }

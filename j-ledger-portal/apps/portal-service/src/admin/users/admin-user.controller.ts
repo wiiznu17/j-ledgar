@@ -124,8 +124,6 @@ export class AdminUserController {
     return this.identityService.activateUser(id);
   }
 
-
-
   @Post(':id/suspend')
   @RequirePermissions(Permission.FREEZE_USERS)
   @AuditLog(null as any, ResourceType.USER, 'Suspended user account')

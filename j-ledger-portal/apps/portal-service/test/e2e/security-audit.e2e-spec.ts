@@ -59,13 +59,13 @@ describe('Phase E: Security & Observability Audit', () => {
 
   beforeEach(async () => {
     await dbHelper.clearDatabase();
-    
+
     // Seed initial data
     const partner = await prisma.partner.create({
-      data: { name: 'Audit Partner', userId: testUserId, status: 'ACTIVE' }
+      data: { name: 'Audit Partner', userId: testUserId, status: 'ACTIVE' },
     });
     const merchant = await prisma.merchant.create({
-      data: { partnerId: partner.id, name: 'Audit Merchant', isActive: true }
+      data: { partnerId: partner.id, name: 'Audit Merchant', isActive: true },
     });
     merchantId = merchant.id;
 
@@ -77,7 +77,7 @@ describe('Phase E: Security & Observability Audit', () => {
         name: 'Existing Term',
         secretKey: 'sk_test_SHOULD_NOT_LEAK_123',
         status: 'ACTIVE' as any,
-      }
+      },
     });
 
     // Write a mock audit log since actual audit middleware might be skipped in e2e depending on setup
@@ -87,8 +87,8 @@ describe('Phase E: Security & Observability Audit', () => {
         resourceType: 'MERCHANT',
         userId: testAdminId,
         requestPayload: { merchantId: merchant.id },
-        ipAddress: '127.0.0.1'
-      }
+        ipAddress: '127.0.0.1',
+      },
     });
   });
 
@@ -105,11 +105,13 @@ describe('Phase E: Security & Observability Audit', () => {
       expect(res.status).toBe(200);
       expect(Array.isArray(res.body)).toBe(true);
       expect(res.body.length).toBeGreaterThan(0);
-      
+
       // Ensure the secret key is stripped from the response
       res.body.forEach((terminal: any) => {
         expect(terminal.secretKey).toBeUndefined();
-        expect(JSON.stringify(terminal)).not.toContain('sk_test_SHOULD_NOT_LEAK_123');
+        expect(JSON.stringify(terminal)).not.toContain(
+          'sk_test_SHOULD_NOT_LEAK_123',
+        );
       });
     });
 
@@ -119,11 +121,13 @@ describe('Phase E: Security & Observability Audit', () => {
         .set('Authorization', 'Bearer mock-admin-token');
 
       expect(res.status).toBe(200);
-      
+
       // Ensure the secret key is stripped
       res.body.forEach((terminal: any) => {
         expect(terminal.secretKey).toBeUndefined();
-        expect(JSON.stringify(terminal)).not.toContain('sk_test_SHOULD_NOT_LEAK_123');
+        expect(JSON.stringify(terminal)).not.toContain(
+          'sk_test_SHOULD_NOT_LEAK_123',
+        );
       });
     });
   });
@@ -131,9 +135,9 @@ describe('Phase E: Security & Observability Audit', () => {
   describe('Observability & Audit Logs', () => {
     it('should have recorded the merchant approval action in the database', async () => {
       const logs = await prisma.auditLog.findMany({
-        where: { action: 'MERCHANT_APPROVED' }
+        where: { action: 'MERCHANT_APPROVED' },
       });
-      
+
       expect(logs).toBeDefined();
       expect(logs.length).toBeGreaterThan(0);
       expect(logs[0].userId).toBe(testAdminId);

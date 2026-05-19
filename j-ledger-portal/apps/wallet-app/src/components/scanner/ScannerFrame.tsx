@@ -8,7 +8,10 @@ interface ScannerFrameProps {
   isProcessing: boolean;
 }
 
-export const ScannerFrame: React.FC<ScannerFrameProps> = ({ size, isProcessing }) => {
+export const ScannerFrame: React.FC<ScannerFrameProps> = ({
+  size,
+  isProcessing,
+}) => {
   return (
     <View
       style={{

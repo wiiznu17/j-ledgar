@@ -34,7 +34,9 @@ export default function TreasuryHealthChart({
     <Card className="border border-border/80 shadow-md shadow-slate-200/40 dark:shadow-none hover:shadow-lg hover:border-emerald-500/20 transition-all duration-300 rounded-xl h-full flex flex-col justify-between overflow-hidden bg-card">
       <CardHeader className="flex flex-row items-center justify-between pb-2 space-y-0">
         <div className="flex items-center gap-2">
-          <CardTitle className="text-sm font-semibold text-foreground">Treasury Health</CardTitle>
+          <CardTitle className="text-sm font-semibold text-foreground">
+            Treasury Health
+          </CardTitle>
           <InfoTooltip
             content="คะแนนสุขภาพทางการเงินของระบบ คำนวณจากอัตราส่วนสำรอง (Reserve Ratio) และสถานะเงินรอโอน"
             iconClassName="text-muted-foreground hover:text-foreground"
@@ -67,14 +69,18 @@ export default function TreasuryHealthChart({
                 </Pie>
               </PieChart>
             </ResponsiveContainer>
-            
+
             {/* Center Text inside gauge */}
             <div className="absolute top-[50%] flex flex-col items-center justify-center">
               <span className="text-3xl font-extrabold text-foreground tracking-tight">
                 {healthScore}%
               </span>
               <span className="text-xs font-semibold text-emerald-500 tracking-wide mt-0.5">
-                {healthScore >= 80 ? 'Healthy' : healthScore >= 50 ? 'Warning' : 'Critical'}
+                {healthScore >= 80
+                  ? 'Healthy'
+                  : healthScore >= 50
+                    ? 'Warning'
+                    : 'Critical'}
               </span>
             </div>
           </div>
@@ -113,7 +119,9 @@ export default function TreasuryHealthChart({
             <span className="block text-sm font-bold text-foreground">
               {settlementPending}
             </span>
-            <span className={`block text-[10px] font-bold ${settlementPending > 15 ? 'text-amber-500' : 'text-emerald-500'}`}>
+            <span
+              className={`block text-[10px] font-bold ${settlementPending > 15 ? 'text-amber-500' : 'text-emerald-500'}`}
+            >
               {settlementPending > 15 ? 'High' : 'Low'}
             </span>
           </div>

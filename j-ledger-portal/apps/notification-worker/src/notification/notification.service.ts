@@ -25,7 +25,7 @@ export class NotificationService {
     );
     try {
       let { userId, eventType, referenceId, metadata, status } = payload;
-      
+
       // Ensure metadata is an object if it arrives as a string
       if (typeof metadata === 'string') {
         try {
@@ -35,7 +35,9 @@ export class NotificationService {
         }
       }
 
-      this.logger.debug(`[HandleEvent] metadata=${JSON.stringify(metadata || {})}`);
+      this.logger.debug(
+        `[HandleEvent] metadata=${JSON.stringify(metadata || {})}`,
+      );
 
       if (metadata?.silent === true || metadata?.silent === 'true') {
         this.logger.debug(`Silent notification for user ${userId}, skipping.`);
@@ -72,7 +74,12 @@ export class NotificationService {
       }
 
       const title = await this.generateTitle(topic, actualEventType, metadata);
-      const body = await this.generateBody(topic, actualEventType, metadata, payload.amount);
+      const body = await this.generateBody(
+        topic,
+        actualEventType,
+        metadata,
+        payload.amount,
+      );
       const { category, path } = this.getCategoryAndPath(
         actualEventType,
         metadata,
@@ -105,7 +112,10 @@ export class NotificationService {
       let pushSuccess = false;
 
       // Push Strategy
-      if (isSecurityEvent || (prefs?.pushEnabled !== false && metadata?.silent !== true)) {
+      if (
+        isSecurityEvent ||
+        (prefs?.pushEnabled !== false && metadata?.silent !== true)
+      ) {
         if (devices.length > 0) {
           pushAttempted = true;
           for (const device of devices) {
@@ -199,9 +209,10 @@ export class NotificationService {
     topic: string,
     eventType: string,
     metadata: any,
-    topLevelAmount?: number | string
+    topLevelAmount?: number | string,
   ): Promise<string> {
-    const displayAmount = metadata?.totalAmount || metadata?.amount || topLevelAmount || 0;
+    const displayAmount =
+      metadata?.totalAmount || metadata?.amount || topLevelAmount || 0;
     const amount = Number(displayAmount).toLocaleString(undefined, {
       minimumFractionDigits: 2,
       maximumFractionDigits: 2,
@@ -257,13 +268,13 @@ export class NotificationService {
 
           const sender = senderName || 'a J-Ledger user';
           if (metadata?.isMerchantPayment) {
-             return `You have received a payment of ฿${amount} from ${sender}.${refText}`;
+            return `You have received a payment of ฿${amount} from ${sender}.${refText}`;
           }
           return `You have received ฿${amount} from ${sender}.${refText}`;
         } else {
           const recipient =
             metadata?.recipientName || metadata?.recipientPhone || 'Recipient';
-          
+
           if (metadata?.isMerchantPayment) {
             return `Payment of ฿${amount} to ${recipient} was successful.${refText}`;
           }

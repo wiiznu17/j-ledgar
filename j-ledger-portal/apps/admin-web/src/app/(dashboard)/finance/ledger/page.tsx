@@ -102,17 +102,19 @@ export default function InternalLedgerPage() {
 
   const getAccountIcon = (userId: string) => {
     if (userId === '00000000-0000-0000-0000-000000000000')
-      return <Landmark className="w-5 h-5 text-indigo-600 dark:text-indigo-400" />;
+      return (
+        <Landmark className="w-5 h-5 text-indigo-600 dark:text-indigo-400" />
+      );
     if (userId.includes('reward'))
-      return <TrendingUp className="w-5 h-5 text-emerald-600 dark:text-emerald-400" />;
+      return (
+        <TrendingUp className="w-5 h-5 text-emerald-600 dark:text-emerald-400" />
+      );
     return <Database className="w-5 h-5 text-muted-foreground" />;
   };
 
   return (
     <div className="space-y-6 pb-10 text-foreground">
-
       <Card className="border-none shadow-xs overflow-hidden bg-card text-card-foreground">
-
         {/* Filter Toolbar */}
         <div className="p-4 bg-card border-b border-border">
           <form
@@ -199,8 +201,9 @@ export default function InternalLedgerPage() {
                           </div>
                           <div className="flex flex-col">
                             <span className="text-sm font-bold text-foreground leading-tight">
-                              {account.userId === '00000000-0000-0000-0000-000000000000' 
-                                ? 'Master Treasury' 
+                              {account.userId ===
+                              '00000000-0000-0000-0000-000000000000'
+                                ? 'Master Treasury'
                                 : account.accountName || 'Internal Account'}
                             </span>
                             <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-tight">

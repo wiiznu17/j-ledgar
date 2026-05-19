@@ -44,6 +44,8 @@ export const dashboardRequester = {
     if (query?.to) params.append('to', query.to);
     const suffix = params.toString() ? `?${params.toString()}` : '';
 
-    return apiClient.get<DashboardStats>(`${API_PATHS.ADMIN.DASHBOARD.STATS}${suffix}`);
+    return apiClient.get<DashboardStats>(
+      `${API_PATHS.ADMIN.DASHBOARD.STATS}${suffix}`,
+    );
   },
 };

@@ -10,14 +10,14 @@ import {
 } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { 
-  Smartphone, 
-  Circle, 
-  Settings, 
-  RotateCcw, 
-  Trash2, 
+import {
+  Smartphone,
+  Circle,
+  Settings,
+  RotateCcw,
+  Trash2,
   Plus,
-  Loader2
+  Loader2,
 } from 'lucide-react';
 import { Skeleton } from '@/components/ui/skeleton';
 
@@ -44,7 +44,14 @@ interface TerminalTableProps {
   isSME?: boolean;
 }
 
-export function TerminalTable({ merchants, loading, onCreateTerminal, onRotateSecret, isRotating, isSME }: TerminalTableProps) {
+export function TerminalTable({
+  merchants,
+  loading,
+  onCreateTerminal,
+  onRotateSecret,
+  isRotating,
+  isSME,
+}: TerminalTableProps) {
   if (loading) {
     return (
       <div className="p-4 space-y-3">
@@ -60,7 +67,9 @@ export function TerminalTable({ merchants, loading, onCreateTerminal, onRotateSe
       {merchants.length === 0 ? (
         <div className="h-64 flex flex-col items-center justify-center text-slate-400 bg-slate-50 rounded-[2rem] border border-dashed border-slate-200">
           <Smartphone className="w-10 h-10 mb-2 opacity-20" />
-          <p className="text-sm font-medium">No merchant branches found for this partner.</p>
+          <p className="text-sm font-medium">
+            No merchant branches found for this partner.
+          </p>
         </div>
       ) : (
         merchants.map((merchant) => (
@@ -71,18 +80,27 @@ export function TerminalTable({ merchants, loading, onCreateTerminal, onRotateSe
                   {isSME ? (
                     <Smartphone className="w-5 h-5" />
                   ) : (
-                    <Plus className="w-5 h-5 cursor-pointer hover:scale-110 transition-transform" onClick={() => onCreateTerminal(merchant.id, merchant.name)} />
+                    <Plus
+                      className="w-5 h-5 cursor-pointer hover:scale-110 transition-transform"
+                      onClick={() =>
+                        onCreateTerminal(merchant.id, merchant.name)
+                      }
+                    />
                   )}
                 </div>
                 <div>
-                  <h4 className="text-sm font-black text-slate-900 uppercase tracking-tight">{merchant.name}</h4>
-                  <p className="text-[10px] text-slate-500 font-bold uppercase tracking-widest">Branch ID: {merchant.id.substring(0, 8)}</p>
+                  <h4 className="text-sm font-black text-slate-900 uppercase tracking-tight">
+                    {merchant.name}
+                  </h4>
+                  <p className="text-[10px] text-slate-500 font-bold uppercase tracking-widest">
+                    Branch ID: {merchant.id.substring(0, 8)}
+                  </p>
                 </div>
               </div>
               {!isSME && (
-                <Button 
-                  variant="outline" 
-                  size="sm" 
+                <Button
+                  variant="outline"
+                  size="sm"
                   className="h-8 rounded-lg border-slate-200 text-slate-600 font-bold text-[10px] uppercase tracking-wider"
                   onClick={() => onCreateTerminal(merchant.id, merchant.name)}
                 >
@@ -96,26 +114,44 @@ export function TerminalTable({ merchants, loading, onCreateTerminal, onRotateSe
               <Table>
                 <TableHeader className="bg-slate-50/50">
                   <TableRow className="hover:bg-transparent border-slate-100">
-                    <TableHead className="text-slate-400 font-black text-[10px] uppercase tracking-widest py-4 pl-6">Terminal Node</TableHead>
-                    <TableHead className="text-slate-400 font-black text-[10px] uppercase tracking-widest py-4">Hardware ID</TableHead>
-                    <TableHead className="text-slate-400 font-black text-[10px] uppercase tracking-widest py-4">Status</TableHead>
-                    <TableHead className="text-slate-400 font-black text-[10px] uppercase tracking-widest py-4">Provisioned</TableHead>
+                    <TableHead className="text-slate-400 font-black text-[10px] uppercase tracking-widest py-4 pl-6">
+                      Terminal Node
+                    </TableHead>
+                    <TableHead className="text-slate-400 font-black text-[10px] uppercase tracking-widest py-4">
+                      Hardware ID
+                    </TableHead>
+                    <TableHead className="text-slate-400 font-black text-[10px] uppercase tracking-widest py-4">
+                      Status
+                    </TableHead>
+                    <TableHead className="text-slate-400 font-black text-[10px] uppercase tracking-widest py-4">
+                      Provisioned
+                    </TableHead>
                     <TableHead className="text-right py-4 pr-6"></TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
                   {merchant.terminals.length === 0 ? (
                     <TableRow>
-                      <TableCell colSpan={5} className="h-24 text-center text-slate-400 text-xs italic">
+                      <TableCell
+                        colSpan={5}
+                        className="h-24 text-center text-slate-400 text-xs italic"
+                      >
                         No active terminals configured for this branch.
                       </TableCell>
                     </TableRow>
                   ) : (
                     merchant.terminals.map((terminal) => (
-                      <TableRow key={terminal.id} className="hover:bg-slate-50/30 border-slate-50 transition-colors">
+                      <TableRow
+                        key={terminal.id}
+                        className="hover:bg-slate-50/30 border-slate-50 transition-colors"
+                      >
                         <TableCell className="py-4 pl-6">
-                          <div className="font-bold text-slate-800 text-sm">{terminal.name || 'Unnamed Terminal'}</div>
-                          <div className="text-[10px] text-slate-400 font-mono mt-0.5">{terminal.id}</div>
+                          <div className="font-bold text-slate-800 text-sm">
+                            {terminal.name || 'Unnamed Terminal'}
+                          </div>
+                          <div className="text-[10px] text-slate-400 font-mono mt-0.5">
+                            {terminal.id}
+                          </div>
                         </TableCell>
                         <TableCell className="py-4">
                           <code className="text-[10px] font-black bg-slate-100 text-slate-600 px-2 py-0.5 rounded-md uppercase tracking-tight">
@@ -123,8 +159,12 @@ export function TerminalTable({ merchants, loading, onCreateTerminal, onRotateSe
                           </code>
                         </TableCell>
                         <TableCell className="py-4">
-                          <Badge className={`rounded-lg px-2 py-0.5 text-[10px] font-black uppercase tracking-wider border-none flex items-center gap-1.5 w-fit ${terminal.status === 'ACTIVE' ? 'bg-emerald-50 text-emerald-600' : 'bg-rose-50 text-rose-600'}`}>
-                            <Circle className={`w-2 h-2 fill-current ${terminal.status === 'ACTIVE' ? 'animate-pulse' : ''}`} />
+                          <Badge
+                            className={`rounded-lg px-2 py-0.5 text-[10px] font-black uppercase tracking-wider border-none flex items-center gap-1.5 w-fit ${terminal.status === 'ACTIVE' ? 'bg-emerald-50 text-emerald-600' : 'bg-rose-50 text-rose-600'}`}
+                          >
+                            <Circle
+                              className={`w-2 h-2 fill-current ${terminal.status === 'ACTIVE' ? 'animate-pulse' : ''}`}
+                            />
                             {terminal.status}
                           </Badge>
                         </TableCell>
@@ -133,17 +173,25 @@ export function TerminalTable({ merchants, loading, onCreateTerminal, onRotateSe
                         </TableCell>
                         <TableCell className="py-4 text-right pr-6">
                           <div className="flex justify-end gap-1">
-                            <Button 
-                                variant="ghost" 
-                                size="sm" 
-                                title="Rotate Secret Key"
-                                onClick={() => onRotateSecret?.(terminal.id)}
-                                disabled={isRotating}
-                                className="h-8 w-8 p-0 text-slate-300 hover:text-indigo-600 hover:bg-indigo-50 rounded-lg transition-all"
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              title="Rotate Secret Key"
+                              onClick={() => onRotateSecret?.(terminal.id)}
+                              disabled={isRotating}
+                              className="h-8 w-8 p-0 text-slate-300 hover:text-indigo-600 hover:bg-indigo-50 rounded-lg transition-all"
                             >
-                              {isRotating ? <Loader2 className="h-4 w-4 animate-spin" /> : <RotateCcw className="h-4 w-4" />}
+                              {isRotating ? (
+                                <Loader2 className="h-4 w-4 animate-spin" />
+                              ) : (
+                                <RotateCcw className="h-4 w-4" />
+                              )}
                             </Button>
-                            <Button variant="ghost" size="sm" className="h-8 w-8 p-0 text-slate-300 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition-all">
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              className="h-8 w-8 p-0 text-slate-300 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition-all"
+                            >
                               <Trash2 className="h-4 w-4" />
                             </Button>
                           </div>

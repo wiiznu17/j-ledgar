@@ -153,7 +153,8 @@ export default function UsersPage() {
           <div className="flex items-center gap-2">
             <div className="w-2 h-2 rounded-full bg-emerald-500" />
             <span className="text-muted-foreground font-medium">
-              Active: <strong className="text-foreground">{stats.active}</strong>
+              Active:{' '}
+              <strong className="text-foreground">{stats.active}</strong>
             </span>
           </div>
           <div className="flex items-center gap-2">

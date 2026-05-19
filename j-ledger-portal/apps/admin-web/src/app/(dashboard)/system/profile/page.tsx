@@ -83,7 +83,6 @@ export default function ProfilePage() {
 
   return (
     <div className="space-y-6 pb-10">
-
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 items-stretch">
         {/* Left Column: Profile Card */}
         <div className="lg:col-span-1 flex flex-col gap-6">
@@ -98,7 +97,9 @@ export default function ProfilePage() {
               <h2 className="text-xl font-bold text-foreground leading-tight">
                 {admin?.firstName} {admin?.lastName}
               </h2>
-              <p className="text-sm text-muted-foreground mb-4">{admin?.email}</p>
+              <p className="text-sm text-muted-foreground mb-4">
+                {admin?.email}
+              </p>
               <Badge
                 variant="outline"
                 className="bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 border-indigo-500/20 font-bold text-xs px-3 py-1 self-center"

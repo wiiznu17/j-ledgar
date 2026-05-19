@@ -89,7 +89,9 @@ export const PINVerification: React.FC<PINVerificationProps> = ({
       setIsVerifying(false);
       setPin('');
 
-      const serverMessage = error.response?.data?.message || 'An error occurred during PIN verification';
+      const serverMessage =
+        error.response?.data?.message ||
+        'An error occurred during PIN verification';
       const status = error.response?.status;
 
       if (status === 403) {

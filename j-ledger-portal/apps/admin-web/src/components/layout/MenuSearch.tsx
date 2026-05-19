@@ -46,7 +46,8 @@ const searchItems: SearchItem[] = [
     name: 'Dashboard',
     category: 'Overview',
     href: '/dashboard',
-    description: 'System overview, VAT settlements, and real-time financial stats.',
+    description:
+      'System overview, VAT settlements, and real-time financial stats.',
     icon: LayoutDashboard,
   },
   {
@@ -70,7 +71,8 @@ const searchItems: SearchItem[] = [
     name: 'Customer Wallets',
     category: 'Finance & Accounting',
     href: '/finance/wallets',
-    description: 'Check wallet balances, daily/monthly limits, and freeze status.',
+    description:
+      'Check wallet balances, daily/monthly limits, and freeze status.',
     icon: Wallet,
     requiredPermission: Permission.VIEW_USERS,
   },
@@ -78,7 +80,8 @@ const searchItems: SearchItem[] = [
     name: 'Internal Ledger',
     category: 'Finance & Accounting',
     href: '/finance/ledger',
-    description: 'View double-entry accounts ledger logs and credit/debit records.',
+    description:
+      'View double-entry accounts ledger logs and credit/debit records.',
     icon: Landmark,
     requiredPermission: Permission.VIEW_LEDGER_ENTRIES,
   },
@@ -86,7 +89,8 @@ const searchItems: SearchItem[] = [
     name: 'Reconciliation',
     category: 'Finance & Accounting',
     href: '/finance/reconcile',
-    description: 'Match asset/liability entries and download reconciliation reports.',
+    description:
+      'Match asset/liability entries and download reconciliation reports.',
     icon: ShieldCheck,
     requiredPermission: Permission.RUN_RECONCILIATION,
   },
@@ -96,7 +100,8 @@ const searchItems: SearchItem[] = [
     name: 'KYC Verification',
     category: 'Risk & Compliance',
     href: '/risk/kyc',
-    description: 'Verify user registration data, ID cards, and address details.',
+    description:
+      'Verify user registration data, ID cards, and address details.',
     icon: ShieldCheck,
     requiredPermission: Permission.VIEW_USERS,
   },
@@ -139,7 +144,8 @@ const searchItems: SearchItem[] = [
     name: 'Deal Settings',
     category: 'Promotions',
     href: '/promotions/settings',
-    description: 'Adjust global validation limits and promotional capping parameters.',
+    description:
+      'Adjust global validation limits and promotional capping parameters.',
     icon: Settings,
     requiredPermission: Permission.VIEW_DEALS,
   },
@@ -147,7 +153,8 @@ const searchItems: SearchItem[] = [
     name: 'Loyalty Program Rules',
     category: 'Promotions',
     href: '/promotions/loyalty',
-    description: 'Set rules for point multiplier coefficients and point expiration times.',
+    description:
+      'Set rules for point multiplier coefficients and point expiration times.',
     icon: Coins,
     requiredPermission: Permission.VIEW_LOYALTY,
   },
@@ -157,7 +164,8 @@ const searchItems: SearchItem[] = [
     name: 'Users Lookup',
     category: 'Support & Operations',
     href: '/support/users',
-    description: 'Search customer information, profile status, and transaction histories.',
+    description:
+      'Search customer information, profile status, and transaction histories.',
     icon: Users,
     requiredPermission: Permission.VIEW_USERS,
   },
@@ -165,7 +173,8 @@ const searchItems: SearchItem[] = [
     name: 'Merchant Partners',
     category: 'Support & Operations',
     href: '/support/merchants',
-    description: 'Manage terminal assignments and partner application requests.',
+    description:
+      'Manage terminal assignments and partner application requests.',
     icon: Store,
     requiredPermission: Permission.VIEW_MERCHANTS,
   },
@@ -173,7 +182,8 @@ const searchItems: SearchItem[] = [
     name: 'User Activity (Audit Logs)',
     category: 'Support & Operations',
     href: '/support/user-activity',
-    description: 'Inspect staff action history, parameter updates, and system logs.',
+    description:
+      'Inspect staff action history, parameter updates, and system logs.',
     icon: History,
     requiredPermission: Permission.VIEW_AUDIT_LOGS,
   },
@@ -183,7 +193,8 @@ const searchItems: SearchItem[] = [
     name: 'System Platform Settings',
     category: 'System & Security',
     href: '/system/settings',
-    description: 'Edit global commission fees, merchant MDR, and platform limits.',
+    description:
+      'Edit global commission fees, merchant MDR, and platform limits.',
     icon: Settings,
     requiredPermission: Permission.VIEW_SYSTEM_SETTINGS,
   },
@@ -199,7 +210,8 @@ const searchItems: SearchItem[] = [
     name: 'Roles & Permissions',
     category: 'System & Security',
     href: '/system/roles',
-    description: 'Create security groups and configure functional role access tables.',
+    description:
+      'Create security groups and configure functional role access tables.',
     icon: Database,
     requiredPermission: Permission.MANAGE_SYSTEM_ROLES,
   },
@@ -207,7 +219,8 @@ const searchItems: SearchItem[] = [
     name: 'System Outbox Message Queue',
     category: 'System & Security',
     href: '/system/outbox',
-    description: 'Check Kafka outbox database records and queue delivery failures.',
+    description:
+      'Check Kafka outbox database records and queue delivery failures.',
     icon: Send,
     requiredPermission: Permission.VIEW_SYSTEM_OUTBOX,
   },
@@ -233,7 +246,8 @@ const searchItems: SearchItem[] = [
     name: 'View Merchant Applications',
     category: 'Quick Actions',
     href: '/support/merchants/applications',
-    description: 'Evaluate business submissions from potential merchant partners.',
+    description:
+      'Evaluate business submissions from potential merchant partners.',
     icon: ClipboardList,
     requiredPermission: Permission.VIEW_MERCHANTS,
   },
@@ -243,7 +257,8 @@ const searchItems: SearchItem[] = [
     name: 'My Profile',
     category: 'Account Settings',
     href: '/system/profile',
-    description: 'Review your credentials, operational role, and personal settings.',
+    description:
+      'Review your credentials, operational role, and personal settings.',
     icon: User,
   },
 ];
@@ -307,7 +322,9 @@ export function MenuSearch() {
       setSelectedIndex((prev) => (prev + 1) % filtered.length);
     } else if (e.key === 'ArrowUp') {
       e.preventDefault();
-      setSelectedIndex((prev) => (prev - 1 + filtered.length) % filtered.length);
+      setSelectedIndex(
+        (prev) => (prev - 1 + filtered.length) % filtered.length,
+      );
     } else if (e.key === 'Enter') {
       e.preventDefault();
       if (filtered[selectedIndex]) {
@@ -338,8 +355,12 @@ export function MenuSearch() {
         className="hidden lg:flex items-center bg-slate-50 dark:bg-slate-900 border border-border/80 rounded-xl px-3 py-1.5 gap-2 w-64 text-muted-foreground/80 hover:border-muted-foreground/30 hover:bg-muted/30 transition-all shadow-2xs hover:shadow-xs group cursor-pointer text-left focus:outline-hidden"
       >
         <Search className="w-4 h-4 text-muted-foreground/75 group-hover:text-foreground transition-colors" />
-        <span className="text-xs font-semibold flex-1">Search menus & pages...</span>
-        <kbd className="text-[9px] font-bold bg-background dark:bg-muted/80 border border-border px-1.5 py-0.5 rounded shadow-2xs text-muted-foreground/60 select-none group-hover:bg-muted transition-colors">⌘K</kbd>
+        <span className="text-xs font-semibold flex-1">
+          Search menus & pages...
+        </span>
+        <kbd className="text-[9px] font-bold bg-background dark:bg-muted/80 border border-border px-1.5 py-0.5 rounded shadow-2xs text-muted-foreground/60 select-none group-hover:bg-muted transition-colors">
+          ⌘K
+        </kbd>
       </button>
 
       {/* Mobile/Tablet Search Trigger Button */}
@@ -368,7 +389,9 @@ export function MenuSearch() {
               className="flex-1 bg-transparent border-0 outline-hidden text-sm placeholder:text-muted-foreground/60 focus:ring-0 text-foreground"
               autoFocus
             />
-            <kbd className="text-[10px] font-bold bg-slate-100 dark:bg-slate-800 text-muted-foreground border border-border px-1.5 py-0.5 rounded select-none">ESC</kbd>
+            <kbd className="text-[10px] font-bold bg-slate-100 dark:bg-slate-800 text-muted-foreground border border-border px-1.5 py-0.5 rounded select-none">
+              ESC
+            </kbd>
           </div>
 
           {/* Search Results */}
@@ -415,7 +438,9 @@ export function MenuSearch() {
                           <span
                             className={cn(
                               'text-xs font-bold leading-none',
-                              isSelected ? 'text-indigo-700 dark:text-indigo-300' : 'text-foreground',
+                              isSelected
+                                ? 'text-indigo-700 dark:text-indigo-300'
+                                : 'text-foreground',
                             )}
                           >
                             {item.name}
@@ -445,7 +470,9 @@ export function MenuSearch() {
               })
             ) : (
               <div className="py-12 px-4 text-center select-none animate-in fade-in duration-300">
-                <p className="text-sm font-bold text-muted-foreground">No menu items found</p>
+                <p className="text-sm font-bold text-muted-foreground">
+                  No menu items found
+                </p>
                 <p className="text-[11px] text-muted-foreground/60 mt-1">
                   Try checking your spelling or typing another keyword.
                 </p>

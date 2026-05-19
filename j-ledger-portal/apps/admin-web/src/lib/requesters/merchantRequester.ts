@@ -3,7 +3,12 @@ import { apiClient } from '../api-client';
 
 export const merchantRequester = {
   // Partner Management
-  getPartners: async (params: { page?: number; limit?: number; search?: string; status?: string }) => {
+  getPartners: async (params: {
+    page?: number;
+    limit?: number;
+    search?: string;
+    status?: string;
+  }) => {
     return apiClient.get<any>(API_PATHS.ADMIN.MERCHANT.PARTNERS, { params });
   },
 
@@ -11,8 +16,8 @@ export const merchantRequester = {
     return apiClient.get<any>(API_PATHS.ADMIN.MERCHANT.PARTNER_DETAIL(id));
   },
 
-  createPartner: async (data: { 
-    name: string; 
+  createPartner: async (data: {
+    name: string;
     taxId?: string;
     profile?: {
       businessNameEn?: string;
@@ -24,29 +29,49 @@ export const merchantRequester = {
       addressDetail?: string;
       website?: string;
       logoUrl?: string;
-    }
+    };
   }) => {
     return apiClient.post<any>(API_PATHS.ADMIN.MERCHANT.PARTNERS, data);
   },
 
   updatePartner: async (id: string, data: any) => {
-    return apiClient.put<any>(API_PATHS.ADMIN.MERCHANT.PARTNER_DETAIL(id), data);
+    return apiClient.put<any>(
+      API_PATHS.ADMIN.MERCHANT.PARTNER_DETAIL(id),
+      data,
+    );
   },
 
   updatePartnerStatus: async (id: string, status: boolean) => {
-    return apiClient.put<void>(API_PATHS.ADMIN.MERCHANT.PARTNER_STATUS(id), { status });
+    return apiClient.put<void>(API_PATHS.ADMIN.MERCHANT.PARTNER_STATUS(id), {
+      status,
+    });
   },
 
-  getApplications: async (params: { page?: number; limit?: number; status?: string; search?: string }) => {
-    return apiClient.get<any>(API_PATHS.ADMIN.MERCHANT.APPLICATIONS, { params });
+  getApplications: async (params: {
+    page?: number;
+    limit?: number;
+    status?: string;
+    search?: string;
+  }) => {
+    return apiClient.get<any>(API_PATHS.ADMIN.MERCHANT.APPLICATIONS, {
+      params,
+    });
   },
 
-  reviewApplication: async (id: string, data: { status: string; note?: string }) => {
-    return apiClient.put<void>(API_PATHS.ADMIN.MERCHANT.APPLICATION_REVIEW(id), data);
+  reviewApplication: async (
+    id: string,
+    data: { status: string; note?: string },
+  ) => {
+    return apiClient.put<void>(
+      API_PATHS.ADMIN.MERCHANT.APPLICATION_REVIEW(id),
+      data,
+    );
   },
 
   getPartnerMerchants: async (partnerId: string) => {
-    return apiClient.get<any[]>(`${API_PATHS.ADMIN.MERCHANT.PARTNERS}/${partnerId}/merchants`);
+    return apiClient.get<any[]>(
+      `${API_PATHS.ADMIN.MERCHANT.PARTNERS}/${partnerId}/merchants`,
+    );
   },
 
   // Terminal Management
@@ -54,15 +79,29 @@ export const merchantRequester = {
     return apiClient.get<any[]>(API_PATHS.ADMIN.MERCHANT.TERMINALS(merchantId));
   },
 
-  createTerminal: async (merchantId: string, data: { name: string; hardwareId?: string }) => {
-    return apiClient.post<any>(API_PATHS.ADMIN.MERCHANT.TERMINALS(merchantId), data);
+  createTerminal: async (
+    merchantId: string,
+    data: { name: string; hardwareId?: string },
+  ) => {
+    return apiClient.post<any>(
+      API_PATHS.ADMIN.MERCHANT.TERMINALS(merchantId),
+      data,
+    );
   },
 
-  createMerchant: async (partnerId: string, data: { name: string; address?: string }) => {
-    return apiClient.post<any>(`${API_PATHS.ADMIN.MERCHANT.PARTNERS}/${partnerId}/merchants`, data);
+  createMerchant: async (
+    partnerId: string,
+    data: { name: string; address?: string },
+  ) => {
+    return apiClient.post<any>(
+      `${API_PATHS.ADMIN.MERCHANT.PARTNERS}/${partnerId}/merchants`,
+      data,
+    );
   },
 
   rotateTerminalSecret: async (terminalId: string) => {
-    return apiClient.post<any>(`/admin/merchants/terminals/${terminalId}/rotate`);
+    return apiClient.post<any>(
+      `/admin/merchants/terminals/${terminalId}/rotate`,
+    );
   },
 };

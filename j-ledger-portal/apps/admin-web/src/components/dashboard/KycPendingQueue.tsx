@@ -39,10 +39,7 @@ export function KycPendingQueue() {
         <CardContent>
           <div className="space-y-4">
             {[1, 2, 3].map((i) => (
-              <div
-                key={i}
-                className="h-12 bg-muted animate-pulse rounded-lg"
-              />
+              <div key={i} className="h-12 bg-muted animate-pulse rounded-lg" />
             ))}
           </div>
         </CardContent>

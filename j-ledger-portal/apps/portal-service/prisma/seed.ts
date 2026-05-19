@@ -10,10 +10,16 @@ async function main() {
   try {
     // Delete in reverse order of dependencies
     await prisma.terminal.deleteMany({ where: { hardwareId: 'HW-TM-001' } });
-    await prisma.merchant.deleteMany({ where: { name: 'Coffee Master - Sukhumvit Branch' } });
+    await prisma.merchant.deleteMany({
+      where: { name: 'Coffee Master - Sukhumvit Branch' },
+    });
     await prisma.brand.deleteMany({ where: { name: 'Coffee Master' } });
-    await prisma.partner.deleteMany({ where: { taxId: { in: ['0000000000000', '1234567890123'] } } });
-    await prisma.user.deleteMany({ where: { phoneNumber: { in: ['0811111111', '0812345678'] } } });
+    await prisma.partner.deleteMany({
+      where: { taxId: { in: ['0000000000000', '1234567890123'] } },
+    });
+    await prisma.user.deleteMany({
+      where: { phoneNumber: { in: ['0811111111', '0812345678'] } },
+    });
     console.log('✅ Cleanup completed.');
   } catch (e) {
     console.warn('⚠️ Cleanup warning (might be first run):', e);
@@ -244,7 +250,8 @@ async function main() {
       name: 'MANAGE_DEALS',
       resource: 'deal',
       action: 'manage',
-      description: 'Create, update, toggle, or delete promotional deals and metadata',
+      description:
+        'Create, update, toggle, or delete promotional deals and metadata',
     },
     {
       name: 'VIEW_BANNERS',
@@ -487,28 +494,33 @@ async function main() {
     });
   }
 
-    // 6. System Ecosystem Seed
-    console.log('🏛️ Seeding system ecosystem...');
-    const systemPartner = await prisma.partner.upsert({
-      where: { taxId: '0000000000000' },
-      update: {},
-      create: {
-        name: 'J-Ledger System',
-        taxId: '0000000000000',
-        status: 'ACTIVE',
-        type: 'CORPORATE',
-        feeRate: 0,
-      },
-    });
+  // 6. System Ecosystem Seed
+  console.log('🏛️ Seeding system ecosystem...');
+  const systemPartner = await prisma.partner.upsert({
+    where: { taxId: '0000000000000' },
+    update: {},
+    create: {
+      name: 'J-Ledger System',
+      taxId: '0000000000000',
+      status: 'ACTIVE',
+      type: 'CORPORATE',
+      feeRate: 0,
+    },
+  });
 
-    const financeUrl = process.env.FINANCE_SERVICE_URL || 'http://localhost:8081';
-    const internalSecret = process.env.JLEDGER_INTERNAL_SECRET || 'default_internal_secret';
-    const headers = { 'X-Internal-Secret': internalSecret };
+  const financeUrl = process.env.FINANCE_SERVICE_URL || 'http://localhost:8081';
+  const internalSecret =
+    process.env.JLEDGER_INTERNAL_SECRET || 'default_internal_secret';
+  const headers = { 'X-Internal-Secret': internalSecret };
 
-    console.log('💰 Seeding Finance Service core settings and system accounts...');
-    try {
-      // 6.1. Seed System Settings
-      await axios.put(`${financeUrl}/api/v1/system/settings`, {
+  console.log(
+    '💰 Seeding Finance Service core settings and system accounts...',
+  );
+  try {
+    // 6.1. Seed System Settings
+    await axios.put(
+      `${financeUrl}/api/v1/system/settings`,
+      {
         systemName: 'J-Ledger',
         companyName: 'J-Ledger Co., Ltd.',
         supportEmail: 'support@jledger.com',
@@ -537,174 +549,222 @@ async function main() {
         monthlyTransactionLimit: 5000000.0,
         perTransactionLimit: 100000.0,
         walletBalanceLimit: 1000000.0,
-        dailyTopUpLimit: 200000.0
-      }, { headers });
-      console.log('✅ System settings updated.');
+        dailyTopUpLimit: 200000.0,
+      },
+      { headers },
+    );
+    console.log('✅ System settings updated.');
 
-      // 6.2. Ensure Core System Accounts exist
-      let systemAccounts = systemPartner.financeAccounts as any || {};
+    // 6.2. Ensure Core System Accounts exist
+    let systemAccounts = (systemPartner.financeAccounts as any) || {};
 
-      // 6.2.1. SYSTEM_BANK_ACCOUNT
-      try {
-        const existingAccounts = await axios.get(`${financeUrl}/api/v1/accounts/user/00000000-0000-0000-0000-000000000000`, { headers });
-        const hasBankAcc = existingAccounts.data.some((acc: any) => acc.account_name === 'SYSTEM_BANK_ACCOUNT');
-        
-        if (!hasBankAcc) {
-          await axios.post(`${financeUrl}/api/v1/accounts`, {
+    // 6.2.1. SYSTEM_BANK_ACCOUNT
+    try {
+      const existingAccounts = await axios.get(
+        `${financeUrl}/api/v1/accounts/user/00000000-0000-0000-0000-000000000000`,
+        { headers },
+      );
+      const hasBankAcc = existingAccounts.data.some(
+        (acc: any) => acc.account_name === 'SYSTEM_BANK_ACCOUNT',
+      );
+
+      if (!hasBankAcc) {
+        await axios.post(
+          `${financeUrl}/api/v1/accounts`,
+          {
             user_id: '00000000-0000-0000-0000-000000000000',
             account_name: 'SYSTEM_BANK_ACCOUNT',
             currency: 'THB',
-            account_type: 'BANK_CLEARING'
-          }, { headers });
-          console.log('✅ SYSTEM_BANK_ACCOUNT created.');
-        } else {
-          console.log('ℹ️ SYSTEM_BANK_ACCOUNT already exists.');
-        }
-      } catch (e: any) {
-        console.warn('⚠️ Could not verify or create SYSTEM_BANK_ACCOUNT');
+            account_type: 'BANK_CLEARING',
+          },
+          { headers },
+        );
+        console.log('✅ SYSTEM_BANK_ACCOUNT created.');
+      } else {
+        console.log('ℹ️ SYSTEM_BANK_ACCOUNT already exists.');
       }
+    } catch (e: any) {
+      console.warn('⚠️ Could not verify or create SYSTEM_BANK_ACCOUNT');
+    }
 
-      // 6.2.2. Revenue and VAT Accounts
-      const systemPartnerAccounts = await axios.get(`${financeUrl}/api/v1/accounts/user/${systemPartner.id}`, { headers }).catch(() => ({ data: [] }));
-      
-      if (!systemAccounts.revenue) {
-        const existingRevenue = systemPartnerAccounts.data.find((acc: any) => acc.account_name === 'SYSTEM_REVENUE');
-        if (existingRevenue) {
-          systemAccounts.revenue = existingRevenue.id;
-        } else {
-          const res = await axios.post(`${financeUrl}/api/v1/accounts`, {
+    // 6.2.2. Revenue and VAT Accounts
+    const systemPartnerAccounts = await axios
+      .get(`${financeUrl}/api/v1/accounts/user/${systemPartner.id}`, {
+        headers,
+      })
+      .catch(() => ({ data: [] }));
+
+    if (!systemAccounts.revenue) {
+      const existingRevenue = systemPartnerAccounts.data.find(
+        (acc: any) => acc.account_name === 'SYSTEM_REVENUE',
+      );
+      if (existingRevenue) {
+        systemAccounts.revenue = existingRevenue.id;
+      } else {
+        const res = await axios.post(
+          `${financeUrl}/api/v1/accounts`,
+          {
             user_id: systemPartner.id,
             account_name: 'SYSTEM_REVENUE',
             currency: 'THB',
-            account_type: 'SYSTEM_REVENUE'
-          }, { headers });
-          systemAccounts.revenue = res.data.id;
-        }
+            account_type: 'SYSTEM_REVENUE',
+          },
+          { headers },
+        );
+        systemAccounts.revenue = res.data.id;
       }
+    }
 
-      if (!systemAccounts.vat_payable) {
-        const existingVat = systemPartnerAccounts.data.find((acc: any) => acc.account_name === 'SYSTEM_VAT_PAYABLE');
-        if (existingVat) {
-          systemAccounts.vat_payable = existingVat.id;
-        } else {
-          const res = await axios.post(`${financeUrl}/api/v1/accounts`, {
+    if (!systemAccounts.vat_payable) {
+      const existingVat = systemPartnerAccounts.data.find(
+        (acc: any) => acc.account_name === 'SYSTEM_VAT_PAYABLE',
+      );
+      if (existingVat) {
+        systemAccounts.vat_payable = existingVat.id;
+      } else {
+        const res = await axios.post(
+          `${financeUrl}/api/v1/accounts`,
+          {
             user_id: systemPartner.id,
             account_name: 'SYSTEM_VAT_PAYABLE',
             currency: 'THB',
-            account_type: 'SYSTEM_VAT_PAYABLE'
-          }, { headers });
-          systemAccounts.vat_payable = res.data.id;
-        }
+            account_type: 'SYSTEM_VAT_PAYABLE',
+          },
+          { headers },
+        );
+        systemAccounts.vat_payable = res.data.id;
       }
-
-      await prisma.partner.update({
-        where: { id: systemPartner.id },
-        data: { financeAccounts: systemAccounts }
-      });
-      console.log('✅ 3 Core System Accounts linked.');
-
-    } catch (error: any) {
-      console.warn('⚠️ Warning: Failed to seed Finance Service core. Is it running?');
     }
 
-    // 7. Seed Merchant Ecosystem (Minimal)
-    const isProduction = process.env.NODE_ENV === 'production';
-    if (!isProduction) {
-      console.log('🏪 Seeding merchant ecosystem...');
-      
-      const merchantUser = await prisma.user.upsert({
-        where: { phoneNumber: '0812345678' },
-        update: {},
-        create: {
-          phoneNumber: '0812345678',
-          email: 'merchant@test.com',
-          status: 'ACTIVE',
-          registrationState: 'COMPLETED',
-        },
-      });
+    await prisma.partner.update({
+      where: { id: systemPartner.id },
+      data: { financeAccounts: systemAccounts },
+    });
+    console.log('✅ 3 Core System Accounts linked.');
+  } catch (error: any) {
+    console.warn(
+      '⚠️ Warning: Failed to seed Finance Service core. Is it running?',
+    );
+  }
 
-      // Create Finance Account and Wallet for Merchant Owner
-      try {
-        const ownerAccounts = await axios.get(`${financeUrl}/api/v1/accounts/user/${merchantUser.id}`, { headers }).catch(() => ({ data: [] }));
-        const hasBusinessAcc = ownerAccounts.data.some((acc: any) => acc.account_name === 'BUSINESS_OPERATIONAL');
-        
-        if (!hasBusinessAcc) {
-          await axios.post(`${financeUrl}/api/v1/accounts`, {
+  // 7. Seed Merchant Ecosystem (Minimal)
+  const isProduction = process.env.NODE_ENV === 'production';
+  if (!isProduction) {
+    console.log('🏪 Seeding merchant ecosystem...');
+
+    const merchantUser = await prisma.user.upsert({
+      where: { phoneNumber: '0812345678' },
+      update: {},
+      create: {
+        phoneNumber: '0812345678',
+        email: 'merchant@test.com',
+        status: 'ACTIVE',
+        registrationState: 'COMPLETED',
+      },
+    });
+
+    // Create Finance Account and Wallet for Merchant Owner
+    try {
+      const ownerAccounts = await axios
+        .get(`${financeUrl}/api/v1/accounts/user/${merchantUser.id}`, {
+          headers,
+        })
+        .catch(() => ({ data: [] }));
+      const hasBusinessAcc = ownerAccounts.data.some(
+        (acc: any) => acc.account_name === 'BUSINESS_OPERATIONAL',
+      );
+
+      if (!hasBusinessAcc) {
+        await axios.post(
+          `${financeUrl}/api/v1/accounts`,
+          {
             user_id: merchantUser.id,
             account_name: 'BUSINESS_OPERATIONAL',
             currency: 'THB',
-            account_type: 'AVAILABLE'
-          }, { headers });
-          console.log('✅ Merchant Owner BUSINESS_OPERATIONAL account created.');
-        }
+            account_type: 'AVAILABLE',
+          },
+          { headers },
+        );
+        console.log('✅ Merchant Owner BUSINESS_OPERATIONAL account created.');
+      }
 
-        // Check if wallet exists before creating
-        try {
-          await axios.get(`${financeUrl}/api/finance/wallets/${merchantUser.id}`, { headers });
-          console.log('ℹ️ Merchant Owner wallet already exists.');
-        } catch (walletErr: any) {
-          if (walletErr.response?.status === 404) {
-            await axios.post(`${financeUrl}/api/finance/wallets/create`, {
+      // Check if wallet exists before creating
+      try {
+        await axios.get(
+          `${financeUrl}/api/finance/wallets/${merchantUser.id}`,
+          { headers },
+        );
+        console.log('ℹ️ Merchant Owner wallet already exists.');
+      } catch (walletErr: any) {
+        if (walletErr.response?.status === 404) {
+          await axios.post(
+            `${financeUrl}/api/finance/wallets/create`,
+            {
               userId: merchantUser.id,
-              currency: 'THB'
-            }, { headers });
-            console.log('✅ Merchant Owner wallet created.');
-          }
+              currency: 'THB',
+            },
+            { headers },
+          );
+          console.log('✅ Merchant Owner wallet created.');
         }
-      } catch (e: any) {
-        console.warn('   Note: Merchant Finance setup error:', e.message);
       }
+    } catch (e: any) {
+      console.warn('   Note: Merchant Finance setup error:', e.message);
+    }
 
-      const partner = await prisma.partner.upsert({
-        where: { taxId: '1234567890123' },
-        update: { userId: merchantUser.id, status: 'ACTIVE' },
-        create: {
-          userId: merchantUser.id,
-          name: 'Coffee Master HQ',
-          taxId: '1234567890123',
-          status: 'ACTIVE',
-          feeRate: 0.03,
-        },
-      });
+    const partner = await prisma.partner.upsert({
+      where: { taxId: '1234567890123' },
+      update: { userId: merchantUser.id, status: 'ACTIVE' },
+      create: {
+        userId: merchantUser.id,
+        name: 'Coffee Master HQ',
+        taxId: '1234567890123',
+        status: 'ACTIVE',
+        feeRate: 0.03,
+      },
+    });
 
-      const brand = await prisma.brand.upsert({
-        where: { name: 'Coffee Master' },
-        update: { partnerId: partner.id },
-        create: {
-          name: 'Coffee Master',
+    const brand = await prisma.brand.upsert({
+      where: { name: 'Coffee Master' },
+      update: { partnerId: partner.id },
+      create: {
+        name: 'Coffee Master',
+        partnerId: partner.id,
+        description: 'The best coffee in town',
+      },
+    });
+
+    let merchant = await prisma.merchant.findFirst({
+      where: {
+        name: 'Coffee Master - Sukhumvit Branch',
+        partnerId: partner.id,
+      },
+    });
+
+    if (!merchant) {
+      merchant = await prisma.merchant.create({
+        data: {
           partnerId: partner.id,
-          description: 'The best coffee in town',
-        },
-      });
-
-      let merchant = await prisma.merchant.findFirst({
-          where: { name: 'Coffee Master - Sukhumvit Branch', partnerId: partner.id }
-      });
-
-      if (!merchant) {
-          merchant = await prisma.merchant.create({
-              data: {
-                  partnerId: partner.id,
-                  name: 'Coffee Master - Sukhumvit Branch',
-                  category: 'COFFEE_SHOP',
-                  address: 'Sukhumvit Soi 24, Bangkok',
-              },
-          });
-      }
-
-      const terminalSecret = 'sk_test_coffee_master_2024';
-      await prisma.terminal.upsert({
-        where: { hardwareId: 'HW-TM-001' },
-        update: { secretKey: terminalSecret },
-        create: {
-          merchantId: merchant.id,
-          name: 'POS-01',
-          secretKey: terminalSecret,
-          hardwareId: 'HW-TM-001',
-          status: 'ACTIVE',
+          name: 'Coffee Master - Sukhumvit Branch',
+          category: 'COFFEE_SHOP',
+          address: 'Sukhumvit Soi 24, Bangkok',
         },
       });
     }
+
+    const terminalSecret = 'sk_test_coffee_master_2024';
+    await prisma.terminal.upsert({
+      where: { hardwareId: 'HW-TM-001' },
+      update: { secretKey: terminalSecret },
+      create: {
+        merchantId: merchant.id,
+        name: 'POS-01',
+        secretKey: terminalSecret,
+        hardwareId: 'HW-TM-001',
+        status: 'ACTIVE',
+      },
+    });
+  }
 
   console.log('✅ Comprehensive Seed completed successfully!');
 }

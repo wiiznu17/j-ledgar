@@ -1,5 +1,11 @@
 import React from 'react';
-import { View, Pressable, Text, ActivityIndicator, Platform } from 'react-native';
+import {
+  View,
+  Pressable,
+  Text,
+  ActivityIndicator,
+  Platform,
+} from 'react-native';
 import { ArrowRight } from 'lucide-react-native';
 import { MotiView } from 'moti';
 
@@ -29,13 +35,13 @@ export const StickyActionArea: React.FC<StickyActionAreaProps> = ({
   return (
     <MotiView
       from={{ translateY: 150, opacity: 0 }}
-      animate={{ 
+      animate={{
         translateY: isVisible ? 0 : 150,
-        opacity: isVisible ? 1 : 0 
+        opacity: isVisible ? 1 : 0,
       }}
       transition={{ type: 'timing', duration: 300 }}
       className="absolute bottom-0 left-0 right-0 z-30"
-      style={{ 
+      style={{
         paddingHorizontal: 20,
         paddingTop: 16,
         paddingBottom: Platform.OS === 'ios' ? 40 : 24,
@@ -44,10 +50,7 @@ export const StickyActionArea: React.FC<StickyActionAreaProps> = ({
         borderTopColor: '#f9fafb',
       }}
     >
-      <Pressable
-        disabled={isInteractionDisabled}
-        onPress={onPress}
-      >
+      <Pressable disabled={isInteractionDisabled} onPress={onPress}>
         {({ pressed }) => (
           <View
             style={{
@@ -59,13 +62,15 @@ export const StickyActionArea: React.FC<StickyActionAreaProps> = ({
               justifyContent: 'center',
               gap: 12,
               opacity: pressed && !isInteractionDisabled ? 0.8 : 1,
-              transform: [{ scale: pressed && !isInteractionDisabled ? 0.98 : 1 }],
+              transform: [
+                { scale: pressed && !isInteractionDisabled ? 0.98 : 1 },
+              ],
               // Shadow
               shadowColor: accentColor,
               shadowOffset: { width: 0, height: 6 },
               shadowOpacity: 0.2,
               shadowRadius: 12,
-              elevation: 5
+              elevation: 5,
             }}
           >
             {isLoading ? (

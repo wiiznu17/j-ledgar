@@ -19,7 +19,7 @@ export default async function DashboardLayout({
   }
 
   const payload = await verifyToken(token);
-  
+
   if (!payload) {
     // Token is invalid or expired
     redirect('/login');

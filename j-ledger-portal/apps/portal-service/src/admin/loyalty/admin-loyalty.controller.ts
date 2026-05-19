@@ -29,7 +29,11 @@ export class AdminLoyaltyController {
 
   @Put('rules/:eventType')
   @RequirePermissions(Permission.MANAGE_LOYALTY)
-  @AuditLog(null as any, ResourceType.LOYALTY_RULE, 'Updated points earning rule')
+  @AuditLog(
+    null as any,
+    ResourceType.LOYALTY_RULE,
+    'Updated points earning rule',
+  )
   async updateRule(
     @Param('eventType') eventType: string,
     @Body() data: any,

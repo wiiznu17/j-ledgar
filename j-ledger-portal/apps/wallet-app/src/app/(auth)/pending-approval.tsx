@@ -83,7 +83,10 @@ export default function PendingApprovalScreen() {
   };
 
   return (
-    <SafeAreaView style={{ flex: 1, backgroundColor: 'transparent' }} edges={['top']}>
+    <SafeAreaView
+      style={{ flex: 1, backgroundColor: 'transparent' }}
+      edges={['top']}
+    >
       <View
         style={{
           flex: 1,

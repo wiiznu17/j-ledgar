@@ -186,22 +186,29 @@ export default function TransactionDetailScreen() {
               {transaction.orderId ? (
                 <DetailRow label="Order ID" value={transaction.orderId} />
               ) : null}
-              {transaction.netAmount && transaction.netAmount !== transaction.amount ? (
+              {transaction.netAmount &&
+              transaction.netAmount !== transaction.amount ? (
                 <DetailRow
                   label="Net Received"
-                  value={`฿${Number(transaction.netAmount).toLocaleString(undefined, {
-                    minimumFractionDigits: 2,
-                    maximumFractionDigits: 2,
-                  })}`}
+                  value={`฿${Number(transaction.netAmount).toLocaleString(
+                    undefined,
+                    {
+                      minimumFractionDigits: 2,
+                      maximumFractionDigits: 2,
+                    },
+                  )}`}
                 />
               ) : null}
               {transaction.feeAmount ? (
                 <DetailRow
                   label="Fee Deducted"
-                  value={`-฿${Number(transaction.feeAmount).toLocaleString(undefined, {
-                    minimumFractionDigits: 2,
-                    maximumFractionDigits: 2,
-                  })}`}
+                  value={`-฿${Number(transaction.feeAmount).toLocaleString(
+                    undefined,
+                    {
+                      minimumFractionDigits: 2,
+                      maximumFractionDigits: 2,
+                    },
+                  )}`}
                   valueColor="#ef4444"
                 />
               ) : null}

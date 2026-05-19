@@ -64,5 +64,3 @@ export class ApplyMerchantDto {
   @IsOptional()
   images?: string[];
 }
-
-

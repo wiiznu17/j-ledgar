@@ -196,7 +196,9 @@ export class KycService {
       let walletId = userFull?.ledgerAccountId;
 
       if (!walletId) {
-        this.logger.log(`[KYC] Creating new wallet for user ${userId} on approval`);
+        this.logger.log(
+          `[KYC] Creating new wallet for user ${userId} on approval`,
+        );
         const wallet = await this.financeService.createWallet(userId, 'THB');
         walletId = wallet.walletId;
         // Link wallet to user in portal DB
@@ -786,7 +788,7 @@ export class KycService {
       where: { id: userId },
       data: { registrationState: RegistrationState.ID_CARD_UPLOADED },
     });
-    console.log("idCardNumber", idCardNumber)
+    console.log('idCardNumber', idCardNumber);
     return {
       extractedData: {
         idNumber: idCardNumber, // ส่งเลขจริงกลับไปให้ตรวจ

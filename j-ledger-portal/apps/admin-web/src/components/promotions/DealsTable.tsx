@@ -9,7 +9,15 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table';
-import { Edit2, Trash2, Loader2, Power, PowerOff, Calendar, Eye } from 'lucide-react';
+import {
+  Edit2,
+  Trash2,
+  Loader2,
+  Power,
+  PowerOff,
+  Calendar,
+  Eye,
+} from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { promotionsRequester } from '@/lib/requesters';
 import { toast } from 'sonner';
@@ -65,7 +73,9 @@ export function DealsTable({ deals, onRefresh }: DealsTableProps) {
             <TableHead className="text-foreground">Stock Status</TableHead>
             <TableHead className="text-foreground">Status</TableHead>
             <TableHead className="text-foreground">Priority</TableHead>
-            <TableHead className="text-right text-foreground">Actions</TableHead>
+            <TableHead className="text-right text-foreground">
+              Actions
+            </TableHead>
           </TableRow>
         </TableHeader>
         <TableBody>
@@ -88,11 +98,13 @@ export function DealsTable({ deals, onRefresh }: DealsTableProps) {
                     />
                   </div>
                   <div>
-                    <div 
-                        className="font-bold text-sm text-foreground hover:text-indigo-600 dark:hover:text-indigo-400 cursor-pointer transition-colors"
-                        onClick={() => router.push(`/promotions/deals/${deal.id}`)}
+                    <div
+                      className="font-bold text-sm text-foreground hover:text-indigo-600 dark:hover:text-indigo-400 cursor-pointer transition-colors"
+                      onClick={() =>
+                        router.push(`/promotions/deals/${deal.id}`)
+                      }
                     >
-                        {deal.title}
+                      {deal.title}
                     </div>
                     <div className="text-[10px] text-muted-foreground line-clamp-1 max-w-[200px]">
                       {deal.description}
@@ -168,7 +180,10 @@ export function DealsTable({ deals, onRefresh }: DealsTableProps) {
                 </Button>
               </TableCell>
               <TableCell>
-                <Badge variant="secondary" className="text-[10px] bg-muted text-muted-foreground border-border">
+                <Badge
+                  variant="secondary"
+                  className="text-[10px] bg-muted text-muted-foreground border-border"
+                >
                   P{deal.priority}
                 </Badge>
               </TableCell>
@@ -187,7 +202,9 @@ export function DealsTable({ deals, onRefresh }: DealsTableProps) {
                     variant="ghost"
                     size="icon"
                     className="h-8 w-8 text-muted-foreground hover:text-amber-600 dark:hover:text-amber-400"
-                    onClick={() => router.push(`/promotions/deals/${deal.id}/edit`)}
+                    onClick={() =>
+                      router.push(`/promotions/deals/${deal.id}/edit`)
+                    }
                     title="Edit Deal"
                   >
                     <Edit2 size={14} />

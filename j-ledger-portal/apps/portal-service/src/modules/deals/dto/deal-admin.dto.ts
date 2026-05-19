@@ -1,13 +1,13 @@
-import { 
-  IsString, 
-  IsNotEmpty, 
-  IsOptional, 
-  MaxLength, 
-  IsUrl, 
-  IsNumber, 
-  IsBoolean, 
+import {
+  IsString,
+  IsNotEmpty,
+  IsOptional,
+  MaxLength,
+  IsUrl,
+  IsNumber,
+  IsBoolean,
   IsDateString,
-  Min
+  Min,
 } from 'class-validator';
 
 export class CreateBrandDto {

@@ -37,7 +37,14 @@ export function RedemptionsTable({ redemptions }: RedemptionsTableProps) {
           </Badge>
         );
       default:
-        return <Badge variant="outline" className="border-border text-muted-foreground">{status}</Badge>;
+        return (
+          <Badge
+            variant="outline"
+            className="border-border text-muted-foreground"
+          >
+            {status}
+          </Badge>
+        );
     }
   };
 
@@ -70,7 +77,9 @@ export function RedemptionsTable({ redemptions }: RedemptionsTableProps) {
                 </div>
               </TableCell>
               <TableCell>
-                <div className="font-semibold text-sm text-foreground">{item.deal?.title}</div>
+                <div className="font-semibold text-sm text-foreground">
+                  {item.deal?.title}
+                </div>
                 <div className="text-[10px] text-muted-foreground">
                   {item.deal?.brand?.name}
                 </div>

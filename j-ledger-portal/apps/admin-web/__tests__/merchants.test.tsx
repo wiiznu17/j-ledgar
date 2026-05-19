@@ -7,11 +7,17 @@ import { merchantRequester } from '../src/lib/requesters';
 // Mock UI Components that cause Invalid hook call due to React 19 / Radix UI mismatch
 jest.mock('@/components/ui/dialog', () => ({
   Dialog: ({ children }: any) => <div data-testid="dialog">{children}</div>,
-  DialogContent: ({ children }: any) => <div data-testid="dialog-content">{children}</div>,
-  DialogHeader: ({ children }: any) => <div data-testid="dialog-header">{children}</div>,
+  DialogContent: ({ children }: any) => (
+    <div data-testid="dialog-content">{children}</div>
+  ),
+  DialogHeader: ({ children }: any) => (
+    <div data-testid="dialog-header">{children}</div>
+  ),
   DialogTitle: ({ children }: any) => <div>{children}</div>,
   DialogDescription: ({ children }: any) => <div>{children}</div>,
-  DialogFooter: ({ children }: any) => <div data-testid="dialog-footer">{children}</div>,
+  DialogFooter: ({ children }: any) => (
+    <div data-testid="dialog-footer">{children}</div>
+  ),
   DialogTrigger: ({ children }: any) => <div>{children}</div>,
 }));
 
@@ -20,12 +26,19 @@ jest.mock('@/components/ui/input', () => ({
 }));
 
 jest.mock('@/components/ui/label', () => ({
-  Label: ({ children, htmlFor }: any) => <label htmlFor={htmlFor}>{children}</label>,
+  Label: ({ children, htmlFor }: any) => (
+    <label htmlFor={htmlFor}>{children}</label>
+  ),
 }));
 
 jest.mock('@/components/ui/button', () => ({
   Button: ({ children, onClick, type, disabled }: any) => (
-    <button onClick={onClick} type={type} disabled={disabled} data-testid="button">
+    <button
+      onClick={onClick}
+      type={type}
+      disabled={disabled}
+      data-testid="button"
+    >
       {children}
     </button>
   ),
@@ -70,7 +83,7 @@ describe('Merchant Management - Phase C', () => {
           merchantId="m-123"
           merchantName="Test Merchant"
           onSuccess={mockOnSuccess}
-        />
+        />,
       );
 
       const submitButton = screen.getByText('Provision Terminal');
@@ -87,10 +100,10 @@ describe('Merchant Management - Phase C', () => {
     // For this test, we simulate an unauthorized user trying to view elements
     // that should be protected. If a component is rendered, it assumes the guard
     // let it through. We mock a scenario where guard blocks rendering.
-    
+
     it('should block unauthorized access', () => {
       const isAuthorized = false; // Mocking guard logic
-      
+
       const ProtectedComponent = () => {
         if (!isAuthorized) return <div>Access Denied</div>;
         return <div>Admin Content</div>;
@@ -109,8 +122,10 @@ describe('Merchant Management - Phase C', () => {
         name: 'Front Desk',
         secretKey: 'secret-hmac-key-12345',
       };
-      
-      (merchantRequester.createTerminal as jest.Mock).mockResolvedValue(mockResponse);
+
+      (merchantRequester.createTerminal as jest.Mock).mockResolvedValue(
+        mockResponse,
+      );
 
       render(
         <CreateTerminalModal
@@ -119,7 +134,7 @@ describe('Merchant Management - Phase C', () => {
           merchantId="m-123"
           merchantName="Test Merchant"
           onSuccess={mockOnSuccess}
-        />
+        />,
       );
 
       // Fill form

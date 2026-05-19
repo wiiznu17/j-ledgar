@@ -1,5 +1,11 @@
 import React from 'react';
-import { View, Text, TextInput, TouchableOpacity, ActivityIndicator } from 'react-native';
+import {
+  View,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  ActivityIndicator,
+} from 'react-native';
 import { Search, X } from 'lucide-react-native';
 
 interface TransactionSearchAreaProps {
@@ -24,7 +30,7 @@ export const TransactionSearchArea: React.FC<TransactionSearchAreaProps> = ({
       <Text className="text-[10px] font-manrope font-black text-gray-400 uppercase tracking-widest mb-4 ml-1">
         Search Recipient
       </Text>
-      
+
       <View className="bg-gray-50/80 rounded-2xl px-5 py-4 border border-gray-100 flex-row items-center">
         <TextInput
           placeholder="08X-XXX-XXXX"
@@ -36,7 +42,7 @@ export const TransactionSearchArea: React.FC<TransactionSearchAreaProps> = ({
           style={{ paddingVertical: 0 }}
           maxLength={12}
         />
-        
+
         {value.length > 0 && !isLoading && (
           <TouchableOpacity
             onPress={onClear}
@@ -50,7 +56,9 @@ export const TransactionSearchArea: React.FC<TransactionSearchAreaProps> = ({
           onPress={onSearch}
           disabled={isLoading || value.replace(/\D/g, '').length < 10}
           className={`w-10 h-10 rounded-xl items-center justify-center ${
-            value.replace(/\D/g, '').length >= 10 ? 'bg-[#f48fb1]' : 'bg-gray-200'
+            value.replace(/\D/g, '').length >= 10
+              ? 'bg-[#f48fb1]'
+              : 'bg-gray-200'
           }`}
         >
           {isLoading ? (
@@ -60,7 +68,7 @@ export const TransactionSearchArea: React.FC<TransactionSearchAreaProps> = ({
           )}
         </TouchableOpacity>
       </View>
-      
+
       <Text className="text-[10px] font-manrope font-bold text-gray-400 mt-4 ml-1 leading-relaxed">
         Enter the phone number of the person you want to transfer funds to.
       </Text>

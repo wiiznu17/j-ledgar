@@ -130,7 +130,10 @@ api.interceptors.request.use(
 // Response Interceptor: Handle errors globally and implement token rotation
 api.interceptors.response.use(
   (response) => {
-    console.log(`[Axios] Success: [${response.config.method?.toUpperCase()}] ${response.config.url}`, response.status);
+    console.log(
+      `[Axios] Success: [${response.config.method?.toUpperCase()}] ${response.config.url}`,
+      response.status,
+    );
     return response;
   },
   async (error) => {
@@ -140,20 +143,28 @@ api.interceptors.response.use(
     // Differentiate between initial 401 (warn) and retry 401 (error)
     if (status === 401) {
       if (!originalRequest._retry) {
-        console.warn(`[Axios] Potential token expiry (401): [${originalRequest?.method?.toUpperCase()}] ${originalRequest?.url}`);
+        console.warn(
+          `[Axios] Potential token expiry (401): [${originalRequest?.method?.toUpperCase()}] ${originalRequest?.url}`,
+        );
       } else {
-        console.error(`[Axios] Critical Unauthorized (401): [${originalRequest?.method?.toUpperCase()}] ${originalRequest?.url}`, {
-          status,
-          message: error.message,
-          data: error.response?.data
-        });
+        console.error(
+          `[Axios] Critical Unauthorized (401): [${originalRequest?.method?.toUpperCase()}] ${originalRequest?.url}`,
+          {
+            status,
+            message: error.message,
+            data: error.response?.data,
+          },
+        );
       }
     } else {
-      console.error(`[Axios] Error: [${originalRequest?.method?.toUpperCase()}] ${originalRequest?.url}`, {
-        status,
-        message: error.message,
-        data: error.response?.data
-      });
+      console.error(
+        `[Axios] Error: [${originalRequest?.method?.toUpperCase()}] ${originalRequest?.url}`,
+        {
+          status,
+          message: error.message,
+          data: error.response?.data,
+        },
+      );
     }
 
     // If error is 401 and we haven't retried yet
@@ -208,12 +219,14 @@ api.interceptors.response.use(
           // Store new tokens
           if (Platform.OS === 'web') {
             localStorage.setItem('auth_token', accessToken);
-            if (newRefreshToken) localStorage.setItem('refresh_token', newRefreshToken);
+            if (newRefreshToken)
+              localStorage.setItem('refresh_token', newRefreshToken);
           } else {
             await SecureStore.setItemAsync('auth_token', accessToken);
-            if (newRefreshToken) await SecureStore.setItemAsync('refresh_token', newRefreshToken);
+            if (newRefreshToken)
+              await SecureStore.setItemAsync('refresh_token', newRefreshToken);
           }
-          
+
           // Use dynamic require to break cycle and update store
           const { useAuthStore: authStore } = require('@/store/auth');
           authStore.getState().setToken(accessToken, newRefreshToken);
@@ -235,12 +248,15 @@ api.interceptors.response.use(
           // Retry original request
           return api(originalRequest);
         } catch (refreshError: any) {
-          console.error('[Axios] Refresh failed, logging out:', refreshError.response?.data || refreshError.message);
-          
+          console.error(
+            '[Axios] Refresh failed, logging out:',
+            refreshError.response?.data || refreshError.message,
+          );
+
           // If refresh fails, logout
           const { useAuthStore: authStore } = require('@/store/auth');
           if (authStore.getState().isAuthenticated) {
-             await authStore.getState().logout();
+            await authStore.getState().logout();
           }
 
           refreshSubscribers.forEach((callback) => callback(''));
@@ -253,7 +269,7 @@ api.interceptors.response.use(
         // No refresh token available, logout if we haven't already
         const { useAuthStore: authStore } = require('@/store/auth');
         if (authStore.getState().isAuthenticated) {
-           await authStore.getState().logout();
+          await authStore.getState().logout();
         }
       }
     }

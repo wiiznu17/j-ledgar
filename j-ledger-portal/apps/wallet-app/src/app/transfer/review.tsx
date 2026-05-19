@@ -152,7 +152,9 @@ export default function ReviewTransferScreen() {
       try {
         const { status } = await Location.requestForegroundPermissionsAsync();
         if (status === 'granted') {
-          const pos = await Location.getCurrentPositionAsync({ accuracy: Location.Accuracy.Balanced });
+          const pos = await Location.getCurrentPositionAsync({
+            accuracy: Location.Accuracy.Balanced,
+          });
           const rev = await Location.reverseGeocodeAsync({
             latitude: pos.coords.latitude,
             longitude: pos.coords.longitude,
@@ -165,12 +167,15 @@ export default function ReviewTransferScreen() {
           }
         }
       } catch (gpsErr) {
-        console.warn('[GPS] Failed to retrieve current location for transaction:', gpsErr);
+        console.warn(
+          '[GPS] Failed to retrieve current location for transaction:',
+          gpsErr,
+        );
       }
 
       const formattedNote = `${note || ''} [Loc: ${locationStr}]`.trim();
       let result: any;
-      
+
       if (paymentId) {
         // Dynamic QR Payment Flow
         result = await MerchantService.confirmPayment(paymentId);
@@ -196,7 +201,11 @@ export default function ReviewTransferScreen() {
       setIsProcessing(false);
 
       // Send success notification
-      const recipientDisplay = (merchantName as string) || (recipientName as string) || (recipient as string) || 'Recipient';
+      const recipientDisplay =
+        (merchantName as string) ||
+        (recipientName as string) ||
+        (recipient as string) ||
+        'Recipient';
       NotificationService.transferSuccess(recipientDisplay, amount as string);
 
       router.replace({
@@ -205,7 +214,8 @@ export default function ReviewTransferScreen() {
           recipient,
           amount,
           note: formattedNote,
-          merchantName: merchantName || (merchantId ? recipientName : undefined),
+          merchantName:
+            merchantName || (merchantId ? recipientName : undefined),
           transactionId: result.transactionId,
           createdAt: result.createdAt || new Date().toISOString(),
           recipientName: result?.recipient?.displayName || recipientName,
@@ -287,11 +297,21 @@ export default function ReviewTransferScreen() {
           className="mt-2"
         >
           {/* Main Review Card */}
-          <TransactionReviewCard 
+          <TransactionReviewCard
             amount={transferAmount}
-            toName={(merchantName as string) || (recipientName as string) || (recipient as string)}
+            toName={
+              (merchantName as string) ||
+              (recipientName as string) ||
+              (recipient as string)
+            }
             toType={merchantId || paymentId ? 'merchant' : 'user'}
-            transactionType={paymentId ? 'QR Payment' : merchantId ? 'Merchant Payment' : 'Peer-to-Peer'}
+            transactionType={
+              paymentId
+                ? 'QR Payment'
+                : merchantId
+                  ? 'Merchant Payment'
+                  : 'Peer-to-Peer'
+            }
             fee={fee}
             note={note as string}
           />
@@ -353,7 +373,7 @@ export default function ReviewTransferScreen() {
       </AnimatePresence>
 
       {/* Sticky Action Area */}
-      <StickyActionArea 
+      <StickyActionArea
         isVisible={true}
         label={isConfirming ? 'Authenticating...' : 'Confirm Transfer'}
         onPress={handleConfirm}
@@ -363,7 +383,7 @@ export default function ReviewTransferScreen() {
       />
 
       {/* Full Screen Processing Portal */}
-      <ProcessingPortal 
+      <ProcessingPortal
         isVisible={isProcessing}
         title="Encrypting Transaction"
         subtitle="We're verifying your identities and securing the ledger connection..."
@@ -371,4 +391,3 @@ export default function ReviewTransferScreen() {
     </SafeAreaView>
   );
 }
-

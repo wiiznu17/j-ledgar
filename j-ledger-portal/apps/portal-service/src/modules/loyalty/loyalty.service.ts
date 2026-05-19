@@ -113,7 +113,7 @@ export class LoyaltyService {
       const month = result.expiresAt.getMonth() + 1;
       const monthStr = month < 10 ? `0${month}` : `${month}`;
       const periodStr = `${monthStr}/${result.expiresAt.getFullYear()}`;
-      
+
       await this.kafkaProducer.emit(KafkaTopic.LOYALTY_EVENTS, {
         userId,
         eventType: NotificationEventType.LOYALTY_EARN,
@@ -295,7 +295,7 @@ export class LoyaltyService {
    */
   async processExpiries() {
     const now = new Date();
-    
+
     // 1. Find all users with expired earn records
     const expiredEarns = await this.prisma.pointHistory.groupBy({
       by: ['userId'],
@@ -328,25 +328,41 @@ export class LoyaltyService {
         by: ['type'],
         where: {
           userId,
-          type: { in: [PointTransactionType.REDEEM, PointTransactionType.EXPIRE] },
+          type: {
+            in: [PointTransactionType.REDEEM, PointTransactionType.EXPIRE],
+          },
         },
         _sum: {
           amount: true,
         },
       });
 
-      const totalRedeemed = Math.abs(spentAndExpired.find(s => s.type === PointTransactionType.REDEEM)?._sum.amount || 0);
-      const totalAlreadyExpired = Math.abs(spentAndExpired.find(s => s.type === PointTransactionType.EXPIRE)?._sum.amount || 0);
+      const totalRedeemed = Math.abs(
+        spentAndExpired.find((s) => s.type === PointTransactionType.REDEEM)
+          ?._sum.amount || 0,
+      );
+      const totalAlreadyExpired = Math.abs(
+        spentAndExpired.find((s) => s.type === PointTransactionType.EXPIRE)
+          ?._sum.amount || 0,
+      );
 
       // Amount to expire = Earned(Expired) - Redeemed - AlreadyExpired
       // Since redemptions consume oldest points first (FIFO assumption)
-      const pointsToRemove = Math.max(0, pointsEarnedExpired - totalRedeemed - totalAlreadyExpired);
+      const pointsToRemove = Math.max(
+        0,
+        pointsEarnedExpired - totalRedeemed - totalAlreadyExpired,
+      );
 
       if (pointsToRemove > 0) {
         await this.prisma.$transaction(async (tx) => {
           // Double check current balance to avoid negative balance (safety net)
-          const userPoint = await tx.userPoint.findUnique({ where: { userId } });
-          const safeToRemove = Math.min(pointsToRemove, userPoint?.balance || 0);
+          const userPoint = await tx.userPoint.findUnique({
+            where: { userId },
+          });
+          const safeToRemove = Math.min(
+            pointsToRemove,
+            userPoint?.balance || 0,
+          );
 
           if (safeToRemove > 0) {
             await tx.userPoint.update({

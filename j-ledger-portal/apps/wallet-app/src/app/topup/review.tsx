@@ -114,7 +114,9 @@ export default function TopupReviewScreen() {
       try {
         const { status } = await Location.requestForegroundPermissionsAsync();
         if (status === 'granted') {
-          const pos = await Location.getCurrentPositionAsync({ accuracy: Location.Accuracy.Balanced });
+          const pos = await Location.getCurrentPositionAsync({
+            accuracy: Location.Accuracy.Balanced,
+          });
           const rev = await Location.reverseGeocodeAsync({
             latitude: pos.coords.latitude,
             longitude: pos.coords.longitude,
@@ -127,7 +129,10 @@ export default function TopupReviewScreen() {
           }
         }
       } catch (gpsErr) {
-        console.warn('[GPS] Failed to retrieve current location for transaction:', gpsErr);
+        console.warn(
+          '[GPS] Failed to retrieve current location for transaction:',
+          gpsErr,
+        );
       }
 
       setProcessingText('Preparing payment');
@@ -184,7 +189,7 @@ export default function TopupReviewScreen() {
               },
             },
           ],
-          { cancelable: false }
+          { cancelable: false },
         );
         return;
       }

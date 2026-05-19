@@ -6,7 +6,7 @@ import { apiClient } from '@/lib/api-client';
 export async function getSystemSettings() {
   try {
     const response = await apiClient.get<any>('/api/admin/system/settings');
-    console.log("System Settings: ",response);
+    console.log('System Settings: ', response);
     return response;
   } catch (error) {
     console.error('Failed to fetch system settings:', error);
@@ -16,7 +16,10 @@ export async function getSystemSettings() {
 
 export async function updateSystemSettings(settings: any) {
   try {
-    const response = await apiClient.put<any>('/api/admin/system/settings', settings);
+    const response = await apiClient.put<any>(
+      '/api/admin/system/settings',
+      settings,
+    );
     revalidatePath('/system/settings');
     revalidatePath('/dashboard');
     return response;

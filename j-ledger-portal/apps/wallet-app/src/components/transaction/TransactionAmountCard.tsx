@@ -38,7 +38,7 @@ export const TransactionAmountCard: React.FC<TransactionAmountCardProps> = ({
   const isTooSmall = amount !== '' && parseFloat(amount) < minAmount;
 
   return (
-    <View 
+    <View
       className="bg-white rounded-[2.5rem] p-8 mb-6 items-center border border-gray-50 relative overflow-hidden"
       style={{
         // Stable shadow implementation to prevent context loss in NativeWind 4
@@ -46,24 +46,26 @@ export const TransactionAmountCard: React.FC<TransactionAmountCardProps> = ({
         shadowOffset: { width: 0, height: 4 },
         shadowOpacity: 0.05,
         shadowRadius: 10,
-        elevation: 2
+        elevation: 2,
       }}
     >
       {/* Background Decoration */}
-      <View 
-        className="absolute -top-10 -right-10 w-24 h-24 rounded-full opacity-10" 
+      <View
+        className="absolute -top-10 -right-10 w-24 h-24 rounded-full opacity-10"
         style={{ backgroundColor: accentColor }}
       />
-      
+
       <Text className="text-[10px] font-manrope font-black text-gray-400 uppercase tracking-widest mb-4">
         {label}
       </Text>
 
-      <View 
+      <View
         className="flex-row items-center justify-center border-b-2 pb-2 mb-6 w-full max-w-[220px]"
         style={{ borderBottomColor: isTooSmall ? '#fca5a5' : '#fce7f3' }}
       >
-        <Text className="text-2xl font-manrope font-black text-gray-400 mr-2">฿</Text>
+        <Text className="text-2xl font-manrope font-black text-gray-400 mr-2">
+          ฿
+        </Text>
         <TextInput
           placeholder="0.00"
           placeholderTextColor="#d1d5db"
@@ -72,12 +74,12 @@ export const TransactionAmountCard: React.FC<TransactionAmountCardProps> = ({
           keyboardType="decimal-pad"
           selectionColor={accentColor}
           className="font-manrope font-black text-center"
-          style={{ 
-            fontSize: 44, 
-            minWidth: 120, 
+          style={{
+            fontSize: 44,
+            minWidth: 120,
             color: isTooSmall ? '#ef4444' : accentColor,
             height: 60,
-            includeFontPadding: false
+            includeFontPadding: false,
           }}
           maxLength={9}
         />
@@ -96,12 +98,12 @@ export const TransactionAmountCard: React.FC<TransactionAmountCardProps> = ({
             key={val}
             onPress={() => handleQuickSelect(val)}
             className="px-5 py-3 rounded-2xl border active:scale-95"
-            style={{ 
-              backgroundColor: `${accentColor}10`, 
-              borderColor: `${accentColor}20` 
+            style={{
+              backgroundColor: `${accentColor}10`,
+              borderColor: `${accentColor}20`,
             }}
           >
-            <Text 
+            <Text
               className="text-[11px] font-manrope font-black"
               style={{ color: accentColor }}
             >

@@ -379,7 +379,9 @@ export default function WalletDetailPage({
                             <p
                               className={cn(
                                 'text-sm font-bold tabular-nums',
-                                isIn ? 'text-emerald-600 dark:text-emerald-400' : 'text-foreground',
+                                isIn
+                                  ? 'text-emerald-600 dark:text-emerald-400'
+                                  : 'text-foreground',
                               )}
                             >
                               {isIn ? '+' : '-'}
