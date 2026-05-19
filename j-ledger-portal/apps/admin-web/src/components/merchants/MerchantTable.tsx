@@ -10,9 +10,10 @@ import {
 } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Eye, ExternalLink, ShieldCheck, ShieldAlert, Store } from 'lucide-react';
+import { ExternalLink, ShieldCheck, ShieldAlert, Store } from 'lucide-react';
 import Link from 'next/link';
 import { Skeleton } from '@/components/ui/skeleton';
+import { useRouter } from 'next/navigation';
 
 interface Partner {
   id: string;
@@ -31,6 +32,8 @@ interface MerchantTableProps {
 }
 
 export function MerchantTable({ partners, loading }: MerchantTableProps) {
+  const router = useRouter();
+
   const getStatusBadge = (status: string) => {
     switch (status) {
       case 'ACTIVE':
@@ -95,14 +98,18 @@ export function MerchantTable({ partners, loading }: MerchantTableProps) {
           </TableRow>
         ) : (
           partners.map((partner) => (
-            <TableRow key={partner.id} className="hover:bg-muted/30 border-border transition-colors">
+            <TableRow
+              key={partner.id}
+              className="hover:bg-muted/30 border-border transition-colors cursor-pointer"
+              onClick={() => router.push(`/support/merchants/${partner.id}`)}
+            >
               <TableCell className="py-4">
                 <div className="font-semibold text-foreground">{partner.name}</div>
                 <div className="text-xs text-muted-foreground font-mono mt-0.5">{partner.id}</div>
               </TableCell>
               <TableCell className="py-4 font-medium text-muted-foreground">{partner.taxId}</TableCell>
               <TableCell className="py-4 text-center">
-                <Badge variant="outline" className="text-muted-foreground bg-muted border-border">
+                <Badge variant="outline" className="text-muted-foreground bg-muted border-border" onClick={(e) => e.stopPropagation()}>
                   <Store className="w-3 h-3 mr-1" />
                   {partner._count?.merchants || 0}
                 </Badge>
@@ -113,12 +120,10 @@ export function MerchantTable({ partners, loading }: MerchantTableProps) {
               </TableCell>
               <TableCell className="py-4 text-right">
                 <div className="flex justify-end gap-2">
-                  <Link href={`/support/merchants/${partner.id}`}>
-                    <Button variant="ghost" size="sm" className="h-8 w-8 p-0 text-muted-foreground hover:text-indigo-600 dark:hover:text-indigo-400">
-                      <Eye className="h-4 w-4" />
-                    </Button>
-                  </Link>
-                  <Link href={`/support/merchants/${partner.id}/terminals`}>
+                  <Link
+                    href={`/support/merchants/${partner.id}/terminals`}
+                    onClick={(e) => e.stopPropagation()}
+                  >
                     <Button variant="ghost" size="sm" className="h-8 text-xs gap-1.5 text-muted-foreground hover:text-indigo-600 dark:hover:text-indigo-400">
                       <ExternalLink className="h-3.5 w-3.5" />
                       Terminals

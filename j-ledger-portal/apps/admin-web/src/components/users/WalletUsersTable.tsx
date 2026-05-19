@@ -1,7 +1,6 @@
 'use client';
 
 import { Badge } from '@/components/ui/badge';
-import { Button } from '@/components/ui/button';
 import {
   Table,
   TableBody,
@@ -11,10 +10,10 @@ import {
   TableRow,
 } from '@/components/ui/table';
 import { WalletUser } from '@repo/dto';
-import { UserControlActions } from './UserControlActions';
 import { cn } from '@/lib/utils';
 import { getUserStatusConfig } from '@/lib/status-utils';
 import { buttonVariants } from '@/components/ui/button';
+import { useRouter } from 'next/navigation';
 
 interface WalletUsersTableProps {
   users: WalletUser[];
@@ -22,6 +21,7 @@ interface WalletUsersTableProps {
 }
 
 export function WalletUsersTable({ users, loading }: WalletUsersTableProps) {
+  const router = useRouter();
   if (loading) {
     return (
       <div className="p-8 text-center text-muted-foreground font-medium bg-card">
@@ -50,11 +50,8 @@ export function WalletUsersTable({ users, loading }: WalletUsersTableProps) {
             <TableHead className="font-bold text-muted-foreground uppercase text-[10px] tracking-widest py-4">
               Joined Date
             </TableHead>
-            <TableHead className="font-bold text-muted-foreground uppercase text-[10px] tracking-widest py-4">
-              Activity
-            </TableHead>
             <TableHead className="font-bold text-muted-foreground uppercase text-[10px] tracking-widest text-right py-4">
-              Fraud Control
+              Actions
             </TableHead>
           </TableRow>
         </TableHeader>
@@ -62,15 +59,11 @@ export function WalletUsersTable({ users, loading }: WalletUsersTableProps) {
           {users.map((user) => (
             <TableRow
               key={user.id}
-              className="hover:bg-muted/50 transition-colors border-b border-border group"
+              onClick={() => router.push(`/support/users/${user.id}`)}
+              className="hover:bg-muted/50 transition-colors border-b border-border group cursor-pointer"
             >
               <TableCell className="font-semibold text-foreground">
-                <a
-                  href={`/support/users/${user.id}`}
-                  className="hover:text-indigo-600 dark:hover:text-indigo-400 hover:underline transition-colors"
-                >
-                  {user.email}
-                </a>
+                {user.email || '-'}
               </TableCell>
               <TableCell className="font-mono text-xs text-muted-foreground hidden md:table-cell">
                 {user.phoneNumber}
@@ -97,41 +90,24 @@ export function WalletUsersTable({ users, loading }: WalletUsersTableProps) {
                   year: 'numeric',
                 })}
               </TableCell>
-              <TableCell>
-                <div className="flex items-center gap-2">
-                  <a
-                    href={`/support/users/${user.id}`}
-                    className={cn(
-                      buttonVariants({ variant: 'ghost', size: 'sm' }),
-                      'text-indigo-600 dark:text-indigo-400 hover:text-indigo-700 hover:bg-indigo-500/10 font-bold text-xs',
-                    )}
-                  >
-                    Manage
-                  </a>
-                  <a
-                    href={`/support/user-activity?userId=${user.id}`}
-                    className={cn(
-                      buttonVariants({ variant: 'ghost', size: 'sm' }),
-                      'text-muted-foreground hover:text-foreground hover:bg-muted font-bold text-[10px] uppercase tracking-tighter',
-                    )}
-                  >
-                    Logs
-                  </a>
-                </div>
-              </TableCell>
               <TableCell className="text-right">
-                <UserControlActions
-                  userId={user.id}
-                  email={user.email || ''}
-                  status={user.status}
-                />
+                <a
+                  href={`/support/user-activity?userId=${user.id}`}
+                  onClick={(e) => e.stopPropagation()}
+                  className={cn(
+                    buttonVariants({ variant: 'ghost', size: 'sm' }),
+                    'text-muted-foreground hover:text-foreground hover:bg-muted font-bold text-[10px] uppercase tracking-tighter',
+                  )}
+                >
+                  View Logs
+                </a>
               </TableCell>
             </TableRow>
           ))}
           {users.length === 0 && (
             <TableRow>
               <TableCell
-                colSpan={6}
+                colSpan={5}
                 className="h-32 text-center text-muted-foreground font-medium"
               >
                 No registered wallet users found matching your criteria.

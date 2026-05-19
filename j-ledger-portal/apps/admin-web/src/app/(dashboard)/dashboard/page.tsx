@@ -41,6 +41,7 @@ import {
   transactionRequester,
   dashboardRequester,
 } from '@/lib/requesters';
+import type { DashboardStats } from '@/lib/requesters/dashboardRequester';
 import { subDays, startOfDay, endOfDay } from 'date-fns';
 import { Button } from '@/components/ui/button';
 
@@ -160,7 +161,7 @@ export default function DashboardPage() {
       setLiquidityLoading(true);
       const start = performance.now();
       const { from, to } = getDateRangeISO(range);
-      const stats = await dashboardRequester.getStats({ from, to });
+      const stats: DashboardStats | null = await dashboardRequester.getStats({ from, to });
       const duration = Math.round(performance.now() - start);
       setSystemLatency(duration > 0 ? Math.min(120, duration) : 42);
 
@@ -177,6 +178,7 @@ export default function DashboardPage() {
           growthText: `${lGrowth >= 0 ? '+' : ''}${lGrowth.toFixed(1)}%`,
           growthType: lGrowth > 0 ? 'up' : lGrowth < 0 ? 'down' : 'neutral',
         });
+        console.log('Liquidity Stats:', liquidityStats);
       }
     } catch (e) {
       toast.error('Failed to fetch system liquidity.');
@@ -190,7 +192,7 @@ export default function DashboardPage() {
     try {
       setRevenueLoading(true);
       const { from, to } = getDateRangeISO(range);
-      const stats = await dashboardRequester.getStats({ from, to });
+      const stats: DashboardStats | null = await dashboardRequester.getStats({ from, to });
 
       if (stats) {
         const revenue = stats.financial?.totalRevenue ?? 0;
@@ -218,7 +220,7 @@ export default function DashboardPage() {
     try {
       setPerformanceLoading(true);
       const { from, to } = getDateRangeISO(range);
-      const stats = await dashboardRequester.getStats({ from, to });
+      const stats: DashboardStats | null = await dashboardRequester.getStats({ from, to });
 
       if (stats) {
         const uGrowth = stats.growth?.activeUsersGrowth ?? 20.0;
@@ -260,7 +262,7 @@ export default function DashboardPage() {
     try {
       setVolumeLoading(true);
       const { from, to } = getDateRangeISO(range);
-      const stats = await dashboardRequester.getStats({ from, to });
+      const stats: DashboardStats | null = await dashboardRequester.getStats({ from, to });
       if (stats) {
         setVolumeChartData(stats.chartData || []);
       }
@@ -276,7 +278,7 @@ export default function DashboardPage() {
     try {
       setDistributionLoading(true);
       const { from, to } = getDateRangeISO(range);
-      const stats = await dashboardRequester.getStats({ from, to });
+      const stats: DashboardStats | null = await dashboardRequester.getStats({ from, to });
       if (stats) {
         setDistributionData(stats.distribution || []);
       }

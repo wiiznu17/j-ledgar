@@ -37,8 +37,7 @@ export const merchantRequester = {
     return apiClient.put<void>(API_PATHS.ADMIN.MERCHANT.PARTNER_STATUS(id), { status });
   },
 
-  // Application Management
-  getApplications: async (params: { page?: number; limit?: number; status?: string }) => {
+  getApplications: async (params: { page?: number; limit?: number; status?: string; search?: string }) => {
     return apiClient.get<any>(API_PATHS.ADMIN.MERCHANT.APPLICATIONS, { params });
   },
 

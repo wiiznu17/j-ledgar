@@ -2,11 +2,8 @@
 
 import { useEffect, useState, useCallback, use } from 'react';
 import { 
-  ArrowLeft, 
   Smartphone, 
-  Plus, 
   RefreshCcw,
-  Store,
   ShieldCheck,
   ChevronRight,
   Key,
@@ -15,6 +12,7 @@ import {
 import { toast } from 'sonner';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
 import {
   Dialog,
   DialogContent,
@@ -100,37 +98,33 @@ export default function TerminalsPage({
           <span className="text-foreground">Terminal Infrastructure</span>
         </div>
 
-        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-          <div className="flex items-center gap-4">
-            <Link href={`/support/merchants/${partnerId}`}>
-              <Button variant="ghost" size="sm" className="h-10 w-10 p-0 text-muted-foreground hover:text-indigo-600 dark:hover:text-indigo-400 rounded-xl bg-card shadow-xs border border-border">
-                <ArrowLeft className="w-5 h-5" />
-              </Button>
-            </Link>
-            <div>
-              <div className="flex items-center gap-2 mt-1">
-                {partner && (
-                  <Badge variant="outline" className="bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 border-indigo-500/20 font-bold uppercase text-[10px] tracking-widest px-2 py-0.5 rounded-lg">
-                    {partner.name}
-                  </Badge>
-                )}
-                <p className="text-sm text-muted-foreground">
-                  Configure nodes and hardware for payment processing and point redemptions.
-                </p>
-              </div>
-            </div>
+        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mt-2">
+          <div className="flex items-center gap-3">
+            {partner && (
+              <h2 className="text-2xl font-black text-foreground tracking-tight">
+                {partner.name}
+              </h2>
+            )}
+            {partner && (
+              <Badge className="bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 border-none text-[10px] font-black rounded-lg">
+                {partner.status}
+              </Badge>
+            )}
           </div>
           
           <Button 
             variant="outline" 
             onClick={fetchData} 
             disabled={loading}
-            className="h-10 rounded-xl border-border text-muted-foreground font-bold text-xs uppercase tracking-wider bg-card"
+            className="h-10 rounded-xl border-border text-muted-foreground font-bold text-xs uppercase tracking-wider bg-card shadow-xs"
           >
             <RefreshCcw className={`w-3.5 h-3.5 mr-2 ${loading ? 'animate-spin' : ''}`} />
             Refresh Network
           </Button>
         </div>
+        <p className="text-xs text-muted-foreground max-w-2xl leading-relaxed -mt-1">
+          Configure nodes and hardware terminals for secure transaction processing, point redemptions, and system communication.
+        </p>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
@@ -227,18 +221,5 @@ export default function TerminalsPage({
         </DialogContent>
       </Dialog>
     </div>
-  );
-}
-
-// Reuse Badge from previous page
-function Badge({ children, className, variant = 'default' }: any) {
-  const variants: any = {
-    default: 'bg-muted text-muted-foreground border-border',
-    outline: 'border border-border text-muted-foreground',
-  };
-  return (
-    <span className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-semibold transition-colors ${variants[variant]} ${className}`}>
-      {children}
-    </span>
   );
 }

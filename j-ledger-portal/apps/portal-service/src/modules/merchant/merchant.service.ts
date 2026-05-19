@@ -96,7 +96,17 @@ export class MerchantService {
     const limit = Number(query.limit) || 10;
     const skip = (page - 1) * limit;
 
-    const where: any = query.status && query.status !== 'ALL' ? { status: query.status } : {};
+    const where: any = {};
+    if (query.status && query.status !== 'ALL') {
+      where.status = query.status;
+    }
+    if (query.search) {
+      where.OR = [
+        { businessName: { contains: query.search, mode: 'insensitive' } },
+        { taxId: { contains: query.search, mode: 'insensitive' } },
+        { contactName: { contains: query.search, mode: 'insensitive' } },
+      ];
+    }
 
     const [applications, total] = await Promise.all([
       this.prisma.merchantApplication.findMany({
@@ -149,6 +159,9 @@ export class MerchantService {
         profile: true,
         merchants: {
           include: { terminals: true },
+        },
+        applications: {
+          orderBy: { createdAt: 'desc' },
         },
         _count: {
           select: { merchants: true },

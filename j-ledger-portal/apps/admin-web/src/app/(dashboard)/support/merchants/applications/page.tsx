@@ -4,31 +4,18 @@ import { useEffect, useState, useCallback } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { 
   ClipboardCheck, 
-  ArrowLeft, 
-  Filter, 
-  RotateCcw,
+  ChevronRight,
   CheckCircle2,
-  AlertCircle,
-  ChevronLeft,
-  ChevronRight
+  AlertCircle
 } from 'lucide-react';
 import { toast } from 'sonner';
 import Link from 'next/link';
-import { Button } from '@/components/ui/button';
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
-import { Textarea } from "@/components/ui/textarea";
 
 import { merchantRequester } from '@/lib/requesters';
 import { MerchantApplicationTable } from '@/components/merchants/MerchantApplicationTable';
 import { TablePagination } from '@/components/common/TablePagination';
 import {
+  FilterSearchInput,
   FilterSelect,
   FilterActions,
 } from '@/components/common/FilterElements';
@@ -41,6 +28,8 @@ export default function ApplicationsPage() {
   const [totalPages, setTotalPages] = useState(1);
 
   // Filters
+  const [searchTerm, setSearchTerm] = useState('');
+  const [appliedSearch, setAppliedSearch] = useState('');
   const [status, setStatus] = useState<string>('PENDING');
   const [appliedStatus, setAppliedStatus] = useState('PENDING');
 
@@ -51,6 +40,7 @@ export default function ApplicationsPage() {
         page,
         limit: 10,
         status: appliedStatus === 'ALL' ? undefined : appliedStatus,
+        search: appliedSearch || undefined,
       });
       setApplications(response.data || []);
       setTotal(response.pagination?.total || 0);
@@ -61,7 +51,7 @@ export default function ApplicationsPage() {
     } finally {
       setLoading(false);
     }
-  }, [page, appliedStatus]);
+  }, [page, appliedStatus, appliedSearch]);
 
   useEffect(() => {
     fetchApplications();
@@ -71,55 +61,15 @@ export default function ApplicationsPage() {
     if (e) e.preventDefault();
     setPage(1);
     setAppliedStatus(status);
+    setAppliedSearch(searchTerm);
   };
 
   const handleClearFilters = () => {
     setStatus('PENDING');
+    setSearchTerm('');
     setAppliedStatus('PENDING');
+    setAppliedSearch('');
     setPage(1);
-  };
-
-  // Rejection Dialog State
-  const [isRejectDialogOpen, setIsRejectDialogOpen] = useState(false);
-  const [selectedAppId, setSelectedAppId] = useState<string | null>(null);
-  const [rejectionNote, setRejectionNote] = useState('');
-
-  const handleReview = async (id: string, newStatus: 'APPROVED' | 'REJECTED') => {
-    if (newStatus === 'REJECTED') {
-      setSelectedAppId(id);
-      setRejectionNote('');
-      setIsRejectDialogOpen(true);
-      return;
-    }
-
-    // Direct approval
-    await processReview(id, 'APPROVED');
-  };
-
-  const processReview = async (id: string, status: 'APPROVED' | 'REJECTED', note?: string) => {
-    const promise = merchantRequester.reviewApplication(id, { 
-      status,
-      note: note || `Reviewed via Admin Portal at ${new Date().toLocaleString()}`
-    });
-
-    toast.promise(promise, {
-      loading: `Processing ${status.toLowerCase()}...`,
-      success: () => {
-        fetchApplications(); // Refresh list
-        setIsRejectDialogOpen(false);
-        return `Application ${status.toLowerCase()} successfully`;
-      },
-      error: 'Failed to process application review',
-    });
-  };
-
-  const handleConfirmReject = () => {
-    if (!selectedAppId) return;
-    if (!rejectionNote.trim()) {
-      toast.error('Please provide a reason for rejection');
-      return;
-    }
-    processReview(selectedAppId, 'REJECTED', rejectionNote);
   };
 
   return (
@@ -132,24 +82,6 @@ export default function ApplicationsPage() {
           </Link>
           <ChevronRight className="w-3 h-3" />
           <span className="text-foreground">Application Queue</span>
-        </div>
-
-        <div className="flex items-center gap-4">
-          <Link href="/support/merchants">
-            <Button variant="ghost" size="sm" className="h-8 w-8 p-0 text-muted-foreground hover:text-indigo-600 dark:hover:text-indigo-400">
-              <ChevronLeft className="w-5 h-5" />
-            </Button>
-          </Link>
-          <div>
-            <div className="flex items-center gap-2 mt-1">
-              <Badge variant="outline" className="bg-amber-500/10 text-amber-600 dark:text-amber-400 border-amber-500/20 font-bold px-2 py-0.5 rounded-lg">
-                {total} Pending
-              </Badge>
-              <p className="text-sm text-muted-foreground">
-                Review and approve new merchant partnership requests.
-              </p>
-            </div>
-          </div>
         </div>
       </div>
 
@@ -179,21 +111,27 @@ export default function ApplicationsPage() {
         <div className="p-3 bg-card border-b border-border">
           <form
             onSubmit={handleFilter}
-            className="flex flex-wrap items-end gap-4"
+            className="grid grid-cols-1 md:grid-cols-4 gap-4 items-end"
           >
-            <div className="w-64">
-              <FilterSelect
-                label="Filter by Status"
-                value={status}
-                onValueChange={(val: string) => setStatus(val || 'ALL')}
-                options={[
-                  { label: 'PENDING REVIEW', value: 'PENDING' },
-                  { label: 'APPROVED', value: 'APPROVED' },
-                  { label: 'REJECTED', value: 'REJECTED' },
-                  { label: 'ALL APPLICATIONS', value: 'ALL' },
-                ]}
-              />
-            </div>
+            <FilterSearchInput
+              label="Search Application"
+              placeholder="name, tax id..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="md:col-span-2"
+            />
+
+            <FilterSelect
+              label="Status"
+              value={status}
+              onValueChange={(val: string) => setStatus(val || 'ALL')}
+              options={[
+                { label: 'PENDING REVIEW', value: 'PENDING' },
+                { label: 'APPROVED', value: 'APPROVED' },
+                { label: 'REJECTED', value: 'REJECTED' },
+                { label: 'ALL APPLICATIONS', value: 'ALL' },
+              ]}
+            />
 
             <FilterActions
               searchLabel="Filter"
@@ -207,7 +145,6 @@ export default function ApplicationsPage() {
           <MerchantApplicationTable 
             applications={applications} 
             loading={loading} 
-            onReview={handleReview}
           />
 
           <TablePagination
@@ -219,45 +156,6 @@ export default function ApplicationsPage() {
           />
         </CardContent>
       </Card>
-
-      <Dialog open={isRejectDialogOpen} onOpenChange={setIsRejectDialogOpen}>
-        <DialogContent className="sm:max-w-[425px] bg-card text-card-foreground border border-border">
-          <DialogHeader>
-            <DialogTitle className="flex items-center gap-2 text-rose-600 dark:text-rose-400">
-              <AlertCircle className="w-5 h-5" />
-              Reject Application
-            </DialogTitle>
-            <DialogDescription className="text-muted-foreground">
-              Please provide a reason for rejecting this merchant application. This note will be visible to the applicant.
-            </DialogDescription>
-          </DialogHeader>
-          <div className="grid gap-4 py-4">
-            <Textarea
-              placeholder="e.g. Identity documents are blurry, please re-upload."
-              value={rejectionNote}
-              onChange={(e) => setRejectionNote(e.target.value)}
-              className="min-h-[100px] bg-muted border-border text-foreground placeholder:text-muted-foreground"
-            />
-          </div>
-          <DialogFooter>
-            <Button variant="ghost" onClick={() => setIsRejectDialogOpen(false)} className="text-muted-foreground">Cancel</Button>
-            <Button variant="destructive" onClick={handleConfirmReject}>Confirm Rejection</Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
     </div>
-  );
-}
-
-// Add Badge import (helper)
-function Badge({ children, className, variant = 'default' }: any) {
-  const variants: any = {
-    default: 'bg-muted text-muted-foreground border-border',
-    outline: 'border border-border text-muted-foreground',
-  };
-  return (
-    <span className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-semibold transition-colors ${variants[variant]} ${className}`}>
-      {children}
-    </span>
   );
 }
