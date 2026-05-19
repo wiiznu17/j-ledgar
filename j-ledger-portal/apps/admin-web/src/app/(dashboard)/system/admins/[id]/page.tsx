@@ -2,6 +2,7 @@
 
 import { use, useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
+import Link from 'next/link';
 import {
   Card,
   CardContent,
@@ -20,6 +21,9 @@ import {
   UserCheck,
   ChevronRight,
   RefreshCcw,
+  Shield,
+  Lock,
+  History
 } from 'lucide-react';
 import { showConfirm, showSuccess, showError } from '@/lib/swal';
 import { AdminUser, AdminRole } from '@repo/dto';
@@ -169,41 +173,42 @@ export default function AdminDetailPage({
 
   if (loading) {
     return (
-      <div className="flex justify-center py-12 text-muted-foreground">
-        Loading profile...
+      <div className="flex items-center justify-center h-64 flex-col gap-4">
+        <RefreshCcw className="w-8 h-8 text-indigo-600 dark:text-indigo-400 animate-spin" />
+        <p className="text-muted-foreground text-sm font-medium animate-pulse">
+          Loading administrator profile...
+        </p>
       </div>
     );
   }
 
   if (!admin) {
     return (
-      <div className="flex justify-center py-12 text-destructive">
-        Admin not found
+      <div className="flex flex-col items-center justify-center h-64 gap-2 text-destructive">
+        <ShieldAlert className="w-10 h-10 animate-bounce" />
+        <p className="font-bold text-sm">Administrator not found</p>
       </div>
     );
   }
 
   return (
-    <div className="space-y-4 max-w-6xl mx-auto pb-10">
+    <div className="space-y-6 max-w-6xl mx-auto pb-10 px-4 md:px-0 text-foreground">
       {/* Header with Breadcrumbs */}
-      <div className="flex flex-col gap-3">
-        <div className="flex items-center text-[10px] font-bold text-muted-foreground uppercase tracking-widest gap-2">
-          <button
-            onClick={() => router.back()}
-            className="hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors uppercase tracking-widest font-bold text-[10px]"
-          >
-            Directory
-          </button>
-          <ChevronRight className="w-3 h-3 text-muted-foreground" />
-          <span className="text-foreground">Admin Profile</span>
-        </div>
-        <div className="flex items-center justify-between">
-          <div />
+      <div className="flex flex-col gap-4 bg-card p-6 rounded-[2rem] border border-border shadow-xs">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+          <div className="flex items-center text-[10px] font-bold text-muted-foreground uppercase tracking-widest gap-2">
+            <Link href="/system/admins" className="hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors">
+              Admins
+            </Link>
+            <ChevronRight className="w-3 h-3" />
+            <span className="text-foreground">Admin Profile</span>
+          </div>
+
           <div className="flex items-center gap-2">
             <Button
               onClick={() => fetchAdminData()}
               variant="outline"
-              className="rounded-lg border-border font-semibold text-xs h-9 px-4 text-muted-foreground hover:bg-muted/50"
+              className="rounded-xl border-border font-bold text-xs uppercase tracking-wider h-10 px-4 text-muted-foreground hover:bg-muted/50 transition-all"
             >
               <RefreshCcw className="w-3.5 h-3.5 mr-2" /> Sync Profile
             </Button>
@@ -211,21 +216,22 @@ export default function AdminDetailPage({
         </div>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        <Card className="md:col-span-2 border border-border shadow-xs bg-card text-card-foreground">
-          <CardHeader>
-            <CardTitle>Overview</CardTitle>
-            <CardDescription className="text-muted-foreground">
-              Personal details and access rights.
-            </CardDescription>
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        {/* Main Info Card */}
+        <Card className="lg:col-span-2 border border-border shadow-xs bg-card text-card-foreground rounded-[2rem] overflow-hidden transition-all duration-300 hover:shadow-md">
+          <CardHeader className="bg-muted/30 border-b border-border p-6">
+            <CardTitle className="text-xs font-black uppercase tracking-widest text-muted-foreground flex items-center justify-between">
+              Administrative Overview
+              <Shield className="w-4 h-4 text-indigo-500" />
+            </CardTitle>
           </CardHeader>
-          <CardContent className="space-y-6">
-            <div className="flex items-center justify-between">
+          <CardContent className="p-6 space-y-6">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-6 border-b border-border">
               <div>
-                <h3 className="text-xl font-semibold text-foreground">
+                <h3 className="text-xl font-black text-foreground tracking-tight">
                   {admin.firstName} {admin.lastName}
                 </h3>
-                <p className="text-muted-foreground">{admin.email}</p>
+                <p className="text-sm text-muted-foreground font-medium mt-0.5">{admin.email}</p>
               </div>
               <Badge
                 variant={
@@ -235,12 +241,14 @@ export default function AdminDetailPage({
                       ? 'default'
                       : 'destructive'
                 }
-                className={`text-sm px-3 py-1 font-bold ${
+                className={`text-[10px] font-black px-3 py-1 rounded-lg border-none ${
                   isInvited
                     ? isExpired
-                      ? 'bg-rose-500/10 text-rose-600 dark:text-rose-400 border-rose-500/20'
-                      : 'bg-amber-500/10 text-amber-600 dark:text-amber-400 border-amber-500/20'
-                    : ''
+                      ? 'bg-rose-500/10 text-rose-600 dark:text-rose-400'
+                      : 'bg-amber-500/10 text-amber-600 dark:text-amber-400'
+                    : admin.isActive
+                      ? 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400'
+                      : 'bg-rose-500/10 text-rose-600 dark:text-rose-400'
                 }`}
               >
                 {isInvited
@@ -253,14 +261,14 @@ export default function AdminDetailPage({
               </Badge>
             </div>
 
-            <div className="grid grid-cols-2 gap-4 pt-4 border-t border-border">
-              <div>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 pt-2">
+              <div className="space-y-2">
                 <div className="flex items-center justify-between">
-                  <p className="text-sm text-muted-foreground mb-1">System Role</p>
+                  <p className="text-[10px] font-black uppercase text-muted-foreground tracking-wider">System Role</p>
                   {!isEditingRole && admin.email !== 'admin@jledger.io' && (
                     <button
                       onClick={() => setIsEditingRole(true)}
-                      className="text-[10px] font-bold text-indigo-600 dark:text-indigo-400 hover:text-indigo-700 dark:hover:text-indigo-300 uppercase tracking-wider"
+                      className="text-[9px] font-black text-indigo-600 dark:text-indigo-400 hover:text-indigo-700 dark:hover:text-indigo-300 uppercase tracking-widest"
                     >
                       Change Role
                     </button>
@@ -273,10 +281,10 @@ export default function AdminDetailPage({
                       value={editedRole}
                       onValueChange={(val) => val && setEditedRole(val)}
                     >
-                      <SelectTrigger className="h-9 bg-card border-border rounded-lg text-xs font-semibold text-foreground">
+                      <SelectTrigger className="h-10 bg-muted/20 border-border rounded-xl text-xs font-semibold text-foreground focus-visible:ring-indigo-500">
                         <SelectValue placeholder="Select Role" />
                       </SelectTrigger>
-                      <SelectContent className="bg-card border-border text-foreground">
+                      <SelectContent className="bg-card border-border text-foreground rounded-xl">
                         {availableRoles.map((role) => (
                           <SelectItem key={role.id} value={role.name}>
                             {role.name}
@@ -300,12 +308,12 @@ export default function AdminDetailPage({
                         )}
                       </SelectContent>
                     </Select>
-                    <div className="flex gap-1">
+                    <div className="flex gap-1.5 shrink-0">
                       <Button
                         size="sm"
                         onClick={handleUpdateRole}
                         disabled={isUpdating}
-                        className="h-9 bg-emerald-600 hover:bg-emerald-700 text-white px-3 text-xs font-bold"
+                        className="h-10 bg-emerald-600 hover:bg-emerald-700 dark:bg-emerald-500 dark:hover:bg-emerald-600 text-white px-3 text-xs font-bold rounded-xl"
                       >
                         {isUpdating ? '...' : 'Save'}
                       </Button>
@@ -316,7 +324,7 @@ export default function AdminDetailPage({
                           setIsEditingRole(false);
                           setEditedRole(admin.role);
                         }}
-                        className="h-9 text-muted-foreground hover:text-foreground px-3 text-xs font-bold"
+                        className="h-10 text-muted-foreground hover:text-foreground px-3 text-xs font-bold rounded-xl"
                       >
                         Cancel
                       </Button>
@@ -327,19 +335,24 @@ export default function AdminDetailPage({
                     variant="outline"
                     className={
                       admin.role === AdminRole.SUPER_ADMIN
-                        ? 'border-indigo-500/30 text-indigo-600 dark:text-indigo-400 bg-indigo-500/10'
-                        : 'text-muted-foreground border-border bg-muted/10'
+                        ? 'border-indigo-500/20 text-indigo-600 dark:text-indigo-400 bg-indigo-500/10 font-bold text-[10px] rounded-lg mt-0.5'
+                        : admin.role === AdminRole.AUDITOR
+                        ? 'border-purple-500/20 text-purple-600 dark:text-purple-400 bg-purple-500/10 font-bold text-[10px] rounded-lg mt-0.5'
+                        : admin.role === AdminRole.COMPLIANCE_OFFICER
+                        ? 'border-amber-500/20 text-amber-600 dark:text-amber-400 bg-amber-500/10 font-bold text-[10px] rounded-lg mt-0.5'
+                        : 'border-sky-500/20 text-sky-600 dark:text-sky-400 bg-sky-500/10 font-bold text-[10px] rounded-lg mt-0.5'
                     }
                   >
                     {admin.role || 'N/A'}
                   </Badge>
                 )}
               </div>
+              
               <div>
-                <p className="text-sm text-muted-foreground mb-1">Joined Date</p>
-                <p className="font-medium text-foreground">
+                <p className="text-[10px] font-black uppercase text-muted-foreground tracking-wider mb-2">Registration Date</p>
+                <p className="text-sm font-bold text-foreground mt-0.5">
                   {admin.createdAt
-                    ? new Date(admin.createdAt).toLocaleDateString()
+                    ? new Date(admin.createdAt).toLocaleString()
                     : 'N/A'}
                 </p>
               </div>
@@ -347,34 +360,39 @@ export default function AdminDetailPage({
           </CardContent>
         </Card>
 
+        {/* Sidebar Actions */}
         <div className="space-y-6">
-          <Card className="border border-border shadow-xs bg-card text-card-foreground">
-            <CardHeader>
-              <CardTitle>Security & Access</CardTitle>
+          {/* Security & Access */}
+          <Card className="border border-border shadow-xs bg-card text-card-foreground rounded-[2rem] overflow-hidden transition-all duration-300 hover:shadow-md">
+            <CardHeader className="bg-muted/30 border-b border-border p-5">
+              <CardTitle className="text-xs font-black uppercase tracking-widest text-muted-foreground flex items-center justify-between">
+                Security & Access
+                <Lock className="w-4 h-4 text-rose-500" />
+              </CardTitle>
             </CardHeader>
-            <CardContent className="space-y-3">
+            <CardContent className="p-5 space-y-3">
               <Button
                 variant="outline"
-                className="w-full justify-start text-foreground border-border hover:bg-muted/50"
+                className="w-full justify-start text-foreground border-border hover:bg-muted/50 rounded-xl h-11 text-xs font-bold gap-2 px-4"
                 onClick={handleResetPassword}
               >
-                <Mail className="mr-2 h-4 w-4 text-blue-500" />
-                {isInvited ? 'Resend Invitation' : 'Send Password Reset'}
+                <Mail className="h-4 w-4 text-indigo-500" />
+                {isInvited ? 'Resend Invitation Email' : 'Send Password Reset'}
               </Button>
 
               {admin.email !== 'admin@jledger.io' && currentUser?.id !== id && (
                 <Button
                   variant={admin.isActive ? 'outline' : 'default'}
-                  className={`w-full justify-start ${admin.isActive ? 'text-destructive hover:text-destructive border-border hover:bg-destructive/10' : ''}`}
+                  className={`w-full justify-start rounded-xl h-11 text-xs font-bold gap-2 px-4 ${admin.isActive ? 'text-destructive hover:text-destructive border-border hover:bg-destructive/10' : 'bg-emerald-600 hover:bg-emerald-700 text-white'}`}
                   onClick={handleToggleStatus}
                 >
                   {admin.isActive ? (
                     <>
-                      <UserX className="mr-2 h-4 w-4" /> Suspend Access
+                      <UserX className="h-4 w-4" /> Suspend Staff Access
                     </>
                   ) : (
                     <>
-                      <UserCheck className="mr-2 h-4 w-4" /> Activate Access
+                      <UserCheck className="h-4 w-4" /> Restore Staff Access
                     </>
                   )}
                 </Button>
@@ -382,18 +400,22 @@ export default function AdminDetailPage({
             </CardContent>
           </Card>
 
-          <Card className="border border-border shadow-xs bg-card text-card-foreground">
-            <CardHeader>
-              <CardTitle>Accountability</CardTitle>
+          {/* Accountability */}
+          <Card className="border border-border shadow-xs bg-card text-card-foreground rounded-[2rem] overflow-hidden transition-all duration-300 hover:shadow-md">
+            <CardHeader className="bg-muted/30 border-b border-border p-5">
+              <CardTitle className="text-xs font-black uppercase tracking-widest text-muted-foreground flex items-center justify-between">
+                System Accountability
+                <History className="w-4 h-4 text-emerald-500" />
+              </CardTitle>
             </CardHeader>
-            <CardContent>
+            <CardContent className="p-5">
               <Button
                 variant="secondary"
-                className="w-full justify-start bg-muted hover:bg-muted/80 text-foreground border border-border"
+                className="w-full justify-start bg-muted hover:bg-muted/80 text-foreground border border-border rounded-xl h-11 text-xs font-bold gap-2 px-4"
                 onClick={() => router.push(`/audit?adminUserId=${admin.id}`)}
               >
-                <Activity className="mr-2 h-4 w-4" />
-                View Audit Logs
+                <Activity className="h-4 w-4 text-emerald-600" />
+                Audit Administration Logs
               </Button>
             </CardContent>
           </Card>

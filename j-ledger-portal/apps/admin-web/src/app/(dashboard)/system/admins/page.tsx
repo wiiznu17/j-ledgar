@@ -41,10 +41,11 @@ import {
   Trash2,
   Eye,
   Search,
-  Filter,
-  RotateCcw,
-  ChevronLeft,
-  ChevronRight,
+  Users,
+  ShieldCheck,
+  Mail,
+  User,
+  ShieldAlert
 } from 'lucide-react';
 import { showConfirm, showSuccess, showError } from '@/lib/swal';
 import { AdminUser, AdminRole } from '@repo/dto';
@@ -222,75 +223,100 @@ export default function UsersPage() {
   };
 
   return (
-    <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <div />
+    <div className="space-y-6 max-w-7xl mx-auto px-4 md:px-0 text-foreground">
+      {/* Page Header */}
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 bg-card p-6 rounded-[2rem] border border-border shadow-xs">
+        <div className="flex items-center gap-4">
+          <div className="p-3 bg-indigo-500/10 rounded-2xl text-indigo-600 dark:text-indigo-400">
+            <Users className="w-6 h-6 animate-pulse" />
+          </div>
+          <div>
+            <h3 className="text-xl font-black tracking-tight text-foreground">Admin Management</h3>
+            <p className="text-xs text-muted-foreground mt-0.5">
+              Manage system administrators, support agents, compliance officers, and role assignments.
+            </p>
+          </div>
+        </div>
 
         <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
           <DialogTrigger
             render={
-              <Button className="bg-indigo-600 hover:bg-indigo-700 dark:bg-indigo-500 dark:hover:bg-indigo-600 text-white border-0 shadow-sm">
+              <Button className="bg-indigo-600 hover:bg-indigo-700 dark:bg-indigo-500 dark:hover:bg-indigo-600 text-white font-bold text-xs uppercase tracking-wider rounded-2xl h-11 px-6 shadow-md transition-all duration-300 hover:shadow-indigo-500/10 hover:-translate-y-0.5">
                 <UserPlus className="mr-2 h-4 w-4" />
-                Create User
+                Add Administrator
               </Button>
             }
           />
-          <DialogContent className="sm:max-w-[425px] bg-card text-foreground border-border">
-            <form onSubmit={handleCreateUser}>
+          <DialogContent className="sm:max-w-[425px] bg-card text-foreground border-border rounded-[2rem] overflow-hidden">
+            <form onSubmit={handleCreateUser} className="space-y-5">
               <DialogHeader>
-                <DialogTitle>Add New Admin</DialogTitle>
-                <DialogDescription className="text-muted-foreground">
-                  Create a new administrator account with specific role-based
-                  access.
+                <DialogTitle className="text-lg font-black tracking-tight text-foreground flex items-center gap-2">
+                  <ShieldCheck className="w-5 h-5 text-indigo-500" />
+                  Add New Admin
+                </DialogTitle>
+                <DialogDescription className="text-xs text-muted-foreground mt-1">
+                  Create a new administrator account with specific role-based permissions.
                 </DialogDescription>
               </DialogHeader>
-              <div className="grid gap-4 py-4">
-                <div className="grid gap-2">
-                  <Label htmlFor="email">Email address</Label>
-                  <Input
-                    id="email"
-                    type="email"
-                    placeholder="name@jledger.io"
-                    value={newEmail}
-                    onChange={(e) => setNewEmail(e.target.value)}
-                    className="bg-card border-border"
-                    required
-                  />
+
+              <div className="space-y-4 py-2">
+                <div className="space-y-1.5">
+                  <Label htmlFor="email" className="text-[10px] font-black uppercase text-muted-foreground tracking-wider">Email Address</Label>
+                  <div className="relative flex items-center">
+                    <Mail className="w-4 h-4 absolute left-3.5 text-muted-foreground/60" />
+                    <Input
+                      id="email"
+                      type="email"
+                      placeholder="name@jledger.io"
+                      value={newEmail}
+                      onChange={(e) => setNewEmail(e.target.value)}
+                      className="pl-10 bg-muted/20 border-border rounded-xl focus-visible:ring-indigo-500"
+                      required
+                    />
+                  </div>
                 </div>
+
                 <div className="grid grid-cols-2 gap-4">
-                  <div className="grid gap-2">
-                    <Label htmlFor="firstName">First Name</Label>
-                    <Input
-                      id="firstName"
-                      placeholder="John"
-                      value={newFirstName}
-                      onChange={(e) => setNewFirstName(e.target.value)}
-                      className="bg-card border-border"
-                      required
-                    />
+                  <div className="space-y-1.5">
+                    <Label htmlFor="firstName" className="text-[10px] font-black uppercase text-muted-foreground tracking-wider">First Name</Label>
+                    <div className="relative flex items-center">
+                      <User className="w-4 h-4 absolute left-3.5 text-muted-foreground/60" />
+                      <Input
+                        id="firstName"
+                        placeholder="John"
+                        value={newFirstName}
+                        onChange={(e) => setNewFirstName(e.target.value)}
+                        className="pl-10 bg-muted/20 border-border rounded-xl focus-visible:ring-indigo-500"
+                        required
+                      />
+                    </div>
                   </div>
-                  <div className="grid gap-2">
-                    <Label htmlFor="lastName">Last Name</Label>
-                    <Input
-                      id="lastName"
-                      placeholder="Doe"
-                      value={newLastName}
-                      onChange={(e) => setNewLastName(e.target.value)}
-                      className="bg-card border-border"
-                      required
-                    />
+                  <div className="space-y-1.5">
+                    <Label htmlFor="lastName" className="text-[10px] font-black uppercase text-muted-foreground tracking-wider">Last Name</Label>
+                    <div className="relative flex items-center">
+                      <User className="w-4 h-4 absolute left-3.5 text-muted-foreground/60" />
+                      <Input
+                        id="lastName"
+                        placeholder="Doe"
+                        value={newLastName}
+                        onChange={(e) => setNewLastName(e.target.value)}
+                        className="pl-10 bg-muted/20 border-border rounded-xl focus-visible:ring-indigo-500"
+                        required
+                      />
+                    </div>
                   </div>
                 </div>
-                <div className="grid gap-2">
-                  <Label htmlFor="role">Role Assignment</Label>
+
+                <div className="space-y-1.5">
+                  <Label htmlFor="role" className="text-[10px] font-black uppercase text-muted-foreground tracking-wider">Role Assignment</Label>
                   <Select
                     value={newRole}
                     onValueChange={(val) => val && setNewRole(val)}
                   >
-                    <SelectTrigger id="role" className="bg-card border-border">
+                    <SelectTrigger id="role" className="bg-muted/20 border-border rounded-xl h-11 focus-visible:ring-indigo-500">
                       <SelectValue placeholder="Select a role" />
                     </SelectTrigger>
-                    <SelectContent className="bg-card border-border text-foreground">
+                    <SelectContent className="bg-card border-border text-foreground rounded-xl">
                       {availableRoles.map((role) => (
                         <SelectItem key={role.id} value={role.name}>
                           {role.name}
@@ -307,19 +333,23 @@ export default function UsersPage() {
                           <SelectItem value={AdminRole.SUPPORT_AGENT}>
                             Support Agent
                           </SelectItem>
+                          <SelectItem value={AdminRole.COMPLIANCE_OFFICER}>
+                            Compliance Officer
+                          </SelectItem>
                         </>
                       )}
                     </SelectContent>
                   </Select>
                 </div>
               </div>
-              <DialogFooter>
+
+              <DialogFooter className="pt-2">
                 <Button
                   type="submit"
                   disabled={loading}
-                  className="w-full bg-indigo-600 hover:bg-indigo-700 dark:bg-indigo-500 dark:hover:bg-indigo-600 text-white font-bold"
+                  className="w-full bg-indigo-600 hover:bg-indigo-700 dark:bg-indigo-500 dark:hover:bg-indigo-600 text-white font-bold text-xs uppercase tracking-wider rounded-xl h-11"
                 >
-                  {loading ? 'Creating...' : 'Confirm Registration'}
+                  {loading ? 'Registering...' : 'Confirm Registration'}
                 </Button>
               </DialogFooter>
             </form>
@@ -327,8 +357,9 @@ export default function UsersPage() {
         </Dialog>
       </div>
 
-      <Card className="border border-border shadow-xs overflow-hidden bg-card text-card-foreground">
-        <div className="p-4 bg-muted/10 border-b border-border">
+      {/* Filters Card */}
+      <Card className="border border-border shadow-xs overflow-hidden bg-card text-card-foreground rounded-[2rem] transition-all duration-300 hover:shadow-md">
+        <div className="p-5 bg-muted/10 border-b border-border">
           <form
             onSubmit={handleApplyFilter}
             className="grid grid-cols-1 md:grid-cols-4 gap-4 items-end"
@@ -358,6 +389,10 @@ export default function UsersPage() {
                         label: 'SUPPORT AGENT',
                         value: AdminRole.SUPPORT_AGENT,
                       },
+                      {
+                        label: 'COMPLIANCE OFFICER',
+                        value: AdminRole.COMPLIANCE_OFFICER,
+                      },
                     ]
                   : []),
               ]}
@@ -375,7 +410,7 @@ export default function UsersPage() {
             />
 
             <FilterActions
-              searchLabel="Search"
+              searchLabel="Search staff"
               isLoading={loading}
               onReset={handleResetFilter}
             />
@@ -387,10 +422,10 @@ export default function UsersPage() {
             <Table>
               <TableHeader className="bg-muted/30">
                 <TableRow className="border-border hover:bg-transparent">
-                  <TableHead className="text-muted-foreground">Staff</TableHead>
-                  <TableHead className="text-muted-foreground">Role</TableHead>
-                  <TableHead className="text-muted-foreground">Status</TableHead>
-                  <TableHead className="text-right text-muted-foreground">Actions</TableHead>
+                  <TableHead className="text-[10px] font-black uppercase tracking-widest text-muted-foreground py-4 pl-6">Staff Profile</TableHead>
+                  <TableHead className="text-[10px] font-black uppercase tracking-widest text-muted-foreground py-4">Role Assignment</TableHead>
+                  <TableHead className="text-[10px] font-black uppercase tracking-widest text-muted-foreground py-4">Account Status</TableHead>
+                  <TableHead className="text-right text-[10px] font-black uppercase tracking-widest text-muted-foreground py-4 pr-6">Management</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -400,40 +435,44 @@ export default function UsersPage() {
                       key={user.id}
                       className="hover:bg-muted/30 transition-colors border-border"
                     >
-                      <TableCell>
+                      <TableCell className="pl-6 py-4">
                         <div className="flex flex-col">
-                          <span className="font-medium text-foreground">
+                          <span className="font-bold text-foreground">
                             {user.firstName} {user.lastName}
                           </span>
-                          <span className="text-xs text-muted-foreground">
+                          <span className="text-xs text-muted-foreground font-medium mt-0.5">
                             {user.email}
                           </span>
                         </div>
                       </TableCell>
-                      <TableCell>
+                      <TableCell className="py-4">
                         <Badge
                           variant="outline"
                           className={
                             user.role === AdminRole.SUPER_ADMIN
-                              ? 'border-indigo-500/30 text-indigo-600 dark:text-indigo-400 bg-indigo-500/10'
-                              : 'text-muted-foreground border-border bg-muted/10'
+                              ? 'border-indigo-500/20 text-indigo-600 dark:text-indigo-400 bg-indigo-500/10 font-bold text-[10px] rounded-lg'
+                              : user.role === AdminRole.AUDITOR
+                              ? 'border-purple-500/20 text-purple-600 dark:text-purple-400 bg-purple-500/10 font-bold text-[10px] rounded-lg'
+                              : user.role === AdminRole.COMPLIANCE_OFFICER
+                              ? 'border-amber-500/20 text-amber-600 dark:text-amber-400 bg-amber-500/10 font-bold text-[10px] rounded-lg'
+                              : 'border-sky-500/20 text-sky-600 dark:text-sky-400 bg-sky-500/10 font-bold text-[10px] rounded-lg'
                           }
                         >
                           {user.role}
                         </Badge>
                       </TableCell>
-                      <TableCell>
+                      <TableCell className="py-4">
                         {user.isInvited && user.isActive ? (
                           new Date(user.inviteExpiry || 0) < new Date() ? (
                             <Badge
-                              className="bg-rose-500/10 text-rose-600 dark:text-rose-400 border-rose-500/20 font-bold"
+                              className="bg-rose-500/10 text-rose-600 dark:text-rose-400 border-none font-bold text-[10px] rounded-lg"
                               variant="outline"
                             >
                               EXPIRED INVITE
                             </Badge>
                           ) : (
                             <Badge
-                              className="bg-amber-500/10 text-amber-600 dark:text-amber-400 border-amber-500/20 font-bold"
+                              className="bg-amber-500/10 text-amber-600 dark:text-amber-400 border-none font-bold text-[10px] rounded-lg"
                               variant="outline"
                             >
                               PENDING INVITE
@@ -443,8 +482,8 @@ export default function UsersPage() {
                           <Badge
                             className={
                               user.isActive
-                                ? 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/20 font-bold'
-                                : 'bg-rose-500/10 text-rose-600 dark:text-rose-400 border-rose-500/20 font-bold'
+                                ? 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-none font-bold text-[10px] rounded-lg'
+                                : 'bg-rose-500/10 text-rose-600 dark:text-rose-400 border-none font-bold text-[10px] rounded-lg'
                             }
                             variant="outline"
                           >
@@ -452,24 +491,26 @@ export default function UsersPage() {
                           </Badge>
                         )}
                       </TableCell>
-                      <TableCell className="text-right flex justify-end gap-2">
-                        <Link href={`/system/admins/${user.id}`}>
-                          <Button variant="outline" size="sm" className="h-8 border-border hover:bg-muted/50">
-                            <Eye className="h-4 w-4 mr-1" /> View
-                          </Button>
-                        </Link>
-                        {user.role !== AdminRole.SUPER_ADMIN &&
-                          user.email !== 'admin@jledger.io' &&
-                          user.id !== currentUser?.id && (
-                            <Button
-                              variant="ghost"
-                              size="icon"
-                              onClick={() => handleDeleteUser(user.id)}
-                              className="text-destructive hover:bg-destructive/10 h-8 w-8"
-                            >
-                              <Trash2 className="h-4 w-4" />
+                      <TableCell className="text-right pr-6 py-4">
+                        <div className="flex justify-end items-center gap-2">
+                          <Link href={`/system/admins/${user.id}`}>
+                            <Button variant="outline" size="sm" className="h-8 border-border hover:bg-muted/50 rounded-lg text-xs font-bold gap-1 px-3">
+                              <Eye className="h-3.5 w-3.5" /> View
                             </Button>
-                          )}
+                          </Link>
+                          {user.role !== AdminRole.SUPER_ADMIN &&
+                            user.email !== 'admin@jledger.io' &&
+                            user.id !== currentUser?.id && (
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                onClick={() => handleDeleteUser(user.id)}
+                                className="text-destructive hover:bg-destructive/10 h-8 w-8 rounded-lg"
+                              >
+                                <Trash2 className="h-4 w-4" />
+                              </Button>
+                            )}
+                        </div>
                       </TableCell>
                     </TableRow>
                   ))}
@@ -477,9 +518,9 @@ export default function UsersPage() {
                   <TableRow className="border-border">
                     <TableCell
                       colSpan={4}
-                      className="h-24 text-center text-muted-foreground"
+                      className="h-24 text-center text-muted-foreground font-medium text-xs animate-pulse"
                     >
-                      Loading directory...
+                      Loading administrator directory...
                     </TableCell>
                   </TableRow>
                 )}
@@ -491,7 +532,7 @@ export default function UsersPage() {
                     >
                       <div className="flex flex-col items-center justify-center gap-2">
                         <Search className="h-8 w-8 text-muted-foreground/30" />
-                        <p>No admin users found.</p>
+                        <p className="text-sm font-semibold">No admin users found.</p>
                       </div>
                     </TableCell>
                   </TableRow>
