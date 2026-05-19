@@ -156,8 +156,42 @@ export class AuditService {
       this.prisma.auditLog.count({ where }),
     ]);
 
+    // Fetch matching staff actor details in-memory to avoid complex schema changes
+    const adminUserIds = Array.from(
+      new Set(data.map((log) => log.adminUserId).filter(Boolean)),
+    ) as string[];
+
+    const staffMembers =
+      adminUserIds.length > 0
+        ? await this.prisma.staff.findMany({
+            where: { id: { in: adminUserIds } },
+            select: {
+              id: true,
+              username: true,
+              firstName: true,
+              lastName: true,
+            },
+          })
+        : [];
+
+    const staffMap = new Map(staffMembers.map((s) => [s.id, s]));
+
+    const mappedData = data.map((log) => {
+      const staff = log.adminUserId ? staffMap.get(log.adminUserId) : null;
+      return {
+        ...log,
+        adminUser: staff
+          ? {
+              username: staff.username,
+              firstName: staff.firstName,
+              lastName: staff.lastName,
+            }
+          : null,
+      };
+    });
+
     return {
-      data,
+      data: mappedData,
       pagination: {
         page,
         limit,

@@ -62,9 +62,15 @@ export default function UserActivityPage() {
   // Robust array fallback helper
   const logsList = Array.isArray(logs) ? logs : [];
 
-  // Filters
+  // Draft Filters (Values in inputs)
   const [userId, setUserId] = useState(searchParams.get('userId') || '');
   const [eventType, setEventType] = useState<string>('ALL');
+
+  // Applied Filters (Trigger search only on submission)
+  const [appliedFilters, setAppliedFilters] = useState({
+    userId: searchParams.get('userId') || '',
+    eventType: 'ALL',
+  });
 
   const limit = 50;
 
@@ -75,8 +81,8 @@ export default function UserActivityPage() {
         params: {
           page: String(page),
           limit: String(limit),
-          ...(userId ? { userId } : {}),
-          ...(eventType !== 'ALL' ? { eventType } : {}),
+          ...(appliedFilters.userId ? { userId: appliedFilters.userId } : {}),
+          ...(appliedFilters.eventType !== 'ALL' ? { eventType: appliedFilters.eventType } : {}),
         },
       });
 
@@ -103,7 +109,7 @@ export default function UserActivityPage() {
     } finally {
       setLoading(false);
     }
-  }, [page, userId, eventType]);
+  }, [page, appliedFilters]);
 
   useEffect(() => {
     fetchLogs();
@@ -112,13 +118,20 @@ export default function UserActivityPage() {
   const handleFilter = (e?: React.FormEvent) => {
     if (e) e.preventDefault();
     setPage(1);
-    fetchLogs();
+    setAppliedFilters({
+      userId,
+      eventType,
+    });
   };
 
   const handleClearFilters = () => {
     setUserId('');
     setEventType('ALL');
     setPage(1);
+    setAppliedFilters({
+      userId: '',
+      eventType: 'ALL',
+    });
     router.push('/support/user-activity');
   };
 

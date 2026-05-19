@@ -74,7 +74,7 @@ export default function AuditPage() {
 
   const searchParams = useSearchParams();
 
-  // Filters
+  // Draft Filters (Values in inputs)
   const [adminUserId, setAdminUserId] = useState(
     searchParams.get('adminUserId') || '',
   );
@@ -82,6 +82,15 @@ export default function AuditPage() {
   const [resourceType, setResourceType] = useState<string>('ALL');
   const [startDate, setStartDate] = useState('');
   const [endDate, setEndDate] = useState('');
+
+  // Applied Filters (Trigger search only on submission)
+  const [appliedFilters, setAppliedFilters] = useState({
+    adminUserId: searchParams.get('adminUserId') || '',
+    action: 'ALL',
+    resourceType: 'ALL',
+    startDate: '',
+    endDate: '',
+  });
 
   const limit = 50;
 
@@ -100,11 +109,11 @@ export default function AuditPage() {
       const response = await adminApi.audit.findAll({
         page,
         limit,
-        adminUserId: adminUserId || undefined,
-        action: action !== 'ALL' ? action : undefined,
-        resourceType: resourceType !== 'ALL' ? resourceType : undefined,
-        startDate: startDate || undefined,
-        endDate: endDate || undefined,
+        adminUserId: appliedFilters.adminUserId || undefined,
+        action: appliedFilters.action !== 'ALL' ? appliedFilters.action : undefined,
+        resourceType: appliedFilters.resourceType !== 'ALL' ? appliedFilters.resourceType : undefined,
+        startDate: appliedFilters.startDate || undefined,
+        endDate: appliedFilters.endDate || undefined,
       });
       setLogs(response.data || []);
       
@@ -117,7 +126,7 @@ export default function AuditPage() {
     } finally {
       setLoading(false);
     }
-  }, [page, adminUserId, action, resourceType, startDate, endDate]);
+  }, [page, appliedFilters]);
 
   useEffect(() => {
     fetchLogs();
@@ -127,7 +136,13 @@ export default function AuditPage() {
   const handleFilter = (e?: React.FormEvent) => {
     if (e) e.preventDefault();
     setPage(1);
-    fetchLogs();
+    setAppliedFilters({
+      adminUserId,
+      action,
+      resourceType,
+      startDate,
+      endDate,
+    });
   };
 
   const handleClearFilters = () => {
@@ -137,6 +152,13 @@ export default function AuditPage() {
     setStartDate('');
     setEndDate('');
     setPage(1);
+    setAppliedFilters({
+      adminUserId: '',
+      action: 'ALL',
+      resourceType: 'ALL',
+      startDate: '',
+      endDate: '',
+    });
   };
 
   const getActionColor = (action: string) => {
@@ -340,7 +362,7 @@ export default function AuditPage() {
                             <Cpu className="w-3.5 h-3.5" />
                           </div>
                           <span className="text-xs font-bold text-foreground leading-tight">
-                            Admin System
+                            {log.adminUser?.username || 'Admin System'}
                           </span>
                         </div>
                       </div>
@@ -421,7 +443,11 @@ export default function AuditPage() {
                                     <div className="space-y-1.5 font-bold text-foreground">
                                       <p className="flex justify-between border-b border-border pb-1">
                                         <span>Actor Name:</span>
-                                        <span>Admin System</span>
+                                        <span>
+                                          {selectedLog.adminUser
+                                            ? `${selectedLog.adminUser.firstName || ''} ${selectedLog.adminUser.lastName || ''} (${selectedLog.adminUser.username})`.trim()
+                                            : 'Admin System'}
+                                        </span>
                                       </p>
                                       <p className="flex justify-between border-b border-border pb-1">
                                         <span>Actor ID:</span>

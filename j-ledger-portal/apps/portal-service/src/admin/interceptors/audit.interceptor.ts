@@ -48,6 +48,11 @@ export class AuditInterceptor implements NestInterceptor {
       [context.getHandler(), context.getClass()],
     );
 
+    // Skip GET requests unless explicitly annotated with @AuditLog
+    if (method === 'GET' && !metadata) {
+      return next.handle();
+    }
+
     const primaryPermission = requiredPermissions[0];
     const actionReason =
       metadata?.reason || `Executed permission: ${primaryPermission}`;

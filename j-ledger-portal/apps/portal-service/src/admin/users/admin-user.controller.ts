@@ -114,11 +114,13 @@ export class AdminUserController {
     @Query('page') page: number = 1,
     @Query('limit') limit: number = 10,
     @Query('userId') userId?: string,
+    @Query('eventType') eventType?: string,
   ): Promise<AdminPaginatedResponse<any>> {
     return this.identityService.findAllSecurityEvents(
       Number(page),
       Number(limit),
       userId,
+      eventType,
     );
   }
 

@@ -930,10 +930,12 @@ export class IdentityService {
     page: number = 1,
     limit: number = 50,
     userId?: string,
+    eventType?: string,
   ) {
     const skip = (page - 1) * limit;
     const where: any = {};
     if (userId) where.userId = userId;
+    if (eventType) where.eventType = eventType;
 
     const [events, total] = await Promise.all([
       this.prisma.securityEvent.findMany({
