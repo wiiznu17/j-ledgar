@@ -232,6 +232,72 @@ async function main() {
       action: 'manage',
       description: 'Freeze, unfreeze or manage terminals',
     },
+
+    // Promotions & Deals
+    {
+      name: 'VIEW_DEALS',
+      resource: 'deal',
+      action: 'read',
+      description: 'View active promotional deals, brands, and categories',
+    },
+    {
+      name: 'MANAGE_DEALS',
+      resource: 'deal',
+      action: 'manage',
+      description: 'Create, update, toggle, or delete promotional deals and metadata',
+    },
+    {
+      name: 'VIEW_BANNERS',
+      resource: 'banner',
+      action: 'read',
+      description: 'View active promotional banners',
+    },
+    {
+      name: 'MANAGE_BANNERS',
+      resource: 'banner',
+      action: 'manage',
+      description: 'Create, update, or delete promotional banners',
+    },
+
+    // Loyalty System
+    {
+      name: 'VIEW_LOYALTY',
+      resource: 'loyalty',
+      action: 'read',
+      description: 'View active loyalty rules and stats',
+    },
+    {
+      name: 'MANAGE_LOYALTY',
+      resource: 'loyalty',
+      action: 'manage',
+      description: 'Modify loyalty point structures and rule triggers',
+    },
+
+    // System Settings & Operations
+    {
+      name: 'VIEW_SYSTEM_SETTINGS',
+      resource: 'system',
+      action: 'read',
+      description: 'View core system settings and fees',
+    },
+    {
+      name: 'MANAGE_SYSTEM_SETTINGS',
+      resource: 'system',
+      action: 'manage',
+      description: 'Modify core system fees, MDR rates, and bounds',
+    },
+    {
+      name: 'VIEW_SYSTEM_OUTBOX',
+      resource: 'outbox',
+      action: 'read',
+      description: 'View system Kafka outbox message logs',
+    },
+    {
+      name: 'RETRY_SYSTEM_OUTBOX',
+      resource: 'outbox',
+      action: 'retry',
+      description: 'Trigger outbox event retries',
+    },
   ];
 
   console.log('📦 Seeding permissions...');
@@ -290,6 +356,11 @@ async function main() {
       'VIEW_DASHBOARD',
       'VIEW_STATISTICS',
       'VIEW_MERCHANTS',
+      'VIEW_DEALS',
+      'VIEW_BANNERS',
+      'VIEW_LOYALTY',
+      'VIEW_SYSTEM_SETTINGS',
+      'VIEW_SYSTEM_OUTBOX',
     ],
     SUPPORT_AGENT: [
       'VIEW_USERS',
@@ -299,6 +370,10 @@ async function main() {
       'VIEW_KYC',
       'VIEW_MERCHANTS',
       'VIEW_MERCHANT_APPLICATIONS',
+      'VIEW_DEALS',
+      'VIEW_BANNERS',
+      'VIEW_LOYALTY',
+      'VIEW_SYSTEM_SETTINGS',
     ],
     COMPLIANCE_OFFICER: [
       'VIEW_SUSPICIOUS_ACTIVITIES',
@@ -314,6 +389,9 @@ async function main() {
       'VIEW_MERCHANT_APPLICATIONS',
       'APPROVE_MERCHANTS',
       'MANAGE_MERCHANTS',
+      'VIEW_LOYALTY',
+      'VIEW_SYSTEM_SETTINGS',
+      'VIEW_SYSTEM_OUTBOX',
     ],
   };
 

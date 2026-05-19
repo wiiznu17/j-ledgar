@@ -36,6 +36,11 @@ export enum ResourceType {
   MERCHANT = 'MERCHANT',
   TERMINAL = 'TERMINAL',
   PARTNER = 'PARTNER',
+  DEAL = 'DEAL',
+  BANNER = 'BANNER',
+  LOYALTY_RULE = 'LOYALTY_RULE',
+  SYSTEM_SETTINGS = 'SYSTEM_SETTINGS',
+  SYSTEM_OUTBOX = 'SYSTEM_OUTBOX',
 }
 
 export interface AuditLogData {
