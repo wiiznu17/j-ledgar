@@ -326,7 +326,7 @@ export default function UserActivityPage() {
                             </Button>
                           }
                         />
-                        <DialogContent className="max-w-md bg-card text-card-foreground rounded-2xl border-0 shadow-2xl">
+                        <DialogContent className="max-w-2xl sm:max-w-2xl bg-card text-card-foreground rounded-2xl border-0 shadow-2xl">
                           <DialogHeader>
                             <DialogTitle className="text-xl font-bold flex items-center gap-2 text-foreground">
                               <ShieldAlert className="w-5 h-5 text-indigo-600" />

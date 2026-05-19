@@ -1000,10 +1000,17 @@ export class IdentityService {
       throw new ForbiddenException('Only ACTIVE users can be suspended');
     }
 
-    return this.prisma.user.update({
+    const updated = await this.prisma.user.update({
       where: { id },
       data: { status: UserStatus.SUSPENDED },
     });
+
+    await this.logSecurityEvent(id, NotificationEventType.ACCOUNT_LOCKED, {
+      action: 'SUSPENDED',
+      reason: 'Suspended by administrative staff',
+    });
+
+    return updated;
   }
 
   async activateUser(id: string) {
@@ -1021,10 +1028,17 @@ export class IdentityService {
       );
     }
 
-    return this.prisma.user.update({
+    const updated = await this.prisma.user.update({
       where: { id },
       data: { status: UserStatus.ACTIVE },
     });
+
+    await this.logSecurityEvent(id, NotificationEventType.ACCOUNT_UNLOCKED, {
+      action: 'ACTIVATED',
+      reason: 'Reactivated by administrative staff',
+    });
+
+    return updated;
   }
 
   async blockUser(id: string, reason?: string) {
@@ -1040,10 +1054,17 @@ export class IdentityService {
       );
     }
 
-    return this.prisma.user.update({
+    const updated = await this.prisma.user.update({
       where: { id },
       data: { status: UserStatus.BLOCKED },
     });
+
+    await this.logSecurityEvent(id, NotificationEventType.ACCOUNT_LOCKED, {
+      action: 'BLOCKED',
+      reason: reason || 'Blocked by administrative staff',
+    });
+
+    return updated;
   }
 
   async getUserActivity(id: string) {
@@ -1750,14 +1771,50 @@ export class IdentityService {
       throw new BadRequestException('PIN not set');
     }
 
+    // Check if PIN is currently locked
+    if (user.pinLockedUntil && user.pinLockedUntil > new Date()) {
+      const timeLeft = Math.ceil((user.pinLockedUntil.getTime() - Date.now()) / 1000);
+      throw new ForbiddenException({
+        statusCode: 403,
+        message: `PIN is locked. Please try again in ${timeLeft} seconds.`,
+        error: 'Forbidden',
+        timeLeft,
+      });
+    }
+
     this.logger.debug(`[Identity] Comparing PIN for user ${userId}`);
     const isPinValid = await bcrypt.compare(dto.pin, user.pinHash);
     if (!isPinValid) {
       this.logger.warn(`[Identity] Invalid PIN attempt for user: ${userId}`);
-      await this.logSecurityEvent(userId, NotificationEventType.PIN_FAILURE, {
-        deviceId: dto.deviceId,
-      });
-      throw new UnauthorizedException('Invalid PIN');
+      const updatedUser = await this.handlePinFailure(userId);
+      const remainingAttempts = 3 - updatedUser.pinAttempts;
+
+      if (updatedUser.pinLockedUntil && updatedUser.pinLockedUntil > new Date()) {
+        await this.logSecurityEvent(userId, NotificationEventType.PIN_LOCKED, {
+          deviceId: dto.deviceId,
+          attempts: updatedUser.pinAttempts,
+        });
+
+        await this.logSecurityEvent(userId, NotificationEventType.ACCOUNT_LOCKED, {
+          action: 'ACCOUNT_LOCKED',
+          reason: 'PIN locked due to 3 consecutive failures',
+          deviceId: dto.deviceId,
+        });
+
+        throw new ForbiddenException({
+          statusCode: 403,
+          message: 'PIN locked due to too many incorrect attempts. Please try again in 5 minutes.',
+          error: 'Forbidden',
+          timeLeft: 300,
+        });
+      } else {
+        await this.logSecurityEvent(userId, NotificationEventType.PIN_FAILURE, {
+          deviceId: dto.deviceId,
+          attempts: updatedUser.pinAttempts,
+          remainingAttempts: remainingAttempts > 0 ? remainingAttempts : 0,
+        });
+        throw new UnauthorizedException(`Invalid PIN. You have ${remainingAttempts} attempts remaining.`);
+      }
     }
 
     await this.logSecurityEvent(userId, NotificationEventType.PIN_VERIFIED, {

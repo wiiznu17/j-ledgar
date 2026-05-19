@@ -144,7 +144,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
         '[Auth] PIN verification failed:',
         error.response?.data || error.message,
       );
-      return false;
+      throw error;
     }
   },
 

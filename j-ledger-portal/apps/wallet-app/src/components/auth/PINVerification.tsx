@@ -70,7 +70,7 @@ export const PINVerification: React.FC<PINVerificationProps> = ({
   }, [isSuspended, suspensionEndTime]);
 
   const handlePINComplete = async (enteredPin: string) => {
-    if (isVerifying || attempts >= MAX_ATTEMPTS || isSuspended) return;
+    if (isVerifying || isSuspended) return;
 
     setIsVerifying(true);
 
@@ -84,37 +84,28 @@ export const PINVerification: React.FC<PINVerificationProps> = ({
         setAttempts(0);
         setPin('');
         onSuccess();
-      } else {
-        const newAttempts = attempts + 1;
-        setAttempts(newAttempts);
-        setPin('');
-
-        if (newAttempts >= MAX_ATTEMPTS) {
-          // Suspend account
-          const endTime = Date.now() + SUSPENSION_MINUTES * 60 * 1000;
-          setIsSuspended(true);
-          setSuspensionEndTime(endTime);
-          setRemainingTime(SUSPENSION_MINUTES * 60);
-          setIsVerifying(false);
-
-          const message = `Account suspended for ${SUSPENSION_MINUTES} minutes due to multiple failed PIN attempts.`;
-          if (onFailure) onFailure(message);
-        } else {
-          setIsVerifying(false);
-          const remainingAttempts = MAX_ATTEMPTS - newAttempts;
-          Alert.alert(
-            'Invalid PIN',
-            `Incorrect PIN. ${remainingAttempts} attempt${remainingAttempts !== 1 ? 's' : ''} remaining.`,
-            [{ text: 'OK' }],
-          );
-        }
       }
-    } catch (error) {
+    } catch (error: any) {
       setIsVerifying(false);
       setPin('');
-      const message = 'An error occurred during PIN verification';
-      if (onFailure) onFailure(message);
-      Alert.alert('Error', message);
+
+      const serverMessage = error.response?.data?.message || 'An error occurred during PIN verification';
+      const status = error.response?.status;
+
+      if (status === 403) {
+        // Locked / Forbidden State
+        setIsSuspended(true);
+        // Sync dynamic suspension display from backend timeLeft
+        const timeLeft = error.response?.data?.timeLeft || 300;
+        setSuspensionEndTime(Date.now() + timeLeft * 1000);
+        setRemainingTime(timeLeft);
+
+        if (onFailure) onFailure(serverMessage);
+        Alert.alert('Account Locked', serverMessage, [{ text: 'OK' }]);
+      } else {
+        if (onFailure) onFailure(serverMessage);
+        Alert.alert('Invalid PIN', serverMessage, [{ text: 'OK' }]);
+      }
     }
   };
 

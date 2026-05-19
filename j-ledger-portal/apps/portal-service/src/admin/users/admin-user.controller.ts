@@ -70,6 +70,22 @@ export class AdminUserController {
     return this.identityService.searchUsers(query);
   }
 
+  @Get('security-events')
+  @RequirePermissions(Permission.VIEW_AUDIT_LOGS)
+  async getSecurityEvents(
+    @Query('page') page: number = 1,
+    @Query('limit') limit: number = 10,
+    @Query('userId') userId?: string,
+    @Query('eventType') eventType?: string,
+  ): Promise<AdminPaginatedResponse<any>> {
+    return this.identityService.findAllSecurityEvents(
+      Number(page),
+      Number(limit),
+      userId,
+      eventType,
+    );
+  }
+
   @Get(':id')
   @RequirePermissions(Permission.VIEW_USERS)
   async getUserById(@Param('id') id: string) {
@@ -108,21 +124,7 @@ export class AdminUserController {
     return this.identityService.activateUser(id);
   }
 
-  @Get('security-events')
-  @RequirePermissions(Permission.VIEW_AUDIT_LOGS)
-  async getSecurityEvents(
-    @Query('page') page: number = 1,
-    @Query('limit') limit: number = 10,
-    @Query('userId') userId?: string,
-    @Query('eventType') eventType?: string,
-  ): Promise<AdminPaginatedResponse<any>> {
-    return this.identityService.findAllSecurityEvents(
-      Number(page),
-      Number(limit),
-      userId,
-      eventType,
-    );
-  }
+
 
   @Post(':id/suspend')
   @RequirePermissions(Permission.FREEZE_USERS)
