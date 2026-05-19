@@ -22,6 +22,7 @@ import { useAuthStore } from '../../store/auth';
 import { BiometricAuth } from '../../components/auth/BiometricAuth';
 import { PINVerification } from '../../components/auth/PINVerification';
 import { ErrorRecovery } from '../../components/error/ErrorRecovery';
+import * as Location from 'expo-location';
 import {
   isBiometricAvailable,
   isBiometricEnrolled,
@@ -147,6 +148,27 @@ export default function ReviewTransferScreen() {
     setError(null);
 
     try {
+      let locationStr = 'Bangkok, Thailand';
+      try {
+        const { status } = await Location.requestForegroundPermissionsAsync();
+        if (status === 'granted') {
+          const pos = await Location.getCurrentPositionAsync({ accuracy: Location.Accuracy.Balanced });
+          const rev = await Location.reverseGeocodeAsync({
+            latitude: pos.coords.latitude,
+            longitude: pos.coords.longitude,
+          });
+          if (rev && rev[0]) {
+            const r = rev[0];
+            const city = r.region || r.subregion || r.city || 'Bangkok';
+            const country = r.country || 'Thailand';
+            locationStr = `${city}, ${country}`;
+          }
+        }
+      } catch (gpsErr) {
+        console.warn('[GPS] Failed to retrieve current location for transaction:', gpsErr);
+      }
+
+      const formattedNote = `${note || ''} [Loc: ${locationStr}]`.trim();
       let result: any;
       
       if (paymentId) {
@@ -157,7 +179,7 @@ export default function ReviewTransferScreen() {
         result = await MerchantService.confirmManualPayment({
           merchantId,
           amount: transferAmount,
-          note: note as string,
+          note: formattedNote,
         });
       } else {
         // P2P Transfer Flow
@@ -165,7 +187,7 @@ export default function ReviewTransferScreen() {
         const transferRes = await api.post('/integration/p2p/transfer', {
           recipientPhone: recipient,
           amount: transferAmount,
-          note: note || undefined,
+          note: formattedNote,
           idempotencyKey,
         });
         result = transferRes.data;
@@ -182,7 +204,7 @@ export default function ReviewTransferScreen() {
         params: {
           recipient,
           amount,
-          note,
+          note: formattedNote,
           merchantName: merchantName || (merchantId ? recipientName : undefined),
           transactionId: result.transactionId,
           createdAt: result.createdAt || new Date().toISOString(),

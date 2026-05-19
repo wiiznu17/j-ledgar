@@ -112,6 +112,67 @@ export default function MerchantApply() {
   const [acceptedTerms, setAcceptedTerms] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isSuccess, setIsSuccess] = useState(false);
+  const [isLocating, setIsLocating] = useState(false);
+
+  const getCurrentLocation = async () => {
+    setIsLocating(true);
+    try {
+      const { status } = await Location.requestForegroundPermissionsAsync();
+      if (status !== 'granted') {
+        Alert.alert(
+          'Permission Denied',
+          'Please enable location services in your device settings to auto-locate your store.',
+        );
+        return;
+      }
+
+      const locationData = await Location.getCurrentPositionAsync({
+        accuracy: Location.Accuracy.Balanced,
+      });
+
+      if (locationData && locationData.coords) {
+        const coords = {
+          latitude: locationData.coords.latitude,
+          longitude: locationData.coords.longitude,
+        };
+        setTempCoords(coords);
+        
+        // If map modal is open, animate the modal map, else animate the main map
+        if (showMapModal) {
+          modalMapRef.current?.animateToRegion({
+            ...coords,
+            latitudeDelta: 0.005,
+            longitudeDelta: 0.005,
+          }, 1000);
+        } else {
+          mapRef.current?.animateToRegion({
+            ...coords,
+            latitudeDelta: 0.005,
+            longitudeDelta: 0.005,
+          }, 1000);
+        }
+        
+        // Also pre-fill form immediately
+        setForm(prev => ({
+          ...prev,
+          latitude: coords.latitude,
+          longitude: coords.longitude,
+        }));
+        updateAddressFromCoords(coords.latitude, coords.longitude);
+      }
+    } catch (error) {
+      console.error('Error getting location:', error);
+      Alert.alert('Error', 'Failed to retrieve your current location.');
+    } finally {
+      setIsLocating(false);
+    }
+  };
+
+  useEffect(() => {
+    if (step === 3) {
+      getCurrentLocation();
+    }
+  }, [step]);
 
   useEffect(() => {
     const showEvent = Platform.OS === 'ios' ? 'keyboardWillShow' : 'keyboardDidShow';
@@ -540,6 +601,20 @@ export default function MerchantApply() {
                 pinColor="#6366f1"
               />
             </MapView>
+            
+            {/* Locate Me Floating Button */}
+            <View className="absolute top-24 right-6">
+              <TouchableOpacity 
+                onPress={getCurrentLocation}
+                className="w-12 h-12 bg-white rounded-full items-center justify-center shadow-lg border border-slate-100 active:scale-95"
+              >
+                {isLocating ? (
+                  <ActivityIndicator size="small" color="#6366f1" />
+                ) : (
+                  <LocateFixed size={20} color="#6366f1" />
+                )}
+              </TouchableOpacity>
+            </View>
             
             <View className="absolute bottom-10 left-6 right-6">
               <TouchableOpacity 

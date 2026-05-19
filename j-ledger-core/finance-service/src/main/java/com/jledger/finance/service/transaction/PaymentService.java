@@ -1,10 +1,13 @@
 package com.jledger.finance.service.transaction;
 
+import com.jledger.finance.domain.entity.Account;
 import com.jledger.finance.domain.entity.PaymentTransaction;
 import com.jledger.finance.dto.PaymentWebhookRequest;
 import com.jledger.finance.dto.TransferRequest;
+import com.jledger.finance.repository.ledger.AccountRepository;
 import com.jledger.finance.repository.transaction.PaymentTransactionRepository;
 import com.jledger.finance.service.wallet.TransferService;
+import com.jledger.finance.service.wallet.WalletService;
 
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
@@ -23,6 +26,8 @@ public class PaymentService {
 
     private final PaymentTransactionRepository paymentTransactionRepository;
     private final TransferService transferService;
+    private final AccountRepository accountRepository;
+    private final WalletService walletService;
 
     @Transactional
     public void processWebhook(PaymentWebhookRequest request) {
@@ -80,17 +85,18 @@ public class PaymentService {
 
     private void settlePayment(PaymentTransaction payment) {
         if (payment.getType() == PaymentTransaction.Type.TOPUP) {
-            // Debit: System, Credit: User
-            TransferRequest transferRequest = new TransferRequest(
-                    SYSTEM_BANK_ACCOUNT_ID.toString(),
-                    payment.getAccountId().toString(),
+            Account account = accountRepository.findById(payment.getAccountId())
+                    .orElseThrow(() -> new IllegalArgumentException("Account not found: " + payment.getAccountId()));
+
+            // Use the dedicated, high-performance external top-up credit flow to update both wallet, ledger, and transactions.
+            walletService.creditTopUpFromExternal(
+                    account.getUserId().toString(),
                     payment.getAmount(),
                     DEFAULT_CURRENCY,
+                    payment.getReferenceId(),
+                    "STRIPE",
                     null
             );
-
-            // Use reference_id as idempotency key for the ledger transfer to ensure one-to-one mapping
-            transferService.executeTransfer("PAY-" + payment.getReferenceId(), transferRequest);
         } else if (payment.getType() == PaymentTransaction.Type.WITHDRAW) {
             // Withdrawal logic: Debit User, Credit System
             throw new UnsupportedOperationException("Withdrawal settlement is not yet implemented");

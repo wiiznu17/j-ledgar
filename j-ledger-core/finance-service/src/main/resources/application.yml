@@ -10,6 +10,17 @@ spring:
     username: ${JLEDGER_DATASOURCE_USERNAME:ledger_admin}
     password: ${JLEDGER_DATASOURCE_PASSWORD:ledger_password}
 
+  redis:
+    host: ${SPRING_REDIS_HOST:localhost}
+    port: ${SPRING_REDIS_PORT:6379}
+    password: ${SPRING_REDIS_PASSWORD:redis_password}
+
+  data:
+    redis:
+      host: ${SPRING_REDIS_HOST:localhost}
+      port: ${SPRING_REDIS_PORT:6379}
+      password: ${SPRING_REDIS_PASSWORD:redis_password}
+
   jpa:
     hibernate:
       ddl-auto: validate

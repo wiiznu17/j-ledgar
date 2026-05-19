@@ -6,6 +6,7 @@ import {
   ActivityIndicator,
   ScrollView,
   Platform,
+  Alert,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import {
@@ -21,6 +22,13 @@ import { useScreenCaptureProtection } from '@/hooks/useScreenCaptureProtection';
 import api from '@/lib/axios';
 import { useStripe } from '@stripe/stripe-react-native';
 import { useAuthStore } from '@/store/auth';
+import * as Location from 'expo-location';
+import { BiometricAuth } from '../../components/auth/BiometricAuth';
+import { PINVerification } from '../../components/auth/PINVerification';
+import {
+  isBiometricAvailable,
+  isBiometricEnrolled,
+} from '../../lib/biometric-auth';
 
 export default function TopupReviewScreen() {
   useScreenCaptureProtection();
@@ -36,23 +44,97 @@ export default function TopupReviewScreen() {
   const { initPaymentSheet, presentPaymentSheet } = useStripe();
   const userEmail = useAuthStore((state) => state.user?.email);
 
+  const [isConfirming, setIsConfirming] = useState(false);
+  const [showBiometric, setShowBiometric] = useState(false);
+  const [showPIN, setShowPIN] = useState(false);
+  const [biometricAvailable, setBiometricAvailable] = useState(false);
+  const biometricEnabled = useAuthStore((state) => state.biometricEnabled);
+
   const topupAmount = parseFloat(amount || '0') || 0;
   const fee = 0;
   const totalAmount = topupAmount + fee;
 
+  React.useEffect(() => {
+    const checkBiometric = async () => {
+      const available = await isBiometricAvailable();
+      const enrolled = await isBiometricEnrolled();
+      setBiometricAvailable(available && enrolled);
+    };
+    checkBiometric();
+  }, []);
+
   const handleConfirm = async () => {
-    if (isProcessing) {
+    if (isProcessing || isConfirming) return;
+
+    if (biometricAvailable && biometricEnabled) {
+      setIsConfirming(true);
+      setShowBiometric(true);
       return;
     }
 
+    setIsConfirming(true);
+    setShowPIN(true);
+  };
+
+  const handleBiometricSuccess = () => {
+    setShowBiometric(false);
+    setIsConfirming(false);
+    performTopup();
+  };
+
+  const handleBiometricFailure = (errorStr: string) => {
+    setShowBiometric(false);
+    setShowPIN(true);
+  };
+
+  const handlePINSuccess = () => {
+    setShowPIN(false);
+    setIsConfirming(false);
+    performTopup();
+  };
+
+  const handlePINFailure = (errorStr: string) => {
+    setShowPIN(false);
+    setIsConfirming(false);
+  };
+
+  const handleAuthCancel = () => {
+    setShowBiometric(false);
+    setShowPIN(false);
+    setIsConfirming(false);
+  };
+
+  const performTopup = async () => {
     setIsProcessing(true);
     setError('');
 
     try {
+      setProcessingText('Getting current location');
+      let locationStr = 'Bangkok, Thailand';
+      try {
+        const { status } = await Location.requestForegroundPermissionsAsync();
+        if (status === 'granted') {
+          const pos = await Location.getCurrentPositionAsync({ accuracy: Location.Accuracy.Balanced });
+          const rev = await Location.reverseGeocodeAsync({
+            latitude: pos.coords.latitude,
+            longitude: pos.coords.longitude,
+          });
+          if (rev && rev[0]) {
+            const r = rev[0];
+            const city = r.region || r.subregion || r.city || 'Bangkok';
+            const country = r.country || 'Thailand';
+            locationStr = `${city}, ${country}`;
+          }
+        }
+      } catch (gpsErr) {
+        console.warn('[GPS] Failed to retrieve current location for transaction:', gpsErr);
+      }
+
       setProcessingText('Preparing payment');
       const intentRes = await api.post('/integration/topup/intent', {
         amount: topupAmount,
         currency: 'THB',
+        note: `Top-up [Loc: ${locationStr}]`,
       });
       const intentData = intentRes.data || {};
 
@@ -91,7 +173,20 @@ export default function TopupReviewScreen() {
       }
 
       if (status !== 'PAID') {
-        throw new Error('Payment verification timeout');
+        Alert.alert(
+          'Verification Pending',
+          'Your payment was authorized successfully. It may take a moment for the bank to settle your funds. Your balance will be updated automatically.',
+          [
+            {
+              text: 'OK',
+              onPress: () => {
+                router.replace('/(tabs)');
+              },
+            },
+          ],
+          { cancelable: false }
+        );
+        return;
       }
 
       router.replace({
@@ -113,6 +208,8 @@ export default function TopupReviewScreen() {
       setProcessingText('Processing Payment');
     }
   };
+
+  const isButtonDisabled = isProcessing || isConfirming;
 
   return (
     <SafeAreaView className="flex-1 bg-[#f8f9fe]" edges={['top']}>
@@ -240,19 +337,19 @@ export default function TopupReviewScreen() {
       </ScrollView>
 
       <View
-        className="absolute bottom-0 left-0 right-0 px-5 pt-4 pb-8 bg-white/90 border-t border-gray-50"
+        className="absolute bottom-0 left-0 right-0 px-5 pt-4 pb-8 bg-white/90 border-t border-gray-50 animate-fade-in"
         style={{ paddingBottom: Platform.OS === 'ios' ? 34 : 24 }}
       >
         <TouchableOpacity
-          disabled={isProcessing}
+          disabled={isButtonDisabled}
           onPress={handleConfirm}
           className={`w-full h-16 rounded-2xl flex-row items-center justify-center gap-3 ${
-            isProcessing
+            isButtonDisabled
               ? 'bg-pink-300'
               : 'bg-[#f48fb1] shadow-lg shadow-pink-200 active:scale-95'
           }`}
         >
-          {isProcessing ? (
+          {isProcessing || isConfirming ? (
             <ActivityIndicator color="white" />
           ) : (
             <>
@@ -264,6 +361,39 @@ export default function TopupReviewScreen() {
           )}
         </TouchableOpacity>
       </View>
+
+      {/* Authentication Modal - Outside ScrollView */}
+      <AnimatePresence>
+        {isConfirming && !error && (
+          <MotiView
+            from={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="absolute inset-0 bg-white items-center justify-center z-40"
+          >
+            {showBiometric && biometricAvailable && biometricEnabled && (
+              <View className="w-full bg-white rounded-t-[2.5rem] p-6 pt-8">
+                <BiometricAuth
+                  onSuccess={handleBiometricSuccess}
+                  onFailure={handleBiometricFailure}
+                  onUsePIN={() => {
+                    setShowBiometric(false);
+                    setShowPIN(true);
+                  }}
+                />
+              </View>
+            )}
+
+            {showPIN && (
+              <PINVerification
+                onSuccess={handlePINSuccess}
+                onFailure={handlePINFailure}
+                onCancel={handleAuthCancel}
+              />
+            )}
+          </MotiView>
+        )}
+      </AnimatePresence>
 
       <AnimatePresence>
         {isProcessing && (

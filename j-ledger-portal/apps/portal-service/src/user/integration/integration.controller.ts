@@ -22,6 +22,7 @@ interface TopUpBody {
 interface TopupIntentBody {
   amount: number;
   currency?: 'THB';
+  note?: string;
 }
 
 interface P2PPreviewBody {
@@ -73,12 +74,14 @@ export class IntegrationController {
   }
 
   @Post('topup/intent')
+  @UseGuards(PinVerifiedGuard)
   async createTopupIntent(@Req() req: any, @Body() body: TopupIntentBody) {
     const userId = req.user?.sub;
     return this.integrationService.createStripeTopupIntent(
       userId,
       body.amount,
       body.currency || 'THB',
+      body.note,
     );
   }
 

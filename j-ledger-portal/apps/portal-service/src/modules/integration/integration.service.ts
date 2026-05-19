@@ -434,6 +434,7 @@ export class IntegrationService {
     userId: string,
     amount: number,
     currency: string = 'THB',
+    note?: string,
   ) {
     if (!this.stripe) {
       throw new HttpException(
@@ -466,6 +467,7 @@ export class IntegrationService {
         metadata: {
           userId,
           orderId: order.id,
+          note: note || '',
         },
       },
       {
@@ -505,12 +507,42 @@ export class IntegrationService {
   }
 
   async getTopupOrderStatus(userId: string, orderId: string) {
-    const order = await this.prisma.topupOrder.findFirst({
+    let order = await this.prisma.topupOrder.findFirst({
       where: { id: orderId, userId },
     });
     if (!order) {
       throw new Error('Top-up order not found');
     }
+
+    // Secure Active Polling Fallback: If status is still PENDING, query Stripe API directly
+    // to reconcile/verify in case webhooks are delayed or blocked (e.g. no ngrok in dev).
+    if (order.status === TopupOrderStatus.PENDING && order.stripePaymentIntentId && this.stripe) {
+      try {
+        this.logger.log(`[TopupOrderStatus] Actively querying Stripe for intent: ${order.stripePaymentIntentId}`);
+        const paymentIntent = await this.stripe.paymentIntents.retrieve(order.stripePaymentIntentId);
+        
+        if (paymentIntent.status === 'succeeded') {
+          this.logger.log(`[TopupOrderStatus] Stripe payment succeeded! Running dynamic reconciliation for order: ${order.id}`);
+          // Trigger the standard payment fulfillment pipeline immediately!
+          await this.handlePaymentIntentSucceeded({
+            id: `direct_recon_${randomUUID()}`,
+            type: 'payment_intent.succeeded',
+            data: { object: paymentIntent },
+          });
+
+          // Refetch the order to return the final credited status
+          const updated = await this.prisma.topupOrder.findFirst({
+            where: { id: orderId, userId },
+          });
+          if (updated) {
+            order = updated;
+          }
+        }
+      } catch (stripeErr: any) {
+        this.logger.warn(`[TopupOrderStatus] Failed active Stripe verification check: ${stripeErr.message}`);
+      }
+    }
+
     return {
       orderId: order.id,
       status: order.status,
@@ -983,7 +1015,7 @@ export class IntegrationService {
       await this.billingService.createInvoice({
         userId: order.userId,
         senderName: 'J-Ledger Top-up',
-        note: `Top-up via ${order.currency}`,
+        note: paymentIntent.metadata?.note || `Top-up via ${order.currency}`,
         referenceId: paymentIntentId,
         items: [
           {

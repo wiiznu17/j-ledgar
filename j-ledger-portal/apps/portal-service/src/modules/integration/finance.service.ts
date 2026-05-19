@@ -321,6 +321,22 @@ export class FinanceService {
     }
   }
 
+  async getTransactionByUuid(transactionId: string): Promise<any> {
+    const url = `${this.financeServiceUrl}/api/v1/transactions/uuid/${transactionId}`;
+    try {
+      const response = await this.httpService.axiosRef.get(url, {
+        headers: this.getInternalHeaders(),
+      });
+      return response.data;
+    } catch (error: any) {
+      if (error.response?.status === 404) {
+        return null;
+      }
+      this.logCompactError(`getTransactionByUuid id=${transactionId}`, error);
+      this.rethrowAsHttpException(error, 'Failed to get transaction details');
+    }
+  }
+
   async getLinkedBankAccounts(
     userId: string,
   ): Promise<LinkedBankAccountResponse[]> {

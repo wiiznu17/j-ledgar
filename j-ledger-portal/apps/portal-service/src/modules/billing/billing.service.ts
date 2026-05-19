@@ -26,7 +26,7 @@ export class BillingService {
 
     try {
       const settings = await this.financeService.getSystemSettings();
-      const vatRate = Number(settings.vatRate || 0.07);
+      const vatRate = dto.partnerId ? Number(settings.vatRate || 0.07) : 0;
       const minAmount = Number(settings.minMerchantPayment || 5.00);
 
       // Calculate totals with consistent rounding
@@ -34,10 +34,10 @@ export class BillingService {
         (sum, item) => sum + item.unitPrice * item.quantity,
         0,
       );
-      const tax = Number((subtotal * vatRate).toFixed(2));
+      const tax = dto.partnerId ? Number((subtotal * vatRate).toFixed(2)) : 0;
       const total = subtotal + tax;
 
-      if (total < minAmount) {
+      if (dto.partnerId && total < minAmount) {
         throw new BadRequestException(`Minimum invoice amount is ฿${minAmount.toFixed(2)}`);
       }
 
@@ -124,10 +124,35 @@ export class BillingService {
     this.logger.log(
       `[getInvoiceById] Searching invoice for user=${userId} with identifier="${id}"`,
     );
+
+    const searchConditions: any[] = [{ id }, { invoiceNumber: id }, { referenceId: id }];
+
+    if (id.startsWith('TXN')) {
+      try {
+        const txn = await this.financeService.getTransactionByUuid(id);
+        if (txn && txn.referenceId) {
+          const fallbackRef = txn.referenceId;
+          this.logger.log(
+            `[getInvoiceById] Resolved TXN ${id} to referenceId: ${fallbackRef}`,
+          );
+          searchConditions.push({ referenceId: fallbackRef });
+          if (fallbackRef.startsWith('PAY-')) {
+            searchConditions.push({ referenceId: fallbackRef.replace('PAY-', '') });
+          } else {
+            searchConditions.push({ referenceId: `PAY-${fallbackRef}` });
+          }
+        }
+      } catch (err: any) {
+        this.logger.warn(
+          `[getInvoiceById] Failed to resolve TXN ${id} via finance-service: ${err.message}`,
+        );
+      }
+    }
+
     const invoice = await this.prisma.invoice.findFirst({
       where: {
         userId,
-        OR: [{ id }, { invoiceNumber: id }, { referenceId: id }],
+        OR: searchConditions,
       },
       include: { items: true },
     });
