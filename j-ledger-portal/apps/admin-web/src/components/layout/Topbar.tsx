@@ -15,6 +15,7 @@ import {
 } from '@/components/ui/dropdown-menu';
 import Link from 'next/link';
 import { ThemeToggle } from '@/components/theme-toggle';
+import { MenuSearch } from '@/components/layout/MenuSearch';
 
 interface TopbarProps {
   onLogout?: (formData: FormData) => void;
@@ -134,12 +135,8 @@ export function Topbar({ onLogout, onToggleMobile }: TopbarProps) {
       </div>
 
       <div className="flex items-center gap-4">
-        {/* Search Input Widget */}
-        <div className="hidden lg:flex items-center bg-slate-50 dark:bg-slate-900 border border-border/80 rounded-xl px-3 py-1.5 gap-2 w-64 text-muted-foreground/80 hover:border-muted-foreground/30 transition-colors shadow-2xs">
-          <Search className="w-4 h-4 text-muted-foreground/75" />
-          <span className="text-xs font-semibold flex-1">Search anything...</span>
-          <kbd className="text-[9px] font-bold bg-background dark:bg-muted/80 border border-border px-1.5 py-0.5 rounded shadow-2xs text-muted-foreground/60 select-none">⌘K</kbd>
-        </div>
+        {/* Real Interactive Menu Search */}
+        <MenuSearch />
 
         {/* Theme Toggle */}
         <ThemeToggle />
