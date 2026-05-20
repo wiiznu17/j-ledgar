@@ -2,10 +2,17 @@ import { NextResponse, NextRequest } from 'next/server';
 import { jwtVerify } from 'jose';
 import { verifyToken } from '@/lib/auth/jwt';
 
-const SECRET = new TextEncoder().encode(
-  process.env.ADMIN_JWT_SECRET ||
-    'jledger-admin-super-secret-2024-dev-key-32chars',
-);
+const adminJwtSecret = process.env.ADMIN_JWT_SECRET;
+if (!adminJwtSecret) {
+  throw new Error('ADMIN_JWT_SECRET is required');
+}
+
+const internalApiBaseUrl = process.env.INTERNAL_API_URL;
+if (!internalApiBaseUrl) {
+  throw new Error('INTERNAL_API_URL is required');
+}
+
+const SECRET = new TextEncoder().encode(adminJwtSecret);
 
 export async function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl;
@@ -38,7 +45,7 @@ export async function proxy(request: NextRequest) {
       try {
         console.log('[Proxy] Attempting token refresh for user:', userId);
         const refreshResponse = await fetch(
-          'http://localhost:3000/api/admin/auth/refresh',
+          `${internalApiBaseUrl}/api/admin/auth/refresh`,
           {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },

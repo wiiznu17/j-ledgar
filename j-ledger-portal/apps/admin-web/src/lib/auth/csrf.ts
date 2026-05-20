@@ -1,6 +1,9 @@
 import { cookies } from 'next/headers';
 
-const CSRF_SECRET = process.env.CSRF_SECRET || 'jledger-local-dev-csrf-secret';
+const CSRF_SECRET = process.env.CSRF_SECRET;
+if (!CSRF_SECRET) {
+  throw new Error('CSRF_SECRET is required');
+}
 
 export async function generateCSRFToken(): Promise<string> {
   const timestamp = Date.now();
