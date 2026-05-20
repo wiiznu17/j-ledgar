@@ -214,12 +214,12 @@ export default function TreasuryPage() {
                       <span className="text-muted-foreground">
                         Ledger (Gross):
                       </span>
-                      <span className="font-bold">
-                        ฿
-                        {summary?.stripeBalance.toLocaleString(undefined, {
-                          minimumFractionDigits: 2,
-                        })}
-                      </span>
+                        <span className="font-bold">
+                          ฿
+                          {(summary?.stripeBalance ?? 0).toLocaleString(undefined, {
+                            minimumFractionDigits: 2,
+                          })}
+                        </span>
                     </div>
                     <div className="flex justify-between">
                       <span className="text-muted-foreground">
@@ -301,7 +301,7 @@ export default function TreasuryPage() {
             </div>
             <h3 className="text-2xl font-black text-foreground tabular-nums">
               ฿
-              {summary?.totalBankBalance.toLocaleString(undefined, {
+              {(summary?.totalBankBalance ?? 0).toLocaleString(undefined, {
                 minimumFractionDigits: 2,
               })}
             </h3>
@@ -338,7 +338,7 @@ export default function TreasuryPage() {
             </div>
             <h3 className="text-2xl font-black text-foreground tabular-nums">
               ฿
-              {summary?.totalCustomerLiability.toLocaleString(undefined, {
+              {(summary?.totalCustomerLiability ?? 0).toLocaleString(undefined, {
                 minimumFractionDigits: 2,
               })}
             </h3>
@@ -386,7 +386,7 @@ export default function TreasuryPage() {
             <h3
               className={`text-2xl font-black ${status?.color || 'text-foreground'} tabular-nums`}
             >
-              {summary?.reserveRatio}%
+              {summary?.reserveRatio ?? 0}%
             </h3>
             <p className="text-[10px] text-muted-foreground mt-1.5 font-medium italic">
               ความมั่นคงของระบบ

@@ -56,9 +56,26 @@ export default function UsersPage() {
   const fetchStats = useCallback(async () => {
     try {
       const response = await userRequester.getWalletUserStats();
+      const safeStats = response?.data ?? response ?? {};
       setStats(
-        response.data ||
-          response || { total: 0, active: 0, pending: 0, blocked: 0 },
+        {
+          total:
+            typeof safeStats.total === 'number'
+              ? safeStats.total
+              : 0,
+          active:
+            typeof safeStats.active === 'number'
+              ? safeStats.active
+              : 0,
+          pending:
+            typeof safeStats.pending === 'number'
+              ? safeStats.pending
+              : 0,
+          blocked:
+            typeof safeStats.blocked === 'number'
+              ? safeStats.blocked
+              : 0,
+        },
       );
     } catch (error) {
       console.error('[USERS_PAGE] Stats error:', error);
@@ -89,9 +106,23 @@ export default function UsersPage() {
           status: filters.status === 'ALL' ? undefined : filters.status,
         },
       });
-      setUsers(response.data);
-      setTotal(response.pagination.total);
-      setTotalPages(response.pagination.totalPages);
+      const safeUsers = Array.isArray(response?.data) ? response.data : [];
+      const safePagination = response?.pagination ?? {
+        total: safeUsers.length,
+        totalPages: 1,
+      };
+      setUsers(safeUsers);
+      setTotal(
+        typeof safePagination.total === 'number'
+          ? safePagination.total
+          : safeUsers.length,
+      );
+      setTotalPages(
+        typeof safePagination.totalPages === 'number' &&
+          safePagination.totalPages > 0
+          ? safePagination.totalPages
+          : 1,
+      );
     } catch (error) {
       console.error('[USERS_PAGE] Fetch error:', error);
       toast.error('Failed to fetch users');

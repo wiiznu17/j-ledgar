@@ -92,13 +92,23 @@ export default function WalletAccountsPage() {
         size: 10,
       });
 
+      const safeData = Array.isArray(response?.data) ? response.data : [];
+      const safePagination = response?.pagination ?? {
+        total: safeData.length,
+        totalPages: 1,
+      };
+
       // Filter client-side if search is used (since Java search is simplified)
-      let filteredData = response.data;
+      let filteredData = safeData;
       if (appliedSearch) {
         filteredData = filteredData.filter(
           (w: WalletDto) =>
-            w.walletId.toLowerCase().includes(appliedSearch.toLowerCase()) ||
-            w.userId.toLowerCase().includes(appliedSearch.toLowerCase()),
+            (w.walletId || '')
+              .toLowerCase()
+              .includes(appliedSearch.toLowerCase()) ||
+            (w.userId || '')
+              .toLowerCase()
+              .includes(appliedSearch.toLowerCase()),
         );
       }
 
@@ -109,8 +119,17 @@ export default function WalletAccountsPage() {
       }
 
       setWallets(filteredData);
-      setTotal(response.pagination.total);
-      setTotalPages(response.pagination.totalPages);
+      setTotal(
+        typeof safePagination.total === 'number'
+          ? safePagination.total
+          : filteredData.length,
+      );
+      setTotalPages(
+        typeof safePagination.totalPages === 'number' &&
+          safePagination.totalPages > 0
+          ? safePagination.totalPages
+          : 1,
+      );
     } catch (error) {
       console.error('[WALLET_ACCOUNTS] Fetch error:', error);
       toast.error('Failed to fetch wallet accounts');
