@@ -2,6 +2,7 @@ import { NestFactory } from '@nestjs/core';
 import { RequestMethod, ValidationPipe } from '@nestjs/common';
 import { AppModule } from './app.module';
 import cookieParser from 'cookie-parser';
+import { GlobalExceptionFilter } from './common/filters/global-exception.filter';
 
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 
@@ -59,11 +60,37 @@ async function bootstrap() {
     }),
   );
 
+  app.useGlobalFilters(new GlobalExceptionFilter());
+
   app.setGlobalPrefix('api', {
     exclude: [{ path: 'health', method: RequestMethod.GET }],
   });
 
-  app.enableCors();
+  const allowedOrigins = process.env.JLEDGER_ALLOWED_ORIGINS
+    ? process.env.JLEDGER_ALLOWED_ORIGINS.split(',').map((o) => o.trim())
+    : nodeEnv === 'production'
+      ? ['https://potayyr.site', 'https://www.potayyr.site']
+      : [
+          'http://localhost:3000',
+          'http://localhost:3001',
+          'http://localhost:3002',
+        ];
+
+  if (nodeEnv === 'production' && !process.env.JLEDGER_ALLOWED_ORIGINS) {
+    console.warn(
+      '⚠️  WARNING: JLEDGER_ALLOWED_ORIGINS not set - using hardcoded defaults. Set this env var for custom origins.',
+    );
+  }
+
+  app.enableCors({
+    origin: allowedOrigins,
+    credentials: true,
+    methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
+    allowedHeaders: ['Content-Type', 'Authorization'],
+    optionsSuccessStatus: 200,
+    maxAge: 3600,
+    preflightContinue: false,
+  });
 
   const port = process.env.PORT || 3000;
   await app.listen(port, '0.0.0.0');
