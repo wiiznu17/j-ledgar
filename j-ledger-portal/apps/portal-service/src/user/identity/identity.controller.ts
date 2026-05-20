@@ -147,7 +147,7 @@ export class IdentityController {
 
   @Post('login')
   @HttpCode(HttpStatus.OK)
-  @Throttle({ 'login': { limit: 3, ttl: 900000 } })
+  @Throttle({ login: { limit: 3, ttl: 900000 } })
   async login(@Body() body: LoginDto, @Req() req: Request) {
     console.log('[IdentityController] Login request:', {
       phoneNumber: body.phoneNumber,

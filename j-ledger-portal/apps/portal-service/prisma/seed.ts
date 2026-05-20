@@ -424,7 +424,8 @@ async function main() {
 
   // 4. Create/Update Default Admin User
   const seedAdminEmail = process.env.JLEDGER_ADMIN_EMAIL || 'admin@jledger.com';
-  const seedAdminPasswordRaw = process.env.JLEDGER_ADMIN_PASSWORD || 'password123';
+  const seedAdminPasswordRaw =
+    process.env.JLEDGER_ADMIN_PASSWORD || 'password123';
   const adminPassword = await bcrypt.hash(seedAdminPasswordRaw, 10);
   const adminUser = await prisma.staff.upsert({
     where: { username: 'admin' },

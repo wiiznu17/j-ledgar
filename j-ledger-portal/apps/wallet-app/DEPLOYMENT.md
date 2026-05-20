@@ -21,12 +21,12 @@
 
 ## 1. Prerequisites
 
-| เครื่องมือ | Version | ติดตั้ง |
-|---|---|---|
-| Node.js | >= 20 | `brew install node` |
-| npm | >= 10 | ติดมากับ Node.js |
-| EAS CLI | latest | `npm install -g eas-cli` |
-| Expo Go | latest | โหลดจาก App Store / Play Store (สำหรับ dev เท่านั้น) |
+| เครื่องมือ | Version | ติดตั้ง                                              |
+| ---------- | ------- | ---------------------------------------------------- |
+| Node.js    | >= 20   | `brew install node`                                  |
+| npm        | >= 10   | ติดมากับ Node.js                                     |
+| EAS CLI    | latest  | `npm install -g eas-cli`                             |
+| Expo Go    | latest  | โหลดจาก App Store / Play Store (สำหรับ dev เท่านั้น) |
 
 ```bash
 # ตรวจสอบว่า login EAS แล้วหรือยัง
@@ -93,6 +93,7 @@ npx turbo run dev --filter=wallet-app
 ### เปิดแอปบนโทรศัพท์
 
 หลัง `npm run dev` จะเห็น QR Code ใน Terminal:
+
 - **Android**: เปิด Expo Go → Scan QR Code
 - **iOS**: เปิดกล้อง → Scan QR Code → เปิดใน Expo Go
 
@@ -115,6 +116,7 @@ eas build --profile preview --platform android
 ```
 
 เมื่อ build เสร็จ EAS จะให้:
+
 - **Link ดาวน์โหลด APK** → ส่ง link ให้ผู้ทดสอบโหลดเอง
 - ดูทุก build ได้ที่ [expo.dev/accounts/wiiznu17/projects/wallet-app/builds](https://expo.dev)
 
@@ -143,6 +145,7 @@ eas build:list --limit 5
 ### เช็ค `app.json` ก่อน build production
 
 ใน [app.json](./app.json) ให้ตรวจสอบ:
+
 - `version` — เพิ่มเลข version ก่อน build ทุกครั้ง
 - `android.versionCode` — เพิ่มทีละ 1 ทุก release (ถ้ามี)
 - `ios.buildNumber` — เพิ่มทีละ 1 ทุก release (ถ้ามี)
@@ -172,19 +175,19 @@ eas submit --platform ios
 
 ## 6. Environment Variables อ้างอิง
 
-| ตัวแปร | ตัวอย่างค่า | หมายเหตุ |
-|---|---|---|
-| `EXPO_PUBLIC_API_URL` | `https://potayyr.site` | URL ของ portal-service backend |
-| `EXPO_PUBLIC_STRIPE_PUBLISHABLE_KEY` | `pk_live_xxx` หรือ `pk_test_xxx` | **Publishable key เท่านั้น** |
-| `EXPO_PUBLIC_AWS_REGION` | `ap-southeast-1` | AWS Region สำหรับ Face Liveness |
-| `EXPO_PUBLIC_AWS_IDENTITY_POOL_ID` | `ap-southeast-1:xxxx` | Cognito Identity Pool สำหรับ KYC |
+| ตัวแปร                               | ตัวอย่างค่า                      | หมายเหตุ                         |
+| ------------------------------------ | -------------------------------- | -------------------------------- |
+| `EXPO_PUBLIC_API_URL`                | `https://potayyr.site`           | URL ของ portal-service backend   |
+| `EXPO_PUBLIC_STRIPE_PUBLISHABLE_KEY` | `pk_live_xxx` หรือ `pk_test_xxx` | **Publishable key เท่านั้น**     |
+| `EXPO_PUBLIC_AWS_REGION`             | `ap-southeast-1`                 | AWS Region สำหรับ Face Liveness  |
+| `EXPO_PUBLIC_AWS_IDENTITY_POOL_ID`   | `ap-southeast-1:xxxx`            | Cognito Identity Pool สำหรับ KYC |
 
 ### ตารางเปรียบเทียบค่าตาม Environment
 
-| | Local Dev | Staging | Production |
-|---|---|---|---|
-| `API_URL` | `http://192.168.x.x:3000` | `https://staging.potayyr.site` | `https://potayyr.site` |
-| `STRIPE_KEY` | `pk_test_xxx` | `pk_test_xxx` | `pk_live_xxx` |
+|              | Local Dev                 | Staging                        | Production             |
+| ------------ | ------------------------- | ------------------------------ | ---------------------- |
+| `API_URL`    | `http://192.168.x.x:3000` | `https://staging.potayyr.site` | `https://potayyr.site` |
+| `STRIPE_KEY` | `pk_test_xxx`             | `pk_test_xxx`                  | `pk_live_xxx`          |
 
 ---
 
