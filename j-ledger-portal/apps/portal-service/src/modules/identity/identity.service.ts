@@ -39,6 +39,7 @@ import {
 } from './dto/auth.dto';
 import * as bcrypt from 'bcryptjs';
 import { randomUUID, createDecipheriv } from 'crypto';
+import { LogMaskingUtil } from '../../common/utils/log-masking.util';
 
 const ACCESS_TOKEN_TTL_SECONDS = 15 * 60;
 const REFRESH_TOKEN_TTL_SECONDS = 30 * 24 * 60 * 60;
@@ -150,8 +151,9 @@ export class IdentityService {
     }
 
     const phoneNumber = this.normalizePhone(dto.phoneNumber);
+    const maskedPhone = LogMaskingUtil.maskPhoneNumber(phoneNumber);
     this.logger.log(
-      `[Register] STEP 1: Initiating registration for ${phoneNumber}`,
+      `[Register] STEP 1: Initiating registration for ${maskedPhone}`,
     );
 
     let user = await this.prisma.user.findFirst({
@@ -159,7 +161,7 @@ export class IdentityService {
     });
 
     if (!user) {
-      this.logger.log(`[Register] Creating new user for ${phoneNumber}`);
+      this.logger.log(`[Register] Creating new user for ${maskedPhone}`);
       user = await this.prisma.user.create({
         data: {
           phoneNumber,
@@ -168,13 +170,13 @@ export class IdentityService {
       });
     } else {
       this.logger.log(
-        `[Register] Existing user found for ${phoneNumber}, current state: ${user.registrationState}`,
+        `[Register] Existing user found for ${maskedPhone}, current state: ${user.registrationState}`,
       );
 
       // If user already has a password, they should use Login flow instead of Sign Up
       if (user.passwordHash) {
         this.logger.warn(
-          `[Register] User ${phoneNumber} already has a password. Forcing login.`,
+          `[Register] User ${maskedPhone} already has a password. Forcing login.`,
         );
         throw new ConflictException(
           'User already has an account. Please log in.',
@@ -186,7 +188,7 @@ export class IdentityService {
         (user.registrationState as RegistrationState) ===
         RegistrationState.COMPLETED
       ) {
-        this.logger.warn(`[Register] User ${phoneNumber} already registered`);
+        this.logger.warn(`[Register] User ${maskedPhone} already registered`);
         throw new ConflictException('User already registered');
       }
 
@@ -197,12 +199,12 @@ export class IdentityService {
           data: { registrationState: RegistrationState.PENDING_OTP },
         });
         this.logger.log(
-          `[Register] Updated registration state to PENDING_OTP for ${phoneNumber}`,
+          `[Register] Updated registration state to PENDING_OTP for ${maskedPhone}`,
         );
       }
 
       this.logger.log(
-        `[Register] Resuming onboarding for ${phoneNumber} from previous state: ${user.registrationState}`,
+        `[Register] Resuming onboarding for ${maskedPhone} from previous state: ${user.registrationState}`,
       );
     }
 
@@ -217,7 +219,7 @@ export class IdentityService {
     );
 
     this.logger.log(
-      `[Register] STEP 1 Complete: OTP challenge created for ${phoneNumber}, state: PENDING_OTP`,
+      `[Register] STEP 1 Complete: OTP challenge created for ${maskedPhone}, state: PENDING_OTP`,
     );
 
     return {
@@ -231,7 +233,8 @@ export class IdentityService {
     context?: { ip?: string; userAgent?: string },
   ) {
     const phoneNumber = this.normalizePhone(dto.phoneNumber);
-    this.logger.log(`[Register] STEP 2: Verifying OTP for ${phoneNumber}`);
+    const maskedPhone = LogMaskingUtil.maskPhoneNumber(phoneNumber);
+    this.logger.log(`[Register] STEP 2: Verifying OTP for ${maskedPhone}`);
 
     const user = await this.verifyOtpChallenge(
       dto.challengeId,
@@ -254,11 +257,11 @@ export class IdentityService {
         data: { registrationState: RegistrationState.OTP_VERIFIED },
       });
       this.logger.log(
-        `[Register] State updated to OTP_VERIFIED for ${phoneNumber}`,
+        `[Register] State updated to OTP_VERIFIED for ${maskedPhone}`,
       );
     } else {
       this.logger.log(
-        `[Register] Keeping current state: ${user.registrationState} for ${phoneNumber}`,
+        `[Register] Keeping current state: ${user.registrationState} for ${maskedPhone}`,
       );
     }
 
@@ -272,7 +275,7 @@ export class IdentityService {
     );
 
     this.logger.log(
-      `[Register] STEP 2 Complete: State updated to OTP_VERIFIED for ${phoneNumber}`,
+      `[Register] STEP 2 Complete: State updated to OTP_VERIFIED for ${maskedPhone}`,
     );
 
     const finalUser = await this.prisma.user.findUnique({
@@ -300,7 +303,8 @@ export class IdentityService {
     }
 
     const phoneNumber = this.normalizePhone(dto.phoneNumber);
-    this.logger.log(`[Login] Attempting login for ${phoneNumber}`);
+    const maskedPhone = LogMaskingUtil.maskPhoneNumber(phoneNumber);
+    this.logger.log(`[Login] Attempting login for ${maskedPhone}`);
 
     const user = await this.prisma.user.findFirst({
       where: { phoneNumber: { in: this.getPhoneCandidates(phoneNumber) } },

@@ -40,11 +40,17 @@ import { AdminJwtStrategy } from './strategies/admin-jwt.strategy';
     LoyaltyModule,
     AuditModule,
     KycModule,
-    JwtModule.register({
-      secret:
-        process.env.ADMIN_JWT_SECRET ||
-        'jledger-admin-super-secret-2024-dev-key-32chars',
-      signOptions: { expiresIn: '8h' },
+    JwtModule.registerAsync({
+      useFactory: () => {
+        const secret = process.env.ADMIN_JWT_SECRET;
+        if (!secret || secret.length < 32) {
+          throw new Error('ADMIN_JWT_SECRET is missing or too short');
+        }
+        return {
+          secret: secret,
+          signOptions: { expiresIn: '12h' },
+        };
+      },
     }),
   ],
   controllers: [

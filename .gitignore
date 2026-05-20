@@ -81,3 +81,30 @@ ewallet-ekyc-project-4083c44873a8.json
 rekognition-dev-user_accessKeys.csv
 skill and roadmap
 j-ledger-portal/apps/portal-service/ewallet-ekyc-project-4083c44873a8.json
+
+# ==============================================================================
+# Security / Secrets
+# ==============================================================================
+# Sensitive files - NEVER commit
+.env
+.env.local
+.env.*.local
+.env.production
+.env.*.production
+
+# Credentials & Keys
+*.pem
+*.key
+*.jks
+*-credentials.json
+*-credentials.js
+*-accessKeys.csv
+*-adminSDK*.json
+firebase-*.json
+private-key.json
+secrets/
+
+# AWS/Cloud credentials
+aws-credentials
+.aws/
+google-credentials.json
