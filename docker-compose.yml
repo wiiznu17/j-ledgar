@@ -96,8 +96,8 @@ services:
 
   portal-migration:
     build:
-      context: ./j-ledger-portal/apps/portal-service
-      dockerfile: Dockerfile
+      context: ./j-ledger-portal
+      dockerfile: apps/portal-service/Dockerfile
     image: j-ledger/portal-service:latest
     container_name: jledger-portal-migration
     depends_on:
@@ -132,14 +132,14 @@ services:
       finance-migration:
         condition: service_completed_successfully
     environment:
-      - SPRING_DATASOURCE_URL=jdbc:postgresql://postgres:5432/${POSTGRES_DB}?currentSchema=finance
-      - SPRING_DATASOURCE_USERNAME=${POSTGRES_USER}
-      - SPRING_DATASOURCE_PASSWORD=${POSTGRES_PASSWORD}
+      - JLEDGER_DATASOURCE_URL=jdbc:postgresql://postgres:5432/${POSTGRES_DB}?currentSchema=finance
+      - JLEDGER_DATASOURCE_USERNAME=${POSTGRES_USER}
+      - JLEDGER_DATASOURCE_PASSWORD=${POSTGRES_PASSWORD}
       - SPRING_REDIS_HOST=redis
       - SPRING_REDIS_PORT=6379
       - SPRING_REDIS_PASSWORD=${REDIS_PASSWORD}
       - JLEDGER_KAFKA_BOOTSTRAP_SERVERS=kafka:29092
-      - jledger.internal.secret=${JLEDGER_INTERNAL_SECRET}
+      - JLEDGER_INTERNAL_SECRET=${JLEDGER_INTERNAL_SECRET}
     networks:
       - jledger-network
     expose:
@@ -155,8 +155,8 @@ services:
   # ----------------------------------------------------
   portal-service:
     build:
-      context: ./j-ledger-portal/apps/portal-service
-      dockerfile: Dockerfile
+      context: ./j-ledger-portal
+      dockerfile: apps/portal-service/Dockerfile
     image: j-ledger/portal-service:latest
     container_name: jledger-portal
     depends_on:
@@ -211,8 +211,8 @@ services:
   # ----------------------------------------------------
   notification-worker:
     build:
-      context: ./j-ledger-portal/apps/notification-worker
-      dockerfile: Dockerfile
+      context: ./j-ledger-portal
+      dockerfile: apps/notification-worker/Dockerfile
     image: j-ledger/notification-worker:latest
     container_name: jledger-notification-worker
     depends_on:
