@@ -52,7 +52,7 @@ export class IdentityController {
 
   @Post('register/init')
   @HttpCode(HttpStatus.OK)
-  @Throttle({ default: {}, regInit: {} })
+  @Throttle({ 'otp-send': { limit: 3, ttl: 60000 } })
   async registerInit(@Body() body: RegisterInitDto, @Req() req: Request) {
     return this.identityService.registerInit(body, {
       ip: req.ip,
@@ -62,7 +62,7 @@ export class IdentityController {
 
   @Post('register/verify-otp')
   @HttpCode(HttpStatus.OK)
-  @Throttle({ default: {}, regVerify: {} })
+  @Throttle({ 'otp-verify': { limit: 3, ttl: 300000 } })
   async registerVerifyOtp(
     @Body() body: RegisterVerifyOtpDto,
     @Req() req: Request,
@@ -147,7 +147,7 @@ export class IdentityController {
 
   @Post('login')
   @HttpCode(HttpStatus.OK)
-  @Throttle({ default: {}, login: {} })
+  @Throttle({ 'login': { limit: 3, ttl: 900000 } })
   async login(@Body() body: LoginDto, @Req() req: Request) {
     console.log('[IdentityController] Login request:', {
       phoneNumber: body.phoneNumber,

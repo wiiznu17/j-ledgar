@@ -8,12 +8,12 @@ services:
     environment:
       POSTGRES_USER: ${POSTGRES_USER}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
-      POSTGRES_DB: jledger_db
+      POSTGRES_DB: ${POSTGRES_DB}
     volumes:
       - pgdata:/var/lib/postgresql/data
       - ./docker/init-scripts:/docker-entrypoint-initdb.d
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d jledger_db"]
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}"]
       interval: 10s
       timeout: 10s
       retries: 10
@@ -106,8 +106,13 @@ services:
     command: sh -c "npx prisma migrate deploy && npx prisma db seed"
     environment:
       - DATABASE_URL=postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB}
+      - FINANCE_SERVICE_URL=http://finance-service:8081
+      - JLEDGER_INTERNAL_SECRET=${JLEDGER_INTERNAL_SECRET}
+      - JLEDGER_ADMIN_EMAIL=${JLEDGER_ADMIN_EMAIL}
+      - JLEDGER_ADMIN_PASSWORD=${JLEDGER_ADMIN_PASSWORD}
     networks:
       - jledger-network
+
 
   # ----------------------------------------------------
   # 6. Finance Service (Java/Spring Boot)
@@ -167,10 +172,30 @@ services:
       - DATABASE_URL=postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB}
       - JLEDGER_REDIS_ADDRESS=redis://redis:6379
       - JLEDGER_REDIS_PASSWORD=${REDIS_PASSWORD}
-      - JWT_ACCESS_SECRET=${JWT_ACCESS_SECRET}
-      - JWT_REFRESH_SECRET=${JWT_REFRESH_SECRET}
-      - JWT_REGISTRATION_SECRET=${JWT_REGISTRATION_SECRET}
+      - CUSTOMER_JWT_SECRET=${CUSTOMER_JWT_SECRET}
+      - CUSTOMER_REFRESH_SECRET=${CUSTOMER_REFRESH_SECRET}
+      - CUSTOMER_REGISTRATION_SECRET=${CUSTOMER_REGISTRATION_SECRET}
+      - ADMIN_JWT_SECRET=${ADMIN_JWT_SECRET}
+      - ADMIN_REFRESH_SECRET=${ADMIN_REFRESH_SECRET}
+      - PII_ENCRYPTION_KEY=${PII_ENCRYPTION_KEY}
       - JLEDGER_INTERNAL_SECRET=${JLEDGER_INTERNAL_SECRET}
+      - SMS_PROVIDER_TYPE=${SMS_PROVIDER_TYPE}
+      - KYC_OCR_PROVIDER_TYPE=${KYC_OCR_PROVIDER_TYPE}
+      - KYC_FACE_PROVIDER_TYPE=${KYC_FACE_PROVIDER_TYPE}
+      - STORAGE_PROVIDER_TYPE=${STORAGE_PROVIDER_TYPE}
+      - AWS_ACCESS_KEY_ID=${AWS_ACCESS_KEY_ID}
+      - AWS_SECRET_ACCESS_KEY=${AWS_SECRET_ACCESS_KEY}
+      - AWS_REGION=${AWS_REGION}
+      - AWS_S3_BUCKET_NAME=${AWS_S3_BUCKET_NAME}
+      - JLEDGER_ALLOWED_ORIGINS=${JLEDGER_ALLOWED_ORIGINS}
+      - KAFKA_BROKERS=${KAFKA_BROKERS}
+      - JLEDGER_ADMIN_EMAIL=${JLEDGER_ADMIN_EMAIL}
+      - JLEDGER_ADMIN_PASSWORD=${JLEDGER_ADMIN_PASSWORD}
+      - KYC_MIN_SIMILARITY_SCORE=${KYC_MIN_SIMILARITY_SCORE}
+      - KYC_MIN_LIVENESS_CONFIDENCE=${KYC_MIN_LIVENESS_CONFIDENCE}
+      - STRIPE_SECRET_KEY=${STRIPE_SECRET_KEY}
+      - STRIPE_WEBHOOK_SECRET=${STRIPE_WEBHOOK_SECRET}
+      - STRIPE_PUBLISHABLE_KEY=${STRIPE_PUBLISHABLE_KEY}
     networks:
       - jledger-network
     expose:
@@ -197,7 +222,7 @@ services:
         condition: service_healthy
     environment:
       - DATABASE_URL=postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB}
-      - KAFKA_BROKERS=kafka:29092
+      - KAFKA_BROKERS=${KAFKA_BROKERS}
       - SMTP_HOST=${SMTP_HOST}
       - SMTP_PORT=${SMTP_PORT}
       - SMTP_USER=${SMTP_USER}

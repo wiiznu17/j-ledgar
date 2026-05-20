@@ -28,9 +28,7 @@ export class AdminJwtStrategy extends PassportStrategy(Strategy, 'admin-jwt') {
         },
       ]),
       ignoreExpiration: false,
-      secretOrKey:
-        configService.get<string>('ADMIN_JWT_SECRET') ||
-        'jledger-admin-super-secret-2024-dev-key-32chars',
+      secretOrKey: configService.get<string>('ADMIN_JWT_SECRET'),
     });
   }
 

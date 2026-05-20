@@ -1,382 +1,106 @@
-# J-Ledger Ecosystem 🏦
+# J-Ledger
 
-J-Ledger is a high-performance, production-ready financial ledger system designed for consistency and scalability. The ecosystem uses a pragmatic monolithic architecture with **2 core services** for simplified deployment and faster development.
+![Java](https://img.shields.io/badge/Java-ED8B00?style=flat-square&logo=openjdk&logoColor=white)
+![Spring Boot](https://img.shields.io/badge/Spring_Boot-6DB33F?style=flat-square&logo=spring-boot&logoColor=white)
+![Node.js](https://img.shields.io/badge/Node.js-43853D?style=flat-square&logo=node.js&logoColor=white)
+![NestJS](https://img.shields.io/badge/NestJS-E0234E?style=flat-square&logo=nestjs&logoColor=white)
+![PostgreSQL](https://img.shields.io/badge/PostgreSQL-316192?style=flat-square&logo=postgresql&logoColor=white)
+![Redis](https://img.shields.io/badge/Redis-DC382D?style=flat-square&logo=redis&logoColor=white)
+![Apache Kafka](https://img.shields.io/badge/Apache_Kafka-231F20?style=flat-square&logo=apache-kafka&logoColor=white)
+![Docker](https://img.shields.io/badge/Docker-2496ED?style=flat-square&logo=docker&logoColor=white)
 
----
+J-Ledger is a high-performance, production-ready financial ledger system designed for consistency and scalability. The ecosystem uses a pragmatic monolithic architecture with two core services, simplifying deployment while allowing for faster development and strict domain isolation.
 
-## 🏗️ System Architecture
+## System Architecture
 
-```text
-.
-├── j-ledger-core/                # 🛡️ Financial Core (Java 21)
-│   └── finance-service/          # All financial logic (ledger, wallet, transfer, limits, settlement, fraud, fees)
-├── j-ledger-portal/              # 🌐 Portal Service (NestJS Monolith)
-│   ├── apps/
-│   │   ├── portal-service/       # Monolithic API (identity, kyc, admin, integration, audit, reporting modules)
-│   │   ├── notification-worker/  # Async Notifications (Kafka consumer, push, email, SMS)
-│   │   ├── admin-web/            # Admin Management Dashboard (React)
-│   │   └── wallet-app/           # Customer Mobile App (React Native/Expo)
-│   └── packages/                 # Shared packages
-├── docker/
-│   └── nginx/
-│       ├── default.conf          # Production (HTTPS with SSL, potayyr.site) - Public NGINX
-│       └── default.conf.example  # Local development (HTTP only, localhost) - สำหรับ Local Test
-├── docker-compose.yml            # 🚀 Production Orchestration
-├── docker-compose.dev.yml        # 🛠️ Development Infrastructure (Dev Mode)
-└── docker-compose.test.yml       # 🧪 Local Test Infrastructure (Local Test Mode)
-```
+The project is structured into two main components to ensure a clear separation of concerns between core financial operations and user-facing features:
 
-### Core Services
+1. **Finance Service (j-ledger-core)**
+   - **Role:** The core ledger engine.
+   - **Stack:** Java 21, Spring Boot
+   - **Responsibilities:** Handles all critical financial logic including ledger entries, wallet management, transfers, transaction limits, settlements, fraud rules, and fee calculations. Only this service can mutate the state of money.
 
-| Service                 | Port | Technology            | Responsibilities                                                                          |
-| ----------------------- | ---- | --------------------- | ----------------------------------------------------------------------------------------- |
-| **finance-service**     | 8081 | Java 21 / Spring Boot | Ledger, wallet, transfers, transactions, limits, settlement, fraud rules, fees, reporting |
-| **portal-service**      | 3000 | NestJS                | Identity, KYC, Admin, Integration, Audit, Reporting APIs (monolithic)                     |
-| **notification-worker** | 3001 | NestJS                | Kafka consumer, push notifications, email, SMS                                            |
-| **admin-web**           | 3002 | React / Next.js       | Admin Management Dashboard                                                                |
+2. **Portal Service (j-ledger-portal)**
+   - **Role:** The monolithic gateway and user-facing API.
+   - **Stack:** Node.js, NestJS
+   - **Responsibilities:** Manages identity, KYC processes, admin workflows, third-party integrations, audit logging, and reporting. It acts as a proxy, calling the Finance Service via HTTP REST APIs for any financial operations.
 
-### Portal Service Modules
+Additionally, the repository contains:
+- `notification-worker`: A NestJS worker that consumes Kafka events for push notifications, emails, and SMS.
+- `admin-web`: A React/Next.js dashboard for administrative management.
+- `wallet-app`: A React Native/Expo application for end customers.
 
-| Module          | Purpose                                                              |
-| --------------- | -------------------------------------------------------------------- |
-| **identity**    | User authentication, registration, PIN, biometric, device management |
-| **kyc**         | KYC document upload, OCR, face verification, PII encryption          |
-| **admin**       | Staff management, roles, permissions, audit logging                  |
-| **integration** | Transaction history, bank integrations, webhooks, ledger proxy       |
-| **audit**       | Audit logging, sensitive data masking, compliance tracking           |
-| **reporting**   | Daily/monthly reports, reconciliation, user statistics               |
+## Technology Stack
 
-### Database Schemas
+- **Backend:** Java 21 (Spring Boot), Node.js (NestJS)
+- **Frontend:** React (Next.js), React Native (Expo)
+- **Database:** PostgreSQL (with logical schemas for finance, identity, kyc, admin, integration)
+- **Cache & Message Broker:** Redis, Apache Kafka, Zookeeper
+- **Infrastructure:** Docker, Docker Compose, Nginx (for production routing)
 
-| Schema          | Owner           | Purpose                                                                                             |
-| --------------- | --------------- | --------------------------------------------------------------------------------------------------- |
-| **finance**     | finance-service | Money domain (wallets, accounts, ledger entries, transactions, transfers, holds, fees, settlements) |
-| **identity**    | portal-service  | User authentication, devices, sessions, OTP, consents, security events                              |
-| **kyc**         | portal-service  | KYC documents, PII data, verification status                                                        |
-| **admin**       | portal-service  | Staff, roles, permissions, audit logs                                                               |
-| **integration** | portal-service  | Bank integrations, webhooks, API logs                                                               |
+## Prerequisites
 
----
+To run this project locally, you will need:
+- Docker and Docker Compose
+- Node.js (v18+)
+- Java 21 (for running the finance service locally outside of Docker)
+- Maven (optional, wrapper provided)
 
-## 🚀 Deployment Modes
+## Getting Started (Local Development)
 
-J-Ledger supports 3 deployment modes:
+The recommended workflow for active development is the Hybrid Mode, where the infrastructure runs in Docker while the application code runs locally on your machine.
 
-### Mode 1: Local Development (Hybrid)
+### 1. Start the Infrastructure
 
-- **Infrastructure**: Docker (postgres, redis, kafka, zookeeper, pgadmin)
-- **Services**: Run locally on your machine
-- **Nginx**: Not used (access services directly via localhost:port)
-- **Database**: Single database (jledger_db) with schemas for each service
-- **Command**: `docker compose -f docker-compose.yml -f docker-compose.dev.yml up -d postgres redis kafka zookeeper pgadmin`
-
-### Mode 2: Local Test (Full Docker)
-
-- **Infrastructure**: Full Docker stack
-- **Services**: All services in Docker
-- **Nginx**: HTTP only (default.conf.example) for testing
-- **Database**: Single database (jledger_db) with schemas
-- **Command**: `docker compose -f docker-compose.yml -f docker-compose.test.yml up -d --build`
-
-### Mode 3: Production (AWS EC2)
-
-- **Infrastructure**: Full Docker stack on AWS EC2
-- **Services**: All services in Docker
-- **Nginx**: HTTPS with SSL (default.conf) for public
-- **Database**: Single database (jledger_db) with schemas
-- **Command**: `docker compose up -d --build`
-
-See [network.md](./network.md) for detailed network architecture and configuration.
-
----
-
-## �️ Database Management
-
-### Reset Database (Start Fresh)
-
-To completely reset the database and start from scratch:
-
-```bash
-# Stop all containers and remove volumes
-docker compose down -v
-
-# For Mode 1 (Dev Mode)
-docker compose -f docker-compose.yml -f docker-compose.dev.yml down -v
-
-# For Mode 2 (Local Test)
-docker compose -f docker-compose.yml -f docker-compose.test.yml down -v
-
-### 🔄 Unified System Reset (Recommended for Dev)
-
-To completely wipe both **Finance Service (Java)** and **Portal Service (Node)** and start from a clean state (0 balance, core accounts, and treasury seeds):
-
-```bash
-# 1. Run the reset script (Wipes DBs and runs migrations)
-cd j-ledger-portal && npm run system:reset
-
-# 2. Start Finance Service (Java)
-cd j-ledger-core/finance-service && ./mvnw spring-boot:run
-
-# 3. Run the Smart Seeder (Run after Java is UP)
-cd j-ledger-portal/apps/portal-service && npx prisma db seed
-```
-
-**This process ensures:**
-1. Both databases are completely fresh.
-2. Core system settings (MDR, VAT, Limits) are initialized in Java.
-3. Treasury bank accounts (SCB, KBank) are seeded for the dashboard.
-4. Portal accounts are linked to Finance accounts correctly.
-
----
-
-### Manual Finance Schema Reset (Start Ledger Fresh)
-
-If you only want to wipe the **finance** ledger data manually:
-
-**Warning:** This deletes all data including:
-
-- PostgreSQL data
-- Redis data
-- Kafka data
-- All application data
-
----
-
-## �️ Mode 1: Local Development (Hybrid Workflow)
-
-This is the recommended workflow for active development. It uses Docker for infrastructure (DB, Redis, Kafka) and runs the application code directly on your machine for fast feedback.
-
-### 1. Start Infrastructure
-
+Bring up the databases, message broker, and cache:
 ```bash
 docker compose -f docker-compose.yml -f docker-compose.dev.yml up -d postgres redis kafka zookeeper pgadmin
 ```
 
-### 2. Initialize Databases (First Time Only)
+### 2. Configure the Environment
 
-**Note:** Only services with direct database access and migration files need to be initialized.
-
+Copy the example environment file and populate it with your local values:
 ```bash
-# Finance Service (Flyway - Java)
-cd j-ledger-core/finance-service
-# Flyway migrations run automatically via Spring Boot on startup
-# Or manually: ./mvnw flyway:migrate
+cp .env.example .env
 ```
 
-### 2.5 Database Migration (เมื่อมีการแก้ Database)
+### 3. Run the Services
 
-เมื่อต้องการแก้ database schema ในโหมด Hybrid Development:
-
-**Finance Service (Flyway - Java):**
-
-```bash
-# สร้าง SQL migration file ใหม่
-# ไฟล์: j-ledger-core/finance-service/src/main/resources/db/migration/V2__your_change.sql
-# ระบุ schema ใน SQL: SET search_path TO finance, public;
-docker compose -f docker-compose.yml -f docker-compose.dev.yml run --rm finance-migration
-```
-
-**Portal Service (Prisma - Node):**
-
-```bash
-# 1. เมื่อมีการแก้ไขไฟล์ schema.prisma และต้องการสร้าง Migration
-cd j-ledger-portal/apps/portal-service
-npx prisma migrate dev --name <migration_name>
-
-# 2. เมื่อต้องการ Reset Database และลงข้อมูลเริ่มต้นใหม่ (ล้างตารางทั้งหมด)
-npx prisma migrate reset
-
-# 3. เมื่อต้องการลงข้อมูลเริ่มต้น (Seed) อย่างเดียว (ไม่ล้างตาราง)
-node prisma/seed.js
-# หรือ
-npx prisma db seed
-```
-
-> **หมายเหตุสำหรับ Mode 2 (Local Test) และ Mode 3 (Production)**:
->
-> - Migrations รันอัตโนมัติผ่าน Docker Compose containers
-> - ไม่ต้องรัน migration แยก
-> - Migration container: finance-migration
-
-> **หมายเหตุ**: Step 2 (Initialize Databases) เป็นการทำครั้งแรกเท่านั้น หลังจากนั้นเมื่อแก้ database ให้ใช้ขั้นตอนใน step 2.5
-
----
-
-### 3. Run Services Locally
-
-Run each service in its own terminal:
-
-**Portal Service (NestJS):**
-
-```bash
-lsof -ti:3000 | xargs kill -9  
-lsof -ti:3001 | xargs kill -9
-lsof -ti:3002 | xargs kill -9
-lsof -ti:8081 | xargs kill -9
-lsof -ti:19000 | xargs kill -9   
-```
-
-```bash
-cd j-ledger-portal/apps/portal-service && npm run dev
-```
+Open separate terminal instances for each service.
 
 **Finance Service (Java):**
-
 ```bash
-cd j-ledger-core/finance-service && ./mvnw spring-boot:run
+cd j-ledger-core/finance-service
+./mvnw spring-boot:run
+```
+*Note: Flyway database migrations run automatically on startup.*
+
+**Portal Service (Node.js):**
+```bash
+cd j-ledger-portal/apps/portal-service
+npm install
+npm run dev
 ```
 
-**Notification Worker (NestJS):**
-
+**Notification Worker (Node.js):**
 ```bash
-cd j-ledger-portal/apps/notification-worker && npm run start:dev
+cd j-ledger-portal/apps/notification-worker
+npm install
+npm run start:dev
 ```
 
-**Frontend Applications (Optional):**
+## Deployment
 
-```bash
-cd j-ledger-portal/apps/admin-web && npm run dev
-cd j-ledger-portal/apps/wallet-app && npx expo start
-```
+The system supports deploying to AWS EC2 using a full Docker stack. For detailed deployment instructions, server configuration, and SSL setup, please refer to the [Deployment Guide](deployment-guide.md).
 
-### Cleanup (When Needed)
+## Documentation
 
-To reset infrastructure and start fresh:
+For deeper insights into the project structure, please review the following documentation files located in the root directory:
+- `ABOUT_PROJECT.md`: Detailed project scope, deployment modes, and database management commands.
+- `DATABASE_DIAGRAM.md`: Database schema definitions and relationships.
+- `network.md`: Network architecture and routing configurations.
+- `SECURITY_AUDIT_REPORT.md` & `SECURITY_FINDINGS_AND_REMEDIATION.md`: Security compliance and auditing guidelines.
 
-```bash
-docker compose -f docker-compose.yml -f docker-compose.dev.yml down -v
-docker compose -f docker-compose.yml -f docker-compose.dev.yml up -d postgres redis kafka zookeeper pgadmin
-```
+## Security Notice
 
----
-
-## 🧪 Mode 2: Local Test (Full Docker)
-
-To run the entire system in Docker locally for testing before production deployment:
-
-### 1. Configure Environment
-
-Copy `.env.example` to `.env` and fill in the secrets.
-
-### 2. First Time Setup (Database Initialization)
-
-Migrations run automatically on first startup. No manual steps required.
-
-Migration containers will run in this order:
-
-1. finance-migration (creates finance schema)
-
-### 3. Database Migration (When Changing Schema)
-
-When you need to modify database schema:
-
-**Step 1: Create Migration File Locally**
-
-```bash
-# For Finance Service (Flyway)
-# Create: j-ledger-core/finance-service/src/main/resources/db/migration/V2__your_change.sql
-# Remember to include: SET search_path TO finance, public;
-```
-
-**Step 2: Rebuild and Restart**
-
-```bash
-docker compose -f docker-compose.yml -f docker-compose.test.yml up -d --build
-```
-
-Migration containers will automatically apply the new migrations.
-
-### 4. Launch Everything
-
-```bash
-docker compose -f docker-compose.yml -f docker-compose.test.yml up -d --build
-```
-
-**Note:** This uses the HTTP-only nginx configuration (default.conf.example) for local testing. No SSL required.
-
-_The system will automatically handle health checks, ensuring the DB and Kafka are ready before starting the APIs._
-
----
-
-## 🚀 Mode 3: Production Deployment (AWS EC2)
-
-To run the entire system exactly as it would be in production on AWS EC2:
-
-### 1. Configure Environment
-
-Copy `.env.example` to `.env` and fill in the secrets.
-
-### 2. First Time Setup (Database Initialization)
-
-Migrations run automatically on first startup. No manual steps required.
-
-Migration containers will run in this order:
-
-1. finance-migration (creates finance schema)
-
-### 3. Database Migration (When Changing Schema)
-
-When you need to modify database schema in production:
-
-**Step 1: Create Migration File Locally**
-
-```bash
-# For Finance Service (Flyway)
-# Create: j-ledger-core/finance-service/src/main/resources/db/migration/V2__your_change.sql
-# Remember to include: SET search_path TO finance, public;
-```
-
-**Step 2: Test in Mode 2 (Local Test) First**
-
-Always test migrations in Mode 2 before deploying to production:
-
-```bash
-# Reset Mode 2 database
-docker compose -f docker-compose.yml -f docker-compose.test.yml down -v
-
-# Run with new migrations
-docker compose -f docker-compose.yml -f docker-compose.test.yml up -d --build
-```
-
-**Step 3: Deploy to Production**
-
-```bash
-# SSH into production server
-ssh user@your-server
-
-# Pull latest code
-git pull
-
-# Rebuild and restart
-docker compose up -d --build
-```
-
-> **⚠️ Important:** Always backup database before running migrations in production
-
-### 4. Launch Everything
-
-```bash
-docker compose up -d --build
-```
-
-**Note:** This uses the production nginx configuration with SSL (default.conf). Requires SSL certificates at `/etc/letsencrypt/live/potayyr.site/` on the host machine.
-
-_The system will automatically handle health checks, ensuring the DB and Kafka are ready before starting the APIs._
-
----
-
-## 🩺 Monitoring & Access
-
-- **Finance Service**: [http://localhost:8081/actuator/health](http://localhost:8081/actuator/health)
-- **Portal Service**: [http://localhost:3000/](http://localhost:3000/)
-- **Notification Worker**: [http://localhost:3001/](http://localhost:3001/)
-- **Admin Web**: [http://localhost:3002/](http://localhost:3002/)
-
----
-
-## 🔒 Security Best Practices
-
-- **Internal Network**: All services communicate via the `jledger-network`.
-- **Secret Management**: Never commit your `.env` file. Change all default passwords before deploying to AWS.
-- **Port Exposure**: In production, only the `nginx` (80/443) should be exposed. Use `docker-compose.dev.yml` only for local debugging.
-- **Finance Service Isolation**: Only finance-service can mutate money state. Portal-service calls finance-service via HTTP REST API for all financial operations.
+Never commit `.env` files or sensitive credential files (such as `.pem`, `.key`, or `.csv` access keys) to the repository. The `.gitignore` is pre-configured to prevent accidental commits of known sensitive file formats.

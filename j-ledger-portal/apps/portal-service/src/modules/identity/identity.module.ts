@@ -9,10 +9,17 @@ import { NotificationModule } from '../notification/notification.module';
 
 @Module({
   imports: [
-    JwtModule.register({
-      secret:
-        process.env.CUSTOMER_JWT_SECRET || 'jledger-customer-secret-dev-2024',
-      signOptions: { expiresIn: '15m' },
+    JwtModule.registerAsync({
+      useFactory: () => {
+        const secret = process.env.CUSTOMER_JWT_SECRET;
+        if (!secret || secret.length < 32) {
+          throw new Error('CUSTOMER_JWT_SECRET is missing or too short');
+        }
+        return {
+          secret: secret,
+          signOptions: { expiresIn: '15m' },
+        };
+      },
     }),
     IntegrationModule,
     NotificationModule,

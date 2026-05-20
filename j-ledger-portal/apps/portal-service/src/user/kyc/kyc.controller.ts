@@ -10,7 +10,9 @@ import {
   Headers,
   Req,
   UnauthorizedException,
+  BadRequestException,
 } from '@nestjs/common';
+import { extname } from 'path';
 import { KycService } from '../../modules/kyc/kyc.service';
 import { ConfirmOcrDto } from '../../modules/kyc/dto/kyc.dto';
 import { JwtAuthGuard } from '../../core/common/guards/jwt-auth.guard';
@@ -23,6 +25,21 @@ import { Request } from 'express';
 @Controller('kyc')
 export class KycController {
   private readonly logger = new Logger(KycController.name);
+
+  private readonly fileValidationConfig = {
+    fileFilter: (req: any, file: any, cb: any) => {
+      const allowedMimes = ['image/jpeg', 'image/png', 'application/pdf'];
+      const allowedExtensions = ['.jpg', '.jpeg', '.png', '.pdf'];
+      
+      const ext = extname(file.originalname).toLowerCase();
+
+      if (!allowedMimes.includes(file.mimetype) || !allowedExtensions.includes(ext)) {
+        return cb(new BadRequestException(`Only JPEG, PNG, and PDF files allowed. Received: ${file.mimetype}`), false);
+      }
+      cb(null, true);
+    },
+    limits: { fileSize: 5 * 1024 * 1024 }, // 5MB
+  };
 
   constructor(private kycService: KycService) {}
 
@@ -60,7 +77,7 @@ export class KycController {
 
   @Post('upload-id-card')
   @UseGuards(RegistrationAuthGuard)
-  @UseInterceptors(FileInterceptor('idCardImage'))
+  @UseInterceptors(function (this: KycController) { return FileInterceptor('idCardImage', this.fileValidationConfig); }.call(KycController.prototype))
   async uploadIdCard(@UploadedFile() file: any, @Req() request: Request) {
     if (!file) {
       throw new Error('No file uploaded');
@@ -76,7 +93,7 @@ export class KycController {
 
   @Post('submit-selfie')
   @UseGuards(RegistrationAuthGuard)
-  @UseInterceptors(FileInterceptor('selfieImage'))
+  @UseInterceptors(function (this: KycController) { return FileInterceptor('selfieImage', this.fileValidationConfig); }.call(KycController.prototype))
   async submitSelfie(@UploadedFile() file: any, @Req() request: Request) {
     const user = (request as any).user;
     if (!user || !user.sub) {
@@ -99,7 +116,7 @@ export class KycController {
 
   @Post('upload-id-card/simple')
   @UseGuards(RegistrationAuthGuard)
-  @UseInterceptors(FileInterceptor('idCardImage'))
+  @UseInterceptors(function (this: KycController) { return FileInterceptor('idCardImage', this.fileValidationConfig); }.call(KycController.prototype))
   async uploadIdCardSimple(
     @UploadedFile() file: any,
     @Headers('authorization') authorization: string,
@@ -149,7 +166,7 @@ export class KycController {
 
   @Post('submit-selfie/simple')
   @UseGuards(RegistrationAuthGuard)
-  @UseInterceptors(FileInterceptor('selfieImage'))
+  @UseInterceptors(function (this: KycController) { return FileInterceptor('selfieImage', this.fileValidationConfig); }.call(KycController.prototype))
   async submitSelfieSimple(
     @UploadedFile() file: any,
     @Headers('authorization') authorization: string,

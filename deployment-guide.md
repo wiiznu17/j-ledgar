@@ -86,7 +86,7 @@ sudo usermod -aG docker $USER
     ```
 2.  **สั่ง Clone โปรเจกต์ (Repo เดียว)**:
     ```bash
-    git clone https://github.com/wiiznu17/j-ledgar.git
+    git clone https://github.com/wiiznu17/j-ledger.git
     cd j-ledger
     ```
 
@@ -96,28 +96,32 @@ sudo usermod -aG docker $USER
 
 หลังจากได้โค้ดมาแล้ว ให้ตั้งค่าไฟล์สำคัญดังนี้:
 
-1.  **ตั้งค่า .env**:
+1.  **สร้างไฟล์ .env (แนะนำ: ใช้ script อัตโนมัติ)**:
 
 ```bash
 cd ~/app/j-ledger
-cp .env.example .env
-nano .env
+python3 generate-secrets.py
 ```
 
+Script จะสร้างไฟล์ `.env` โดยอัตโนมัติ โดยสุ่ม key ที่ต้องการทั้งหมดให้เลย จากนั้นแก้ค่าที่เหลือด้วย `nano .env`
+
 > [!IMPORTANT]
-> **ต้องตั้งค่า Environment Variables ทั้งหมด** - ไม่มีค่า default แล้ว ระบบจะไม่ทำงานถ้าขาดตัวแปรใดตัวแปรหนึ่ง
+> **ต้องตั้งค่า Environment Variables ทั้งหมด** - ระบบจะไม่ทำงานถ้าขาดตัวแปรใดตัวแปรหนึ่ง
 
-**แก้ไขค่าสำคัญใน `.env`:**
+**ค่าที่ script สุ่มให้อัตโนมัติ** (ไม่ต้องทำเอง):
+- `CUSTOMER_JWT_SECRET`, `CUSTOMER_REFRESH_SECRET`, `CUSTOMER_REGISTRATION_SECRET`
+- `ADMIN_JWT_SECRET`, `ADMIN_REFRESH_SECRET`
+- `PII_ENCRYPTION_KEY`, `JLEDGER_INTERNAL_SECRET`
+- `POSTGRES_PASSWORD`, `REDIS_PASSWORD`, `JLEDGER_ADMIN_PASSWORD`
 
+**ต้องแก้ด้วยตัวเองหลัง script รัน:**
 - `JLEDGER_ALLOWED_ORIGINS=https://potayyr.site`
-- `POSTGRES_USER`, `POSTGRES_PASSWORD`, `POSTGRES_DB` (ตั้งค่า database)
-- `REDIS_PASSWORD` (เปลี่ยนให้ยากๆ)
-- `JLEDGER_ADMIN_EMAIL=admin@jledger.com` (อีเมลแอดมินเริ่มต้น)
-- `JLEDGER_ADMIN_PASSWORD=Admin@123` (รหัสผ่านแอดมินเริ่มต้น)
-- `JWT_SECRET`, `JWT_REFRESH_SECRET`, `JWT_ACCESS_SECRET`, `JWT_REGISTRATION_SECRET` (ใส่รหัสลับสุ่มที่ปลอดภัยสำหรับ Token)
-- `JLEDGER_INTERNAL_SECRET` (ใส่รหัสลับสุ่มที่ปลอดภัยสำหรับการคุยภายใน)
-- `KYC_ENCRYPTION_KEY` (คีย์เข้ารหัสข้อมูล KYC - ต้องมี 32 bytes)
-- `THROTTLE_TTL_DEFAULT`, `THROTTLE_LIMIT_DEFAULT` (ตั้งค่า rate limiting - มี default ใน .env.example)
+- `JLEDGER_ADMIN_EMAIL` (อีเมลสำหรับ login admin ครั้งแรก)
+- `POSTGRES_USER`, `POSTGRES_DB` (ถ้าต้องการเปลี่ยนจาก default)
+- `SMTP_HOST`, `SMTP_USER`, `SMTP_PASSWORD`, `SMTP_FROM` (Email notifications)
+- `AWS_ACCESS_KEY_ID`, `AWS_SECRET_ACCESS_KEY`, `AWS_S3_BUCKET_NAME` (ถ้าใช้ KYC จริง)
+- `FIREBASE_PROJECT_ID`, `FIREBASE_CLIENT_EMAIL`, `FIREBASE_PRIVATE_KEY` (ถ้าใช้ push notification)
+- `STRIPE_SECRET_KEY`, `STRIPE_WEBHOOK_SECRET` (ถ้าใช้ Stripe)
 
 2.  **เริ่มระบบ (Deployment)**:
 
@@ -279,7 +283,7 @@ docker compose up -d portal-migration
 ### Production Mode
 
 - **Web Portal:** `https://potayyr.site` (ล้างคุกกี้เบราว์เซอร์ก่อนเข้าครั้งแรกถ้าเคยเข้ามาก่อน)
-- **Login:** `admin@jledger.com` / `Admin@123`
+- **Login:** ใช้ค่า `JLEDGER_ADMIN_EMAIL` และ `JLEDGER_ADMIN_PASSWORD` ที่ตั้งไว้ใน `.env`
 - **Backend APIs:** ยิงผ่าน `https://potayyr.site/api/...`
 
 ### Local Development Mode
