@@ -6,20 +6,20 @@ spring:
     name: finance-service
 
   datasource:
-    url: ${JLEDGER_DATASOURCE_URL:jdbc:postgresql://localhost:5432/jledger_db?currentSchema=finance}
-    username: ${JLEDGER_DATASOURCE_USERNAME:ledger_admin}
-    password: ${JLEDGER_DATASOURCE_PASSWORD:ledger_password}
+    url: ${JLEDGER_DATASOURCE_URL}
+    username: ${JLEDGER_DATASOURCE_USERNAME}
+    password: ${JLEDGER_DATASOURCE_PASSWORD}
 
   redis:
     host: ${SPRING_REDIS_HOST:localhost}
     port: ${SPRING_REDIS_PORT:6379}
-    password: ${SPRING_REDIS_PASSWORD:redis_password}
+    password: ${SPRING_REDIS_PASSWORD}
 
   data:
     redis:
       host: ${SPRING_REDIS_HOST:localhost}
       port: ${SPRING_REDIS_PORT:6379}
-      password: ${SPRING_REDIS_PASSWORD:redis_password}
+      password: ${SPRING_REDIS_PASSWORD}
 
   jpa:
     hibernate:
@@ -38,7 +38,7 @@ spring:
 
 jledger:
   internal:
-    secret: ${JLEDGER_INTERNAL_SECRET:default_internal_secret}
+    secret: ${JLEDGER_INTERNAL_SECRET}
 
   redis:
     redisson:
