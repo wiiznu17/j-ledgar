@@ -31,12 +31,15 @@ export default function LoyaltyPage() {
         loyaltyRequester.getStats(),
         loyaltyRequester.getExpirySchedule(),
       ]);
-      setRules(rulesRes);
-      setStats(statsRes);
-      setExpiryData(expiryRes);
+      setRules(Array.isArray(rulesRes) ? rulesRes : []);
+      setStats(statsRes ?? null);
+      setExpiryData(Array.isArray(expiryRes) ? expiryRes : []);
     } catch (error) {
       console.error('Failed to fetch loyalty data', error);
       toast.error('Could not load loyalty data');
+      setRules([]);
+      setStats(null);
+      setExpiryData([]);
     } finally {
       setLoading(false);
     }
