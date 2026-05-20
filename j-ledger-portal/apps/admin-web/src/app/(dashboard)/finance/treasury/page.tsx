@@ -93,7 +93,7 @@ export default function TreasuryPage() {
         treasuryRequester.getPayoutHistory(),
       ]);
       setSummary(summaryRes);
-      setPayouts(payoutsRes);
+      setPayouts(Array.isArray(payoutsRes) ? payoutsRes : []);
     } catch (err) {
       console.error('[TREASURY_PAGE] Fetch error:', err);
       toast.error('Failed to fetch treasury data');
@@ -415,7 +415,10 @@ export default function TreasuryPage() {
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-border">
-                  {summary?.bankAccounts.map(
+                  {(Array.isArray(summary?.bankAccounts)
+                    ? summary.bankAccounts
+                    : []
+                  ).map(
                     (acc: TreasuryBankAccount, i: number) => (
                       <tr
                         key={i}
