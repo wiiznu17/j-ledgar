@@ -59,7 +59,7 @@ sudo chmod a+r /etc/apt/keyrings/docker.gpg
 # 5. เพิ่มที่อยู่แหล่งเก็บโปรแกรม (Repository) ของ Docker เข้าไปในระบบของ Ubuntu
 echo \
   "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/docker.gpg] https://download.docker.com/linux/ubuntu \
-  $(. /etc/os-release && echo "$VERSION_CODENAME") stable" | \
+  $(. /os-release && echo "$VERSION_CODENAME") stable" | \
   sudo tee /etc/apt/sources.list.d/docker.list > /dev/null
 
 # 6. อัปเดตรายการแพ็กเกจอีกครั้งเพื่อให้มองเห็นไฟล์ของ Docker ที่เราเพิ่งเพิ่มไป
@@ -87,7 +87,7 @@ sudo usermod -aG docker $USER
 2.  **สั่ง Clone โปรเจกต์ (Repo เดียว)**:
     ```bash
     git clone https://github.com/wiiznu17/j-ledgar.git
-    cd j-ledgar
+    cd j-ledger
     ```
 
 ---
@@ -110,7 +110,6 @@ nano .env
 **แก้ไขค่าสำคัญใน `.env`:**
 
 - `JLEDGER_ALLOWED_ORIGINS=https://potayyr.site`
-- `INTERNAL_API_URL=http://admin-api:3001` (ทางด่วนสำหรับ Server คุยกันเอง)
 - `POSTGRES_USER`, `POSTGRES_PASSWORD`, `POSTGRES_DB` (ตั้งค่า database)
 - `REDIS_PASSWORD` (เปลี่ยนให้ยากๆ)
 - `JLEDGER_ADMIN_EMAIL=admin@jledger.com` (อีเมลแอดมินเริ่มต้น)
@@ -122,61 +121,100 @@ nano .env
 
 2.  **เริ่มระบบ (Deployment)**:
 
-```bash
+````bash
 docker compose up -d --build
-```
 
-_ระบบจะทำการรัน Migration อัตโนมัติ (ผ่าน core-migration และ admin-migration) ก่อนจะเริ่มแอปหลักครับ_
+_ระบบจะทำการรัน Migration อัตโนมัติ (ผ่าน finance-migration, portal-migration) ก่อนจะเริ่มแอปหลักครับ_
 _ตรวจสอบสถานะด้วย `docker compose ps`_
 
 ---
 
-## �️ การจัดการ Database Migration
+## 5. Local Development Mode (Hybrid)
+
+สำหรับการพัฒนาแบบ Hybrid (Infrastructure ใน Docker, Services บน Local):
+
+1. **ตั้งค่า .env.local**:
+
+```bash
+cp .env.local.example .env.local
+# แก้ค่าตามต้องการ (ส่วนใหญ่ใช้ค่า default ได้)
+````
+
+2. **เริ่ม Infrastructure**:
+
+```bash
+docker compose -f docker-compose.yml -f docker-compose.dev.yml up -d postgres redis kafka zookeeper pgadmin
+```
+
+3. **รัน Services บน Local**:
+
+```bash
+# Portal Service (Monolithic - contains identity, kyc, admin, integration, audit, reporting modules)
+cd j-ledger-portal/apps/portal-service && npm run dev
+
+# Finance Service (Java)
+cd j-ledger-core/finance-service && ./mvnw spring-boot:run
+
+# Notification Worker (NestJS)
+cd j-ledger-portal/apps/notification-worker && npm run start:dev
+```
+
+> [!NOTE]
+> Local services จะเชื่อมต่อ infrastructure ผ่าน localhost (ports exposed จาก docker-compose.dev.yml)
+
+---
+
+## 🗄️ 6. การจัดการ Database Migration
 
 ### โครงสร้าง Database
 
 โปรเจ็คใช้ **PostgreSQL เดียว** (`jledger_db`) แต่แยก schema กัน:
 
-| Service          | Schema          | Migration Tool |
-| ---------------- | --------------- | -------------- |
-| **core-service** | `public`        | Flyway (SQL)   |
-| **admin-api**    | `admin_schema`  | Prisma (ORM)   |
-| **wallet-api**   | `wallet_schema` | Prisma (ORM)   |
+| Service             | Schema        | Migration Tool |
+| ------------------- | ------------- | -------------- |
+| **finance-service** | `finance`     | Flyway (SQL)   |
+| **portal-service**  | `identity`    | Prisma (ORM)   |
+| **portal-service**  | `kyc`         | Prisma (ORM)   |
+| **portal-service**  | `admin`       | Prisma (ORM)   |
+| **portal-service**  | `integration` | Prisma (ORM)   |
 
 ### การรันครั้งแรก (Initial Deployment)
 
 เมื่อรัน `docker compose up -d --build` ครั้งแรก ระบบจะทำ migration อัตโนมัติ:
 
-- `core-migration` container รัน Flyway → apply SQL migrations จาก `j-ledger-core/core-service/src/main/resources/db/migration/`
-- `admin-migration` container รัน Prisma → apply migrations และ seed data สำหรับ `admin_schema`
-- `wallet-migration` container รัน Prisma → apply migrations และ seed data สำหรับ `wallet_schema`
+- `finance-migration` container รัน Flyway → apply SQL migrations จาก `j-ledger-core/finance-service/src/main/resources/db/migration/`
+- `portal-migration` container รัน Prisma → apply migrations สำหรับ identity, kyc, admin, integration schemas
 
-Services หลัก (core-service, admin-api, wallet-api) จะรอให้ migration เสร็จก่อนถึงจะเริ่มทำงาน
+Services หลักจะรอให้ migration เสร็จก่อนถึงจะเริ่มทำงาน
 
 ### เมื่อมีการแก้ Database
 
-#### 1. Core Service (Flyway)
+#### 1. Finance Service (Flyway)
 
 ```bash
 # สร้าง migration file ใหม่
-# ไฟล์: j-ledger-core/core-service/src/main/resources/db/migration/V13__your_change.sql
+# ไฟล์: j-ledger-core/finance-service/src/main/resources/db/migration/V2__your_change.sql
+# ระบุ schema ใน SQL: SET search_path TO finance, public;
 
-# Deploy migration
-docker compose up -d core-migration
+# Deploy migration (Production)
+docker compose up -d finance-migration
+
+# Deploy migration (Dev - Docker)
+docker compose -f docker-compose.yml -f docker-compose.dev.yml run --rm finance-migration
 ```
 
-#### 2. Admin API / Wallet API (Prisma)
+#### 2. Portal Service (Prisma)
 
 ```bash
 # แก้ prisma/schema.prisma
-cd j-ledger-portal/apps/admin-api  # หรือ wallet-api
+cd j-ledger-portal/apps/portal-service
 
-# สร้าง migration
+# สร้าง migration (Dev)
 npx prisma migrate dev --name your_change
 
-# Rebuild image และ deploy
-docker compose build admin-migration  # หรือ wallet-migration
-docker compose up -d admin-migration
+# Rebuild image และ deploy (Production)
+docker compose build portal-migration
+docker compose up -d portal-migration
 ```
 
 ### Workflow Summary
@@ -190,7 +228,7 @@ docker compose up -d admin-migration
 
 ---
 
-## �🔒 5. ตั้งค่า SSL (HTTPS) ด้วย Certbot (Standalone Mode)
+## 🔒 7. ตั้งค่า SSL (HTTPS) ด้วย Certbot (Standalone Mode)
 
 เพื่อให้ป้องกันปัญหาพอร์ต 80 ชนกันระหว่าง Certbot และ Nginx ใน Docker เราจะใช้โหมด `standalone` ตามขั้นตอนที่ถูกต้องดังนี้ครับ:
 
@@ -203,7 +241,7 @@ docker compose up -d admin-migration
 2. **หยุด Nginx ชั่วคราว (เพื่อคืนพอร์ต 80 ให้ Certbot):**
 
    ```bash
-   cd ~/app/j-ledgar
+   cd ~/app/j-ledger
    docker compose stop nginx
    ```
 
@@ -236,11 +274,19 @@ docker compose up -d admin-migration
 
 ---
 
-## 🔗 6. การเข้าใช้งานหลังติดตั้ง
+## 🔗 8. การเข้าใช้งานหลังติดตั้ง
+
+### Production Mode
 
 - **Web Portal:** `https://potayyr.site` (ล้างคุกกี้เบราว์เซอร์ก่อนเข้าครั้งแรกถ้าเคยเข้ามาก่อน)
 - **Login:** `admin@jledger.com` / `Admin@123`
 - **Backend APIs:** ยิงผ่าน `https://potayyr.site/api/...`
 
+### Local Development Mode
+
+- **Portal Service:** `http://localhost:3000`
+- **Finance Service:** `http://localhost:8081`
+- **Notification Worker:** `http://localhost:3001`
+
 > [!IMPORTANT]
-> **Database Security**: สังเกตว่าพอร์ต 5432, 6379 จะไม่ถูกเปิดออกมาข้างนอกเครื่อง เพื่อป้องกันการเจาะระบบ ทุกอย่างสื่อสารกันภายใน Docker Network
+> **Database Security**: สังเกตว่าพอร์ต 5432, 6379 จะไม่ถูกเปิดออกมาข้างนอกเครื่องใน production เพื่อป้องกันการเจาะระบบ ทุกอย่างสื่อสารกันภายใน Docker Network

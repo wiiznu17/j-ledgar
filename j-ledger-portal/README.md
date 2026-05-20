@@ -147,7 +147,45 @@ npm exec turbo link
 npm exec turbo link
 ```
 
+## Testing
+
+### Portal Service E2E Tests
+
+The `portal-service` includes integration and E2E tests to verify onboarding flows, security guards, and data consistency.
+
+#### 1. Setup Test Database
+
+Before running E2E tests for the first time, you need to initialize the test database schema:
+
+```bash
+cd apps/portal-service
+DATABASE_URL=postgresql://ledger_admin:ledger_password@localhost:5432/jledger_test npx prisma db push
+```
+
+#### 2. Running Tests
+
+You can run all E2E tests for the portal-service using the following command:
+
+```bash
+cd apps/portal-service
+npm run test:e2e
+```
+
+To run a specific test file:
+
+```bash
+npm run test:e2e -- onboarding.e2e-spec.ts
+```
+
+#### 3. Test Configuration
+
+- **Test Config**: `apps/portal-service/test/jest-e2e.json`
+- **Environment Setup**: `apps/portal-service/test/jest-setup.ts` (Handles `DATABASE_URL` override for testing)
+- **Helpers**: Located in `apps/portal-service/test/helpers/`
+
 ## Useful Links
+
+...
 
 Learn more about the power of Turborepo:
 

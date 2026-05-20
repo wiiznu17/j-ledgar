@@ -32,7 +32,12 @@ export class NotificationService {
       title: 'Transfer Successful',
       body: `You transferred ฿${amount} to ${recipientName}`,
       type: 'transfer',
-      data: { action: 'transfer', status: 'success', recipient: recipientName, amount },
+      data: {
+        action: 'transfer',
+        status: 'success',
+        recipient: recipientName,
+        amount,
+      },
     });
   }
 

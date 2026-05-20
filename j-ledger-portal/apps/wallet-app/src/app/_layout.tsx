@@ -1,13 +1,29 @@
 import { useEffect } from 'react';
-import { DarkTheme, DefaultTheme, ThemeProvider } from '@react-navigation/native';
-import { useRouter, Stack, SplashScreen } from 'expo-router';
+import {
+  View,
+  StyleSheet,
+  Text,
+  Image,
+  Alert,
+  ActivityIndicator,
+} from 'react-native';
+import {
+  DarkTheme,
+  DefaultTheme,
+  ThemeProvider,
+} from '@react-navigation/native';
+import { router, Stack, SplashScreen, useSegments } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import 'react-native-reanimated';
-import { SafeAreaProvider } from 'react-native-safe-area-context';
+import { SafeAreaProvider, SafeAreaView } from 'react-native-safe-area-context';
+import { StripeProvider } from '@stripe/stripe-react-native';
 
 import { useColorScheme } from '@/hooks/use-color-scheme';
 import { useAuthStore } from '@/store/auth';
+import { useNotifications } from '@/hooks/useNotifications';
+import { useAppLock } from '@/hooks/useAppLock';
+import { configureAmplify } from '@/lib/amplify-config';
 
 import {
   useFonts,
@@ -33,11 +49,25 @@ export const unstable_settings = {
 
 import { BackgroundGradient } from '@/components/common/BackgroundGradient';
 
+import { UserStatus, RegistrationState } from '@repo/dto';
+
+import { PINVerification } from '@/components/auth/PINVerification';
+
 export default function RootLayout() {
   const colorScheme = useColorScheme();
-  const router = useRouter();
+  useNotifications();
+  useAppLock();
 
-  const { initialize: initializeAuth, isAuthenticated, isLoading: isAuthLoading } = useAuthStore();
+  const {
+    initialize: initializeAuth,
+    isAuthenticated,
+    isLoading: isAuthLoading,
+    needsPinVerification,
+    hasSession,
+    user,
+    unlockWithPin,
+  } = useAuthStore();
+  const segments = useSegments();
 
   const [fontsLoaded, fontError] = useFonts({
     Manrope_400Regular,
@@ -49,6 +79,7 @@ export default function RootLayout() {
 
   useEffect(() => {
     initializeAuth();
+    configureAmplify();
   }, []);
 
   useEffect(() => {
@@ -61,39 +92,176 @@ export default function RootLayout() {
   useEffect(() => {
     if (!fontsLoaded || isAuthLoading) return;
 
-    if (!isAuthenticated) {
-      router.replace('/(auth)/login');
+    console.log('[RootLayout] Auth Guard Check:', {
+      isAuthenticated,
+      needsPinVerification,
+      status: user?.status,
+      registrationState: user?.registrationState,
+    });
+
+    // If we need PIN verification and we ARE NOT already on the login screen,
+    // we don't redirect anymore, we'll show an overlay.
+    // However, if we ARE NOT authenticated at all (no session), we MUST go to login.
+    if (!isAuthenticated && !needsPinVerification) {
+      if (
+        segments[0] !== '(auth)' ||
+        (segments[1] !== 'login' && segments[1] !== 'onboarding')
+      ) {
+        router.replace('/(auth)/login');
+      }
+    } else if (user && !needsPinVerification) {
+      const isAuthGroup = segments[0] === '(auth)';
+      const isOnboarding = segments[1] === 'onboarding';
+      const isPendingApproval = segments[1] === 'pending-approval';
+
+      // 1. Handle Incomplete Registration Flow
+      // Users who are PENDING_APPROVAL or ACTIVE are considered to have finished their part of onboarding.
+      const isRegistrationDone =
+        user.registrationState === RegistrationState.COMPLETED ||
+        user.status === UserStatus.PENDING_APPROVAL ||
+        user.status === UserStatus.ACTIVE;
+
+      if (!isRegistrationDone) {
+        if (!isOnboarding) {
+          router.replace('/(auth)/onboarding');
+        }
+        return;
+      }
+
+      // 2. Handle Final Account Status
+      switch (user.status) {
+        case UserStatus.ACTIVE:
+          if (isAuthGroup) {
+            router.replace('/(tabs)');
+          }
+          break;
+
+        case UserStatus.PENDING_APPROVAL:
+          if (!isAuthGroup || segments[1] !== 'pending-approval') {
+            router.replace('/(auth)/pending-approval');
+          }
+          break;
+
+        case UserStatus.REJECTED:
+        case UserStatus.SUSPENDED:
+        case UserStatus.BLOCKED:
+        case UserStatus.INACTIVE:
+          if (!isAuthGroup || segments[1] !== 'account-restricted') {
+            router.replace('/(auth)/account-restricted');
+          }
+          break;
+
+        case UserStatus.DELETED:
+          initializeAuth();
+          router.replace('/(auth)/login');
+          break;
+      }
     }
-  }, [isAuthenticated, isAuthLoading, fontsLoaded]);
+  }, [
+    isAuthenticated,
+    isAuthLoading,
+    fontsLoaded,
+    needsPinVerification,
+    user?.status,
+    user?.registrationState,
+  ]);
 
   if ((!fontsLoaded && !fontError) || isAuthLoading) {
-    return null;
+    return (
+      <SafeAreaView
+        style={{ flex: 1, backgroundColor: '#f8cec2' }}
+        edges={['top']}
+      >
+        <BackgroundGradient />
+        <View className="flex-1 items-center justify-center">
+          <ActivityIndicator color="#f48fb1" size="large" />
+        </View>
+      </SafeAreaView>
+    );
   }
 
+  const navTheme = {
+    ...(colorScheme === 'dark' ? DarkTheme : DefaultTheme),
+    colors: {
+      ...(colorScheme === 'dark' ? DarkTheme.colors : DefaultTheme.colors),
+      background: 'transparent',
+    },
+  };
+
   return (
-    <QueryClientProvider client={queryClient}>
-      <SafeAreaProvider>
-        <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
-          <BackgroundGradient>
-            <Stack>
-              <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
-              <Stack.Screen name="(auth)" options={{ headerShown: false }} />
-              <Stack.Screen name="transfer" options={{ headerShown: false }} />
-              <Stack.Screen name="topup" options={{ headerShown: false }} />
-              <Stack.Screen name="transaction" options={{ headerShown: false }} />
-              <Stack.Screen name="deal" options={{ headerShown: false }} />
-              <Stack.Screen name="my-qr" options={{ headerShown: false }} />
-              <Stack.Screen name="notifications" options={{ headerShown: false }} />
-              <Stack.Screen
-                name="settings"
-                options={{ presentation: 'modal', title: 'Settings' }}
-              />
-              <Stack.Screen name="profile/information" options={{ headerShown: false }} />
-            </Stack>
-          </BackgroundGradient>
-          <StatusBar style="auto" />
-        </ThemeProvider>
-      </SafeAreaProvider>
-    </QueryClientProvider>
+    <StripeProvider
+      publishableKey={
+        process.env.EXPO_PUBLIC_STRIPE_PUBLISHABLE_KEY || 'pk_test_placeholder'
+      }
+      merchantIdentifier="merchant.com.jledger.app"
+    >
+      <QueryClientProvider client={queryClient}>
+        <SafeAreaProvider>
+          <ThemeProvider value={navTheme}>
+            <View style={{ flex: 1, backgroundColor: '#f8cec2' }}>
+              {/* Standalone Background */}
+              <View style={StyleSheet.absoluteFill}>
+                <BackgroundGradient />
+              </View>
+
+              <Stack
+                screenOptions={{
+                  contentStyle: { backgroundColor: 'transparent' },
+                  headerShown: false,
+                }}
+              >
+                <Stack.Screen name="(tabs)" />
+                <Stack.Screen name="(auth)" />
+                <Stack.Screen name="transfer" />
+                <Stack.Screen name="topup" />
+                <Stack.Screen name="transaction" />
+                <Stack.Screen name="deal" />
+                <Stack.Screen name="my-qr" />
+                <Stack.Screen name="notifications" />
+                <Stack.Screen
+                  name="settings"
+                  options={{ presentation: 'modal', title: 'Settings' }}
+                />
+                <Stack.Screen name="profile/information" />
+              </Stack>
+
+              {/* Security PIN Overlay - Preserves underlying route! */}
+              {needsPinVerification && segments[1] !== 'login' && (
+                <View style={[StyleSheet.absoluteFill, { zIndex: 9999 }]}>
+                  {/* Reuse Background Gradient for consistency */}
+                  <View style={StyleSheet.absoluteFill}>
+                    <BackgroundGradient />
+                  </View>
+
+                  <PINVerification
+                    onSuccess={() => {
+                      console.log('[RootLayout] Overlay Unlock Successful');
+                    }}
+                    onFailure={(msg) => Alert.alert('PIN Incorrect', msg)}
+                    useUnlock={true}
+                    headerCenterElement={
+                      <View className="flex-row items-center gap-2">
+                        <View className="w-8 h-8 bg-pink-50 rounded-lg items-center justify-center border border-pink-100 shadow-sm">
+                          <Image
+                            source={require('../../assets/images/icon.png')}
+                            className="w-5 h-5"
+                            resizeMode="contain"
+                          />
+                        </View>
+                        <Text className="text-sm font-manrope font-black text-gray-800 tracking-tight">
+                          P-wallet
+                        </Text>
+                      </View>
+                    }
+                  />
+                </View>
+              )}
+            </View>
+            <StatusBar style="auto" />
+          </ThemeProvider>
+        </SafeAreaProvider>
+      </QueryClientProvider>
+    </StripeProvider>
   );
 }
+// End of RootLayout

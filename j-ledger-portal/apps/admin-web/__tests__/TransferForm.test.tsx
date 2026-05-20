@@ -27,18 +27,24 @@ describe('TransferForm Client Component Isolation Test', () => {
 
     render(<TransferForm />);
 
-    fireEvent.change(screen.getByLabelText('Source Account ID'), { target: { value: 'user-a' } });
+    fireEvent.change(screen.getByLabelText('Source Account ID'), {
+      target: { value: 'user-a' },
+    });
     fireEvent.change(screen.getByLabelText('Destination Account ID'), {
       target: { value: 'user-b' },
     });
-    fireEvent.change(screen.getByLabelText('Amount'), { target: { value: '100' } });
+    fireEvent.change(screen.getByLabelText('Amount'), {
+      target: { value: '100' },
+    });
 
     fireEvent.submit(screen.getByTestId('transfer-form'));
 
     expect(screen.getByText('Processing...')).toBeInTheDocument();
 
     await waitFor(() => {
-      expect(screen.getByText('Transfer successful! Tx ID: tx-223344')).toBeInTheDocument();
+      expect(
+        screen.getByText('Transfer successful! Tx ID: tx-223344'),
+      ).toBeInTheDocument();
     });
   });
 
@@ -51,16 +57,22 @@ describe('TransferForm Client Component Isolation Test', () => {
     render(<TransferForm />);
 
     // Must populate required fields so native form validation doesn't block submission
-    fireEvent.change(screen.getByLabelText('Source Account ID'), { target: { value: 'ac-1' } });
+    fireEvent.change(screen.getByLabelText('Source Account ID'), {
+      target: { value: 'ac-1' },
+    });
     fireEvent.change(screen.getByLabelText('Destination Account ID'), {
       target: { value: 'ac-2' },
     });
-    fireEvent.change(screen.getByLabelText('Amount'), { target: { value: '22' } });
+    fireEvent.change(screen.getByLabelText('Amount'), {
+      target: { value: '22' },
+    });
 
     fireEvent.submit(screen.getByTestId('transfer-form'));
 
     await waitFor(() => {
-      expect(screen.getByText('Lock contention blocked explicitly')).toBeInTheDocument();
+      expect(
+        screen.getByText('Lock contention blocked explicitly'),
+      ).toBeInTheDocument();
     });
   });
 });

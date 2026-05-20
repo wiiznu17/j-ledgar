@@ -1,103 +1,157 @@
-import React, { useState } from 'react';
-import { Dimensions } from 'react-native';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
+import { ActivityIndicator, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
-import { Coffee, Landmark, ShoppingBag, ReceiptText, Gamepad2, Globe } from 'lucide-react-native';
+import { useFocusEffect } from '@react-navigation/native';
+import api from '@/lib/axios';
 
-// Components
 import { HistoryHeader } from '@/components/history/HistoryHeader';
 import { HistorySearchBar } from '@/components/history/HistorySearchBar';
 import { HistoryCategoryTabs } from '@/components/history/HistoryCategoryTabs';
 import { HistoryTransactionList } from '@/components/history/HistoryTransactionList';
-
-const { width } = Dimensions.get('window');
-
-const CATEGORIES = ['All', 'Shopping', 'Bills', 'Deposit', 'Games'];
-
-const MOCK_TRANSACTIONS = [
-  {
-    id: '1',
-    title: 'Starbucks Coffee',
-    category: 'Shopping',
-    amount: 155,
-    type: 'expense',
-    date: 'Today, 10:45 AM',
-    icon: <Coffee />,
-  },
-  {
-    id: '2',
-    title: 'Monthly Salary',
-    category: 'Deposit',
-    amount: 45000,
-    type: 'income',
-    date: 'Today, 08:00 AM',
-    icon: <Landmark />,
-  },
-  {
-    id: '3',
-    title: '7-Eleven Store',
-    category: 'Shopping',
-    amount: 82,
-    type: 'expense',
-    date: 'Yesterday, 09:20 PM',
-    icon: <ShoppingBag />,
-  },
-  {
-    id: '4',
-    title: 'Electricity Bill',
-    category: 'Bills',
-    amount: 1240,
-    type: 'expense',
-    date: '15 Apr, 2024',
-    icon: <ReceiptText />,
-  },
-  {
-    id: '5',
-    title: 'Steam Wallet',
-    category: 'Games',
-    amount: 500,
-    type: 'expense',
-    date: '14 Apr, 2024',
-    icon: <Gamepad2 />,
-  },
-  {
-    id: '6',
-    title: 'Adobe Subscription',
-    category: 'Bills',
-    amount: 350,
-    type: 'expense',
-    date: '12 Apr, 2024',
-    icon: <Globe />,
-  },
-];
+import {
+  HISTORY_FILTERS,
+  type HistoryFilter,
+  type HistoryItem,
+} from '@/features/history/presentation';
 
 export default function HistoryScreen() {
   const router = useRouter();
-  const [selectedCategory, setSelectedCategory] = useState('All');
+  const [selectedCategory, setSelectedCategory] =
+    useState<HistoryFilter['key']>('ALL');
   const [search, setSearch] = useState('');
+  const [transactions, setTransactions] = useState<HistoryItem[]>([]);
+  const [page, setPage] = useState(0);
+  const [hasMore, setHasMore] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
+  const [isLoadingMore, setIsLoadingMore] = useState(false);
+  const [isRefreshing, setIsRefreshing] = useState(false);
+  const [error, setError] = useState('');
+  const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  const filteredTransactions = MOCK_TRANSACTIONS.filter((tx) => {
-    const matchesCategory = selectedCategory === 'All' || tx.category === selectedCategory;
-    const matchesSearch = tx.title.toLowerCase().includes(search.toLowerCase());
-    return matchesCategory && matchesSearch;
-  });
+  const fetchHistory = useCallback(
+    async (targetPage: number, replace = false) => {
+      try {
+        const params: Record<string, string | number> = {
+          page: targetPage,
+          size: 20,
+        };
+        if (selectedCategory !== 'ALL') {
+          params.type = selectedCategory;
+        }
+        if (search.trim()) {
+          params.q = search.trim();
+        }
+
+        const res = await api.get('/integration/history', { params });
+        const data = res.data || {};
+        const items: HistoryItem[] = data.items || [];
+        setTransactions((prev) => (replace ? items : [...prev, ...items]));
+        setHasMore(Boolean(data.hasMore));
+        setPage(targetPage);
+        setError('');
+      } catch (err: any) {
+        setError(
+          err?.response?.data?.message || 'ไม่สามารถโหลดประวัติธุรกรรมได้',
+        );
+      } finally {
+        setIsLoading(false);
+        setIsLoadingMore(false);
+      }
+    },
+    [search, selectedCategory],
+  );
+
+  const refresh = useCallback(
+    (pullToRefresh = false) => {
+      if (pullToRefresh) {
+        setIsRefreshing(true);
+      } else {
+        setIsLoading(true);
+      }
+      fetchHistory(0, true).finally(() => setIsRefreshing(false));
+    },
+    [fetchHistory],
+  );
+
+  useEffect(() => {
+    if (debounceRef.current) {
+      clearTimeout(debounceRef.current);
+    }
+    debounceRef.current = setTimeout(() => {
+      refresh();
+    }, 300);
+    return () => {
+      if (debounceRef.current) {
+        clearTimeout(debounceRef.current);
+      }
+    };
+  }, [search, selectedCategory, refresh]);
+
+  useFocusEffect(
+    useCallback(() => {
+      refresh();
+    }, [refresh]),
+  );
+
+  const loadMore = useCallback(() => {
+    if (isLoading || isLoadingMore || !hasMore) {
+      return;
+    }
+    setIsLoadingMore(true);
+    fetchHistory(page + 1, false);
+  }, [fetchHistory, hasMore, isLoading, isLoadingMore, page]);
+
+  if (isLoading && transactions.length === 0) {
+    return (
+      <SafeAreaView
+        className="flex-1 bg-transparent items-center justify-center"
+        edges={['top']}
+      >
+        <ActivityIndicator size="large" color="#f48fb1" />
+        <Text className="text-sm font-manrope font-bold text-gray-400 mt-4">
+          Loading history...
+        </Text>
+      </SafeAreaView>
+    );
+  }
 
   return (
-    <SafeAreaView className="flex-1 bg-[#f8f9fe]" edges={['top']}>
+    <SafeAreaView className="flex-1 bg-transparent" edges={['top']}>
       <HistoryHeader onBack={() => router.back()} />
 
       <HistorySearchBar value={search} onChangeText={setSearch} />
 
       <HistoryCategoryTabs
-        categories={CATEGORIES}
+        categories={HISTORY_FILTERS}
         selectedCategory={selectedCategory}
         onSelectCategory={setSelectedCategory}
       />
 
+      {error ? (
+        <View className="px-5 pb-3">
+          <View className="bg-red-50 border border-red-100 rounded-2xl p-4">
+            <Text className="text-xs font-manrope font-bold text-red-500 text-center">
+              {error}
+            </Text>
+          </View>
+        </View>
+      ) : null}
+
       <HistoryTransactionList
-        transactions={filteredTransactions}
+        transactions={transactions}
+        refreshing={isRefreshing}
+        onRefresh={() => refresh(true)}
+        hasMore={hasMore}
+        isLoadingMore={isLoadingMore}
+        onLoadMore={loadMore}
         onTransactionPress={(tx) => {
-          router.push(`/transaction/${tx.id}` as any);
+          router.push({
+            pathname: `/transaction/${tx.id}` as any,
+            params: {
+              payload: JSON.stringify(tx),
+            },
+          });
         }}
       />
     </SafeAreaView>

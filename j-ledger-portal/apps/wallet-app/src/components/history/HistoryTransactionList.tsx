@@ -1,31 +1,61 @@
 import React from 'react';
-import { View, Text, ScrollView, TouchableOpacity } from 'react-native';
+import {
+  View,
+  Text,
+  ScrollView,
+  TouchableOpacity,
+  RefreshControl,
+} from 'react-native';
 import { MotiView } from 'moti';
 import { ArrowDownLeft, ArrowUpRight, Search } from 'lucide-react-native';
-
-interface Transaction {
-  id: string;
-  title: string;
-  category: string;
-  amount: number;
-  type: string;
-  date: string;
-  icon: React.ReactNode;
-}
+import {
+  formatCreatedAt,
+  getAmountColor,
+  getTypeMeta,
+  type HistoryItem,
+} from '@/features/history/presentation';
 
 interface HistoryTransactionListProps {
-  transactions: Transaction[];
-  onTransactionPress: (tx: Transaction) => void;
+  transactions: HistoryItem[];
+  onTransactionPress: (tx: HistoryItem) => void;
+  refreshing?: boolean;
+  onRefresh?: () => void;
+  hasMore?: boolean;
+  isLoadingMore?: boolean;
+  onLoadMore?: () => void;
 }
 
 export const HistoryTransactionList = ({
   transactions,
   onTransactionPress,
+  refreshing = false,
+  onRefresh,
+  hasMore = false,
+  isLoadingMore = false,
+  onLoadMore,
 }: HistoryTransactionListProps) => {
   return (
     <ScrollView
       contentContainerStyle={{ paddingHorizontal: 20, paddingBottom: 140 }}
       showsVerticalScrollIndicator={false}
+      refreshControl={
+        <RefreshControl
+          refreshing={refreshing}
+          onRefresh={onRefresh}
+          tintColor="#f48fb1"
+        />
+      }
+      onMomentumScrollEnd={(event) => {
+        const { layoutMeasurement, contentOffset, contentSize } =
+          event.nativeEvent;
+        const threshold = 120;
+        const reachedBottom =
+          layoutMeasurement.height + contentOffset.y >=
+          contentSize.height - threshold;
+        if (reachedBottom && hasMore && !isLoadingMore) {
+          onLoadMore?.();
+        }
+      }}
     >
       <View className="gap-y-2">
         {transactions.map((tx, idx) => (
@@ -42,13 +72,14 @@ export const HistoryTransactionList = ({
               <View className="flex-row items-center gap-4">
                 {/* Icon Container with Overlay */}
                 <View className="w-12 h-12 rounded-full bg-pink-50 items-center justify-center relative">
-                  {React.isValidElement(tx.icon)
-                    ? React.cloneElement(tx.icon as any, { size: 22, color: '#f48fb1' })
-                    : null}
+                  {(() => {
+                    const Icon = getTypeMeta(tx.type).icon;
+                    return <Icon size={22} color="#f48fb1" />;
+                  })()}
                   <View
-                    className={`absolute -bottom-1 -right-1 w-5 h-5 rounded-full items-center justify-center border-2 border-white ${tx.type === 'income' ? 'bg-green-500' : 'bg-gray-800'}`}
+                    className={`absolute -bottom-1 -right-1 w-5 h-5 rounded-full items-center justify-center border-2 border-white ${tx.direction === 'IN' ? 'bg-green-500' : 'bg-gray-800'}`}
                   >
-                    {tx.type === 'income' ? (
+                    {tx.direction === 'IN' ? (
                       <ArrowDownLeft size={10} color="white" strokeWidth={3} />
                     ) : (
                       <ArrowUpRight size={10} color="white" strokeWidth={3} />
@@ -57,21 +88,28 @@ export const HistoryTransactionList = ({
                 </View>
 
                 <View>
-                  <Text className="text-sm font-manrope font-black text-gray-800">{tx.title}</Text>
+                  <Text className="text-sm font-manrope font-black text-gray-800">
+                    {tx.title}
+                  </Text>
                   <Text className="text-[10px] font-manrope font-bold text-gray-400 uppercase tracking-widest mt-1">
-                    {tx.category}
+                    {getTypeMeta(tx.type).label}
                   </Text>
                 </View>
               </View>
 
               <View className="items-end">
                 <Text
-                  className={`font-manrope font-black text-base ${tx.type === 'income' ? 'text-green-500' : 'text-gray-800'}`}
+                  className="font-manrope font-black text-base"
+                  style={{ color: getAmountColor(tx.direction, tx.status) }}
                 >
-                  {tx.type === 'expense' ? '-' : '+'}฿{tx.amount.toLocaleString()}
+                  {tx.direction === 'OUT' ? '-' : '+'}฿
+                  {Number(tx.amount || 0).toLocaleString(undefined, {
+                    minimumFractionDigits: 2,
+                    maximumFractionDigits: 2,
+                  })}
                 </Text>
                 <Text className="text-[9px] font-manrope font-bold text-gray-400 mt-1">
-                  {tx.date}
+                  {formatCreatedAt(tx.createdAt)}
                 </Text>
               </View>
             </TouchableOpacity>
@@ -87,6 +125,14 @@ export const HistoryTransactionList = ({
           </View>
           <Text className="font-manrope font-black text-gray-400 uppercase tracking-widest text-xs">
             No Activity Found
+          </Text>
+        </View>
+      )}
+
+      {hasMore && (
+        <View className="items-center py-4">
+          <Text className="text-[10px] font-manrope font-black text-gray-400 uppercase tracking-widest">
+            {isLoadingMore ? 'Loading more...' : 'Scroll down to load more'}
           </Text>
         </View>
       )}

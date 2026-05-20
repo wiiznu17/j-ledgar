@@ -1,5 +1,9 @@
 import { apiClient, RequestOptions } from '@/lib/api-client';
-import { ReconciliationReport, ReconciliationSummary, API_PATHS } from '@repo/dto';
+import {
+  ReconciliationReport,
+  ReconciliationSummary,
+  API_PATHS,
+} from '@repo/dto';
 
 /**
  * Reconcile Requester
@@ -11,17 +15,21 @@ export const reconcileRequester = {
    * Path: /api/admin/system/reconcile/reports
    */
   getReports: async (options?: RequestOptions) => {
-    return apiClient.get<ReconciliationReport[]>(API_PATHS.ADMIN.SYSTEM.RECONCILE_REPORTS, {
-      ...options,
-      next: { revalidate: 0, ...options?.next },
-    });
+    return apiClient.get<ReconciliationReport[]>(
+      API_PATHS.ADMIN.RECONCILIATION.REPORTS,
+      options,
+    );
   },
 
   /**
    * Manually triggers a reconciliation audit.
-   * Path: /api/admin/system/reconcile/trigger
+   * Path: /api/admin/reconciliation/run
    */
   triggerManualAudit: async (options?: RequestOptions) => {
-    return apiClient.post<ReconciliationSummary>(API_PATHS.ADMIN.SYSTEM.RECONCILE_TRIGGER, {}, options);
+    return apiClient.post<ReconciliationSummary>(
+      API_PATHS.ADMIN.RECONCILIATION.RUN,
+      {},
+      options,
+    );
   },
 };

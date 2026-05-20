@@ -1,13 +1,18 @@
+'use client';
+
+import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Lock, Mail } from 'lucide-react';
+import { Eye, EyeOff, Lock, Mail } from 'lucide-react';
 
 interface LoginFormProps {
   action: (formData: FormData) => void;
 }
 
 export function LoginForm({ action }: LoginFormProps) {
+  const [showPassword, setShowPassword] = useState(false);
+
   return (
     <form action={action} className="space-y-6">
       <div className="space-y-4">
@@ -22,8 +27,9 @@ export function LoginForm({ action }: LoginFormProps) {
               name="email"
               type="email"
               placeholder="admin@jledger.com"
+              defaultValue="admin@jledger.com"
               required
-              className="pl-10 h-12 border-border focus:border-ring focus:ring-1 focus:ring-ring"
+              className="pl-10 h-12 bg-card text-foreground border-border focus:border-ring focus:ring-1 focus:ring-ring"
             />
           </div>
         </div>
@@ -37,11 +43,23 @@ export function LoginForm({ action }: LoginFormProps) {
             <Input
               id="password"
               name="password"
-              type="password"
+              type={showPassword ? 'text' : 'password'}
               placeholder="••••••••"
+              defaultValue="password123"
               required
-              className="pl-10 h-12 border-border focus:border-ring focus:ring-1 focus:ring-ring"
+              className="pl-10 pr-10 h-12 bg-card text-foreground border-border focus:border-ring focus:ring-1 focus:ring-ring"
             />
+            <button
+              type="button"
+              onClick={() => setShowPassword(!showPassword)}
+              className="absolute inset-y-0 right-0 pr-3 flex items-center text-muted-foreground hover:text-foreground transition-colors"
+            >
+              {showPassword ? (
+                <EyeOff className="h-5 w-5" />
+              ) : (
+                <Eye className="h-5 w-5" />
+              )}
+            </button>
           </div>
         </div>
       </div>
@@ -52,14 +70,20 @@ export function LoginForm({ action }: LoginFormProps) {
             id="remember-me"
             name="remember-me"
             type="checkbox"
-            className="h-4 w-4 rounded border-border text-primary focus:ring-ring"
+            className="h-4 w-4 rounded border-border bg-card text-indigo-600 focus:ring-indigo-500"
           />
-          <label htmlFor="remember-me" className="ml-2 block text-sm text-foreground">
+          <label
+            htmlFor="remember-me"
+            className="ml-2 block text-sm text-foreground"
+          >
             Remember me
           </label>
         </div>
         <div className="text-sm">
-          <a href="#" className="font-medium text-accent hover:text-accent/80">
+          <a
+            href="#"
+            className="font-medium text-indigo-600 hover:text-indigo-500 dark:text-indigo-400 dark:hover:text-indigo-300 transition-colors"
+          >
             Forgot password?
           </a>
         </div>
@@ -67,7 +91,7 @@ export function LoginForm({ action }: LoginFormProps) {
 
       <Button
         type="submit"
-        className="w-full h-12 text-base font-semibold text-white bg-gradient-to-r from-[var(--color-magenta)] to-[var(--color-pink)] hover:opacity-90 transition-opacity border-0"
+        className="w-full h-12 text-base font-semibold text-white bg-indigo-600 hover:bg-indigo-700 dark:bg-indigo-500 dark:hover:bg-indigo-600 shadow-xs transition-all active:scale-[0.98] border-0"
       >
         Sign in
       </Button>

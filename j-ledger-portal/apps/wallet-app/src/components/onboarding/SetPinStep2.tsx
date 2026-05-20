@@ -1,8 +1,6 @@
-import React from 'react';
-import { View } from 'react-native';
-import { PinPad } from '@/components/common/PinPad';
+import { PINInput } from '@/components/common/PINInput';
+import { PINLayout, PINBackButton } from '@/components/common/PINLayout';
 import { StepWrapper } from '@/components/common/StepWrapper';
-import { StepHeader } from './StepHeader';
 
 interface SetPinStep2Props {
   visible: boolean;
@@ -20,13 +18,17 @@ export const SetPinStep2: React.FC<SetPinStep2Props> = ({
   onBack,
 }) => (
   <StepWrapper visible={visible}>
-    <StepHeader
+    <PINLayout
       title="Confirm Transaction PIN"
       subtitle="Please re-enter your 6-digit PIN to confirm."
-      onBack={onBack}
-    />
-    <View className="mt-4">
-      <PinPad pin={pin} setPin={onPinChange} length={6} onComplete={onComplete} />
-    </View>
+      leftElement={<PINBackButton onPress={onBack} />}
+    >
+      <PINInput
+        pin={pin}
+        onPinChange={onPinChange}
+        length={6}
+        onComplete={onComplete}
+      />
+    </PINLayout>
   </StepWrapper>
 );

@@ -12,6 +12,7 @@ export type ErrorCode =
   | 'TRANSFER_FAILED'
   | 'SERVER_ERROR'
   | 'TIMEOUT'
+  | 'INSUFFICIENT_FUNDS'
   | 'UNKNOWN';
 
 export interface TransferError {
@@ -24,7 +25,12 @@ export interface TransferError {
 export interface TransactionLog {
   id: string;
   timestamp: number;
-  type: 'QR_SCAN' | 'QR_VALIDATION' | 'BIOMETRIC_AUTH' | 'PIN_AUTH' | 'TRANSFER';
+  type:
+    | 'QR_SCAN'
+    | 'QR_VALIDATION'
+    | 'BIOMETRIC_AUTH'
+    | 'PIN_AUTH'
+    | 'TRANSFER';
   status: 'SUCCESS' | 'FAILURE';
   recipient?: string;
   amount?: string;
@@ -43,7 +49,8 @@ export const logTransaction = (log: TransactionLog): void => {
   // Add unique ID if not provided
   const entry = {
     ...log,
-    id: log.id || `txn_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+    id:
+      log.id || `txn_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
   };
 
   // Keep last 500 logs
@@ -75,7 +82,10 @@ export const getErrorInfo = (
   message: string;
   actionLabel: string;
 } => {
-  const errorMap: Record<ErrorCode, { title: string; message: string; actionLabel: string }> = {
+  const errorMap: Record<
+    ErrorCode,
+    { title: string; message: string; actionLabel: string }
+  > = {
     NETWORK_ERROR: {
       title: 'Connection Problem',
       message:
@@ -96,12 +106,14 @@ export const getErrorInfo = (
     },
     INVALID_AMOUNT: {
       title: 'Invalid Amount',
-      message: 'The amount specified is invalid. Please enter a valid amount and try again.',
+      message:
+        'The amount specified is invalid. Please enter a valid amount and try again.',
       actionLabel: 'Edit Amount',
     },
     BIOMETRIC_FAILED: {
       title: 'Authentication Failed',
-      message: 'Biometric authentication failed. Please try again or use PIN instead.',
+      message:
+        'Biometric authentication failed. Please try again or use PIN instead.',
       actionLabel: 'Try Again',
     },
     PIN_FAILED: {
@@ -111,18 +123,26 @@ export const getErrorInfo = (
     },
     TRANSFER_FAILED: {
       title: 'Transfer Failed',
-      message: 'The transfer could not be completed. Please verify the details and try again.',
+      message:
+        'The transfer could not be completed. Please verify the details and try again.',
       actionLabel: 'Retry Transfer',
     },
     SERVER_ERROR: {
       title: 'Server Error',
-      message: 'The server encountered an error. Please try again in a few moments.',
+      message:
+        'The server encountered an error. Please try again in a few moments.',
       actionLabel: 'Retry',
     },
     TIMEOUT: {
       title: 'Request Timeout',
-      message: 'The request took too long. Please check your connection and try again.',
+      message:
+        'The request took too long. Please check your connection and try again.',
       actionLabel: 'Retry',
+    },
+    INSUFFICIENT_FUNDS: {
+      title: 'Insufficient Balance',
+      message: 'Your wallet balance is not enough for this transaction.',
+      actionLabel: 'Top Up',
     },
     UNKNOWN: {
       title: 'Unexpected Error',
@@ -131,13 +151,22 @@ export const getErrorInfo = (
     },
   };
 
-  return errorMap[error.code] || errorMap.UNKNOWN;
+  const info = errorMap[error.code] || errorMap.UNKNOWN;
+
+  return {
+    title: info.title,
+    // Use the specific message from backend if available, otherwise fallback to map
+    message: error.message || info.message,
+    actionLabel: info.actionLabel,
+  };
 };
 
 /**
  * Determine recovery path based on error
  */
-export const getRecoveryPath = (error: TransferError): 'back' | 'edit' | 'retry' | 'home' => {
+export const getRecoveryPath = (
+  error: TransferError,
+): 'back' | 'edit' | 'retry' | 'home' => {
   switch (error.code) {
     case 'INVALID_QR':
     case 'INVALID_RECIPIENT':
@@ -150,6 +179,8 @@ export const getRecoveryPath = (error: TransferError): 'back' | 'edit' | 'retry'
     case 'TIMEOUT':
     case 'TRANSFER_FAILED':
       return 'retry';
+    case 'INSUFFICIENT_FUNDS':
+      return 'edit'; // Allow user to edit amount or go back to topup
     default:
       return 'home';
   }
@@ -172,10 +203,19 @@ export const parseBackendError = (error: any): TransferError => {
     const data = error.response.data;
 
     if (status === 400) {
+      const rawMessage = data.message || '';
+      const message = Array.isArray(rawMessage) ? rawMessage[0] : rawMessage;
+
+      const isInsufficientFunds =
+        typeof message === 'string' &&
+        (message.toLowerCase().includes('insufficient') ||
+          message.includes('ไม่เพียงพอ'));
+
       return {
-        code: 'INVALID_QR',
-        message: data.message || 'Invalid request',
+        code: isInsufficientFunds ? 'INSUFFICIENT_FUNDS' : 'INVALID_QR',
+        message: message || 'Invalid request',
         details: data.details,
+        recoveryAction: isInsufficientFunds ? 'EDIT' : 'RETRY',
       };
     } else if (status === 401) {
       return {

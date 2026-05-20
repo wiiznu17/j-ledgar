@@ -1,98 +1,571 @@
 'use client';
 
+import { Card, CardContent } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from '@/components/ui/table';
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from '@/components/ui/dialog';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
 import { useEffect, useState } from 'react';
 import { toast } from 'sonner';
+import {
+  FilterSearchInput,
+  FilterSelect,
+  FilterActions,
+} from '@/components/common/FilterElements';
+import { TablePagination } from '@/components/common/TablePagination';
 import { systemRequester, OutboxEvent } from '@/lib/requesters/systemRequester';
+import {
+  Radio,
+  Activity,
+  CheckCircle2,
+  AlertCircle,
+  Clock,
+  ChevronRight,
+  Terminal,
+  Search,
+  RotateCcw,
+  Box,
+  Share2,
+  Cpu,
+  History,
+  Filter,
+  RefreshCw,
+} from 'lucide-react';
+import { format } from 'date-fns';
 
 export default function SystemOutboxPage() {
   const [data, setData] = useState<OutboxEvent[]>([]);
+  const [loading, setLoading] = useState(false);
+  const [selectedEvent, setSelectedEvent] = useState<OutboxEvent | null>(null);
+  const [filterStatus, setFilterStatus] = useState<string>('ALL');
+  const [filterType, setFilterType] = useState<string>('ALL');
+
+  // Temporary states for filters before applying
+  const [tempStatus, setTempStatus] = useState<string>('ALL');
+  const [tempType, setTempType] = useState<string>('ALL');
+
+  // Pagination
+  const [page, setPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
+  const [totalItems, setTotalItems] = useState(0);
+
+  const fetchOutbox = async (
+    statusOverride?: string,
+    typeOverride?: string,
+    pageOverride?: number,
+  ) => {
+    try {
+      setLoading(true);
+      const currentPage = pageOverride || page;
+      const filters: any = {
+        page: currentPage,
+        limit: 10,
+      };
+      const status = statusOverride || filterStatus;
+      const type = typeOverride || filterType;
+
+      if (status !== 'ALL') filters.status = status;
+      if (type !== 'ALL') filters.eventType = type;
+
+      const response = await systemRequester.getOutbox(filters);
+      setData(response.data || []);
+
+      if (response.pagination) {
+        setTotalPages(response.pagination.totalPages || 1);
+        setTotalItems(response.pagination.total || 0);
+        setPage(response.pagination.page || 1);
+      }
+    } catch (error) {
+      console.error('[OUTBOX] Fetch error:', error);
+      toast.error('Service temporarily unavailable.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleApplyFilter = () => {
+    setFilterStatus(tempStatus);
+    setFilterType(tempType);
+    setPage(1);
+    fetchOutbox(tempStatus, tempType, 1);
+  };
+
+  const handleClearFilter = () => {
+    setTempStatus('ALL');
+    setTempType('ALL');
+    setFilterStatus('ALL');
+    setFilterType('ALL');
+    setPage(1);
+    fetchOutbox('ALL', 'ALL', 1);
+  };
+
+  const handlePageChange = (newPage: number) => {
+    setPage(newPage);
+    fetchOutbox(filterStatus, filterType, newPage);
+  };
 
   useEffect(() => {
-    const fetchOutbox = async () => {
-      try {
-        const d = await systemRequester.getOutbox();
-        setData(d);
-      } catch (error) {
-        console.error('[OUTBOX] Fetch error:', error);
-        toast.error('Service temporarily unavailable. Please try again.');
-      }
-    };
-    
     fetchOutbox();
   }, []);
 
-  return (
-    <div className="space-y-6">
-      <h2 className="text-3xl font-bold tracking-tight">System Outbox</h2>
+  const getStatusConfig = (status: string) => {
+    switch (status.toUpperCase()) {
+      case 'COMPLETED':
+      case 'PROCESSED':
+        return {
+          color:
+            'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/20',
+          dot: 'bg-emerald-500',
+          icon: <CheckCircle2 className="w-3 h-3" />,
+        };
+      case 'FAILED':
+        return {
+          color:
+            'bg-rose-500/10 text-rose-600 dark:text-rose-400 border-rose-500/20',
+          dot: 'bg-rose-500',
+          icon: <AlertCircle className="w-3 h-3" />,
+        };
+      default:
+        return {
+          color:
+            'bg-amber-500/10 text-amber-600 dark:text-amber-400 border-amber-500/20',
+          dot: 'bg-amber-500',
+          icon: <Clock className="w-3 h-3" />,
+        };
+    }
+  };
 
-      <Card className="border-border shadow-sm">
-        <CardHeader>
-          <CardTitle>Kafka Event Outbox</CardTitle>
-          <CardDescription>
-            Monitor pending and completed integration events to be published to Kafka.
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <div className="border rounded-lg overflow-hidden border-border bg-white">
-            <Table>
-              <TableHeader className="bg-secondary/50">
-                <TableRow>
-                  <TableHead className="w-[80px]">Status</TableHead>
-                  <TableHead>Event Type</TableHead>
-                  <TableHead className="hidden lg:table-cell">Event ID</TableHead>
-                  <TableHead>Created At</TableHead>
-                  <TableHead>Processed At</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {data.map((event) => (
-                  <TableRow key={event.id} className="hover:bg-secondary/30 transition-colors">
-                    <TableCell>
-                      <Badge
-                        variant="outline"
-                        className={
-                          event.status === 'COMPLETED'
-                            ? 'border-primary text-primary bg-primary/5'
-                            : event.status === 'FAILED'
-                              ? 'border-destructive text-destructive bg-destructive/5'
-                              : 'border-accent text-accent bg-accent/5'
-                        }
-                      >
-                        {event.status}
-                      </Badge>
-                    </TableCell>
-                    <TableCell className="font-medium">{event.eventType}</TableCell>
-                    <TableCell className="font-mono text-xs text-muted-foreground hidden lg:table-cell">
-                      {event.id}
-                    </TableCell>
-                    <TableCell>{new Date(event.createdAt).toLocaleString()}</TableCell>
-                    <TableCell className="text-muted-foreground">
-                      {event.processedAt ? new Date(event.processedAt).toLocaleString() : '-'}
-                    </TableCell>
-                  </TableRow>
-                ))}
-                {data.length === 0 && (
-                  <TableRow>
-                    <TableCell colSpan={5} className="h-24 text-center text-muted-foreground">
-                      No outbox events found.
-                    </TableCell>
-                  </TableRow>
-                )}
-              </TableBody>
-            </Table>
+  const stats = {
+    total: totalItems,
+    processed: 0, // We don't have global stats for this easily without a dedicated endpoint
+    failed: 0,
+    pending: 0,
+  };
+
+  const handleRetry = async (id: string) => {
+    try {
+      await systemRequester.retryOutbox(id);
+      toast.success('Event reset to PENDING. Processing will resume shortly.');
+      fetchOutbox();
+    } catch (error) {
+      console.error('[OUTBOX] Retry error:', error);
+      toast.error('Failed to trigger retry. Please try again.');
+    }
+  };
+
+  return (
+    <div className="space-y-4 pb-10 text-foreground">
+      {/* Header Area */}
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+        <div>
+          <div className="flex items-center gap-2 mb-1">
+            <div className="p-2 bg-indigo-500/10 rounded-xl">
+              <Radio className="w-5 h-5 text-indigo-600 dark:text-indigo-400" />
+            </div>
+            <p className="text-sm text-muted-foreground font-medium ml-1">
+              Transactional event logs and Kafka integration stream.
+            </p>
           </div>
-        </CardContent>
+        </div>
+      </div>
+
+      {/* Stats Snapshots */}
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+        {[
+          {
+            label: 'Total Events',
+            value: stats.total,
+            icon: Activity,
+            color: 'text-indigo-600 dark:text-indigo-400',
+            bg: 'bg-indigo-500/10',
+          },
+          {
+            label: 'Processed',
+            value: stats.processed,
+            icon: CheckCircle2,
+            color: 'text-emerald-600 dark:text-emerald-400',
+            bg: 'bg-emerald-500/10',
+          },
+          {
+            label: 'Pending',
+            value: stats.pending,
+            icon: Clock,
+            color: 'text-amber-600 dark:text-amber-400',
+            bg: 'bg-amber-500/10',
+          },
+          {
+            label: 'Failed',
+            value: stats.failed,
+            icon: AlertCircle,
+            color: 'text-rose-600 dark:text-rose-400',
+            bg: 'bg-rose-500/10',
+          },
+        ].map((s, i) => (
+          <Card
+            key={i}
+            className="border-none shadow-xs overflow-hidden bg-card text-card-foreground"
+          >
+            <CardContent className="p-4 flex items-center gap-3">
+              <div className={`p-2.5 ${s.bg} ${s.color} rounded-xl`}>
+                <s.icon className="w-5 h-5" />
+              </div>
+              <div>
+                <p className="text-[10px] font-black text-muted-foreground uppercase tracking-widest leading-none mb-1">
+                  {s.label}
+                </p>
+                <p className="text-xl font-black text-foreground leading-none">
+                  {s.value}
+                </p>
+              </div>
+            </CardContent>
+          </Card>
+        ))}
+      </div>
+
+      {/* Main Table Container */}
+      <Card className="border-none shadow-xs overflow-hidden bg-card text-card-foreground">
+        {/* Filter Toolbar */}
+        <div className="p-3 bg-card border-b border-border">
+          <div className="grid grid-cols-1 md:grid-cols-5 gap-4 items-end">
+            <FilterSelect
+              label="Event Status"
+              value={tempStatus}
+              onValueChange={setTempStatus}
+              options={[
+                { label: 'ALL STATUS', value: 'ALL' },
+                { label: 'PENDING', value: 'PENDING' },
+                {
+                  label: 'PROCESSED',
+                  value: 'PROCESSED',
+                  className: 'text-emerald-600',
+                },
+                {
+                  label: 'FAILED',
+                  value: 'FAILED',
+                  className: 'text-rose-600',
+                },
+              ]}
+            />
+
+            <FilterSelect
+              label="Event Type"
+              value={tempType}
+              onValueChange={setTempType}
+              options={[
+                { label: 'ALL TYPES', value: 'ALL' },
+                { label: 'TRANSACTIONS', value: 'TRANSACTION' },
+                { label: 'SYSTEM EVENTS', value: 'SYSTEM' },
+              ]}
+            />
+
+            <div className="hidden md:block md:col-span-1"></div>
+
+            <FilterActions
+              searchLabel="Search"
+              isLoading={loading}
+              onReset={handleClearFilter}
+              className="md:col-span-2"
+            />
+          </div>
+        </div>
+
+        <div className="overflow-x-auto">
+          <table className="w-full text-left">
+            <thead>
+              <tr className="border-b border-border bg-muted/30 text-muted-foreground text-[10px] uppercase font-bold tracking-widest">
+                <th className="px-6 py-2.5 border-r border-border">
+                  Registration Time
+                </th>
+                <th className="px-6 py-2.5 text-center border-r border-border">
+                  Status
+                </th>
+                <th className="px-6 py-2.5 text-center border-r border-border">
+                  Event Type
+                </th>
+                <th className="px-6 py-2.5 text-center border-r border-border">
+                  Processing Details
+                </th>
+                <th className="px-6 py-2.5 text-center">Intel</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-border">
+              {loading && data.length === 0 ? (
+                Array.from({ length: 5 }).map((_, i) => (
+                  <tr key={i} className="animate-pulse">
+                    <td colSpan={5} className="px-6 py-8 h-12 bg-muted/10" />
+                  </tr>
+                ))
+              ) : data.length === 0 ? (
+                <tr>
+                  <td
+                    colSpan={5}
+                    className="px-6 py-12 text-center text-muted-foreground font-semibold"
+                  >
+                    No outbox events found in the stream.
+                  </td>
+                </tr>
+              ) : (
+                data.map((event) => {
+                  const config = getStatusConfig(event.status);
+                  return (
+                    <tr
+                      key={event.id}
+                      className="hover:bg-muted/30 transition-colors group"
+                    >
+                      <td className="px-6 py-2 border-r border-border">
+                        <div className="flex flex-col">
+                          <span className="text-xs font-bold text-foreground">
+                            {format(
+                              new Date(event.createdAt),
+                              'MMM d, HH:mm:ss',
+                            )}
+                          </span>
+                          <span className="text-[9px] text-muted-foreground font-mono tracking-tighter italic">
+                            ID: {event.id.split('-')[0]}...
+                          </span>
+                        </div>
+                      </td>
+                      <td className="px-6 py-2 border-r border-border">
+                        <div className="flex items-center justify-center gap-2">
+                          <div
+                            className={`w-1.5 h-1.5 rounded-full ${config.dot}`}
+                          />
+                          <span
+                            className={`px-2 py-0.5 rounded-md text-[9px] font-black uppercase tracking-wider border ${config.color}`}
+                          >
+                            {event.status}
+                          </span>
+                        </div>
+                      </td>
+                      <td className="px-6 py-2 border-r border-border text-center">
+                        <div className="flex flex-col items-center gap-1">
+                          <span className="text-[10px] font-black text-foreground uppercase tracking-tight bg-muted px-2 py-0.5 rounded border border-border">
+                            {event.eventType}
+                          </span>
+                        </div>
+                      </td>
+                      <td className="px-6 py-2 border-r border-border text-center text-xs">
+                        <div className="flex flex-col items-center">
+                          {event.updatedAt &&
+                          (event.status.toUpperCase() === 'COMPLETED' ||
+                            event.status.toUpperCase() === 'PROCESSED') ? (
+                            <span className="text-[10px] font-bold text-emerald-600 flex items-center gap-1">
+                              <CheckCircle2 className="w-3 h-3" />
+                              {format(new Date(event.updatedAt), 'HH:mm:ss')}
+                            </span>
+                          ) : (
+                            <div className="flex flex-col items-center gap-0.5">
+                              <span className="text-[10px] font-bold text-muted-foreground italic">
+                                Waiting...
+                              </span>
+                              {event.retryCount > 0 && (
+                                <span className="text-[8px] font-black text-rose-500 dark:text-rose-400 uppercase tracking-tighter bg-rose-500/10 px-1 rounded">
+                                  Retries: {event.retryCount}
+                                </span>
+                              )}
+                            </div>
+                          )}
+                        </div>
+                      </td>
+                      <td className="px-6 py-2 text-center">
+                        <Dialog>
+                          <DialogTrigger
+                            render={
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={() => setSelectedEvent(event)}
+                                className="h-7 px-3 rounded-lg text-[9px] font-bold border-border hover:bg-muted hover:border-indigo-500/20 text-muted-foreground hover:text-foreground transition-all active:scale-95 group/btn"
+                              >
+                                Inspect
+                                <ChevronRight className="w-3 h-3 ml-1 text-muted-foreground/50 group-hover/btn:text-indigo-500 dark:group-hover/btn:text-indigo-400 transition-colors" />
+                              </Button>
+                            }
+                          />
+                          <DialogContent className="sm:max-w-3xl bg-card text-card-foreground rounded-2xl border border-border shadow-2xl overflow-hidden">
+                            <DialogHeader className="bg-muted/30 p-6 border-b border-border">
+                              <DialogTitle className="text-xl font-bold flex items-center gap-2">
+                                <Terminal className="w-5 h-5 text-indigo-600 dark:text-indigo-400" />
+                                Event Intel: {event.eventType}
+                              </DialogTitle>
+                              <DialogDescription className="text-xs text-muted-foreground">
+                                Technical trace of the outbox event and Kafka
+                                payload.
+                              </DialogDescription>
+                            </DialogHeader>
+                            {selectedEvent && (
+                              <div className="p-6 space-y-6 max-h-[70vh] overflow-y-auto custom-scrollbar">
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-6 text-xs text-foreground">
+                                  <div className="space-y-4">
+                                    <div>
+                                      <p className="font-black text-muted-foreground uppercase tracking-widest text-[9px] mb-1">
+                                        Event Identification
+                                      </p>
+                                      <div className="space-y-1.5 font-bold">
+                                        <p className="flex justify-between border-b border-border pb-1 text-muted-foreground">
+                                          <span>Internal ID:</span>
+                                          <span className="font-mono text-[10px]">
+                                            {selectedEvent.id}
+                                          </span>
+                                        </p>
+                                        <p className="flex justify-between border-b border-border pb-1 text-muted-foreground">
+                                          <span>Type:</span>
+                                          <span className="uppercase text-indigo-600 dark:text-indigo-400">
+                                            {selectedEvent.eventType}
+                                          </span>
+                                        </p>
+                                        <p className="flex justify-between border-b border-border pb-1 text-muted-foreground">
+                                          <span>Created:</span>
+                                          <span>
+                                            {format(
+                                              new Date(selectedEvent.createdAt),
+                                              'PPP p',
+                                            )}
+                                          </span>
+                                        </p>
+                                      </div>
+                                    </div>
+                                  </div>
+
+                                  <div className="space-y-4">
+                                    <div>
+                                      <p className="font-black text-muted-foreground uppercase tracking-widest text-[9px] mb-1">
+                                        Processing Status
+                                      </p>
+                                      <div className="space-y-1.5 font-bold">
+                                        <p className="flex justify-between border-b border-border pb-1 text-muted-foreground">
+                                          <span>Status:</span>
+                                          <span
+                                            className={`uppercase ${config.color} px-2 rounded-sm border`}
+                                          >
+                                            {selectedEvent.status}
+                                          </span>
+                                        </p>
+                                        <p className="flex justify-between border-b border-border pb-1 text-muted-foreground">
+                                          <span>Retry Count:</span>
+                                          <span className="font-mono text-indigo-600 dark:text-indigo-400">
+                                            {selectedEvent.retryCount}
+                                          </span>
+                                        </p>
+                                        <p className="flex justify-between border-b border-border pb-1 text-muted-foreground">
+                                          <span>Last Updated:</span>
+                                          <span>
+                                            {selectedEvent.updatedAt
+                                              ? format(
+                                                  new Date(
+                                                    selectedEvent.updatedAt,
+                                                  ),
+                                                  'PPP p',
+                                                )
+                                              : '-'}
+                                          </span>
+                                        </p>
+                                      </div>
+                                    </div>
+                                  </div>
+                                </div>
+
+                                {selectedEvent.lastError && (
+                                  <div className="space-y-2">
+                                    <p className="font-black text-rose-500 dark:text-rose-400 uppercase tracking-widest text-[9px] ml-1 flex items-center gap-1">
+                                      <AlertCircle className="w-3 h-3" />
+                                      Failure Trace
+                                    </p>
+                                    <div className="p-3 bg-rose-500/10 rounded-xl border border-rose-500/20">
+                                      <p className="text-[10px] text-rose-600 dark:text-rose-400 font-mono leading-relaxed italic">
+                                        {selectedEvent.lastError}
+                                      </p>
+                                    </div>
+                                  </div>
+                                )}
+
+                                {selectedEvent.payload && (
+                                  <div className="space-y-2">
+                                    <p className="font-black text-muted-foreground uppercase tracking-widest text-[9px] ml-1 flex items-center gap-1">
+                                      <Share2 className="w-3 h-3" />
+                                      Kafka Message Payload
+                                    </p>
+                                    <div className="p-4 bg-slate-950 dark:bg-slate-950/60 rounded-xl overflow-hidden border border-border shadow-inner">
+                                      <pre className="text-[10px] text-emerald-500 dark:text-emerald-400 font-mono overflow-x-auto custom-scrollbar leading-relaxed">
+                                        {JSON.stringify(
+                                          selectedEvent.payload,
+                                          null,
+                                          2,
+                                        )}
+                                      </pre>
+                                    </div>
+                                  </div>
+                                )}
+
+                                {selectedEvent.metadata && (
+                                  <div className="space-y-2">
+                                    <p className="font-black text-muted-foreground uppercase tracking-widest text-[9px] ml-1 flex items-center gap-1">
+                                      <Cpu className="w-3 h-3" />
+                                      Context Metadata
+                                    </p>
+                                    <div className="p-4 bg-slate-950 dark:bg-slate-950/60 rounded-xl overflow-hidden border border-border shadow-inner">
+                                      <pre className="text-[10px] text-indigo-400 dark:text-indigo-300 font-mono overflow-x-auto custom-scrollbar leading-relaxed">
+                                        {JSON.stringify(
+                                          selectedEvent.metadata,
+                                          null,
+                                          2,
+                                        )}
+                                      </pre>
+                                    </div>
+                                  </div>
+                                )}
+                              </div>
+                            )}
+                            <div className="bg-muted/30 p-4 border-t border-border flex justify-end gap-3">
+                              <Button
+                                variant="outline"
+                                onClick={() => setSelectedEvent(null)}
+                                className="h-9 px-4 rounded-xl text-xs font-bold border-border bg-card"
+                              >
+                                Close
+                              </Button>
+                              <Button
+                                onClick={() =>
+                                  selectedEvent && handleRetry(selectedEvent.id)
+                                }
+                                className="h-9 px-4 rounded-xl text-xs font-bold bg-indigo-600 hover:bg-indigo-500 text-white shadow-xs transition-all active:scale-95"
+                              >
+                                <RotateCcw className="w-3.5 h-3.5 mr-2" />
+                                Re-process Event
+                              </Button>
+                            </div>
+                          </DialogContent>
+                        </Dialog>
+                      </td>
+                    </tr>
+                  );
+                })
+              )}
+            </tbody>
+          </table>
+        </div>
       </Card>
+
+      <TablePagination
+        currentPage={page}
+        totalPages={totalPages}
+        totalItems={totalItems}
+        onPageChange={handlePageChange}
+        isLoading={loading}
+      />
     </div>
   );
 }

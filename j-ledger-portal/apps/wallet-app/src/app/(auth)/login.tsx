@@ -9,6 +9,7 @@ import {
   Platform,
   Dimensions,
   ActivityIndicator,
+  Alert,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
@@ -29,10 +30,7 @@ import { useAuthStore } from '@/store/auth';
 import { OtpInputFields } from '@/components/common/OtpInputFields';
 import { getStableDeviceId, getDeviceName } from '@/lib/device.utils';
 import { useScreenCaptureProtection } from '@/hooks/useScreenCaptureProtection';
-
-import axios from 'axios';
-
-const API_URL = process.env.EXPO_PUBLIC_API_URL || 'http://localhost:3002';
+import { api } from '@/lib/axios';
 
 const { width } = Dimensions.get('window');
 
@@ -55,6 +53,19 @@ export default function LoginScreen() {
   const router = useRouter();
   const setToken = useAuthStore((state) => state.setToken);
   const setUser = useAuthStore((state) => state.setUser);
+  const needsPinVerification = useAuthStore(
+    (state) => state.needsPinVerification,
+  );
+  const unlockWithPin = useAuthStore((state) => state.unlockWithPin);
+  const logout = useAuthStore((state) => state.logout);
+
+  // Auto-skip to PIN if returning user with valid session
+  useEffect(() => {
+    if (needsPinVerification && step === 'CREDENTIALS') {
+      console.log('[Login] Existing session found, skipping to PIN...');
+      setStep('PIN');
+    }
+  }, [needsPinVerification]);
 
   // Timer Effect
   useEffect(() => {
@@ -87,7 +98,8 @@ export default function LoginScreen() {
   const formatPhone = (val: string) => {
     const cleaned = val.replace(/\D/g, '');
     if (cleaned.length <= 3) return cleaned;
-    if (cleaned.length <= 6) return `${cleaned.slice(0, 3)}-${cleaned.slice(3)}`;
+    if (cleaned.length <= 6)
+      return `${cleaned.slice(0, 3)}-${cleaned.slice(3)}`;
     return `${cleaned.slice(0, 3)}-${cleaned.slice(3, 6)}-${cleaned.slice(6, 10)}`;
   };
 
@@ -99,18 +111,50 @@ export default function LoginScreen() {
       const deviceId = await getStableDeviceId();
       const deviceName = getDeviceName();
 
-      const res = await axios.post(`${API_URL}/auth/login`, {
+      console.log('[Login] Attempting login with:', {
+        phone,
+        deviceId,
+        deviceName,
+        url: '/identity/login',
+      });
+
+      const res = await api.post('/identity/login', {
         phoneNumber: phone,
         password,
         deviceId,
         deviceName,
       });
 
-      // If successful (no OTP required)
+      console.log('[Login] Login response:', {
+        status: res.status,
+        hasAccessToken: !!res.data.accessToken,
+        hasRefreshToken: !!res.data.refreshToken,
+        userId: res.data.userId,
+      });
+
+      // If successful (no OTP required), go to PIN step
       await setToken(res.data.accessToken, res.data.refreshToken);
-      setUser({ id: res.data.userId || 'current', phoneNumber: phone });
+      if (res.data.user) {
+        setUser(res.data.user);
+      }
+
+      // Save regToken if provided (for resuming onboarding)
+      if (res.data.regToken) {
+        console.log('[Login] Saving regToken to resume onboarding');
+        const { useRegistrationStore } = await import('@/store/registration');
+        await useRegistrationStore.getState().setRegToken(res.data.regToken);
+      }
+
+      // Force PIN verification state
+      await useAuthStore.getState().lockSession();
       setStep('PIN');
     } catch (err: any) {
+      console.error('[Login] Login failed:', {
+        message: err.message,
+        status: err.response?.status,
+        data: err.response?.data,
+      });
+
       const errorData = err.response?.data;
 
       if (errorData?.errorCode === 'NEW_DEVICE_OTP_REQUIRED') {
@@ -134,7 +178,7 @@ export default function LoginScreen() {
       const deviceId = await getStableDeviceId();
       const deviceName = getDeviceName();
 
-      const res = await axios.post(`${API_URL}/auth/device/verify`, {
+      const res = await api.post('/identity/device/verify', {
         phoneNumber: phone,
         challengeId,
         otp: otpString,
@@ -143,7 +187,18 @@ export default function LoginScreen() {
       });
 
       await setToken(res.data.accessToken, res.data.refreshToken);
-      setUser({ id: res.data.userId || 'current', phoneNumber: phone });
+      if (res.data.user) {
+        setUser(res.data.user);
+      }
+
+      // Save regToken if provided (for resuming onboarding)
+      if (res.data.regToken) {
+        console.log(
+          '[Login] Saving regToken to resume onboarding (New Device)',
+        );
+        const { useRegistrationStore } = await import('@/store/registration');
+        await useRegistrationStore.getState().setRegToken(res.data.regToken);
+      }
       setStep('PIN');
     } catch (err: any) {
       setError(err.response?.data?.message || 'Verification failed');
@@ -154,28 +209,47 @@ export default function LoginScreen() {
   };
 
   const handlePinSuccess = () => {
-    console.log('[Login] Authentication successful, entering app...');
+    console.log(
+      '[Login] Authentication successful, relying on global guard for navigation...',
+    );
     setIsLoading(false);
-    router.replace('/(tabs)' as any);
+    // Removed direct redirect to (tabs) to let RootLayout handle status-based navigation
   };
 
   const handlePinFailure = (errMsg: string) => {
     console.warn('[Login] Authentication failed:', errMsg);
     setIsLoading(false);
-    setError(errMsg);
+    // If PIN-only login fails, check if we should fall back to full login
+    if (needsPinVerification) {
+      setError('ไม่สามารถยืนยัน PIN ได้ กรุณาเข้าสู่ระบบใหม่');
+    } else {
+      setError(errMsg);
+    }
+  };
+
+  const handleSwitchAccount = async () => {
+    await logout();
+    setStep('CREDENTIALS');
+    setError('');
   };
 
   return (
-    <SafeAreaView className="flex-1 bg-[#f8f9fe]" edges={['top', 'bottom']}>
+    <SafeAreaView className="flex-1 bg-transparent" edges={['top', 'bottom']}>
       <KeyboardAvoidingView
-        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+        behavior={
+          step === 'PIN'
+            ? undefined
+            : Platform.OS === 'ios'
+              ? 'padding'
+              : 'height'
+        }
         className="flex-1"
       >
         <ScrollView
           contentContainerStyle={{
             flexGrow: 1,
             paddingHorizontal: 24,
-            justifyContent: 'center',
+            justifyContent: step === 'PIN' ? 'flex-start' : 'center',
             paddingBottom: 60,
           }}
           showsVerticalScrollIndicator={false}
@@ -190,13 +264,13 @@ export default function LoginScreen() {
                 className="mb-4"
               >
                 <Image
-                  source={require('../../../assets/images/j_ledger_logo_1776536282920.png')}
+                  source={require('../../../assets/images/logo/logo.png')}
                   className="w-24 h-24"
                   resizeMode="contain"
                 />
               </MotiView>
               <Text className="text-3xl font-manrope font-black tracking-tight text-gray-800 mb-2">
-                J-Ledger
+                P-wallet
               </Text>
               <Text className="text-gray-400 font-manrope font-medium text-sm text-center px-4">
                 Securely manage your digital assets with advanced cryptography
@@ -219,7 +293,15 @@ export default function LoginScreen() {
                   <AppTextInput
                     placeholder="08X-XXX-XXXX"
                     value={formatPhone(phone)}
-                    onChangeText={(val) => setPhone(val.replace(/\D/g, ''))}
+                    onChangeText={(val) => {
+                      // Remove everything except numbers
+                      const cleaned = val.replace(/\D/g, '');
+                      // Strictly only update if it's within 10 digits
+                      if (cleaned.length <= 10) {
+                        setPhone(cleaned);
+                      }
+                    }}
+                    maxLength={12} // 10 digits + 2 dashes
                     keyboardType="phone-pad"
                     containerClassName="bg-transparent border border-gray-100 h-14"
                     className="font-manrope font-bold text-gray-800 text-base tracking-widest"
@@ -270,7 +352,10 @@ export default function LoginScreen() {
                       >
                         Sign In
                       </Text>
-                      <ArrowRight size={18} color={!phone || !password ? '#9ca3af' : 'white'} />
+                      <ArrowRight
+                        size={18}
+                        color={!phone || !password ? '#9ca3af' : 'white'}
+                      />
                     </>
                   )}
                 </TouchableOpacity>
@@ -278,12 +363,17 @@ export default function LoginScreen() {
             </View>
 
             <TouchableOpacity
-              onPress={() => router.push('/onboarding' as any)}
+              onPress={async () => {
+                await logout(); // Clear any stale sessions before starting new registration
+                router.push('/onboarding' as any);
+              }}
               className="items-center"
             >
               <Text className="text-sm font-manrope font-bold text-gray-400">
-                New to J-Ledger?{' '}
-                <Text className="text-[#f48fb1] font-black underline">Create a Wallet</Text>
+                New to P-wallet?{' '}
+                <Text className="text-[#f48fb1] font-black underline">
+                  Create a Wallet
+                </Text>
               </Text>
             </TouchableOpacity>
           </StepWrapper>
@@ -311,7 +401,9 @@ export default function LoginScreen() {
                 </Text>
                 <Text className="text-xs text-gray-400 font-manrope font-medium text-center leading-relaxed">
                   Enter the 6-digit code sent to{'\n'}
-                  <Text className="font-black text-gray-700">{formatPhone(phone)}</Text>
+                  <Text className="font-black text-gray-700">
+                    {formatPhone(phone)}
+                  </Text>
                 </Text>
               </View>
 
@@ -331,7 +423,9 @@ export default function LoginScreen() {
               {error ? (
                 <View className="flex-row items-center justify-center gap-2 mb-6">
                   <AlertCircle size={14} color="#ef4444" />
-                  <Text className="text-xs text-red-500 font-manrope font-bold">{error}</Text>
+                  <Text className="text-xs text-red-500 font-manrope font-bold">
+                    {error}
+                  </Text>
                 </View>
               ) : null}
 
@@ -371,11 +465,26 @@ export default function LoginScreen() {
           {/* STEP 3: PIN VERIFICATION */}
           {/* ========================================= */}
           <StepWrapper visible={step === 'PIN'}>
-            <View className="py-6">
+            <View className={step === 'PIN' ? '' : 'py-6'}>
               <PINVerification
                 onSuccess={handlePinSuccess}
                 onFailure={handlePinFailure}
                 onCancel={() => setStep('CREDENTIALS')}
+                useUnlock={true}
+                headerCenterElement={
+                  <View className="flex-row items-center gap-2">
+                    <View className="w-8 h-8 bg-pink-50 rounded-lg items-center justify-center border border-pink-100 shadow-sm">
+                      <Image
+                        source={require('../../../assets/images/icon.png')}
+                        className="w-5 h-5"
+                        resizeMode="contain"
+                      />
+                    </View>
+                    <Text className="text-sm font-manrope font-black text-gray-800 tracking-tight">
+                      P-wallet
+                    </Text>
+                  </View>
+                }
               />
             </View>
           </StepWrapper>
@@ -389,24 +498,26 @@ export default function LoginScreen() {
                 <AlertCircle size={40} color="#ef4444" />
               </View>
               <Text className="text-5xl font-manrope font-black text-red-500 mb-4 tracking-tighter">
-                {Math.floor(lockoutTime / 60)}:{(lockoutTime % 60).toString().padStart(2, '0')}
+                {Math.floor(lockoutTime / 60)}:
+                {(lockoutTime % 60).toString().padStart(2, '0')}
               </Text>
               <Text className="text-2xl font-manrope font-black text-gray-800 mb-3 tracking-tight">
                 Account Locked
               </Text>
               <Text className="text-sm text-gray-500 font-manrope font-medium text-center leading-relaxed">
-                Too many failed attempts. For your security, please wait before trying again.
+                Too many failed attempts. For your security, please wait before
+                trying again.
               </Text>
             </View>
           </StepWrapper>
         </ScrollView>
 
         {/* Footer Versioning */}
-        <View className="absolute bottom-6 left-0 right-0 items-center pointer-events-none">
+        {/* <View className="absolute bottom-6 left-0 right-0 items-center pointer-events-none">
           <Text className="text-[9px] font-manrope font-black uppercase tracking-[0.4em] text-gray-300">
-            J-Ledger Protocol V4
+            P-wallet Protocol V4
           </Text>
-        </View>
+        </View> */}
       </KeyboardAvoidingView>
     </SafeAreaView>
   );

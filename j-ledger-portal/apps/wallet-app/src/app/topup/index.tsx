@@ -4,42 +4,46 @@ import {
   Text,
   ScrollView,
   TouchableOpacity,
-  Dimensions,
   TextInput,
   Platform,
   KeyboardAvoidingView,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { ChevronLeft, Landmark, ArrowRight, CheckCircle2, Zap } from 'lucide-react-native';
+import { ChevronLeft, CreditCard, ArrowRight, Zap } from 'lucide-react-native';
 import { useRouter } from 'expo-router';
 import { MotiView } from 'moti';
 
-const { width } = Dimensions.get('window');
-
 export default function TopupScreen() {
   const [amount, setAmount] = useState('');
-  const router = useRouter();
-
   const [isSubmitting, setIsSubmitting] = useState(false);
 
+  const router = useRouter();
+
   const handleNextStep = () => {
-    if (isSubmitting) return;
+    if (isSubmitting) {
+      return;
+    }
+
     setIsSubmitting(true);
-    // ส่งยอดเงินไปตรวจสอบที่หน้า Review
     router.push({
       pathname: '/topup/review',
-      params: { amount },
+      params: {
+        amount,
+      },
     } as any);
+    setIsSubmitting(false);
   };
 
+  const isAmountValid = amount && parseFloat(amount) > 0;
+  const canContinue = Boolean(isAmountValid && !isSubmitting);
+
   return (
-    <SafeAreaView className="flex-1 bg-[#f8f9fe]" edges={['top']}>
+    <SafeAreaView className="flex-1 bg-transparent" edges={['top']}>
       <KeyboardAvoidingView
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
         className="flex-1"
       >
         <View className="flex-1 px-5">
-          {/* Header */}
           <View className="flex-row items-center justify-between pt-2 pb-4">
             <TouchableOpacity
               onPress={() => router.back()}
@@ -59,7 +63,6 @@ export default function TopupScreen() {
             showsVerticalScrollIndicator={false}
             contentContainerStyle={{ paddingBottom: 40 }}
           >
-            {/* Amount Section */}
             <MotiView
               from={{ opacity: 0, translateY: 10 }}
               animate={{ opacity: 1, translateY: 0 }}
@@ -72,7 +75,9 @@ export default function TopupScreen() {
               </Text>
 
               <View className="flex-row items-center justify-center border-b-2 border-pink-100 pb-3 mb-8 w-full max-w-[260px]">
-                <Text className="text-3xl font-manrope font-black text-gray-400 mr-2 mt-1">฿</Text>
+                <Text className="text-3xl font-manrope font-black text-gray-400 mr-2 mt-1">
+                  ฿
+                </Text>
                 <TextInput
                   placeholder="0.00"
                   placeholderTextColor="#d1d5db"
@@ -105,13 +110,14 @@ export default function TopupScreen() {
                     onPress={() => setAmount(val.replace(',', ''))}
                     className="px-5 py-2.5 rounded-xl bg-pink-50 border border-pink-100 shadow-sm active:scale-95"
                   >
-                    <Text className="text-xs font-manrope font-black text-[#f48fb1]">{val}</Text>
+                    <Text className="text-xs font-manrope font-black text-[#f48fb1]">
+                      {val}
+                    </Text>
                   </TouchableOpacity>
                 ))}
               </View>
             </MotiView>
 
-            {/* Methods Section */}
             <Text className="text-[10px] font-manrope font-black text-gray-400 uppercase tracking-widest px-1 mb-4">
               Payment Method
             </Text>
@@ -120,52 +126,47 @@ export default function TopupScreen() {
               from={{ opacity: 0, translateY: 10 }}
               animate={{ opacity: 1, translateY: 0 }}
               transition={{ delay: 100 }}
-              className="mb-8"
+              className="mb-6"
             >
-              <View className="flex-row items-center justify-between p-5 rounded-[2rem] mb-4 bg-white border border-pink-200 shadow-md shadow-pink-100">
-                <View className="flex-row items-center gap-4">
+              <View className="flex-row items-center justify-between p-5 rounded-[2rem] mb-4 border bg-white border-pink-200 shadow-md shadow-pink-100">
+                <View className="flex-row items-center gap-4 flex-1">
                   <View className="w-12 h-12 rounded-[1.2rem] items-center justify-center bg-pink-50">
-                    <Landmark size={20} color="#f48fb1" />
+                    <CreditCard size={20} color="#f48fb1" />
                   </View>
-                  <View>
+                  <View className="flex-1">
                     <Text className="text-sm font-manrope font-black text-gray-800">
-                      SCB Savings Account
+                      Stripe Checkout
                     </Text>
                     <Text className="text-[10px] font-manrope font-bold text-gray-400 mt-1">
-                      *** *** 4567
+                      Choose Card or PromptPay in checkout
                     </Text>
                   </View>
-                </View>
-                <View className="w-5 h-5 rounded-full border-[1.5px] items-center justify-center bg-[#f48fb1] border-[#f48fb1]">
-                  <CheckCircle2 size={12} color="white" />
                 </View>
               </View>
             </MotiView>
 
-            {/* Next Step Button */}
             <MotiView
               from={{ opacity: 0, translateY: 10 }}
               animate={{ opacity: 1, translateY: 0 }}
               transition={{ delay: 200 }}
             >
               <TouchableOpacity
-                disabled={isSubmitting || !amount || parseFloat(amount) <= 0}
+                disabled={!canContinue}
                 onPress={handleNextStep}
-                className={`w-full h-16 rounded-2xl flex-row items-center justify-center gap-2 shadow-lg transition-all
-                  ${
-                    isSubmitting || !amount || parseFloat(amount) <= 0
-                      ? 'bg-gray-200 shadow-none'
-                      : 'bg-[#f48fb1] shadow-pink-200 active:scale-95'
-                  }`}
+                className={`w-full h-16 rounded-2xl flex-row items-center justify-center gap-2 shadow-lg ${
+                  canContinue
+                    ? 'bg-[#f48fb1] shadow-pink-200 active:scale-95'
+                    : 'bg-gray-200 shadow-none'
+                }`}
               >
                 <Text
-                  className={`font-manrope font-black text-base ${!amount || parseFloat(amount) <= 0 || isSubmitting ? 'text-gray-400' : 'text-white'}`}
+                  className={`font-manrope font-black text-base ${
+                    canContinue ? 'text-white' : 'text-gray-400'
+                  }`}
                 >
                   {isSubmitting ? 'Processing...' : 'Review Top Up'}
                 </Text>
-                {!isSubmitting && amount && parseFloat(amount) > 0 && (
-                  <ArrowRight size={20} color="white" />
-                )}
+                {canContinue ? <ArrowRight size={20} color="white" /> : null}
               </TouchableOpacity>
             </MotiView>
           </ScrollView>

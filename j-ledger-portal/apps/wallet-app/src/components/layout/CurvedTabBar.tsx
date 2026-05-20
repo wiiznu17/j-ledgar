@@ -1,7 +1,20 @@
 import React from 'react';
-import { View, Text, TouchableOpacity, Dimensions, StyleSheet, Platform } from 'react-native';
+import {
+  View,
+  Text,
+  TouchableOpacity,
+  Dimensions,
+  StyleSheet,
+  Platform,
+} from 'react-native';
 import { Svg, Path } from 'react-native-svg';
-import { Home, History, QrCode, TicketPercent, User } from 'lucide-react-native';
+import {
+  Home,
+  History,
+  QrCode,
+  TicketPercent,
+  User,
+} from 'lucide-react-native';
 import { useRouter, usePathname } from 'expo-router';
 import { MotiView } from 'moti';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -59,9 +72,17 @@ export function CurvedTabBar(props: BottomTabBarProps) {
 
   return (
     // box-none ทำให้กดทะลุพื้นที่โปร่งใสส่วนบนลงไปโดนเนื้อหาข้างหลังได้
-    <View style={[styles.container, { height: totalHeight }]} pointerEvents="box-none">
+    <View
+      style={[styles.container, { height: totalHeight }]}
+      pointerEvents="box-none"
+    >
       {/* 1. Background SVG Layer */}
-      <Svg width={width} height={totalHeight} style={styles.svg} pointerEvents="none">
+      <Svg
+        width={width}
+        height={totalHeight}
+        style={styles.svg}
+        pointerEvents="none"
+      >
         <Path d={getPath()} fill="#ffffff" stroke="#f3f4f6" strokeWidth={1.5} />
       </Svg>
 
@@ -69,7 +90,11 @@ export function CurvedTabBar(props: BottomTabBarProps) {
       <View
         style={[
           styles.navContainer,
-          { height: tabHeight + bottomInset, paddingBottom: bottomInset, marginTop: topOffset },
+          {
+            height: tabHeight + bottomInset,
+            paddingBottom: bottomInset,
+            marginTop: topOffset,
+          },
         ]}
       >
         {navItems.map((item, index) => {
@@ -81,7 +106,13 @@ export function CurvedTabBar(props: BottomTabBarProps) {
 
           if (item.isCenter) {
             // เว้นที่ว่างหลุมตรงกลางไว้
-            return <View key={index} style={{ width: width / 5 }} pointerEvents="none" />;
+            return (
+              <View
+                key={index}
+                style={{ width: width / 5 }}
+                pointerEvents="none"
+              />
+            );
           }
 
           return (
@@ -90,7 +121,10 @@ export function CurvedTabBar(props: BottomTabBarProps) {
               onPress={() => handlePress(item.route)}
               className="items-center justify-center flex-1"
             >
-              <MotiView animate={{ scale: isActive ? 1.05 : 1 }} className="items-center">
+              <MotiView
+                animate={{ scale: isActive ? 1.05 : 1 }}
+                className="items-center"
+              >
                 <item.icon
                   size={24}
                   color={isActive ? '#f48fb1' : '#9ca3af'}

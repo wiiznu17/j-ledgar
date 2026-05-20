@@ -40,14 +40,19 @@ export function AppTextInput({
       >
         {leftElement && <View className="mr-3">{leftElement}</View>}
         <TextInput
-          className={cn('flex-1 font-manrope font-extrabold text-lg text-on-surface', className)}
+          className={cn(
+            'flex-1 font-manrope font-extrabold text-lg text-on-surface',
+            className,
+          )}
           placeholderTextColor="#595b6180"
           {...props}
         />
         {rightElement && <View className="ml-3">{rightElement}</View>}
       </View>
       {error && (
-        <Text className="text-red-500 text-xs font-manrope font-bold px-1 mt-1">{error}</Text>
+        <Text className="text-red-500 text-xs font-manrope font-bold px-1 mt-1">
+          {error}
+        </Text>
       )}
     </View>
   );

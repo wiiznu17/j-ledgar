@@ -1,6 +1,7 @@
 {
   "$schema": "https://turborepo.dev/schema.json",
   "ui": "tui",
+  "globalEnv": ["NODE_ENV", "JWT_SECRET", "CSRF_SECRET"],
   "tasks": {
     "build": {
       "dependsOn": ["^build"],

@@ -1,5 +1,11 @@
 import React from 'react';
-import { View, Text, TouchableOpacity, Image, ActivityIndicator } from 'react-native';
+import {
+  View,
+  Text,
+  TouchableOpacity,
+  Image,
+  ActivityIndicator,
+} from 'react-native';
 import { QrCode } from 'lucide-react-native';
 import { MotiView } from 'moti';
 

@@ -119,17 +119,13 @@ api.interceptors.request.use(async (config) => {
   }
 
   try {
-    await SslPinningPlugin.certificatePinning(
-      'GET',
-      config.url!,
-      {
-        validDomains: ['api.jledger.io'],
-        hashes: [
-          'sha256/AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=',
-          'sha256/BBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBB=',
-        ],
-      },
-    );
+    await SslPinningPlugin.certificatePinning('GET', config.url!, {
+      validDomains: ['api.jledger.io'],
+      hashes: [
+        'sha256/AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=',
+        'sha256/BBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBB=',
+      ],
+    });
   } catch (error) {
     console.error('Certificate pinning failed:', error);
     return Promise.reject(new Error('Certificate validation failed'));

@@ -1,5 +1,11 @@
 import React, { useState } from 'react';
-import { View, Text, TouchableOpacity, ActivityIndicator, Alert } from 'react-native';
+import {
+  View,
+  Text,
+  TouchableOpacity,
+  ActivityIndicator,
+  Alert,
+} from 'react-native';
 // import { MotiView } from 'moti';
 import { Shield } from 'lucide-react-native';
 import {
@@ -14,7 +20,11 @@ interface BiometricAuthProps {
   onUsePIN?: () => void;
 }
 
-export const BiometricAuth: React.FC<BiometricAuthProps> = ({ onSuccess, onFailure, onUsePIN }) => {
+export const BiometricAuth: React.FC<BiometricAuthProps> = ({
+  onSuccess,
+  onFailure,
+  onUsePIN,
+}) => {
   const [isAuthenticating, setIsAuthenticating] = useState(false);
   const [biometricType, setBiometricType] = useState<string>('Biometric');
   const [attempts, setAttempts] = useState(0);
@@ -93,7 +103,9 @@ export const BiometricAuth: React.FC<BiometricAuthProps> = ({ onSuccess, onFailu
         </View>
 
         {/* Title */}
-        <Text className="text-lg font-manrope font-black text-gray-800 mb-2">Confirm Identity</Text>
+        <Text className="text-lg font-manrope font-black text-gray-800 mb-2">
+          Confirm Identity
+        </Text>
         <Text className="text-xs font-manrope font-bold text-gray-500 text-center mb-6">
           Use your {biometricType.toLowerCase()} to confirm this transfer
         </Text>
@@ -112,7 +124,9 @@ export const BiometricAuth: React.FC<BiometricAuthProps> = ({ onSuccess, onFailu
             <ActivityIndicator size="small" color="white" />
           ) : (
             <Text className="text-white font-manrope font-black text-sm">
-              {isAuthenticating ? 'Authenticating...' : 'Verify with ' + biometricType}
+              {isAuthenticating
+                ? 'Authenticating...'
+                : 'Verify with ' + biometricType}
             </Text>
           )}
         </TouchableOpacity>
@@ -120,7 +134,8 @@ export const BiometricAuth: React.FC<BiometricAuthProps> = ({ onSuccess, onFailu
         {/* Attempts Counter */}
         {attempts > 0 && attempts < maxAttempts && (
           <Text className="text-xs font-manrope font-bold text-orange-500 text-center">
-            {remainingAttempts} attempt{remainingAttempts !== 1 ? 's' : ''} remaining
+            {remainingAttempts} attempt{remainingAttempts !== 1 ? 's' : ''}{' '}
+            remaining
           </Text>
         )}
 
@@ -134,7 +149,9 @@ export const BiometricAuth: React.FC<BiometricAuthProps> = ({ onSuccess, onFailu
             disabled={isAuthenticating}
             className="mt-3"
           >
-            <Text className="text-[#f48fb1] font-manrope font-bold text-xs">Use PIN instead</Text>
+            <Text className="text-[#f48fb1] font-manrope font-bold text-xs">
+              Use PIN instead
+            </Text>
           </TouchableOpacity>
         )}
       </View>

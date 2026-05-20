@@ -13,6 +13,8 @@ describe('AccountTable Role-Based Actions', () => {
       balance: 1500.0,
       currency: 'THB',
       status: AccountStatus.ACTIVE,
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
     },
   ];
 
@@ -20,7 +22,11 @@ describe('AccountTable Role-Based Actions', () => {
 
   it('displays the Freeze button for SUPER_ADMIN', () => {
     render(
-      <AccountTable data={mockAccounts} onToggleStatus={mockOnToggle} userRole="SUPER_ADMIN" />,
+      <AccountTable
+        data={mockAccounts}
+        onToggleStatus={mockOnToggle}
+        userRole="SUPER_ADMIN"
+      />,
     );
 
     expect(screen.getByText('Actions')).toBeInTheDocument();
@@ -29,7 +35,11 @@ describe('AccountTable Role-Based Actions', () => {
 
   it('hides the Actions column and Freeze button for SUPPORT_STAFF', () => {
     render(
-      <AccountTable data={mockAccounts} onToggleStatus={mockOnToggle} userRole="SUPPORT_STAFF" />,
+      <AccountTable
+        data={mockAccounts}
+        onToggleStatus={mockOnToggle}
+        userRole="SUPPORT_STAFF"
+      />,
     );
 
     expect(screen.queryByText('Actions')).not.toBeInTheDocument();
