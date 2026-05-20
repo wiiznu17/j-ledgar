@@ -2,11 +2,15 @@ import { create } from 'zustand';
 import * as SecureStore from 'expo-secure-store';
 import { Platform } from 'react-native';
 import { verifySecureStorage } from '@/lib/device.utils';
+import { api } from '@/lib/axios';
 
 interface WalletUser {
   id: string;
   email?: string;
   phoneNumber?: string;
+  status?: string;
+  registrationState?: string;
+  reviewNote?: string;
   createdAt?: string;
 }
 
@@ -15,12 +19,22 @@ interface AuthState {
   refreshToken: string | null;
   isAuthenticated: boolean;
   isLoading: boolean;
+  hasSession: boolean; // true when refresh token exists (user has logged in before on this device)
+  needsPinVerification: boolean; // true when session exists but needs PIN to unlock
   user: WalletUser | null;
   biometricEnabled: boolean;
-  setToken: (token: string | null, refreshToken?: string | null) => Promise<void>;
+  lastActiveAt: number; // timestamp of last activity
+  setToken: (
+    token: string | null,
+    refreshToken?: string | null,
+  ) => Promise<void>;
   setUser: (user: WalletUser | null) => void;
   setBiometricEnabled: (enabled: boolean) => Promise<void>;
   verifyPin: (pin: string) => Promise<boolean>;
+  refreshSession: () => Promise<boolean>;
+  unlockWithPin: (pin: string) => Promise<boolean>;
+  lockSession: () => void;
+  updateActivity: () => void;
   initialize: () => Promise<void>;
   logout: () => Promise<void>;
 }
@@ -28,14 +42,19 @@ interface AuthState {
 const isWeb = Platform.OS === 'web';
 const BIOMETRIC_ENABLED_KEY = 'biometric_enabled';
 const REFRESH_TOKEN_KEY = 'refresh_token';
+const LAST_ACTIVE_KEY = 'last_active_at';
+const SESSION_LOCKED_KEY = 'session_locked';
 
 export const useAuthStore = create<AuthState>((set, get) => ({
   token: null,
   refreshToken: null,
   isAuthenticated: false,
   isLoading: true,
+  hasSession: false,
+  needsPinVerification: false,
   user: null,
   biometricEnabled: false,
+  lastActiveAt: Date.now(),
 
   setToken: async (token: string | null, refreshToken?: string | null) => {
     if (token) {
@@ -50,7 +69,12 @@ export const useAuthStore = create<AuthState>((set, get) => ({
           await SecureStore.setItemAsync(REFRESH_TOKEN_KEY, refreshToken);
         }
       }
-      set({ token, refreshToken: refreshToken || null, isAuthenticated: true });
+      set({
+        token,
+        refreshToken: refreshToken || null,
+        isAuthenticated: true,
+        lastActiveAt: Date.now(),
+      });
     } else {
       if (isWeb) {
         localStorage.removeItem('auth_token');
@@ -64,7 +88,22 @@ export const useAuthStore = create<AuthState>((set, get) => ({
     }
   },
 
-  setUser: (user: WalletUser | null) => set({ user }),
+  setUser: async (user: WalletUser | null) => {
+    if (user) {
+      if (isWeb) {
+        localStorage.setItem('wallet_user', JSON.stringify(user));
+      } else {
+        await SecureStore.setItemAsync('wallet_user', JSON.stringify(user));
+      }
+    } else {
+      if (isWeb) {
+        localStorage.removeItem('wallet_user');
+      } else {
+        await SecureStore.deleteItemAsync('wallet_user');
+      }
+    }
+    set({ user, lastActiveAt: Date.now() });
+  },
 
   setBiometricEnabled: async (enabled: boolean) => {
     try {
@@ -80,21 +119,96 @@ export const useAuthStore = create<AuthState>((set, get) => ({
   },
 
   verifyPin: async (pin: string): Promise<boolean> => {
-    const { token } = get();
-    if (!token) return false;
-
+    // Note: We don't need a token if we're using PIN to unlock/refresh
+    // But currently backend JwtAuthGuard is blocking it.
+    // We'll pass the token if we have it, or use deviceId in the future.
     try {
-      const API_URL = process.env.EXPO_PUBLIC_API_URL || 'http://localhost:3002';
-      await require('axios').post(
-        `${API_URL}/auth/pin/verify`,
-        { pin },
-        { headers: { Authorization: `Bearer ${token}` } },
-      );
+      const { user } = get();
+      const deviceId = await require('@/lib/device.utils').getStableDeviceId();
+      const deviceName = require('@/lib/device.utils').getDeviceName();
+
+      const res = await api.post('/identity/pin/verify', {
+        pin,
+        deviceId,
+        deviceName,
+      });
+
+      // If backend returns new tokens on PIN verify, use them!
+      if (res.data.accessToken) {
+        await get().setToken(res.data.accessToken, res.data.refreshToken);
+      }
+
       return true;
     } catch (error: any) {
-      console.error('[Auth] PIN verification failed:', error.response?.data || error.message);
+      console.error(
+        '[Auth] PIN verification failed:',
+        error.response?.data || error.message,
+      );
+      throw error;
+    }
+  },
+
+  refreshSession: async (): Promise<boolean> => {
+    const { refreshToken } = get();
+    if (!refreshToken) return false;
+
+    try {
+      const res = await api.post('/identity/refresh', { refreshToken });
+
+      const { accessToken, refreshToken: newRefreshToken, user } = res.data;
+      await get().setToken(accessToken, newRefreshToken);
+      if (user) {
+        get().setUser(user);
+      }
+
+      // Save regToken if provided (for resuming onboarding)
+      if (res.data.regToken) {
+        console.log('[Auth] Saving regToken from refresh to resume onboarding');
+        const { useRegistrationStore } = await import('@/store/registration');
+        await useRegistrationStore.getState().setRegToken(res.data.regToken);
+      }
+
+      console.log('[Auth] Session refreshed successfully');
+      return true;
+    } catch (error: any) {
+      console.error(
+        '[Auth] Session refresh failed:',
+        error.response?.data || error.message,
+      );
       return false;
     }
+  },
+
+  unlockWithPin: async (pin: string): Promise<boolean> => {
+    // PIN verification now also issues new tokens if needed
+    const isValid = await get().verifyPin(pin);
+    if (isValid) {
+      if (isWeb) {
+        localStorage.removeItem(SESSION_LOCKED_KEY);
+      } else {
+        await SecureStore.deleteItemAsync(SESSION_LOCKED_KEY);
+      }
+      set({
+        needsPinVerification: false,
+        lastActiveAt: Date.now(),
+        isAuthenticated: true,
+      });
+    }
+    return isValid;
+  },
+
+  lockSession: async () => {
+    console.log('[Auth] Session locked, PIN required');
+    if (isWeb) {
+      localStorage.setItem(SESSION_LOCKED_KEY, 'true');
+    } else {
+      await SecureStore.setItemAsync(SESSION_LOCKED_KEY, 'true');
+    }
+    set({ needsPinVerification: true, lastActiveAt: Date.now() });
+  },
+
+  updateActivity: () => {
+    set({ lastActiveAt: Date.now() });
   },
 
   initialize: async () => {
@@ -122,12 +236,58 @@ export const useAuthStore = create<AuthState>((set, get) => ({
         ? localStorage.getItem(BIOMETRIC_ENABLED_KEY) === 'true'
         : (await SecureStore.getItemAsync(BIOMETRIC_ENABLED_KEY)) === 'true';
 
-      if (token) {
-        console.log('[Auth] Restored session from storage');
-        set({ token, refreshToken, isAuthenticated: true, biometricEnabled });
+      const userJson = isWeb
+        ? localStorage.getItem('wallet_user')
+        : await SecureStore.getItemAsync('wallet_user');
+      const user = userJson ? JSON.parse(userJson) : null;
+
+      const isLocked = isWeb
+        ? localStorage.getItem(SESSION_LOCKED_KEY) === 'true'
+        : (await SecureStore.getItemAsync(SESSION_LOCKED_KEY)) === 'true';
+
+      if (token && user) {
+        console.log(
+          '[Auth] Restored session from storage, isLocked:',
+          isLocked,
+        );
+        set({
+          token,
+          refreshToken,
+          user,
+          isAuthenticated: !isLocked,
+          hasSession: true,
+          needsPinVerification: isLocked,
+          biometricEnabled,
+        });
+      } else if (refreshToken && user) {
+        // Only require PIN if we actually have user data to go with the session
+        console.log(
+          '[Auth] Session found but access token expired, PIN verification required',
+        );
+        set({
+          refreshToken,
+          user,
+          hasSession: true,
+          needsPinVerification: true,
+          isAuthenticated: false,
+          biometricEnabled,
+        });
       } else {
-        console.log('[Auth] No existing session found');
-        set({ biometricEnabled });
+        console.log('[Auth] No complete session found, starting fresh');
+        // Clear any orphaned tokens to be safe
+        if (token || refreshToken) {
+          if (!isWeb) {
+            await SecureStore.deleteItemAsync('auth_token');
+            await SecureStore.deleteItemAsync(REFRESH_TOKEN_KEY);
+          }
+        }
+        set({
+          hasSession: false,
+          biometricEnabled,
+          token: null,
+          refreshToken: null,
+          needsPinVerification: false,
+        });
       }
 
       // PIN will be initialized during onboarding flow
@@ -144,7 +304,10 @@ export const useAuthStore = create<AuthState>((set, get) => ({
       const { useRegistrationStore } = require('./registration');
       await useRegistrationStore.getState().reset();
     } catch (err) {
-      console.warn('[Auth] Soft error resetting registration store on logout:', err);
+      console.warn(
+        '[Auth] Soft error resetting registration store on logout:',
+        err,
+      );
     }
 
     if (isWeb) {
@@ -154,6 +317,13 @@ export const useAuthStore = create<AuthState>((set, get) => ({
       await SecureStore.deleteItemAsync('auth_token');
       await SecureStore.deleteItemAsync(REFRESH_TOKEN_KEY);
     }
-    set({ token: null, refreshToken: null, isAuthenticated: false, user: null });
+    set({
+      token: null,
+      refreshToken: null,
+      isAuthenticated: false,
+      hasSession: false,
+      needsPinVerification: false,
+      user: null,
+    });
   },
 }));

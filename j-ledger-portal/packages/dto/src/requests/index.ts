@@ -14,6 +14,7 @@ export interface AuthResponse {
   refreshToken: string;
   userId: string;
   role: string;
+  permissions: string[];
 }
 
 export interface RefreshTokenRequest {

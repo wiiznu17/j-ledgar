@@ -41,19 +41,19 @@ export async function verifySecureStorage(): Promise<SecureStorageVerificationRe
     // Test write
     const testKey = 'secure_storage_test';
     const testValue = 'test_value_' + Date.now();
-    
+
     await SecureStore.setItemAsync(testKey, testValue);
-    
+
     // Test read
     const readValue = await SecureStore.getItemAsync(testKey);
-    
+
     // Test delete
     await SecureStore.deleteItemAsync(testKey);
-    
+
     if (readValue === testValue) {
       result.isAvailable = true;
       result.isEncrypted = true; // SecureStore uses encryption on supported platforms
-      
+
       // Additional platform-specific checks
       if (Platform.OS === 'android') {
         // Android uses KeyStore for encryption
@@ -155,22 +155,33 @@ export async function performStorageHealthCheck(): Promise<StorageHealthCheck> {
   const recommendations: string[] = [];
 
   if (!verification.isAvailable) {
-    recommendations.push('Secure storage is not available. App may be running in an unsupported environment.');
+    recommendations.push(
+      'Secure storage is not available. App may be running in an unsupported environment.',
+    );
   }
 
   if (!verification.isEncrypted && Platform.OS !== 'web') {
-    recommendations.push('Secure storage is not encrypted. This may indicate a security issue.');
+    recommendations.push(
+      'Secure storage is not encrypted. This may indicate a security issue.',
+    );
   }
 
   if (keysCheck.missingKeys.length > 0) {
-    recommendations.push(`Missing secure storage keys: ${keysCheck.missingKeys.join(', ')}`);
+    recommendations.push(
+      `Missing secure storage keys: ${keysCheck.missingKeys.join(', ')}`,
+    );
   }
 
   if (Platform.OS === 'web') {
-    recommendations.push('Web platform uses localStorage which is not encrypted. Consider using mobile app for enhanced security.');
+    recommendations.push(
+      'Web platform uses localStorage which is not encrypted. Consider using mobile app for enhanced security.',
+    );
   }
 
-  const healthy = verification.isAvailable && verification.isEncrypted && keysCheck.allPresent;
+  const healthy =
+    verification.isAvailable &&
+    verification.isEncrypted &&
+    keysCheck.allPresent;
 
   return {
     healthy,

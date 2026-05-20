@@ -1,0 +1,179 @@
+import React, { useRef, useState } from 'react';
+import {
+  View,
+  Text,
+  TouchableOpacity,
+  ScrollView,
+  ActivityIndicator,
+  Alert,
+  Share,
+} from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
+import { ChevronLeft, Download, Share2 } from 'lucide-react-native';
+import { useRouter, useLocalSearchParams } from 'expo-router';
+import { useQuery } from '@tanstack/react-query';
+import { api } from '@/lib/axios';
+import { InvoiceView } from '@/components/billing/InvoiceView';
+import ViewShot from 'react-native-view-shot';
+import * as MediaLibrary from 'expo-media-library';
+import * as Haptics from 'expo-haptics';
+
+export default function BillingDetailScreen() {
+  const router = useRouter();
+  const { id } = useLocalSearchParams();
+  const viewShotRef = useRef<ViewShot>(null);
+  const [isSaving, setIsSaving] = useState(false);
+
+  const {
+    data: invoice,
+    isLoading,
+    isError,
+    error,
+  } = useQuery({
+    queryKey: ['invoice', id],
+    queryFn: async () => {
+      console.log(`[BillingDetail] Fetching invoice with ID: ${id}`);
+      try {
+        const { data } = await api.get(`/billing/invoices/${id}`);
+        console.log(
+          `[BillingDetail] Success: Found invoice ${data?.invoiceNumber}`,
+        );
+        return data;
+      } catch (err: any) {
+        console.error(
+          `[BillingDetail] API Error: ${err?.response?.status} - ${err?.message}`,
+        );
+        throw err;
+      }
+    },
+    enabled: !!id,
+  });
+
+  const handleSaveToGallery = async () => {
+    try {
+      setIsSaving(true);
+      const { status } = await MediaLibrary.requestPermissionsAsync();
+      if (status !== 'granted') {
+        Alert.alert(
+          'Permission Required',
+          'Please allow access to your gallery to save the receipt.',
+        );
+        return;
+      }
+
+      if (viewShotRef.current?.capture) {
+        const uri = await viewShotRef.current.capture();
+        await MediaLibrary.saveToLibraryAsync(uri);
+        Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+        Alert.alert('Success', 'Receipt saved to your gallery!');
+      }
+    } catch (error) {
+      console.error('Failed to save receipt:', error);
+      Alert.alert('Error', 'Failed to save receipt to gallery.');
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  const handleShare = async () => {
+    try {
+      if (viewShotRef.current?.capture) {
+        const uri = await viewShotRef.current.capture();
+        await Share.share({
+          url: uri,
+          message: `P-wallet Receipt: ${invoice?.invoiceNumber || 'Invoice'}`,
+        });
+      }
+    } catch (error) {
+      console.error('Failed to share receipt:', error);
+    }
+  };
+
+  if (isLoading) {
+    return (
+      <SafeAreaView className="flex-1 bg-white items-center justify-center">
+        <ActivityIndicator size="large" color="#f48fb1" />
+        <Text className="font-manrope font-bold text-gray-400 mt-4">
+          Preparing your receipt...
+        </Text>
+      </SafeAreaView>
+    );
+  }
+
+  if (isError || !invoice) {
+    return (
+      <SafeAreaView className="flex-1 bg-white items-center justify-center p-6">
+        <Text className="text-xl font-manrope font-black text-gray-800">
+          Invoice not found
+        </Text>
+        <TouchableOpacity
+          onPress={() => router.back()}
+          className="mt-8 px-10 py-4 bg-[#f48fb1] rounded-2xl"
+        >
+          <Text className="font-manrope font-black text-white">Go Back</Text>
+        </TouchableOpacity>
+      </SafeAreaView>
+    );
+  }
+
+  return (
+    <SafeAreaView className="flex-1 bg-[#f8f9fe]" edges={['top']}>
+      {/* Header */}
+      <View className="px-5 pt-2 pb-4 flex-row items-center justify-between bg-white border-b border-gray-100">
+        <TouchableOpacity
+          onPress={() => router.back()}
+          className="w-10 h-10 rounded-2xl bg-gray-50 flex items-center justify-center"
+        >
+          <ChevronLeft size={24} color="#1a1a1a" />
+        </TouchableOpacity>
+        <Text className="text-lg font-manrope font-black text-gray-800 tracking-tight">
+          Receipt
+        </Text>
+        <TouchableOpacity
+          onPress={handleShare}
+          className="w-10 h-10 rounded-2xl bg-gray-50 flex items-center justify-center"
+        >
+          <Share2 size={20} color="#1a1a1a" />
+        </TouchableOpacity>
+      </View>
+
+      <ScrollView
+        contentContainerStyle={{ padding: 20, paddingBottom: 100 }}
+        showsVerticalScrollIndicator={false}
+      >
+        {/* The Capture Area */}
+        <ViewShot ref={viewShotRef} options={{ format: 'jpg', quality: 0.9 }}>
+          <InvoiceView invoice={invoice} />
+        </ViewShot>
+
+        {/* Note about official status */}
+        {/* <View className="mt-6 px-4">
+          <Text className="text-[10px] text-gray-400 text-center font-manrope font-medium leading-4">
+            This is an official electronic receipt generated by P-wallet. You
+            can use this for your financial records.
+          </Text>
+        </View> */}
+      </ScrollView>
+
+      {/* Floating Action Button */}
+      <View className="absolute bottom-10 left-5 right-5">
+        <TouchableOpacity
+          onPress={handleSaveToGallery}
+          disabled={isSaving}
+          className="w-full h-16 bg-[#1a1a1a] rounded-2xl flex-row items-center justify-center gap-3 shadow-xl shadow-black/20 active:scale-95"
+        >
+          {isSaving ? (
+            <ActivityIndicator color="white" />
+          ) : (
+            <>
+              <Download size={20} color="white" />
+              <Text className="text-sm font-manrope font-black text-white uppercase tracking-widest">
+                Save to Gallery
+              </Text>
+            </>
+          )}
+        </TouchableOpacity>
+      </View>
+    </SafeAreaView>
+  );
+}

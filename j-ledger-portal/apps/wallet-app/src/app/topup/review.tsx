@@ -3,47 +3,221 @@ import {
   View,
   Text,
   TouchableOpacity,
-  Dimensions,
   ActivityIndicator,
   ScrollView,
   Platform,
+  Alert,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { ChevronLeft, ArrowRight, ShieldCheck, Wallet, Landmark } from 'lucide-react-native';
+import {
+  ChevronLeft,
+  ArrowRight,
+  ShieldCheck,
+  Wallet,
+  CreditCard,
+} from 'lucide-react-native';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import { MotiView, AnimatePresence } from 'moti';
 import { useScreenCaptureProtection } from '@/hooks/useScreenCaptureProtection';
-
-const { width } = Dimensions.get('window');
+import api from '@/lib/axios';
+import { useStripe } from '@stripe/stripe-react-native';
+import { useAuthStore } from '@/store/auth';
+import * as Location from 'expo-location';
+import { BiometricAuth } from '../../components/auth/BiometricAuth';
+import { PINVerification } from '../../components/auth/PINVerification';
+import {
+  isBiometricAvailable,
+  isBiometricEnrolled,
+} from '../../lib/biometric-auth';
 
 export default function TopupReviewScreen() {
-  // Prevent screen capture on sensitive topup review
   useScreenCaptureProtection();
 
   const router = useRouter();
-  const { amount } = useLocalSearchParams();
-  const [isProcessing, setIsProcessing] = useState(false);
+  const { amount } = useLocalSearchParams<{
+    amount: string;
+  }>();
 
-  const topupAmount = parseFloat(amount as string) || 0;
+  const [isProcessing, setIsProcessing] = useState(false);
+  const [error, setError] = useState('');
+  const [processingText, setProcessingText] = useState('Processing Payment');
+  const { initPaymentSheet, presentPaymentSheet } = useStripe();
+  const userEmail = useAuthStore((state) => state.user?.email);
+
+  const [isConfirming, setIsConfirming] = useState(false);
+  const [showBiometric, setShowBiometric] = useState(false);
+  const [showPIN, setShowPIN] = useState(false);
+  const [biometricAvailable, setBiometricAvailable] = useState(false);
+  const biometricEnabled = useAuthStore((state) => state.biometricEnabled);
+
+  const topupAmount = parseFloat(amount || '0') || 0;
   const fee = 0;
   const totalAmount = topupAmount + fee;
 
-  const handleConfirm = () => {
-    if (isProcessing) return; // Guard กันการกดซ้ำรัวๆ
-    setIsProcessing(true);
-    // Mock Gateway Connection
-    setTimeout(() => {
-      setIsProcessing(false);
-      router.push({
-        pathname: '/topup/success',
-        params: { amount },
-      } as any);
-    }, 1500);
+  React.useEffect(() => {
+    const checkBiometric = async () => {
+      const available = await isBiometricAvailable();
+      const enrolled = await isBiometricEnrolled();
+      setBiometricAvailable(available && enrolled);
+    };
+    checkBiometric();
+  }, []);
+
+  const handleConfirm = async () => {
+    if (isProcessing || isConfirming) return;
+
+    if (biometricAvailable && biometricEnabled) {
+      setIsConfirming(true);
+      setShowBiometric(true);
+      return;
+    }
+
+    setIsConfirming(true);
+    setShowPIN(true);
   };
+
+  const handleBiometricSuccess = () => {
+    setShowBiometric(false);
+    setIsConfirming(false);
+    performTopup();
+  };
+
+  const handleBiometricFailure = (errorStr: string) => {
+    setShowBiometric(false);
+    setShowPIN(true);
+  };
+
+  const handlePINSuccess = () => {
+    setShowPIN(false);
+    setIsConfirming(false);
+    performTopup();
+  };
+
+  const handlePINFailure = (errorStr: string) => {
+    setShowPIN(false);
+    setIsConfirming(false);
+  };
+
+  const handleAuthCancel = () => {
+    setShowBiometric(false);
+    setShowPIN(false);
+    setIsConfirming(false);
+  };
+
+  const performTopup = async () => {
+    setIsProcessing(true);
+    setError('');
+
+    try {
+      setProcessingText('Getting current location');
+      let locationStr = 'Bangkok, Thailand';
+      try {
+        const { status } = await Location.requestForegroundPermissionsAsync();
+        if (status === 'granted') {
+          const pos = await Location.getCurrentPositionAsync({
+            accuracy: Location.Accuracy.Balanced,
+          });
+          const rev = await Location.reverseGeocodeAsync({
+            latitude: pos.coords.latitude,
+            longitude: pos.coords.longitude,
+          });
+          if (rev && rev[0]) {
+            const r = rev[0];
+            const city = r.region || r.subregion || r.city || 'Bangkok';
+            const country = r.country || 'Thailand';
+            locationStr = `${city}, ${country}`;
+          }
+        }
+      } catch (gpsErr) {
+        console.warn(
+          '[GPS] Failed to retrieve current location for transaction:',
+          gpsErr,
+        );
+      }
+
+      setProcessingText('Preparing payment');
+      const intentRes = await api.post('/integration/topup/intent', {
+        amount: topupAmount,
+        currency: 'THB',
+        note: `Top-up [Loc: ${locationStr}]`,
+      });
+      const intentData = intentRes.data || {};
+
+      const initResult = await initPaymentSheet({
+        merchantDisplayName: 'P-wallet',
+        paymentIntentClientSecret: intentData.clientSecret,
+        returnURL: 'walletapp://stripe-redirect',
+        defaultBillingDetails: userEmail ? { email: userEmail } : undefined,
+      });
+      if (initResult.error) {
+        throw new Error(initResult.error.message);
+      }
+
+      setProcessingText('Waiting for payment confirmation');
+      const presentResult = await presentPaymentSheet();
+      if (presentResult.error) {
+        throw new Error(presentResult.error.message);
+      }
+
+      setProcessingText('Verifying payment');
+      const orderId = intentData.orderId;
+      let status = 'PENDING';
+      let latestData: any = null;
+
+      for (let attempt = 0; attempt < 30; attempt++) {
+        const statusRes = await api.get(`/integration/topup/${orderId}`);
+        latestData = statusRes.data;
+        status = latestData?.status;
+        if (status === 'PAID') {
+          break;
+        }
+        if (status === 'FAILED' || status === 'CANCELED') {
+          throw new Error(`Payment ${status.toLowerCase()}`);
+        }
+        await new Promise((resolve) => setTimeout(resolve, 2000));
+      }
+
+      if (status !== 'PAID') {
+        Alert.alert(
+          'Verification Pending',
+          'Your payment was authorized successfully. It may take a moment for the bank to settle your funds. Your balance will be updated automatically.',
+          [
+            {
+              text: 'OK',
+              onPress: () => {
+                router.replace('/(tabs)');
+              },
+            },
+          ],
+          { cancelable: false },
+        );
+        return;
+      }
+
+      router.replace({
+        pathname: '/topup/success',
+        params: {
+          amount: amount || '0',
+          transactionId: latestData?.transactionId || latestData?.orderId,
+          bankName: 'Stripe Checkout',
+          accountNumberMasked: 'Card / PromptPay',
+          createdAt: latestData?.createdAt || new Date().toISOString(),
+        },
+      } as any);
+    } catch (err: any) {
+      setError(
+        err?.response?.data?.message || err?.message || 'เติมเงินไม่สำเร็จ',
+      );
+    } finally {
+      setIsProcessing(false);
+      setProcessingText('Processing Payment');
+    }
+  };
+
+  const isButtonDisabled = isProcessing || isConfirming;
 
   return (
     <SafeAreaView className="flex-1 bg-[#f8f9fe]" edges={['top']}>
-      {/* Header */}
       <View className="px-5 pt-2 pb-4 flex-row items-center justify-between">
         <TouchableOpacity
           onPress={() => !isProcessing && router.back()}
@@ -67,7 +241,6 @@ export default function TopupReviewScreen() {
           animate={{ opacity: 1, translateY: 0 }}
           className="mt-2"
         >
-          {/* Main Review Card */}
           <View className="bg-white rounded-[2.5rem] p-7 border border-gray-50 shadow-xl shadow-pink-100/40 relative overflow-hidden mb-6">
             <View className="absolute top-0 left-0 right-0 h-2 bg-[#f48fb1]" />
 
@@ -76,7 +249,9 @@ export default function TopupReviewScreen() {
                 Top Up Amount
               </Text>
               <View className="flex-row items-baseline w-full justify-center">
-                <Text className="text-2xl font-manrope font-black text-gray-400 mr-2">฿</Text>
+                <Text className="text-2xl font-manrope font-black text-gray-400 mr-2">
+                  ฿
+                </Text>
                 <Text
                   numberOfLines={1}
                   adjustsFontSizeToFit
@@ -91,30 +266,26 @@ export default function TopupReviewScreen() {
               </View>
             </View>
 
-            {/* Transfer Direction Container */}
             <View className="bg-gray-50/80 rounded-[2rem] p-5 border border-gray-100/50 mb-8 relative">
-              {/* Connector Line */}
               <View className="absolute left-10 top-12 bottom-12 w-[2px] bg-gray-200 border-dashed border-l-[2px] border-gray-200 z-0" />
 
-              {/* From Linked Bank */}
               <View className="flex-row items-center relative z-10 mb-6">
-                <View className="w-10 h-10 bg-purple-50 rounded-xl items-center justify-center shadow-sm border border-purple-100">
-                  <Landmark size={20} color="#a855f7" />
+                <View className="w-10 h-10 bg-pink-50 rounded-xl items-center justify-center shadow-sm border border-pink-100">
+                  <CreditCard size={20} color="#f48fb1" />
                 </View>
                 <View className="ml-4 flex-1">
                   <Text className="text-[10px] font-manrope font-black text-gray-400 uppercase tracking-widest mb-0.5">
                     Funding Source
                   </Text>
                   <Text className="text-sm font-manrope font-black text-gray-800">
-                    SCB Savings Account
+                    Stripe Checkout
                   </Text>
                   <Text className="text-[10px] font-manrope font-bold text-gray-400 mt-0.5">
-                    *** *** 4567
+                    Card or PromptPay
                   </Text>
                 </View>
               </View>
 
-              {/* To Wallet */}
               <View className="flex-row items-center relative z-10">
                 <View className="w-10 h-10 bg-pink-50 rounded-xl items-center justify-center border border-pink-100 shadow-sm">
                   <Wallet size={20} color="#f48fb1" />
@@ -123,15 +294,16 @@ export default function TopupReviewScreen() {
                   <Text className="text-[10px] font-manrope font-black text-gray-400 uppercase tracking-widest mb-0.5">
                     To
                   </Text>
-                  <Text className="text-sm font-manrope font-black text-gray-800">My E-Wallet</Text>
+                  <Text className="text-sm font-manrope font-black text-gray-800">
+                    My E-Wallet
+                  </Text>
                   <Text className="text-[10px] font-manrope font-bold text-gray-400 mt-0.5">
-                    J-Ledger Account
+                    P-wallet Account
                   </Text>
                 </View>
               </View>
             </View>
 
-            {/* Summary Board */}
             <View className="space-y-4">
               <SummaryRow label="Transaction Type" value="Wallet Top Up" />
               <SummaryRow label="Bank Fee" value="FREE" isHighlight />
@@ -141,13 +313,23 @@ export default function TopupReviewScreen() {
                   Total Deduction
                 </Text>
                 <Text className="text-xl font-manrope font-black text-[#f48fb1]">
-                  ฿{totalAmount.toLocaleString(undefined, { minimumFractionDigits: 2 })}
+                  ฿
+                  {totalAmount.toLocaleString(undefined, {
+                    minimumFractionDigits: 2,
+                  })}
                 </Text>
               </View>
             </View>
           </View>
 
-          {/* Trust Banner */}
+          {error ? (
+            <View className="bg-red-50 border border-red-100 rounded-2xl p-4 mb-4">
+              <Text className="text-xs font-manrope font-bold text-red-500 text-center">
+                {error}
+              </Text>
+            </View>
+          ) : null}
+
           <View className="bg-green-50/50 p-5 rounded-2xl border border-green-100/50 flex-row items-center gap-4 shadow-sm mb-4">
             <View className="w-10 h-10 rounded-xl bg-white items-center justify-center border border-green-100">
               <ShieldCheck size={20} color="#22c55e" />
@@ -159,30 +341,65 @@ export default function TopupReviewScreen() {
         </MotiView>
       </ScrollView>
 
-      {/* Floating Action Area */}
       <View
-        className="absolute bottom-0 left-0 right-0 px-5 pt-4 pb-8 bg-white/90 border-t border-gray-50"
+        className="absolute bottom-0 left-0 right-0 px-5 pt-4 pb-8 bg-white/90 border-t border-gray-50 animate-fade-in"
         style={{ paddingBottom: Platform.OS === 'ios' ? 34 : 24 }}
       >
         <TouchableOpacity
-          disabled={isProcessing}
+          disabled={isButtonDisabled}
           onPress={handleConfirm}
-          className={`w-full h-16 rounded-2xl flex-row items-center justify-center gap-3 transition-all ${
-            isProcessing ? 'bg-pink-300' : 'bg-[#f48fb1] shadow-lg shadow-pink-200 active:scale-95'
+          className={`w-full h-16 rounded-2xl flex-row items-center justify-center gap-3 ${
+            isButtonDisabled
+              ? 'bg-pink-300'
+              : 'bg-[#f48fb1] shadow-lg shadow-pink-200 active:scale-95'
           }`}
         >
-          {isProcessing ? (
+          {isProcessing || isConfirming ? (
             <ActivityIndicator color="white" />
           ) : (
             <>
-              <Text className="font-manrope font-black text-white text-base">Confirm Payment</Text>
+              <Text className="font-manrope font-black text-white text-base">
+                Confirm Payment
+              </Text>
               <ArrowRight size={20} color="white" />
             </>
           )}
         </TouchableOpacity>
       </View>
 
-      {/* Processing Portal */}
+      {/* Authentication Modal - Outside ScrollView */}
+      <AnimatePresence>
+        {isConfirming && !error && (
+          <MotiView
+            from={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="absolute inset-0 bg-white items-center justify-center z-40"
+          >
+            {showBiometric && biometricAvailable && biometricEnabled && (
+              <View className="w-full bg-white rounded-t-[2.5rem] p-6 pt-8">
+                <BiometricAuth
+                  onSuccess={handleBiometricSuccess}
+                  onFailure={handleBiometricFailure}
+                  onUsePIN={() => {
+                    setShowBiometric(false);
+                    setShowPIN(true);
+                  }}
+                />
+              </View>
+            )}
+
+            {showPIN && (
+              <PINVerification
+                onSuccess={handlePINSuccess}
+                onFailure={handlePINFailure}
+                onCancel={handleAuthCancel}
+              />
+            )}
+          </MotiView>
+        )}
+      </AnimatePresence>
+
       <AnimatePresence>
         {isProcessing && (
           <MotiView
@@ -199,10 +416,10 @@ export default function TopupReviewScreen() {
               <ActivityIndicator size="large" color="#f48fb1" />
             </MotiView>
             <Text className="text-2xl font-manrope font-black text-gray-800 tracking-tight text-center">
-              Processing Payment
+              {processingText}
             </Text>
             <Text className="text-sm font-manrope font-bold text-gray-400 mt-3 text-center leading-relaxed">
-              Connecting to your linked bank account...
+              Waiting for Stripe payment confirmation...
             </Text>
           </MotiView>
         )}

@@ -29,16 +29,19 @@ export async function executeTransfer(formData: FormData) {
     const data = await transactionRequester.transfer(transferData, {
       headers: {
         'Idempotency-Key': idempotencyKey,
-      }
+      },
     });
 
     return { success: true, data };
   } catch (err) {
     console.error('Transfer Error:', err);
-    const message = err instanceof Error ? err.message : 'Transaction failed. Please check your balance and try again.';
-    return { 
-      success: false, 
-      error: message
+    const message =
+      err instanceof Error
+        ? err.message
+        : 'Transaction failed. Please check your balance and try again.';
+    return {
+      success: false,
+      error: message,
     };
   }
 }

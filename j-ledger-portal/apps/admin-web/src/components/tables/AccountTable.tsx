@@ -37,12 +37,17 @@ export function AccountTable({
             <TableHead className="hidden md:table-cell">Account ID</TableHead>
             <TableHead className="text-right">Balance</TableHead>
             <TableHead className="text-center">Status</TableHead>
-            {isSuperAdmin && <TableHead className="text-right">Actions</TableHead>}
+            {isSuperAdmin && (
+              <TableHead className="text-right">Actions</TableHead>
+            )}
           </TableRow>
         </TableHeader>
         <TableBody>
           {data.map((acc) => (
-            <TableRow key={acc.id} className="hover:bg-secondary/30 transition-colors">
+            <TableRow
+              key={acc.id}
+              className="hover:bg-secondary/30 transition-colors"
+            >
               <TableCell className="font-medium">{acc.accountName}</TableCell>
               <TableCell className="font-mono text-xs text-muted-foreground hidden md:table-cell">
                 {acc.id}
@@ -65,15 +70,23 @@ export function AccountTable({
               {isSuperAdmin && (
                 <TableCell className="text-right">
                   <Button
-                    variant={acc.status === AccountStatus.ACTIVE ? 'destructive' : 'default'}
+                    variant={
+                      acc.status === AccountStatus.ACTIVE
+                        ? 'destructive'
+                        : 'default'
+                    }
                     size="sm"
                     disabled={loading}
                     className={
-                      acc.status !== AccountStatus.ACTIVE ? 'bg-primary hover:bg-primary/90 text-white' : ''
+                      acc.status !== AccountStatus.ACTIVE
+                        ? 'bg-primary hover:bg-primary/90 text-white'
+                        : ''
                     }
                     onClick={() => onToggleStatus(acc.id, acc.status)}
                   >
-                    {acc.status === AccountStatus.ACTIVE ? 'Freeze' : 'Unfreeze'}
+                    {acc.status === AccountStatus.ACTIVE
+                      ? 'Freeze'
+                      : 'Unfreeze'}
                   </Button>
                 </TableCell>
               )}
@@ -81,7 +94,10 @@ export function AccountTable({
           ))}
           {data.length === 0 && (
             <TableRow>
-              <TableCell colSpan={5} className="h-24 text-center text-muted-foreground">
+              <TableCell
+                colSpan={5}
+                className="h-24 text-center text-muted-foreground"
+              >
                 No results.
               </TableCell>
             </TableRow>

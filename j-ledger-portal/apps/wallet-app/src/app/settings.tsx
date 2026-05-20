@@ -1,5 +1,12 @@
 import React from 'react';
-import { View, Text, ScrollView, TouchableOpacity, Switch, Dimensions } from 'react-native';
+import {
+  View,
+  Text,
+  ScrollView,
+  TouchableOpacity,
+  Switch,
+  Dimensions,
+} from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import {
   ChevronRight,
@@ -37,7 +44,9 @@ export default function SettingsScreen() {
           {React.cloneElement(icon, { size: 22, color: '#4855a5' })}
         </View>
         <View>
-          <Text className="text-base font-manrope font-black text-on-surface">{title}</Text>
+          <Text className="text-base font-manrope font-black text-on-surface">
+            {title}
+          </Text>
           {subtitle && (
             <Text className="text-[10px] font-manrope font-bold text-on-surfaceVariant/60 uppercase tracking-widest mt-1">
               {subtitle}
@@ -45,7 +54,11 @@ export default function SettingsScreen() {
           )}
         </View>
       </View>
-      {rightElement ? rightElement : <ChevronRight size={18} color="#4855a530" />}
+      {rightElement ? (
+        rightElement
+      ) : (
+        <ChevronRight size={18} color="#4855a530" />
+      )}
     </View>
   );
 
@@ -92,7 +105,11 @@ export default function SettingsScreen() {
           Security & Privacy
         </Text>
         <GlassPanel intensity={20} className="p-1 px-5 rounded-[35] mb-10">
-          {renderSettingItem(<Lock />, 'Change Secret PIN', 'Update your 6-digit access')}
+          {renderSettingItem(
+            <Lock />,
+            'Change Secret PIN',
+            'Update your 6-digit access',
+          )}
           {renderSettingItem(
             <Fingerprint />,
             'Biometrics',
@@ -114,7 +131,11 @@ export default function SettingsScreen() {
         </Text>
         <GlassPanel intensity={20} className="p-1 px-5 rounded-[35] mb-12">
           <View className="border-0">
-            {renderSettingItem(<CircleHelp />, 'System Status', 'All systems operational')}
+            {renderSettingItem(
+              <CircleHelp />,
+              'System Status',
+              'All systems operational',
+            )}
           </View>
         </GlassPanel>
 

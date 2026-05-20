@@ -37,7 +37,9 @@ export const ServicesGrid = ({ onServicePress }: ServicesGridProps) => {
         {React.cloneElement(icon, { size: 24, color: color })}
         {comingSoon && (
           <View className="absolute -top-1.5 -right-1.5 bg-gray-400 px-1.5 py-0.5 rounded-md shadow-sm">
-            <Text className="text-[7px] font-black text-white uppercase tracking-widest">Soon</Text>
+            <Text className="text-[7px] font-black text-white uppercase tracking-widest">
+              Soon
+            </Text>
           </View>
         )}
       </MotiView>
@@ -51,13 +53,37 @@ export const ServicesGrid = ({ onServicePress }: ServicesGridProps) => {
     <View className="bg-white rounded-[2rem] p-6 border border-gray-50 shadow-sm mb-4">
       <View className="flex-row flex-wrap -mx-2 justify-between">
         {renderServiceItem(<Smartphone />, 'Top-up', '#3b82f6', '/topup')}
-        {renderServiceItem(<ReceiptText />, 'Bills', '#f97316', undefined, true)}
+        {renderServiceItem(
+          <ReceiptText />,
+          'Bills',
+          '#f97316',
+          undefined,
+          true,
+        )}
         {renderServiceItem(<Gamepad2 />, 'Games', '#a855f7', undefined, true)}
-        {renderServiceItem(<ShieldCheck />, 'Insurance', '#22c55e', undefined, true)}
-        {renderServiceItem(<CreditCard />, 'K-Debit', '#14b8a6', undefined, true)}
+        {renderServiceItem(
+          <ShieldCheck />,
+          'Insurance',
+          '#22c55e',
+          undefined,
+          true,
+        )}
+        {renderServiceItem(
+          <CreditCard />,
+          'K-Debit',
+          '#14b8a6',
+          undefined,
+          true,
+        )}
         {renderServiceItem(<Car />, 'Transport', '#2563eb', undefined, true)}
         {renderServiceItem(<TicketPercent />, 'Deals', '#ec4899', '/deals')}
-        {renderServiceItem(<LayoutGrid />, 'Others', '#64748b', undefined, true)}
+        {renderServiceItem(
+          <LayoutGrid />,
+          'Others',
+          '#64748b',
+          undefined,
+          true,
+        )}
       </View>
     </View>
   );

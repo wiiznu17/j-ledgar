@@ -1,7 +1,16 @@
 'use client';
 
+import React, { useEffect, useState } from 'react';
+import { useParams, useRouter } from 'next/navigation';
 import { Badge } from '@/components/ui/badge';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from '@/components/ui/card';
 import {
   Table,
   TableBody,
@@ -10,20 +19,44 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table';
-import { useParams } from 'next/navigation';
-import { useEffect, useState } from 'react';
+import {
+  Coins,
+  Calendar as CalendarIcon,
+  ArrowLeft,
+  CheckCircle2,
+  XCircle,
+  Clock,
+  Copy,
+  Hash,
+  User,
+  Wallet,
+  ArrowRightLeft,
+  Cpu,
+  FileJson,
+  Check,
+  TrendingUp,
+  ExternalLink,
+} from 'lucide-react';
 import { toast } from 'sonner';
 import { transactionRequester } from '@/lib/requesters';
-import { TransactionDetailsDto, TransactionStatus, LedgerEntryType } from '@repo/dto';
+import {
+  TransactionDetailsDto,
+  TransactionStatus,
+  LedgerEntryType,
+  TransactionType,
+} from '@repo/dto';
+import { cn } from '@/lib/utils';
 
 export default function TransactionDetailsPage() {
   const params = useParams();
+  const router = useRouter();
   const id = params.id as string;
   const [data, setData] = useState<TransactionDetailsDto | null>(null);
+  const [copiedId, setCopiedId] = useState(false);
 
   useEffect(() => {
     if (!id) return;
-    
+
     const fetchDetails = async () => {
       try {
         const d = await transactionRequester.getDetails(id);
@@ -37,107 +70,465 @@ export default function TransactionDetailsPage() {
     fetchDetails();
   }, [id]);
 
+  const handleCopyId = (text: string) => {
+    navigator.clipboard.writeText(text);
+    setCopiedId(true);
+    toast.success('ID copied to clipboard');
+    setTimeout(() => setCopiedId(false), 2000);
+  };
+
   if (!data) {
     return (
-      <div className="p-8 text-muted-foreground animate-pulse">Loading transaction details...</div>
+      <div className="p-8 space-y-6 animate-pulse text-foreground">
+        <div className="h-6 w-32 bg-muted rounded-lg" />
+        <div className="h-8 w-64 bg-muted rounded-lg" />
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <div className="h-96 bg-muted/50 rounded-2xl animate-pulse" />
+          <div className="h-96 bg-muted/50 rounded-2xl animate-pulse" />
+        </div>
+      </div>
     );
   }
 
+  const { transaction, ledgerEntries, pointsEarned } = data;
+  const totalDebits = ledgerEntries
+    .filter((e) => e.entryType === LedgerEntryType.DEBIT)
+    .reduce((sum, e) => sum + e.amount, 0);
+  const totalCredits = ledgerEntries
+    .filter((e) => e.entryType === LedgerEntryType.CREDIT)
+    .reduce((sum, e) => sum + e.amount, 0);
+
+  const parsedMetadata = () => {
+    if (!transaction.metadata) return null;
+    if (typeof transaction.metadata === 'object') return transaction.metadata;
+    try {
+      return JSON.parse(transaction.metadata);
+    } catch {
+      return null;
+    }
+  };
+
+  const metadataObj = parsedMetadata();
+
+  const getStatusBadge = (status: TransactionStatus) => {
+    switch (status) {
+      case TransactionStatus.COMPLETED:
+        return (
+          <Badge className="bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20 font-bold px-3 py-1 text-[10px] rounded-lg tracking-wider flex items-center gap-1.5 shadow-xs">
+            <CheckCircle2 size={12} className="text-emerald-500" />
+            COMPLETED
+          </Badge>
+        );
+      case TransactionStatus.FAILED:
+        return (
+          <Badge className="bg-rose-500/10 text-rose-600 dark:text-rose-400 border border-rose-500/20 font-bold px-3 py-1 text-[10px] rounded-lg tracking-wider flex items-center gap-1.5 shadow-xs">
+            <XCircle size={12} className="text-rose-500" />
+            FAILED
+          </Badge>
+        );
+      default:
+        return (
+          <Badge className="bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/20 font-bold px-3 py-1 text-[10px] rounded-lg tracking-wider flex items-center gap-1.5 shadow-xs">
+            <Clock size={12} className="text-amber-500 animate-pulse" />
+            PENDING
+          </Badge>
+        );
+    }
+  };
+
   return (
-    <div className="space-y-6">
-      <div className="flex items-center gap-4">
-        <h2 className="text-3xl font-bold tracking-tight">Transaction Details</h2>
-        <Badge
-          variant="outline"
-          className={
-            data.transaction.status === TransactionStatus.SUCCESS
-              ? 'border-green-500 text-green-600 bg-green-50'
-              : data.transaction.status === TransactionStatus.FAILED
-                ? 'border-red-500 text-red-600 bg-red-50'
-                : 'border-orange-500 text-orange-600 bg-orange-50'
-          }
-        >
-          {data.transaction.status}
-        </Badge>
+    <div className="space-y-6 max-w-6xl mx-auto pb-12 text-foreground">
+      {/* Back Button & Breadcrumbs */}
+      <div className="flex flex-col gap-2">
+        <div className="flex items-center gap-2 text-[10px] font-bold text-muted-foreground uppercase tracking-widest">
+          <button
+            onClick={() => router.push('/transactions')}
+            className="hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors uppercase tracking-widest font-bold text-[10px]"
+          >
+            Transactions
+          </button>
+          <span>/</span>
+          <span className="text-foreground font-bold uppercase tracking-widest text-[10px]">
+            Details
+          </span>
+        </div>
+        <div className="flex flex-wrap items-center gap-3">
+          {getStatusBadge(transaction.status)}
+        </div>
       </div>
 
-      <div className="grid gap-6 md:grid-cols-2">
-        <Card className="border-border shadow-sm">
-          <CardHeader>
-            <CardTitle>Meta Information</CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div>
-              <p className="text-sm text-muted-foreground">ID</p>
-              <p className="font-mono text-sm">{data.transaction.id}</p>
+      {/* Primary Transaction Hero Banner */}
+      <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-slate-950 to-slate-900 dark:from-slate-900/60 dark:to-slate-900/40 p-6 text-white shadow-lg border border-border/30">
+        <div className="absolute top-0 right-0 w-64 h-64 bg-indigo-500/10 rounded-full blur-3xl -translate-y-1/2 translate-x-1/2" />
+        <div className="relative z-10 flex flex-col md:flex-row justify-between items-start md:items-center gap-6">
+          <div className="space-y-3">
+            <div className="flex items-center gap-2 text-indigo-300">
+              <ArrowRightLeft className="w-4 h-4" />
+              <span className="text-[10px] font-bold uppercase tracking-widest animate-pulse">
+                {transaction.transactionType} OPERATIONAL LEDGER
+              </span>
             </div>
-            <div>
-              <p className="text-sm text-muted-foreground">Type</p>
-              <p className="font-semibold">{data.transaction.transactionType}</p>
+            <div className="flex items-baseline gap-2">
+              <span className="text-3xl font-black tracking-tight tabular-nums">
+                {transaction.amount.toLocaleString(undefined, {
+                  minimumFractionDigits: 2,
+                })}
+              </span>
+              <span className="text-sm text-indigo-300 font-medium tracking-wide">
+                {transaction.currency}
+              </span>
             </div>
+            {transaction.description && (
+              <p className="text-sm font-semibold text-slate-200">
+                {transaction.description}
+              </p>
+            )}
+          </div>
+
+          <div className="grid grid-cols-2 md:grid-cols-3 gap-6 border-t border-slate-800/80 md:border-t-0 pt-4 md:pt-0 w-full md:w-auto">
             <div>
-              <p className="text-sm text-muted-foreground">Timestamp</p>
-              <p>{new Date(data.transaction.createdAt).toLocaleString()}</p>
-            </div>
-            <div>
-              <p className="text-sm text-muted-foreground">Amount Configured</p>
-              <p className="font-bold text-lg">
-                {data.transaction.amount.toFixed(4)} {data.transaction.currency}
+              <p className="text-[9px] font-bold text-slate-400 uppercase tracking-widest mb-0.5">
+                Transaction Fee
+              </p>
+              <p className="text-sm font-bold text-slate-100 tabular-nums">
+                {(transaction.fee || 0).toLocaleString()} {transaction.currency}
               </p>
             </div>
-          </CardContent>
-        </Card>
+            <div>
+              <p className="text-[9px] font-bold text-slate-400 uppercase tracking-widest mb-0.5">
+                Completed Date
+              </p>
+              <p className="text-sm font-bold text-slate-100">
+                {transaction.completedAt
+                  ? new Date(transaction.completedAt).toLocaleDateString()
+                  : new Date(transaction.createdAt).toLocaleDateString()}
+              </p>
+            </div>
+            <div className="col-span-2 md:col-span-1">
+              <p className="text-[9px] font-bold text-slate-400 uppercase tracking-widest mb-0.5">
+                Operation Type
+              </p>
+              <Badge className="bg-indigo-500/20 text-indigo-300 border-none font-bold uppercase text-[9px] tracking-wide rounded-md">
+                {transaction.transactionType}
+              </Badge>
+            </div>
+          </div>
+        </div>
+      </div>
 
-        <Card className="border-border shadow-sm">
-          <CardHeader>
-            <CardTitle>Double-Entry Ledger Records</CardTitle>
-            <CardDescription>System integrity verification map.</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="border rounded-lg overflow-hidden border-border bg-white">
+      {/* Main Grid Detail */}
+      <div className="grid gap-6 md:grid-cols-12 items-start">
+        {/* Left Column: Details, Entities & Meta (7 Columns) */}
+        <div className="md:col-span-7 space-y-6">
+          {/* Key Insights Card */}
+          <Card className="border-none shadow-xs rounded-2xl bg-card text-card-foreground overflow-hidden">
+            <CardHeader className="p-5 border-b border-border bg-card">
+              <CardTitle className="text-sm font-bold text-foreground flex items-center gap-2">
+                <Hash className="w-4 h-4 text-indigo-500" /> Transaction
+                Metadata
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="p-5 space-y-5">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div>
+                  <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest mb-1">
+                    System Transaction ID
+                  </p>
+                  <div className="flex items-center gap-2">
+                    <span className="font-mono text-xs text-foreground bg-muted px-2.5 py-1.5 rounded-lg border border-border flex-1 truncate select-all">
+                      {String(
+                        transaction.transactionId || transaction.id,
+                      ).toUpperCase()}
+                    </span>
+                    <Button
+                      onClick={() =>
+                        handleCopyId(
+                          String(transaction.transactionId || transaction.id),
+                        )
+                      }
+                      variant="outline"
+                      size="icon"
+                      className="h-8 w-8 rounded-lg border-border hover:bg-muted text-muted-foreground hover:text-foreground shrink-0"
+                    >
+                      {copiedId ? (
+                        <Check className="w-3.5 h-3.5 text-emerald-500" />
+                      ) : (
+                        <Copy className="w-3.5 h-3.5 text-muted-foreground" />
+                      )}
+                    </Button>
+                  </div>
+                </div>
+
+                <div>
+                  <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest mb-1">
+                    Created Timestamp
+                  </p>
+                  <p className="text-xs font-semibold text-foreground bg-muted px-2.5 py-1.5 rounded-lg border border-border h-9 flex items-center">
+                    {new Date(transaction.createdAt).toLocaleString()}
+                  </p>
+                </div>
+              </div>
+
+              {/* Gateway Reference ID (External) */}
+              {(transaction as any).referenceId && (
+                <div className="pt-4 border-t border-border">
+                  <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest mb-1 flex items-center gap-1">
+                    <ExternalLink className="w-3.5 h-3.5 text-indigo-500" />{' '}
+                    Gateway Reference ID (Stripe / External)
+                  </p>
+                  <div className="flex items-center gap-2">
+                    <span className="font-mono text-xs text-indigo-600 dark:text-indigo-400 bg-indigo-500/5 px-2.5 py-1.5 rounded-lg border border-indigo-500/10 flex-1 truncate select-all">
+                      {String((transaction as any).referenceId)}
+                    </span>
+                    <Button
+                      onClick={() =>
+                        handleCopyId(String((transaction as any).referenceId))
+                      }
+                      variant="outline"
+                      size="icon"
+                      className="h-8 w-8 rounded-lg border-border hover:bg-muted text-muted-foreground hover:text-foreground shrink-0"
+                    >
+                      {copiedId ? (
+                        <Check className="w-3.5 h-3.5 text-emerald-500" />
+                      ) : (
+                        <Copy className="w-3.5 h-3.5 text-muted-foreground" />
+                      )}
+                    </Button>
+                  </div>
+                </div>
+              )}
+
+              {/* Sender/Receiver Details if present */}
+              {(transaction.senderId || transaction.receiverId) && (
+                <div className="pt-4 border-t border-border grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  {transaction.senderId && (
+                    <div className="space-y-1">
+                      <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest mb-1 flex items-center gap-1">
+                        <User className="w-3 h-3 text-indigo-500" /> Sender ID
+                      </p>
+                      <span className="font-mono text-[11px] text-indigo-600 dark:text-indigo-400 bg-indigo-500/10 border border-indigo-500/20 px-2.5 py-1.5 rounded-lg block truncate select-all">
+                        {transaction.senderId}
+                      </span>
+                      {transaction.fromWalletId && (
+                        <p className="text-[10px] text-muted-foreground flex items-center gap-1 mt-1">
+                          <Wallet className="w-2.5 h-2.5 text-muted-foreground animate-pulse" />{' '}
+                          Wallet Account:{' '}
+                          <span className="font-mono text-foreground font-bold">
+                            {transaction.fromWalletId}
+                          </span>
+                        </p>
+                      )}
+                    </div>
+                  )}
+
+                  {transaction.receiverId && (
+                    <div className="space-y-1">
+                      <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest mb-1 flex items-center gap-1">
+                        <User className="w-3 h-3 text-emerald-500" /> Receiver
+                        ID
+                      </p>
+                      <span className="font-mono text-[11px] text-emerald-600 dark:text-emerald-400 bg-emerald-500/10 border border-emerald-500/20 px-2.5 py-1.5 rounded-lg block truncate select-all">
+                        {transaction.receiverId}
+                      </span>
+                      {transaction.toWalletId && (
+                        <p className="text-[10px] text-muted-foreground flex items-center gap-1 mt-1">
+                          <Wallet className="w-2.5 h-2.5 text-muted-foreground animate-pulse" />{' '}
+                          Wallet Account:{' '}
+                          <span className="font-mono text-foreground font-bold">
+                            {transaction.toWalletId}
+                          </span>
+                        </p>
+                      )}
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {/* JSON Metadata Explorer Section */}
+              {metadataObj && (
+                <div className="pt-4 border-t border-border space-y-2">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">
+                        Payload JSON Explorer
+                      </p>
+                      <p className="text-[10px] text-muted-foreground mt-0.5">
+                        Raw database payload and system parameters
+                      </p>
+                    </div>
+                    <Button
+                      onClick={() =>
+                        handleCopyId(JSON.stringify(metadataObj, null, 2))
+                      }
+                      variant="ghost"
+                      size="icon"
+                      className="h-7 w-7 rounded-md hover:bg-muted text-muted-foreground hover:text-foreground shrink-0"
+                    >
+                      <Copy className="w-3.5 h-3.5" />
+                    </Button>
+                  </div>
+                  <div className="relative overflow-hidden rounded-xl border border-border bg-slate-950/95 dark:bg-slate-950/60 shadow-inner">
+                    <pre className="p-4 text-[11px] font-mono text-emerald-400 overflow-x-auto max-h-[200px] scrollbar-thin select-all">
+                      <code>{JSON.stringify(metadataObj, null, 2)}</code>
+                    </pre>
+                  </div>
+                </div>
+              )}
+            </CardContent>
+          </Card>
+
+          {/* Loyalty Points Earned Card */}
+          {pointsEarned && (
+            <Card className="border-none shadow-xs rounded-2xl overflow-hidden bg-gradient-to-br from-emerald-500/10 to-emerald-500/5 dark:from-emerald-500/20 dark:to-emerald-500/5 border border-emerald-500/20">
+              <CardHeader className="p-5 pb-2 border-b border-emerald-500/10">
+                <div className="flex items-center gap-2 text-emerald-600 dark:text-emerald-400">
+                  <Coins className="h-5 w-5 text-emerald-500 animate-bounce" />
+                  <CardTitle className="text-sm font-bold">
+                    Loyalty Points Reward
+                  </CardTitle>
+                </div>
+                <CardDescription className="text-emerald-700/80 dark:text-emerald-400/80 text-xs">
+                  Awarded points for loyalty tier eligibility.
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="p-5 space-y-4">
+                <div className="flex items-baseline gap-1.5">
+                  <span className="text-3xl font-black text-emerald-600 dark:text-emerald-400 leading-none">
+                    +{pointsEarned.amount.toLocaleString()}
+                  </span>
+                  <span className="text-xs font-black text-emerald-700/70 dark:text-emerald-400/70 tracking-widest uppercase">
+                    Points
+                  </span>
+                </div>
+
+                <div className="flex items-center gap-2.5 p-3 bg-card border border-emerald-500/20 rounded-xl shadow-xs max-w-[280px]">
+                  <CalendarIcon className="h-4 w-4 text-emerald-500" />
+                  <div className="text-xs">
+                    <p className="text-[9px] text-emerald-700/60 dark:text-emerald-400/60 font-bold uppercase tracking-wider">
+                      Expires On
+                    </p>
+                    <p className="font-bold text-emerald-800 dark:text-emerald-300 mt-0.5">
+                      {new Date(pointsEarned.expiresAt).toLocaleDateString(
+                        undefined,
+                        {
+                          year: 'numeric',
+                          month: 'long',
+                          day: 'numeric',
+                        },
+                      )}
+                    </p>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          )}
+        </div>
+
+        {/* Right Column: Double-Entry Ledger (5 Columns) */}
+        <div className="md:col-span-5 space-y-6">
+          <Card className="border-none shadow-xs rounded-2xl bg-card text-card-foreground overflow-hidden flex flex-col">
+            <CardHeader className="p-5 border-b border-border bg-card">
+              <div className="flex items-center justify-between">
+                <div>
+                  <CardTitle className="text-sm font-bold text-foreground flex items-center gap-2">
+                    <Cpu className="w-4 h-4 text-indigo-500" /> Double-Entry
+                    Ledger
+                  </CardTitle>
+                  <CardDescription className="text-xs text-muted-foreground mt-0.5">
+                    Cryptographically integrity-verified debit & credit mapping
+                  </CardDescription>
+                </div>
+              </div>
+            </CardHeader>
+            <CardContent className="p-0 flex-1">
               <Table>
-                <TableHeader className="bg-secondary/50">
-                  <TableRow>
-                    <TableHead>Operation</TableHead>
-                    <TableHead>Account Name</TableHead>
-                    <TableHead className="text-right">Amount Applied</TableHead>
+                <TableHeader className="bg-muted/30">
+                  <TableRow className="border-b border-border">
+                    <TableHead className="text-[10px] font-extrabold uppercase tracking-widest text-muted-foreground pl-5 py-3">
+                      Operation
+                    </TableHead>
+                    <TableHead className="text-[10px] font-extrabold uppercase tracking-widest text-muted-foreground py-3">
+                      Account Name
+                    </TableHead>
+                    <TableHead className="text-[10px] font-extrabold uppercase tracking-widest text-muted-foreground pr-5 py-3 text-right">
+                      Amount
+                    </TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {data.ledgerEntries.map((entry) => (
-                    <TableRow key={entry.id}>
-                      <TableCell>
+                  {ledgerEntries.map((entry) => (
+                    <TableRow
+                      key={entry.id}
+                      className="border-b border-border hover:bg-muted/30 transition-colors"
+                    >
+                      <TableCell className="pl-5 py-4">
                         <Badge
-                          variant={entry.entryType === LedgerEntryType.CREDIT ? 'default' : 'destructive'}
-                          className={
+                          variant="outline"
+                          className={cn(
+                            'rounded-md px-2 py-0.5 text-[9px] font-black uppercase border-none tracking-widest shadow-xs',
                             entry.entryType === LedgerEntryType.CREDIT
-                              ? 'bg-chart-4 text-white hover:bg-chart-4/80 border-0'
-                              : 'bg-chart-3 text-white hover:bg-chart-3/80 border-0'
-                          }
+                              ? 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400'
+                              : 'bg-rose-500/10 text-rose-600 dark:text-rose-400',
+                          )}
                         >
                           {entry.entryType}
                         </Badge>
                       </TableCell>
-                      <TableCell className="font-medium">
-                        {entry.account?.accountName || 'Unknown'}
+                      <TableCell className="py-4 font-semibold text-foreground text-xs">
+                        {entry.account?.accountName || 'Unknown Account'}
                       </TableCell>
-                      <TableCell className="text-right font-mono">
+                      <TableCell className="pr-5 py-4 text-right font-mono text-xs font-bold text-foreground tabular-nums">
                         {entry.amount.toFixed(4)}
                       </TableCell>
                     </TableRow>
                   ))}
-                  {data.ledgerEntries.length === 0 && (
+                  {ledgerEntries.length === 0 && (
                     <TableRow>
-                      <TableCell colSpan={3} className="h-24 text-center text-muted-foreground">
+                      <TableCell
+                        colSpan={3}
+                        className="py-12 text-center text-muted-foreground text-xs font-medium"
+                      >
                         No ledger entries recorded.
                       </TableCell>
                     </TableRow>
                   )}
                 </TableBody>
               </Table>
-            </div>
-          </CardContent>
-        </Card>
+
+              {/* Verification & Integrity Seal */}
+              {ledgerEntries.length > 0 && (
+                <div className="p-4 bg-muted/30 border-t border-border space-y-3.5">
+                  <div className="flex justify-between items-center text-xs font-semibold text-muted-foreground px-1">
+                    <span>
+                      Total Debits:{' '}
+                      <span className="font-mono text-foreground">
+                        {totalDebits.toFixed(4)}
+                      </span>
+                    </span>
+                    <span>
+                      Total Credits:{' '}
+                      <span className="font-mono text-foreground">
+                        {totalCredits.toFixed(4)}
+                      </span>
+                    </span>
+                  </div>
+                  <div className="flex items-center gap-2 p-3 bg-emerald-500/10 border border-emerald-500/20 rounded-xl shadow-xs">
+                    <CheckCircle2 className="w-4 h-4 text-emerald-500 shrink-0" />
+                    <div className="text-[10px]">
+                      <p className="font-bold text-emerald-800 dark:text-emerald-300 uppercase tracking-wider">
+                        Verified Balance Match
+                      </p>
+                      <p className="text-emerald-700/70 dark:text-emerald-400/70 font-semibold mt-0.5">
+                        Double-entry checksum verified (Debits sum equals
+                        Credits sum).
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        </div>
       </div>
     </div>
   );

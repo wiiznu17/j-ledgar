@@ -9,14 +9,24 @@ import {
   Platform,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { ChevronLeft, ArrowRight, ShieldCheck, Wallet, UserCircle } from 'lucide-react-native';
+import {
+  ChevronLeft,
+  ArrowRight,
+  ShieldCheck,
+  Wallet,
+  UserCircle,
+} from 'lucide-react-native';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import { MotiView, AnimatePresence } from 'moti';
 import { useAuthStore } from '../../store/auth';
 import { BiometricAuth } from '../../components/auth/BiometricAuth';
 import { PINVerification } from '../../components/auth/PINVerification';
 import { ErrorRecovery } from '../../components/error/ErrorRecovery';
-import { isBiometricAvailable, isBiometricEnrolled } from '../../lib/biometric-auth';
+import * as Location from 'expo-location';
+import {
+  isBiometricAvailable,
+  isBiometricEnrolled,
+} from '../../lib/biometric-auth';
 import {
   TransferError,
   logTransaction,
@@ -25,6 +35,11 @@ import {
 } from '../../lib/error-handling';
 import { NotificationService } from '../../lib/notification-service';
 import { useScreenCaptureProtection } from '@/hooks/useScreenCaptureProtection';
+import { api } from '@/lib/axios';
+import { MerchantService } from '@/lib/merchant-service';
+import { TransactionReviewCard } from '@/components/transaction/TransactionReviewCard';
+import { StickyActionArea } from '@/components/transaction/StickyActionArea';
+import { ProcessingPortal } from '@/components/transaction/ProcessingPortal';
 
 const { width } = Dimensions.get('window');
 
@@ -33,7 +48,25 @@ export default function ReviewTransferScreen() {
   useScreenCaptureProtection();
 
   const router = useRouter();
-  const { recipient, amount, note, merchantName } = useLocalSearchParams();
+  const {
+    merchantId,
+    paymentId,
+    recipient,
+    amount,
+    note,
+    merchantName,
+    recipientName,
+    recipientMasked,
+  } = useLocalSearchParams<{
+    merchantId?: string;
+    paymentId?: string;
+    recipient?: string;
+    amount: string;
+    note?: string;
+    merchantName?: string;
+    recipientName?: string;
+    recipientMasked?: string;
+  }>();
   const [isProcessing, setIsProcessing] = useState(false);
   const [isConfirming, setIsConfirming] = useState(false);
 
@@ -115,36 +148,79 @@ export default function ReviewTransferScreen() {
     setError(null);
 
     try {
-      // Log transfer initiation
-      logTransaction({
-        id: '',
-        timestamp: Date.now(),
-        type: 'TRANSFER',
-        status: 'SUCCESS',
-        recipient: recipient as string,
-        amount: amount as string,
-        details: { merchantName, note },
-      });
+      let locationStr = 'Bangkok, Thailand';
+      try {
+        const { status } = await Location.requestForegroundPermissionsAsync();
+        if (status === 'granted') {
+          const pos = await Location.getCurrentPositionAsync({
+            accuracy: Location.Accuracy.Balanced,
+          });
+          const rev = await Location.reverseGeocodeAsync({
+            latitude: pos.coords.latitude,
+            longitude: pos.coords.longitude,
+          });
+          if (rev && rev[0]) {
+            const r = rev[0];
+            const city = r.region || r.subregion || r.city || 'Bangkok';
+            const country = r.country || 'Thailand';
+            locationStr = `${city}, ${country}`;
+          }
+        }
+      } catch (gpsErr) {
+        console.warn(
+          '[GPS] Failed to retrieve current location for transaction:',
+          gpsErr,
+        );
+      }
 
-      // Mock transfer API call (replace with actual API in production)
-      await new Promise((resolve) => setTimeout(resolve, 1500));
+      const formattedNote = `${note || ''} [Loc: ${locationStr}]`.trim();
+      let result: any;
 
-      // Simulate random network error for testing
-      // Remove this in production
-      // if (Math.random() < 0.1) {
-      //   throw { message: 'Network Error', code: 'ECONNABORTED' };
-      // }
+      if (paymentId) {
+        // Dynamic QR Payment Flow
+        result = await MerchantService.confirmPayment(paymentId);
+      } else if (merchantId) {
+        // Static QR / Manual Merchant Payment Flow
+        result = await MerchantService.confirmManualPayment({
+          merchantId,
+          amount: transferAmount,
+          note: formattedNote,
+        });
+      } else {
+        // P2P Transfer Flow
+        const idempotencyKey = `p2p_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
+        const transferRes = await api.post('/integration/p2p/transfer', {
+          recipientPhone: recipient,
+          amount: transferAmount,
+          note: formattedNote,
+          idempotencyKey,
+        });
+        result = transferRes.data;
+      }
 
       setIsProcessing(false);
 
       // Send success notification
       const recipientDisplay =
-        (Array.isArray(recipient) ? recipient[0] : recipient)?.replace(/-/g, '') || 'Recipient';
+        (merchantName as string) ||
+        (recipientName as string) ||
+        (recipient as string) ||
+        'Recipient';
       NotificationService.transferSuccess(recipientDisplay, amount as string);
 
-      router.push({
+      router.replace({
         pathname: '/transfer/success',
-        params: { recipient, amount, note, merchantName },
+        params: {
+          recipient,
+          amount,
+          note: formattedNote,
+          merchantName:
+            merchantName || (merchantId ? recipientName : undefined),
+          transactionId: result.transactionId,
+          createdAt: result.createdAt || new Date().toISOString(),
+          recipientName: result?.recipient?.displayName || recipientName,
+          recipientMasked: result?.recipient?.phoneMasked || recipientMasked,
+        },
       } as any);
     } catch (err: any) {
       console.error('[Transfer] Error:', err);
@@ -156,7 +232,9 @@ export default function ReviewTransferScreen() {
       transferError.recoveryAction = 'RETRY';
 
       // Send error notification
-      NotificationService.transferFailed(err.message || 'Unknown error occurred');
+      NotificationService.transferFailed(
+        err.message || 'Unknown error occurred',
+      );
 
       // Log failed transfer
       logTransaction({
@@ -188,11 +266,11 @@ export default function ReviewTransferScreen() {
 
   const handleErrorBack = () => {
     setError(null);
-    router.push('/transfer/index' as any);
+    router.push('/transfer' as any);
   };
 
   return (
-    <SafeAreaView className="flex-1 bg-[#f8f9fe]" edges={['top']}>
+    <SafeAreaView className="flex-1 bg-transparent" edges={['top']}>
       {/* Header */}
       <View className="px-5 pt-2 pb-4 flex-row items-center justify-between">
         <TouchableOpacity
@@ -219,79 +297,24 @@ export default function ReviewTransferScreen() {
           className="mt-2"
         >
           {/* Main Review Card */}
-          <View className="bg-white rounded-[2.5rem] p-7 border border-gray-50 shadow-xl shadow-pink-100/40 relative overflow-hidden mb-6">
-            <View className="absolute top-0 left-0 right-0 h-2 bg-[#f48fb1]" />
-
-            <View className="items-center mb-8 pt-4">
-              <Text className="text-[10px] font-manrope font-black text-gray-400 uppercase tracking-widest mb-3">
-                Transfer Amount
-              </Text>
-              <View className="flex-row items-baseline w-full justify-center">
-                <Text className="text-2xl font-manrope font-black text-gray-400 mr-2">฿</Text>
-                <Text
-                  numberOfLines={1}
-                  adjustsFontSizeToFit
-                  minimumFontScale={0.5}
-                  className="text-5xl font-manrope font-black text-gray-800 tracking-tighter"
-                >
-                  {transferAmount.toLocaleString(undefined, {
-                    minimumFractionDigits: 2,
-                    maximumFractionDigits: 2,
-                  })}
-                </Text>
-              </View>
-            </View>
-
-            {/* Transfer Direction Container */}
-            <View className="bg-gray-50/80 rounded-[2rem] p-5 border border-gray-100/50 mb-8 relative">
-              {/* Connector Line (ใช้วิธี Absolute เพื่อไม่ให้รบกวน Layout อื่น) */}
-              <View className="absolute left-10 top-12 bottom-12 w-[2px] bg-gray-200 border-dashed border-l-[2px] border-gray-200 z-0" />
-
-              {/* From User */}
-              <View className="flex-row items-center relative z-10 mb-6">
-                <View className="w-10 h-10 bg-white rounded-xl items-center justify-center shadow-sm border border-gray-100">
-                  <Wallet size={20} color="#9ca3af" />
-                </View>
-                <View className="ml-4 flex-1">
-                  <Text className="text-[10px] font-manrope font-black text-gray-400 uppercase tracking-widest mb-0.5">
-                    From
-                  </Text>
-                  <Text className="text-sm font-manrope font-black text-gray-800">My E-Wallet</Text>
-                </View>
-              </View>
-
-              {/* To User */}
-              <View className="flex-row items-center relative z-10">
-                <View className="w-10 h-10 bg-pink-50 rounded-xl items-center justify-center border border-pink-100 shadow-sm">
-                  <UserCircle size={20} color="#f48fb1" />
-                </View>
-                <View className="ml-4 flex-1">
-                  <Text className="text-[10px] font-manrope font-black text-gray-400 uppercase tracking-widest mb-0.5">
-                    To Recipient
-                  </Text>
-                  <Text className="text-sm font-manrope font-black text-gray-800" numberOfLines={1}>
-                    {recipient}
-                  </Text>
-                </View>
-              </View>
-            </View>
-
-            {/* Summary Board */}
-            <View className="space-y-4">
-              <SummaryRow label="Transaction Type" value="Peer-to-Peer" />
-              <SummaryRow label="Transfer Fee" value="FREE" isHighlight />
-              {note ? <SummaryRow label="Note" value={note as string} /> : null}
-
-              <View className="mt-2 pt-5 border-t border-gray-100 flex-row justify-between items-center">
-                <Text className="text-[10px] font-manrope font-black text-gray-400 uppercase tracking-widest">
-                  Total Payment
-                </Text>
-                <Text className="text-xl font-manrope font-black text-[#f48fb1]">
-                  ฿{totalAmount.toLocaleString(undefined, { minimumFractionDigits: 2 })}
-                </Text>
-              </View>
-            </View>
-          </View>
+          <TransactionReviewCard
+            amount={transferAmount}
+            toName={
+              (merchantName as string) ||
+              (recipientName as string) ||
+              (recipient as string)
+            }
+            toType={merchantId || paymentId ? 'merchant' : 'user'}
+            transactionType={
+              paymentId
+                ? 'QR Payment'
+                : merchantId
+                  ? 'Merchant Payment'
+                  : 'Peer-to-Peer'
+            }
+            fee={fee}
+            note={note as string}
+          />
 
           {/* Trust Banner */}
           <View className="bg-green-50/50 p-5 rounded-2xl border border-green-100/50 flex-row items-center gap-4 shadow-sm mb-4">
@@ -299,7 +322,7 @@ export default function ReviewTransferScreen() {
               <ShieldCheck size={20} color="#22c55e" />
             </View>
             <Text className="text-[10px] font-manrope font-bold text-green-700/80 uppercase tracking-widest flex-1 leading-relaxed">
-              Guaranteed by J-Ledger Security Standard
+              Guaranteed by P-wallet Security Standard
             </Text>
           </View>
 
@@ -323,116 +346,48 @@ export default function ReviewTransferScreen() {
             from={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            className="absolute inset-0 bg-black/40 items-end justify-end z-40"
+            className="absolute inset-0 bg-white items-center justify-center z-40"
           >
-            <MotiView
-              from={{ translateY: 200 }}
-              animate={{ translateY: 0 }}
-              exit={{ translateY: 200 }}
-              className="w-full bg-white rounded-t-[2.5rem] p-6 pt-8 max-h-[80%]"
-            >
-              <ScrollView showsVerticalScrollIndicator={false}>
-                {showBiometric && biometricAvailable && biometricEnabled && (
-                  <BiometricAuth
-                    onSuccess={handleBiometricSuccess}
-                    onFailure={handleBiometricFailure}
-                    onUsePIN={() => {
-                      setShowBiometric(false);
-                      setShowPIN(true);
-                    }}
-                  />
-                )}
+            {showBiometric && biometricAvailable && biometricEnabled && (
+              <View className="w-full bg-white rounded-t-[2.5rem] p-6 pt-8">
+                <BiometricAuth
+                  onSuccess={handleBiometricSuccess}
+                  onFailure={handleBiometricFailure}
+                  onUsePIN={() => {
+                    setShowBiometric(false);
+                    setShowPIN(true);
+                  }}
+                />
+              </View>
+            )}
 
-                {showPIN && (
-                  <PINVerification
-                    onSuccess={handlePINSuccess}
-                    onFailure={handlePINFailure}
-                    onCancel={handleAuthCancel}
-                  />
-                )}
-              </ScrollView>
-            </MotiView>
+            {showPIN && (
+              <PINVerification
+                onSuccess={handlePINSuccess}
+                onFailure={handlePINFailure}
+                onCancel={handleAuthCancel}
+              />
+            )}
           </MotiView>
         )}
       </AnimatePresence>
 
-      {/* Floating Action Area */}
-      <View
-        className="absolute bottom-0 left-0 right-0 px-5 pt-4 pb-8 bg-white/90 border-t border-gray-50"
-        style={{ paddingBottom: Platform.OS === 'ios' ? 34 : 24 }} // จัดการ Safe Area ของ iPhone
-      >
-        <TouchableOpacity
-          disabled={isButtonDisabled}
-          onPress={handleConfirm}
-          className={`w-full h-16 rounded-2xl flex-row items-center justify-center gap-3 transition-all ${
-            isButtonDisabled
-              ? 'bg-pink-300'
-              : 'bg-[#f48fb1] shadow-lg shadow-pink-200 active:scale-95'
-          }`}
-        >
-          {isProcessing ? (
-            <ActivityIndicator color="white" />
-          ) : (
-            <>
-              <Text className="font-manrope font-black text-white text-base">
-                {isConfirming ? 'Authenticating...' : 'Confirm Transfer'}
-              </Text>
-              {!isConfirming && <ArrowRight size={20} color="white" />}
-            </>
-          )}
-        </TouchableOpacity>
-      </View>
+      {/* Sticky Action Area */}
+      <StickyActionArea
+        isVisible={true}
+        label={isConfirming ? 'Authenticating...' : 'Confirm Transfer'}
+        onPress={handleConfirm}
+        disabled={isButtonDisabled}
+        isLoading={isProcessing}
+        isAuthenticating={isConfirming}
+      />
 
-      {/* Processing Portal */}
-      <AnimatePresence>
-        {isProcessing && (
-          <MotiView
-            from={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            className="absolute inset-0 bg-white/95 items-center justify-center z-50 p-10"
-          >
-            <MotiView
-              from={{ scale: 0.8, opacity: 0 }}
-              animate={{ scale: 1, opacity: 1 }}
-              className="w-24 h-24 bg-pink-50 rounded-[2.5rem] items-center justify-center border border-pink-100 mb-8 shadow-2xl shadow-pink-100"
-            >
-              <ActivityIndicator size="large" color="#f48fb1" />
-            </MotiView>
-            <Text className="text-2xl font-manrope font-black text-gray-800 tracking-tight text-center">
-              Encrypting Transaction
-            </Text>
-            <Text className="text-sm font-manrope font-bold text-gray-400 mt-3 text-center leading-relaxed">
-              We're verifying your identities and securing the ledger connection...
-            </Text>
-          </MotiView>
-        )}
-      </AnimatePresence>
+      {/* Full Screen Processing Portal */}
+      <ProcessingPortal
+        isVisible={isProcessing}
+        title="Encrypting Transaction"
+        subtitle="We're verifying your identities and securing the ledger connection..."
+      />
     </SafeAreaView>
-  );
-}
-
-function SummaryRow({
-  label,
-  value,
-  isHighlight,
-}: {
-  label: string;
-  value: string;
-  isHighlight?: boolean;
-}) {
-  return (
-    <View className="flex-row justify-between items-center">
-      <Text className="text-[10px] font-manrope font-black text-gray-400 uppercase tracking-widest">
-        {label}
-      </Text>
-      <Text
-        className={`text-sm font-manrope font-black ${
-          isHighlight ? 'text-green-500' : 'text-gray-800'
-        }`}
-      >
-        {value}
-      </Text>
-    </View>
   );
 }

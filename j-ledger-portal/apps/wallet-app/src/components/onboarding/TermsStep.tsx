@@ -10,11 +10,20 @@ interface TermsStepProps {
   visible: boolean;
   isLoading: boolean;
   onAccept: () => void;
+  onBack: () => void;
 }
 
-export const TermsStep: React.FC<TermsStepProps> = ({ visible, isLoading, onAccept }) => (
+export const TermsStep: React.FC<TermsStepProps> = ({
+  visible,
+  isLoading,
+  onAccept,
+  onBack,
+}) => (
   <StepWrapper visible={visible}>
-    <StepHeader title="Terms of Service" subtitle="Please accept our terms to continue." />
+    <StepHeader
+      title="Terms of Service"
+      subtitle="Please accept our terms to continue."
+    />
     <GlassPanel className="h-[300] mb-8" intensity={10}>
       <ScrollView>
         <Text className="text-xs font-manrope font-medium leading-relaxed p-4">
@@ -22,6 +31,17 @@ export const TermsStep: React.FC<TermsStepProps> = ({ visible, isLoading, onAcce
         </Text>
       </ScrollView>
     </GlassPanel>
-    <AppButton title="Accept and Continue" loading={isLoading} onPress={onAccept} />
+    <AppButton
+      title="Accept and Continue"
+      loading={isLoading}
+      onPress={onAccept}
+    />
+    <AppButton
+      className="mt-4"
+      title="Back"
+      variant="ghost"
+      onPress={onBack}
+      disabled={isLoading}
+    />
   </StepWrapper>
 );

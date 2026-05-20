@@ -1,0 +1,6 @@
+services:
+  nginx:
+    volumes:
+      - ./docker/nginx/default.conf.example:/etc/nginx/conf.d/default.conf:ro
+    ports:
+      - "80:80"

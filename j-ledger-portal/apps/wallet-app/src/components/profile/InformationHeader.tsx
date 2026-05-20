@@ -8,7 +8,10 @@ interface InformationHeaderProps {
   setIsSaving?: (val: boolean) => void;
 }
 
-export function InformationHeader({ isSaving, setIsSaving }: InformationHeaderProps) {
+export function InformationHeader({
+  isSaving,
+  setIsSaving,
+}: InformationHeaderProps) {
   const router = useRouter();
 
   const handleBack = () => {
@@ -26,7 +29,9 @@ export function InformationHeader({ isSaving, setIsSaving }: InformationHeaderPr
       >
         <ChevronLeft size={24} color="#1a1a1a" />
       </TouchableOpacity>
-      <Text className="text-lg font-black text-gray-800 font-manrope">Personal Information</Text>
+      <Text className="text-lg font-black text-gray-800 font-manrope">
+        Personal Information
+      </Text>
       <View className="w-10 h-10" />
     </View>
   );

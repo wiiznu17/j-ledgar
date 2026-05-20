@@ -10,4 +10,7 @@ export * from './AdditionalInfoStep';
 export * from './SetPasswordStep';
 export * from './SetPinStep';
 export * from './SetPinStep2';
+export * from './FaceLivenessStep';
+export * from './FaceLivenessScanner';
+export * from './IDCardScanner';
 export * from './SuccessStep';

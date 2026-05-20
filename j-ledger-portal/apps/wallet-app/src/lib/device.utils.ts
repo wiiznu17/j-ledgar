@@ -84,7 +84,8 @@ export async function getStableDeviceId(): Promise<string> {
  * Gets a human-readable device name.
  */
 export function getDeviceName(): string {
-  const model = Device.modelName || (Platform.OS === 'ios' ? 'iPhone' : 'Android');
+  const model =
+    Device.modelName || (Platform.OS === 'ios' ? 'iPhone' : 'Android');
   const osVersion = Device.osVersion || String(Platform.Version);
   return `${model} - ${osVersion}`;
 }

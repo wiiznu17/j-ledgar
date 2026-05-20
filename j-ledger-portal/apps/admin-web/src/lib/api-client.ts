@@ -1,8 +1,18 @@
-import { API_BASE_URL } from './api-config';
+import axios, {
+  AxiosError,
+  AxiosInstance,
+  AxiosRequestConfig,
+  AxiosResponse,
+} from 'axios';
+import {
+  API_BASE_URL,
+  AUTH_COOKIE_NAME,
+  PERMISSIONS_COOKIE_NAME,
+} from './api-config';
 
 /**
- * Type-safe API Client for J-Ledger Admin Web
- * 
+ * Type-safe API Client for J-Ledger Admin Web using Axios
+ *
  * ARCHITECTURE:
  * - Server Components/Actions: Fetches directly using absolute API_BASE_URL (internal)
  *   and injects authentication from cookies.
@@ -10,97 +20,110 @@ import { API_BASE_URL } from './api-config';
  *   the infrastructure (Nginx/Next.js) to proxy requests and handle browser cookies.
  */
 
-export type HttpMethod = 'GET' | 'POST' | 'PUT' | 'DELETE';
-
-export interface RequestOptions extends RequestInit {
+export interface RequestOptions extends AxiosRequestConfig {
   data?: unknown;
-  params?: Record<string, string>;
+  params?: Record<string, string | number | boolean | undefined>;
 }
 
 export class ApiError extends Error {
-  constructor(public status: number, public message: string, public data?: unknown) {
+  constructor(
+    public status: number,
+    public message: string,
+    public data?: unknown,
+  ) {
     super(message);
     this.name = 'ApiError';
   }
 }
 
-async function request<T>(path: string, options: RequestOptions = {}): Promise<T> {
-  const isServer = typeof window === 'undefined';
-  
-  // 1. Resolve Auth (Server-side only)
-  let headers: Record<string, string> = {
-    'Content-Type': 'application/json',
-    ...(options.headers as Record<string, string>),
-  };
+// Create axios instance
+const createAxiosInstance = (): AxiosInstance => {
+  const instance = axios.create({
+    baseURL: API_BASE_URL,
+    timeout: 30000, // 30 seconds
+    headers: {
+      'Content-Type': 'application/json',
+    },
+  });
 
-  if (isServer) {
-    // Dynamically import cookies to avoid bundling server-only headers in client build
-    const { cookies } = await import('next/headers');
-    const cookieStore = await cookies();
-    const token = cookieStore.get('admin_session')?.value;
-    
-    if (token) {
-      headers['Authorization'] = `Bearer ${token}`;
-    }
-  }
+  // Request interceptor for auth injection (server-side only)
+  instance.interceptors.request.use(async (config) => {
+    const isServer = typeof window === 'undefined';
 
-  // 2. Resolve URL
-  // If it's server-side, we must use the absolute internal URL.
-  // If it's client-side, we use the relative path provided.
-  const baseUrl = isServer ? API_BASE_URL : '';
-  
-  // If the path already has a protocol, don't prepend baseUrl
-  let fullPath = path.startsWith('http') ? path : `${baseUrl}${path}`;
+    if (isServer) {
+      const { cookies } = await import('next/headers');
+      const cookieStore = await cookies();
+      const token = cookieStore.get(AUTH_COOKIE_NAME)?.value;
 
-  // 3. Append Query Params
-  if (options.params) {
-    const searchParams = new URLSearchParams(options.params);
-    fullPath += `?${searchParams.toString()}`;
-  }
-
-  // 4. Configure Fetch
-  const fetchOptions: RequestInit = {
-    ...options,
-    headers,
-    body: options.data ? JSON.stringify(options.data) : options.body,
-  };
-
-  // 5. Execute
-  const response = await fetch(fullPath, fetchOptions);
-
-  if (!response.ok) {
-    let errorData: unknown;
-    try {
-      errorData = await response.json();
-    } catch {
-      errorData = await response.text();
-    }
-    
-    let errorMessage = 'API Request Failed';
-    if (typeof errorData === 'string') {
-      errorMessage = errorData;
-    } else if (errorData && typeof errorData === 'object' && 'message' in errorData) {
-      errorMessage = String(errorData.message);
+      // Only inject auth header if token exists and not a public endpoint
+      if (token && !config.url?.includes('/auth/login')) {
+        config.headers.Authorization = `Bearer ${token}`;
+      }
     }
 
-    throw new ApiError(
-      response.status,
-      errorMessage,
-      errorData
-    );
-  }
+    return config;
+  });
 
-  // If No Content
-  if (response.status === 204) {
-    return {} as T;
-  }
+  // Response interceptor for error handling
+  instance.interceptors.response.use(
+    (response: AxiosResponse) => response,
+    (error: AxiosError) => {
+      if (error.response) {
+        const status = error.response.status;
+        const data = error.response.data;
 
-  return response.json();
-}
+        if (status === 401 && !(error.config as any)?._retry) {
+          (error.config as any)._retry = true;
+
+          // In a full implementation, we would attempt a refresh token call here.
+          // For now, if we get a 401, we treat it as an unrecoverable session error
+          // (especially common during dev DB resets) and clear the session to prevent loops.
+          if (typeof window !== 'undefined') {
+            // Force redirect to login with error param
+            // The LoginPage will handle stopping the redirect loop
+            window.location.href = '/login?error=Session expired';
+          }
+          throw new ApiError(401, 'Unauthorized', data);
+        }
+
+        let errorMessage = 'API Request Failed';
+        if (typeof data === 'string') {
+          errorMessage = data;
+        } else if (data && typeof data === 'object' && 'message' in data) {
+          errorMessage = String(data.message);
+        } else if (error.message) {
+          errorMessage = error.message;
+        }
+
+        throw new ApiError(status, errorMessage, data);
+      } else if (error.request) {
+        // Request was made but no response received
+        throw new ApiError(
+          0,
+          'Network Error - No response received',
+          error.request,
+        );
+      } else {
+        // Something happened in setting up the request
+        throw new ApiError(0, error.message || 'Request setup failed', error);
+      }
+    },
+  );
+
+  return instance;
+};
+
+const axiosInstance = createAxiosInstance();
 
 export const apiClient = {
-  get: <T>(path: string, options?: RequestOptions) => request<T>(path, { ...options, method: 'GET' }),
-  post: <T>(path: string, data?: unknown, options?: RequestOptions) => request<T>(path, { ...options, method: 'POST', data }),
-  put: <T>(path: string, data?: unknown, options?: RequestOptions) => request<T>(path, { ...options, method: 'PUT', data }),
-  delete: <T>(path: string, options?: RequestOptions) => request<T>(path, { ...options, method: 'DELETE' }),
+  get: <T>(path: string, options?: RequestOptions) =>
+    axiosInstance.get<T>(path, options).then((res) => res.data),
+  post: <T>(path: string, data?: unknown, options?: RequestOptions) =>
+    axiosInstance.post<T>(path, data, options).then((res) => res.data),
+  put: <T>(path: string, data?: unknown, options?: RequestOptions) =>
+    axiosInstance.put<T>(path, data, options).then((res) => res.data),
+  patch: <T>(path: string, data?: unknown, options?: RequestOptions) =>
+    axiosInstance.patch<T>(path, data, options).then((res) => res.data),
+  delete: <T>(path: string, options?: RequestOptions) =>
+    axiosInstance.delete<T>(path, options).then((res) => res.data),
 };

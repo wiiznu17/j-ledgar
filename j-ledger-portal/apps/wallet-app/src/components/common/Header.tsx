@@ -25,16 +25,23 @@ export function Header({
       {/* Back Button / Logo Section */}
       <View className="flex-row items-center shrink-0">
         {showBack ? (
-          <TouchableOpacity onPress={onBack || (() => router.back())} className="p-2 -ml-2">
+          <TouchableOpacity
+            onPress={onBack || (() => router.back())}
+            className="p-2 -ml-2"
+          >
             <ChevronLeft size={24} color="#595b61" />
           </TouchableOpacity>
         ) : (
           <View className="w-10 h-10 rounded-xl bg-primary items-center justify-center shadow-lg shadow-primary/20">
-            <Text className="text-white font-manrope font-black text-xl">W</Text>
+            <Text className="text-white font-manrope font-black text-xl">
+              W
+            </Text>
           </View>
         )}
         {title && (
-          <Text className="ml-3 font-manrope font-bold text-base text-on-surface">{title}</Text>
+          <Text className="ml-3 font-manrope font-bold text-base text-on-surface">
+            {title}
+          </Text>
         )}
       </View>
 

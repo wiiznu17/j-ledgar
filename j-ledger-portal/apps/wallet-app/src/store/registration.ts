@@ -1,44 +1,70 @@
 import { create } from 'zustand';
 import * as SecureStore from 'expo-secure-store';
-import { Platform } from 'react-native';
+import { api } from '@/lib/axios';
 import axios from 'axios';
 
-// Align with Backend RegistrationState
-export type RegistrationState =
-  | 'PENDING_OTP'
-  | 'OTP_VERIFIED'
-  | 'TC_ACCEPTED'
-  | 'ID_CARD_UPLOADED'
-  | 'KYC_VERIFIED'
-  | 'PROFILE_COMPLETED'
-  | 'PASSWORD_SET'
-  | 'CREDENTIALS_SET'
-  | 'COMPLETED';
+import { RegistrationState } from '@repo/dto';
 
 interface RegistrationStore {
   regToken: string | null;
   currentState: RegistrationState;
   isSyncing: boolean;
   prefillData: {
-    phoneNumber?: string;
-    firstName?: string;
-    lastName?: string;
-    dob?: string;
+    identity?: {
+      idNumber?: string;
+      idCardUrl?: string;
+      idCardAddress?: string;
+      firstNameTh?: string;
+      lastNameTh?: string;
+      prefixTh?: string;
+      firstNameEn?: string;
+      lastNameEn?: string;
+      prefixEn?: string;
+      dateOfBirth?: string;
+      issueDate?: string;
+      expiryDate?: string;
+      religion?: string;
+    } | null;
+    addresses?: {
+      registered?: any;
+      current?: any;
+    } | null;
+    profile?: {
+      occupation?: string;
+      incomeRange?: string;
+      sourceOfFunds?: string;
+      purposeOfAccount?: string;
+    } | null;
   } | null;
+  status: string | null;
+  reviewNote: string | null;
 
   setRegToken: (token: string | null) => Promise<void>;
   syncStatus: () => Promise<RegistrationState>;
   reset: () => Promise<void>;
+  initialize: () => Promise<void>;
 }
 
 const REG_TOKEN_KEY = 'registration_token';
 const API_URL = process.env.EXPO_PUBLIC_API_URL || 'http://localhost:3000';
 
+// Load persisted token on initialization
+const loadPersistedToken = async (): Promise<string | null> => {
+  try {
+    return await SecureStore.getItemAsync(REG_TOKEN_KEY);
+  } catch (error) {
+    console.error('[RegistrationStore] Failed to load token:', error);
+    return null;
+  }
+};
+
 export const useRegistrationStore = create<RegistrationStore>((set, get) => ({
   regToken: null,
-  currentState: 'PENDING_OTP',
+  currentState: RegistrationState.PENDING_OTP,
   isSyncing: false,
   prefillData: null,
+  status: null,
+  reviewNote: null,
 
   setRegToken: async (token: string | null) => {
     if (token) {
@@ -46,45 +72,58 @@ export const useRegistrationStore = create<RegistrationStore>((set, get) => ({
       set({ regToken: token });
     } else {
       await SecureStore.deleteItemAsync(REG_TOKEN_KEY);
-      set({ regToken: null, prefillData: null, currentState: 'PENDING_OTP' });
+      set({
+        regToken: null,
+        prefillData: null,
+        currentState: RegistrationState.PENDING_OTP,
+      });
     }
   },
 
   syncStatus: async () => {
     const { regToken } = get();
-    if (!regToken) return 'PENDING_OTP';
-
     set({ isSyncing: true });
     try {
-      const response = await axios.post(
-        `${API_URL}/auth/register/status`,
+      // Priority: 1. regToken (Onboarding), 2. accessToken (Authenticated User Retry)
+      let token = regToken;
+      if (!token) {
+        token = await SecureStore.getItemAsync('access_token');
+      }
+
+      if (!token) {
+        set({ isSyncing: false });
+        return RegistrationState.PENDING_OTP;
+      }
+
+      const response = await api.post(
+        '/identity/register/status',
         {},
         {
-          headers: { Authorization: `Bearer ${regToken}` },
+          headers: { Authorization: `Bearer ${token}` },
         },
       );
 
-      const { state, phoneNumber, ocrData, profile } = response.data;
-      console.log(`[Registration] Status synced: ${state} (${phoneNumber || 'No phone'})`);
+      const { state, status, reviewNote, prefilledData } = response.data;
+      console.log(`[Registration] Status synced: ${state} (${status})`);
 
       set({
         currentState: state,
-        prefillData: {
-          phoneNumber,
-          firstName: profile?.firstName || ocrData?.firstName,
-          lastName: profile?.lastName || ocrData?.lastName,
-          dob: profile?.dateOfBirth,
-        },
+        status: status || null,
+        reviewNote: reviewNote || null,
+        prefillData: prefilledData || null,
       });
 
       return state;
     } catch (error) {
-      console.error('[RegistrationStore] Sync failed:', error);
-      // If token is invalid, clear it
+      // If token is invalid (401), clear it silently
       if (axios.isAxiosError(error) && error.response?.status === 401) {
+        console.log('[RegistrationStore] Token invalid/expired, clearing');
         await get().reset();
+        return RegistrationState.PENDING_OTP;
       }
-      return 'PENDING_OTP';
+      // Log only unexpected errors
+      console.error('[RegistrationStore] Sync failed:', error);
+      return RegistrationState.PENDING_OTP;
     } finally {
       set({ isSyncing: false });
     }
@@ -92,6 +131,19 @@ export const useRegistrationStore = create<RegistrationStore>((set, get) => ({
 
   reset: async () => {
     await SecureStore.deleteItemAsync(REG_TOKEN_KEY);
-    set({ regToken: null, currentState: 'PENDING_OTP', prefillData: null });
+    set({
+      regToken: null,
+      currentState: RegistrationState.PENDING_OTP,
+      prefillData: null,
+    });
+  },
+
+  initialize: async () => {
+    const token = await loadPersistedToken();
+    if (token) {
+      set({ regToken: token });
+      // Sync status with backend
+      await get().syncStatus();
+    }
   },
 }));

@@ -15,7 +15,9 @@ export const HistoryHeader = ({ onBack }: HistoryHeaderProps) => {
       >
         <ChevronLeft size={24} color="#1a1a1a" />
       </TouchableOpacity>
-      <Text className="text-lg font-black text-gray-800 font-manrope">History</Text>
+      <Text className="text-lg font-black text-gray-800 font-manrope">
+        History
+      </Text>
       <View className="w-10 h-10" />
     </View>
   );

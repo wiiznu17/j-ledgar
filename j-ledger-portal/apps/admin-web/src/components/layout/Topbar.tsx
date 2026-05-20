@@ -1,45 +1,232 @@
 'use client';
 
+import {
+  LogOut,
+  User,
+  Settings,
+  ChevronDown,
+  UserCircle,
+  Menu,
+  Search,
+  Bell,
+} from 'lucide-react';
+import { usePathname, useRouter } from 'next/navigation';
+import { useEffect, useState } from 'react';
+import { authRequester } from '@/lib/requesters';
+import { AdminUser } from '@repo/dto';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
+import Link from 'next/link';
 import { ThemeToggle } from '@/components/theme-toggle';
-import { Button } from '@/components/ui/button';
-import { PanelLeft, LogOut } from 'lucide-react';
+import { MenuSearch } from '@/components/layout/MenuSearch';
 
 interface TopbarProps {
-  title?: string;
-  onToggle?: () => void;
   onLogout?: (formData: FormData) => void;
+  onToggleMobile?: () => void;
 }
 
-export function Topbar({ title = 'J-Ledger Admin', onToggle, onLogout }: TopbarProps) {
+interface RouteTitle {
+  pattern: string;
+  title: string;
+}
+
+const routeTitles: RouteTitle[] = [
+  { pattern: '/dashboard', title: 'Dashboard' },
+  { pattern: '/transactions/[id]', title: 'Transaction Details' },
+  { pattern: '/transactions', title: 'Transactions' },
+  { pattern: '/promotions/deals/new', title: 'Create Deal' },
+  { pattern: '/promotions/deals/[id]/edit', title: 'Edit Deal' },
+  { pattern: '/promotions/deals/[id]', title: 'Deal Details' },
+  { pattern: '/promotions/deals', title: 'Deals & Coupons' },
+  { pattern: '/promotions/banners', title: 'Banners' },
+  { pattern: '/promotions/redemptions', title: 'Redemptions' },
+  { pattern: '/promotions/settings', title: 'Promotion Settings' },
+  { pattern: '/promotions/loyalty', title: 'Loyalty Program' },
+  { pattern: '/risk/kyc/[userId]', title: 'KYC Details' },
+  { pattern: '/risk/kyc', title: 'KYC Verification' },
+  { pattern: '/risk/aml', title: 'AML Monitor' },
+  { pattern: '/finance/wallets/[id]', title: 'Wallet Details' },
+  { pattern: '/finance/wallets', title: 'Customer Wallets' },
+  { pattern: '/finance/reconcile', title: 'Reconcile' },
+  { pattern: '/audit', title: 'Audit Logs' },
+  { pattern: '/support/user-activity', title: 'User Activity' },
+  { pattern: '/support/users/[id]', title: 'User Details' },
+  { pattern: '/support/users', title: 'Users' },
+  {
+    pattern: '/support/merchants/applications',
+    title: 'Merchant Applications',
+  },
+  { pattern: '/support/merchants/create', title: 'Create Partner' },
+  { pattern: '/support/merchants/[id]/edit', title: 'Edit Merchant' },
+  { pattern: '/support/merchants/[id]/terminals', title: 'Merchant Terminals' },
+  { pattern: '/support/merchants/[id]', title: 'Merchant Details' },
+  { pattern: '/support/merchants', title: 'Merchants' },
+  { pattern: '/finance/treasury', title: 'System Treasury' },
+  { pattern: '/system/profile', title: 'My Profile' },
+  { pattern: '/system/admins/[id]', title: 'Admin Details' },
+  { pattern: '/system/admins', title: 'Admin Management' },
+  { pattern: '/system/roles/[id]', title: 'Role Details' },
+  { pattern: '/system/roles', title: 'Role Management' },
+  { pattern: '/finance/ledger/[id]', title: 'Ledger Transaction Details' },
+  { pattern: '/finance/ledger', title: 'Internal Ledger' },
+  { pattern: '/system/outbox', title: 'System Outbox' },
+  { pattern: '/system/settings', title: 'System Settings' },
+];
+
+const matchRoute = (pathname: string, pattern: string) => {
+  const pathParts = pathname.split('/').filter(Boolean);
+  const patternParts = pattern.split('/').filter(Boolean);
+
+  if (pathParts.length !== patternParts.length) return false;
+
+  return patternParts.every((part, i) => {
+    if (part.startsWith('[') && part.endsWith(']')) {
+      return true; // Match Dynamic Parameter
+    }
+    return part === pathParts[i];
+  });
+};
+
+export function Topbar({ onLogout, onToggleMobile }: TopbarProps) {
+  const pathname = usePathname();
+  const router = useRouter();
+  const [user, setUser] = useState<AdminUser | null>(null);
+
+  useEffect(() => {
+    const fetchUser = async () => {
+      try {
+        const data = await authRequester.getMe();
+        setUser(data);
+      } catch (e) {
+        console.error('Failed to fetch user in Topbar', e);
+      }
+    };
+    fetchUser();
+  }, []);
+
+  const getPageTitle = () => {
+    const exactMatch = routeTitles.find((r) => r.pattern === pathname);
+    if (exactMatch) return exactMatch.title;
+
+    const dynamicMatch = routeTitles.find((r) =>
+      matchRoute(pathname, r.pattern),
+    );
+    if (dynamicMatch) return dynamicMatch.title;
+
+    return 'P-wallet Admin';
+  };
+
   return (
-    <header className="h-16 bg-white border-b border-border flex items-center justify-between pl-4 pr-8 flex-shrink-0">
-      <div className="flex items-center gap-4">
-        <Button
-          variant="ghost"
-          size="icon"
-          onClick={onToggle}
-          className="text-slate-500 hover:text-slate-900 transition-colors"
-        >
-          <PanelLeft className="h-5 w-5" />
-        </Button>
-        <div className="flex items-center text-xl font-bold text-[#2D3748]">
-          <span className="lg:hidden">{title}</span>
+    <header className="h-16 md:h-[72px] bg-card border-b border-border flex items-center justify-between px-4 md:px-8 flex-shrink-0 text-foreground transition-all duration-200">
+      <div className="flex items-center gap-2 md:gap-4">
+        {onToggleMobile && (
+          <button
+            onClick={onToggleMobile}
+            className="p-2 -ml-2 rounded-lg lg:hidden text-muted-foreground hover:bg-muted transition-colors cursor-pointer"
+            aria-label="Toggle Menu"
+          >
+            <Menu className="w-5 h-5" />
+          </button>
+        )}
+
+        {/* Title and Subtitle block */}
+        <div className="flex flex-col justify-center">
+          <h1 className="text-xl md:text-2xl font-black text-foreground tracking-tight leading-tight">
+            {getPageTitle()}
+          </h1>
+          {getPageTitle() === 'Dashboard' && (
+            <span className="text-[11px] font-medium text-muted-foreground mt-0.5 hidden sm:inline">
+              Overview of system performance and key metrics
+            </span>
+          )}
         </div>
       </div>
+
       <div className="flex items-center gap-4">
+        {/* Real Interactive Menu Search */}
+        <MenuSearch />
+
+        {/* Theme Toggle */}
         <ThemeToggle />
-        {onLogout && (
-          <form action={onLogout}>
-            <Button
-              type="submit"
-              variant="ghost"
-              size="sm"
-              className="text-slate-600 hover:text-red-600 hover:bg-red-50 flex items-center gap-2 font-semibold"
+
+        {/* Notification Bell with Badge */}
+        <button className="relative p-2 text-muted-foreground hover:text-foreground hover:bg-slate-50 dark:hover:bg-slate-900 rounded-xl transition-all border border-transparent hover:border-border cursor-pointer shrink-0">
+          <Bell className="w-4.5 h-4.5" />
+          <span className="absolute top-1.5 right-1.5 w-2 h-2 bg-pink-500 rounded-full border border-card ring-1 ring-pink-500/20" />
+        </button>
+
+        {/* User Admin Account Profile Dropdown */}
+        {user ? (
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <button className="flex items-center gap-3 p-1 pr-3 rounded-full hover:bg-muted transition-all border border-transparent hover:border-border group cursor-pointer">
+                <div className="w-9 h-9 rounded-full bg-muted flex items-center justify-center text-muted-foreground overflow-hidden">
+                  <UserCircle className="w-7 h-7" />
+                </div>
+                <div className="hidden md:flex flex-col items-start">
+                  <span className="text-xs font-bold text-foreground leading-tight">
+                    {user.firstName} {user.lastName}
+                  </span>
+                  <span className="text-[10px] font-medium text-muted-foreground uppercase tracking-tighter">
+                    {user.role}
+                  </span>
+                </div>
+                <ChevronDown className="w-4 h-4 text-muted-foreground/60 group-hover:text-muted-foreground transition-colors" />
+              </button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent
+              align="end"
+              className="w-56 mt-1 rounded-2xl border-border shadow-2xl p-2 bg-card text-foreground"
             >
-              <LogOut className="h-4 w-4" />
-              <span className="hidden sm:inline">Sign out</span>
-            </Button>
-          </form>
+              <DropdownMenuLabel className="px-3 py-2">
+                <div className="flex flex-col">
+                  <span className="text-xs font-black text-muted-foreground uppercase tracking-widest mb-1">
+                    Authenticated Account
+                  </span>
+                  <span className="text-sm font-bold text-foreground truncate">
+                    {user.email}
+                  </span>
+                </div>
+              </DropdownMenuLabel>
+              <DropdownMenuSeparator className="bg-border/60 my-1" />
+              <DropdownMenuItem
+                asChild
+                className="rounded-xl focus:bg-indigo-500/10 focus:text-indigo-500 dark:focus:bg-indigo-500/20 dark:focus:text-indigo-400 py-2.5 cursor-pointer"
+              >
+                <Link
+                  href="/system/profile"
+                  className="flex items-center w-full"
+                >
+                  <User className="w-4 h-4 mr-3 text-muted-foreground" />
+                  <span className="font-semibold text-xs">My Profile</span>
+                </Link>
+              </DropdownMenuItem>
+              <DropdownMenuItem className="rounded-xl focus:bg-indigo-500/10 focus:text-indigo-500 dark:focus:bg-indigo-500/20 dark:focus:text-indigo-400 py-2.5 cursor-pointer">
+                <Settings className="w-4 h-4 mr-3 text-muted-foreground" />
+                <span className="font-semibold text-xs">Settings</span>
+              </DropdownMenuItem>
+              <DropdownMenuSeparator className="bg-border/60 my-1" />
+              {onLogout && (
+                <form action={onLogout}>
+                  <button
+                    type="submit"
+                    className="flex items-center w-full px-2 py-2.5 text-rose-600 hover:bg-rose-500/10 dark:hover:bg-rose-500/20 rounded-xl transition-colors text-left group cursor-pointer"
+                  >
+                    <LogOut className="w-4 h-4 mr-3 text-rose-400 group-hover:text-rose-600" />
+                    <span className="font-bold text-xs">Sign out</span>
+                  </button>
+                </form>
+              )}
+            </DropdownMenuContent>
+          </DropdownMenu>
+        ) : (
+          <div className="w-9 h-9 rounded-full bg-muted animate-pulse" />
         )}
       </div>
     </header>

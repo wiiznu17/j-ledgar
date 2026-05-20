@@ -5,7 +5,10 @@ import { executeTransfer } from '../app/actions/transfer';
 
 export default function TransferForm() {
   const [loading, setLoading] = useState(false);
-  const [message, setMessage] = useState<{ text: string; type: 'success' | 'error' } | null>(null);
+  const [message, setMessage] = useState<{
+    text: string;
+    type: 'success' | 'error';
+  } | null>(null);
   const formRef = useRef<HTMLFormElement>(null);
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
@@ -19,7 +22,10 @@ export default function TransferForm() {
     const result = await executeTransfer(formData);
 
     if (result.success) {
-      setMessage({ text: `Transfer successful! Tx ID: ${result.data?.id}`, type: 'success' });
+      setMessage({
+        text: `Transfer successful! Tx ID: ${result.data?.id}`,
+        type: 'success',
+      });
       form?.reset();
     } else {
       setMessage({ text: result.error || 'Transfer failed', type: 'error' });
@@ -45,7 +51,10 @@ export default function TransferForm() {
       )}
 
       <div>
-        <label htmlFor="sourceAccountId" className="block text-sm text-gray-400 mb-1">
+        <label
+          htmlFor="sourceAccountId"
+          className="block text-sm text-gray-400 mb-1"
+        >
           Source Account ID
         </label>
         <input
@@ -56,7 +65,10 @@ export default function TransferForm() {
         />
       </div>
       <div>
-        <label htmlFor="destinationAccountId" className="block text-sm text-gray-400 mb-1">
+        <label
+          htmlFor="destinationAccountId"
+          className="block text-sm text-gray-400 mb-1"
+        >
           Destination Account ID
         </label>
         <input

@@ -1,0 +1,68 @@
+server:
+  port: 8081
+
+spring:
+  application:
+    name: finance-service
+
+  datasource:
+    url: ${JLEDGER_DATASOURCE_URL:jdbc:postgresql://localhost:5432/jledger_db?currentSchema=finance}
+    username: ${JLEDGER_DATASOURCE_USERNAME:ledger_admin}
+    password: ${JLEDGER_DATASOURCE_PASSWORD:ledger_password}
+
+  redis:
+    host: ${SPRING_REDIS_HOST:localhost}
+    port: ${SPRING_REDIS_PORT:6379}
+    password: ${SPRING_REDIS_PASSWORD:redis_password}
+
+  data:
+    redis:
+      host: ${SPRING_REDIS_HOST:localhost}
+      port: ${SPRING_REDIS_PORT:6379}
+      password: ${SPRING_REDIS_PASSWORD:redis_password}
+
+  jpa:
+    hibernate:
+      ddl-auto: validate
+    show-sql: false
+    properties:
+      hibernate:
+        default_schema: finance
+        dialect: org.hibernate.dialect.PostgreSQLDialect
+ 
+  flyway:
+    enabled: false
+    locations: classpath:db/migration
+    schemas: finance
+    baseline-on-migrate: false
+
+jledger:
+  internal:
+    secret: ${JLEDGER_INTERNAL_SECRET:default_internal_secret}
+
+  redis:
+    redisson:
+      config: classpath:redisson-config.yaml
+
+  kafka:
+    bootstrap-servers: ${JLEDGER_KAFKA_BOOTSTRAP_SERVERS:localhost:9092}
+    consumer:
+      group-id: finance-service
+      auto-offset-reset: earliest
+    producer:
+      key-serializer: org.apache.kafka.common.serialization.StringSerializer
+      value-serializer: org.apache.kafka.common.serialization.StringSerializer
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics
+  endpoint:
+    health:
+      show-details: always
+
+logging:
+  level:
+    com.jledger.finance: DEBUG
+    org.springframework: INFO

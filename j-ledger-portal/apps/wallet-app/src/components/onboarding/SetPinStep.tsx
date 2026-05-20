@@ -1,8 +1,8 @@
 import React from 'react';
 import { View } from 'react-native';
-import { PinPad } from '@/components/common/PinPad';
+import { PINInput } from '@/components/common/PINInput';
+import { PINLayout } from '@/components/common/PINLayout';
 import { StepWrapper } from '@/components/common/StepWrapper';
-import { StepHeader } from './StepHeader';
 
 interface SetPinStepProps {
   visible: boolean;
@@ -18,12 +18,16 @@ export const SetPinStep: React.FC<SetPinStepProps> = ({
   onComplete,
 }) => (
   <StepWrapper visible={visible}>
-    <StepHeader
+    <PINLayout
       title="Set Transaction PIN"
       subtitle="Create a 6-digit PIN to secure your wallet."
-    />
-    <View className="mt-4">
-      <PinPad pin={pin} setPin={onPinChange} length={6} onComplete={onComplete} />
-    </View>
+    >
+      <PINInput
+        pin={pin}
+        onPinChange={onPinChange}
+        length={6}
+        onComplete={onComplete}
+      />
+    </PINLayout>
   </StepWrapper>
 );

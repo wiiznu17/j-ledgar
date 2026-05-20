@@ -11,134 +11,477 @@ import {
   ShieldCheck,
   Users,
   LucideIcon,
+  Ticket,
+  Image as ImageIcon,
+  ClipboardList,
+  Menu,
+  Briefcase,
+  Landmark,
+  SlidersHorizontal,
+  ShieldAlert,
+  Ban,
+  CheckSquare,
+  Lock,
+  HelpCircle,
+  Smartphone,
+  BarChart3,
+  Search,
+  Database,
+  History,
+  Wallet,
+  Coins,
+  Settings,
+  Store,
+  X,
 } from 'lucide-react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { Button } from '@/components/ui/button';
+import { cn } from '@/lib/utils';
+import { Permission } from '@repo/dto';
 
 interface NavigationItem {
   name: string;
   href: string;
   icon: LucideIcon;
   roles?: string[];
+  requiredPermission?: Permission;
+  isNew?: boolean;
+  isSoon?: boolean;
+}
+
+interface NavigationGroup {
+  title: string;
+  items: NavigationItem[];
 }
 
 interface SidebarProps {
   onLogout: (formData: FormData) => void;
+  onToggle?: () => void;
   isCollapsed?: boolean;
   userRole?: string;
+  permissions?: string[];
+  mobileOpen?: boolean;
+  onMobileClose?: () => void;
 }
 
-const navigation: NavigationItem[] = [
-  { name: 'Dashboard', href: '/dashboard', icon: LayoutDashboard },
-  { name: 'Transactions', href: '/transactions', icon: Activity },
+const navigationGroups: NavigationGroup[] = [
   {
-    name: 'AML Monitor',
-    href: '/aml',
-    icon: AlertTriangle,
-    roles: ['SUPER_ADMIN', 'COMPLIANCE_OFFICER'],
+    title: 'Overview',
+    items: [
+      { name: 'Dashboard', href: '/dashboard', icon: LayoutDashboard },
+      { name: 'Transactions', href: '/transactions', icon: Activity },
+    ],
   },
   {
-    name: 'Accounts',
-    href: '/accounts',
-    icon: CreditCard,
-    roles: ['SUPER_ADMIN', 'SUPPORT_STAFF'],
+    title: 'Finance & Accounting',
+    items: [
+      {
+        name: 'Treasury',
+        href: '/finance/treasury',
+        icon: Landmark,
+        requiredPermission: Permission.VIEW_TRANSACTIONS,
+      },
+      {
+        name: 'Settlement',
+        href: '/finance/settlement',
+        icon: Briefcase,
+        requiredPermission: Permission.VIEW_TRANSACTIONS,
+        isSoon: true,
+      },
+      {
+        name: 'Customer Wallets',
+        href: '/finance/wallets',
+        icon: Wallet,
+        requiredPermission: Permission.VIEW_USERS,
+      },
+      {
+        name: 'Internal Ledger',
+        href: '/finance/ledger',
+        icon: Landmark,
+        requiredPermission: Permission.VIEW_LEDGER_ENTRIES,
+      },
+      {
+        name: 'Reconcile',
+        href: '/finance/reconcile',
+        icon: ShieldCheck,
+        requiredPermission: Permission.RUN_RECONCILIATION,
+      },
+    ],
   },
-  { name: 'System Outbox', href: '/system/outbox', icon: Send },
-  { name: 'Reconcile', href: '/reconcile', icon: ShieldCheck },
   {
-    name: 'Audit Logs',
-    href: '/audit',
-    icon: FileText,
-    roles: ['SUPER_ADMIN', 'AUDITOR'],
+    title: 'Risk & Compliance',
+    items: [
+      {
+        name: 'KYC Verification',
+        href: '/risk/kyc',
+        icon: ShieldCheck,
+        requiredPermission: Permission.VIEW_USERS,
+      },
+      {
+        name: 'AML Monitor',
+        href: '/risk/aml',
+        icon: AlertTriangle,
+        requiredPermission: Permission.VIEW_SUSPICIOUS_ACTIVITIES,
+        isSoon: true,
+      },
+      {
+        name: 'Fraud Mgmt',
+        href: '/risk/fraud',
+        icon: ShieldAlert,
+        requiredPermission: Permission.VIEW_SUSPICIOUS_ACTIVITIES,
+        isSoon: true,
+      },
+      {
+        name: 'Blacklist',
+        href: '/risk/blacklist',
+        icon: Ban,
+        requiredPermission: Permission.REPORT_TO_AMLO,
+        isSoon: true,
+      },
+    ],
   },
-  { name: 'Users', href: '/users', icon: Users, roles: ['SUPER_ADMIN'] },
   {
-    name: 'Admins',
-    href: '/system/admins',
-    icon: ShieldCheck,
-    roles: ['SUPER_ADMIN'],
+    title: 'Promotions',
+    items: [
+      {
+        name: 'Deals',
+        href: '/promotions/deals',
+        icon: Ticket,
+        requiredPermission: Permission.VIEW_DASHBOARD,
+      },
+      {
+        name: 'Banners',
+        href: '/promotions/banners',
+        icon: ImageIcon,
+        requiredPermission: Permission.VIEW_DASHBOARD,
+        isSoon: true,
+      },
+      {
+        name: 'Redemptions',
+        href: '/promotions/redemptions',
+        icon: ClipboardList,
+        requiredPermission: Permission.VIEW_DASHBOARD,
+      },
+      {
+        name: 'Deal Settings',
+        href: '/promotions/settings',
+        icon: Settings,
+        requiredPermission: Permission.VIEW_DASHBOARD,
+      },
+      {
+        name: 'Loyalty Points',
+        href: '/promotions/loyalty',
+        icon: Coins,
+        requiredPermission: Permission.VIEW_DASHBOARD,
+        isNew: true,
+      },
+    ],
+  },
+  {
+    title: 'Support & Operations',
+    items: [
+      {
+        name: 'Users',
+        href: '/support/users',
+        icon: Users,
+        requiredPermission: Permission.VIEW_USERS,
+      },
+      {
+        name: 'Merchant Partners',
+        href: '/support/merchants',
+        icon: Store,
+        requiredPermission: Permission.VIEW_MERCHANTS,
+      },
+      {
+        name: 'User Activity',
+        href: '/support/user-activity',
+        icon: History,
+        requiredPermission: Permission.VIEW_AUDIT_LOGS,
+      },
+      {
+        name: 'User Devices',
+        href: '/support/devices',
+        icon: Smartphone,
+        requiredPermission: Permission.VIEW_USERS,
+        isSoon: true,
+      },
+      {
+        name: 'Disputes',
+        href: '/support/disputes',
+        icon: HelpCircle,
+        requiredPermission: Permission.VIEW_USERS,
+        isSoon: true,
+      },
+    ],
+  },
+  {
+    title: 'System & Security',
+    items: [
+      {
+        name: 'Approvals',
+        href: '/system/approvals',
+        icon: CheckSquare,
+        requiredPermission: Permission.VIEW_DASHBOARD,
+        isSoon: true,
+      },
+      {
+        name: 'System Settings',
+        href: '/system/settings',
+        icon: Settings,
+        requiredPermission: Permission.VIEW_DASHBOARD,
+      },
+      {
+        name: 'Admins',
+        href: '/system/admins',
+        icon: ShieldCheck,
+        requiredPermission: Permission.CREATE_ADMINS,
+      },
+      {
+        name: 'Roles & Permissions',
+        href: '/system/roles',
+        icon: Database,
+        requiredPermission: Permission.MANAGE_SYSTEM_ROLES,
+      },
+      {
+        name: 'System Outbox',
+        href: '/system/outbox',
+        icon: Send,
+        requiredPermission: Permission.VIEW_DASHBOARD,
+      },
+    ],
+  },
+  {
+    title: 'Reporting',
+    items: [
+      {
+        name: 'Audit Logs',
+        href: '/audit',
+        icon: FileText,
+        requiredPermission: Permission.VIEW_AUDIT_LOGS,
+      },
+      {
+        name: 'Reports',
+        href: '/reports',
+        icon: BarChart3,
+        requiredPermission: Permission.VIEW_DASHBOARD,
+        isSoon: true,
+      },
+    ],
   },
 ];
 
 export function Sidebar({
   onLogout,
+  onToggle,
   isCollapsed = false,
   userRole = 'SUPPORT_STAFF',
+  permissions = [],
+  mobileOpen = false,
+  onMobileClose,
 }: SidebarProps) {
   const pathname = usePathname();
+
   return (
     <aside
-      className={`bg-gradient-to-b from-[#E0F2FE] via-white to-[#FCE7F3] border-r border-border flex-col hidden lg:flex h-full transition-all duration-300 ease-in-out ${
-        isCollapsed ? 'w-20' : 'w-64'
-      }`}
+      className={cn(
+        'border-r border-border flex-col flex h-full transition-all duration-300 ease-in-out bg-gradient-to-b from-sidebar-gradient-from via-sidebar-gradient-via to-sidebar-gradient-to text-foreground select-none',
+        // Desktop Layout
+        'lg:flex',
+        isCollapsed ? 'lg:w-20' : 'lg:w-64',
+        // Mobile Drawer Layout
+        'fixed inset-y-0 left-0 z-50 w-64 lg:static lg:translate-x-0',
+        mobileOpen
+          ? 'translate-x-0 shadow-2xl'
+          : '-translate-x-full lg:translate-x-0',
+      )}
     >
       <div
-        className={`h-16 flex items-center border-b border-border/50 flex-shrink-0 transition-all duration-300 ${
-          isCollapsed ? 'justify-center px-0' : 'px-6'
-        }`}
-      >
-        <div className="w-8 h-8 rounded-lg bg-gradient-to-r from-[var(--color-magenta)] to-[var(--color-pink)] flex items-center justify-center shadow-md flex-shrink-0">
-          <ShieldCheck className="w-5 h-5 text-white" />
-        </div>
-        {!isCollapsed && (
-          <span className="ml-3 text-xl font-bold text-slate-800 animate-in fade-in duration-500">
-            J-Ledger
-          </span>
+        className={cn(
+          'h-16 flex items-center justify-between border-b border-border/50 flex-shrink-0 transition-all duration-300 px-6',
+          isCollapsed && !mobileOpen && 'lg:px-0 lg:justify-center',
         )}
+      >
+        {!isCollapsed || mobileOpen ? (
+          <div className="flex items-center">
+            <img
+              src="/logo/logo.png"
+              alt="P-wallet"
+              className="h-8 w-auto object-contain"
+            />
+            <span className="ml-3 text-xl font-bold text-foreground tracking-tight animate-in fade-in duration-500">
+              P-wallet
+            </span>
+          </div>
+        ) : (
+          <img
+            src="/logo/logo.png"
+            alt="P-wallet"
+            className="h-8 w-8 object-contain"
+          />
+        )}
+
+        {/* Dynamic Desktop Hamburger vs Mobile Close button */}
+        <div className="flex items-center gap-1">
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={onToggle}
+            className="text-muted-foreground hover:text-foreground hover:bg-muted/50 hidden lg:flex"
+            aria-label="Toggle Sidebar"
+          >
+            <Menu className="h-5 w-5" />
+          </Button>
+
+          {onMobileClose && (
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={onMobileClose}
+              className="text-muted-foreground hover:text-foreground hover:bg-muted/50 lg:hidden"
+              aria-label="Close Sidebar"
+            >
+              <X className="h-5 w-5" />
+            </Button>
+          )}
+        </div>
       </div>
 
-      <nav className="flex-1 px-3 py-6 space-y-2 overflow-y-auto">
-        {navigation.map((item) => {
-          if (item.roles && !item.roles.includes(userRole)) return null;
+      <nav className="flex-1 px-3 py-6 space-y-8 overflow-y-auto custom-scrollbar text-pretty">
+        {navigationGroups.map((group) => {
+          // Filter items based on role and permissions
+          const filteredItems = group.items.filter((item) => {
+            const rolePass = !item.roles || item.roles.includes(userRole);
+            const permissionPass =
+              !item.requiredPermission ||
+              permissions.includes(item.requiredPermission);
+            return rolePass && permissionPass;
+          });
 
-          const isActive = pathname === item.href || pathname.startsWith(item.href + '/');
+          if (filteredItems.length === 0) return null;
+
           return (
-            <Link
-              key={item.name}
-              href={item.href}
-              title={isCollapsed ? item.name : ''}
-              className={`flex items-center rounded-xl transition-all duration-200 group ${
-                isCollapsed ? 'justify-center px-0 py-3' : 'px-4 py-3'
-              } ${
-                isActive
-                  ? 'bg-gradient-to-r from-[#BFDBFE] to-[#E9D5FF] text-slate-800 shadow-[0_4px_0_0_#A5B4FC] border-t border-[#FFFFFF/60]'
-                  : 'text-slate-600 hover:bg-slate-500/10 hover:text-slate-900'
-              }`}
-            >
-              <item.icon
-                className={`flex-shrink-0 transition-colors ${
-                  isCollapsed ? 'h-6 w-6' : 'mr-3 h-5 w-5'
-                } ${isActive ? 'text-slate-800' : 'text-slate-500 group-hover:text-slate-900'}`}
-                aria-hidden="true"
-              />
-              {!isCollapsed && (
-                <span className="text-sm font-semibold truncate animate-in fade-in slide-in-from-left-2 duration-300">
-                  {item.name}
-                </span>
+            <div key={group.title} className="space-y-2">
+              {(!isCollapsed || mobileOpen) && (
+                <h3 className="px-4 text-[10px] font-bold text-muted-foreground uppercase tracking-[0.2em] mb-2">
+                  {group.title}
+                </h3>
               )}
-            </Link>
+              <div className="space-y-1">
+                {filteredItems.map((item) => {
+                  const isActive =
+                    pathname === item.href ||
+                    (item.href !== '/' &&
+                      pathname.startsWith(item.href + '/') &&
+                      !navigationGroups
+                        .flatMap((g) => g.items)
+                        .some(
+                          (other) =>
+                            other.href !== item.href &&
+                            other.href.startsWith(item.href + '/') &&
+                            pathname.startsWith(other.href),
+                        ));
+                  return (
+                    <Link
+                      key={item.name}
+                      href={item.isSoon ? '#' : item.href}
+                      title={isCollapsed && !mobileOpen ? item.name : ''}
+                      onClick={(e) => {
+                        if (item.isSoon) {
+                          e.preventDefault();
+                        } else {
+                          onMobileClose?.();
+                        }
+                      }}
+                      className={cn(
+                        'flex items-center rounded-xl transition-all duration-200 group',
+                        isCollapsed && !mobileOpen
+                          ? 'justify-center px-0 py-3'
+                          : 'px-4 py-2',
+                        isActive
+                          ? 'bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 border border-indigo-500/20 shadow-xs dark:bg-indigo-500/20'
+                          : item.isSoon
+                            ? 'text-muted-foreground/40 cursor-not-allowed opacity-50'
+                            : 'text-muted-foreground hover:bg-muted hover:text-foreground',
+                      )}
+                    >
+                      <item.icon
+                        className={cn(
+                          'flex-shrink-0 transition-colors',
+                          isCollapsed && !mobileOpen
+                            ? 'h-6 w-6'
+                            : 'mr-3 h-4 w-4',
+                          isActive
+                            ? 'text-indigo-600 dark:text-indigo-400'
+                            : item.isSoon
+                              ? 'text-muted-foreground/30'
+                              : 'text-muted-foreground group-hover:text-foreground',
+                        )}
+                        aria-hidden="true"
+                      />
+                      {(!isCollapsed || mobileOpen) && (
+                        <div className="flex items-center justify-between flex-1 min-w-0">
+                          <span
+                            className={cn(
+                              'text-sm font-semibold truncate animate-in fade-in slide-in-from-left-2 duration-300',
+                              item.isSoon && 'text-muted-foreground/40',
+                            )}
+                          >
+                            {item.name}
+                          </span>
+                          {item.isNew && !item.isSoon && (
+                            <span className="ml-2 px-1.5 py-0.5 rounded-md bg-gradient-to-r from-[var(--color-magenta)] to-[var(--color-pink)] text-[8px] font-bold text-white tracking-tighter animate-pulse shadow-sm">
+                              NEW
+                            </span>
+                          )}
+                          {item.isSoon && (
+                            <span className="ml-2 px-1.5 py-0.5 rounded-md bg-slate-100 dark:bg-slate-800 text-[8px] font-bold text-slate-400 tracking-tighter border border-slate-200 dark:border-slate-700 uppercase">
+                              SOON
+                            </span>
+                          )}
+                        </div>
+                      )}
+                    </Link>
+                  );
+                })}
+              </div>
+            </div>
           );
         })}
       </nav>
 
       <div
-        className={`p-4 border-t border-border/50 flex-shrink-0 transition-all duration-300 ${
-          isCollapsed ? 'flex justify-center' : ''
-        }`}
+        className={cn(
+          'p-4 border-t border-border/50 flex-shrink-0 transition-all duration-300',
+          isCollapsed && !mobileOpen ? 'flex justify-center' : '',
+        )}
       >
-        <form action={onLogout} className="w-full">
+        <form
+          action={onLogout}
+          className="w-full"
+          onSubmit={() => onMobileClose?.()}
+        >
           <Button
             type="submit"
             variant="ghost"
-            className={`text-slate-600 hover:bg-slate-500/5 hover:text-slate-900 w-full transition-all ${
-              isCollapsed ? 'px-0 justify-center' : 'justify-start'
-            }`}
+            className={cn(
+              'text-muted-foreground hover:bg-muted hover:text-foreground w-full transition-all cursor-pointer',
+              isCollapsed && !mobileOpen
+                ? 'px-0 justify-center'
+                : 'justify-start',
+            )}
           >
             <LogOut
-              className={`flex-shrink-0 ${isCollapsed ? 'h-6 w-6' : 'mr-3 w-5 h-5 text-slate-500'}`}
+              className={cn(
+                'flex-shrink-0',
+                isCollapsed && !mobileOpen
+                  ? 'h-6 w-6'
+                  : 'mr-3 w-5 h-5 text-muted-foreground',
+              )}
             />
-            {!isCollapsed && <span className="font-semibold text-sm">Sign out</span>}
+            {(!isCollapsed || mobileOpen) && (
+              <span className="font-semibold text-sm">Sign out</span>
+            )}
           </Button>
         </form>
       </div>

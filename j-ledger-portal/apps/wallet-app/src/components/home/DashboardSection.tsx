@@ -1,7 +1,13 @@
 import React from 'react';
 import { View, Text, TouchableOpacity } from 'react-native';
 import { MotiView } from 'moti';
-import { ArrowLeftRight, PlusCircle, QrCode, Star, ChevronRight } from 'lucide-react-native';
+import {
+  ArrowLeftRight,
+  PlusCircle,
+  QrCode,
+  Star,
+  ChevronRight,
+} from 'lucide-react-native';
 
 interface DashboardSectionProps {
   balance: number;
@@ -70,7 +76,9 @@ export const DashboardSection = ({
               >
                 {balance.toLocaleString()}
               </Text>
-              <Text className="text-xl font-manrope font-black text-gray-400">.00</Text>
+              <Text className="text-xl font-manrope font-black text-gray-400">
+                .00
+              </Text>
             </View>
 
             <TouchableOpacity
@@ -79,7 +87,9 @@ export const DashboardSection = ({
               className="bg-[#f48fb1] px-5 py-3 rounded-2xl flex-row items-center gap-2 shadow-lg shadow-pink-200 active:scale-95"
             >
               <ArrowLeftRight size={16} color="white" strokeWidth={3} />
-              <Text className="text-white font-manrope font-bold text-sm">Transfer</Text>
+              <Text className="text-white font-manrope font-bold text-sm">
+                Transfer
+              </Text>
             </TouchableOpacity>
           </View>
 
@@ -89,14 +99,18 @@ export const DashboardSection = ({
               className="flex-1 flex-row items-center justify-center gap-2 py-3.5 rounded-2xl bg-gray-50 border border-gray-100"
             >
               <PlusCircle size={18} color="#f48fb1" />
-              <Text className="text-gray-700 font-manrope font-bold text-xs">Top up</Text>
+              <Text className="text-gray-700 font-manrope font-bold text-xs">
+                Top up
+              </Text>
             </TouchableOpacity>
             <TouchableOpacity
               onPress={onMyQR}
               className="flex-1 flex-row items-center justify-center gap-2 py-3.5 rounded-2xl bg-gray-50 border border-gray-100"
             >
               <QrCode size={18} color="#f48fb1" />
-              <Text className="text-gray-700 font-manrope font-bold text-xs">My QR</Text>
+              <Text className="text-gray-700 font-manrope font-bold text-xs">
+                My QR
+              </Text>
             </TouchableOpacity>
           </View>
         </View>
@@ -118,7 +132,8 @@ export const DashboardSection = ({
               Reward Points
             </Text>
             <Text className="text-xl font-manrope font-black text-gray-800 mt-0.5">
-              {points.toLocaleString()} <Text className="text-sm font-bold text-gray-400">pts</Text>
+              {points.toLocaleString()}{' '}
+              <Text className="text-sm font-bold text-gray-400">pts</Text>
             </Text>
           </View>
         </View>
