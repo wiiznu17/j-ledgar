@@ -30,11 +30,19 @@ export class KycController {
     fileFilter: (req: any, file: any, cb: any) => {
       const allowedMimes = ['image/jpeg', 'image/png', 'application/pdf'];
       const allowedExtensions = ['.jpg', '.jpeg', '.png', '.pdf'];
-      
+
       const ext = extname(file.originalname).toLowerCase();
 
-      if (!allowedMimes.includes(file.mimetype) || !allowedExtensions.includes(ext)) {
-        return cb(new BadRequestException(`Only JPEG, PNG, and PDF files allowed. Received: ${file.mimetype}`), false);
+      if (
+        !allowedMimes.includes(file.mimetype) ||
+        !allowedExtensions.includes(ext)
+      ) {
+        return cb(
+          new BadRequestException(
+            `Only JPEG, PNG, and PDF files allowed. Received: ${file.mimetype}`,
+          ),
+          false,
+        );
       }
       cb(null, true);
     },
@@ -77,7 +85,11 @@ export class KycController {
 
   @Post('upload-id-card')
   @UseGuards(RegistrationAuthGuard)
-  @UseInterceptors(function (this: KycController) { return FileInterceptor('idCardImage', this.fileValidationConfig); }.call(KycController.prototype))
+  @UseInterceptors(
+    function (this: KycController) {
+      return FileInterceptor('idCardImage', this.fileValidationConfig);
+    }.call(KycController.prototype),
+  )
   async uploadIdCard(@UploadedFile() file: any, @Req() request: Request) {
     if (!file) {
       throw new Error('No file uploaded');
@@ -93,7 +105,11 @@ export class KycController {
 
   @Post('submit-selfie')
   @UseGuards(RegistrationAuthGuard)
-  @UseInterceptors(function (this: KycController) { return FileInterceptor('selfieImage', this.fileValidationConfig); }.call(KycController.prototype))
+  @UseInterceptors(
+    function (this: KycController) {
+      return FileInterceptor('selfieImage', this.fileValidationConfig);
+    }.call(KycController.prototype),
+  )
   async submitSelfie(@UploadedFile() file: any, @Req() request: Request) {
     const user = (request as any).user;
     if (!user || !user.sub) {
@@ -116,7 +132,11 @@ export class KycController {
 
   @Post('upload-id-card/simple')
   @UseGuards(RegistrationAuthGuard)
-  @UseInterceptors(function (this: KycController) { return FileInterceptor('idCardImage', this.fileValidationConfig); }.call(KycController.prototype))
+  @UseInterceptors(
+    function (this: KycController) {
+      return FileInterceptor('idCardImage', this.fileValidationConfig);
+    }.call(KycController.prototype),
+  )
   async uploadIdCardSimple(
     @UploadedFile() file: any,
     @Headers('authorization') authorization: string,
@@ -166,7 +186,11 @@ export class KycController {
 
   @Post('submit-selfie/simple')
   @UseGuards(RegistrationAuthGuard)
-  @UseInterceptors(function (this: KycController) { return FileInterceptor('selfieImage', this.fileValidationConfig); }.call(KycController.prototype))
+  @UseInterceptors(
+    function (this: KycController) {
+      return FileInterceptor('selfieImage', this.fileValidationConfig);
+    }.call(KycController.prototype),
+  )
   async submitSelfieSimple(
     @UploadedFile() file: any,
     @Headers('authorization') authorization: string,
