@@ -46,10 +46,12 @@ export default function DealsPage() {
         promotionsRequester.getBrands(),
         promotionsRequester.getCategories(),
       ]);
-      setBrands(bData);
-      setCategories(cData);
+      setBrands(Array.isArray(bData) ? bData : []);
+      setCategories(Array.isArray(cData) ? cData : []);
     } catch (error) {
       console.error('Failed to load meta data');
+      setBrands([]);
+      setCategories([]);
     }
   }, []);
 
@@ -69,12 +71,30 @@ export default function DealsPage() {
         params.isActive = activeFilters.status === 'active';
 
       const res = await promotionsRequester.getDeals({ params });
-      setDeals(res.data || []);
-      if (res.pagination) {
-        setTotalPages(res.pagination.totalPages);
-        setTotalItems(res.pagination.total);
-        setCurrentPage(res.pagination.page);
-      }
+      const safeDeals = Array.isArray(res?.data) ? res.data : [];
+      const safePagination = res?.pagination ?? {
+        page: activeFilters.page,
+        total: safeDeals.length,
+        totalPages: 1,
+      };
+
+      setDeals(safeDeals);
+      setTotalPages(
+        typeof safePagination.totalPages === 'number' &&
+          safePagination.totalPages > 0
+          ? safePagination.totalPages
+          : 1,
+      );
+      setTotalItems(
+        typeof safePagination.total === 'number'
+          ? safePagination.total
+          : safeDeals.length,
+      );
+      setCurrentPage(
+        typeof safePagination.page === 'number' && safePagination.page > 0
+          ? safePagination.page
+          : 1,
+      );
     } catch (error) {
       toast.error('Failed to load deals');
     } finally {

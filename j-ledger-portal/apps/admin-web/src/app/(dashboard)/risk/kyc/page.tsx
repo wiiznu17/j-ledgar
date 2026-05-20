@@ -99,13 +99,31 @@ export default function KycListPage() {
         limit: 10,
       });
 
-      setDocuments(res.data);
-      setStats(res.stats);
-      if (res.pagination) {
-        setTotalPages(res.pagination.totalPages);
-        setTotalItems(res.pagination.total);
-        setCurrentPage(res.pagination.page);
-      }
+      const safeData = Array.isArray(res?.data) ? res.data : [];
+      const safePagination = res?.pagination ?? {
+        page: activeFilters.page,
+        total: safeData.length,
+        totalPages: 1,
+      };
+
+      setDocuments(safeData);
+      setStats(res?.stats ?? null);
+      setTotalPages(
+        typeof safePagination.totalPages === 'number' &&
+          safePagination.totalPages > 0
+          ? safePagination.totalPages
+          : 1,
+      );
+      setTotalItems(
+        typeof safePagination.total === 'number'
+          ? safePagination.total
+          : safeData.length,
+      );
+      setCurrentPage(
+        typeof safePagination.page === 'number' && safePagination.page > 0
+          ? safePagination.page
+          : 1,
+      );
     } catch (err) {
       console.error(err);
     } finally {

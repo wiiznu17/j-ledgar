@@ -157,10 +157,28 @@ export default function TransactionsPage() {
       };
 
       const res = await transactionRequester.getHistory(params);
-      setTransactions(res.data);
-      setTotalPages(res.pagination.totalPages);
-      setTotalItems(res.pagination.total);
-      setCurrentPage(res.pagination.page + 1); // Convert back to 1-based
+      const safeData = Array.isArray(res?.data) ? res.data : [];
+      const safePagination = res?.pagination ?? {
+        page: 0,
+        total: safeData.length,
+        totalPages: 1,
+      };
+
+      setTransactions(safeData);
+      setTotalPages(
+        typeof safePagination.totalPages === 'number' &&
+          safePagination.totalPages > 0
+          ? safePagination.totalPages
+          : 1,
+      );
+      setTotalItems(
+        typeof safePagination.total === 'number'
+          ? safePagination.total
+          : safeData.length,
+      );
+      setCurrentPage(
+        typeof safePagination.page === 'number' ? safePagination.page + 1 : 1,
+      ); // Convert back to 1-based
     } catch (err) {
       console.error('[TRANSACTIONS_PAGE] Fetch error:', err);
       toast.error('Failed to fetch transactions');
@@ -255,7 +273,7 @@ export default function TransactionsPage() {
                     setActiveFilters((prev) => ({
                       ...prev,
                       userId: '',
-                      page: 0,
+                      page: 1,
                     }))
                   }
                   className="ml-1 hover:text-indigo-800"

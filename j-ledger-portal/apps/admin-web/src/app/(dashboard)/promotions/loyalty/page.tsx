@@ -51,7 +51,7 @@ export default function LoyaltyPage() {
       <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
         <StatCard
           title="Active Points"
-          value={stats?.totalActivePoints.toLocaleString() || '0'}
+          value={(stats?.totalActivePoints ?? 0).toLocaleString()}
           description="Current points in user wallets"
           icon={Coins}
           className="bg-card text-card-foreground border border-border shadow-xs"
@@ -59,7 +59,7 @@ export default function LoyaltyPage() {
 
         <StatCard
           title="Lifetime Earned"
-          value={stats?.totalLifetimePoints.toLocaleString() || '0'}
+          value={(stats?.totalLifetimePoints ?? 0).toLocaleString()}
           description="Total points awarded since launch"
           icon={Calendar}
           className="bg-card text-card-foreground border border-border shadow-xs"

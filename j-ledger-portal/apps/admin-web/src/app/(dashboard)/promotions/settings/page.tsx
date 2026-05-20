@@ -125,11 +125,14 @@ export default function PromotionSettingsPage() {
         promotionsRequester.getCategories(),
         merchantRequester.getPartners({ limit: 100, status: 'ACTIVE' }),
       ]);
-      setBrands(b);
-      setCategories(c);
-      setPartners(p.data || []);
+      setBrands(Array.isArray(b) ? b : []);
+      setCategories(Array.isArray(c) ? c : []);
+      setPartners(Array.isArray(p?.data) ? p.data : []);
     } catch (error) {
       toast.error('Failed to load settings data');
+      setBrands([]);
+      setCategories([]);
+      setPartners([]);
     } finally {
       setLoading(false);
     }
