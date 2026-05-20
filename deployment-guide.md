@@ -115,7 +115,7 @@ Script จะสร้างไฟล์ `.env` โดยอัตโนมั�
 - `POSTGRES_PASSWORD`, `REDIS_PASSWORD`, `JLEDGER_ADMIN_PASSWORD`
 
 **ต้องแก้ด้วยตัวเองหลัง script รัน:**
-- `JLEDGER_ALLOWED_ORIGINS=https://potayyr.site`
+- `JLEDGER_ALLOWED_ORIGINS=https://potayyr.site,https://admin.potayyr.site` (ระบุ Origin ของเว็บหลัก และ Admin Panel บน Vercel คั่นด้วยคอมมา เพื่ออนุญาตให้ติดต่อกับ Portal Service ได้อย่างปลอดภัย)
 - `JLEDGER_ADMIN_EMAIL` (อีเมลสำหรับ login admin ครั้งแรก)
 - `POSTGRES_USER`, `POSTGRES_DB` (ถ้าต้องการเปลี่ยนจาก default)
 - `SMTP_HOST`, `SMTP_USER`, `SMTP_PASSWORD`, `SMTP_FROM` (Email notifications)
