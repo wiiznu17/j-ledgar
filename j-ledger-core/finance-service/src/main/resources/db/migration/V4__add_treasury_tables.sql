@@ -40,10 +40,3 @@ CREATE TRIGGER update_treasury_bank_accounts_updated_at
 CREATE TRIGGER update_treasury_payouts_updated_at
     BEFORE UPDATE ON treasury_payouts
     FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
-
--- Seed default treasury bank accounts
-INSERT INTO treasury_bank_accounts (name, bank_name, account_number, provider, balance, currency, is_active, created_at, updated_at)
-VALUES ('SCB Main Corporate', 'Siam Commercial Bank', '111-2-22222-3', 'SCB', 5000000.0000, 'THB', true, NOW(), NOW());
-
-INSERT INTO treasury_bank_accounts (name, bank_name, account_number, provider, balance, currency, is_active, created_at, updated_at)
-VALUES ('KBank Reserve Account', 'Kasikorn Bank', '888-7-77777-9', 'KBANK', 2000000.0000, 'THB', true, NOW(), NOW());

@@ -43,6 +43,7 @@ const createAxiosInstance = (): AxiosInstance => {
     timeout: 30000, // 30 seconds
     headers: {
       'Content-Type': 'application/json',
+      'ngrok-skip-browser-warning': 'true',
     },
   });
 

@@ -4,16 +4,10 @@ services:
       - "5432:5432"
     volumes:
       - ./docker/init-scripts:/docker-entrypoint-initdb.d
-    environment:
-      POSTGRES_USER: ${POSTGRES_USER:-ledger_admin}
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-ledger_password}
-      POSTGRES_DB: jledger_db
 
   redis:
     ports:
       - "6379:6379"
-    environment:
-      REDIS_PASSWORD: ${REDIS_PASSWORD:-redis_password}
 
   zookeeper:
     ports:
@@ -41,3 +35,21 @@ services:
       - jledger-network
     depends_on:
       - postgres
+
+  finance-service:
+    ports:
+      - "8081:8081"
+
+  portal-service:
+    ports:
+      - "3000:3000"
+
+  portal-migration:
+    environment:
+      - JLEDGER_ADMIN_EMAIL=${JLEDGER_ADMIN_EMAIL}
+      - JLEDGER_ADMIN_PASSWORD=${JLEDGER_ADMIN_PASSWORD}
+
+  portal-seed:
+    environment:
+      - JLEDGER_ADMIN_EMAIL=${JLEDGER_ADMIN_EMAIL}
+      - JLEDGER_ADMIN_PASSWORD=${JLEDGER_ADMIN_PASSWORD}
