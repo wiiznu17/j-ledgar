@@ -26,6 +26,7 @@ import { DealModule } from '../modules/deals/deal.module';
 import { LoyaltyModule } from '../modules/loyalty/loyalty.module';
 import { AuditModule } from '../modules/audit/audit.module';
 import { KycModule } from '../modules/kyc/kyc.module';
+import { NotificationModule } from '../modules/notification/notification.module';
 import { JwtModule } from '@nestjs/jwt';
 import { AdminJwtStrategy } from './strategies/admin-jwt.strategy';
 
@@ -40,6 +41,7 @@ import { AdminJwtStrategy } from './strategies/admin-jwt.strategy';
     LoyaltyModule,
     AuditModule,
     KycModule,
+    NotificationModule,
     JwtModule.registerAsync({
       useFactory: () => {
         const secret = process.env.ADMIN_JWT_SECRET;

@@ -108,6 +108,7 @@ services:
       - DATABASE_URL=postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB}
       - FINANCE_SERVICE_URL=http://finance-service:8081
       - JLEDGER_INTERNAL_SECRET=${JLEDGER_INTERNAL_SECRET}
+      - NODE_ENV=${NODE_ENV}
     networks:
       - jledger-network
 
@@ -130,6 +131,9 @@ services:
       - DATABASE_URL=postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB}
       - FINANCE_SERVICE_URL=http://finance-service:8081
       - JLEDGER_INTERNAL_SECRET=${JLEDGER_INTERNAL_SECRET}
+      - NODE_ENV=${NODE_ENV}
+      - JLEDGER_ADMIN_EMAIL=${JLEDGER_ADMIN_EMAIL}
+      - JLEDGER_ADMIN_PASSWORD=${JLEDGER_ADMIN_PASSWORD}
     networks:
       - jledger-network
 
@@ -219,6 +223,7 @@ services:
       - STRIPE_SECRET_KEY=${STRIPE_SECRET_KEY}
       - STRIPE_WEBHOOK_SECRET=${STRIPE_WEBHOOK_SECRET}
       - STRIPE_PUBLISHABLE_KEY=${STRIPE_PUBLISHABLE_KEY}
+      - ADMIN_WEB_URL=${ADMIN_WEB_URL}
     networks:
       - jledger-network
     expose:
