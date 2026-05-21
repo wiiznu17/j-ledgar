@@ -67,7 +67,9 @@ async function bootstrap() {
   });
 
   if (nodeEnv === 'production' && !process.env.JLEDGER_ALLOWED_ORIGINS) {
-    throw new Error('PRODUCTION SECURITY ERROR: JLEDGER_ALLOWED_ORIGINS environment variable must be explicitly defined in production.');
+    throw new Error(
+      'PRODUCTION SECURITY ERROR: JLEDGER_ALLOWED_ORIGINS environment variable must be explicitly defined in production.',
+    );
   }
 
   const allowedOrigins = process.env.JLEDGER_ALLOWED_ORIGINS

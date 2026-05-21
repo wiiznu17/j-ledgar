@@ -135,7 +135,9 @@ export function LandingPage() {
             <div className="w-14 h-14 bg-[#00E5FF] border-4 border-[#1A1A1A] flex items-center justify-center text-[#1A1A1A] mb-6 shadow-[3px_3px_0px_0px_#1A1A1A]">
               <BarChart3 className="w-8 h-8 stroke-[2.5]" />
             </div>
-            <h3 className="text-2xl font-black uppercase mb-4">Reconciliation</h3>
+            <h3 className="text-2xl font-black uppercase mb-4">
+              Reconciliation
+            </h3>
             <p className="text-base font-bold text-[#4A4A4A] leading-relaxed">
               Review daily reconciliation summaries with mismatch status so
               teams can investigate and resolve issues in the same cycle.
@@ -216,7 +218,8 @@ export function LandingPage() {
                   [SUCCESS] Ledger pair check completed: 1,248 / 1,248 entries
                 </p>
                 <p className="text-[#008F39]">
-                  [SUCCESS] Reconciliation batch #R20260521-01 marked as complete
+                  [SUCCESS] Reconciliation batch #R20260521-01 marked as
+                  complete
                 </p>
                 <p className="text-[#A300D9]">
                   [EVENT] Exported mismatch report to internal audit queue

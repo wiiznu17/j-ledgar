@@ -214,12 +214,15 @@ export default function TreasuryPage() {
                       <span className="text-muted-foreground">
                         Ledger (Gross):
                       </span>
-                        <span className="font-bold">
-                          ฿
-                          {(summary?.stripeBalance ?? 0).toLocaleString(undefined, {
+                      <span className="font-bold">
+                        ฿
+                        {(summary?.stripeBalance ?? 0).toLocaleString(
+                          undefined,
+                          {
                             minimumFractionDigits: 2,
-                          })}
-                        </span>
+                          },
+                        )}
+                      </span>
                     </div>
                     <div className="flex justify-between">
                       <span className="text-muted-foreground">
@@ -338,9 +341,12 @@ export default function TreasuryPage() {
             </div>
             <h3 className="text-2xl font-black text-foreground tabular-nums">
               ฿
-              {(summary?.totalCustomerLiability ?? 0).toLocaleString(undefined, {
-                minimumFractionDigits: 2,
-              })}
+              {(summary?.totalCustomerLiability ?? 0).toLocaleString(
+                undefined,
+                {
+                  minimumFractionDigits: 2,
+                },
+              )}
             </h3>
             <p className="text-[10px] text-rose-400 mt-1.5 font-medium italic">
               ยอดเงินลูกค้ารวมในระบบ
@@ -418,44 +424,39 @@ export default function TreasuryPage() {
                   {(Array.isArray(summary?.bankAccounts)
                     ? summary.bankAccounts
                     : []
-                  ).map(
-                    (acc: TreasuryBankAccount, i: number) => (
-                      <tr
-                        key={i}
-                        className="hover:bg-muted/50 transition-colors"
-                      >
-                        <td className="px-6 py-4">
-                          <p className="text-sm font-bold text-foreground">
-                            {acc.name}
-                          </p>
-                          <p className="text-[10px] text-muted-foreground font-mono tracking-tighter">
-                            {acc.accountNumber}
-                          </p>
-                        </td>
-                        <td className="px-6 py-4">
-                          <div className="flex items-center gap-2">
-                            <Badge
-                              variant="outline"
-                              className="text-[9px] font-black uppercase border-indigo-500/20 text-indigo-600 dark:text-indigo-400 bg-indigo-500/10"
-                            >
-                              {acc.provider}
-                            </Badge>
-                            <span className="text-xs font-medium text-muted-foreground">
-                              {acc.bankName}
-                            </span>
-                          </div>
-                        </td>
-                        <td className="px-6 py-4 text-right">
-                          <p className="text-sm font-black text-foreground tabular-nums">
-                            ฿
-                            {acc.balance.toLocaleString(undefined, {
-                              minimumFractionDigits: 2,
-                            })}
-                          </p>
-                        </td>
-                      </tr>
-                    ),
-                  )}
+                  ).map((acc: TreasuryBankAccount, i: number) => (
+                    <tr key={i} className="hover:bg-muted/50 transition-colors">
+                      <td className="px-6 py-4">
+                        <p className="text-sm font-bold text-foreground">
+                          {acc.name}
+                        </p>
+                        <p className="text-[10px] text-muted-foreground font-mono tracking-tighter">
+                          {acc.accountNumber}
+                        </p>
+                      </td>
+                      <td className="px-6 py-4">
+                        <div className="flex items-center gap-2">
+                          <Badge
+                            variant="outline"
+                            className="text-[9px] font-black uppercase border-indigo-500/20 text-indigo-600 dark:text-indigo-400 bg-indigo-500/10"
+                          >
+                            {acc.provider}
+                          </Badge>
+                          <span className="text-xs font-medium text-muted-foreground">
+                            {acc.bankName}
+                          </span>
+                        </div>
+                      </td>
+                      <td className="px-6 py-4 text-right">
+                        <p className="text-sm font-black text-foreground tabular-nums">
+                          ฿
+                          {acc.balance.toLocaleString(undefined, {
+                            minimumFractionDigits: 2,
+                          })}
+                        </p>
+                      </td>
+                    </tr>
+                  ))}
                 </tbody>
               </table>
             </div>

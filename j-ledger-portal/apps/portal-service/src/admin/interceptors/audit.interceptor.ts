@@ -50,10 +50,12 @@ export class AuditInterceptor implements NestInterceptor {
       return next.handle();
     }
 
-
     const primaryPermission = requiredPermissions?.[0];
     const actionReason =
-      metadata?.reason || (primaryPermission ? `Executed permission: ${primaryPermission}` : `Executed action`);
+      metadata?.reason ||
+      (primaryPermission
+        ? `Executed permission: ${primaryPermission}`
+        : `Executed action`);
     const actionType = metadata?.action || (primaryPermission as any); // Use explicit action or fallback to permission name
     const resourceType = metadata?.resourceType || ResourceType.PII;
 
@@ -78,7 +80,11 @@ export class AuditInterceptor implements NestInterceptor {
             }
 
             await this.auditService.log({
-              adminUserId: adminUser?.sub || adminUser?.id || (data as any)?.userId || 'SYSTEM',
+              adminUserId:
+                adminUser?.sub ||
+                adminUser?.id ||
+                (data as any)?.userId ||
+                'SYSTEM',
               action: actionType,
               resourceType: resourceType,
               resourceId: String(resourceId || ''),

@@ -12,26 +12,29 @@ async function createAdmin() {
     console.error('❌ Error: Missing arguments.');
     console.log('Usage: npm run create-admin <username> <password> <email>');
     console.log('Or inside production container:');
-    console.log('node dist/src/cli/create-admin.js <username> <password> <email>');
+    console.log(
+      'node dist/src/cli/create-admin.js <username> <password> <email>',
+    );
     process.exit(1);
   }
 
   try {
-    console.log(`🔍 Checking database for existing staff with username "${username}" or email "${email}"...`);
+    console.log(
+      `🔍 Checking database for existing staff with username "${username}" or email "${email}"...`,
+    );
 
     // Check if staff already exists with either username or email
     const existingStaff = await prisma.staff.findFirst({
       where: {
-        OR: [
-          { username },
-          { email }
-        ]
-      }
+        OR: [{ username }, { email }],
+      },
     });
 
     if (existingStaff) {
       if (existingStaff.username === username) {
-        console.error(`❌ Error: Staff with username "${username}" already exists.`);
+        console.error(
+          `❌ Error: Staff with username "${username}" already exists.`,
+        );
       } else {
         console.error(`❌ Error: Staff with email "${email}" already exists.`);
       }
@@ -85,7 +88,6 @@ async function createAdmin() {
       },
     });
     console.log('🎉 Admin user setup successfully completed!');
-
   } catch (error) {
     console.error('❌ Unexpected error during admin creation:', error);
     process.exit(1);
