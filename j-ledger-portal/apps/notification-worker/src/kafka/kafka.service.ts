@@ -84,26 +84,32 @@ export class KafkaService implements OnModuleInit, OnModuleDestroy {
         const { email, setupLink } = metadata;
         this.logger.log(`Processing ADMIN_INVITE for ${email}`);
         const html = `
-          <div style="font-family: Arial, sans-serif; line-height: 1.6; max-width: 600px; margin: 0 auto; border: 1px solid #e0e0e0; border-radius: 8px; overflow: hidden; box-shadow: 0 4px 10px rgba(0,0,0,0.05);">
-            <div style="background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%); color: white; padding: 24px; text-align: center;">
-              <h1 style="margin: 0; font-size: 24px; font-weight: 600;">J-Ledger Admin Portal 🏦</h1>
-            </div>
-            <div style="padding: 24px; color: #333;">
-              <h2 style="margin-top: 0; color: #1e3c72;">ยินดีต้อนรับสู่ J-Ledger Admin!</h2>
-              <p>คุณได้รับเชิญให้เข้าร่วมทีมผู้ดูแลระบบของ J-Ledger</p>
-              <p>โปรดคลิกปุ่มด้านล่างเพื่อเปิดบัญชีและตั้งค่ารหัสผ่านของคุณ:</p>
-              <div style="text-align: center; margin: 30px 0;">
-                <a href="${setupLink}" style="background-color: #2a5298; color: white; text-decoration: none; padding: 12px 24px; border-radius: 5px; font-weight: bold; display: inline-block;">ตั้งค่าบัญชีของคุณ</a>
+          <div style="background-color: #F5F7FB; padding: 40px 20px; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;">
+            <div style="max-width: 560px; margin: 0 auto; background-color: #FFFFFF; border: 1px solid #E2E8F0; border-radius: 16px; overflow: hidden; box-shadow: 0 4px 20px rgba(0, 0, 0, 0.03);">
+              <div style="background-color: #BF3FFF; height: 6px;"></div>
+              <div style="padding: 40px;">
+                <div style="text-align: center; margin-bottom: 32px;">
+                  <span style="font-size: 20px; font-weight: 800; letter-spacing: 2px; color: #2D3748;">J-LEDGER</span>
+                  <span style="font-size: 10px; font-weight: 700; color: #64748B; display: block; margin-top: 4px; letter-spacing: 1px;">ADMIN PORTAL</span>
+                </div>
+                <h2 style="font-size: 20px; font-weight: 700; color: #2D3748; margin-top: 0; margin-bottom: 12px; text-align: center;">Welcome to J-Ledger</h2>
+                <p style="font-size: 15px; color: #4A5568; line-height: 1.6; margin-bottom: 24px; text-align: center;">You have been invited to join the J-Ledger administrator team. Please click the button below to set up your password and activate your account.</p>
+                <div style="text-align: center; margin: 32px 0;">
+                  <a href="${setupLink}" style="background-color: #BF3FFF; color: #FFFFFF; text-decoration: none; padding: 14px 28px; border-radius: 10px; font-weight: 700; font-size: 15px; display: inline-block; box-shadow: 0 4px 12px rgba(191, 63, 255, 0.2);">Set Up Your Account</a>
+                </div>
+                <div style="background-color: #F8FAFC; border: 1px solid #E2E8F0; border-radius: 10px; padding: 16px; margin: 24px 0;">
+                  <span style="font-size: 12px; color: #64748B; display: block; margin-bottom: 6px; font-weight: 600;">Or copy this link into your browser:</span>
+                  <a href="${setupLink}" style="word-break: break-all; color: #BF3FFF; font-size: 13px; text-decoration: none; font-weight: 500;">${setupLink}</a>
+                </div>
+                <div style="border-top: 1px solid #E2E8F0; margin-top: 32px; padding-top: 24px;">
+                  <p style="color: #94A3B8; font-size: 12px; line-height: 1.5; text-align: center; margin: 0;">This activation link will expire in 24 hours for security purposes.<br>If you did not request this invitation, please ignore this email.</p>
+                </div>
               </div>
-              <p style="color: #666; font-size: 14px;">หรือคัดลอกลิงก์นี้ไปวางในเบราว์เซอร์ของคุณ:</p>
-              <p style="word-break: break-all; color: #2a5298; font-size: 14px;"><a href="${setupLink}">${setupLink}</a></p>
-              <hr style="border: 0; border-top: 1px solid #eee; margin: 20px 0;">
-              <p style="color: #999; font-size: 12px; text-align: center;">ลิงก์นี้จะมีอายุการใช้งาน 24 ชั่วโมง หากคุณไม่ได้ขอรับคำเชิญนี้ โปรดเพิกเฉยต่ออีเมลนี้</p>
             </div>
           </div>
         `;
         try {
-          await this.emailService.sendEmail(email, 'Welcome to J-Ledger Admin Portal! 🏦', html);
+          await this.emailService.sendEmail(email, 'Welcome to J-Ledger Admin Portal!', html);
           this.logger.log(`Successfully sent ADMIN_INVITE email to ${email}`);
         } catch (error) {
           this.logger.error(`Failed to send ADMIN_INVITE email: ${error.message}`);
@@ -115,26 +121,32 @@ export class KafkaService implements OnModuleInit, OnModuleDestroy {
         const { email, resetLink } = metadata;
         this.logger.log(`Processing ADMIN_PASSWORD_RESET for ${email}`);
         const html = `
-          <div style="font-family: Arial, sans-serif; line-height: 1.6; max-width: 600px; margin: 0 auto; border: 1px solid #e0e0e0; border-radius: 8px; overflow: hidden; box-shadow: 0 4px 10px rgba(0,0,0,0.05);">
-            <div style="background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%); color: white; padding: 24px; text-align: center;">
-              <h1 style="margin: 0; font-size: 24px; font-weight: 600;">J-Ledger Admin Portal 🏦</h1>
-            </div>
-            <div style="padding: 24px; color: #333;">
-              <h2 style="margin-top: 0; color: #1e3c72;">คำขอรีเซ็ตรหัสผ่าน</h2>
-              <p>เราได้รับคำขอให้รีเซ็ตรหัสผ่านผู้ดูแลระบบของคุณ</p>
-              <p>โปรดคลิกปุ่มด้านล่างเพื่อเลือกและกำหนดรหัสผ่านใหม่:</p>
-              <div style="text-align: center; margin: 30px 0;">
-                <a href="${resetLink}" style="background-color: #2a5298; color: white; text-decoration: none; padding: 12px 24px; border-radius: 5px; font-weight: bold; display: inline-block;">รีเซ็ตรหัสผ่านใหม่</a>
+          <div style="background-color: #F5F7FB; padding: 40px 20px; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;">
+            <div style="max-width: 560px; margin: 0 auto; background-color: #FFFFFF; border: 1px solid #E2E8F0; border-radius: 16px; overflow: hidden; box-shadow: 0 4px 20px rgba(0, 0, 0, 0.03);">
+              <div style="background-color: #BF3FFF; height: 6px;"></div>
+              <div style="padding: 40px;">
+                <div style="text-align: center; margin-bottom: 32px;">
+                  <span style="font-size: 20px; font-weight: 800; letter-spacing: 2px; color: #2D3748;">J-LEDGER</span>
+                  <span style="font-size: 10px; font-weight: 700; color: #64748B; display: block; margin-top: 4px; letter-spacing: 1px;">ADMIN PORTAL</span>
+                </div>
+                <h2 style="font-size: 20px; font-weight: 700; color: #2D3748; margin-top: 0; margin-bottom: 12px; text-align: center;">Password Reset Request</h2>
+                <p style="font-size: 15px; color: #4A5568; line-height: 1.6; margin-bottom: 24px; text-align: center;">We received a request to reset the password for your administrator account. Please click the button below to define a new password.</p>
+                <div style="text-align: center; margin: 32px 0;">
+                  <a href="${resetLink}" style="background-color: #BF3FFF; color: #FFFFFF; text-decoration: none; padding: 14px 28px; border-radius: 10px; font-weight: 700; font-size: 15px; display: inline-block; box-shadow: 0 4px 12px rgba(191, 63, 255, 0.2);">Reset Password</a>
+                </div>
+                <div style="background-color: #F8FAFC; border: 1px solid #E2E8F0; border-radius: 10px; padding: 16px; margin: 24px 0;">
+                  <span style="font-size: 12px; color: #64748B; display: block; margin-bottom: 6px; font-weight: 600;">Or copy this link into your browser:</span>
+                  <a href="${resetLink}" style="word-break: break-all; color: #BF3FFF; font-size: 13px; text-decoration: none; font-weight: 500;">${resetLink}</a>
+                </div>
+                <div style="border-top: 1px solid #E2E8F0; margin-top: 32px; padding-top: 24px;">
+                  <p style="color: #94A3B8; font-size: 12px; line-height: 1.5; text-align: center; margin: 0;">This link will expire in 24 hours for security purposes.<br>If you did not submit this request, please ignore this email.</p>
+                </div>
               </div>
-              <p style="color: #666; font-size: 14px;">หรือคัดลอกลิงก์นี้ไปวางในเบราว์เซอร์ของคุณ:</p>
-              <p style="word-break: break-all; color: #2a5298; font-size: 14px;"><a href="${resetLink}">${resetLink}</a></p>
-              <hr style="border: 0; border-top: 1px solid #eee; margin: 20px 0;">
-              <p style="color: #999; font-size: 12px; text-align: center;">หากคุณไม่ได้ส่งคำขอนี้ โปรดเพิกเฉยต่ออีเมลนี้และตรวจสอบให้แน่ใจว่าบัญชีของคุณปลอดภัย</p>
             </div>
           </div>
         `;
         try {
-          await this.emailService.sendEmail(email, 'Reset your J-Ledger Admin Password 🔑', html);
+          await this.emailService.sendEmail(email, 'Reset your J-Ledger Admin Password', html);
           this.logger.log(`Successfully sent ADMIN_PASSWORD_RESET email to ${email}`);
         } catch (error) {
           this.logger.error(`Failed to send ADMIN_PASSWORD_RESET email: ${error.message}`);

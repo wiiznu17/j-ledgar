@@ -2,20 +2,13 @@
 
 import { useEffect, useState, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { authRequester } from '@/lib/requesters';
 import { showSuccess, showError } from '@/lib/swal';
+import { ThemeToggle } from '@/components/theme-toggle';
 import {
-  ShieldCheck,
   Lock,
   AlertCircle,
   CheckCircle2,
@@ -101,155 +94,230 @@ function ResetPasswordForm() {
 
   if (isValidating) {
     return (
-      <div className="min-h-screen bg-muted/30 flex flex-col items-center justify-center p-4">
-        <Loader2 className="w-8 h-8 text-indigo-600 dark:text-indigo-400 animate-spin mb-4" />
-        <p className="text-muted-foreground font-medium animate-pulse">
-          Verifying secure link...
-        </p>
+      <div className="relative min-h-screen flex items-center justify-center bg-muted/30 text-foreground">
+        <div className="absolute top-6 right-6 z-50">
+          <ThemeToggle />
+        </div>
+        <div className="flex flex-col items-center justify-center">
+          <Loader2 className="w-10 h-10 text-indigo-600 dark:text-indigo-400 animate-spin mb-4" />
+          <p className="text-muted-foreground font-semibold animate-pulse">
+            Verifying secure link...
+          </p>
+        </div>
       </div>
     );
   }
 
   if (!isValid && !isSuccess) {
     return (
-      <div className="min-h-screen bg-muted/30 flex items-center justify-center p-4">
-        <Card className="max-w-md w-full border border-border shadow-2xl rounded-3xl overflow-hidden bg-card text-card-foreground">
-          <div className="h-2 bg-rose-500" />
-          <CardHeader className="pt-10 pb-6 text-center">
-            <div className="w-16 h-16 bg-rose-500/10 rounded-2xl flex items-center justify-center mx-auto mb-6">
-              <AlertCircle className="w-8 h-8 text-rose-500" />
+      <div className="relative min-h-screen flex items-center justify-center bg-muted/30 text-foreground animate-fade-in">
+        <div className="absolute top-6 right-6 z-50">
+          <ThemeToggle />
+        </div>
+        <div className="flex flex-col lg:flex-row w-full max-w-5xl rounded-2xl overflow-hidden shadow-2xl bg-card border border-border">
+          {/* Left Side: Illustration Image */}
+          <div className="hidden lg:flex w-1/2 bg-muted items-center justify-center relative overflow-hidden">
+            <img
+              src="/login/Data_security_05.jpg"
+              alt="Data Security"
+              className="absolute inset-0 w-full h-full object-cover dark:opacity-80"
+            />
+          </div>
+
+          {/* Right Side */}
+          <div className="w-full lg:w-1/2 p-8 lg:p-16 flex flex-col justify-center">
+            <div className="max-w-sm w-full mx-auto space-y-8">
+              <div className="flex items-center justify-end gap-6 text-right">
+                <div className="flex flex-col">
+                  <span className="text-rose-500 font-bold text-xs uppercase tracking-widest">
+                    Security Alert
+                  </span>
+                  <h1 className="text-3xl font-bold text-foreground mt-1">
+                    Expired Link
+                  </h1>
+                </div>
+                <img
+                  src="/logo/logo-text.png"
+                  alt="Logo"
+                  className="h-20 object-contain dark:invert mix-blend-multiply dark:mix-blend-normal contrast-[1.1] brightness-[1.05]"
+                />
+              </div>
+
+              <div className="p-5 bg-rose-500/10 border border-rose-500/20 rounded-2xl flex flex-col items-center text-center gap-4">
+                <div className="w-12 h-12 bg-rose-500/20 rounded-xl flex items-center justify-center">
+                  <AlertCircle className="w-6 h-6 text-rose-500" />
+                </div>
+                <p className="text-sm text-muted-foreground leading-relaxed">
+                  This password reset link is no longer valid. Please request a new one from the administrator or your login page.
+                </p>
+              </div>
+
+              <Button
+                variant="outline"
+                className="w-full h-12 rounded-xl border-border font-bold text-muted-foreground hover:bg-muted hover:text-foreground"
+                onClick={() => router.push('/login')}
+              >
+                Return to Login
+              </Button>
             </div>
-            <CardTitle className="text-2xl font-bold text-foreground tracking-tight">
-              Invalid or Expired Link
-            </CardTitle>
-            <CardDescription className="text-muted-foreground mt-2 px-4">
-              This password reset link is no longer valid. Please request a new
-              one from the administrator or your login page.
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="pb-10 px-8">
-            <Button
-              variant="outline"
-              className="w-full h-12 rounded-xl border-border font-bold text-muted-foreground hover:bg-muted hover:text-foreground"
-              onClick={() => router.push('/login')}
-            >
-              Return to Login
-            </Button>
-          </CardContent>
-        </Card>
+          </div>
+        </div>
       </div>
     );
   }
 
   if (isSuccess) {
     return (
-      <div className="min-h-screen bg-muted/30 flex items-center justify-center p-4">
-        <Card className="max-w-md w-full border border-border shadow-2xl rounded-3xl overflow-hidden bg-card text-card-foreground">
-          <div className="h-2 bg-emerald-500" />
-          <CardHeader className="pt-10 pb-6 text-center">
-            <div className="w-16 h-16 bg-emerald-500/10 rounded-2xl flex items-center justify-center mx-auto mb-6">
-              <CheckCircle2 className="w-8 h-8 text-emerald-500" />
+      <div className="relative min-h-screen flex items-center justify-center bg-muted/30 text-foreground animate-fade-in">
+        <div className="absolute top-6 right-6 z-50">
+          <ThemeToggle />
+        </div>
+        <div className="flex flex-col lg:flex-row w-full max-w-5xl rounded-2xl overflow-hidden shadow-2xl bg-card border border-border">
+          {/* Left Side: Illustration Image */}
+          <div className="hidden lg:flex w-1/2 bg-muted items-center justify-center relative overflow-hidden">
+            <img
+              src="/login/Data_security_05.jpg"
+              alt="Data Security"
+              className="absolute inset-0 w-full h-full object-cover dark:opacity-80"
+            />
+          </div>
+
+          {/* Right Side */}
+          <div className="w-full lg:w-1/2 p-8 lg:p-16 flex flex-col justify-center">
+            <div className="max-w-sm w-full mx-auto space-y-8">
+              <div className="flex items-center justify-end gap-6 text-right">
+                <div className="flex flex-col">
+                  <span className="text-indigo-600 dark:text-indigo-400 font-bold text-xs uppercase tracking-widest">
+                    Success
+                  </span>
+                  <h1 className="text-3xl font-bold text-foreground mt-1">
+                    Password Updated
+                  </h1>
+                </div>
+                <img
+                  src="/logo/logo-text.png"
+                  alt="Logo"
+                  className="h-20 object-contain dark:invert mix-blend-multiply dark:mix-blend-normal contrast-[1.1] brightness-[1.05]"
+                />
+              </div>
+
+              <div className="p-5 bg-emerald-500/10 border border-emerald-500/20 rounded-2xl flex flex-col items-center text-center gap-4">
+                <div className="w-12 h-12 bg-emerald-500/20 rounded-xl flex items-center justify-center">
+                  <CheckCircle2 className="w-6 h-6 text-emerald-500" />
+                </div>
+                <p className="text-sm text-muted-foreground leading-relaxed">
+                  Your security credentials have been successfully updated. You can now access your account with the new password.
+                </p>
+              </div>
+
+              <Button
+                className="w-full h-12 rounded-xl bg-indigo-600 hover:bg-indigo-700 dark:bg-indigo-500 dark:hover:bg-indigo-600 text-white font-bold transition-all active:scale-[0.98] border-0 shadow-sm"
+                onClick={() => router.push('/login')}
+              >
+                Log in to Portal <ArrowRight className="w-4 h-4 ml-2" />
+              </Button>
             </div>
-            <CardTitle className="text-2xl font-bold text-foreground tracking-tight">
-              Password Updated
-            </CardTitle>
-            <CardDescription className="text-muted-foreground mt-2 px-4">
-              Your security credentials have been successfully updated. You can
-              now access your account with the new password.
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="pb-10 px-8">
-            <Button
-              className="w-full h-12 rounded-xl bg-indigo-600 hover:bg-indigo-700 dark:bg-indigo-500 dark:hover:bg-indigo-600 text-white font-bold shadow-xs"
-              onClick={() => router.push('/login')}
-            >
-              Log in to Portal <ArrowRight className="w-4 h-4 ml-2" />
-            </Button>
-          </CardContent>
-        </Card>
+          </div>
+        </div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-muted/30 flex items-center justify-center p-4 text-foreground">
-      <div className="absolute top-0 left-0 w-full h-1/2 bg-gradient-to-b from-indigo-500/5 to-transparent pointer-events-none" />
+    <div className="relative min-h-screen flex items-center justify-center bg-muted/30 text-foreground animate-fade-in">
+      <div className="absolute top-6 right-6 z-50">
+        <ThemeToggle />
+      </div>
+      <div className="flex flex-col lg:flex-row w-full max-w-5xl rounded-2xl overflow-hidden shadow-2xl bg-card border border-border">
+        {/* Left Side: Illustration Image */}
+        <div className="hidden lg:flex w-1/2 bg-muted items-center justify-center relative overflow-hidden">
+          <img
+            src="/login/Data_security_05.jpg"
+            alt="Data Security"
+            className="absolute inset-0 w-full h-full object-cover dark:opacity-80"
+          />
+        </div>
 
-      <Card className="max-w-md w-full border border-border shadow-2xl rounded-3xl overflow-hidden bg-card text-card-foreground relative z-10">
-        <div className="h-2 bg-indigo-600" />
-        <CardHeader className="pt-10 pb-4 px-8">
-          <div className="flex items-center gap-2 text-indigo-600 dark:text-indigo-400 mb-6">
-            <ShieldCheck className="w-6 h-6" />
-            <span className="font-black text-sm uppercase tracking-widest">
-              J-Ledger Secure
-            </span>
+        {/* Right Side */}
+        <div className="w-full lg:w-1/2 p-8 lg:p-16 flex flex-col justify-center">
+          <div className="max-w-sm w-full mx-auto space-y-8">
+            <div className="flex items-center justify-end gap-6 text-right">
+              <div className="flex flex-col">
+                <span className="text-indigo-600 dark:text-indigo-400 font-bold text-xs uppercase tracking-widest">
+                  J-Ledger Secure
+                </span>
+                <h1 className="text-3xl font-bold text-foreground mt-1">
+                  Reset Password
+                </h1>
+                <p className="text-muted-foreground text-sm mt-1">
+                  Create a new secure password for your account
+                </p>
+              </div>
+              <img
+                src="/logo/logo-text.png"
+                alt="Logo"
+                className="h-20 object-contain dark:invert mix-blend-multiply dark:mix-blend-normal contrast-[1.1] brightness-[1.05]"
+              />
+            </div>
+
+            <form onSubmit={handleSubmit} className="space-y-5">
+              <div className="space-y-2">
+                <Label htmlFor="password">New Password</Label>
+                <div className="relative">
+                  <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground/60" />
+                  <Input
+                    id="password"
+                    type="password"
+                    placeholder="••••••••"
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    className="pl-10 h-12 bg-card text-foreground border-border rounded-xl focus:border-ring focus:ring-1 focus:ring-ring font-medium"
+                    required
+                  />
+                </div>
+
+                {/* Password Rules Checklist */}
+                <div className="mt-3 grid grid-cols-2 gap-2 p-3 bg-muted/50 rounded-2xl border border-border">
+                  <RuleItem label="8+ Characters" met={passwordRules.length} />
+                  <RuleItem label="Uppercase" met={passwordRules.upper} />
+                  <RuleItem label="Lowercase" met={passwordRules.lower} />
+                  <RuleItem label="Special Char" met={passwordRules.special} />
+                </div>
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="confirmPassword">Confirm Password</Label>
+                <div className="relative">
+                  <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground/60" />
+                  <Input
+                    id="confirmPassword"
+                    type="password"
+                    placeholder="••••••••"
+                    value={confirmPassword}
+                    onChange={(e) => setConfirmPassword(e.target.value)}
+                    className="pl-10 h-12 bg-card text-foreground border-border rounded-xl focus:border-ring focus:ring-1 focus:ring-ring font-medium"
+                    required
+                  />
+                </div>
+              </div>
+
+              <div className="pt-2">
+                <Button
+                  type="submit"
+                  disabled={isSubmitting}
+                  className="w-full h-12 rounded-xl bg-indigo-600 hover:bg-indigo-700 dark:bg-indigo-500 dark:hover:bg-indigo-600 text-white font-bold transition-all active:scale-[0.98] border-0 shadow-sm"
+                >
+                  {isSubmitting ? (
+                    <Loader2 className="w-4 h-4 animate-spin" />
+                  ) : (
+                    'Update Password'
+                  )}
+                </Button>
+              </div>
+            </form>
           </div>
-          <CardTitle className="text-2xl font-bold text-foreground tracking-tight">
-            Set Your Password
-          </CardTitle>
-          <CardDescription className="text-muted-foreground">
-            Please create a strong password to secure your administrator
-            account.
-          </CardDescription>
-        </CardHeader>
-        <CardContent className="pb-10 px-8">
-          <form onSubmit={handleSubmit} className="space-y-6">
-            <div className="space-y-2">
-              <Label htmlFor="password">New Password</Label>
-              <div className="relative">
-                <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground/60" />
-                <Input
-                  id="password"
-                  type="password"
-                  placeholder="••••••••"
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  className="pl-10 h-12 bg-card text-foreground border-border rounded-xl focus:ring-indigo-500 font-medium"
-                  required
-                />
-              </div>
-
-              {/* Password Rules Checklist */}
-              <div className="mt-3 grid grid-cols-2 gap-2 p-3 bg-muted/50 rounded-2xl border border-border">
-                <RuleItem label="8+ Characters" met={passwordRules.length} />
-                <RuleItem label="Uppercase" met={passwordRules.upper} />
-                <RuleItem label="Lowercase" met={passwordRules.lower} />
-                <RuleItem label="Special Char" met={passwordRules.special} />
-              </div>
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="confirmPassword">Confirm Password</Label>
-              <div className="relative">
-                <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground/60" />
-                <Input
-                  id="confirmPassword"
-                  type="password"
-                  placeholder="••••••••"
-                  value={confirmPassword}
-                  onChange={(e) => setConfirmPassword(e.target.value)}
-                  className="pl-10 h-12 bg-card text-foreground border-border rounded-xl focus:ring-indigo-500 font-medium"
-                  required
-                />
-              </div>
-            </div>
-
-            <div className="pt-2">
-              <Button
-                type="submit"
-                disabled={isSubmitting}
-                className="w-full h-12 rounded-xl bg-indigo-600 hover:bg-indigo-700 dark:bg-indigo-500 dark:hover:bg-indigo-600 text-white font-bold shadow-xs transition-all active:scale-[0.98]"
-              >
-                {isSubmitting ? (
-                  <Loader2 className="w-4 h-4 animate-spin" />
-                ) : (
-                  'Update Password'
-                )}
-              </Button>
-            </div>
-          </form>
-        </CardContent>
-      </Card>
+        </div>
+      </div>
     </div>
   );
 }
