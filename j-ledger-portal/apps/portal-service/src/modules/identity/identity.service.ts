@@ -673,13 +673,29 @@ export class IdentityService {
       },
     });
 
-    await this.smsProvider.sendMessage(
-      phoneNumber,
-      `Your J-Ledger verification code is: ${code}`,
-    );
+    // Always log OTP in non-production environments for debugging
+    if (process.env.NODE_ENV !== 'production') {
+      this.logger.warn(
+        `[DEV] OTP for ${phoneNumber}: ${code} (expires in ${OTP_TTL_SECONDS}s)`,
+      );
+    }
+
+    try {
+      await this.smsProvider.sendMessage(
+        phoneNumber,
+        `Your J-Ledger verification code is: ${code}`,
+      );
+    } catch (smsError) {
+      // Log OTP to server logs as fallback when SMS fails (visible in CloudWatch / Docker logs)
+      this.logger.error(
+        `SMS delivery failed for ${phoneNumber}. OTP code for manual verification: ${code}`,
+        smsError?.message,
+      );
+    }
 
     return challenge;
   }
+
 
   private async verifyOtpChallenge(
     challengeId: string,

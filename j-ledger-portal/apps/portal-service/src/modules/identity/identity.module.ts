@@ -2,7 +2,7 @@ import { Module } from '@nestjs/common';
 import { JwtModule } from '@nestjs/jwt';
 import { IdentityService } from './identity.service';
 import { IdentityController } from '../../user/identity/identity.controller';
-import { SmsProviderMockProvider } from '../integrations/providers/sms-provider.mock';
+import { AwsSnsSmSProviderProvider } from '../integrations/providers/sms-provider.aws-sns';
 import { JwtStrategy } from './jwt.strategy';
 import { IntegrationModule } from '../integration/integration.module';
 import { NotificationModule } from '../notification/notification.module';
@@ -24,7 +24,7 @@ import { NotificationModule } from '../notification/notification.module';
     IntegrationModule,
     NotificationModule,
   ],
-  providers: [IdentityService, SmsProviderMockProvider, JwtStrategy],
+  providers: [IdentityService, AwsSnsSmSProviderProvider, JwtStrategy],
   controllers: [IdentityController],
   exports: [IdentityService],
 })
