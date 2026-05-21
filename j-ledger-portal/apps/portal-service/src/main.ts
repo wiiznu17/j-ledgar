@@ -12,9 +12,9 @@ async function bootstrap() {
   // Swagger Documentation Setup
   const nodeEnv = (process.env.NODE_ENV || 'development').toLowerCase();
   const isProduction = nodeEnv === 'production';
-  const enableSwagger = process.env.ENABLE_SWAGGER === 'true';
 
-  if (!isProduction || enableSwagger) {
+  // Only enable Swagger in non-production environments to prevent API structure exposure
+  if (!isProduction) {
     const config = new DocumentBuilder()
       .setTitle('J-Ledger Portal API')
       .setDescription('The core API for J-Ledger Fintech Platform')
@@ -66,21 +66,17 @@ async function bootstrap() {
     exclude: [{ path: 'health', method: RequestMethod.GET }],
   });
 
+  if (nodeEnv === 'production' && !process.env.JLEDGER_ALLOWED_ORIGINS) {
+    throw new Error('PRODUCTION SECURITY ERROR: JLEDGER_ALLOWED_ORIGINS environment variable must be explicitly defined in production.');
+  }
+
   const allowedOrigins = process.env.JLEDGER_ALLOWED_ORIGINS
     ? process.env.JLEDGER_ALLOWED_ORIGINS.split(',').map((o) => o.trim())
-    : nodeEnv === 'production'
-      ? ['https://potayyr.site', 'https://www.potayyr.site']
-      : [
-          'http://localhost:3000',
-          'http://localhost:3001',
-          'http://localhost:3002',
-        ];
-
-  if (nodeEnv === 'production' && !process.env.JLEDGER_ALLOWED_ORIGINS) {
-    console.warn(
-      '⚠️  WARNING: JLEDGER_ALLOWED_ORIGINS not set - using hardcoded defaults. Set this env var for custom origins.',
-    );
-  }
+    : [
+        'http://localhost:3000',
+        'http://localhost:3001',
+        'http://localhost:3002',
+      ];
 
   app.enableCors({
     origin: allowedOrigins,

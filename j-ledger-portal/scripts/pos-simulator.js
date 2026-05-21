@@ -10,7 +10,7 @@ const { createHmac, randomBytes } = require('crypto');
 
 const API_BASE_URL = 'http://localhost:3000';
 const TERMINAL_ID = '33a7245a-6746-4313-a71f-e0989bc69356'; // Coffee Master POS-01
-const SECRET_KEY = 'sk_03f73f9cf5ce47eda6f0b2516b32a7d19556fbc0f1c3c9d8';
+const SECRET_KEY = process.env.TERMINAL_SECRET_KEY || 'sk_03f73f9cf5ce47eda6f0b2516b32a7d19556fbc0f1c3c9d8'; // dev default fallback
 
 async function simulatePayment(amount) {
   const timestamp = Math.floor(Date.now() / 1000).toString();
