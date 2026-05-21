@@ -100,7 +100,7 @@ See [network.md](./network.md) for detailed network architecture and configurati
 
 ---
 
-## �️ Database Management
+## 🗄️ Database Management
 
 ### Reset Database (Start Fresh)
 
@@ -153,7 +153,7 @@ If you only want to wipe the **finance** ledger data manually:
 
 ---
 
-## �️ Mode 1: Local Development (Hybrid Workflow)
+## 💻 Mode 1: Local Development (Hybrid Workflow)
 
 This is the recommended workflow for active development. It uses Docker for infrastructure (DB, Redis, Kafka) and runs the application code directly on your machine for fast feedback.
 
@@ -355,11 +355,26 @@ Migration containers will run in this order:
 
 After migrations complete, seed the database with production-safe data:
 
-```bash
-# Run portal seed (NODE_ENV=production skips admin creation and test data)
-NODE_ENV=production docker compose up portal-seed
+> [!IMPORTANT]
+> **ทำไมต้องระบุ `NODE_ENV=production`?**
+> หากไม่มีการระบุ `NODE_ENV=production` สคริปต์ของ Prisma จะถือว่าเป็นการรันในโหมด Development และพยายามสร้างบัญชีผู้ใช้งานเริ่มต้น (`admin`) เสมอ ซึ่งจะทำให้เกิดการชนกันของคีย์ในตาราง (Unique Constraint Violation) และคอนเทนเนอร์จะแครช
+> 
+> ปัจจุบันเราได้แก้ไข `docker-compose.yml` เพื่อส่งผ่านค่า `NODE_ENV` จากภายนอกเข้าไปใน Container ของ `portal-seed` เรียบร้อยแล้ว
 
-# Run finance seed (creates system accounts with zero balance)
+สั่งรันตามสภาพแวดล้อม:
+
+* **โหมดปกติ (Standard Compose):**
+  ```bash
+  NODE_ENV=production docker compose up portal-seed
+  ```
+
+* **โหมดทดสอบ (Test/Staging Compose ที่ใช้ร่วมกับ ngrok):**
+  ```bash
+  NODE_ENV=production docker compose -f docker-compose.yml -f docker-compose.test.yml up portal-seed
+  ```
+
+หลังจากรันเสร็จแล้ว ให้รัน SQL Seed ของฝั่ง **Finance Service** เพื่อจัดเตรียมบัญชีหลักยอดเริ่มต้นเป็น 0:
+```bash
 docker exec -i jledger-postgres psql -U ${POSTGRES_USER} -d ${POSTGRES_DB} < j-ledger-core/finance-service/src/main/resources/db/seed/prod_seed.sql
 ```
 
@@ -372,7 +387,7 @@ docker exec -i jledger-postgres psql -U ${POSTGRES_USER} -d ${POSTGRES_DB} < j-l
 
 **What is NOT seeded in production:**
 
-- ❌ Admin user (use manual setup - see docs/ADMIN_SETUP.md)
+- ❌ Admin user (ต้องสร้างบัญชีแรกผ่าน Admin CLI Tool - ดูรายละเอียดใน [docs/ADMIN_SETUP.md](file:///Users/wiiznu/project/fintech/docs/ADMIN_SETUP.md))
 - ❌ Test merchant and terminal data
 - ❌ Finance service settings (configure manually through admin interface)
 - ❌ Treasury bank accounts with money (configure manually)

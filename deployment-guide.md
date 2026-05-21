@@ -2,7 +2,7 @@
 
 **Domain:** `potayyr.site`
 
-คู่มือนี้สำหรับติดตั้งระบบทั้งหมดลงในเครื่องเดียวโดยใช้ Docker Compose และ Nginx เป็น Reverse Proxy
+คู่มือนี้สำหรับติดตั้งระบบทั้งหมดในระดับ Production ลงในเครื่องเดียวโดยใช้ Docker Compose และ Nginx เป็น Reverse Proxy เพื่อรองรับทราฟฟิกและการทำงานที่มั่นคงปลอดภัย
 
 ---
 
@@ -10,28 +10,28 @@
 
 ก่อนเริ่มงาน ให้ไปที่ AWS Console และตั้งค่า **Inbound Rules** (กฎขาเข้า) เพื่อเปิดทางให้ข้อมูลวิ่งเข้าเครื่องได้ดังนี้:
 
-1.  ไปที่หน้า **EC2 Dashboard** > เลือกที่ **Security Groups** ของเครื่องคุณ
-2.  คลิก **Edit inbound rules** และเพิ่มกฎดังนี้:
-    - **SSH (Port 22)**: เลือก Source เป็น **"My IP"** (แนะนำเพื่อความปลอดภัยสูงสุด ให้เข้าได้เฉพาะคอมพิวเตอร์ของคุณ)
-    - **HTTP (Port 80)**: เลือก Source เป็น **"Anywhere-IPv4"** (เพื่อให้คนทั่วไปเข้าดูเว็บได้)
-    - **HTTPS (Port 443)**: เลือก Source เป็น **"Anywhere-IPv4"** (เพื่อให้เข้าเว็บแบบปลอดภัย SSL)
-3.  กด **Save rules**
+1. ไปที่หน้า **EC2 Dashboard** > เลือกที่ **Security Groups** ของเครื่องคุณ
+2. คลิก **Edit inbound rules** และเพิ่มกฎดังนี้:
+   - **SSH (Port 22)**: เลือก Source เป็น **"My IP"** (แนะนำเพื่อความปลอดภัยสูงสุด ให้เข้าได้เฉพาะคอมพิวเตอร์ของคุณ)
+   - **HTTP (Port 80)**: เลือก Source เป็น **"Anywhere-IPv4"** (เพื่อให้คนทั่วไปเข้าดูเว็บได้)
+   - **HTTPS (Port 443)**: เลือก Source เป็น **"Anywhere-IPv4"** (เพื่อให้เข้าเว็บแบบปลอดภัย SSL)
+3. กด **Save rules**
 
 ## 🔑 1.5 วิธีการ SSH เข้าเครื่อง AWS
 
 การ SSH คือการ "รีโมท" เข้าไปควบคุมเครื่อง Ubuntu ผ่านหน้าจอ Terminal ของคุณ
 
-1.  **เตรียมไฟล์ Key (.pem)**: คุณต้องมีไฟล์คีย์ที่โหลดมาจาก AWS (ในที่นี้คือ `j-ledger-key.pem`)
-2.  **ตั้งค่า Permission ของคีย์**: (ทำบน Terminal ของเครื่อง Mac)
-    ```bash
-    chmod 400 j-ledger-key.pem
-    ```
-3.  **สั่งรีโมทเข้าไปในเครื่อง**:
-    ```bash
-    ssh -i "j-ledger-key.pem" ubuntu@<PUBLIC_IP_ของ_AWS>
-    ```
-    _ตัวอย่าง: `ssh -i "j-ledger-key.pem" ubuntu@13.250.xx.xx`_
-4.  พิมพ์ `yes` หากมีการถามยืนยันการเชื่อมต่อครั้งแรก
+1. **เตรียมไฟล์ Key (.pem)**: คุณต้องมีไฟล์คีย์ที่โหลดมาจาก AWS (ในที่นี้คือ `j-ledger-key.pem`)
+2. **ตั้งค่า Permission ของคีย์**: (ทำบน Terminal ของเครื่อง Mac)
+   ```bash
+   chmod 400 j-ledger-key.pem
+   ```
+3. **สั่งรีโมทเข้าไปในเครื่อง**:
+   ```bash
+   ssh -i "j-ledger-key.pem" ubuntu@<PUBLIC_IP_ของ_AWS>
+   ```
+   _ตัวอย่าง: `ssh -i "j-ledger-key.pem" ubuntu@13.250.xx.xx`_
+4. พิมพ์ `yes` หากมีการถามยืนยันการเชื่อมต่อครั้งแรก
 
 **เมื่อเห็นคำว่า `ubuntu@ip-xxx:~$` แสดงว่าคุณ "วาร์ป" เข้าไปอยู่ในเครื่อง AWS เรียบร้อยแล้วครับ!**
 
@@ -80,15 +80,15 @@ sudo usermod -aG docker $USER
 
 ### วิธีที่แนะนำ: ใช้ Git Clone
 
-1.  **สร้างโฟลเดอร์สำหรับเก็บแอป**:
-    ```bash
-    mkdir -p ~/app && cd ~/app
-    ```
-2.  **สั่ง Clone โปรเจกต์ (Repo เดียว)**:
-    ```bash
-    git clone https://github.com/wiiznu17/j-ledger.git
-    cd j-ledger
-    ```
+1. **สร้างโฟลเดอร์สำหรับเก็บแอป**:
+   ```bash
+   mkdir -p ~/app && cd ~/app
+   ```
+2. **สั่ง Clone โปรเจกต์ (Repo เดียว)**:
+   ```bash
+   git clone https://github.com/wiiznu17/j-ledger.git
+   cd j-ledger
+   ```
 
 ---
 
@@ -96,7 +96,7 @@ sudo usermod -aG docker $USER
 
 หลังจากได้โค้ดมาแล้ว ให้ตั้งค่าไฟล์สำคัญดังนี้:
 
-1.  **สร้างไฟล์ .env (แนะนำ: ใช้ script อัตโนมัติ)**:
+1. **สร้างไฟล์ .env (แนะนำ: ใช้ script อัตโนมัติ)**:
 
 ```bash
 cd ~/app/j-ledger
@@ -116,125 +116,55 @@ Script จะสร้างไฟล์ `.env` โดยอัตโนมั�
 
 **ต้องแก้ด้วยตัวเองหลัง script รัน:**
 - `JLEDGER_ALLOWED_ORIGINS=https://potayyr.site,https://admin.potayyr.site` (ระบุ Origin ของเว็บหลัก และ Admin Panel บน Vercel คั่นด้วยคอมมา เพื่ออนุญาตให้ติดต่อกับ Portal Service ได้อย่างปลอดภัย)
-- `JLEDGER_ADMIN_EMAIL` (อีเมลสำหรับ login admin ครั้งแรก)
-- `POSTGRES_USER`, `POSTGRES_DB` (ถ้าต้องการเปลี่ยนจาก default)
-- `SMTP_HOST`, `SMTP_USER`, `SMTP_PASSWORD`, `SMTP_FROM` (Email notifications)
+- `SMTP_HOST`, `SMTP_USER`, `SMTP_PASSWORD`, `SMTP_FROM` (สำหรับการส่งอีเมลแจ้งเตือนจริงในระบบ)
 - `AWS_ACCESS_KEY_ID`, `AWS_SECRET_ACCESS_KEY`, `AWS_S3_BUCKET_NAME` (ถ้าใช้ KYC จริง)
-- `FIREBASE_PROJECT_ID`, `FIREBASE_CLIENT_EMAIL`, `FIREBASE_PRIVATE_KEY` (ถ้าใช้ push notification)
 - `STRIPE_SECRET_KEY`, `STRIPE_WEBHOOK_SECRET` (ถ้าใช้ Stripe)
+- `POSTGRES_USER`, `POSTGRES_DB` (ถ้าต้องการเปลี่ยนจาก default)
 
-2.  **เริ่มระบบ (Deployment)**:
+> [!NOTE]
+> ตัวแปร `JLEDGER_ADMIN_EMAIL` และ `JLEDGER_ADMIN_PASSWORD` ที่อยู่ในระบบ seed จะถูกใช้งาน**เฉพาะในโหมดพัฒนา/ทดสอบ (Non-Production)** เท่านั้น สำหรับโหมด Production ระบบจะเพิกเฉยและข้ามตัวแปรนี้เพื่อความปลอดภัย และท่านจะต้องสร้างบัญชี Admin แรกผ่าน **Admin CLI Tool** ตามข้อ 6
 
-````bash
+2. **เริ่มระบบ (Deployment)**:
+
+```bash
 docker compose up -d --build
+```
 
-_ระบบจะทำการรัน Migration อัตโนมัติ (ผ่าน finance-migration, portal-migration) ก่อนจะเริ่มแอปหลักครับ_
+_ระบบจะทำการรัน Migration อัตโนมัติ (ผ่าน `finance-migration` และ `portal-migration` containers) ก่อนจะเริ่มแอปหลักโดยไม่มีขั้นตอนยุ่งยากครับ_
 _ตรวจสอบสถานะด้วย `docker compose ps`_
 
----
+3. **ลงข้อมูลเริ่มต้นในระดับ Production (Production Seeding)**:
 
-## 5. Local Development Mode (Hybrid)
+หลังจากระบบรันเรียบร้อยแล้ว ให้ทำการรันข้อมูลตั้งต้น (Seed) ที่เหมาะสมกับ Production โดยระบบจะเตรียมเฉพาะสิทธิ์ บทบาท (RBAC) และบัญชีระบบหลักที่จำเป็นเท่านั้น แต่จะข้ามบัญชีผู้พัฒนาและร้านค้าทดสอบเพื่อความปลอดภัย:
 
-สำหรับการพัฒนาแบบ Hybrid (Infrastructure ใน Docker, Services บน Local):
+> [!IMPORTANT]
+> **ทำไมต้องส่ง `NODE_ENV=production`?**
+> หากรันตัว Seed โดยไม่มีการระบุ `NODE_ENV=production` ตัวสคริปต์ของ Prisma จะคิดว่ารันในโหมด Development และจะพยายามสร้างบัญชีผู้ใช้งานเริ่มต้น (`admin`) เข้าไปในตารางซึ่งอาจเกิดการชนกันของข้อมูลเดิมในฐานข้อมูล (Unique Constraint/Primary Key Collision) และส่งผลให้คอนเทนเนอร์แครชได้
+> 
+> ปัจจุบันเราได้เพิ่ม `environment: - NODE_ENV=${NODE_ENV}` เข้าไปในตาราง `portal-seed` ของไฟล์ `docker-compose.yml` เพื่อให้ดึงค่าจาก Host ได้อย่างสมบูรณ์แบบแล้ว
 
-1. **ตั้งค่า .env.local**:
+สามารถสั่งรันคำสั่งเหล่านี้ได้ตามรูปแบบสภาพแวดล้อมที่ใช้งาน:
 
+* **สำหรับการรันแบบปกติ (Standard Compose):**
+  ```bash
+  NODE_ENV=production docker compose up portal-seed
+  ```
+
+* **สำหรับการรันในสภาพแวดล้อมทดสอบ (Test/Staging Compose ที่รันพอร์ต 80 ผ่าน ngrok):**
+  ```bash
+  NODE_ENV=production docker compose -f docker-compose.yml -f docker-compose.test.yml up portal-seed
+  ```
+
+หลังจากรัน Portal Seed เสร็จแล้ว ให้รัน SQL Seed ของระบบ **Finance Service** เพื่อตั้งค่าบัญชีภายในของระบบให้ยอดคงเหลือเริ่มต้นเป็น 0:
 ```bash
-cp .env.local.example .env.local
-# แก้ค่าตามต้องการ (ส่วนใหญ่ใช้ค่า default ได้)
-````
-
-2. **เริ่ม Infrastructure**:
-
-```bash
-docker compose -f docker-compose.yml -f docker-compose.dev.yml up -d postgres redis kafka zookeeper pgadmin
+docker exec -i jledger-postgres psql -U ${POSTGRES_USER} -d ${POSTGRES_DB} < j-ledger-core/finance-service/src/main/resources/db/seed/prod_seed.sql
 ```
-
-3. **รัน Services บน Local**:
-
-```bash
-# Portal Service (Monolithic - contains identity, kyc, admin, integration, audit, reporting modules)
-cd j-ledger-portal/apps/portal-service && npm run dev
-
-# Finance Service (Java)
-cd j-ledger-core/finance-service && ./mvnw spring-boot:run
-
-# Notification Worker (NestJS)
-cd j-ledger-portal/apps/notification-worker && npm run start:dev
-```
-
-> [!NOTE]
-> Local services จะเชื่อมต่อ infrastructure ผ่าน localhost (ports exposed จาก docker-compose.dev.yml)
 
 ---
 
-## 🗄️ 6. การจัดการ Database Migration
+## 🔒 5. ตั้งค่า SSL (HTTPS) ด้วย Certbot (Standalone Mode)
 
-### โครงสร้าง Database
-
-โปรเจ็คใช้ **PostgreSQL เดียว** (`jledger_db`) แต่แยก schema กัน:
-
-| Service             | Schema        | Migration Tool |
-| ------------------- | ------------- | -------------- |
-| **finance-service** | `finance`     | Flyway (SQL)   |
-| **portal-service**  | `identity`    | Prisma (ORM)   |
-| **portal-service**  | `kyc`         | Prisma (ORM)   |
-| **portal-service**  | `admin`       | Prisma (ORM)   |
-| **portal-service**  | `integration` | Prisma (ORM)   |
-
-### การรันครั้งแรก (Initial Deployment)
-
-เมื่อรัน `docker compose up -d --build` ครั้งแรก ระบบจะทำ migration อัตโนมัติ:
-
-- `finance-migration` container รัน Flyway → apply SQL migrations จาก `j-ledger-core/finance-service/src/main/resources/db/migration/`
-- `portal-migration` container รัน Prisma → apply migrations สำหรับ identity, kyc, admin, integration schemas
-
-Services หลักจะรอให้ migration เสร็จก่อนถึงจะเริ่มทำงาน
-
-### เมื่อมีการแก้ Database
-
-#### 1. Finance Service (Flyway)
-
-```bash
-# สร้าง migration file ใหม่
-# ไฟล์: j-ledger-core/finance-service/src/main/resources/db/migration/V2__your_change.sql
-# ระบุ schema ใน SQL: SET search_path TO finance, public;
-
-# Deploy migration (Production)
-docker compose up -d finance-migration
-
-# Deploy migration (Dev - Docker)
-docker compose -f docker-compose.yml -f docker-compose.dev.yml run --rm finance-migration
-```
-
-#### 2. Portal Service (Prisma)
-
-```bash
-# แก้ prisma/schema.prisma
-cd j-ledger-portal/apps/portal-service
-
-# สร้าง migration (Dev)
-npx prisma migrate dev --name your_change
-
-# Rebuild image และ deploy (Production)
-docker compose build portal-migration
-docker compose up -d portal-migration
-```
-
-### Workflow Summary
-
-**แก้ database → generate migration → รัน migration container → รัน service**
-
-> [!NOTE]
->
-> - `prisma migrate deploy` ใช้ใน production (ไม่สร้าง migration ใหม่ แต่ apply เฉพาะที่มี)
-> - `prisma migrate dev` ใช้ใน development (สร้าง migration ใหม่และ apply)
-
----
-
-## 🔒 7. ตั้งค่า SSL (HTTPS) ด้วย Certbot (Standalone Mode)
-
-เพื่อให้ป้องกันปัญหาพอร์ต 80 ชนกันระหว่าง Certbot และ Nginx ใน Docker เราจะใช้โหมด `standalone` ตามขั้นตอนที่ถูกต้องดังนี้ครับ:
+เพื่อป้องกันปัญหาพอร์ต 80 ชนกันระหว่าง Certbot และ Nginx ใน Docker เราจะใช้โหมด `standalone` ตามขั้นตอนที่ถูกต้องดังนี้ครับ:
 
 1. **ติดตั้ง Certbot:**
 
@@ -278,19 +208,56 @@ docker compose up -d portal-migration
 
 ---
 
-## 🔗 8. การเข้าใช้งานหลังติดตั้ง
+## 🗄️ 6. การจัดการ Database Migration (Production)
 
-### Production Mode
+### โครงสร้าง Database
 
-- **Web Portal:** `https://potayyr.site` (ล้างคุกกี้เบราว์เซอร์ก่อนเข้าครั้งแรกถ้าเคยเข้ามาก่อน)
-- **Login:** ใช้ค่า `JLEDGER_ADMIN_EMAIL` และ `JLEDGER_ADMIN_PASSWORD` ที่ตั้งไว้ใน `.env`
-- **Backend APIs:** ยิงผ่าน `https://potayyr.site/api/...`
+โปรเจกต์ใช้ **PostgreSQL เดียว** (`jledger_db`) แต่แยก schema กันตามโมดูล:
 
-### Local Development Mode
+| Service | Schema | Migration Tool |
+| :--- | :--- | :--- |
+| **finance-service** | `finance` | Flyway (SQL) |
+| **portal-service** | `identity` | Prisma (ORM) |
+| **portal-service** | `kyc` | Prisma (ORM) |
+| **portal-service** | `admin` | Prisma (ORM) |
+| **portal-service** | `integration` | Prisma (ORM) |
 
-- **Portal Service:** `http://localhost:3000`
-- **Finance Service:** `http://localhost:8081`
-- **Notification Worker:** `http://localhost:3001`
+### การรันครั้งแรก (Initial Deployment)
+
+เมื่อรัน `docker compose up -d --build` ครั้งแรก ระบบจะทำ migration อัตโนมัติผ่าน Migration Containers:
+- `finance-migration` container รัน Flyway → apply SQL migrations จาก `j-ledger-core/finance-service/src/main/resources/db/migration/`
+- `portal-migration` container รัน Prisma → apply migrations สำหรับ identity, kyc, admin, integration schemas
+
+### เมื่อมีการอัปเดต Schema ใน Production
+
+#### 1. อัปเดต Finance Service (Flyway)
+เมื่อมีการเพิ่มไฟล์ migration ใหม่ (เช่น `V2__xxx.sql` ใน `j-ledger-core/finance-service/src/main/resources/db/migration/` โดยต้องระบุ `SET search_path TO finance, public;` ไว้ที่หัวไฟล์) ให้สั่งรัน migration container บน EC2:
+```bash
+docker compose up -d finance-migration
+```
+
+#### 2. อัปเดต Portal Service (Prisma)
+เมื่อทำการเพิ่ม Prisma Migration ใหม่บนเครื่อง local เรียบร้อยแล้ว ให้ดึงโค้ดเวอร์ชันล่าสุดมาที่เครื่อง EC2 จากนั้นทำการ rebuild และ deploy ตัว migration container:
+```bash
+docker compose build portal-migration
+docker compose up -d portal-migration
+```
+
+---
+
+## 🔗 7. การเข้าใช้งานหลังติดตั้ง (Production Access)
+
+- **Web Portal:** `https://potayyr.site`
+- **Login:** ในโหมด Production จะไม่มีการสร้างบัญชี Admin เริ่มต้นผ่าน Seed Script เพื่อความปลอดภัยสูงสุด ท่านต้องทำการสร้างบัญชีแรกที่เป็น `SUPER_ADMIN` ด้วยตัวเองผ่าน **Admin CLI Tool** ภายใน Container (ดูคู่มือแบบละเอียดใน [ADMIN_SETUP.md](file:///Users/wiiznu/project/fintech/docs/ADMIN_SETUP.md)):
+  ```bash
+  docker exec -it jledger-portal node dist/src/cli/create-admin.js <username> <password> <email>
+  ```
+  _ตัวอย่าง:_
+  ```bash
+  docker exec -it jledger-portal node dist/src/cli/create-admin.js admin "MySecurePassword123!" admin@potayyr.site
+  ```
+  เมื่อสร้างสำเร็จแล้ว ให้เข้าสู่ระบบด้วยบัญชีดังกล่าวผ่านหน้าเว็บ
+- **Backend APIs:** ติดต่อผ่าน `https://potayyr.site/api/...`
 
 > [!IMPORTANT]
-> **Database Security**: สังเกตว่าพอร์ต 5432, 6379 จะไม่ถูกเปิดออกมาข้างนอกเครื่องใน production เพื่อป้องกันการเจาะระบบ ทุกอย่างสื่อสารกันภายใน Docker Network
+> **Database & Infrastructure Security**: ในโหมด Production สังเกตว่าพอร์ตฐานข้อมูลและระบบภายใน เช่น PostgreSQL (5432) หรือ Redis (6379) จะไม่ถูกเปิดออกภายนอกเครื่องเลย ทุกบริการจะสื่อสารกันภายในระบบปิดของ Docker Network เพื่อป้องกันการเจาะระบบและการโจมตีจากภายนอก 100%

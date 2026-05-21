@@ -1,55 +1,62 @@
 import { Injectable, Logger } from '@nestjs/common';
+import { KafkaProducerService } from '../../modules/notification/kafka-producer.service';
+import { KafkaTopic } from '@repo/dto';
 
 @Injectable()
 export class MailService {
   private readonly logger = new Logger(MailService.name);
 
+  constructor(private readonly kafkaProducer: KafkaProducerService) {}
+
   /**
-   * Mock sending an invitation email to a new staff member.
-   * In a real application, this would integrate with AWS SES, SendGrid, etc.
+   * Publish an admin invitation email event to Kafka.
    */
   async sendAdminInvite(email: string, token: string): Promise<void> {
-    const adminWebUrl = process.env.ADMIN_WEB_URL || '';
+    const adminWebUrl = process.env.ADMIN_WEB_URL || 'http://localhost:3002';
     const setupLink = `${adminWebUrl}/setup-account?token=${token}&email=${encodeURIComponent(email)}`;
 
-    this.logger.log(`
-=========================================================
-📩 [MOCK EMAIL] ADMIN INVITATION
-=========================================================
-To: ${email}
-Subject: Welcome to J-Ledger Admin Portal!
+    this.logger.log(`Publishing ADMIN_INVITE event to Kafka for ${email}`);
 
-You have been invited to join the J-Ledger Admin team.
-Please click the link below to set up your password:
-
-🔗 ${setupLink}
-
-This link will expire in 24 hours.
-=========================================================
-    `);
+    try {
+      await this.kafkaProducer.emit(KafkaTopic.SECURITY_EVENTS, {
+        userId: 'SYSTEM',
+        eventType: 'ADMIN_INVITE',
+        metadata: {
+          email,
+          setupLink,
+        },
+        timestamp: new Date().toISOString(),
+        referenceId: `invite-${Date.now()}`,
+      });
+      this.logger.log(`ADMIN_INVITE event published to Kafka successfully.`);
+    } catch (error) {
+      this.logger.error(`Failed to publish ADMIN_INVITE event: ${error.message}`);
+    }
   }
 
   /**
-   * Mock sending a password reset email to an existing staff member.
+   * Publish a password reset email event to Kafka.
    */
   async sendPasswordReset(email: string, token: string): Promise<void> {
     const adminWebUrl = process.env.ADMIN_WEB_URL || 'http://localhost:3002';
     const resetLink = `${adminWebUrl}/reset-password?token=${token}&email=${encodeURIComponent(email)}`;
 
-    this.logger.log(`
-=========================================================
-📩 [MOCK EMAIL] PASSWORD RESET REQUEST
-=========================================================
-To: ${email}
-Subject: Reset your J-Ledger Admin Password
+    this.logger.log(`Publishing ADMIN_PASSWORD_RESET event to Kafka for ${email}`);
 
-We received a request to reset your admin password.
-Please click the link below to choose a new password:
-
-🔗 ${resetLink}
-
-If you did not request this, please ignore this email.
-=========================================================
-    `);
+    try {
+      await this.kafkaProducer.emit(KafkaTopic.SECURITY_EVENTS, {
+        userId: 'SYSTEM',
+        eventType: 'ADMIN_PASSWORD_RESET',
+        metadata: {
+          email,
+          resetLink,
+        },
+        timestamp: new Date().toISOString(),
+        referenceId: `reset-${Date.now()}`,
+      });
+      this.logger.log(`ADMIN_PASSWORD_RESET event published to Kafka successfully.`);
+    } catch (error) {
+      this.logger.error(`Failed to publish ADMIN_PASSWORD_RESET event: ${error.message}`);
+    }
   }
 }

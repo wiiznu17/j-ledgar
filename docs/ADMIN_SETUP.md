@@ -1,61 +1,83 @@
-# Admin User Setup Guide (Production)
+# 🛡️ คู่มือการตั้งค่าบัญชี Admin คนแรกในระบบ (Production Setup)
 
-This guide explains how to set up the first admin user in production without using seed scripts.
+ในระบบ **J-Ledger** โหมด Production จะไม่มีการสร้างบัญชีผู้ดูแลระบบ (Admin User) ผ่านการรัน Seed Script อัตโนมัติ เพื่อความปลอดภัยสูงสุดและป้องกันการรั่วไหลของรหัสผ่านเริ่มต้น ดังนั้นคุณจะต้องสร้างบัญชีผู้ดูแลระบบคนแรกที่มีบทบาทเป็น `SUPER_ADMIN` ด้วยตัวเองตามขั้นตอนในเอกสารนี้
 
-## Why Not Use Seed Scripts in Production?
+---
 
-Seed scripts in production pose security risks:
-- Hardcoded passwords or environment variables may leak
-- Accidental password resets when re-running seeds
-- Test data contamination in production database
-- Lack of audit trail for admin account creation
+## 🚀 วิธีที่แนะนำและปลอดภัยที่สุด: Admin CLI Tool (Highly Recommended)
 
-## Setup Methods
+วิธีการใช้งาน CLI Tool เป็นวิธีมาตรฐานที่เป็นทางการและปลอดภัยที่สุด เนื่องจากไม่ต้องยิง HTTP endpoint ชั่วคราว และไม่ต้องเขียนคำสั่ง SQL ดิบลงใน Database โดยตรง
 
-### Method 1: Manual Database Insertion (Recommended for First Admin)
+### 1. วิธีสร้าง Admin ในโหมด Production (ผ่าน Docker Container)
 
-Use this method for the initial admin setup when no admin exists yet.
-
-#### Step 1: Connect to PostgreSQL
+รันคำสั่งด้านล่างนี้บนเครื่อง Production Server โดยระบุ `<username>`, `<password>`, และ `<email>` ที่คุณต้องการ:
 
 ```bash
-# Using docker exec
+docker exec -it jledger-portal node dist/src/cli/create-admin.js <username> <password> <email>
+```
+
+**ตัวอย่างเช่น:**
+```bash
+docker exec -it jledger-portal node dist/src/cli/create-admin.js admin "MySecurePassword123!" admin@potayyr.site
+```
+
+ระบบจะทำการ:
+1. เชื่อมต่อฐานข้อมูล PostgreSQL โดยตรงภายในเครือข่าย Docker Network อย่างปลอดภัย
+2. ตรวจสอบว่ามีผู้ใช้นี้อยู่แล้วหรือไม่ (ป้องกันการสร้างซ้ำ)
+3. เข้ารหัสผ่านด้วยฟังก์ชัน `bcryptjs`
+4. สร้างบัญชีผู้ใช้ในตาราง `staffs` และกำหนดบทบาท `SUPER_ADMIN` ให้โดยอัตโนมัติ
+
+---
+
+### 2. วิธีใช้งานในโหมดพัฒนา (Local Development)
+
+หากคุณกำลังพัฒนาแอปในโหมด Local Hybrid หรือต้องการทดสอบ CLI:
+
+```bash
+# ย้ายไปที่โฟลเดอร์ portal-service
+cd j-ledger-portal/apps/portal-service
+
+# รันสคริปต์ผ่าน tsx
+npx tsx src/cli/create-admin.ts <username> <password> <email>
+
+# หรือใช้ npm script ที่เตรียมไว้
+npm run create-admin -- <username> <password> <email>
+```
+
+---
+
+## ⚠️ วิธีสำรอง: Manual Database Insertion (กรณีฉุกเฉินเท่านั้น)
+
+> [!WARNING]
+> วิธีการด้านล่างนี้จัดทำไว้เป็นทางเลือก/กรณีฉุกเฉินเท่านั้น ไม่แนะนำให้ใช้เป็นวิธีหลักในสภาพแวดล้อมจริง (Production) แนะนำให้ใช้ **Admin CLI Tool** เป็นหลัก
+
+การแทรกข้อมูลลงใน PostgreSQL โดยตรงด้วยคำสั่ง SQL ต้องทำด้วยความระมัดระวังเป็นพิเศษ เนื่องจากใช้ระบบแยก Schema และมีข้อจำกัดเรื่องบทบาท (RBAC) หากจำเป็นต้องทำ ให้ปฏิบัติตามขั้นตอนดังนี้:
+
+### ขั้นตอนที่ 1: เชื่อมต่อ PostgreSQL
+```bash
 docker exec -it jledger-postgres psql -U ${POSTGRES_USER} -d ${POSTGRES_DB}
-
-# Or using psql directly if port is exposed
-psql -h localhost -U ${POSTGRES_USER} -d ${POSTGRES_DB}
 ```
 
-#### Step 2: Verify No Admin Exists
-
-```sql
--- Check if any admin staff exists
-SELECT id, username, email, "firstName", "lastName", "isActive" 
-FROM staff 
-WHERE username = 'admin';
-```
-
-#### Step 3: Insert Admin User
-
-First, generate a secure password hash:
-
+### ขั้นตอนที่ 2: สร้าง Password Hash
+คุณต้องเข้ารหัสผ่านล่วงหน้าด้วย `bcryptjs` ห้ามใส่รหัสผ่านที่เป็นข้อความธรรมดา (Plain Text) ลงในฐานข้อมูลเด็ดขาด:
 ```bash
-# Using Node.js
-node -e "console.log(require('bcryptjs').hashSync('YOUR_SECURE_PASSWORD', 10))"
-
-# Or use the portal-service container
 docker exec -it jledger-portal node -e "console.log(require('bcryptjs').hashSync('YOUR_SECURE_PASSWORD', 10))"
 ```
 
-Then insert the admin user:
+### ขั้นตอนที่ 3: แทรกข้อมูลลงในฐานข้อมูล
+ใน J-Ledger ตารางสำหรับระบบผู้ดูแลระบบจะอยู่ใน schema `admin` และมีการใช้ชื่อตารางแบบพหูพจน์ คอลัมน์บางตัวมีความละเอียดอ่อนในเรื่องตัวอักษรเล็ก-ใหญ่ (Case-sensitive) ให้รันคำสั่ง SQL ด้านล่างนี้:
 
 ```sql
--- Insert admin staff user
-INSERT INTO staff (username, password, email, "firstName", "lastName", "isActive", "createdAt", "updatedAt")
+-- 1. สลับไปใช้งาน schema 'admin' และ 'public'
+SET search_path TO admin, public;
+
+-- 2. แทรกข้อมูลผู้ใช้งานในตาราง staffs (สุ่ม UUID แอดมิน หรือพิมพ์เป็นค่าใดค่าหนึ่งขึ้นมาเอง เช่น '00000000-0000-0000-0000-000000000001')
+INSERT INTO staffs (id, username, password, email, "firstName", "lastName", "isActive", "createdAt", "updatedAt")
 VALUES (
+  '00000000-0000-0000-0000-000000000001',
   'admin',
-  '$2a$10$YOUR_HASHED_PASSWORD_HERE', -- Replace with actual hash
-  'admin@yourcompany.com', -- Replace with actual email
+  '$2a$10$YOUR_HASHED_PASSWORD_HERE', -- แทนที่ด้วย Hash ที่ได้จากขั้นตอนที่ 2
+  'admin@potayyr.site',
   'System',
   'Admin',
   true,
@@ -63,250 +85,20 @@ VALUES (
   NOW()
 );
 
--- Get the admin user ID
-SELECT id FROM staff WHERE username = 'admin';
+-- 3. แทรกข้อมูลเพื่อเชื่อมโยงบทบาทในตาราง staff_roles (สุ่ม UUID สำหรับ ID และดึง ID ของบทบาท SUPER_ADMIN อัตโนมัติ)
+INSERT INTO staff_roles (id, "staffId", "roleId", "createdAt")
+VALUES (
+  '00000000-0000-0000-0000-000000000002',
+  '00000000-0000-0000-0000-000000000001', -- อ้างอิง ID ของ staffs ด้านบน
+  (SELECT id FROM roles WHERE name = 'SUPER_ADMIN' LIMIT 1),
+  NOW()
+);
 ```
 
-#### Step 4: Assign SUPER_ADMIN Role
+---
 
-```sql
--- Get SUPER_ADMIN role ID
-SELECT id FROM roles WHERE name = 'SUPER_ADMIN';
+## 🔒 แนวทางปฏิบัติด้านความปลอดภัยหลังการตั้งค่า (Post-Setup Security)
 
--- Assign role to admin (replace ADMIN_ID and ROLE_ID with actual values)
-INSERT INTO "staffRole" ("staffId", "roleId")
-VALUES (ADMIN_ID, ROLE_ID);
-```
-
-#### Step 5: Verify Setup
-
-```sql
--- Verify admin user with role
-SELECT 
-  s.username, 
-  s.email, 
-  s."isActive",
-  r.name as role_name
-FROM staff s
-JOIN "staffRole" sr ON s.id = sr."staffId"
-JOIN roles r ON sr."roleId" = r.id
-WHERE s.username = 'admin';
-```
-
-### Method 2: Admin Setup API Endpoint
-
-Create a dedicated admin setup endpoint that:
-- Only works when no admin exists
-- Requires a special setup token (one-time use)
-- Creates the first admin with provided credentials
-- Disables itself after first use
-
-#### Implementation Example
-
-Add to portal-service:
-
-```typescript
-// apps/portal-service/src/modules/admin/admin-setup.controller.ts
-import { Controller, Post, Body, BadRequestException } from '@nestjs/common';
-import { StaffService } from '../staff/staff.service';
-import { PrismaService } from '../../core/prisma/prisma.service';
-
-@Controller('admin/setup')
-export class AdminSetupController {
-  constructor(
-    private staffService: StaffService,
-    private prisma: PrismaService,
-  ) {}
-
-  @Post()
-  async setupFirstAdmin(@Body() dto: SetupAdminDto) {
-    // Check if setup token is valid
-    if (dto.setupToken !== process.env.ADMIN_SETUP_TOKEN) {
-      throw new BadRequestException('Invalid setup token');
-    }
-
-    // Check if admin already exists
-    const existingAdmin = await this.prisma.staff.findUnique({
-      where: { username: 'admin' },
-    });
-
-    if (existingAdmin) {
-      throw new BadRequestException('Admin already exists');
-    }
-
-    // Create admin user
-    const admin = await this.staffService.createStaff({
-      username: 'admin',
-      password: dto.password,
-      email: dto.email,
-      firstName: dto.firstName,
-      lastName: dto.lastName,
-    });
-
-    // Assign SUPER_ADMIN role
-    const superAdminRole = await this.prisma.role.findUnique({
-      where: { name: 'SUPER_ADMIN' },
-    });
-
-    if (superAdminRole) {
-      await this.prisma.staffRole.create({
-        data: {
-          staffId: admin.id,
-          roleId: superAdminRole.id,
-        },
-      });
-    }
-
-    return { success: true, message: 'Admin setup completed' };
-  }
-}
-```
-
-#### Usage
-
-```bash
-# Generate a one-time setup token
-export ADMIN_SETUP_TOKEN=$(openssl rand -hex 32)
-
-# Call the setup endpoint
-curl -X POST http://localhost:3000/admin/setup \
-  -H "Content-Type: application/json" \
-  -d '{
-    "setupToken": "'$ADMIN_SETUP_TOKEN'",
-    "username": "admin",
-    "password": "YourSecurePassword123!",
-    "email": "admin@yourcompany.com",
-    "firstName": "System",
-    "lastName": "Admin"
-  }'
-
-# After successful setup, remove or invalidate the token
-unset ADMIN_SETUP_TOKEN
-```
-
-### Method 3: Admin CLI Tool
-
-Create a CLI command to create the first admin user.
-
-#### Implementation
-
-Add to portal-service:
-
-```typescript
-// apps/portal-service/src/cli/create-admin.ts
-import { PrismaClient } from '@prisma/client';
-import * as bcrypt from 'bcryptjs';
-
-const prisma = new PrismaClient();
-
-async function createAdmin() {
-  const username = process.argv[2];
-  const password = process.argv[3];
-  const email = process.argv[4];
-
-  if (!username || !password || !email) {
-    console.log('Usage: npm run create-admin <username> <password> <email>');
-    process.exit(1);
-  }
-
-  // Check if admin already exists
-  const existing = await prisma.staff.findUnique({
-    where: { username },
-  });
-
-  if (existing) {
-    console.log('Admin user already exists');
-    process.exit(1);
-  }
-
-  // Create admin
-  const hashedPassword = await bcrypt.hash(password, 10);
-  const admin = await prisma.staff.create({
-    data: {
-      username,
-      password: hashedPassword,
-      email,
-      firstName: 'System',
-      lastName: 'Admin',
-      isActive: true,
-    },
-  });
-
-  // Assign SUPER_ADMIN role
-  const superAdminRole = await prisma.role.findUnique({
-    where: { name: 'SUPER_ADMIN' },
-  });
-
-  if (superAdminRole) {
-    await prisma.staffRole.create({
-      data: {
-        staffId: admin.id,
-        roleId: superAdminRole.id,
-      },
-    });
-  }
-
-  console.log('Admin user created successfully');
-  await prisma.$disconnect();
-}
-
-createAdmin();
-```
-
-#### Add to package.json
-
-```json
-{
-  "scripts": {
-    "create-admin": "tsx src/cli/create-admin.ts"
-  }
-}
-```
-
-#### Usage
-
-```bash
-# Run inside the portal-service container
-docker exec -it jledger-portal npm run create-admin admin "SecurePass123!" admin@yourcompany.com
-```
-
-## Post-Setup Steps
-
-After creating the first admin user:
-
-1. **Change the password immediately** after first login
-2. **Enable 2FA** if available
-3. **Create additional admin accounts** through the admin interface
-4. **Remove or disable** the setup endpoint/CLI tool
-5. **Audit the database** to ensure no other unintended users exist
-6. **Set up monitoring** for admin account creation
-
-## Security Best Practices
-
-1. **Use strong passwords** (minimum 12 characters, mixed case, numbers, symbols)
-2. **Never commit** setup tokens or passwords to version control
-3. **Use environment variables** for sensitive configuration
-4. **Limit admin account creation** to specific IP addresses or times
-5. **Enable audit logging** for all admin operations
-6. **Regularly rotate** admin passwords
-7. **Use separate admin accounts** for different purposes (e.g., operations, security, compliance)
-
-## Running Seed in Production
-
-If you need to run seed scripts in production (for system data only):
-
-```bash
-# Set NODE_ENV to production
-export NODE_ENV=production
-
-# Run seed - it will skip admin creation and test data
-docker compose -f docker-compose.yml -f docker-compose.prod.yml up portal-seed
-```
-
-The seed script will:
-- ✅ Seed permissions and roles
-- ✅ Seed loyalty rules
-- ✅ Seed system partner
-- ❌ Skip admin user creation
-- ❌ Skip test merchant/terminal data
-- ❌ Skip finance service API calls
+1. **เปลี่ยนรหัสผ่านทันที (Password Rotation):** หลังจากล็อกอินเข้าสู่ Web Portal สำเร็จในครั้งแรก ให้ทำการเปลี่ยนรหัสผ่านเป็นรหัสผ่านส่วนตัวที่ปลอดภัยทันที
+2. **สร้างบัญชีบุคคลแยก (Individual Accounts):** สำหรับการทำงานประจำวันของทีมงานคนอื่นๆ ให้สร้างบัญชีแยกรายคนผ่านทางเมนู **Staff Management** บน Admin Dashboard และกำหนดสิทธิ์ (RBAC) ให้เหมาะสมตามหน้าที่ หลีกเลี่ยงการใช้บัญชีสิทธิ์สูงสุด `SUPER_ADMIN` ร่วมกันหลายคน
+3. **ตรวจสอบสิทธิ์ในตาราง:** คุณสามารถตรวจสอบผู้ที่มีสิทธิ์ดูแลระบบทั้งหมดได้ผ่านการใช้คำสั่งคิวรี SQL ตรวจสอบตาราง `staffs` และ `staff_roles` อย่างสม่ำเสมอเพื่อความปลอดภัยของระบบ
