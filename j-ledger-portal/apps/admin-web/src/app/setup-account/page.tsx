@@ -151,7 +151,8 @@ function SetupAccountForm() {
                   <AlertCircle className="w-6 h-6 text-rose-500" />
                 </div>
                 <p className="text-sm text-muted-foreground leading-relaxed">
-                  This invitation link is no longer valid or has expired. Please contact your system administrator to request a new invitation.
+                  This invitation link is no longer valid or has expired. Please
+                  contact your system administrator to request a new invitation.
                 </p>
               </div>
 
@@ -209,7 +210,8 @@ function SetupAccountForm() {
                   <Sparkles className="w-6 h-6 text-indigo-600 dark:text-indigo-400" />
                 </div>
                 <p className="text-sm text-muted-foreground leading-relaxed">
-                  Welcome aboard! Your administrator account is now active and ready. You can now log in to the portal.
+                  Welcome aboard! Your administrator account is now active and
+                  ready. You can now log in to the portal.
                 </p>
               </div>
 

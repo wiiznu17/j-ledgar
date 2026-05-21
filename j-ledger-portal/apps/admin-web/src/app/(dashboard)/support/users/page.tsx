@@ -57,26 +57,12 @@ export default function UsersPage() {
     try {
       const response = await userRequester.getWalletUserStats();
       const safeStats = response?.data ?? response ?? {};
-      setStats(
-        {
-          total:
-            typeof safeStats.total === 'number'
-              ? safeStats.total
-              : 0,
-          active:
-            typeof safeStats.active === 'number'
-              ? safeStats.active
-              : 0,
-          pending:
-            typeof safeStats.pending === 'number'
-              ? safeStats.pending
-              : 0,
-          blocked:
-            typeof safeStats.blocked === 'number'
-              ? safeStats.blocked
-              : 0,
-        },
-      );
+      setStats({
+        total: typeof safeStats.total === 'number' ? safeStats.total : 0,
+        active: typeof safeStats.active === 'number' ? safeStats.active : 0,
+        pending: typeof safeStats.pending === 'number' ? safeStats.pending : 0,
+        blocked: typeof safeStats.blocked === 'number' ? safeStats.blocked : 0,
+      });
     } catch (error) {
       console.error('[USERS_PAGE] Stats error:', error);
     }

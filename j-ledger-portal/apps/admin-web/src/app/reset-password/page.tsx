@@ -148,7 +148,8 @@ function ResetPasswordForm() {
                   <AlertCircle className="w-6 h-6 text-rose-500" />
                 </div>
                 <p className="text-sm text-muted-foreground leading-relaxed">
-                  This password reset link is no longer valid. Please request a new one from the administrator or your login page.
+                  This password reset link is no longer valid. Please request a
+                  new one from the administrator or your login page.
                 </p>
               </div>
 
@@ -206,7 +207,8 @@ function ResetPasswordForm() {
                   <CheckCircle2 className="w-6 h-6 text-emerald-500" />
                 </div>
                 <p className="text-sm text-muted-foreground leading-relaxed">
-                  Your security credentials have been successfully updated. You can now access your account with the new password.
+                  Your security credentials have been successfully updated. You
+                  can now access your account with the new password.
                 </p>
               </div>
 

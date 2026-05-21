@@ -62,7 +62,7 @@ export class KafkaService implements OnModuleInit, OnModuleDestroy {
           }
         } catch (error) {
           this.logger.error(
-             `Error processing message on topic ${topic}: ${error.message}`,
+            `Error processing message on topic ${topic}: ${error.message}`,
           );
         }
       },
@@ -109,10 +109,16 @@ export class KafkaService implements OnModuleInit, OnModuleDestroy {
           </div>
         `;
         try {
-          await this.emailService.sendEmail(email, 'Welcome to J-Ledger Admin Portal!', html);
+          await this.emailService.sendEmail(
+            email,
+            'Welcome to J-Ledger Admin Portal!',
+            html,
+          );
           this.logger.log(`Successfully sent ADMIN_INVITE email to ${email}`);
         } catch (error) {
-          this.logger.error(`Failed to send ADMIN_INVITE email: ${error.message}`);
+          this.logger.error(
+            `Failed to send ADMIN_INVITE email: ${error.message}`,
+          );
         }
         return;
       }
@@ -146,10 +152,18 @@ export class KafkaService implements OnModuleInit, OnModuleDestroy {
           </div>
         `;
         try {
-          await this.emailService.sendEmail(email, 'Reset your J-Ledger Admin Password', html);
-          this.logger.log(`Successfully sent ADMIN_PASSWORD_RESET email to ${email}`);
+          await this.emailService.sendEmail(
+            email,
+            'Reset your J-Ledger Admin Password',
+            html,
+          );
+          this.logger.log(
+            `Successfully sent ADMIN_PASSWORD_RESET email to ${email}`,
+          );
         } catch (error) {
-          this.logger.error(`Failed to send ADMIN_PASSWORD_RESET email: ${error.message}`);
+          this.logger.error(
+            `Failed to send ADMIN_PASSWORD_RESET email: ${error.message}`,
+          );
         }
         return;
       }
