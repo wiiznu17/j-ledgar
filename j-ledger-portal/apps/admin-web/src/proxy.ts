@@ -22,6 +22,8 @@ export async function proxy(request: NextRequest) {
     pathname.startsWith('/_next') ||
     pathname.startsWith('/api/auth') ||
     pathname === '/login' ||
+    pathname === '/setup-account' ||
+    pathname === '/reset-password' ||
     pathname === '/' ||
     pathname.includes('.')
   ) {
