@@ -60,7 +60,7 @@ J-Ledger is a high-performance, production-ready financial ledger system designe
 
 ## 🚀 Deployment Modes
 
-J-Ledger supports 3 deployment modes:
+J-Ledger supports 4 deployment modes:
 
 ### Mode 1: Local Development (Hybrid)
 
@@ -86,6 +86,16 @@ J-Ledger supports 3 deployment modes:
 - **Database**: Single database (jledger_db) with schemas
 - **Command**: `docker compose up -d --build`
 
+### Mode 4: Development with Ports Open (Full Docker + External Access)
+
+- **Infrastructure**: Full Docker stack with exposed ports
+- **Services**: All services in Docker
+- **Nginx**: HTTP only (default.conf.example) for testing with external access (ngrok, Vercel, etc.)
+- **Database**: Single database (jledger_db) with schemas
+- **Exposed Ports**: postgres(5432), redis(6379), kafka(9092), zookeeper(2181), pgadmin(5050)
+- **Command**: `docker compose -f docker-compose.yml -f docker-compose.dev.yml -f docker-compose.test.yml up -d --build`
+- **Use Case**: Development with external frontend (Vercel), ngrok tunneling, or when you need direct DB access
+
 See [network.md](./network.md) for detailed network architecture and configuration.
 
 ---
@@ -96,7 +106,7 @@ See [network.md](./network.md) for detailed network architecture and configurati
 
 To completely reset the database and start from scratch:
 
-```bash
+````bash
 # Stop all containers and remove volumes
 docker compose down -v
 
@@ -119,9 +129,10 @@ cd j-ledger-core/finance-service && ./mvnw spring-boot:run
 
 # 3. Run the Smart Seeder (Run after Java is UP)
 cd j-ledger-portal/apps/portal-service && npx prisma db seed
-```
+````
 
 **This process ensures:**
+
 1. Both databases are completely fresh.
 2. Core system settings (MDR, VAT, Limits) are initialized in Java.
 3. Treasury bank accounts (SCB, KBank) are seeded for the dashboard.
@@ -209,11 +220,11 @@ Run each service in its own terminal:
 **Portal Service (NestJS):**
 
 ```bash
-lsof -ti:3000 | xargs kill -9  
+lsof -ti:3000 | xargs kill -9
 lsof -ti:3001 | xargs kill -9
 lsof -ti:3002 | xargs kill -9
 lsof -ti:8081 | xargs kill -9
-lsof -ti:19000 | xargs kill -9   
+lsof -ti:19000 | xargs kill -9
 ```
 
 ```bash
@@ -223,6 +234,7 @@ cd j-ledger-portal/apps/portal-service && npm run dev
 **Finance Service (Java):**
 
 Ensure your `.env` variables are exported in your terminal, as the service requires them to start.
+
 ```bash
 cd j-ledger-core/finance-service && export $(grep -v '^#' ../../.env | xargs) && ./mvnw spring-boot:run
 ```
@@ -266,7 +278,29 @@ Migrations run automatically on first startup. No manual steps required.
 Migration containers will run in this order:
 
 1. finance-migration (creates finance schema and tables)
-2. portal-migration (runs Prisma migrate deploy and seeds database)
+2. portal-migration (runs Prisma migrate deploy)
+
+### 2.5 Seed Database (After Migrations Complete)
+
+After migrations complete, seed the database with initial data:
+
+```bash
+# Run portal seed (creates permissions, roles, admin user, test data)
+docker compose -f docker-compose.yml -f docker-compose.test.yml up portal-seed
+
+# Run finance seed (creates system accounts, treasury accounts)
+docker exec -i jledger-postgres psql -U ${POSTGRES_USER} -d ${POSTGRES_DB} < j-ledger-core/finance-service/src/main/resources/db/seed/dev_seed.sql
+```
+
+**What gets seeded:**
+
+- Permissions and Roles (RBAC)
+- Admin user (username: admin, password: from JLEDGER_ADMIN_PASSWORD env var)
+- Loyalty rules
+- System partner and accounts
+- Finance service settings
+- Test merchant and terminal data (Coffee Master)
+- Treasury bank accounts (SCB: 5M THB, KBank: 2M THB)
 
 ### 3. Database Migration (When Changing Schema)
 
@@ -315,7 +349,33 @@ Migrations run automatically on first startup. No manual steps required.
 Migration containers will run in this order:
 
 1. finance-migration (creates finance schema and tables)
-2. portal-migration (runs Prisma migrate deploy and seeds database)
+2. portal-migration (runs Prisma migrate deploy)
+
+### 2.5 Seed Database (Production)
+
+After migrations complete, seed the database with production-safe data:
+
+```bash
+# Run portal seed (NODE_ENV=production skips admin creation and test data)
+NODE_ENV=production docker compose up portal-seed
+
+# Run finance seed (creates system accounts with zero balance)
+docker exec -i jledger-postgres psql -U ${POSTGRES_USER} -d ${POSTGRES_DB} < j-ledger-core/finance-service/src/main/resources/db/seed/prod_seed.sql
+```
+
+**What gets seeded in production:**
+
+- Permissions and Roles (RBAC)
+- Loyalty rules
+- System partner and accounts
+- SYSTEM_BANK_ACCOUNT (balance: 0)
+
+**What is NOT seeded in production:**
+
+- ❌ Admin user (use manual setup - see docs/ADMIN_SETUP.md)
+- ❌ Test merchant and terminal data
+- ❌ Finance service settings (configure manually through admin interface)
+- ❌ Treasury bank accounts with money (configure manually)
 
 ### 3. Database Migration (When Changing Schema)
 
@@ -363,6 +423,90 @@ docker compose up -d --build
 ```
 
 **Note:** This uses the production nginx configuration with SSL (default.conf). Requires SSL certificates at `/etc/letsencrypt/live/potayyr.site/` on the host machine.
+
+_The system will automatically handle health checks, ensuring the DB and Kafka are ready before starting the APIs._
+
+---
+
+## 🛠️ Mode 4: Development with Ports Open (Full Docker + External Access)
+
+To run the entire system in Docker with exposed ports for external access (ngrok, Vercel, etc.):
+
+### 1. Configure Environment
+
+Copy `.env.example` to `.env` and fill in the secrets.
+
+### 2. First Time Setup (Database Initialization)
+
+Migrations run automatically on first startup. No manual steps required.
+
+Migration containers will run in this order:
+
+1. finance-migration (creates finance schema and tables)
+2. portal-migration (runs Prisma migrate deploy)
+
+### 2.5 Seed Database (Development)
+
+After migrations complete, seed the database with development data:
+
+```bash
+# Run portal seed (creates permissions, roles, admin user, test data)
+docker compose -f docker-compose.yml -f docker-compose.dev.yml -f docker-compose.test.yml up portal-seed
+
+# Run finance seed (creates system accounts, treasury accounts with test money)
+docker exec -i jledger-postgres psql -U ${POSTGRES_USER} -d ${POSTGRES_DB} < j-ledger-core/finance-service/src/main/resources/db/seed/dev_seed.sql
+```
+
+**What gets seeded:**
+
+- Permissions and Roles (RBAC)
+- Admin user (username: admin, password: from JLEDGER_ADMIN_PASSWORD env var)
+- Loyalty rules
+- System partner and accounts
+- Finance service settings
+- Test merchant and terminal data (Coffee Master)
+- Treasury bank accounts (SCB: 5M THB, KBank: 2M THB)
+
+### 3. Database Migration (When Changing Schema)
+
+When you need to modify database schema:
+
+**Step 1: Create Migration File Locally**
+
+```bash
+# For Finance Service (Flyway)
+# Create: j-ledger-core/finance-service/src/main/resources/db/migration/V2__your_change.sql
+# Remember to include: SET search_path TO finance, public;
+```
+
+**Step 2: Rebuild and Restart**
+
+```bash
+docker compose -f docker-compose.yml -f docker-compose.dev.yml -f docker-compose.test.yml up -d --build
+```
+
+Migration containers will automatically apply the new migrations.
+
+### 4. Launch Everything
+
+```bash
+docker compose -f docker-compose.yml -f docker-compose.dev.yml -f docker-compose.test.yml up -d --build
+```
+
+**Note:** This combines docker-compose.dev.yml (exposes ports) with docker-compose.test.yml (HTTP nginx config). Use this when you need:
+
+- External frontend access (Vercel, ngrok)
+- Direct database access from your machine
+- pgadmin for database management
+- Kafka access from external tools
+
+**Exposed Ports:**
+
+- postgres: 5432
+- redis: 6379
+- kafka: 9092
+- zookeeper: 2181
+- pgadmin: 5050
 
 _The system will automatically handle health checks, ensuring the DB and Kafka are ready before starting the APIs._
 

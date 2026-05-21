@@ -6,21 +6,28 @@ import axios from 'axios';
 const prisma = new PrismaClient();
 
 async function main() {
+  const isProduction = process.env.NODE_ENV === 'production';
+
   console.log('🧹 Cleaning up old seed data...');
   try {
-    // Delete in reverse order of dependencies
-    await prisma.terminal.deleteMany({ where: { hardwareId: 'HW-TM-001' } });
-    await prisma.merchant.deleteMany({
-      where: { name: 'Coffee Master - Sukhumvit Branch' },
-    });
-    await prisma.brand.deleteMany({ where: { name: 'Coffee Master' } });
-    await prisma.partner.deleteMany({
-      where: { taxId: { in: ['0000000000000', '1234567890123'] } },
-    });
-    await prisma.user.deleteMany({
-      where: { phoneNumber: { in: ['0811111111', '0812345678'] } },
-    });
-    console.log('✅ Cleanup completed.');
+    // Only cleanup test data in non-production environments
+    if (!isProduction) {
+      // Delete in reverse order of dependencies
+      await prisma.terminal.deleteMany({ where: { hardwareId: 'HW-TM-001' } });
+      await prisma.merchant.deleteMany({
+        where: { name: 'Coffee Master - Sukhumvit Branch' },
+      });
+      await prisma.brand.deleteMany({ where: { name: 'Coffee Master' } });
+      await prisma.partner.deleteMany({
+        where: { taxId: { in: ['0000000000000', '1234567890123'] } },
+      });
+      await prisma.user.deleteMany({
+        where: { phoneNumber: { in: ['0811111111', '0812345678'] } },
+      });
+      console.log('✅ Cleanup completed.');
+    } else {
+      console.log('ℹ️ Skipping cleanup in production environment.');
+    }
   } catch (e) {
     console.warn('⚠️ Cleanup warning (might be first run):', e);
   }
@@ -422,42 +429,49 @@ async function main() {
     }
   }
 
-  // 4. Create/Update Default Admin User
-  const seedAdminEmail = process.env.JLEDGER_ADMIN_EMAIL || 'admin@jledger.com';
-  const seedAdminPasswordRaw =
-    process.env.JLEDGER_ADMIN_PASSWORD || 'password123';
-  const adminPassword = await bcrypt.hash(seedAdminPasswordRaw, 10);
-  const adminUser = await prisma.staff.upsert({
-    where: { username: 'admin' },
-    update: {
-      email: seedAdminEmail,
-      password: adminPassword,
-    },
-    create: {
-      username: 'admin',
-      password: adminPassword,
-      email: seedAdminEmail,
-      firstName: 'System',
-      lastName: 'Admin',
-      isActive: true,
-    },
-  });
+  // 4. Create/Update Default Admin User (only in non-production)
+  if (!isProduction) {
+    const seedAdminEmail =
+      process.env.JLEDGER_ADMIN_EMAIL || 'admin@jledger.com';
+    const seedAdminPasswordRaw =
+      process.env.JLEDGER_ADMIN_PASSWORD || 'password123';
+    const adminPassword = await bcrypt.hash(seedAdminPasswordRaw, 10);
+    const adminUser = await prisma.staff.upsert({
+      where: { username: 'admin' },
+      update: {
+        email: seedAdminEmail,
+        password: adminPassword,
+      },
+      create: {
+        username: 'admin',
+        password: adminPassword,
+        email: seedAdminEmail,
+        firstName: 'System',
+        lastName: 'Admin',
+        isActive: true,
+      },
+    });
 
-  const superAdminRoleId = createdRolesMap.get('SUPER_ADMIN');
-  if (superAdminRoleId) {
-    await prisma.staffRole.upsert({
-      where: {
-        staffId_roleId: {
+    const superAdminRoleId = createdRolesMap.get('SUPER_ADMIN');
+    if (superAdminRoleId) {
+      await prisma.staffRole.upsert({
+        where: {
+          staffId_roleId: {
+            staffId: adminUser.id,
+            roleId: superAdminRoleId,
+          },
+        },
+        update: {},
+        create: {
           staffId: adminUser.id,
           roleId: superAdminRoleId,
         },
-      },
-      update: {},
-      create: {
-        staffId: adminUser.id,
-        roleId: superAdminRoleId,
-      },
-    });
+      });
+    }
+  } else {
+    console.log(
+      'ℹ️ Skipping admin user creation in production. Use admin setup process instead.',
+    );
   }
 
   // 5. Seed Loyalty Rules
@@ -516,142 +530,148 @@ async function main() {
     process.env.JLEDGER_INTERNAL_SECRET || 'default_internal_secret';
   const headers = { 'X-Internal-Secret': internalSecret };
 
-  console.log(
-    '💰 Seeding Finance Service core settings and system accounts...',
-  );
-  try {
-    // 6.1. Seed System Settings
-    await axios.put(
-      `${financeUrl}/api/v1/system/settings`,
-      {
-        systemName: 'J-Ledger',
-        companyName: 'J-Ledger Co., Ltd.',
-        supportEmail: 'support@jledger.com',
-        supportPhone: '+66-2-123-4567',
-        defaultCurrency: 'THB',
-        businessHoursStart: '09:00',
-        businessHoursEnd: '17:00',
-        emailNotificationsEnabled: true,
-        smsNotificationsEnabled: true,
-        kycRequired: true,
-        twoFactorAuthRequired: false,
-        defaultLanguage: 'th',
-        timezone: 'Asia/Bangkok',
-        sessionTimeoutMinutes: 30,
-        registrationMode: 'open',
-        transferFeeFixed: 5.0,
-        transferFeePercentage: 0.01,
-        topUpFeeFixed: 0,
-        topUpFeePercentage: 0,
-        billPaymentFeeFixed: 10.0,
-        billPaymentFeePercentage: 0.005,
-        withdrawalFeeFixed: 25.0,
-        withdrawalFeePercentage: 0.02,
-        minimumFee: 1.0,
-        dailyTransactionLimit: 500000.0,
-        monthlyTransactionLimit: 5000000.0,
-        perTransactionLimit: 100000.0,
-        walletBalanceLimit: 1000000.0,
-        dailyTopUpLimit: 200000.0,
-      },
-      { headers },
+  // Only seed finance service data in non-production environments
+  if (!isProduction) {
+    console.log(
+      '💰 Seeding Finance Service core settings and system accounts...',
     );
-    console.log('✅ System settings updated.');
-
-    // 6.2. Ensure Core System Accounts exist
-    let systemAccounts = (systemPartner.financeAccounts as any) || {};
-
-    // 6.2.1. SYSTEM_BANK_ACCOUNT
     try {
-      const existingAccounts = await axios.get(
-        `${financeUrl}/api/v1/accounts/user/00000000-0000-0000-0000-000000000000`,
+      // 6.1. Seed System Settings
+      await axios.put(
+        `${financeUrl}/api/v1/system/settings`,
+        {
+          systemName: 'J-Ledger',
+          companyName: 'J-Ledger Co., Ltd.',
+          supportEmail: 'support@jledger.com',
+          supportPhone: '+66-2-123-4567',
+          defaultCurrency: 'THB',
+          businessHoursStart: '09:00',
+          businessHoursEnd: '17:00',
+          emailNotificationsEnabled: true,
+          smsNotificationsEnabled: true,
+          kycRequired: true,
+          twoFactorAuthRequired: false,
+          defaultLanguage: 'th',
+          timezone: 'Asia/Bangkok',
+          sessionTimeoutMinutes: 30,
+          registrationMode: 'open',
+          transferFeeFixed: 5.0,
+          transferFeePercentage: 0.01,
+          topUpFeeFixed: 0,
+          topUpFeePercentage: 0,
+          billPaymentFeeFixed: 10.0,
+          billPaymentFeePercentage: 0.005,
+          withdrawalFeeFixed: 25.0,
+          withdrawalFeePercentage: 0.02,
+          minimumFee: 1.0,
+          dailyTransactionLimit: 500000.0,
+          monthlyTransactionLimit: 5000000.0,
+          perTransactionLimit: 100000.0,
+          walletBalanceLimit: 1000000.0,
+          dailyTopUpLimit: 200000.0,
+        },
         { headers },
       );
-      const hasBankAcc = existingAccounts.data.some(
-        (acc: any) => acc.account_name === 'SYSTEM_BANK_ACCOUNT',
-      );
+      console.log('✅ System settings updated.');
 
-      if (!hasBankAcc) {
-        await axios.post(
-          `${financeUrl}/api/v1/accounts`,
-          {
-            user_id: '00000000-0000-0000-0000-000000000000',
-            account_name: 'SYSTEM_BANK_ACCOUNT',
-            currency: 'THB',
-            account_type: 'BANK_CLEARING',
-          },
+      // 6.2. Ensure Core System Accounts exist
+      let systemAccounts = (systemPartner.financeAccounts as any) || {};
+
+      // 6.2.1. SYSTEM_BANK_ACCOUNT
+      try {
+        const existingAccounts = await axios.get(
+          `${financeUrl}/api/v1/accounts/user/00000000-0000-0000-0000-000000000000`,
           { headers },
         );
-        console.log('✅ SYSTEM_BANK_ACCOUNT created.');
-      } else {
-        console.log('ℹ️ SYSTEM_BANK_ACCOUNT already exists.');
-      }
-    } catch (e: any) {
-      console.warn('⚠️ Could not verify or create SYSTEM_BANK_ACCOUNT');
-    }
-
-    // 6.2.2. Revenue and VAT Accounts
-    const systemPartnerAccounts = await axios
-      .get(`${financeUrl}/api/v1/accounts/user/${systemPartner.id}`, {
-        headers,
-      })
-      .catch(() => ({ data: [] }));
-
-    if (!systemAccounts.revenue) {
-      const existingRevenue = systemPartnerAccounts.data.find(
-        (acc: any) => acc.account_name === 'SYSTEM_REVENUE',
-      );
-      if (existingRevenue) {
-        systemAccounts.revenue = existingRevenue.id;
-      } else {
-        const res = await axios.post(
-          `${financeUrl}/api/v1/accounts`,
-          {
-            user_id: systemPartner.id,
-            account_name: 'SYSTEM_REVENUE',
-            currency: 'THB',
-            account_type: 'SYSTEM_REVENUE',
-          },
-          { headers },
+        const hasBankAcc = existingAccounts.data.some(
+          (acc: any) => acc.account_name === 'SYSTEM_BANK_ACCOUNT',
         );
-        systemAccounts.revenue = res.data.id;
-      }
-    }
 
-    if (!systemAccounts.vat_payable) {
-      const existingVat = systemPartnerAccounts.data.find(
-        (acc: any) => acc.account_name === 'SYSTEM_VAT_PAYABLE',
-      );
-      if (existingVat) {
-        systemAccounts.vat_payable = existingVat.id;
-      } else {
-        const res = await axios.post(
-          `${financeUrl}/api/v1/accounts`,
-          {
-            user_id: systemPartner.id,
-            account_name: 'SYSTEM_VAT_PAYABLE',
-            currency: 'THB',
-            account_type: 'SYSTEM_VAT_PAYABLE',
-          },
-          { headers },
+        if (!hasBankAcc) {
+          await axios.post(
+            `${financeUrl}/api/v1/accounts`,
+            {
+              user_id: '00000000-0000-0000-0000-000000000000',
+              account_name: 'SYSTEM_BANK_ACCOUNT',
+              currency: 'THB',
+              account_type: 'BANK_CLEARING',
+            },
+            { headers },
+          );
+          console.log('✅ SYSTEM_BANK_ACCOUNT created.');
+        } else {
+          console.log('ℹ️ SYSTEM_BANK_ACCOUNT already exists.');
+        }
+      } catch (e: any) {
+        console.warn('⚠️ Could not verify or create SYSTEM_BANK_ACCOUNT');
+      }
+
+      // 6.2.2. Revenue and VAT Accounts
+      const systemPartnerAccounts = await axios
+        .get(`${financeUrl}/api/v1/accounts/user/${systemPartner.id}`, {
+          headers,
+        })
+        .catch(() => ({ data: [] }));
+
+      if (!systemAccounts.revenue) {
+        const existingRevenue = systemPartnerAccounts.data.find(
+          (acc: any) => acc.account_name === 'SYSTEM_REVENUE',
         );
-        systemAccounts.vat_payable = res.data.id;
+        if (existingRevenue) {
+          systemAccounts.revenue = existingRevenue.id;
+        } else {
+          const res = await axios.post(
+            `${financeUrl}/api/v1/accounts`,
+            {
+              user_id: systemPartner.id,
+              account_name: 'SYSTEM_REVENUE',
+              currency: 'THB',
+              account_type: 'SYSTEM_REVENUE',
+            },
+            { headers },
+          );
+          systemAccounts.revenue = res.data.id;
+        }
       }
-    }
 
-    await prisma.partner.update({
-      where: { id: systemPartner.id },
-      data: { financeAccounts: systemAccounts },
-    });
-    console.log('✅ 3 Core System Accounts linked.');
-  } catch (error: any) {
-    console.warn(
-      '⚠️ Warning: Failed to seed Finance Service core. Is it running?',
+      if (!systemAccounts.vat_payable) {
+        const existingVat = systemPartnerAccounts.data.find(
+          (acc: any) => acc.account_name === 'SYSTEM_VAT_PAYABLE',
+        );
+        if (existingVat) {
+          systemAccounts.vat_payable = existingVat.id;
+        } else {
+          const res = await axios.post(
+            `${financeUrl}/api/v1/accounts`,
+            {
+              user_id: systemPartner.id,
+              account_name: 'SYSTEM_VAT_PAYABLE',
+              currency: 'THB',
+              account_type: 'SYSTEM_VAT_PAYABLE',
+            },
+            { headers },
+          );
+          systemAccounts.vat_payable = res.data.id;
+        }
+      }
+
+      await prisma.partner.update({
+        where: { id: systemPartner.id },
+        data: { financeAccounts: systemAccounts },
+      });
+      console.log('✅ 3 Core System Accounts linked.');
+    } catch (error: any) {
+      console.warn(
+        '⚠️ Warning: Failed to seed Finance Service core. Is it running?',
+      );
+    }
+  } else {
+    console.log(
+      'ℹ️ Skipping Finance Service seeding in production. Configure manually through admin interface.',
     );
   }
 
   // 7. Seed Merchant Ecosystem (Minimal)
-  const isProduction = process.env.NODE_ENV === 'production';
   if (!isProduction) {
     console.log('🏪 Seeding merchant ecosystem...');
 
