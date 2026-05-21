@@ -16,6 +16,8 @@ import { JwtService } from '@nestjs/jwt';
 import * as bcrypt from 'bcryptjs';
 import { LoginRequest, AuthResponse, RefreshTokenRequest } from '@repo/dto';
 import { AdminJwtGuard } from '../guards/admin-jwt.guard';
+import { AuditLog } from '../decorators/audit.decorator';
+import { AuditAction, ResourceType } from '../../modules/audit/audit.service';
 
 @Controller('admin/auth')
 export class AdminAuthController {
@@ -26,6 +28,7 @@ export class AdminAuthController {
 
   @Post('login')
   @HttpCode(HttpStatus.OK)
+  @AuditLog(AuditAction.LOGIN, ResourceType.ADMIN_USER, 'Staff login')
   async login(@Body() dto: LoginRequest): Promise<AuthResponse> {
     const staff = await this.adminService.findByEmail(dto.email);
 
@@ -125,6 +128,7 @@ export class AdminAuthController {
   @UseGuards(AdminJwtGuard)
   @Post('logout')
   @HttpCode(HttpStatus.OK)
+  @AuditLog(AuditAction.LOGOUT, ResourceType.ADMIN_USER, 'Staff logout')
   async logout(@Req() req: any) {
     await this.adminService.clearRefreshToken(req.user.sub);
     return { message: 'Logged out successfully' };
