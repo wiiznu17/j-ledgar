@@ -27,6 +27,7 @@ import { useRouter } from 'expo-router';
 import { useAuthStore } from '@/store/auth';
 import { UserProfileService, UserProfile } from '@/lib/user-service';
 import { RegistrationState } from '@repo/dto';
+import { api } from '@/lib/axios';
 
 export default function SettingsScreen() {
   const { logout } = useAuthStore();
@@ -37,6 +38,7 @@ export default function SettingsScreen() {
   const [userProfile, setUserProfile] = useState<UserProfile | null>(null);
   const [biometrics, setBiometrics] = useState(true);
   const [pushNotifs, setPushNotifs] = useState(true);
+  const [isTogglingPush, setIsTogglingPush] = useState(false);
 
   // Fetch user profile
   const fetchProfile = async () => {
@@ -50,9 +52,38 @@ export default function SettingsScreen() {
     }
   };
 
+  // Load push notification preference from backend
+  const fetchPreferences = async () => {
+    try {
+      const res = await api.get('/notifications/preferences');
+      setPushNotifs(res.data?.pushEnabled !== false);
+    } catch (error) {
+      console.error('[Profile] Failed to load notification preferences:', error);
+    }
+  };
+
+  // Toggle push notification and sync with backend
+  const togglePushNotifications = async () => {
+    if (isTogglingPush) return;
+    const newValue = !pushNotifs;
+    // Optimistic update
+    setPushNotifs(newValue);
+    setIsTogglingPush(true);
+    try {
+      await api.patch('/notifications/preferences', { pushEnabled: newValue });
+    } catch (error) {
+      console.error('[Profile] Failed to update push preference:', error);
+      // Rollback on failure
+      setPushNotifs(!newValue);
+    } finally {
+      setIsTogglingPush(false);
+    }
+  };
+
   // Fetch on mount and when screen is focused
   useEffect(() => {
     fetchProfile();
+    fetchPreferences();
   }, []);
 
   useFocusEffect(
@@ -246,7 +277,8 @@ export default function SettingsScreen() {
               iconBg="bg-orange-50"
               label="Push Notifications"
               active={pushNotifs}
-              onToggle={() => setPushNotifs(!pushNotifs)}
+              onToggle={togglePushNotifications}
+              disabled={isTogglingPush}
             />
             <Divider />
             <SettingItem
@@ -349,7 +381,7 @@ function SettingItem({ icon, iconBg, label, onPress, badge }: any) {
   );
 }
 
-function ToggleSetting({ icon, iconBg, label, active, onToggle }: any) {
+function ToggleSetting({ icon, iconBg, label, active, onToggle, disabled }: any) {
   return (
     <View className="w-full px-5 py-4 flex-row items-center justify-between bg-white">
       <View className="flex-row items-center gap-4">
@@ -365,6 +397,7 @@ function ToggleSetting({ icon, iconBg, label, active, onToggle }: any) {
       <Switch
         value={active}
         onValueChange={onToggle}
+        disabled={disabled}
         trackColor={{ false: '#f3f4f6', true: '#f48fb1' }}
         thumbColor={Platform.OS === 'ios' ? undefined : '#ffffff'}
       />
