@@ -8,7 +8,6 @@ import {
   UserCircle,
   Menu,
   Search,
-  Bell,
 } from 'lucide-react';
 import { usePathname, useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
@@ -154,12 +153,6 @@ export function Topbar({ onLogout, onToggleMobile }: TopbarProps) {
 
         {/* Theme Toggle */}
         <ThemeToggle />
-
-        {/* Notification Bell with Badge */}
-        <button className="relative p-2 text-muted-foreground hover:text-foreground hover:bg-slate-50 dark:hover:bg-slate-900 rounded-xl transition-all border border-transparent hover:border-border cursor-pointer shrink-0">
-          <Bell className="w-4.5 h-4.5" />
-          <span className="absolute top-1.5 right-1.5 w-2 h-2 bg-pink-500 rounded-full border border-card ring-1 ring-pink-500/20" />
-        </button>
 
         {/* User Admin Account Profile Dropdown */}
         {user ? (
