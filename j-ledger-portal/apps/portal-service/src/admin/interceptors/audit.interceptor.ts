@@ -37,26 +37,24 @@ export class AuditInterceptor implements NestInterceptor {
       [context.getHandler(), context.getClass()],
     );
 
-    // STRICT: Only log if permission is required
-    if (!requiredPermissions || requiredPermissions.length === 0) {
-      return next.handle();
-    }
-
     // Get metadata from decorator (optional now)
     const metadata = this.reflector.getAllAndOverride<AuditMetadata>(
       AUDIT_LOG_KEY,
       [context.getHandler(), context.getClass()],
     );
 
-    // Skip GET requests unless explicitly annotated with @AuditLog
-    if (method === 'GET' && !metadata) {
+    const hasPermission = requiredPermissions && requiredPermissions.length > 0;
+
+    // Skip if NEITHER permission is required NOR explicitly annotated with @AuditLog
+    if (!hasPermission && !metadata) {
       return next.handle();
     }
 
-    const primaryPermission = requiredPermissions[0];
+
+    const primaryPermission = requiredPermissions?.[0];
     const actionReason =
-      metadata?.reason || `Executed permission: ${primaryPermission}`;
-    const actionType = primaryPermission as any; // Use permission name as action
+      metadata?.reason || (primaryPermission ? `Executed permission: ${primaryPermission}` : `Executed action`);
+    const actionType = metadata?.action || (primaryPermission as any); // Use explicit action or fallback to permission name
     const resourceType = metadata?.resourceType || ResourceType.PII;
 
     return (next.handle() as any).pipe(
@@ -80,7 +78,7 @@ export class AuditInterceptor implements NestInterceptor {
             }
 
             await this.auditService.log({
-              adminUserId: adminUser?.sub || adminUser?.id || 'SYSTEM',
+              adminUserId: adminUser?.sub || adminUser?.id || (data as any)?.userId || 'SYSTEM',
               action: actionType,
               resourceType: resourceType,
               resourceId: String(resourceId || ''),
