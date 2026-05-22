@@ -19,7 +19,7 @@ J-Ledger is a high-performance, production-ready financial ledger system designe
 │   └── packages/                 # Shared packages
 ├── docker/
 │   └── nginx/
-│       ├── default.conf          # Production (HTTPS with SSL, potayyr.site) - Public NGINX
+│       ├── default.conf          # Production (HTTPS with SSL, api.potayyr.site) - Public NGINX
 │       └── default.conf.example  # Local development (HTTP only, localhost) - สำหรับ Local Test
 ├── docker-compose.yml            # 🚀 Production Orchestration
 ├── docker-compose.dev.yml        # 🛠️ Development Infrastructure (Dev Mode)
@@ -437,7 +437,7 @@ docker compose up -d --build
 docker compose up -d --build
 ```
 
-**Note:** This uses the production nginx configuration with SSL (default.conf). Requires SSL certificates at `/etc/letsencrypt/live/potayyr.site/` on the host machine.
+**Note:** This uses the production nginx configuration with SSL (default.conf). Requires SSL certificates at `/etc/letsencrypt/live/api.potayyr.site/` on the host machine.
 
 _The system will automatically handle health checks, ensuring the DB and Kafka are ready before starting the APIs._
 

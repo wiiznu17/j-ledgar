@@ -1,6 +1,6 @@
 # 🚀 คู่มือการ Deploy J-Ledger บน AWS EC2 (Ubuntu 24.04)
 
-**Domain:** `potayyr.site`
+**Service API Domain (EC2):** `api.potayyr.site`
 
 คู่มือนี้สำหรับติดตั้งระบบทั้งหมดในระดับ Production ลงในเครื่องเดียวโดยใช้ Docker Compose และ Nginx เป็น Reverse Proxy เพื่อรองรับทราฟฟิกและการทำงานที่มั่นคงปลอดภัย
 
@@ -59,7 +59,7 @@ sudo chmod a+r /etc/apt/keyrings/docker.gpg
 # 5. เพิ่มที่อยู่แหล่งเก็บโปรแกรม (Repository) ของ Docker เข้าไปในระบบของ Ubuntu
 echo \
   "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/docker.gpg] https://download.docker.com/linux/ubuntu \
-  $(. /os-release && echo "$VERSION_CODENAME") stable" | \
+  $(. /etc/os-release && echo "$VERSION_CODENAME") stable" | \
   sudo tee /etc/apt/sources.list.d/docker.list > /dev/null
 
 # 6. อัปเดตรายการแพ็กเกจอีกครั้งเพื่อให้มองเห็นไฟล์ของ Docker ที่เราเพิ่งเพิ่มไป
@@ -92,119 +92,81 @@ sudo usermod -aG docker $USER
 
 ---
 
-## ⚙️ 4. ตั้งค่า Environment และเริ่มระบบ
+## ⚙️ 4. ตั้งค่า Environment และขอใบรับรอง SSL (HTTPS)
 
-หลังจากได้โค้ดมาแล้ว ให้ตั้งค่าไฟล์สำคัญดังนี้:
+ก่อนที่จะเริ่มรันระบบใน Docker เราต้องตั้งค่าสภาพแวดล้อม (.env) และขอใบรับรองความปลอดภัย SSL ให้เรียบร้อยเสียก่อน (การทำ SSL ก่อนเริ่มระบบช่วยแก้ปัญหา Nginx คอนเทนเนอร์แครชเนื่องจากหาใบรับรองไม่เจอได้ 100%)
 
-1. **สร้างไฟล์ .env (แนะนำ: ใช้ script อัตโนมัติ)**:
+### 4.1 สร้างไฟล์ .env
+1. **รันสคริปต์สุ่ม Secrets อัตโนมัติ**:
+   ```bash
+   cd ~/app/j-ledger
+   python3 generate-secrets.py
+   ```
+   _สคริปต์จะคัดลอกตัวอย่างจาก `.env.example` ไปสร้างเป็น `.env` และสุ่ม Key/Password ที่จำเป็นทั้งหมดให้ท่านโดยอัตโนมัติ_
 
-```bash
-cd ~/app/j-ledger
-python3 generate-secrets.py
-```
+2. **แก้ไขการตั้งค่าเพิ่มเติม**:
+   เปิดไฟล์ `.env` ด้วย nano เพื่อใส่ค่าบริการภายนอก:
+   ```bash
+   nano .env
+   ```
+   **ค่าสำคัญที่ต้องตรวจสอบและระบุเอง:**
+   - `NODE_ENV=production` (สคริปต์สุ่มจะใส่ค่านี้เป็นค่าเริ่มต้นแล้ว เพื่อระบุโหมดการรันแบบ Production)
+   - `JLEDGER_ALLOWED_ORIGINS=https://potayyr.site,https://admin.potayyr.site` (เพื่อความปลอดภัยสูงสำหรับระบบ CORS)
+   - `SMTP_HOST`, `SMTP_USER`, `SMTP_PASSWORD`, `SMTP_FROM` (สำหรับการส่งอีเมลแจ้งเตือนจริงในระบบ)
+   - `AWS_ACCESS_KEY_ID`, `AWS_SECRET_ACCESS_KEY`, `AWS_S3_BUCKET_NAME` (สำหรับบริการ KYC/Face Liveness)
+   - `STRIPE_SECRET_KEY`, `STRIPE_WEBHOOK_SECRET` (สำหรับระบายธุรกรรม/การชำระเงินผ่านบัตร)
 
-Script จะสร้างไฟล์ `.env` โดยอัตโนมัติ โดยสุ่ม key ที่ต้องการทั้งหมดให้เลย จากนั้นแก้ค่าที่เหลือด้วย `nano .env`
+### 4.2 ขอใบรับรอง SSL ด้วย Certbot (ก่อนเริ่ม Docker)
+เนื่องจากการทำงานของ Nginx ใน Docker ถูกตั้งค่าให้รับเฉพาะ HTTPS (SSL) บนพอร์ต 443 เราจึงจำเป็นต้องขอใบรับรอง SSL จาก Let's Encrypt มาอยู่ในเครื่องก่อนเริ่มแอปพลิเคชัน:
 
-> [!IMPORTANT]
-> **ต้องตั้งค่า Environment Variables ทั้งหมด** - ระบบจะไม่ทำงานถ้าขาดตัวแปรใดตัวแปรหนึ่ง
-
-**ค่าที่ script สุ่มให้อัตโนมัติ** (ไม่ต้องทำเอง):
-- `CUSTOMER_JWT_SECRET`, `CUSTOMER_REFRESH_SECRET`, `CUSTOMER_REGISTRATION_SECRET`
-- `ADMIN_JWT_SECRET`, `ADMIN_REFRESH_SECRET`
-- `PII_ENCRYPTION_KEY`, `JLEDGER_INTERNAL_SECRET`
-- `POSTGRES_PASSWORD`, `REDIS_PASSWORD`, `JLEDGER_ADMIN_PASSWORD`
-
-**ต้องแก้ด้วยตัวเองหลัง script รัน:**
-- `JLEDGER_ALLOWED_ORIGINS=https://potayyr.site,https://admin.potayyr.site` (ระบุ Origin ของเว็บหลัก และ Admin Panel บน Vercel คั่นด้วยคอมมา เพื่ออนุญาตให้ติดต่อกับ Portal Service ได้อย่างปลอดภัย)
-- `SMTP_HOST`, `SMTP_USER`, `SMTP_PASSWORD`, `SMTP_FROM` (สำหรับการส่งอีเมลแจ้งเตือนจริงในระบบ)
-- `AWS_ACCESS_KEY_ID`, `AWS_SECRET_ACCESS_KEY`, `AWS_S3_BUCKET_NAME` (ถ้าใช้ KYC จริง)
-- `STRIPE_SECRET_KEY`, `STRIPE_WEBHOOK_SECRET` (ถ้าใช้ Stripe)
-- `POSTGRES_USER`, `POSTGRES_DB` (ถ้าต้องการเปลี่ยนจาก default)
-
-> [!NOTE]
-> ตัวแปร `JLEDGER_ADMIN_EMAIL` และ `JLEDGER_ADMIN_PASSWORD` ที่อยู่ในระบบ seed จะถูกใช้งาน**เฉพาะในโหมดพัฒนา/ทดสอบ (Non-Production)** เท่านั้น สำหรับโหมด Production ระบบจะเพิกเฉยและข้ามตัวแปรนี้เพื่อความปลอดภัย และท่านจะต้องสร้างบัญชี Admin แรกผ่าน **Admin CLI Tool** ตามข้อ 6
-
-2. **เริ่มระบบ (Deployment)**:
-
-```bash
-docker compose up -d --build
-```
-
-_ระบบจะทำการรัน Migration อัตโนมัติ (ผ่าน `finance-migration` และ `portal-migration` containers) ก่อนจะเริ่มแอปหลักโดยไม่มีขั้นตอนยุ่งยากครับ_
-_ตรวจสอบสถานะด้วย `docker compose ps`_
-
-3. **ลงข้อมูลเริ่มต้นในระดับ Production (Production Seeding)**:
-
-หลังจากระบบรันเรียบร้อยแล้ว ให้ทำการรันข้อมูลตั้งต้น (Seed) ที่เหมาะสมกับ Production โดยระบบจะเตรียมเฉพาะสิทธิ์ บทบาท (RBAC) และบัญชีระบบหลักที่จำเป็นเท่านั้น แต่จะข้ามบัญชีผู้พัฒนาและร้านค้าทดสอบเพื่อความปลอดภัย:
-
-> [!IMPORTANT]
-> **ทำไมต้องส่ง `NODE_ENV=production`?**
-> หากรันตัว Seed โดยไม่มีการระบุ `NODE_ENV=production` ตัวสคริปต์ของ Prisma จะคิดว่ารันในโหมด Development และจะพยายามสร้างบัญชีผู้ใช้งานเริ่มต้น (`admin`) เข้าไปในตารางซึ่งอาจเกิดการชนกันของข้อมูลเดิมในฐานข้อมูล (Unique Constraint/Primary Key Collision) และส่งผลให้คอนเทนเนอร์แครชได้
-> 
-> ปัจจุบันเราได้เพิ่ม `environment: - NODE_ENV=${NODE_ENV}` เข้าไปในตาราง `portal-seed` ของไฟล์ `docker-compose.yml` เพื่อให้ดึงค่าจาก Host ได้อย่างสมบูรณ์แบบแล้ว
-
-สามารถสั่งรันคำสั่งเหล่านี้ได้ตามรูปแบบสภาพแวดล้อมที่ใช้งาน:
-
-* **สำหรับการรันแบบปกติ (Standard Compose):**
-  ```bash
-  NODE_ENV=production docker compose up portal-seed
-  ```
-
-* **สำหรับการรันในสภาพแวดล้อมทดสอบ (Test/Staging Compose ที่รันพอร์ต 80 ผ่าน ngrok):**
-  ```bash
-  NODE_ENV=production docker compose -f docker-compose.yml -f docker-compose.test.yml up portal-seed
-  ```
-
-หลังจากรัน Portal Seed เสร็จแล้ว ให้รัน SQL Seed ของระบบ **Finance Service** เพื่อตั้งค่าบัญชีภายในของระบบให้ยอดคงเหลือเริ่มต้นเป็น 0:
-```bash
-docker exec -i jledger-postgres psql -U ${POSTGRES_USER} -d ${POSTGRES_DB} < j-ledger-core/finance-service/src/main/resources/db/seed/prod_seed.sql
-```
-
----
-
-## 🔒 5. ตั้งค่า SSL (HTTPS) ด้วย Certbot (Standalone Mode)
-
-เพื่อป้องกันปัญหาพอร์ต 80 ชนกันระหว่าง Certbot และ Nginx ใน Docker เราจะใช้โหมด `standalone` ตามขั้นตอนที่ถูกต้องดังนี้ครับ:
-
-1. **ติดตั้ง Certbot:**
-
+1. **ติดตั้ง Certbot ลงบน Ubuntu Host**:
    ```bash
    sudo apt install certbot -y
    ```
 
-2. **หยุด Nginx ชั่วคราว (เพื่อคืนพอร์ต 80 ให้ Certbot):**
-
+2. **ขอใบรับรอง SSL ในโหมด Standalone**:
+   รันคำสั่งด้านล่าง (ตรวจสอบว่าไม่มีแอปอื่นใช้พอร์ต 80 อยู่ขณะรัน):
    ```bash
-   cd ~/app/j-ledger
-   docker compose stop nginx
+   sudo certbot certonly --standalone -d api.potayyr.site
    ```
+   _หมายเหตุ: การขอใบรับรองสำหรับโดเมน `api.potayyr.site` จะทำให้ Let's Encrypt บันทึกไฟล์ใบรับรองไว้ที่ `/etc/letsencrypt/live/api.potayyr.site/` ซึ่งจะตรงกับการตั้งค่าของ Nginx ของเราพอดี (สำหรับโดเมน `potayyr.site` และ `admin.potayyr.site` จะมีระบบจัดการ SSL อัตโนมัติจากฝั่งผู้ให้บริการโฮสติ้ง เช่น Vercel อยู่แล้ว จึงไม่ต้องขอใบรับรองจากเครื่อง EC2 เครื่องนี้)_
 
-3. **ขอใบรับรอง SSL:**
+---
 
-   ```bash
-   sudo certbot certonly --standalone -d potayyr.site -d www.potayyr.site
-   ```
+## 🚀 5. เริ่มต้นระบบและใส่ข้อมูลตั้งต้น (Seeding)
 
-   _กรอก Email และกดยอมรับเงื่อนไข ไฟล์ใบรับรองจะถูกเก็บไว้ที่ `/etc/letsencrypt/live/potayyr.site/`_
+เมื่อเตรียม `.env` และใบรับรอง SSL เรียบร้อยแล้ว สามารถสั่งเริ่มระบบทั้งหมดได้ทันที:
 
-4. **เปิดการใช้งาน HTTPS ใน Nginx:**
-   ใช้ตัวอย่างคอนฟิกสำหรับ Production และเปิดการใช้งาน SSL:
+### 5.1 เริ่มระบบทั้งหมด (Deployment)
+```bash
+docker compose up -d --build
+```
+- ระบบจะดาวน์โหลด อัปเดต และคอมไพล์โค้ดใน Docker Network แบบปิด
+- ในขั้นตอนนี้ **Nginx จะสามารถเริ่มทำงานได้ทันทีและไร้ข้อผิดพลาด** เนื่องจากตรวจพบไฟล์ SSL ของท่านที่สร้างไว้ก่อนหน้านี้
+- ตัว Migration Containers (`finance-migration` และ `portal-migration`) จะทำการอัปเดตและสร้างโครงสร้าง Schema ใหม่ลงในฐานข้อมูลให้ทันที
+- ตรวจสอบความถูกต้องและสถานะการทำงานด้วย `docker compose ps`
 
-   ```bash
-   # คัดลอกเทมเพลตสำหรับ Production
-   cp docker/nginx/default.conf.prod docker/nginx/default.conf
+### 5.2 รันข้อมูลตั้งต้นในระดับ Production (Production Seeding)
 
-   # แก้ไขเพื่อตรวจสอบความถูกต้อง (หากต้องการ)
-   nano docker/nginx/default.conf
-   ```
+หลังระบบรันเรียบร้อยแล้ว ให้ทำการรันข้อมูลตั้งต้น (Seed) ที่เหมาะสมกับระดับ Production เพื่อให้ระบบตั้งค่าโครงสร้างสิทธิ์ บทบาท (RBAC) และบัญชีระบบหลักที่จำเป็น:
 
-   - (ออปชั่น) หากในไฟล์เทมเพลตยังมีเครื่องหมาย `#` ปิดส่วน SSL ไว้ ให้เอาออกเพื่อให้ใช้งาน HTTPS ได้สมบูรณ์
-   - (ออปชั่น) เอาเครื่องหมาย `#` ออกจากส่วน `return 301 https://...` ในพอร์ต 80 เพื่อบังคับใช้ HTTPS
+* **สำหรับการรันแบบปกติ (Standard Compose):**
+  ```bash
+  docker compose up portal-seed
+  ```
+  _(เนื่องจากเรากำหนด `NODE_ENV=production` ลงใน `.env` เรียบร้อยแล้ว ตัว Seed Script จะทราบและไม่สร้างบัญชี Admin ทดสอบที่จะทำให้เกิด Primary Key Collision หรือลดความปลอดภัยลง)_
 
-5. **เริ่มการทำงาน Nginx อีกครั้ง:**
-   ```bash
-   docker compose up -d nginx
-   ```
+* **สำหรับการรันในสภาพแวดล้อม Staging/Test (ใช้ docker-compose.test.yml):**
+  ```bash
+  docker compose -f docker-compose.yml -f docker-compose.test.yml up portal-seed
+  ```
+
+หลังจากรัน Portal Seed สำเร็จแล้ว ให้ทำการรัน SQL Seed สำหรับระบบ **Finance Service** เพื่อตั้งค่าบัญชีระบบภายใน (Double-entry Clearing Account) ให้ยอดคงเหลือเริ่มต้นเป็น 0:
+
+```bash
+docker exec -i jledger-postgres sh -c 'psql -U "$POSTGRES_USER" -d "$POSTGRES_DB"' < j-ledger-core/finance-service/src/main/resources/db/seed/prod_seed.sql
+```
+_(หมายเหตุ: คำสั่งนี้จะใช้บริการเชลล์ภายใน Container เป็นตัวแปลงค่ารหัสผ่านและชื่อผู้ใช้ ช่วยให้มั่นใจได้ว่าคำสั่งทำงานได้ทันทีโดยไม่ต้อง Export ตัวแปรบนเครื่อง Host เสมือน)_
 
 ---
 
@@ -247,7 +209,9 @@ docker compose up -d portal-migration
 
 ## 🔗 7. การเข้าใช้งานหลังติดตั้ง (Production Access)
 
-- **Web Portal:** `https://potayyr.site`
+- **Service APIs (EC2):** `https://api.potayyr.site`
+- **Admin Web Portal (Vercel):** `https://admin.potayyr.site` (ตั้งค่าใน Vercel ให้ยิงมาที่ `https://api.potayyr.site`)
+- **Landing Page (ในอนาคต):** `https://potayyr.site`
 - **Login:** ในโหมด Production จะไม่มีการสร้างบัญชี Admin เริ่มต้นผ่าน Seed Script เพื่อความปลอดภัยสูงสุด ท่านต้องทำการสร้างบัญชีแรกที่เป็น `SUPER_ADMIN` ด้วยตัวเองผ่าน **Admin CLI Tool** ภายใน Container (ดูคู่มือแบบละเอียดใน [ADMIN_SETUP.md](file:///Users/wiiznu/project/fintech/docs/ADMIN_SETUP.md)):
   ```bash
   docker exec -it jledger-portal node dist/src/cli/create-admin.js <username> <password> <email>
@@ -256,8 +220,8 @@ docker compose up -d portal-migration
   ```bash
   docker exec -it jledger-portal node dist/src/cli/create-admin.js admin "MySecurePassword123!" admin@potayyr.site
   ```
-  เมื่อสร้างสำเร็จแล้ว ให้เข้าสู่ระบบด้วยบัญชีดังกล่าวผ่านหน้าเว็บ
-- **Backend APIs:** ติดต่อผ่าน `https://potayyr.site/api/...`
+  เมื่อสร้างสำเร็จแล้ว ให้เข้าสู่ระบบด้วยบัญชีดังกล่าวผ่านหน้าเว็บของ Admin Web (`https://admin.potayyr.site`)
+- **Backend APIs:** ติดต่อผ่าน `https://api.potayyr.site/api/...`
 
 > [!IMPORTANT]
 > **Database & Infrastructure Security**: ในโหมด Production สังเกตว่าพอร์ตฐานข้อมูลและระบบภายใน เช่น PostgreSQL (5432) หรือ Redis (6379) จะไม่ถูกเปิดออกภายนอกเครื่องเลย ทุกบริการจะสื่อสารกันภายในระบบปิดของ Docker Network เพื่อป้องกันการเจาะระบบและการโจมตีจากภายนอก 100%
