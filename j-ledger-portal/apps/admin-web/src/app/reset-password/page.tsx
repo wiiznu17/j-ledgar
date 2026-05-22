@@ -15,6 +15,8 @@ import {
   ArrowRight,
   Loader2,
   Circle,
+  Eye,
+  EyeOff,
 } from 'lucide-react';
 
 function ResetPasswordForm() {
@@ -29,6 +31,8 @@ function ResetPasswordForm() {
 
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
 
   const passwordRules = {
     length: password.length >= 8,
@@ -269,13 +273,24 @@ function ResetPasswordForm() {
                   <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground/60" />
                   <Input
                     id="password"
-                    type="password"
+                    type={showPassword ? 'text' : 'password'}
                     placeholder="••••••••"
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
-                    className="pl-10 h-12 bg-card text-foreground border-border rounded-xl focus:border-ring focus:ring-1 focus:ring-ring font-medium"
+                    className="pl-10 pr-10 h-12 bg-card text-foreground border-border rounded-xl focus:border-ring focus:ring-1 focus:ring-ring font-medium"
                     required
                   />
+                  <button
+                    type="button"
+                    onClick={() => setShowPassword(!showPassword)}
+                    className="absolute inset-y-0 right-3 flex items-center text-muted-foreground/60 hover:text-foreground transition-colors"
+                  >
+                    {showPassword ? (
+                      <EyeOff className="w-4 h-4" />
+                    ) : (
+                      <Eye className="w-4 h-4" />
+                    )}
+                  </button>
                 </div>
 
                 {/* Password Rules Checklist */}
@@ -293,13 +308,24 @@ function ResetPasswordForm() {
                   <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground/60" />
                   <Input
                     id="confirmPassword"
-                    type="password"
+                    type={showConfirmPassword ? 'text' : 'password'}
                     placeholder="••••••••"
                     value={confirmPassword}
                     onChange={(e) => setConfirmPassword(e.target.value)}
-                    className="pl-10 h-12 bg-card text-foreground border-border rounded-xl focus:border-ring focus:ring-1 focus:ring-ring font-medium"
+                    className="pl-10 pr-10 h-12 bg-card text-foreground border-border rounded-xl focus:border-ring focus:ring-1 focus:ring-ring font-medium"
                     required
                   />
+                  <button
+                    type="button"
+                    onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                    className="absolute inset-y-0 right-3 flex items-center text-muted-foreground/60 hover:text-foreground transition-colors"
+                  >
+                    {showConfirmPassword ? (
+                      <EyeOff className="w-4 h-4" />
+                    ) : (
+                      <Eye className="w-4 h-4" />
+                    )}
+                  </button>
                 </div>
               </div>
 

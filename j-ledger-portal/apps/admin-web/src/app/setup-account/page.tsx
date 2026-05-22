@@ -17,6 +17,8 @@ import {
   Sparkles,
   UserCircle,
   Circle,
+  Eye,
+  EyeOff,
 } from 'lucide-react';
 
 function SetupAccountForm() {
@@ -32,6 +34,8 @@ function SetupAccountForm() {
 
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
 
   const passwordRules = {
     length: password.length >= 8,
@@ -189,8 +193,19 @@ function SetupAccountForm() {
           {/* Right Side */}
           <div className="w-full lg:w-1/2 p-8 lg:p-16 flex flex-col justify-center">
             <div className="max-w-sm w-full mx-auto space-y-8">
-              <div className="flex items-center justify-end gap-6 text-right">
-                <div className="flex flex-col">
+              <div className="flex items-center justify-end">
+                <img
+                  src="/logo/logo-text.png"
+                  alt="Logo"
+                  className="h-16 object-contain dark:invert mix-blend-multiply dark:mix-blend-normal contrast-[1.1] brightness-[1.05]"
+                />
+              </div>
+
+              <div className="flex flex-col items-center text-center gap-5 py-4">
+                <div className="w-16 h-16 bg-indigo-50 dark:bg-indigo-950/30 border border-indigo-100 dark:border-indigo-900/50 rounded-2xl flex items-center justify-center shadow-xs animate-bounce">
+                  <Sparkles className="w-8 h-8 text-indigo-600 dark:text-indigo-400" />
+                </div>
+                <div className="flex flex-col items-center">
                   <span className="text-indigo-600 dark:text-indigo-400 font-bold text-xs uppercase tracking-widest">
                     Welcome!
                   </span>
@@ -198,18 +213,7 @@ function SetupAccountForm() {
                     Activated
                   </h1>
                 </div>
-                <img
-                  src="/logo/logo-text.png"
-                  alt="Logo"
-                  className="h-20 object-contain dark:invert mix-blend-multiply dark:mix-blend-normal contrast-[1.1] brightness-[1.05]"
-                />
-              </div>
-
-              <div className="p-5 bg-emerald-500/10 border border-emerald-500/20 rounded-2xl flex flex-col items-center text-center gap-4">
-                <div className="w-12 h-12 bg-emerald-500/20 rounded-xl flex items-center justify-center">
-                  <Sparkles className="w-6 h-6 text-indigo-600 dark:text-indigo-400" />
-                </div>
-                <p className="text-sm text-muted-foreground leading-relaxed">
+                <p className="text-sm text-muted-foreground leading-relaxed max-w-xs">
                   Welcome aboard! Your administrator account is now active and
                   ready. You can now log in to the portal.
                 </p>
@@ -283,13 +287,24 @@ function SetupAccountForm() {
                   <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground/60" />
                   <Input
                     id="password"
-                    type="password"
+                    type={showPassword ? 'text' : 'password'}
                     placeholder="••••••••"
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
-                    className="pl-10 h-12 bg-card text-foreground border-border rounded-xl focus:border-ring focus:ring-1 focus:ring-ring font-medium animate-none"
+                    className="pl-10 pr-10 h-12 bg-card text-foreground border-border rounded-xl focus:border-ring focus:ring-1 focus:ring-ring font-medium animate-none"
                     required
                   />
+                  <button
+                    type="button"
+                    onClick={() => setShowPassword(!showPassword)}
+                    className="absolute inset-y-0 right-3 flex items-center text-muted-foreground/60 hover:text-foreground transition-colors"
+                  >
+                    {showPassword ? (
+                      <EyeOff className="w-4 h-4" />
+                    ) : (
+                      <Eye className="w-4 h-4" />
+                    )}
+                  </button>
                 </div>
 
                 {/* Password Rules Checklist */}
@@ -307,13 +322,24 @@ function SetupAccountForm() {
                   <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground/60" />
                   <Input
                     id="confirmPassword"
-                    type="password"
+                    type={showConfirmPassword ? 'text' : 'password'}
                     placeholder="••••••••"
                     value={confirmPassword}
                     onChange={(e) => setConfirmPassword(e.target.value)}
-                    className="pl-10 h-12 bg-card text-foreground border-border rounded-xl focus:border-ring focus:ring-1 focus:ring-ring font-medium animate-none"
+                    className="pl-10 pr-10 h-12 bg-card text-foreground border-border rounded-xl focus:border-ring focus:ring-1 focus:ring-ring font-medium animate-none"
                     required
                   />
+                  <button
+                    type="button"
+                    onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                    className="absolute inset-y-0 right-3 flex items-center text-muted-foreground/60 hover:text-foreground transition-colors"
+                  >
+                    {showConfirmPassword ? (
+                      <EyeOff className="w-4 h-4" />
+                    ) : (
+                      <Eye className="w-4 h-4" />
+                    )}
+                  </button>
                 </div>
               </div>
 
