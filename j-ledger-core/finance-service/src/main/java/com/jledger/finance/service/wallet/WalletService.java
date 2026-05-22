@@ -1583,11 +1583,16 @@ public class WalletService {
                     // Standardize source field
                     if (txMetadata.containsKey("bankName")) {
                         metadata.put("source", txMetadata.get("bankName"));
-                    } else if (transaction.getDescription().contains("Stripe")) {
-                        metadata.put("source", "Credit Card (Stripe)");
                     }
                 } catch (Exception e) {
                     logger.warn("Failed to parse transaction metadata for outbox: {}", e.getMessage());
+                }
+            }
+
+            // Standardize source field if not already set
+            if (!metadata.containsKey("source") && transaction.getDescription() != null) {
+                if (transaction.getDescription().contains("Stripe")) {
+                    metadata.put("source", "Credit Card (Stripe)");
                 }
             }
             

@@ -245,10 +245,15 @@ export class NotificationService {
         return `Identity verification was not successful. Reason: ${metadata?.reason || 'Document clarity issue'}. Please try again or contact support.`;
 
       case NotificationEventType.TOPUP:
-        const source =
-          metadata?.source ||
-          metadata?.description?.split('via ')?.[1] ||
-          'Bank Transfer';
+        let source = metadata?.source;
+        if (!source) {
+          const desc = metadata?.description || '';
+          if (desc.toUpperCase().includes('STRIPE')) {
+            source = 'Credit Card (Stripe)';
+          } else {
+            source = desc.split('via ')?.[1] || 'Bank Transfer';
+          }
+        }
         return `Your wallet has been successfully topped up with ฿${amount} via ${source}.${refText}`;
 
       case NotificationEventType.TRANSFER:
