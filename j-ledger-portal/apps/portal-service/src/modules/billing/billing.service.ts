@@ -8,6 +8,7 @@ import { PrismaService } from '../../core/prisma/prisma.service';
 import { FinanceService } from '../integration/finance.service';
 import { CreateInvoiceDto } from './dto/create-invoice.dto';
 import { InvoiceStatus } from '@prisma/client';
+import { ConfigService } from '@nestjs/config';
 
 @Injectable()
 export class BillingService {
@@ -16,6 +17,7 @@ export class BillingService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly financeService: FinanceService,
+    private readonly configService: ConfigService,
   ) {}
 
   async createInvoice(dto: CreateInvoiceDto) {
@@ -135,6 +137,10 @@ export class BillingService {
       { referenceId: id },
     ];
 
+    if (id.startsWith('PAY-')) {
+      searchConditions.push({ referenceId: id.replace('PAY-', '') });
+    }
+
     if (id.startsWith('TXN')) {
       try {
         const txn = await this.financeService.getTransactionByUuid(id);
@@ -168,8 +174,81 @@ export class BillingService {
     });
 
     if (!invoice) {
+      this.logger.log(
+        `[getInvoiceById] Invoice not found in Invoice table. Searching in TopupOrder for identifier="${id}"`,
+      );
+      const stripeId = id.startsWith('PAY-') ? id.replace('PAY-', '') : id;
+      const topupOrder = await this.prisma.topupOrder.findFirst({
+        where: {
+          userId,
+          OR: [
+            { id },
+            { stripePaymentIntentId: stripeId },
+            { financeTransactionId: id },
+            { financeTransactionId: stripeId }
+          ]
+        }
+      });
+
+      if (topupOrder) {
+        this.logger.log(
+          `[getInvoiceById] Found matching TopupOrder: ${topupOrder.id}. Synthesizing invoice response.`,
+        );
+
+        let dynamicNote = 'Top-up';
+        const stripeSecret = this.configService.get<string>('STRIPE_SECRET_KEY');
+        if (topupOrder.stripePaymentIntentId && stripeSecret) {
+          try {
+            const Stripe = require('stripe');
+            const stripeClient = new Stripe(stripeSecret);
+            const intent = await stripeClient.paymentIntents.retrieve(
+              topupOrder.stripePaymentIntentId,
+            );
+            if (intent && intent.metadata && intent.metadata.note) {
+              dynamicNote = intent.metadata.note;
+            }
+          } catch (stripeErr: any) {
+            this.logger.warn(
+              `[getInvoiceById] Could not fetch note from Stripe: ${stripeErr.message}`,
+            );
+          }
+        }
+
+        return {
+          id: topupOrder.id,
+          invoiceNumber: `INV-TOPUP-${topupOrder.id.slice(0, 8).toUpperCase()}`,
+          userId: topupOrder.userId,
+          senderName: 'Top-up via Stripe',
+          senderDetail: 'Direct Bank Deposit',
+          amount: Number(topupOrder.amount),
+          tax: 0,
+          feeAmount: 0,
+          feeTax: 0,
+          total: Number(topupOrder.amount),
+          currency: topupOrder.currency,
+          status: topupOrder.status === 'PAID' ? 'PAID' : 'PENDING',
+          dueDate: null,
+          paidAt: topupOrder.updatedAt,
+          partnerId: null,
+          referenceId: topupOrder.financeTransactionId || `PAY-${topupOrder.stripePaymentIntentId}`,
+          note: dynamicNote,
+          createdAt: topupOrder.createdAt,
+          updatedAt: topupOrder.updatedAt,
+          items: [
+            {
+              id: `item-${topupOrder.id}`,
+              invoiceId: topupOrder.id,
+              name: 'Top-up funds',
+              quantity: 1,
+              unitPrice: Number(topupOrder.amount),
+              amount: Number(topupOrder.amount),
+            },
+          ],
+        } as any;
+      }
+
       this.logger.warn(
-        `[getInvoiceById] Invoice NOT FOUND for user=${userId} with identifier="${id}"`,
+        `[getInvoiceById] Invoice and TopupOrder NOT FOUND for user=${userId} with identifier="${id}"`,
       );
       throw new NotFoundException('Invoice not found');
     }
