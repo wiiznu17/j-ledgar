@@ -41,7 +41,7 @@ import * as bcrypt from 'bcryptjs';
 import { randomUUID, createDecipheriv } from 'crypto';
 import { LogMaskingUtil } from '../../common/utils/log-masking.util';
 
-const ACCESS_TOKEN_TTL_SECONDS = 15 * 60;
+const ACCESS_TOKEN_TTL_SECONDS = 3 * 60;
 const REFRESH_TOKEN_TTL_SECONDS = 30 * 24 * 60 * 60;
 const REGISTRATION_TOKEN_TTL_SECONDS = 15 * 60;
 const OTP_TTL_SECONDS = 3 * 60;

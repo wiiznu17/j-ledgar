@@ -21,6 +21,7 @@ import {
   ChevronLeft,
   Store,
   FileText,
+  Check,
   CheckCircle2,
   User,
   Mail,
@@ -65,7 +66,7 @@ const SALES_CHANNELS = [
 const ProgressBar = ({ step }: { step: number }) => (
   <View className="px-6 pt-2 mb-6">
     <View className="flex-row justify-between items-center mb-3">
-      <Text className="text-indigo-600 font-black font-manrope text-[10px] uppercase tracking-widest">
+      <Text className="text-[#f48fb1] font-black font-manrope text-[10px] uppercase tracking-widest">
         Step {step} of 3
       </Text>
       <Text className="text-slate-400 font-black text-[10px]">
@@ -74,7 +75,7 @@ const ProgressBar = ({ step }: { step: number }) => (
     </View>
     <View className="flex-row h-1 bg-slate-100 rounded-full overflow-hidden">
       <View
-        className="h-full bg-indigo-500"
+        className="h-full bg-[#f48fb1]"
         style={{ width: `${(step / 3) * 100}%` }}
       />
     </View>
@@ -105,9 +106,9 @@ const InputField = ({
 }: any) => (
   <View className="mb-5">
     <View className="flex-row items-center mb-2 ml-1">
-      <Icon size={12} color={error ? '#f43f5e' : '#6366f1'} />
+      <Icon size={12} color={error ? '#f43f5e' : '#f48fb1'} />
       <Text
-        className={`text-[10px] font-black uppercase tracking-widest ml-2 ${error ? 'text-rose-500' : 'text-indigo-500'}`}
+        className={`text-[10px] font-black uppercase tracking-widest ml-2 ${error ? 'text-rose-500' : 'text-[#f48fb1]'}`}
       >
         {label}
       </Text>
@@ -673,7 +674,7 @@ export default function MerchantApply() {
                   <ChevronLeft size={24} color="#1f2937" />
                 </TouchableOpacity>
                 <View className="flex-1 flex-row items-center bg-slate-100 px-5 py-3.5 rounded-xl ml-2 border border-slate-200">
-                  <Search size={18} color="#6366f1" />
+                  <Search size={18} color="#f48fb1" />
                   <TextInput
                     value={searchText}
                     onChangeText={setSearchText}
@@ -696,7 +697,7 @@ export default function MerchantApply() {
                   {isSearchingMap && (
                     <ActivityIndicator
                       size="small"
-                      color="#6366f1"
+                      color="#f48fb1"
                       className="ml-2"
                     />
                   )}
@@ -713,8 +714,8 @@ export default function MerchantApply() {
                         onPress={() => handleSelectSuggestion(item)}
                         className={`flex-row items-center px-5 py-4 border-b border-slate-50 ${index === suggestions.length - 1 ? 'border-b-0' : ''}`}
                       >
-                        <View className="w-8 h-8 bg-indigo-50 rounded-full items-center justify-center mr-3">
-                          <MapPin size={14} color="#6366f1" />
+                        <View className="w-8 h-8 bg-pink-50 rounded-full items-center justify-center mr-3">
+                          <MapPin size={14} color="#f48fb1" />
                         </View>
                         <View className="flex-1">
                           <Text
@@ -756,7 +757,7 @@ export default function MerchantApply() {
                 coordinate={tempCoords}
                 draggable
                 onDragEnd={(e) => setTempCoords(e.nativeEvent.coordinate)}
-                pinColor="#6366f1"
+                pinColor="#f48fb1"
               />
             </MapView>
 
@@ -767,9 +768,9 @@ export default function MerchantApply() {
                 className="w-12 h-12 bg-white rounded-full items-center justify-center shadow-lg border border-slate-100 active:scale-95"
               >
                 {isLocating ? (
-                  <ActivityIndicator size="small" color="#6366f1" />
+                  <ActivityIndicator size="small" color="#f48fb1" />
                 ) : (
-                  <LocateFixed size={20} color="#6366f1" />
+                  <LocateFixed size={20} color="#f48fb1" />
                 )}
               </TouchableOpacity>
             </View>
@@ -777,7 +778,7 @@ export default function MerchantApply() {
             <View className="absolute bottom-10 left-6 right-6">
               <TouchableOpacity
                 onPress={confirmLocation}
-                className="bg-indigo-600 py-4 rounded-[2rem] shadow-2xl shadow-indigo-200 flex-row items-center justify-center"
+                className="bg-[#f48fb1] py-4 rounded-[2rem] shadow-2xl shadow-pink-200 flex-row items-center justify-center"
               >
                 <LocateFixed size={20} color="white" />
                 <Text className="text-white font-black font-manrope text-lg ml-3">
@@ -828,13 +829,13 @@ export default function MerchantApply() {
 
             <View className="bg-white rounded-3xl p-6 mb-8 shadow-sm border border-slate-100">
               <View className="flex-row items-center mb-4">
-                <ShieldCheck size={16} color="#6366f1" />
-                <Text className="text-[10px] font-black text-indigo-500 uppercase tracking-widest ml-2">
+                <ShieldCheck size={16} color="#f48fb1" />
+                <Text className="text-[10px] font-black text-[#f48fb1] uppercase tracking-widest ml-2">
                   Owner Identity (KYC)
                 </Text>
               </View>
               {isLoadingUser ? (
-                <ActivityIndicator color="#6366f1" size="small" />
+                <ActivityIndicator color="#f48fb1" size="small" />
               ) : (
                 <View>
                   <InfoRow label="Full Name" value={userData?.name} />
@@ -861,7 +862,7 @@ export default function MerchantApply() {
               )}
             </View>
 
-            <Text className="text-[10px] font-black text-indigo-500 uppercase tracking-[0.2em] mb-4 ml-1">
+            <Text className="text-[10px] font-black text-[#f48fb1] uppercase tracking-[0.2em] mb-4 ml-1">
               Section 1: Store Profile
             </Text>
 
@@ -956,9 +957,9 @@ export default function MerchantApply() {
               className="flex-row items-center mt-8 bg-white p-5 rounded-2xl border border-slate-100"
             >
               <View
-                className={`w-6 h-6 rounded-lg items-center justify-center border ${acceptedTerms ? 'bg-indigo-600 border-indigo-600' : 'bg-white border-slate-200'}`}
+                className={`w-6 h-6 rounded-lg items-center justify-center border ${acceptedTerms ? 'bg-[#f48fb1] border-[#f48fb1]' : 'bg-white border-slate-200'}`}
               >
-                {acceptedTerms && <CheckCircle2 size={14} color="white" />}
+                {acceptedTerms && <Check size={14} color="white" />}
               </View>
               <Text className="ml-3 text-slate-700 font-black font-manrope text-xs">
                 I accept the terms and conditions
@@ -1009,20 +1010,20 @@ export default function MerchantApply() {
                       latitude: form.latitude,
                       longitude: form.longitude,
                     }}
-                    pinColor="#6366f1"
+                    pinColor="#f48fb1"
                   />
                 </MapView>
                 <View className="absolute inset-0 bg-black/5 items-center justify-center">
                   <View className="bg-white/90 px-4 py-2 rounded-full flex-row items-center shadow-sm">
-                    <MapIcon size={14} color="#6366f1" />
-                    <Text className="text-indigo-600 font-black text-[10px] ml-2">
+                    <MapIcon size={14} color="#f48fb1" />
+                    <Text className="text-[#f48fb1] font-black text-[10px] ml-2">
                       TAP TO PIN LOCATION
                     </Text>
                   </View>
                 </View>
                 {isReverseGeocoding && (
                   <View className="absolute inset-0 bg-white/50 items-center justify-center">
-                    <ActivityIndicator color="#6366f1" />
+                    <ActivityIndicator color="#f48fb1" />
                   </View>
                 )}
               </TouchableOpacity>
@@ -1050,8 +1051,8 @@ export default function MerchantApply() {
             <View className="mb-4">
               <View className="flex-row items-center justify-between mb-4">
                 <View className="flex-row items-center">
-                  <Camera size={16} color="#6366f1" />
-                  <Text className="text-[10px] font-black text-indigo-500 uppercase tracking-widest ml-2">
+                  <Camera size={16} color="#f48fb1" />
+                  <Text className="text-[10px] font-black text-[#f48fb1] uppercase tracking-widest ml-2">
                     Store Photos
                   </Text>
                 </View>
@@ -1086,8 +1087,8 @@ export default function MerchantApply() {
                     onPress={pickImage}
                     className="w-[31%] aspect-square bg-white rounded-2xl border-2 border-dashed border-slate-100 items-center justify-center mb-3 shadow-sm"
                   >
-                    <Plus size={24} color="#6366f1" />
-                    <Text className="text-indigo-400 text-[8px] font-black uppercase mt-1">
+                    <Plus size={24} color="#f48fb1" />
+                    <Text className="text-pink-400 text-[8px] font-black uppercase mt-1">
                       Add Photo
                     </Text>
                   </TouchableOpacity>
@@ -1104,9 +1105,9 @@ export default function MerchantApply() {
               )}
             </View>
 
-            <View className="bg-indigo-50/50 p-5 rounded-2xl border border-indigo-100/50 mt-4 flex-row items-start">
-              <FileText size={16} color="#6366f1" className="mt-0.5" />
-              <Text className="text-indigo-600 text-[11px] font-bold leading-5 ml-3 flex-1">
+            <View className="bg-pink-50/50 p-5 rounded-2xl border border-pink-100/50 mt-4 flex-row items-start">
+              <FileText size={16} color="#f48fb1" className="mt-0.5" />
+              <Text className="text-[#f48fb1] text-[11px] font-bold leading-5 ml-3 flex-1">
                 Tip: Clear photos and accurate location help speed up the
                 approval process.
               </Text>

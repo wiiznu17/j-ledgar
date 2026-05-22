@@ -17,7 +17,7 @@ import { NotificationModule } from '../notification/notification.module';
         }
         return {
           secret: secret,
-          signOptions: { expiresIn: '15m' },
+          signOptions: { expiresIn: '3m' },
         };
       },
     }),
