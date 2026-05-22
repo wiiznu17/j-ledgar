@@ -131,6 +131,13 @@ sudo usermod -aG docker $USER
    ```
    _หมายเหตุ: การขอใบรับรองสำหรับโดเมน `api.potayyr.site` จะทำให้ Let's Encrypt บันทึกไฟล์ใบรับรองไว้ที่ `/etc/letsencrypt/live/api.potayyr.site/` ซึ่งจะตรงกับการตั้งค่าของ Nginx ของเราพอดี (สำหรับโดเมน `potayyr.site` และ `admin.potayyr.site` จะมีระบบจัดการ SSL อัตโนมัติจากฝั่งผู้ให้บริการโฮสติ้ง เช่น Vercel อยู่แล้ว จึงไม่ต้องขอใบรับรองจากเครื่อง EC2 เครื่องนี้)_
 
+3. **ตั้งค่าระบบต่ออายุ SSL อัตโนมัติ (Auto-Renewal Integration)**:
+   รันคำสั่งด้านล่างนี้หลังจากขอใบรับรองสำเร็จ เพื่อป้อนเงื่อนไขให้ระบบเบื้องหลังรู้ว่าจะต้องแอบสั่งปิดและเปิด Docker Nginx เพื่อเคลียร์พอร์ต 80 ให้อัตโนมัติทุก ๆ 3 เดือนตอนที่แอบมาต่ออายุใบรับรอง:
+   ```bash
+   sudo sh -c 'echo "pre_hook = docker compose -f /home/ubuntu/app/j-ledger/docker-compose.yml stop nginx" >> /etc/letsencrypt/renewal/api.potayyr.site.conf'
+   sudo sh -c 'echo "post_hook = docker compose -f /home/ubuntu/app/j-ledger/docker-compose.yml start nginx" >> /etc/letsencrypt/renewal/api.potayyr.site.conf'
+   ```
+
 ---
 
 ## 🚀 5. เริ่มต้นระบบและใส่ข้อมูลตั้งต้น (Seeding)
@@ -225,3 +232,30 @@ docker compose up -d portal-migration
 
 > [!IMPORTANT]
 > **Database & Infrastructure Security**: ในโหมด Production สังเกตว่าพอร์ตฐานข้อมูลและระบบภายใน เช่น PostgreSQL (5432) หรือ Redis (6379) จะไม่ถูกเปิดออกภายนอกเครื่องเลย ทุกบริการจะสื่อสารกันภายในระบบปิดของ Docker Network เพื่อป้องกันการเจาะระบบและการโจมตีจากภายนอก 100%
+
+---
+
+## 🔄 8. การอัปเดตระบบในอนาคต (Future System Updates)
+
+เมื่อมีการพัฒนาฟีเจอร์ใหม่ แก้ไขบั๊ก หรืออัปเดตโค้ดบนเครื่อง Local และต้องการนำมาขึ้นเครื่อง Production บน EC2 ให้ทำตามขั้นตอนดังนี้:
+
+### 1. แก้ไขและเพิ่มตัวแปรสภาพแวดล้อม (หากมี)
+หากโค้ดชุดใหม่มีการเพิ่มหรือแก้ไขค่าตัวแปรใน `.env.example` ให้รีโมทเข้าเครื่อง EC2 แล้วเปิดไฟล์ `.env` เพื่ออัปเดตค่าให้ตรงกันก่อน:
+```bash
+nano ~/app/j-ledger/.env
+```
+
+### 2. ดึงโค้ดเวอร์ชันล่าสุดจาก Git
+```bash
+cd ~/app/j-ledger
+git pull origin main
+```
+
+### 3. สั่ง Rebuild และเริ่มระบบเวอร์ชันใหม่
+ใช้คำสั่งด้านล่างนี้เพื่อสั่งให้ Docker คอมไพล์และรันเฉพาะส่วนประกอบที่มีการแก้ไขโค้ดใหม่ (โดยที่ข้อมูลในฐานข้อมูลเดิมของคุณจะไม่ได้รับผลกระทบหรือสูญหายใด ๆ ทั้งสิ้น):
+```bash
+docker compose up -d --build
+```
+
+### 4. อัปเดตโครงสร้างฐานข้อมูล (หากมีการแก้ไข Schema)
+ในกรณีที่อัปเดตนั้นมีการแก้ไขฐานข้อมูลร่วมด้วย ให้ทำตามขั้นตอนการสั่งรัน Migration Container ใน **หัวข้อที่ 6** ของคู่มือนี้เพื่ออัปเดตโครงสร้างฐานข้อมูลให้สอดคล้องกับโค้ดล่าสุดครับ

@@ -26,8 +26,7 @@ export function LoginForm({ action }: LoginFormProps) {
               id="email"
               name="email"
               type="email"
-              placeholder="admin@jledger.com"
-              defaultValue="admin@jledger.com"
+              placeholder="email@example.com"
               required
               className="pl-10 h-12 bg-card text-foreground border-border focus:border-ring focus:ring-1 focus:ring-ring"
             />
@@ -45,7 +44,6 @@ export function LoginForm({ action }: LoginFormProps) {
               name="password"
               type={showPassword ? 'text' : 'password'}
               placeholder="••••••••"
-              defaultValue="password123"
               required
               className="pl-10 pr-10 h-12 bg-card text-foreground border-border focus:border-ring focus:ring-1 focus:ring-ring"
             />
