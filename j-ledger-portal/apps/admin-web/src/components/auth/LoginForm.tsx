@@ -1,10 +1,11 @@
 'use client';
 
 import { useState } from 'react';
+import { useFormStatus } from 'react-dom';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Eye, EyeOff, Lock, Mail } from 'lucide-react';
+import { Eye, EyeOff, Lock, Mail, Loader2 } from 'lucide-react';
 
 interface LoginFormProps {
   action: (formData: FormData) => void;
@@ -87,12 +88,28 @@ export function LoginForm({ action }: LoginFormProps) {
         </div>
       </div>
 
-      <Button
-        type="submit"
-        className="w-full h-12 text-base font-semibold text-white bg-indigo-600 hover:bg-indigo-700 dark:bg-indigo-500 dark:hover:bg-indigo-600 shadow-xs transition-all active:scale-[0.98] border-0"
-      >
-        Sign in
-      </Button>
+      <SubmitButton />
     </form>
+  );
+}
+
+function SubmitButton() {
+  const { pending } = useFormStatus();
+
+  return (
+    <Button
+      type="submit"
+      disabled={pending}
+      className="w-full h-12 text-base font-semibold text-white bg-indigo-600 hover:bg-indigo-700 dark:bg-indigo-500 dark:hover:bg-indigo-600 shadow-xs transition-all active:scale-[0.98] border-0 flex items-center justify-center gap-2"
+    >
+      {pending ? (
+        <>
+          <Loader2 className="h-5 w-5 animate-spin" />
+          Signing in...
+        </>
+      ) : (
+        'Sign in'
+      )}
+    </Button>
   );
 }
