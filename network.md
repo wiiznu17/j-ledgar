@@ -4,7 +4,7 @@
 
 ## 📝 Nginx Configuration
 
-- `docker/nginx/default.conf` - Production (HTTPS with SSL, potayyr.site) - Public NGINX
+- `docker/nginx/default.conf` - Production (HTTPS with SSL, api.potayyr.site) - Public NGINX
 - `docker/nginx/default.conf.example` - Local development (HTTP only, localhost) - สำหรับ Local Test
 
 **Usage:**

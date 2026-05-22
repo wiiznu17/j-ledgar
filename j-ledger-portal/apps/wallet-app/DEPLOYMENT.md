@@ -49,7 +49,7 @@ cp .env.example .env
 
 ```env
 # ชี้ไปที่ backend server จริง
-EXPO_PUBLIC_API_URL=https://potayyr.site
+EXPO_PUBLIC_API_URL=https://api.potayyr.site
 
 # Stripe (ใช้ publishable key เท่านั้น — ห้าม secret key)
 EXPO_PUBLIC_STRIPE_PUBLISHABLE_KEY=pk_live_xxx
@@ -177,7 +177,7 @@ eas submit --platform ios
 
 | ตัวแปร                               | ตัวอย่างค่า                      | หมายเหตุ                         |
 | ------------------------------------ | -------------------------------- | -------------------------------- |
-| `EXPO_PUBLIC_API_URL`                | `https://potayyr.site`           | URL ของ portal-service backend   |
+| `EXPO_PUBLIC_API_URL`                | `https://api.potayyr.site`       | URL ของ portal-service backend   |
 | `EXPO_PUBLIC_STRIPE_PUBLISHABLE_KEY` | `pk_live_xxx` หรือ `pk_test_xxx` | **Publishable key เท่านั้น**     |
 | `EXPO_PUBLIC_AWS_REGION`             | `ap-southeast-1`                 | AWS Region สำหรับ Face Liveness  |
 | `EXPO_PUBLIC_AWS_IDENTITY_POOL_ID`   | `ap-southeast-1:xxxx`            | Cognito Identity Pool สำหรับ KYC |
@@ -186,7 +186,7 @@ eas submit --platform ios
 
 |              | Local Dev                 | Staging                        | Production             |
 | ------------ | ------------------------- | ------------------------------ | ---------------------- |
-| `API_URL`    | `http://192.168.x.x:3000` | `https://staging.potayyr.site` | `https://potayyr.site` |
+| `API_URL`    | `http://192.168.x.x:3000` | `https://staging.potayyr.site` | `https://api.potayyr.site` |
 | `STRIPE_KEY` | `pk_test_xxx`             | `pk_test_xxx`                  | `pk_live_xxx`          |
 
 ---

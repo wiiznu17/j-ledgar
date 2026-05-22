@@ -55,7 +55,7 @@ npm run create-admin -- <username> <password> <email>
 
 ### ขั้นตอนที่ 1: เชื่อมต่อ PostgreSQL
 ```bash
-docker exec -it jledger-postgres psql -U ${POSTGRES_USER} -d ${POSTGRES_DB}
+docker exec -it jledger-postgres sh -c 'psql -U "$POSTGRES_USER" -d "$POSTGRES_DB"'
 ```
 
 ### ขั้นตอนที่ 2: สร้าง Password Hash
