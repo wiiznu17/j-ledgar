@@ -124,7 +124,11 @@ export class IntegrationController {
   }
 
   @Get('transactions/details/:transactionId')
-  async getTransactionDetails(@Param('transactionId') transactionId: string) {
-    return this.integrationService.getTransactionDetails(transactionId);
+  async getTransactionDetails(
+    @Req() req: any,
+    @Param('transactionId') transactionId: string,
+  ) {
+    const userId = req.user?.sub;
+    return this.integrationService.getTransactionDetails(transactionId, userId);
   }
 }
