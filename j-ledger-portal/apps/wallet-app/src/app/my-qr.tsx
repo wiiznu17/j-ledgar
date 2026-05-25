@@ -15,10 +15,14 @@ import { AmountModal } from '@/components/my-qr/AmountModal';
 // Services
 import { UserProfileService, UserProfile } from '@/lib/user-service';
 
+// Hooks
+import { useScreenCaptureProtection } from '@/hooks/useScreenCaptureProtection';
+
 // Constants
 import { MOCK_USER } from '@/constants/mockData';
 
 export default function MyQrScreen() {
+  useScreenCaptureProtection();
   const router = useRouter();
   const [amount, setAmount] = useState('');
   const [isModalVisible, setIsModalVisible] = useState(false);

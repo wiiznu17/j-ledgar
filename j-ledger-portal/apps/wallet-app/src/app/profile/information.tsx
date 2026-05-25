@@ -60,7 +60,7 @@ const DEFAULT_FORM_DATA: FormData = {
   nameTh: '',
   prefixEn: 'Mr.',
   nameEn: '',
-  avatar: require('../../../assets/images/mock_user_avatar.png'),
+  avatar: require('../../../assets/images/logo/logo.png'),
   phone: '',
   email: '',
   kycTier: 'Standard',

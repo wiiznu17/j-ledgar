@@ -146,7 +146,7 @@ export default function HomeScreen() {
         <WelcomeHeader
           user={{
             name: userName,
-            avatar: require('../../../assets/images/mock_user_avatar.png'),
+            avatar: require('../../../assets/images/logo/logo.png'),
           }}
         />
 

@@ -8,6 +8,7 @@ import {
   Switch,
   Platform,
   ActivityIndicator,
+  Alert,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useFocusEffect } from '@react-navigation/native';
@@ -28,15 +29,15 @@ import { useAuthStore } from '@/store/auth';
 import { UserProfileService, UserProfile } from '@/lib/user-service';
 import { RegistrationState } from '@repo/dto';
 import { api } from '@/lib/axios';
+import { authenticateWithBiometric, getBiometricErrorMessage } from '@/lib/biometric-auth';
 
 export default function SettingsScreen() {
-  const { logout } = useAuthStore();
+  const { logout, biometricEnabled, setBiometricEnabled } = useAuthStore();
   const router = useRouter();
 
   // States
   const [isLoading, setIsLoading] = useState(true);
   const [userProfile, setUserProfile] = useState<UserProfile | null>(null);
-  const [biometrics, setBiometrics] = useState(true);
   const [pushNotifs, setPushNotifs] = useState(true);
   const [isTogglingPush, setIsTogglingPush] = useState(false);
 
@@ -92,13 +93,56 @@ export default function SettingsScreen() {
     }, []),
   );
 
-  const handleLogout = async () => {
+  const handleLogout = () => {
+    Alert.alert(
+      'ออกจากระบบ',
+      'คุณต้องการออกจากระบบใช่หรือไม่?',
+      [
+        {
+          text: 'ยกเลิก',
+          style: 'cancel',
+        },
+        {
+          text: 'ออกจากระบบ',
+          style: 'destructive',
+          onPress: async () => {
+            try {
+              await logout();
+              router.replace('/(auth)/login' as any);
+            } catch (err) {
+              console.error('[Profile] Logout failed:', err);
+              router.replace('/(auth)/login' as any);
+            }
+          },
+        },
+      ],
+      { cancelable: true }
+    );
+  };
+
+  // Toggle biometric settings with real hardware authentication check
+  const handleToggleBiometric = async () => {
     try {
-      await logout();
-      router.replace('/(auth)/login' as any);
-    } catch (err) {
-      console.error('[Profile] Logout failed:', err);
-      router.replace('/(auth)/login' as any);
+      if (!biometricEnabled) {
+        const result = await authenticateWithBiometric();
+        if (result.success) {
+          await setBiometricEnabled(true);
+          Alert.alert('สำเร็จ', 'เปิดใช้งานสแกนลายนิ้วมือ/ใบหน้าเรียบร้อยแล้ว');
+        } else {
+          if (result.error && result.error.code !== 'USER_CANCEL') {
+            Alert.alert(
+              'ยืนยันตัวตนไม่สำเร็จ',
+              'อุปกรณ์ของคุณไม่รองรับ หรือยังไม่ได้ลงทะเบียนสแกนลายนิ้วมือ/ใบหน้าบนระบบปฏิบัติการของเครื่อง'
+            );
+          }
+        }
+      } else {
+        await setBiometricEnabled(false);
+        Alert.alert('สำเร็จ', 'ปิดใช้งานสแกนลายนิ้วมือ/ใบหน้าเรียบร้อยแล้ว');
+      }
+    } catch (error) {
+      console.error('[Profile] Biometric toggle error:', error);
+      Alert.alert('เกิดข้อผิดพลาด', 'ไม่สามารถเปลี่ยนแปลงการตั้งค่าชีวมาตรได้');
     }
   };
 
@@ -114,11 +158,26 @@ export default function SettingsScreen() {
 
   // Get display name from profile
   const getDisplayName = () => {
+    // 1. Try KYC Thai Name
+    const kycThFirst = userProfile?.kycData?.firstNameTh || '';
+    const kycThLast = userProfile?.kycData?.lastNameTh || '';
+    const kycThName = `${kycThFirst} ${kycThLast}`.trim();
+    if (kycThName) return kycThName;
+
+    // 2. Try KYC English Name
+    const kycEnFirst = userProfile?.kycData?.firstNameEn || '';
+    const kycEnLast = userProfile?.kycData?.lastNameEn || '';
+    const kycEnName = `${kycEnFirst} ${kycEnLast}`.trim();
+    if (kycEnName) return kycEnName;
+
+    // 3. Try Profile Name
     const firstName = userProfile?.profile?.firstName || '';
     const lastName = userProfile?.profile?.lastName || '';
     const fullName = `${firstName} ${lastName}`.trim();
+    if (fullName) return fullName;
 
-    return fullName || userProfile?.phoneNumber || 'P-wallet User';
+    // 4. Fallback to a placeholder (Not phone number to avoid duplication)
+    return 'P-wallet User';
   };
 
   if (isLoading) {
@@ -140,7 +199,7 @@ export default function SettingsScreen() {
       {/* Header */}
       <View className="px-5 pt-2 pb-4 items-center justify-center">
         <Text className="text-lg font-black text-gray-800 font-manrope">
-          Me
+          Profile
         </Text>
       </View>
 
@@ -161,7 +220,7 @@ export default function SettingsScreen() {
             >
               <View className="p-1 border-[3px] border-white rounded-[2.5rem] shadow-sm bg-white">
                 <Image
-                  source={require('../../../assets/images/mock_user_avatar.png')}
+                  source={require('../../../assets/images/logo/logo.png')}
                   className="w-28 h-28 rounded-[2.2rem]"
                 />
               </View>
@@ -178,13 +237,13 @@ export default function SettingsScreen() {
             <Text className="text-sm font-bold text-gray-400 mt-1">
               {formatPhone(userProfile?.phoneNumber || '')}
             </Text>
-            <View className="bg-pink-50 px-3 py-1.5 rounded-full mt-3 border border-pink-100">
+            {/* <View className="bg-pink-50 px-3 py-1.5 rounded-full mt-3 border border-pink-100">
               <Text className="text-[10px] font-black text-[#f48fb1] uppercase tracking-widest">
                 {userProfile?.registrationState === RegistrationState.COMPLETED
                   ? 'Premium Member'
                   : 'Standard Member'}
               </Text>
-            </View>
+            </View> */}
           </View>
         </View>
 
@@ -215,14 +274,6 @@ export default function SettingsScreen() {
               label="My Information Profile"
               onPress={() => router.push('/profile/information' as any)}
             />
-            <Divider />
-            <SettingItem
-              icon={<CreditCard size={20} color="#14b8a6" />}
-              iconBg="bg-teal-50"
-              label="Transaction History"
-              onPress={() => {}}
-              badge="Coming Soon"
-            />
           </View>
         </View>
 
@@ -244,16 +295,8 @@ export default function SettingsScreen() {
               icon={<Fingerprint size={20} color="#a855f7" />}
               iconBg="bg-purple-50"
               label="Biometric ID"
-              active={biometrics}
-              onToggle={() => setBiometrics(!biometrics)}
-            />
-            <Divider />
-            <SettingItem
-              icon={<Smartphone size={20} color="#64748b" />}
-              iconBg="bg-slate-50"
-              label="Manage Devices"
-              onPress={() => {}}
-              badge="Coming Soon"
+              active={biometricEnabled}
+              onToggle={handleToggleBiometric}
             />
             <Divider />
             <SettingItem
@@ -334,15 +377,6 @@ export default function SettingsScreen() {
           </Text>
         </TouchableOpacity>
 
-        {/* Footer Versioning */}
-        <View className="items-center space-y-1 py-4 opacity-60">
-          <Text className="text-[10px] font-bold text-gray-400 uppercase tracking-widest italic">
-            P-wallet Version 2.0.4-beta
-          </Text>
-          <Text className="text-[8px] font-medium text-gray-300 uppercase tracking-[0.2em] mt-1">
-            Built for World Class Experience
-          </Text>
-        </View>
       </ScrollView>
     </SafeAreaView>
   );
@@ -350,32 +384,37 @@ export default function SettingsScreen() {
 
 // --- Reusable Components ---
 
-function SettingItem({ icon, iconBg, label, onPress, badge }: any) {
+function SettingItem({ icon, iconBg, label, onPress, badge, disabled }: any) {
+  const isActuallyDisabled = disabled || badge === 'Coming Soon';
   return (
     <TouchableOpacity
-      onPress={onPress}
-      activeOpacity={0.7}
-      className="w-full px-5 py-4 flex-row items-center justify-between bg-white"
+      onPress={isActuallyDisabled ? undefined : onPress}
+      activeOpacity={isActuallyDisabled ? 1 : 0.7}
+      className={`w-full px-5 py-4 flex-row items-center justify-between bg-white ${isActuallyDisabled ? 'opacity-65' : ''}`}
     >
       <View className="flex-row items-center gap-4">
         <View
-          className={`w-10 h-10 rounded-2xl items-center justify-center ${iconBg}`}
+          className={`w-10 h-10 rounded-2xl items-center justify-center ${isActuallyDisabled ? 'bg-gray-50' : iconBg}`}
         >
-          {icon}
+          {isActuallyDisabled ? (
+            React.cloneElement(icon, { color: '#9ca3af' })
+          ) : (
+            icon
+          )}
         </View>
-        <Text className="font-manrope font-black text-sm text-gray-800">
+        <Text className={`font-manrope font-black text-sm ${isActuallyDisabled ? 'text-gray-400' : 'text-gray-800'}`}>
           {label}
         </Text>
       </View>
       <View className="flex-row items-center gap-2">
         {badge && (
-          <View className="bg-gray-100 px-2 py-1 rounded-full">
-            <Text className="text-[9px] font-bold text-gray-500 uppercase tracking-wider">
+          <View className="bg-gray-100 px-2 py-0.5 rounded-full border border-gray-200/40">
+            <Text className="text-[8px] font-manrope font-black text-gray-400 uppercase tracking-widest">
               {badge}
             </Text>
           </View>
         )}
-        <ChevronRight size={18} color="#d1d5db" />
+        <ChevronRight size={18} color={isActuallyDisabled ? '#e5e7eb' : '#d1d5db'} />
       </View>
     </TouchableOpacity>
   );

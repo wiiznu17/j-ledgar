@@ -22,9 +22,6 @@ export const WelcomeHeader = ({ user }: WelcomeHeaderProps) => {
           className="w-12 h-12 rounded-full border-2 border-[#f48fb1]"
         />
         <View>
-          <Text className="text-xs font-manrope font-bold text-gray-400">
-            Hello,
-          </Text>
           <Text className="text-lg font-manrope font-black text-gray-800 tracking-tight">
             {user.name}
           </Text>

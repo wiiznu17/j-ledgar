@@ -6,7 +6,6 @@ import { useFocusEffect } from '@react-navigation/native';
 import api from '@/lib/axios';
 
 import { HistoryHeader } from '@/components/history/HistoryHeader';
-import { HistorySearchBar } from '@/components/history/HistorySearchBar';
 import { HistoryCategoryTabs } from '@/components/history/HistoryCategoryTabs';
 import { HistoryTransactionList } from '@/components/history/HistoryTransactionList';
 import {
@@ -119,8 +118,6 @@ export default function HistoryScreen() {
   return (
     <SafeAreaView className="flex-1 bg-transparent" edges={['top']}>
       <HistoryHeader onBack={() => router.back()} />
-
-      <HistorySearchBar value={search} onChangeText={setSearch} />
 
       <HistoryCategoryTabs
         categories={HISTORY_FILTERS}

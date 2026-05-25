@@ -1,4 +1,5 @@
-import React, { useState } from 'react';
+import React, { useState, useCallback } from 'react';
+import { useFocusEffect } from '@react-navigation/native';
 import {
   View,
   Text,
@@ -109,12 +110,54 @@ export default function NotificationsScreen() {
     initialPageParam: 1,
   });
 
-  // Mark as read mutation
+  // Refetch notifications when screen is focused (e.g. back from transaction detail)
+  useFocusEffect(
+    useCallback(() => {
+      // Only refetch if we already have data to avoid duplicate API requests on mount
+      if (data) {
+        refetch();
+      }
+    }, [refetch, data])
+  );
+
+  // Mark as read mutation with instant optimistic UI update
   const markAsReadMutation = useMutation({
     mutationFn: async (id: string) => {
       await api.patch(`/notifications/${id}/read`);
     },
-    onSuccess: () => {
+    onMutate: async (clickedId: string) => {
+      // Cancel outgoing refetches so they don't overwrite our optimistic update
+      await queryClient.cancelQueries({ queryKey: ['notifications'] });
+
+      // Snapshot the previous queries value
+      const previousQueries = queryClient.getQueriesData({ queryKey: ['notifications'] });
+
+      // Optimistically update to read state in all matching queries
+      queryClient.setQueriesData<any>({ queryKey: ['notifications'] }, (oldData: any) => {
+        if (!oldData) return oldData;
+        return {
+          ...oldData,
+          pages: oldData.pages.map((page: any) => ({
+            ...page,
+            items: page.items.map((item: any) =>
+              item.id === clickedId ? { ...item, isRead: true } : item
+            ),
+          })),
+        };
+      });
+
+      return { previousQueries };
+    },
+    onError: (err, clickedId, context: any) => {
+      // Rollback to previous state on error
+      if (context?.previousQueries) {
+        context.previousQueries.forEach(([queryKey, value]: any) => {
+          queryClient.setQueryData(queryKey, value);
+        });
+      }
+    },
+    onSettled: () => {
+      // Refetch to sync with server
       queryClient.invalidateQueries({ queryKey: ['notifications'] });
     },
   });
@@ -125,32 +168,34 @@ export default function NotificationsScreen() {
   const getIcon = (type: string, category?: string) => {
     const cat = getCategoryForType(type, category);
 
-    if (cat === NotificationCategory.FINANCE)
-      return <CreditCard size={22} color="#4855a5" />;
-    if (cat === NotificationCategory.SYSTEM)
-      return <ShieldCheck size={22} color="#4855a5" />;
-    if (cat === NotificationCategory.PROMO)
-      return <Tag size={22} color="#f48fb1" />;
-    if (cat === NotificationCategory.NEWS)
-      return <Newspaper size={22} color="#4855a5" />;
-
     // Specific overrides if needed
     const t = type?.toUpperCase() || '';
     if (t === NotificationEventType.SECURITY || t.includes('ERROR'))
-      return <AlertCircle size={22} color="#ef4444" />;
+      return <AlertCircle size={20} color="#ef4444" />;
 
-    return <Bell size={22} color="#4855a5" />;
+    if (cat === NotificationCategory.FINANCE)
+      return <CreditCard size={20} color="#3b82f6" />;
+    if (cat === NotificationCategory.SYSTEM)
+      return <ShieldCheck size={20} color="#10b981" />;
+    if (cat === NotificationCategory.PROMO)
+      return <Tag size={20} color="#f48fb1" />;
+    if (cat === NotificationCategory.NEWS)
+      return <Newspaper size={20} color="#f59e0b" />;
+
+    return <Bell size={20} color="#64748b" />;
   };
 
   const getIconBg = (type: string, category?: string) => {
     const cat = getCategoryForType(type, category);
+    const t = type?.toUpperCase() || '';
+    if (t === NotificationEventType.SECURITY || t.includes('ERROR')) return 'bg-red-50';
 
     if (cat === NotificationCategory.FINANCE) return 'bg-blue-50';
-    if (cat === NotificationCategory.SYSTEM) return 'bg-red-50';
-    if (cat === NotificationCategory.PROMO) return 'bg-primary/10';
-    if (cat === NotificationCategory.NEWS) return 'bg-indigo-50';
+    if (cat === NotificationCategory.SYSTEM) return 'bg-emerald-50';
+    if (cat === NotificationCategory.PROMO) return 'bg-pink-50';
+    if (cat === NotificationCategory.NEWS) return 'bg-amber-50';
 
-    return 'bg-[#eff0f7]';
+    return 'bg-gray-50';
   };
 
   const formatTime = (dateString: string) => {
@@ -173,9 +218,16 @@ export default function NotificationsScreen() {
       markAsReadMutation.mutate(notification.id);
     }
 
-    // Deep linking logic
-    if (notification.path) {
-      router.push(notification.path as any);
+    // Deep linking logic with client-side mapping for routes not implemented
+    let targetPath = notification.path;
+    if (targetPath === '/loyalty') {
+      targetPath = '/(tabs)/deals'; // Redirect to the actual deals/points tab!
+    } else if (targetPath === '/profile/security') {
+      targetPath = '/(tabs)/profile'; // Redirect to profile settings!
+    }
+
+    if (targetPath) {
+      router.push(targetPath as any);
       return;
     }
 
@@ -196,9 +248,9 @@ export default function NotificationsScreen() {
         type === NotificationEventType.TOPUP ||
         type === NotificationEventType.PAYMENT)
     ) {
-      const targetPath = `/transaction/${id}`;
-      console.log(`[Notifications] Navigating to: ${targetPath}`);
-      router.push(targetPath as any);
+      const transPath = `/transaction/${id}`;
+      console.log(`[Notifications] Navigating to: ${transPath}`);
+      router.push(transPath as any);
     } else if (
       type === 'KYC_STATUS' ||
       type === NotificationEventType.KYC_APPROVED ||
@@ -209,91 +261,83 @@ export default function NotificationsScreen() {
       type === 'SECURITY' ||
       type === NotificationEventType.LOGIN_SUCCESS
     ) {
-      router.push('/profile/security' as any);
+      router.push('/(tabs)/profile' as any); // Redirect to profile tab settings where security items are
     }
   };
 
+  // Standard full-screen loading state consistent with other app pages
+  if (isLoading && !isRefetching && notifications.length === 0) {
+    return (
+      <SafeAreaView
+        className="flex-1 bg-transparent items-center justify-center"
+        edges={['top']}
+      >
+        <ActivityIndicator size="large" color="#f48fb1" />
+        <Text className="text-sm font-manrope font-bold text-gray-400 mt-4">
+          กำลังโหลดข้อมูล...
+        </Text>
+      </SafeAreaView>
+    );
+  }
+
   return (
-    <SafeAreaView className="flex-1 bg-transparent">
-      <View className="px-6 mt-6 mb-4 flex-row items-center gap-4">
+    <SafeAreaView className="flex-1 bg-transparent" edges={['top']}>
+      {/* Header */}
+      <View className="px-5 pt-2 pb-4 flex-row items-center justify-between">
         <TouchableOpacity
           onPress={() => router.back()}
-          className="w-12 h-12 rounded-2xl bg-white border border-gray-100 flex items-center justify-center shadow-md active:scale-95"
+          className="w-10 h-10 bg-white rounded-2xl items-center justify-center border border-gray-100 shadow-sm active:scale-95"
         >
-          <ChevronLeft size={24} color="#4855a5" />
+          <ChevronLeft size={24} color="#1a1a1a" />
         </TouchableOpacity>
-        <Text className="text-xl font-manrope font-black text-on-surface tracking-tight">
+        <Text className="text-lg font-black text-gray-800 font-manrope">
           Notifications
         </Text>
+        <View className="w-10 h-10" />
       </View>
 
       {/* Filter Categories */}
-      <View className="mb-6 h-16" style={{ zIndex: 20 }}>
+      <View className="mb-6">
         <ScrollView
           horizontal
           showsHorizontalScrollIndicator={false}
           contentContainerStyle={{
-            paddingHorizontal: 24,
-            gap: 12,
-            paddingBottom: 8,
+            paddingHorizontal: 20,
+            paddingVertical: 1,
+            gap: 10,
           }}
         >
           {CATEGORIES.map((cat) => {
             const Icon = cat.icon;
             const isSelected = selectedCategory === cat.id;
             return (
-              <Pressable
+              <TouchableOpacity
                 key={cat.id}
                 onPress={() => setSelectedCategory(cat.id)}
-                style={({ pressed }) => ({
-                  opacity: pressed ? 0.8 : 1,
-                  transform: [{ scale: pressed ? 0.96 : 1 }],
-                })}
               >
-                <View
-                  style={{
-                    flexDirection: 'row',
-                    alignItems: 'center',
-                    paddingHorizontal: 20,
-                    paddingVertical: 12,
-                    borderRadius: 16,
-                    borderWidth: 1,
-                    backgroundColor: isSelected ? '#4855a5' : '#ffffff',
-                    borderColor: isSelected
-                      ? '#4855a5'
-                      : 'rgba(72, 85, 165, 0.1)',
-                    // Manual shadow-md implementation
-                    shadowColor: '#000',
-                    shadowOffset: { width: 0, height: 4 },
-                    shadowOpacity: isSelected ? 0.15 : 0.05,
-                    shadowRadius: 6,
-                    elevation: isSelected ? 5 : 1,
+                <MotiView
+                  animate={{
+                    backgroundColor: isSelected ? '#f48fb1' : '#ffffff',
+                    borderColor: isSelected ? '#f48fb1' : '#f3f4f6',
                   }}
+                  className="px-4 py-2.5 rounded-full border shadow-sm flex-row items-center gap-2"
                 >
-                  <Icon size={18} color={isSelected ? '#ffffff' : '#4855a5'} />
+                  <Icon size={14} color={isSelected ? '#ffffff' : '#9ca3af'} />
                   <Text
-                    style={{
-                      marginLeft: 8,
-                      fontFamily: 'Manrope_700Bold',
-                      fontSize: 14,
-                      color: isSelected ? '#ffffff' : '#4855a5',
-                    }}
+                    className={`font-manrope font-black text-[11px] uppercase tracking-widest ${
+                      isSelected ? 'text-white' : 'text-gray-400'
+                    }`}
                   >
                     {cat.label}
                   </Text>
-                </View>
-              </Pressable>
+                </MotiView>
+              </TouchableOpacity>
             );
           })}
         </ScrollView>
       </View>
 
-      {isLoading && !isRefetching ? (
-        <View className="py-20 items-center">
-          <ActivityIndicator size="large" color="#4855a5" />
-        </View>
-      ) : (
-        <FlatList
+      <FlatList
           data={notifications}
           renderItem={({ item, index }) => (
             <NotificationItem
@@ -306,7 +350,7 @@ export default function NotificationsScreen() {
             />
           )}
           keyExtractor={(item) => item.id}
-          contentContainerStyle={{ paddingHorizontal: 24, paddingBottom: 120 }}
+          contentContainerStyle={{ paddingHorizontal: 20, paddingBottom: 140 }}
           showsVerticalScrollIndicator={false}
           onEndReached={() => {
             if (hasNextPage && !isFetchingNextPage) {
@@ -318,14 +362,14 @@ export default function NotificationsScreen() {
             <RefreshControl
               refreshing={isRefetching}
               onRefresh={refetch}
-              tintColor="#4855a5"
+              tintColor="#f48fb1"
             />
           }
           ListHeaderComponent={
             notifications.length > 0 ? (
-              <View className="mb-6">
-                <Text className="text-sm font-manrope font-bold text-on-surfaceVariant">
-                  {unreadCount} unread
+              <View className="mb-4 px-1">
+                <Text className="text-[10px] font-manrope font-black text-gray-400 uppercase tracking-widest">
+                  {unreadCount} unread notifications
                 </Text>
               </View>
             ) : null
@@ -333,24 +377,23 @@ export default function NotificationsScreen() {
           ListFooterComponent={
             isFetchingNextPage ? (
               <View className="py-4">
-                <ActivityIndicator size="small" color="#4855a5" />
+                <ActivityIndicator size="small" color="#f48fb1" />
               </View>
             ) : null
           }
           ListEmptyComponent={
             !isLoading ? (
-              <View className="items-center justify-center py-40">
-                <View className="w-20 h-20 bg-white/20 rounded-full items-center justify-center mb-6">
-                  <Bell size={32} color="#4855a540" />
+              <View className="items-center justify-center py-20">
+                <View className="w-20 h-20 bg-gray-100 rounded-full items-center justify-center mb-4">
+                  <Bell size={32} color="#d1d5db" />
                 </View>
-                <Text className="font-manrope font-black text-on-surfaceVariant/40 uppercase tracking-widest">
+                <Text className="font-manrope font-black text-gray-400 uppercase tracking-widest text-xs">
                   Quiet Inbox
                 </Text>
               </View>
             ) : null
           }
         />
-      )}
     </SafeAreaView>
   );
 }
@@ -371,41 +414,46 @@ const NotificationItem = React.memo(
     getIconBg: (type: string, category?: string) => string;
     formatTime: (date: any) => string;
   }) => (
-    <View className="mb-4">
+    <View className="mb-2">
       <TouchableOpacity
         onPress={() => onPress(item)}
-        className={`border rounded-[30] p-5 flex-row gap-5 shadow-md active:opacity-70 ${
+        className={`border rounded-[2rem] p-5 flex-row items-center justify-between shadow-sm active:scale-95 ${
           item.isRead
-            ? 'bg-white border-gray-100'
-            : 'bg-blue-50 border-blue-100 shadow-blue-100'
+            ? 'bg-white border-gray-50'
+            : 'bg-pink-50 border-pink-100 shadow-pink-100/10'
         }`}
       >
-        <View
-          className={`w-14 h-14 rounded-2xl ${getIconBg(
-            item.type,
-            item.category,
-          )} items-center justify-center border border-outline-variant/5`}
-        >
-          {getIcon(item.type, item.category)}
-        </View>
-        <View className="flex-1">
-          <View className="flex-row justify-between items-center mb-1">
+        <View className="flex-row items-center gap-4 flex-1">
+          {/* Icon Container */}
+          <View
+            className={`w-12 h-12 rounded-full ${getIconBg(
+              item.type,
+              item.category,
+            )} items-center justify-center border border-outline-variant/5`}
+          >
+            {getIcon(item.type, item.category)}
+          </View>
+          <View className="flex-1 mr-2">
             <Text
               numberOfLines={1}
-              className={`text-base font-manrope tracking-tight flex-1 mr-2 ${
+              className={`text-sm font-manrope tracking-tight mb-1 ${
                 item.isRead
-                  ? 'font-bold text-on-surface'
-                  : 'font-black text-primary'
+                  ? 'font-bold text-gray-800'
+                  : 'font-black text-pink-400'
               }`}
             >
               {item.title}
             </Text>
-            <Text className="text-[10px] font-manrope font-black text-gray-500 uppercase tracking-tighter">
-              {formatTime(item.createdAt)}
+            <Text className="text-[12px] font-manrope font-bold text-gray-400 leading-normal">
+              {item.message}
             </Text>
           </View>
-          <Text className="text-[12px] font-manrope font-bold text-gray-600 leading-relaxed">
-            {item.message}
+        </View>
+        
+        {/* Right side: Time/Date */}
+        <View className="items-end justify-center">
+          <Text className="text-[9px] font-manrope font-bold text-gray-400 uppercase tracking-widest">
+            {formatTime(item.createdAt)}
           </Text>
         </View>
       </TouchableOpacity>

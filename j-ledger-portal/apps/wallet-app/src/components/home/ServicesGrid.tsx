@@ -6,7 +6,7 @@ import {
   ReceiptText,
   Gamepad2,
   ShieldCheck,
-  CreditCard,
+  Store,
   Car,
   TicketPercent,
   LayoutGrid,
@@ -69,11 +69,10 @@ export const ServicesGrid = ({ onServicePress }: ServicesGridProps) => {
           true,
         )}
         {renderServiceItem(
-          <CreditCard />,
-          'K-Debit',
+          <Store />,
+          'Merchant',
           '#14b8a6',
-          undefined,
-          true,
+          '/merchant',
         )}
         {renderServiceItem(<Car />, 'Transport', '#2563eb', undefined, true)}
         {renderServiceItem(<TicketPercent />, 'Deals', '#ec4899', '/deals')}
