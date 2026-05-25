@@ -15,6 +15,7 @@ import {
   ArrowDownLeft,
   Receipt,
   Filter,
+  MapPin,
 } from 'lucide-react-native';
 import { MerchantService, MerchantTransaction } from '@/lib/merchant-service';
 
@@ -80,6 +81,15 @@ export default function MerchantTransactions() {
     const isPending = item.status === 'PENDING';
     const isFailed = item.status === 'FAILED' || item.status === 'CANCELLED';
 
+    // Parse note & location metadata
+    let noteText = item.note || '';
+    let locationText = '';
+    const locMatch = noteText.match(/\[Loc:\s*([^\]]+)\]/);
+    if (locMatch) {
+      locationText = locMatch[1] || '';
+      noteText = noteText.replace(/\[Loc:\s*[^\]]+\]/, '').trim();
+    }
+
     return (
       <View className="bg-white p-4 rounded-[1.5rem] mb-3 border border-gray-100 flex-row items-center justify-between shadow-sm">
         <View className="flex-row items-center flex-1">
@@ -104,7 +114,20 @@ export default function MerchantTransactions() {
             >
               {item.type || 'Payment Received'}
             </Text>
-            <Text className="text-xs text-gray-400 font-medium mt-1">
+            {noteText ? (
+              <Text className="text-xs text-[#db2777] font-bold font-manrope mt-1">
+                📝 {noteText}
+              </Text>
+            ) : null}
+            {locationText ? (
+              <View className="flex-row items-center mt-1">
+                <MapPin size={10} color="#94a3b8" />
+                <Text className="text-[10px] text-gray-400 font-semibold font-manrope ml-1" numberOfLines={1}>
+                  {locationText}
+                </Text>
+              </View>
+            ) : null}
+            <Text className="text-[10px] text-gray-400 font-semibold mt-1">
               {item.createdAt ? new Date(item.createdAt).toLocaleString() : '-'}
             </Text>
             {item.referenceId && (
