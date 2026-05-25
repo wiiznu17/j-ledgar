@@ -1,12 +1,27 @@
 import React, { useEffect, useState } from 'react';
-import { View, Text, TouchableOpacity } from 'react-native';
+import { View, Text, TouchableOpacity, Image } from 'react-native';
 import { Search, Bell } from 'lucide-react-native';
 import { useRouter } from 'expo-router';
-import { useNotificationStore } from '@/store/notifications';
+import { useQuery } from '@tanstack/react-query';
+import { api } from '@/lib/axios';
 
 export const HomeHeader = () => {
   const router = useRouter();
-  const unreadCount = useNotificationStore((state) => state.getUnreadCount());
+  const { data: unreadCount = 0 } = useQuery({
+    queryKey: ['notifications', 'unread-count'],
+    queryFn: async () => {
+      try {
+        const response = await api.get('/notifications', {
+          params: { page: 1, limit: 1 },
+        });
+        return response.data?.meta?.unreadCount ?? 0;
+      } catch (err) {
+        console.error('[HomeHeader] Failed to fetch unread count:', err);
+        return 0;
+      }
+    },
+    refetchInterval: 15000, // Auto refetch every 15s to keep in sync
+  });
 
   const handleNotificationPress = () => {
     router.push('/notifications' as any);
@@ -14,8 +29,12 @@ export const HomeHeader = () => {
 
   return (
     <View className="px-5 pt-2 pb-4 flex-row items-center justify-between">
-      <View className="w-10 h-10 bg-[#f48fb1] rounded-2xl items-center justify-center mr-3 shadow-sm shadow-pink-200">
-        <Text className="text-white font-black text-xl">W</Text>
+      <View className="w-10 h-10 bg-white rounded-2xl items-center justify-center mr-3 border border-gray-50 p-1.5 shadow-sm">
+        <Image
+          source={require('../../../assets/images/logo/logo.png')}
+          className="w-full h-full"
+          resizeMode="contain"
+        />
       </View>
       <View className="flex-1 mr-4">
         <View className="bg-white border border-gray-100 rounded-full px-4 py-3 flex-row items-center shadow-sm">

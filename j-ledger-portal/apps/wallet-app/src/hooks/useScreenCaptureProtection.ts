@@ -16,7 +16,8 @@ export function useScreenCaptureProtection(enabled: boolean = true) {
       return;
     }
 
-    if (!enabled) {
+    const isCaptureDisabled = process.env.EXPO_PUBLIC_DISABLE_SCREEN_CAPTURE === 'true';
+    if (!enabled || isCaptureDisabled) {
       return;
     }
 
