@@ -247,8 +247,98 @@ export class BillingService {
         } as any;
       }
 
+      this.logger.log(
+        `[getInvoiceById] TopupOrder not found. Searching in MerchantPayment for identifier="${id}"`,
+      );
+
+      const merchantPayment = await this.prisma.merchantPayment.findFirst({
+        where: {
+          OR: [
+            { id },
+            { referenceId: id },
+          ],
+        },
+        include: {
+          merchant: {
+            include: {
+              partner: {
+                include: {
+                  profile: true,
+                },
+              },
+            },
+          },
+        },
+      });
+
+      if (merchantPayment) {
+        this.logger.log(
+          `[getInvoiceById] Found matching MerchantPayment: ${merchantPayment.id}. Validating user ownership.`,
+        );
+
+        let isOwner = false;
+        try {
+          const userWallet = await this.financeService.getWallet(userId);
+          const txn = await this.financeService.getTransactionByUuid(merchantPayment.referenceId || id);
+          if (userWallet && txn && Number(txn.fromWalletId) === Number(userWallet.id)) {
+            isOwner = true;
+          }
+        } catch (err: any) {
+          this.logger.warn(
+            `[getInvoiceById] Failed to validate merchant payment ownership: ${err.message}`,
+          );
+        }
+
+        if (!isOwner) {
+          this.logger.warn(
+            `[getInvoiceById] User ${userId} is not the owner of MerchantPayment ${merchantPayment.id}`,
+          );
+          throw new NotFoundException('Invoice not found');
+        }
+
+        this.logger.log(
+          `[getInvoiceById] Ownership validated. Synthesizing invoice response for merchant payment.`,
+        );
+
+        const amountNum = Number(merchantPayment.amount);
+        const vatRate = 0.07;
+        const merchantVat = Number((amountNum * (vatRate / (1 + vatRate))).toFixed(2));
+
+        return {
+          id: merchantPayment.id,
+          invoiceNumber: `INV-PAY-${merchantPayment.id.slice(0, 8).toUpperCase()}`,
+          userId: userId,
+          senderName: merchantPayment.merchant.name,
+          senderDetail: merchantPayment.merchant.category || 'Partner Store',
+          amount: amountNum,
+          tax: merchantVat,
+          feeAmount: 0,
+          feeTax: 0,
+          total: amountNum,
+          currency: merchantPayment.currency,
+          status: merchantPayment.status === 'COMPLETED' ? 'PAID' : 'PENDING',
+          dueDate: null,
+          paidAt: merchantPayment.updatedAt,
+          partnerId: merchantPayment.merchant.partnerId,
+          referenceId: merchantPayment.referenceId || merchantPayment.id,
+          note: merchantPayment.note || 'Merchant Payment',
+          createdAt: merchantPayment.createdAt,
+          updatedAt: merchantPayment.updatedAt,
+          items: [
+            {
+              id: `item-${merchantPayment.id}`,
+              invoiceId: merchantPayment.id,
+              name: `Payment to ${merchantPayment.merchant.name}`,
+              quantity: 1,
+              unitPrice: amountNum,
+              amount: amountNum,
+            },
+          ],
+        } as any;
+      }
+
       this.logger.warn(
-        `[getInvoiceById] Invoice and TopupOrder NOT FOUND for user=${userId} with identifier="${id}"`,
+        `[getInvoiceById] Invoice, TopupOrder, and MerchantPayment NOT FOUND for user=${userId} with identifier="${id}"`,
       );
       throw new NotFoundException('Invoice not found');
     }
