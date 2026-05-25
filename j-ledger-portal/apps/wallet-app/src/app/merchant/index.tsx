@@ -21,9 +21,11 @@ import {
   ArrowRight,
 } from 'lucide-react-native';
 import { MerchantService, MerchantDashboardData } from '@/lib/merchant-service';
+import { useMerchantStore } from '@/store/merchant';
 
 export default function MerchantDashboard() {
   const router = useRouter();
+  const setIsMerchant = useMerchantStore((state) => state.setIsMerchant);
   const [data, setData] = useState<MerchantDashboardData | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isRefreshing, setIsRefreshing] = useState(false);
@@ -34,6 +36,7 @@ export default function MerchantDashboard() {
       setErrorStatus(null);
       const res = await MerchantService.getDashboard();
       setData(res);
+      setIsMerchant(res.isMerchant);
     } catch (error: any) {
       console.error('[Merchant Dashboard] Fetch Error:', error);
       if (error?.response?.status) {
