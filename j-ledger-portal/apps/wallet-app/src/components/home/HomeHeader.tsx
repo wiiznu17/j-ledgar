@@ -4,9 +4,12 @@ import { Search, Bell } from 'lucide-react-native';
 import { useRouter } from 'expo-router';
 import { useQuery } from '@tanstack/react-query';
 import { api } from '@/lib/axios';
+import { useAuthStore } from '@/store/auth';
 
 export const HomeHeader = () => {
   const router = useRouter();
+  const token = useAuthStore((state) => state.token);
+
   const { data: unreadCount = 0 } = useQuery({
     queryKey: ['notifications', 'unread-count'],
     queryFn: async () => {
@@ -21,6 +24,7 @@ export const HomeHeader = () => {
       }
     },
     refetchInterval: 15000, // Auto refetch every 15s to keep in sync
+    enabled: !!token,
   });
 
   const handleNotificationPress = () => {
