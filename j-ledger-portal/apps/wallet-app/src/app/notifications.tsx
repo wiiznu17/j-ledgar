@@ -120,47 +120,7 @@ export default function NotificationsScreen() {
     }, [refetch, data])
   );
 
-  // Mark as read mutation with instant optimistic UI update
-  const markAsReadMutation = useMutation({
-    mutationFn: async (id: string) => {
-      await api.patch(`/notifications/${id}/read`);
-    },
-    onMutate: async (clickedId: string) => {
-      // Cancel outgoing refetches so they don't overwrite our optimistic update
-      await queryClient.cancelQueries({ queryKey: ['notifications'] });
 
-      // Snapshot the previous queries value
-      const previousQueries = queryClient.getQueriesData({ queryKey: ['notifications'] });
-
-      // Optimistically update to read state in all matching queries
-      queryClient.setQueriesData<any>({ queryKey: ['notifications'] }, (oldData: any) => {
-        if (!oldData) return oldData;
-        return {
-          ...oldData,
-          pages: oldData.pages.map((page: any) => ({
-            ...page,
-            items: page.items.map((item: any) =>
-              item.id === clickedId ? { ...item, isRead: true } : item
-            ),
-          })),
-        };
-      });
-
-      return { previousQueries };
-    },
-    onError: (err, clickedId, context: any) => {
-      // Rollback to previous state on error
-      if (context?.previousQueries) {
-        context.previousQueries.forEach(([queryKey, value]: any) => {
-          queryClient.setQueryData(queryKey, value);
-        });
-      }
-    },
-    onSettled: () => {
-      // Refetch to sync with server
-      queryClient.invalidateQueries({ queryKey: ['notifications'] });
-    },
-  });
 
   const notifications = data?.pages.flatMap((page) => page.items) || [];
   const unreadCount = notifications.filter((n: any) => !n.isRead).length;
@@ -215,7 +175,28 @@ export default function NotificationsScreen() {
 
   const handleNotificationPress = (notification: any) => {
     if (!notification.isRead) {
-      markAsReadMutation.mutate(notification.id);
+      // Optimistically update to read state in all matching queries immediately
+      queryClient.setQueriesData<any>({ queryKey: ['notifications'] }, (oldData: any) => {
+        if (!oldData) return oldData;
+        return {
+          ...oldData,
+          pages: oldData.pages.map((page: any) => ({
+            ...page,
+            items: page.items.map((item: any) =>
+              item.id === notification.id ? { ...item, isRead: true } : item
+            ),
+          })),
+        };
+      });
+
+      // Background request: will not be aborted when screen transitions/unmounts
+      api.patch(`/notifications/${notification.id}/read`)
+        .then(() => {
+          queryClient.invalidateQueries({ queryKey: ['notifications'] });
+        })
+        .catch((err) => {
+          console.error('[Notifications] Failed to mark as read:', err);
+        });
     }
 
     // Deep linking logic with client-side mapping for routes not implemented
