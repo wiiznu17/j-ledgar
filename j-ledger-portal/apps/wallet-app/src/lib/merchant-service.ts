@@ -23,6 +23,7 @@ export interface MerchantTransaction {
   amount: number;
   status: string;
   type: string;
+  note?: string;
   createdAt: string;
   referenceId?: string;
 }

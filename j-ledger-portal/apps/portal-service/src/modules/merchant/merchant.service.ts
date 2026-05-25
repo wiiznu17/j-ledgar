@@ -1479,11 +1479,10 @@ export class MerchantService {
         id: p.id,
         amount: Number(p.amount),
         status: p.status,
-        type:
-          p.note ||
-          (p.terminalId
-            ? `Terminal: ${p.terminal?.name || p.terminalId}`
-            : 'QR Payment'),
+        type: p.terminalId
+          ? `Terminal: ${p.terminal?.name || p.terminalId}`
+          : 'QR Payment',
+        note: p.note,
         createdAt: p.createdAt,
         referenceId: p.referenceId,
       })),
