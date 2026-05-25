@@ -188,14 +188,14 @@ export default function NotificationsScreen() {
   const getIconBg = (type: string, category?: string) => {
     const cat = getCategoryForType(type, category);
     const t = type?.toUpperCase() || '';
-    if (t === NotificationEventType.SECURITY || t.includes('ERROR')) return 'bg-red-50';
+    if (t === NotificationEventType.SECURITY || t.includes('ERROR')) return 'bg-[#fef2f2]';
 
-    if (cat === NotificationCategory.FINANCE) return 'bg-blue-50';
-    if (cat === NotificationCategory.SYSTEM) return 'bg-emerald-50';
-    if (cat === NotificationCategory.PROMO) return 'bg-pink-50';
-    if (cat === NotificationCategory.NEWS) return 'bg-amber-50';
+    if (cat === NotificationCategory.FINANCE) return 'bg-[#eff6ff]';
+    if (cat === NotificationCategory.SYSTEM) return 'bg-[#ecfdf5]';
+    if (cat === NotificationCategory.PROMO) return 'bg-[#fff0f3]';
+    if (cat === NotificationCategory.NEWS) return 'bg-[#fffbeb]';
 
-    return 'bg-gray-50';
+    return 'bg-[#f9fafb]';
   };
 
   const formatTime = (dateString: string) => {
@@ -420,7 +420,7 @@ const NotificationItem = React.memo(
         className={`border rounded-[2rem] p-5 flex-row items-center justify-between shadow-sm active:scale-95 ${
           item.isRead
             ? 'bg-white border-gray-50'
-            : 'bg-pink-50 border-pink-100 shadow-pink-100/10'
+            : 'bg-[#fff0f3] border-[#fbcfe8] shadow-[#fbcfe8]/10'
         }`}
       >
         <View className="flex-row items-center gap-4 flex-1">
@@ -439,7 +439,7 @@ const NotificationItem = React.memo(
               className={`text-sm font-manrope tracking-tight mb-1 ${
                 item.isRead
                   ? 'font-bold text-gray-800'
-                  : 'font-black text-pink-400'
+                  : 'font-black text-[#f48fb1]'
               }`}
             >
               {item.title}
