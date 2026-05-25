@@ -12,6 +12,7 @@ import { randomBytes, randomUUID, timingSafeEqual, createHmac } from 'crypto';
 import * as QRCode from 'qrcode';
 import { TerminalIdempotencyService } from './security/terminal-idempotency.service';
 import { ApplyMerchantDto } from '../../user/merchant/dto/apply-merchant.dto';
+import { StorageService } from '../../core/storage/storage.service';
 
 @Injectable()
 export class MerchantService {
@@ -23,6 +24,7 @@ export class MerchantService {
     private readonly financeService: FinanceService,
     private readonly auditService: AuditService,
     private readonly idempotencyService: TerminalIdempotencyService,
+    private readonly storageService: StorageService,
   ) {}
 
   async validateTerminalSignature(
@@ -123,6 +125,8 @@ export class MerchantService {
       this.prisma.merchantApplication.count({ where }),
     ]);
 
+    await this.presignApplicationImages(applications);
+
     return {
       data: applications,
       pagination: {
@@ -180,6 +184,10 @@ export class MerchantService {
 
     if (!partner)
       throw new HttpException('Partner not found', HttpStatus.NOT_FOUND);
+
+    if (partner.applications) {
+      await this.presignApplicationImages(partner.applications);
+    }
 
     // If partner has finance accounts, fetch the real-time balances
     const financeAccounts = partner.financeAccounts as any;
@@ -1939,5 +1947,43 @@ export class MerchantService {
       name: updated.name,
       secretKey: newSecret,
     };
+  }
+
+  private extractS3Key(urlOrKey: string): string {
+    if (!urlOrKey) return '';
+    if (!urlOrKey.startsWith('http')) return urlOrKey;
+
+    try {
+      const url = new URL(urlOrKey);
+      const pathDecoded = decodeURIComponent(url.pathname);
+      const parts = pathDecoded.split('/').filter(Boolean);
+      if (url.hostname.includes('s3.') && parts.length > 1) {
+        return parts.slice(1).join('/');
+      }
+      return parts.join('/');
+    } catch {
+      const match = urlOrKey.match(/\.com\/(.+)$/);
+      return match ? decodeURIComponent(match[1]) : urlOrKey;
+    }
+  }
+
+  private async presignApplicationImages(apps: any[]) {
+    if (!apps || apps.length === 0) return;
+
+    for (const app of apps) {
+      if (app.images && app.images.length > 0) {
+        app.images = await Promise.all(
+          app.images.map(async (img: string) => {
+            try {
+              const key = this.extractS3Key(img);
+              return await this.storageService.getPresignedUrl(key);
+            } catch (err) {
+              this.logger.error(`Failed to presign storefront image: ${img}`, err);
+              return img;
+            }
+          })
+        );
+      }
+    }
   }
 }

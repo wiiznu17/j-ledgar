@@ -8,7 +8,7 @@ export interface IStorageProvider {
 
   deleteFile(key: string): Promise<void>;
 
-  getSignedUrl?(key: string): Promise<string>;
+  getSignedUrl?(key: string, expiresIn?: number): Promise<string>;
 }
 
 export const STORAGE_PROVIDER = 'IStorageProvider';

@@ -4,7 +4,9 @@ import {
   S3Client,
   PutObjectCommand,
   DeleteObjectCommand,
+  GetObjectCommand,
 } from '@aws-sdk/client-s3';
+import { getSignedUrl } from '@aws-sdk/s3-request-presigner';
 import { Upload } from '@aws-sdk/lib-storage';
 import { IStorageProvider } from './storage.interface';
 
@@ -75,6 +77,20 @@ export class S3StorageProvider implements IStorageProvider {
       await this.s3Client.send(command);
     } catch (error) {
       this.logger.error(`S3 delete failed: ${error.message}`);
+      throw error;
+    }
+  }
+
+  async getSignedUrl(key: string, expiresIn = 3600): Promise<string> {
+    try {
+      const command = new GetObjectCommand({
+        Bucket: this.bucket,
+        Key: key,
+      });
+
+      return await getSignedUrl(this.s3Client, command, { expiresIn });
+    } catch (error) {
+      this.logger.error(`Failed to generate signed URL for key ${key}: ${error.message}`);
       throw error;
     }
   }

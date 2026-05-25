@@ -29,4 +29,11 @@ export class StorageService {
   async deleteFile(key: string) {
     return this.storageProvider.deleteFile(key);
   }
+
+  async getPresignedUrl(key: string, expiresIn = 3600): Promise<string> {
+    if (this.storageProvider.getSignedUrl) {
+      return this.storageProvider.getSignedUrl(key, expiresIn);
+    }
+    return '';
+  }
 }
