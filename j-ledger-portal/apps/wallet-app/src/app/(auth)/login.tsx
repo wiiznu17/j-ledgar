@@ -21,6 +21,8 @@ import {
   ShieldCheck,
   ChevronLeft,
   ArrowRight,
+  Eye,
+  EyeOff,
 } from 'lucide-react-native';
 import { MotiView } from 'moti';
 import { PINVerification } from '@/components/auth/PINVerification';
@@ -43,6 +45,7 @@ export default function LoginScreen() {
   const [step, setStep] = useState<LoginStep>('CREDENTIALS');
   const [phone, setPhone] = useState('');
   const [password, setPassword] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [challengeId, setChallengeId] = useState('');
   const [otp, setOtp] = useState(['', '', '', '', '', '']);
@@ -317,12 +320,24 @@ export default function LoginScreen() {
                 <View className="bg-gray-50 rounded-2xl">
                   <AppTextInput
                     placeholder="Enter your password"
-                    secureTextEntry
+                    secureTextEntry={!showPassword}
                     value={password}
                     onChangeText={setPassword}
                     containerClassName="bg-transparent border border-gray-100 h-14"
                     className="font-manrope font-bold text-gray-800 text-base"
                     leftElement={<Lock size={18} color="#9ca3af" />}
+                    rightElement={
+                      <TouchableOpacity
+                        onPress={() => setShowPassword(!showPassword)}
+                        hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+                      >
+                        {showPassword ? (
+                          <EyeOff size={18} color="#9ca3af" />
+                        ) : (
+                          <Eye size={18} color="#9ca3af" />
+                        )}
+                      </TouchableOpacity>
+                    }
                   />
                 </View>
               </View>

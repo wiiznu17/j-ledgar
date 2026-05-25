@@ -2,9 +2,11 @@ import React from 'react';
 import { Slot, router, usePathname } from 'expo-router';
 import { View, Text, TouchableOpacity, Platform } from 'react-native';
 import { Home, Activity, CreditCard, QrCode } from 'lucide-react-native';
+import { useMerchantStore } from '@/store/merchant';
 
 export default function MerchantLayout() {
   const pathname = usePathname();
+  const isMerchant = useMerchantStore((state) => state.isMerchant);
 
   // Define tabs with their corresponding paths
   const tabs = [
@@ -44,9 +46,18 @@ export default function MerchantLayout() {
     '/merchant/payment-confirm',
   ];
 
-  const shouldHideTabBar = hideTabBarPages.some((page) =>
+  let shouldHideTabBar = hideTabBarPages.some((page) =>
     pathname.startsWith(page),
   );
+
+  // Hide tab bar on the main merchant page if the user is not a merchant yet
+  // (the "Become a Partner" or "Pending" screens)
+  if (
+    !isMerchant &&
+    (pathname === '/merchant' || pathname === '/merchant/')
+  ) {
+    shouldHideTabBar = true;
+  }
 
   return (
     <View style={{ flex: 1, backgroundColor: '#f8f9fe' }}>
