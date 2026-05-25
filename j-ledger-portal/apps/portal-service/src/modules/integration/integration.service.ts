@@ -165,7 +165,7 @@ export class IntegrationService {
       );
 
       const walletItems = (walletTransactions || []).map((tx: any) =>
-        this.mapWalletTransactionToHistoryItem(tx, userWalletId),
+        this.mapWalletTransactionToHistoryItem(tx, userWalletId, userWallet?.id),
       );
 
       // Deduplicate to avoid showing all legs of merchant payments or redundant entries
@@ -205,7 +205,7 @@ export class IntegrationService {
     }
   }
 
-  async getTransactionDetails(transactionId: string) {
+  async getTransactionDetails(transactionId: string, userId?: string) {
     let actualId = transactionId;
     try {
       if (
@@ -281,7 +281,18 @@ export class IntegrationService {
         'get',
         INTERNAL_API_PATHS.FINANCE.WALLETS.TRANSACTION_DETAIL(actualId),
       );
-      return this.mapWalletTransactionToHistoryItem(raw);
+
+      let userWalletId: string | undefined;
+      let userWalletPk: number | undefined;
+      if (userId) {
+        try {
+          const wallet = await this.financeService.getWallet(userId);
+          userWalletId = wallet?.walletId;
+          userWalletPk = wallet?.id;
+        } catch {}
+      }
+
+      return this.mapWalletTransactionToHistoryItem(raw, userWalletId, userWalletPk);
     } catch (error: any) {
       const errorMsg = error.response?.data?.message || error.message;
       this.logger.error(
@@ -365,7 +376,7 @@ export class IntegrationService {
     const recentTransactions = (transactions || [])
       .slice(0, 10)
       .map((tx: any) =>
-        this.mapWalletTransactionToHistoryItem(tx, userWalletId),
+        this.mapWalletTransactionToHistoryItem(tx, userWalletId, wallet?.id),
       );
 
     return {
@@ -1188,7 +1199,11 @@ export class IntegrationService {
     return parsed;
   }
 
-  private mapWalletTransactionToHistoryItem(tx: any, userWalletId?: string) {
+  private mapWalletTransactionToHistoryItem(
+    tx: any,
+    userWalletId?: string | number,
+    userWalletPk?: string | number,
+  ) {
     const type = (tx?.type || tx?.transactionType || 'PAYMENT') as
       | 'TOPUP'
       | 'TRANSFER'
@@ -1197,9 +1212,10 @@ export class IntegrationService {
       | 'WITHDRAWAL';
     const metadata = this.parseMetadata(tx?.metadata);
 
-    // Determine income/outcome based on userWalletId if available
-    const isIncome = userWalletId
-      ? tx.toWalletId === userWalletId
+    // Determine income/outcome based on userWalletId or userWalletPk if available
+    const isIncome = userWalletId || userWalletPk
+      ? (userWalletId && String(tx.toWalletId) === String(userWalletId)) ||
+        (userWalletPk && String(tx.toWalletId) === String(userWalletPk))
       : type === 'TOPUP' || (!tx?.fromWalletId && !!tx?.toWalletId);
 
     const createdAt = tx?.createdAt
