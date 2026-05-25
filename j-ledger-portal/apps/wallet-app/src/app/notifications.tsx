@@ -177,7 +177,7 @@ export default function NotificationsScreen() {
     if (!notification.isRead) {
       // Optimistically update to read state in all matching queries immediately
       queryClient.setQueriesData<any>({ queryKey: ['notifications'] }, (oldData: any) => {
-        if (!oldData) return oldData;
+        if (!oldData || !oldData.pages) return oldData;
         return {
           ...oldData,
           pages: oldData.pages.map((page: any) => ({
