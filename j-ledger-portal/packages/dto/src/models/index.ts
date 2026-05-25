@@ -16,6 +16,7 @@ export interface WalletUser {
   email: string | null;
   status: string; // UserStatus enum
   registrationState: string; // RegistrationState enum
+  kycStatus?: string; // KYCVerificationStatus enum
   ledgerAccountId: string | null;
   loyaltyPoints?: number;
   createdAt: Date | string;

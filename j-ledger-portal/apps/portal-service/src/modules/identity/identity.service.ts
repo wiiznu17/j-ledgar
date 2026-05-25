@@ -824,9 +824,22 @@ export class IdentityService {
   }
 
   async findById(id: string) {
-    return this.prisma.user.findUnique({
+    const user = await this.prisma.user.findUnique({
       where: { id },
     });
+
+    if (!user) return null;
+
+    // Fetch KYC status separately since it's in a different schema/module
+    const kyc = await this.prisma.kYCData.findUnique({
+      where: { userId: id },
+      select: { verificationStatus: true },
+    });
+
+    return {
+      ...user,
+      kycStatus: kyc?.verificationStatus || 'NOT_SUBMITTED',
+    };
   }
 
   async getTrustedDeviceIdByIdentifier(

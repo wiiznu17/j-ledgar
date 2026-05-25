@@ -15,7 +15,7 @@ import {
   Modal,
   FlatList,
 } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import {
   ChevronLeft,
@@ -137,6 +137,7 @@ const InputField = ({
 
 export default function MerchantApply() {
   const router = useRouter();
+  const insets = useSafeAreaInsets();
   const mapRef = useRef<MapView>(null);
   const modalMapRef = useRef<MapView>(null);
 
@@ -661,7 +662,7 @@ export default function MerchantApply() {
         presentationStyle="fullScreen"
       >
         <View className="flex-1 bg-white">
-          <SafeAreaView edges={['top']} className="bg-white">
+          <View style={{ paddingTop: Math.max(insets.top, 47) }} className="bg-white">
             <View className="z-20">
               <View className="flex-row items-center px-5 pt-4 pb-2">
                 <TouchableOpacity
@@ -735,7 +736,7 @@ export default function MerchantApply() {
                 </View>
               )}
             </View>
-          </SafeAreaView>
+          </View>
 
           <View className="flex-1 relative z-10">
             <MapView
