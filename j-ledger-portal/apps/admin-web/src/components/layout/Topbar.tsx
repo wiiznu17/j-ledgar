@@ -7,9 +7,8 @@ import {
   ChevronDown,
   UserCircle,
   Menu,
-  Search,
 } from 'lucide-react';
-import { usePathname, useRouter } from 'next/navigation';
+import { usePathname } from 'next/navigation';
 import { useEffect, useState } from 'react';
 import { authRequester } from '@/lib/requesters';
 import { AdminUser } from '@repo/dto';
@@ -30,52 +29,238 @@ interface TopbarProps {
   onToggleMobile?: () => void;
 }
 
-interface RouteTitle {
+interface RouteMeta {
   pattern: string;
   title: string;
+  description: string;
 }
 
-const routeTitles: RouteTitle[] = [
-  { pattern: '/dashboard', title: 'Dashboard' },
-  { pattern: '/transactions/[id]', title: 'Transaction Details' },
-  { pattern: '/transactions', title: 'Transactions' },
-  { pattern: '/promotions/deals/new', title: 'Create Deal' },
-  { pattern: '/promotions/deals/[id]/edit', title: 'Edit Deal' },
-  { pattern: '/promotions/deals/[id]', title: 'Deal Details' },
-  { pattern: '/promotions/deals', title: 'Deals & Coupons' },
-  { pattern: '/promotions/banners', title: 'Banners' },
-  { pattern: '/promotions/redemptions', title: 'Redemptions' },
-  { pattern: '/promotions/settings', title: 'Promotion Settings' },
-  { pattern: '/promotions/loyalty', title: 'Loyalty Program' },
-  { pattern: '/risk/kyc/[userId]', title: 'KYC Details' },
-  { pattern: '/risk/kyc', title: 'KYC Verification' },
-  { pattern: '/risk/aml', title: 'AML Monitor' },
-  { pattern: '/finance/wallets/[id]', title: 'Wallet Details' },
-  { pattern: '/finance/wallets', title: 'Customer Wallets' },
-  { pattern: '/finance/reconcile', title: 'Reconcile' },
-  { pattern: '/audit', title: 'Audit Logs' },
-  { pattern: '/support/user-activity', title: 'User Activity' },
-  { pattern: '/support/users/[id]', title: 'User Details' },
-  { pattern: '/support/users', title: 'Users' },
+const routeMetas: RouteMeta[] = [
+  {
+    pattern: '/dashboard',
+    title: 'Dashboard',
+    description: 'Overview of system performance and key metrics',
+  },
+  {
+    pattern: '/transactions/[id]',
+    title: 'Transaction Details',
+    description: 'Inspect transaction status, routing metadata, and ledger context.',
+  },
+  {
+    pattern: '/transactions',
+    title: 'Transactions',
+    description: 'Search, filter, and review customer payment activity across the platform.',
+  },
+  {
+    pattern: '/promotions/deals/new',
+    title: 'Create Deal',
+    description: 'Configure a new promotion campaign, eligibility rules, and reward mechanics.',
+  },
+  {
+    pattern: '/promotions/deals/[id]/edit',
+    title: 'Edit Deal',
+    description: 'Update promotion details, targeting, budget, and campaign lifecycle controls.',
+  },
+  {
+    pattern: '/promotions/deals/[id]',
+    title: 'Deal Details',
+    description: 'Review campaign configuration, redemption performance, and operational status.',
+  },
+  {
+    pattern: '/promotions/deals',
+    title: 'Deals & Coupons',
+    description: 'Manage promotional offers, coupon campaigns, and customer reward incentives.',
+  },
+  {
+    pattern: '/promotions/deals/simulator',
+    title: 'Deal Simulator',
+    description: 'Test promotion eligibility and reward outcomes before launching campaigns.',
+  },
+  {
+    pattern: '/promotions/banners',
+    title: 'Banners',
+    description: 'Manage in-app promotional banners, placements, and visibility windows.',
+  },
+  {
+    pattern: '/promotions/redemptions',
+    title: 'Redemptions',
+    description: 'Track customer reward usage, coupon claims, and redemption outcomes.',
+  },
+  {
+    pattern: '/promotions/settings',
+    title: 'Promotion Settings',
+    description: 'Tune global promotion behavior, campaign controls, and operational defaults.',
+  },
+  {
+    pattern: '/promotions/loyalty',
+    title: 'Loyalty Program',
+    description: 'Configure points, tiers, earning rules, and loyalty engagement controls.',
+  },
+  {
+    pattern: '/risk/kyc/[userId]',
+    title: 'KYC Details',
+    description: 'Review customer identity evidence, verification history, and decision context.',
+  },
+  {
+    pattern: '/risk/kyc',
+    title: 'KYC Verification',
+    description: 'Review identity applications, verification outcomes, and pending compliance checks.',
+  },
+  {
+    pattern: '/risk/aml',
+    title: 'AML Monitor',
+    description: 'Investigate suspicious activity, risk scoring, and regulatory review workflows.',
+  },
+  {
+    pattern: '/risk/fraud',
+    title: 'Fraud Alerts',
+    description: 'Monitor sophisticated patterns such as smurfing, structuring, layering, and ledger account takeoff threats.',
+  },
+  {
+    pattern: '/risk/blacklist',
+    title: 'Blacklist Management',
+    description: 'Restrict wallets, block compromised IP ranges, and revoke unauthorized hardware keys instantly.',
+  },
+  {
+    pattern: '/finance/wallets/[id]',
+    title: 'Wallet Details',
+    description: 'Inspect wallet balances, linked customer records, and account-level activity.',
+  },
+  {
+    pattern: '/finance/wallets',
+    title: 'Customer Wallets',
+    description: 'Monitor wallet status, balances, and customer account controls.',
+  },
+  {
+    pattern: '/finance/reconcile',
+    title: 'Reconcile',
+    description: 'Compare internal records, settlement files, and ledger consistency signals.',
+  },
+  {
+    pattern: '/finance/settlement',
+    title: 'Merchant Settlement',
+    description: 'Clear pending balances to merchant bank accounts, deduct transaction fees, and update ledger balances.',
+  },
+  {
+    pattern: '/finance/treasury',
+    title: 'System Treasury',
+    description: 'Monitor platform liquidity, treasury balances, and funding movement controls.',
+  },
+  {
+    pattern: '/finance/ledger/[id]',
+    title: 'Ledger Transaction Details',
+    description: 'Trace double-entry postings, ledger impact, and transaction audit context.',
+  },
+  {
+    pattern: '/finance/ledger',
+    title: 'Internal Ledger',
+    description: 'Browse ledger entries, posting history, and accounting movement records.',
+  },
+  {
+    pattern: '/audit',
+    title: 'Audit Logs',
+    description: 'Review administrative actions, security events, and operational audit trails.',
+  },
+  {
+    pattern: '/reports',
+    title: 'Reports',
+    description: 'Generate operational, finance, risk, and growth summaries for stakeholders.',
+  },
+  {
+    pattern: '/support/user-activity',
+    title: 'User Activity',
+    description: 'Trace customer login events, device activity, and security-sensitive actions.',
+  },
+  {
+    pattern: '/support/devices',
+    title: 'User Devices',
+    description: 'Monitor trusted devices, session keys, and revoke compromised user terminals.',
+  },
+  {
+    pattern: '/support/disputes',
+    title: 'Disputes',
+    description: 'Manage customer disputes, evidence review, and case resolution workflows.',
+  },
+  {
+    pattern: '/support/users/[id]',
+    title: 'User Details',
+    description: 'Inspect customer profile, wallets, verification state, and support history.',
+  },
+  {
+    pattern: '/support/users',
+    title: 'Users',
+    description: 'Search wallet users, review account status, and support customer operations.',
+  },
   {
     pattern: '/support/merchants/applications',
     title: 'Merchant Applications',
+    description: 'Review merchant onboarding submissions, KYC evidence, and approval readiness.',
   },
-  { pattern: '/support/merchants/create', title: 'Create Partner' },
-  { pattern: '/support/merchants/[id]/edit', title: 'Edit Merchant' },
-  { pattern: '/support/merchants/[id]/terminals', title: 'Merchant Terminals' },
-  { pattern: '/support/merchants/[id]', title: 'Merchant Details' },
-  { pattern: '/support/merchants', title: 'Merchants' },
-  { pattern: '/finance/treasury', title: 'System Treasury' },
-  { pattern: '/system/profile', title: 'My Profile' },
-  { pattern: '/system/admins/[id]', title: 'Admin Details' },
-  { pattern: '/system/admins', title: 'Admin Management' },
-  { pattern: '/system/roles/[id]', title: 'Role Details' },
-  { pattern: '/system/roles', title: 'Role Management' },
-  { pattern: '/finance/ledger/[id]', title: 'Ledger Transaction Details' },
-  { pattern: '/finance/ledger', title: 'Internal Ledger' },
-  { pattern: '/system/outbox', title: 'System Outbox' },
-  { pattern: '/system/settings', title: 'System Settings' },
+  {
+    pattern: '/support/merchants/create',
+    title: 'Create Partner',
+    description: 'Register a new merchant partner and configure operational account details.',
+  },
+  {
+    pattern: '/support/merchants/[id]/edit',
+    title: 'Edit Merchant',
+    description: 'Update merchant profile, settlement configuration, and operational metadata.',
+  },
+  {
+    pattern: '/support/merchants/[id]/terminals',
+    title: 'Merchant Terminals',
+    description: 'Manage merchant POS terminals, device bindings, and terminal activation state.',
+  },
+  {
+    pattern: '/support/merchants/[id]',
+    title: 'Merchant Details',
+    description: 'Review merchant profile, settlement health, terminals, and activity history.',
+  },
+  {
+    pattern: '/support/merchants',
+    title: 'Merchants',
+    description: 'Manage merchant partners, onboarding status, and operational account controls.',
+  },
+  {
+    pattern: '/system/profile',
+    title: 'My Profile',
+    description: 'View your admin account details, role assignment, and access context.',
+  },
+  {
+    pattern: '/system/admins/[id]',
+    title: 'Admin Details',
+    description: 'Inspect administrator profile, role grants, and account status.',
+  },
+  {
+    pattern: '/system/admins',
+    title: 'Admin Management',
+    description: 'Manage administrator accounts, role assignments, and staff access controls.',
+  },
+  {
+    pattern: '/system/roles/[id]',
+    title: 'Role Details',
+    description: 'Review role permissions, access scope, and assigned administrator coverage.',
+  },
+  {
+    pattern: '/system/roles',
+    title: 'Role Management',
+    description: 'Configure admin roles, permissions, and least-privilege access policies.',
+  },
+  {
+    pattern: '/system/approvals',
+    title: 'System Approvals',
+    description: 'Review pending administrative approvals and sensitive workflow decisions.',
+  },
+  {
+    pattern: '/system/outbox',
+    title: 'System Outbox',
+    description: 'Monitor queued notifications, delivery attempts, and outbound message status.',
+  },
+  {
+    pattern: '/system/settings',
+    title: 'System Settings',
+    description: 'Adjust platform-wide configuration, feature controls, and operational defaults.',
+  },
 ];
 
 const matchRoute = (pathname: string, pattern: string) => {
@@ -94,7 +279,6 @@ const matchRoute = (pathname: string, pattern: string) => {
 
 export function Topbar({ onLogout, onToggleMobile }: TopbarProps) {
   const pathname = usePathname();
-  const router = useRouter();
   const [user, setUser] = useState<AdminUser | null>(null);
 
   useEffect(() => {
@@ -109,17 +293,22 @@ export function Topbar({ onLogout, onToggleMobile }: TopbarProps) {
     fetchUser();
   }, []);
 
-  const getPageTitle = () => {
-    const exactMatch = routeTitles.find((r) => r.pattern === pathname);
-    if (exactMatch) return exactMatch.title;
+  const getPageMeta = () => {
+    const exactMatch = routeMetas.find((r) => r.pattern === pathname);
+    if (exactMatch) return exactMatch;
 
-    const dynamicMatch = routeTitles.find((r) =>
+    const dynamicMatch = routeMetas.find((r) =>
       matchRoute(pathname, r.pattern),
     );
-    if (dynamicMatch) return dynamicMatch.title;
+    if (dynamicMatch) return dynamicMatch;
 
-    return 'P-wallet Admin';
+    return {
+      title: 'P-wallet Admin',
+      description: 'Manage platform operations, risk controls, and customer support workflows.',
+    };
   };
+
+  const pageMeta = getPageMeta();
 
   return (
     <header className="h-16 md:h-[72px] bg-card border-b border-border flex items-center justify-between px-4 md:px-8 flex-shrink-0 text-foreground transition-all duration-200">
@@ -137,13 +326,11 @@ export function Topbar({ onLogout, onToggleMobile }: TopbarProps) {
         {/* Title and Subtitle block */}
         <div className="flex flex-col justify-center">
           <h1 className="text-xl md:text-2xl font-black text-foreground tracking-tight leading-tight">
-            {getPageTitle()}
+            {pageMeta.title}
           </h1>
-          {getPageTitle() === 'Dashboard' && (
-            <span className="text-[11px] font-medium text-muted-foreground mt-0.5 hidden sm:inline">
-              Overview of system performance and key metrics
-            </span>
-          )}
+          <span className="text-[11px] font-medium text-muted-foreground mt-0.5 hidden sm:inline">
+            {pageMeta.description}
+          </span>
         </div>
       </div>
 

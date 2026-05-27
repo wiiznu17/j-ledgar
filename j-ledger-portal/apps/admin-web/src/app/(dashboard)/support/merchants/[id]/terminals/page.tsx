@@ -8,6 +8,7 @@ import {
   ChevronRight,
   Key,
   Copy,
+  ShieldAlert,
 } from 'lucide-react';
 import { toast } from 'sonner';
 import Link from 'next/link';
@@ -39,6 +40,7 @@ export default function TerminalsPage({
   const [rotatedTerminal, setRotatedTerminal] = useState<any>(null);
   const [isRotateModalOpen, setIsRotateModalOpen] = useState(false);
   const [isRotating, setIsRotating] = useState(false);
+  const [confirmRotateTerminalId, setConfirmRotateTerminalId] = useState<string | null>(null);
 
   const fetchData = useCallback(async () => {
     setLoading(true);
@@ -66,13 +68,14 @@ export default function TerminalsPage({
     setIsModalOpen(true);
   };
 
-  const handleRotateSecret = async (terminalId: string) => {
-    if (
-      !confirm(
-        'Are you sure you want to rotate the secret key? The old key will stop working immediately.',
-      )
-    )
-      return;
+  const triggerRotateSecret = (terminalId: string) => {
+    setConfirmRotateTerminalId(terminalId);
+  };
+
+  const handleRotateSecret = async () => {
+    if (!confirmRotateTerminalId) return;
+    const terminalId = confirmRotateTerminalId;
+    setConfirmRotateTerminalId(null);
 
     setIsRotating(true);
     try {
@@ -135,10 +138,6 @@ export default function TerminalsPage({
             Refresh Network
           </Button>
         </div>
-        <p className="text-xs text-muted-foreground max-w-2xl leading-relaxed -mt-1">
-          Configure nodes and hardware terminals for secure transaction
-          processing, point redemptions, and system communication.
-        </p>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
@@ -184,7 +183,7 @@ export default function TerminalsPage({
           merchants={merchants}
           loading={loading}
           onCreateTerminal={handleOpenModal}
-          onRotateSecret={handleRotateSecret}
+          onRotateSecret={triggerRotateSecret}
           isRotating={isRotating}
           isSME={partner?.type === 'SME'}
         />
@@ -202,7 +201,7 @@ export default function TerminalsPage({
 
       {/* Rotate Secret Result Modal */}
       <Dialog open={isRotateModalOpen} onOpenChange={setIsRotateModalOpen}>
-        <DialogContent className="sm:max-w-[450px] rounded-[2rem] border-none shadow-2xl p-8 text-center bg-card text-card-foreground">
+        <DialogContent className="sm:max-w-md rounded-[2rem] border-none shadow-2xl p-8 text-center bg-card text-card-foreground">
           {rotatedTerminal && (
             <div className="space-y-6">
               <div className="w-20 h-20 bg-amber-500/10 rounded-[2rem] flex items-center justify-center text-amber-600 dark:text-amber-400 mx-auto">
@@ -253,6 +252,43 @@ export default function TerminalsPage({
               </Button>
             </div>
           )}
+        </DialogContent>
+      </Dialog>
+
+      {/* Rotate Confirmation Alert Dialog */}
+      <Dialog open={!!confirmRotateTerminalId} onOpenChange={(open) => !open && setConfirmRotateTerminalId(null)}>
+        <DialogContent className="sm:max-w-md rounded-[2rem] border-none shadow-2xl p-8 text-center bg-card text-card-foreground">
+          <div className="space-y-6">
+            <div className="w-20 h-20 bg-rose-500/10 rounded-[2rem] flex items-center justify-center text-rose-600 dark:text-rose-400 mx-auto animate-pulse">
+              <ShieldAlert className="w-10 h-10" />
+            </div>
+            <div>
+              <h3 className="text-2xl font-black text-foreground tracking-tight">
+                Rotate Secret Key?
+              </h3>
+              <p className="text-sm text-muted-foreground mt-3 leading-relaxed">
+                Are you absolutely sure you want to rotate the secret key? 
+                <span className="text-rose-500 font-bold block mt-2">
+                  The old key will stop working immediately, cutting off active terminal connections!
+                </span>
+              </p>
+            </div>
+            <div className="flex gap-3">
+              <Button
+                variant="ghost"
+                onClick={() => setConfirmRotateTerminalId(null)}
+                className="flex-1 h-12 rounded-xl font-bold text-muted-foreground hover:bg-muted"
+              >
+                Cancel
+              </Button>
+              <Button
+                onClick={handleRotateSecret}
+                className="flex-1 h-12 rounded-xl font-black uppercase tracking-wider bg-rose-600 hover:bg-rose-700 text-white shadow-xs border-none"
+              >
+                Yes, Rotate Key
+              </Button>
+            </div>
+          </div>
         </DialogContent>
       </Dialog>
     </div>

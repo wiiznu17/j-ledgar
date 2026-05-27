@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { ScrollView } from 'react-native';
+import { ScrollView, View, Text, TouchableOpacity } from 'react-native';
+import { Info } from 'lucide-react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { MotiView } from 'moti';
@@ -32,6 +33,12 @@ export default function MyQrScreen() {
   const [isLoading, setIsLoading] = useState(true);
   const qrCardRef = useRef<QRCardRef>(null);
 
+  // POS / Present-to-Pay States
+  const [mode, setMode] = useState<'RECEIVE' | 'PAY'>('RECEIVE');
+  const [payToken, setPayToken] = useState<string>('');
+  const [expiresAt, setExpiresAt] = useState<string>('');
+  const [secondsLeft, setSecondsLeft] = useState<number>(0);
+
   useEffect(() => {
     loadUserProfile();
   }, []);
@@ -47,6 +54,46 @@ export default function MyQrScreen() {
       setIsLoading(false);
     }
   };
+
+  const fetchToken = async () => {
+    try {
+      setIsProcessing(true);
+      const res = await UserProfileService.getPayToken();
+      setPayToken(res.token);
+      setExpiresAt(res.expiresAt);
+      
+      const seconds = Math.max(0, Math.floor((new Date(res.expiresAt).getTime() - Date.now()) / 1000));
+      setSecondsLeft(seconds);
+    } catch (error) {
+      console.error('Failed to fetch pay token:', error);
+    } finally {
+      setIsProcessing(false);
+    }
+  };
+
+  useEffect(() => {
+    if (mode === 'PAY') {
+      fetchToken();
+    } else {
+      setPayToken('');
+      setSecondsLeft(0);
+    }
+  }, [mode]);
+
+  useEffect(() => {
+    if (mode !== 'PAY' || !expiresAt) return;
+
+    const timer = setInterval(() => {
+      const seconds = Math.max(0, Math.floor((new Date(expiresAt).getTime() - Date.now()) / 1000));
+      setSecondsLeft(seconds);
+      if (seconds <= 0) {
+        clearInterval(timer);
+        fetchToken(); // Automatically refresh when expired
+      }
+    }, 1000);
+
+    return () => clearInterval(timer);
+  }, [mode, expiresAt]);
 
   // Convert E.164 phone number to local 10-digit format
   const toLocalPhone = (phone: string): string => {
@@ -74,10 +121,11 @@ export default function MyQrScreen() {
       : MOCK_USER.name;
 
   // สร้างข้อมูลสำหรับ QR Code โดยแนบจำนวนเงินเข้าไปถ้ามีการระบุ
-  const qrData =
-    amount && parseFloat(amount) > 0
-      ? `JLEDGER:${phoneNumber}:${amount}`
-      : `JLEDGER:${phoneNumber}`;
+  const qrData = mode === 'PAY'
+    ? payToken || 'LOADING...'
+    : (amount && parseFloat(amount) > 0
+        ? `JLEDGER:${phoneNumber}:${amount}`
+        : `JLEDGER:${phoneNumber}`);
 
   const handleSetAmount = () => {
     if (isProcessing) return;
@@ -110,30 +158,94 @@ export default function MyQrScreen() {
           animate={{ opacity: 1, translateY: 0 }}
           className="mt-2"
         >
+          {/* Segmented Mode Switcher */}
+          <View className="flex-row bg-gray-100 p-1.5 rounded-[1.8rem] mb-6 border border-gray-200">
+            <TouchableOpacity
+              onPress={() => setMode('RECEIVE')}
+              className={`flex-1 py-3.5 rounded-[1.5rem] items-center justify-center ${
+                mode === 'RECEIVE' ? 'bg-[#f48fb1] shadow-sm' : 'bg-transparent'
+              }`}
+            >
+              <Text
+                className={`font-manrope font-black text-[14px] ${
+                  mode === 'RECEIVE' ? 'text-white' : 'text-gray-500'
+                }`}
+              >
+                รับเงิน (Receive)
+              </Text>
+            </TouchableOpacity>
+            <TouchableOpacity
+              onPress={() => setMode('PAY')}
+              className={`flex-1 py-3.5 rounded-[1.5rem] items-center justify-center ${
+                mode === 'PAY' ? 'bg-[#f48fb1] shadow-sm' : 'bg-transparent'
+              }`}
+            >
+              <Text
+                className={`font-manrope font-black text-[14px] ${
+                  mode === 'PAY' ? 'text-white' : 'text-gray-500'
+                }`}
+              >
+                จ่ายหน้าร้าน (Pay POS)
+              </Text>
+            </TouchableOpacity>
+          </View>
+
           <QRCard
             ref={qrCardRef}
-            name={userName}
-            phone={phoneNumber}
+            name={mode === 'PAY' ? 'PAYMENT CODE' : userName}
+            phone={mode === 'PAY' ? 'SCAN TO DEBIT' : phoneNumber}
             avatar={MOCK_USER.avatar}
             qrData={qrData}
-            amount={amount}
+            amount={mode === 'PAY' ? '' : amount}
           />
 
-          <AmountTriggerButton
-            amount={amount}
-            onPress={() => {
-              setTempAmount(amount);
-              setIsModalVisible(true);
-            }}
-          />
+          {mode === 'PAY' && (
+            <View className="items-center mt-2 mb-6">
+              <Text className="text-gray-500 font-manrope font-semibold text-[14px]">
+                Token will refresh in: <Text className="text-pink-500 font-black">{secondsLeft}s</Text>
+              </Text>
+              <TouchableOpacity
+                onPress={fetchToken}
+                disabled={isProcessing}
+                className="mt-3 px-4 py-2 bg-pink-50 rounded-xl border border-pink-100 active:bg-pink-100 animate-pulse"
+              >
+                <Text className="text-pink-500 font-manrope font-black text-[12px]">
+                  {isProcessing ? 'Refreshing...' : 'Refresh Code Now'}
+                </Text>
+              </TouchableOpacity>
+            </View>
+          )}
+
+          {mode === 'RECEIVE' && (
+            <AmountTriggerButton
+              amount={amount}
+              onPress={() => {
+                setTempAmount(amount);
+                setIsModalVisible(true);
+              }}
+            />
+          )}
         </MotiView>
 
-        <QRActionButtons
-          isProcessing={isProcessing}
-          setIsProcessing={setIsProcessing}
-          qrCardRef={qrCardRef}
-        />
-        <QRInfoBanner />
+        {mode === 'RECEIVE' ? (
+          <>
+            <QRActionButtons
+              isProcessing={isProcessing}
+              setIsProcessing={setIsProcessing}
+              qrCardRef={qrCardRef}
+            />
+            <QRInfoBanner />
+          </>
+        ) : (
+          <View className="bg-white rounded-2xl p-5 flex-row items-center gap-4 border border-gray-50 shadow-sm mb-10">
+            <View className="w-10 h-10 bg-pink-50 rounded-xl items-center justify-center border border-pink-100">
+              <Info size={20} color="#f48fb1" />
+            </View>
+            <Text className="text-[10px] font-manrope font-bold text-gray-500 leading-relaxed flex-1">
+              แสดงคิวอาร์โค้ดนี้แก่ร้านค้าเพื่อสแกนชำระเงิน รหัสจะรีเฟรชทุกๆ 60 วินาทีเพื่อความปลอดภัยสูงสุดของคุณ
+            </Text>
+          </View>
+        )}
       </ScrollView>
 
       <AmountModal

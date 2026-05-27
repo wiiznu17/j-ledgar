@@ -129,7 +129,9 @@ export default function EditPartnerPage({ params }: EditPartnerPageProps) {
     } finally {
       setIsSubmitting(false);
     }
-    if (isLoading) {
+  };
+
+  if (isLoading) {
       return (
         <div className="flex flex-col items-center justify-center min-h-[60vh] text-foreground">
           <Loader2 className="w-10 h-10 text-indigo-600 animate-spin mb-4" />
@@ -568,5 +570,4 @@ export default function EditPartnerPage({ params }: EditPartnerPageProps) {
         </div>
       </div>
     );
-  };
 }

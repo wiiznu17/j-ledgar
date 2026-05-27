@@ -21,4 +21,9 @@ export class TerminalPaymentDto {
   @IsString()
   @IsOptional()
   note?: string;
+
+  @ApiProperty({ example: 'PAY-E7A4F8B2', description: 'Customer Pay Token or User UUID', required: false })
+  @IsString()
+  @IsOptional()
+  customerToken?: string;
 }

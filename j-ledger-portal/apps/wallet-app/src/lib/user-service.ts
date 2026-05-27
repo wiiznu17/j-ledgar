@@ -93,4 +93,9 @@ export const UserProfileService = {
     const response = await api.put(`/identity/address/${type}`, data);
     return response.data;
   },
+
+  getPayToken: async (): Promise<{ token: string; expiresAt: string }> => {
+    const response = await api.post('/identity/pay-token');
+    return response.data;
+  },
 };

@@ -15,26 +15,51 @@ import {
   Settings,
   Save,
   RefreshCw,
-  Percent,
   Globe,
   Clock,
-  Wallet,
   ArrowUpRight,
   ArrowDownLeft,
   Lock,
   Coins,
-  Banknote,
   Sliders,
   Receipt,
   Languages,
-  Shield,
   HelpCircle,
 } from 'lucide-react';
 import { toast } from 'sonner';
-import { getSystemSettings, updateSystemSettings } from '@/app/actions/system';
+import {
+  createSystemSettingsApproval,
+  getSystemSettings,
+} from '@/app/actions/system';
+
+const feeFields = new Set([
+  'merchantFeeRate',
+  'vatRate',
+  'transferFeeFixed',
+  'transferFeePercentage',
+  'withdrawalFeeFixed',
+  'withdrawalFeePercentage',
+  'billPaymentFeeFixed',
+  'billPaymentFeePercentage',
+]);
+
+const limitFields = new Set([
+  'minMerchantPayment',
+  'dailyTransactionLimit',
+  'perTransactionLimit',
+  'monthlyTransactionLimit',
+  'minP2pTransfer',
+]);
+
+const formatValue = (value: unknown) => {
+  if (typeof value === 'number') return Number(value).toLocaleString();
+  if (value === null || value === undefined || value === '') return 'N/A';
+  return String(value);
+};
 
 export default function SystemSettingsPage() {
   const [settings, setSettings] = useState<any>(null);
+  const [originalSettings, setOriginalSettings] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
 
@@ -43,6 +68,7 @@ export default function SystemSettingsPage() {
     try {
       const data = await getSystemSettings();
       setSettings(data);
+      setOriginalSettings(data);
     } catch (error) {
       toast.error('Failed to fetch system settings');
     } finally {
@@ -56,12 +82,42 @@ export default function SystemSettingsPage() {
 
   const handleSave = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!settings || !originalSettings) return;
+
+    const changedFields = Object.keys(settings).filter(
+      (key) => settings[key] !== originalSettings[key],
+    );
+
+    if (changedFields.length === 0) {
+      toast.info('No configuration changes to submit.');
+      return;
+    }
+
     setSaving(true);
     try {
-      await updateSystemSettings(settings);
-      toast.success('System settings updated successfully');
+      const changedFieldSet = new Set(changedFields);
+      const category = changedFields.every((field) => feeFields.has(field))
+        ? 'FEE'
+        : changedFields.every((field) => limitFields.has(field))
+          ? 'LIMIT'
+          : 'SECURITY';
+
+      await createSystemSettingsApproval({
+        category,
+        action: `Update ${changedFields.length} system setting${changedFields.length > 1 ? 's' : ''}`,
+        originalValue: changedFields
+          .map((field) => `${field}: ${formatValue(originalSettings[field])}`)
+          .join(' | '),
+        proposedValue: changedFields
+          .map((field) => `${field}: ${formatValue(settings[field])}`)
+          .join(' | '),
+        payload: settings,
+        reason: `Requested from /system/settings for: ${Array.from(changedFieldSet).join(', ')}`,
+      });
+      toast.success('Change request submitted to System Approvals.');
+      await fetchSettings();
     } catch (error) {
-      toast.error('Failed to update system settings');
+      toast.error('Failed to submit system settings approval');
     } finally {
       setSaving(false);
     }
@@ -110,7 +166,7 @@ export default function SystemSettingsPage() {
           ) : (
             <Save className="w-4 h-4 mr-2" />
           )}
-          Save Configuration
+          Submit for Approval
         </Button>
       </div>
 

@@ -107,4 +107,36 @@ export class AdminMerchantController {
   async rotateSecret(@Param('id') terminalId: string) {
     return this.merchantService.rotateTerminalSecret(terminalId);
   }
+
+  @Post('settlements/run')
+  @Permissions(Permission.MANAGE_MERCHANTS)
+  async triggerSettlement() {
+    await this.merchantService.runDailySettlement();
+    return { success: true, message: 'Settlement triggered manually and successfully executed' };
+  }
+
+  @Post('settlements/:partnerId/run')
+  @Permissions(Permission.MANAGE_MERCHANTS)
+  async triggerPartnerSettlement(@Param('partnerId') partnerId: string) {
+    await this.merchantService.runSettlementForPartner(partnerId);
+    return { success: true, message: 'Settlement processed successfully for this merchant partner' };
+  }
+
+  @Get('settlements/history')
+  @Permissions(Permission.VIEW_MERCHANTS)
+  async getSettlementHistory(
+    @Query('page') page: number = 1,
+    @Query('limit') limit: number = 20,
+    @Query('search') search?: string,
+    @Query('sortBy') sortBy?: string,
+    @Query('sortOrder') sortOrder?: string,
+  ) {
+    return this.merchantService.getSettlementHistory(
+      Number(page),
+      Number(limit),
+      search,
+      sortBy,
+      sortOrder,
+    );
+  }
 }

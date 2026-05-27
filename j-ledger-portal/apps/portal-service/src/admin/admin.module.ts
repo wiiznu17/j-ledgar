@@ -17,6 +17,7 @@ import { AdminIntegrationController } from './integration/admin-integration.cont
 import { AdminKycController } from './kyc/admin-kyc.controller';
 import { AdminDashboardController } from './dashboard/admin-dashboard.controller';
 import { AdminLoyaltyController } from './loyalty/admin-loyalty.controller';
+import { AdminReportsController } from './reports/admin-reports.controller';
 import { IdentityModule } from '../modules/identity/identity.module';
 import { StorageModule } from '../core/storage/storage.module';
 import { ReportingModule } from '../modules/reporting/reporting.module';
@@ -70,6 +71,7 @@ import { AdminJwtStrategy } from './strategies/admin-jwt.strategy';
     AdminKycController,
     AdminDashboardController,
     AdminLoyaltyController,
+    AdminReportsController,
   ],
   providers: [
     AdminService,

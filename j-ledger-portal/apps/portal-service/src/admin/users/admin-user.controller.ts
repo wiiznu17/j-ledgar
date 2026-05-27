@@ -86,6 +86,36 @@ export class AdminUserController {
     );
   }
 
+  @Get('devices')
+  @RequirePermissions(Permission.VIEW_USERS)
+  async getUserDevices(
+    @Query('page') page: number = 1,
+    @Query('limit') limit: number = 10,
+    @Query('search') search?: string,
+    @Query('os') os?: string,
+    @Query('trustLevel') trustLevel?: string,
+  ) {
+    return this.identityService.findAllUserDevices(Number(page), Number(limit), {
+      search,
+      os,
+      trustLevel,
+    });
+  }
+
+  @Post('devices/:id/revoke')
+  @RequirePermissions(Permission.FREEZE_USERS)
+  @AuditLog(null as any, ResourceType.USER, 'Revoked user device')
+  async revokeUserDevice(@Param('id') id: string) {
+    return this.identityService.revokeUserDevice(id);
+  }
+
+  @Post('devices/:id/reactivate')
+  @RequirePermissions(Permission.UNFREEZE_USERS)
+  @AuditLog(null as any, ResourceType.USER, 'Reactivated user device')
+  async reactivateUserDevice(@Param('id') id: string) {
+    return this.identityService.reactivateUserDevice(id);
+  }
+
   @Get(':id')
   @RequirePermissions(Permission.VIEW_USERS)
   async getUserById(@Param('id') id: string) {

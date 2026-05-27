@@ -79,7 +79,7 @@ export function CreateTerminalModal({
 
   return (
     <Dialog open={isOpen} onOpenChange={(open) => !open && handleClose()}>
-      <DialogContent className="sm:max-w-[450px] rounded-[2rem] border-none shadow-2xl p-0 overflow-hidden">
+      <DialogContent className="sm:max-w-md rounded-[2rem] border-none shadow-2xl p-0 overflow-hidden">
         {!createdTerminal ? (
           <form onSubmit={handleCreate}>
             <div className="p-8 pb-4">

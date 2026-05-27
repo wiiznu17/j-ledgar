@@ -3,7 +3,7 @@ import { AdminJwtGuard } from '../guards/admin-jwt.guard';
 import { AdminRolesGuard } from '../guards/admin-roles.guard';
 import { IntegrationService } from '../../modules/integration/integration.service';
 import { KycService } from '../../modules/kyc/kyc.service';
-import { FinanceService } from 'src/modules/integration/finance.service';
+import { FinanceService } from '../../modules/integration/finance.service';
 
 @Controller('admin/dashboard')
 @UseGuards(AdminJwtGuard, AdminRolesGuard)

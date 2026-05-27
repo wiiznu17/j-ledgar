@@ -21,8 +21,13 @@ import {
   Info,
   Link as LinkIcon,
   Layers,
+  Search,
+  Check,
+  ChevronDown,
 } from 'lucide-react';
 import { promotionsRequester, merchantRequester } from '@/lib/requesters';
+import { TablePagination } from '@/components/common/TablePagination';
+import { Popover, PopoverTrigger, PopoverContent } from '@/components/ui/popover';
 import {
   Table,
   TableBody,
@@ -95,6 +100,52 @@ export default function PromotionSettingsPage() {
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
 
+  // Search & Pagination states
+  const [brandSearchQuery, setBrandSearchQuery] = useState('');
+  const [brandPage, setBrandPage] = useState(1);
+  const [brandLimit, setBrandLimit] = useState(10);
+
+  const [categorySearchQuery, setCategorySearchQuery] = useState('');
+  const [categoryPage, setCategoryPage] = useState(1);
+  const [categoryLimit, setCategoryLimit] = useState(10);
+
+  // Searchable Partner Combobox states
+  const [isPartnerSearchOpen, setIsPartnerSearchOpen] = useState(false);
+  const [partnerSearchQuery, setPartnerSearchQuery] = useState('');
+
+  // We reset page to 1 on search queries changes
+  const handleBrandSearch = (query: string) => {
+    setBrandSearchQuery(query);
+    setBrandPage(1);
+  };
+
+  const handleCategorySearch = (query: string) => {
+    setCategorySearchQuery(query);
+    setCategoryPage(1);
+  };
+
+  // Filtered lists
+  const filteredBrands = brands.filter((b) =>
+    b.name.toLowerCase().includes(brandSearchQuery.toLowerCase()) ||
+    (b.partner?.name || '').toLowerCase().includes(brandSearchQuery.toLowerCase()) ||
+    (b.description || '').toLowerCase().includes(brandSearchQuery.toLowerCase())
+  );
+
+  const paginatedBrands = filteredBrands.slice(
+    (brandPage - 1) * brandLimit,
+    brandPage * brandLimit
+  );
+
+  const filteredCategories = categories.filter((c) =>
+    c.name.toLowerCase().includes(categorySearchQuery.toLowerCase()) ||
+    (c.description || '').toLowerCase().includes(categorySearchQuery.toLowerCase())
+  );
+
+  const paginatedCategories = filteredCategories.slice(
+    (categoryPage - 1) * categoryLimit,
+    categoryPage * categoryLimit
+  );
+
   // Dialog states
   const [isBrandModalOpen, setIsBrandModalOpen] = useState(false);
   const [isCategoryModalOpen, setIsCategoryModalOpen] = useState(false);
@@ -125,9 +176,17 @@ export default function PromotionSettingsPage() {
         promotionsRequester.getCategories(),
         merchantRequester.getPartners({ limit: 100, status: 'ACTIVE' }),
       ]);
-      setBrands(Array.isArray(b) ? b : []);
+      const loadedPartners = Array.isArray(p?.data) ? p.data : [];
+      setPartners(loadedPartners);
+
+      const partnerMap = new Map(loadedPartners.map((item: any) => [item.id, item]));
+      const mappedBrands = (Array.isArray(b) ? b : []).map((brand: any) => ({
+        ...brand,
+        partner: brand.partnerId ? partnerMap.get(brand.partnerId) : null,
+      }));
+
+      setBrands(mappedBrands);
       setCategories(Array.isArray(c) ? c : []);
-      setPartners(Array.isArray(p?.data) ? p.data : []);
     } catch (error) {
       toast.error('Failed to load settings data');
       setBrands([]);
@@ -263,23 +322,44 @@ export default function PromotionSettingsPage() {
 
         <TabsContent value="brands">
           <Card className="border border-border shadow-xs overflow-hidden bg-card text-card-foreground">
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 p-6 bg-muted/30 border-b border-border">
+            <CardHeader className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 p-6 bg-muted/30 border-b border-border">
               <div>
                 <CardTitle className="text-lg font-bold">
                   Partner Brands
                 </CardTitle>
                 <CardDescription className="text-muted-foreground">
-                  Manage the brand identities that partner with our rewards
-                  program.
+                  Manage the brand identities that partner with our rewards program.
                 </CardDescription>
               </div>
-              <Button
-                size="sm"
-                className="bg-indigo-600 hover:bg-indigo-700 dark:bg-indigo-500 dark:hover:bg-indigo-600 text-white shadow-xs rounded-xl px-4 border-0"
-                onClick={() => handleOpenBrandModal()}
-              >
-                <Plus className="mr-2 h-4 w-4" /> Add Brand
-              </Button>
+              <div className="flex items-center gap-3">
+                <div className="relative w-64">
+                  <Input
+                    placeholder="Search brands..."
+                    value={brandSearchQuery}
+                    onChange={(e) => handleBrandSearch(e.target.value)}
+                    className="h-9 rounded-xl bg-card border-border pl-9 text-xs focus:ring-indigo-500 text-foreground"
+                  />
+                  <Search
+                    size={14}
+                    className="absolute left-3.5 top-1/2 -translate-y-1/2 text-muted-foreground/50"
+                  />
+                  {brandSearchQuery && (
+                    <button
+                      onClick={() => handleBrandSearch('')}
+                      className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground/40 hover:text-foreground"
+                    >
+                      <X size={12} />
+                    </button>
+                  )}
+                </div>
+                <Button
+                  size="sm"
+                  className="bg-indigo-600 hover:bg-indigo-700 dark:bg-indigo-500 dark:hover:bg-indigo-600 text-white shadow-xs rounded-xl px-4 border-0 h-9"
+                  onClick={() => handleOpenBrandModal()}
+                >
+                  <Plus className="mr-2 h-4 w-4" /> Add Brand
+                </Button>
+              </div>
             </CardHeader>
             <CardContent className="p-0">
               {loading ? (
@@ -287,97 +367,108 @@ export default function PromotionSettingsPage() {
                   <Loader2 className="h-8 w-8 animate-spin text-indigo-500" />
                 </div>
               ) : (
-                <Table>
-                  <TableHeader className="bg-muted/20">
-                    <TableRow className="border-b border-border">
-                      <TableHead className="px-6 text-[10px] font-black text-muted-foreground uppercase tracking-widest">
-                        Brand
-                      </TableHead>
-                      <TableHead className="px-6 text-[10px] font-black text-muted-foreground uppercase tracking-widest">
-                        Partner
-                      </TableHead>
-                      <TableHead className="px-6 text-[10px] font-black text-muted-foreground uppercase tracking-widest">
-                        Description
-                      </TableHead>
-                      <TableHead className="px-6 text-[10px] font-black text-muted-foreground uppercase tracking-widest">
-                        Website
-                      </TableHead>
-                      <TableHead className="px-6 text-right text-[10px] font-black text-muted-foreground uppercase tracking-widest">
-                        Action
-                      </TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody className="divide-y divide-border">
-                    {brands.map((b) => (
-                      <TableRow
-                        key={b.id}
-                        className="hover:bg-muted/40 transition-colors border-b border-border"
-                      >
-                        <TableCell className="px-6 py-4 font-medium">
-                          <div className="flex items-center gap-3">
-                            <div className="w-10 h-10 rounded-xl border border-border bg-card overflow-hidden flex-shrink-0 shadow-xs p-1">
-                              {b.logoUrl ? (
-                                <img
-                                  src={b.logoUrl}
-                                  className="w-full h-full object-contain"
-                                />
-                              ) : (
-                                <div className="w-full h-full flex items-center justify-center text-[10px] text-muted-foreground/30">
-                                  LOGO
-                                </div>
-                              )}
-                            </div>
-                            <span className="font-bold text-foreground">
-                              {b.name}
-                            </span>
-                          </div>
-                        </TableCell>
-                        <TableCell className="px-6 py-4">
-                          {b.partner ? (
-                            <Badge
-                              variant="outline"
-                              className="bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 border-indigo-500/20 font-bold px-2 py-0.5 rounded-lg text-[9px]"
-                            >
-                              {b.partner.name}
-                            </Badge>
-                          ) : (
-                            <span className="text-[10px] text-muted-foreground/30 font-bold italic">
-                              NO PARTNER
-                            </span>
-                          )}
-                        </TableCell>
-                        <TableCell className="px-6 py-4 text-xs text-muted-foreground max-w-[300px] leading-relaxed">
-                          {b.description || '-'}
-                        </TableCell>
-                        <TableCell className="px-6 py-4">
-                          {b.website ? (
-                            <a
-                              href={b.website}
-                              target="_blank"
-                              rel="noreferrer"
-                              className="text-indigo-600 dark:text-indigo-400 flex items-center gap-1.5 text-[10px] font-bold hover:underline bg-indigo-500/10 px-2.5 py-1 rounded-full w-fit"
-                            >
-                              {new URL(b.website).hostname}{' '}
-                              <ExternalLink size={10} />
-                            </a>
-                          ) : (
-                            '-'
-                          )}
-                        </TableCell>
-                        <TableCell className="px-6 py-4 text-right">
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            className="h-9 w-9 text-muted-foreground hover:text-indigo-600 hover:bg-indigo-500/10 dark:hover:text-indigo-400 dark:hover:bg-indigo-500/20 rounded-xl transition-all"
-                            onClick={() => handleOpenBrandModal(b)}
-                          >
-                            <Edit2 size={14} />
-                          </Button>
-                        </TableCell>
+                <>
+                  <Table>
+                    <TableHeader className="bg-muted/20">
+                      <TableRow className="border-b border-border">
+                        <TableHead className="px-6 text-[10px] font-black text-muted-foreground uppercase tracking-widest">
+                          Brand
+                        </TableHead>
+                        <TableHead className="px-6 text-[10px] font-black text-muted-foreground uppercase tracking-widest">
+                          Partner
+                        </TableHead>
+                        <TableHead className="px-6 text-[10px] font-black text-muted-foreground uppercase tracking-widest">
+                          Description
+                        </TableHead>
+                        <TableHead className="px-6 text-[10px] font-black text-muted-foreground uppercase tracking-widest">
+                          Website
+                        </TableHead>
+                        <TableHead className="px-6 text-right text-[10px] font-black text-muted-foreground uppercase tracking-widest">
+                          Action
+                        </TableHead>
                       </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
+                    </TableHeader>
+                    <TableBody className="divide-y divide-border">
+                      {paginatedBrands.map((b) => (
+                        <TableRow
+                          key={b.id}
+                          className="hover:bg-muted/40 transition-colors border-b border-border"
+                        >
+                          <TableCell className="px-6 py-4 font-medium">
+                            <div className="flex items-center gap-3">
+                              <div className="w-10 h-10 rounded-xl border border-border bg-card overflow-hidden flex-shrink-0 shadow-xs p-1">
+                                {b.logoUrl ? (
+                                  <img
+                                    src={b.logoUrl}
+                                    className="w-full h-full object-contain"
+                                  />
+                                ) : (
+                                  <div className="w-full h-full flex items-center justify-center text-[10px] text-muted-foreground/30">
+                                    LOGO
+                                  </div>
+                                )}
+                              </div>
+                              <span className="font-bold text-foreground">
+                                {b.name}
+                              </span>
+                            </div>
+                          </TableCell>
+                          <TableCell className="px-6 py-4">
+                            {b.partner ? (
+                              <Badge
+                                variant="outline"
+                                className="bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 border-indigo-500/20 font-bold px-2 py-0.5 rounded-lg text-[9px]"
+                              >
+                                {b.partner.name}
+                              </Badge>
+                            ) : (
+                              <span className="text-[10px] text-muted-foreground/30 font-bold italic">
+                                NO PARTNER
+                              </span>
+                            )}
+                          </TableCell>
+                          <TableCell className="px-6 py-4 text-xs text-muted-foreground max-w-[300px] leading-relaxed">
+                            {b.description || '-'}
+                          </TableCell>
+                          <TableCell className="px-6 py-4">
+                            {b.website ? (
+                              <a
+                                href={b.website}
+                                target="_blank"
+                                rel="noreferrer"
+                                className="text-indigo-600 dark:text-indigo-400 flex items-center gap-1.5 text-[10px] font-bold hover:underline bg-indigo-500/10 px-2.5 py-1 rounded-full w-fit"
+                              >
+                                {new URL(b.website).hostname}{' '}
+                                <ExternalLink size={10} />
+                              </a>
+                            ) : (
+                              '-'
+                            )}
+                          </TableCell>
+                          <TableCell className="px-6 py-4 text-right">
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              className="h-9 w-9 text-muted-foreground hover:text-indigo-600 hover:bg-indigo-500/10 dark:hover:text-indigo-400 dark:hover:bg-indigo-500/20 rounded-xl transition-all"
+                              onClick={() => handleOpenBrandModal(b)}
+                            >
+                              <Edit2 size={14} />
+                            </Button>
+                          </TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                  <TablePagination
+                    currentPage={brandPage}
+                    totalPages={Math.ceil(filteredBrands.length / brandLimit) || 1}
+                    totalItems={filteredBrands.length}
+                    onPageChange={setBrandPage}
+                    limit={brandLimit}
+                    onLimitChange={setBrandLimit}
+                    itemName="brands"
+                  />
+                </>
               )}
             </CardContent>
           </Card>
@@ -385,7 +476,7 @@ export default function PromotionSettingsPage() {
 
         <TabsContent value="categories">
           <Card className="border border-border shadow-xs overflow-hidden bg-card text-card-foreground">
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 p-6 bg-muted/30 border-b border-border">
+            <CardHeader className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 p-6 bg-muted/30 border-b border-border">
               <div>
                 <CardTitle className="text-lg font-bold">
                   Deal Categories
@@ -394,13 +485,35 @@ export default function PromotionSettingsPage() {
                   Group deals into meaningful sections for user navigation.
                 </CardDescription>
               </div>
-              <Button
-                size="sm"
-                className="bg-indigo-600 hover:bg-indigo-700 dark:bg-indigo-500 dark:hover:bg-indigo-600 text-white shadow-xs rounded-xl px-4 border-0"
-                onClick={() => handleOpenCategoryModal()}
-              >
-                <Plus className="mr-2 h-4 w-4" /> Add Category
-              </Button>
+              <div className="flex items-center gap-3">
+                <div className="relative w-64">
+                  <Input
+                    placeholder="Search categories..."
+                    value={categorySearchQuery}
+                    onChange={(e) => handleCategorySearch(e.target.value)}
+                    className="h-9 rounded-xl bg-card border-border pl-9 text-xs focus:ring-indigo-500 text-foreground"
+                  />
+                  <Search
+                    size={14}
+                    className="absolute left-3.5 top-1/2 -translate-y-1/2 text-muted-foreground/50"
+                  />
+                  {categorySearchQuery && (
+                    <button
+                      onClick={() => handleCategorySearch('')}
+                      className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground/40 hover:text-foreground"
+                    >
+                      <X size={12} />
+                    </button>
+                  )}
+                </div>
+                <Button
+                  size="sm"
+                  className="bg-indigo-600 hover:bg-indigo-700 dark:bg-indigo-500 dark:hover:bg-indigo-600 text-white shadow-xs rounded-xl px-4 border-0 h-9"
+                  onClick={() => handleOpenCategoryModal()}
+                >
+                  <Plus className="mr-2 h-4 w-4" /> Add Category
+                </Button>
+              </div>
             </CardHeader>
             <CardContent className="p-0">
               {loading ? (
@@ -408,59 +521,70 @@ export default function PromotionSettingsPage() {
                   <Loader2 className="h-8 w-8 animate-spin text-indigo-500" />
                 </div>
               ) : (
-                <Table>
-                  <TableHeader className="bg-muted/20">
-                    <TableRow className="border-b border-border">
-                      <TableHead className="px-6 text-[10px] font-black text-muted-foreground uppercase tracking-widest">
-                        Category
-                      </TableHead>
-                      <TableHead className="px-6 text-[10px] font-black text-muted-foreground uppercase tracking-widest">
-                        Order
-                      </TableHead>
-                      <TableHead className="px-6 text-[10px] font-black text-muted-foreground uppercase tracking-widest">
-                        Description
-                      </TableHead>
-                      <TableHead className="px-6 text-right text-[10px] font-black text-muted-foreground uppercase tracking-widest">
-                        Action
-                      </TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody className="divide-y divide-border">
-                    {categories.map((c) => (
-                      <TableRow
-                        key={c.id}
-                        className="hover:bg-muted/40 transition-colors border-b border-border"
-                      >
-                        <TableCell className="px-6 py-4 font-medium">
-                          <Badge
-                            variant="outline"
-                            className="bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 border-indigo-500/20 font-bold px-3 py-1 rounded-lg"
-                          >
-                            {c.name.toUpperCase()}
-                          </Badge>
-                        </TableCell>
-                        <TableCell className="px-6 py-4">
-                          <div className="w-8 h-8 rounded-full bg-muted flex items-center justify-center text-xs font-black text-foreground tabular-nums border border-border">
-                            {c.order}
-                          </div>
-                        </TableCell>
-                        <TableCell className="px-6 py-4 text-xs text-muted-foreground leading-relaxed">
-                          {c.description || '-'}
-                        </TableCell>
-                        <TableCell className="px-6 py-4 text-right">
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            className="h-9 w-9 text-muted-foreground hover:text-indigo-600 hover:bg-indigo-500/10 dark:hover:text-indigo-400 dark:hover:bg-indigo-500/20 rounded-xl transition-all"
-                            onClick={() => handleOpenCategoryModal(c)}
-                          >
-                            <Edit2 size={14} />
-                          </Button>
-                        </TableCell>
+                <>
+                  <Table>
+                    <TableHeader className="bg-muted/20">
+                      <TableRow className="border-b border-border">
+                        <TableHead className="px-6 text-[10px] font-black text-muted-foreground uppercase tracking-widest">
+                          Category
+                        </TableHead>
+                        <TableHead className="px-6 text-[10px] font-black text-muted-foreground uppercase tracking-widest">
+                          Order
+                        </TableHead>
+                        <TableHead className="px-6 text-[10px] font-black text-muted-foreground uppercase tracking-widest">
+                          Description
+                        </TableHead>
+                        <TableHead className="px-6 text-right text-[10px] font-black text-muted-foreground uppercase tracking-widest">
+                          Action
+                        </TableHead>
                       </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
+                    </TableHeader>
+                    <TableBody className="divide-y divide-border">
+                      {paginatedCategories.map((c) => (
+                        <TableRow
+                          key={c.id}
+                          className="hover:bg-muted/40 transition-colors border-b border-border"
+                        >
+                          <TableCell className="px-6 py-4 font-medium">
+                            <Badge
+                              variant="outline"
+                              className="bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 border-indigo-500/20 font-bold px-3 py-1 rounded-lg"
+                            >
+                              {c.name.toUpperCase()}
+                            </Badge>
+                          </TableCell>
+                          <TableCell className="px-6 py-4">
+                            <div className="w-8 h-8 rounded-full bg-muted flex items-center justify-center text-xs font-black text-foreground tabular-nums border border-border">
+                              {c.order}
+                            </div>
+                          </TableCell>
+                          <TableCell className="px-6 py-4 text-xs text-muted-foreground leading-relaxed">
+                            {c.description || '-'}
+                          </TableCell>
+                          <TableCell className="px-6 py-4 text-right">
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              className="h-9 w-9 text-muted-foreground hover:text-indigo-600 hover:bg-indigo-500/10 dark:hover:text-indigo-400 dark:hover:bg-indigo-500/20 rounded-xl transition-all"
+                              onClick={() => handleOpenCategoryModal(c)}
+                            >
+                              <Edit2 size={14} />
+                            </Button>
+                          </TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                  <TablePagination
+                    currentPage={categoryPage}
+                    totalPages={Math.ceil(filteredCategories.length / categoryLimit) || 1}
+                    totalItems={filteredCategories.length}
+                    onPageChange={setCategoryPage}
+                    limit={categoryLimit}
+                    onLimitChange={setCategoryLimit}
+                    itemName="categories"
+                  />
+                </>
               )}
             </CardContent>
           </Card>
@@ -469,7 +593,7 @@ export default function PromotionSettingsPage() {
 
       {/* Brand Modal */}
       <Dialog open={isBrandModalOpen} onOpenChange={setIsBrandModalOpen}>
-        <DialogContent className="sm:max-w-[800px] w-[95vw] p-0 overflow-hidden rounded-3xl border border-border bg-card text-card-foreground shadow-2xl">
+        <DialogContent className="sm:max-w-6xl w-[95vw] p-0 overflow-hidden rounded-3xl border border-border bg-card text-card-foreground shadow-2xl">
           <form onSubmit={handleBrandSubmit}>
             <div className="p-8 pb-4">
               <DialogHeader>
@@ -510,7 +634,7 @@ export default function PromotionSettingsPage() {
                           htmlFor="b-name"
                           className="text-[10px] font-black text-muted-foreground uppercase tracking-widest ml-1"
                         >
-                          Brand Name
+                          Brand Name <span className="text-rose-500 font-bold">* (Required / จำเป็นต้องระบุ)</span>
                         </Label>
                         <Input
                           id="b-name"
@@ -521,7 +645,7 @@ export default function PromotionSettingsPage() {
                           }
                           placeholder="e.g. Starbucks"
                           required
-                          className="rounded-xl bg-card text-foreground border-border focus:ring-indigo-500"
+                          className="rounded-xl bg-card text-foreground border-border focus:ring-indigo-500 font-bold"
                         />
                         <CharCounter
                           current={brandForm.name.length}
@@ -533,37 +657,100 @@ export default function PromotionSettingsPage() {
                           htmlFor="b-partner"
                           className="text-[10px] font-black text-muted-foreground uppercase tracking-widest ml-1"
                         >
-                          Associated Partner
+                          Associated Partner <span className="text-muted-foreground/50 lowercase font-normal italic">(Optional / ระบุหรือไม่ก็ได้)</span>
                         </Label>
-                        <Select
-                          value={brandForm.partnerId}
-                          onValueChange={(val: string | null) =>
-                            setBrandForm((prev) => ({
-                              ...prev,
-                              partnerId: val || 'none',
-                            }))
-                          }
-                        >
-                          <SelectTrigger
-                            id="b-partner"
-                            className="rounded-xl bg-card text-foreground border-border focus:ring-indigo-500"
-                          >
-                            <SelectValue placeholder="Select Partner" />
-                          </SelectTrigger>
-                          <SelectContent className="rounded-xl bg-card text-foreground border-border shadow-xl">
-                            <SelectItem
-                              value="none"
-                              className="text-muted-foreground/60 italic"
-                            >
-                              None (Independent Brand)
-                            </SelectItem>
-                            {partners.map((p) => (
-                              <SelectItem key={p.id} value={p.id || ''}>
-                                {p.name}
-                              </SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
+                        <Popover open={isPartnerSearchOpen} onOpenChange={setIsPartnerSearchOpen}>
+                          <PopoverTrigger
+                            render={
+                              <button
+                                id="b-partner"
+                                type="button"
+                                role="combobox"
+                                aria-expanded={isPartnerSearchOpen}
+                                className="flex w-full items-center justify-between rounded-xl bg-card text-foreground border border-border hover:bg-muted font-bold text-xs h-10 px-3 transition-colors focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2"
+                              >
+                                {brandForm.partnerId === 'none'
+                                  ? 'None (Independent Brand)'
+                                  : partners.find((p) => p.id === brandForm.partnerId)?.name || 'Select Partner'}
+                                <ChevronDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                              </button>
+                            }
+                          />
+                          <PopoverContent className="w-[300px] p-2 bg-card border border-border shadow-xl rounded-2xl text-card-foreground">
+                            <div className="space-y-2">
+                              <div className="relative">
+                                <Input
+                                  placeholder="Search partner..."
+                                  value={partnerSearchQuery}
+                                  onChange={(e) => setPartnerSearchQuery(e.target.value)}
+                                  className="h-8 rounded-lg bg-muted border-border font-bold text-xs pl-8 pr-8 focus:ring-indigo-500 text-foreground"
+                                />
+                                <Search
+                                  size={12}
+                                  className="absolute left-2.5 top-1/2 -translate-y-1/2 text-muted-foreground/50"
+                                />
+                                {partnerSearchQuery && (
+                                  <button
+                                    type="button"
+                                    onClick={() => setPartnerSearchQuery('')}
+                                    className="absolute right-2.5 top-1/2 -translate-y-1/2 text-muted-foreground/40 hover:text-foreground"
+                                  >
+                                    <X size={10} />
+                                  </button>
+                                )}
+                              </div>
+                              <div className="max-h-[160px] overflow-y-auto space-y-0.5 pr-1">
+                                <button
+                                  type="button"
+                                  onClick={() => {
+                                    setBrandForm({ ...brandForm, partnerId: 'none' });
+                                    setIsPartnerSearchOpen(false);
+                                    setPartnerSearchQuery('');
+                                  }}
+                                  className={`w-full text-left px-2.5 py-1.5 rounded-lg text-[10px] transition-colors flex items-center justify-between ${
+                                    brandForm.partnerId === 'none'
+                                      ? 'bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 font-bold'
+                                      : 'hover:bg-muted text-muted-foreground'
+                                  }`}
+                                >
+                                  None (Independent Brand)
+                                  {brandForm.partnerId === 'none' && <Check className="w-3 h-3" />}
+                                </button>
+                                {partners.filter((p) =>
+                                  p.name.toLowerCase().includes(partnerSearchQuery.toLowerCase())
+                                ).length === 0 ? (
+                                  <div className="py-4 text-center text-[10px] text-muted-foreground font-medium">
+                                    No partners found
+                                  </div>
+                                ) : (
+                                  partners
+                                    .filter((p) =>
+                                      p.name.toLowerCase().includes(partnerSearchQuery.toLowerCase())
+                                    )
+                                    .map((p) => (
+                                      <button
+                                        key={p.id}
+                                        type="button"
+                                        onClick={() => {
+                                          setBrandForm({ ...brandForm, partnerId: p.id });
+                                          setIsPartnerSearchOpen(false);
+                                          setPartnerSearchQuery('');
+                                        }}
+                                        className={`w-full text-left px-2.5 py-1.5 rounded-lg text-[10px] transition-colors flex items-center justify-between ${
+                                          brandForm.partnerId === p.id
+                                            ? 'bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 font-bold'
+                                            : 'hover:bg-muted text-foreground font-medium'
+                                        }`}
+                                      >
+                                        {p.name}
+                                        {brandForm.partnerId === p.id && <Check className="w-3 h-3" />}
+                                      </button>
+                                    ))
+                                )}
+                              </div>
+                            </div>
+                          </PopoverContent>
+                        </Popover>
                       </div>
                     </div>
                     <div className="space-y-2">
@@ -571,7 +758,7 @@ export default function PromotionSettingsPage() {
                         htmlFor="b-web"
                         className="text-[10px] font-black text-muted-foreground uppercase tracking-widest ml-1"
                       >
-                        Website URL
+                        Website URL <span className="text-muted-foreground/50 lowercase font-normal italic">(Optional / ระบุหรือไม่ก็ได้)</span>
                       </Label>
                       <div className="relative">
                         <Input
@@ -611,7 +798,7 @@ export default function PromotionSettingsPage() {
                       htmlFor="b-desc"
                       className="text-[10px] font-black text-muted-foreground uppercase tracking-widest ml-1"
                     >
-                      Description
+                      Description <span className="text-muted-foreground/50 lowercase font-normal italic">(Optional / ระบุหรือไม่ก็ได้)</span>
                     </Label>
                     <Textarea
                       id="b-desc"
@@ -664,7 +851,7 @@ export default function PromotionSettingsPage() {
 
       {/* Category Modal */}
       <Dialog open={isCategoryModalOpen} onOpenChange={setIsCategoryModalOpen}>
-        <DialogContent className="sm:max-w-[600px] w-[95vw] p-0 overflow-hidden rounded-3xl border border-border bg-card text-card-foreground shadow-2xl">
+        <DialogContent className="sm:max-w-xl w-[95vw] p-0 overflow-hidden rounded-3xl border border-border bg-card text-card-foreground shadow-2xl">
           <form onSubmit={handleCategorySubmit}>
             <div className="p-8 pb-4">
               <DialogHeader>
@@ -684,7 +871,7 @@ export default function PromotionSettingsPage() {
                     htmlFor="c-name"
                     className="text-[10px] font-black text-muted-foreground uppercase tracking-widest ml-1"
                   >
-                    Category Name
+                    Category Name <span className="text-rose-500 font-bold">* (Required / จำเป็นต้องระบุ)</span>
                   </Label>
                   <Input
                     id="c-name"
@@ -704,7 +891,7 @@ export default function PromotionSettingsPage() {
                     htmlFor="c-order"
                     className="text-[10px] font-black text-muted-foreground uppercase tracking-widest ml-1"
                   >
-                    Display Order
+                    Display Order <span className="text-muted-foreground/50 lowercase font-normal italic">(Optional / ระบุหรือไม่ก็ได้)</span>
                   </Label>
                   <Input
                     id="c-order"
@@ -727,7 +914,7 @@ export default function PromotionSettingsPage() {
                   htmlFor="c-desc"
                   className="text-[10px] font-black text-muted-foreground uppercase tracking-widest ml-1"
                 >
-                  Description
+                  Description <span className="text-muted-foreground/50 lowercase font-normal italic">(Optional / ระบุหรือไม่ก็ได้)</span>
                 </Label>
                 <Textarea
                   id="c-desc"

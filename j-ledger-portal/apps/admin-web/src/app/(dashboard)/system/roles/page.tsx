@@ -134,7 +134,7 @@ export default function RolesPage() {
               </Button>
             }
           />
-          <DialogContent className="sm:max-w-[425px] bg-card text-foreground rounded-2xl border border-border shadow-md">
+          <DialogContent className="sm:max-w-md bg-card text-foreground rounded-2xl border border-border shadow-md">
             <form onSubmit={handleCreateRole}>
               <DialogHeader>
                 <DialogTitle className="text-xl font-bold text-foreground">

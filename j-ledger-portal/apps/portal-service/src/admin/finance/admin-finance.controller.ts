@@ -10,6 +10,7 @@ import {
   Logger,
   HttpException,
   HttpStatus,
+  Inject,
 } from '@nestjs/common';
 import { AdminJwtGuard } from '../guards/admin-jwt.guard';
 import { AdminRolesGuard } from '../guards/admin-roles.guard';
@@ -26,6 +27,8 @@ import {
 
 import { IntegrationService } from '../../modules/integration/integration.service';
 import { LoyaltyService } from '../../modules/loyalty/loyalty.service';
+import { REDIS_CLIENT } from '../../core/common/constants';
+import Redis from 'ioredis';
 
 @Controller('admin')
 @UseGuards(AdminJwtGuard, AdminRolesGuard)
@@ -35,6 +38,7 @@ export class AdminFinanceController {
   constructor(
     private readonly integrationService: IntegrationService,
     private readonly loyaltyService: LoyaltyService,
+    @Inject(REDIS_CLIENT) private readonly redis: Redis,
   ) {}
 
   // ==================== Account Management ====================
@@ -295,11 +299,26 @@ export class AdminFinanceController {
   async getSuspiciousActivities(
     @Query('page') page: number = 1,
     @Query('limit') limit: number = 50,
+    @Query('userId') userId?: string,
+    @Query('status') status?: string,
+    @Query('activityType') activityType?: string,
+    @Query('minRiskScore') minRiskScore?: number,
+    @Query('maxRiskScore') maxRiskScore?: number,
   ): Promise<AdminPaginatedResponse<any>> {
     const skipPage = Math.max(0, page - 1);
+    const query = new URLSearchParams({
+      page: skipPage.toString(),
+      size: limit.toString(),
+      ...(userId && { userId }),
+      ...(status && { status }),
+      ...(activityType && { activityType }),
+      ...(minRiskScore && { minRiskScore: minRiskScore.toString() }),
+      ...(maxRiskScore && { maxRiskScore: maxRiskScore.toString() }),
+    });
+
     const response = await this.integrationService.forwardToGateway<any>(
       'get',
-      `${INTERNAL_API_PATHS.FINANCE.AML.SUSPICIOUS_ACTIVITIES}?page=${skipPage}&size=${limit}`,
+      `${INTERNAL_API_PATHS.FINANCE.AML.SUSPICIOUS_ACTIVITIES}?${query.toString()}`,
     );
 
     // Format to match UI expectations (PaginatedResponse)
@@ -324,10 +343,31 @@ export class AdminFinanceController {
     @Param('id') id: string,
     @Body() data: any,
   ): Promise<void> {
+    const javaPayload = {
+      status: data.status,
+      reviewedBy: data.reviewedBy || 'COMPLIANCE_OFFICER',
+      description: data.description || data.notes || '',
+    };
     await this.integrationService.forwardToGateway(
       'put',
       INTERNAL_API_PATHS.FINANCE.AML.SUSPICIOUS_ACTIVITY_STATUS(id),
-      data,
+      javaPayload,
+    );
+  }
+
+  @Post('aml/suspicious-activities/:id/report')
+  @Roles(AdminRole.SUPER_ADMIN, AdminRole.AUDITOR, AdminRole.COMPLIANCE_OFFICER)
+  async reportSuspiciousActivityToAmlo(
+    @Param('id') id: string,
+    @Body() body: any,
+  ): Promise<any> {
+    return this.integrationService.forwardToGateway(
+      'post',
+      INTERNAL_API_PATHS.FINANCE.AML.REPORT_AMLO,
+      {
+        activityId: id,
+        reviewedBy: 'COMPLIANCE_OFFICER',
+      },
     );
   }
 
@@ -399,6 +439,317 @@ export class AdminFinanceController {
         arrivalDate: new Date().toISOString(),
       },
     );
-    return { success: true, payoutId: stripePayoutId };
+    return { success: true, stripePayoutId };
+  }
+
+  // ==================== Support Disputes ====================
+
+  @Get('disputes')
+  @Roles(AdminRole.SUPER_ADMIN, AdminRole.AUDITOR, AdminRole.SUPPORT_AGENT)
+  async getDisputes(
+    @Query('page') page: number = 1,
+    @Query('limit') limit: number = 10,
+    @Query('search') search?: string,
+    @Query('status') status?: string,
+    @Query('type') type?: string,
+  ): Promise<AdminPaginatedResponse<any> & { stats: any }> {
+    const response = await this.integrationService.forwardToGateway<any>(
+      'get',
+      `${INTERNAL_API_PATHS.FINANCE.TRANSACTIONS.BASE}?page=0&size=500`,
+    );
+
+    const transactions = Array.isArray(response)
+      ? response
+      : response.content || [];
+    const disputeStatuses = await this.getDisputeStatusOverrides(transactions);
+    const searchTerm = search?.trim().toLowerCase();
+    const normalizedStatus = status && status !== 'ALL' ? status : undefined;
+    const normalizedType = type && type !== 'ALL' ? type : undefined;
+
+    const disputes = transactions
+      .map((transaction: any) =>
+        this.buildDisputeRecord(
+          transaction,
+          disputeStatuses.get(this.getDisputeKey(transaction)),
+        ),
+      )
+      .filter((dispute: any) => {
+        const defaultQueueItem =
+          dispute.transactionStatus !== 'COMPLETED' ||
+          dispute.status === 'REVERSED';
+        const matchesDefaultScope = normalizedStatus
+          ? true
+          : defaultQueueItem;
+        const matchesStatus =
+          !normalizedStatus || dispute.status === normalizedStatus;
+        const matchesType =
+          !normalizedType || dispute.transactionType === normalizedType;
+        const matchesSearch =
+          !searchTerm ||
+          [
+            dispute.id,
+            dispute.transactionId,
+            dispute.type,
+            dispute.reason,
+            dispute.sender,
+            dispute.recipient,
+          ]
+            .filter(Boolean)
+            .some((value) => String(value).toLowerCase().includes(searchTerm));
+
+        return matchesDefaultScope && matchesStatus && matchesType && matchesSearch;
+      })
+      .sort(
+        (a: any, b: any) =>
+          new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime(),
+      );
+
+    const safePage = Math.max(1, Number(page) || 1);
+    const safeLimit = Math.min(Math.max(1, Number(limit) || 10), 100);
+    const start = (safePage - 1) * safeLimit;
+    const paginated = disputes.slice(start, start + safeLimit);
+    const hydrated = await Promise.all(
+      paginated.map((dispute: any) => this.hydrateDisputeLedger(dispute)),
+    );
+
+    return {
+      data: hydrated,
+      pagination: {
+        page: safePage,
+        limit: safeLimit,
+        total: disputes.length,
+        totalPages: Math.max(1, Math.ceil(disputes.length / safeLimit)),
+      },
+      stats: {
+        pending: disputes.filter((item: any) => item.status === 'PENDING')
+          .length,
+        reversed: disputes.filter((item: any) => item.status === 'REVERSED')
+          .length,
+        resolved: disputes.filter((item: any) => item.status === 'RESOLVED')
+          .length,
+        disputedAmount: disputes
+          .filter((item: any) => item.status === 'PENDING')
+          .reduce((sum: number, item: any) => sum + Number(item.amount || 0), 0),
+      },
+    };
+  }
+
+  @Post('disputes/:id/reverse')
+  @Roles(AdminRole.SUPER_ADMIN, AdminRole.AUDITOR, AdminRole.SUPPORT_AGENT)
+  async reverseDispute(@Param('id') id: string): Promise<{ success: boolean }> {
+    await this.redis.set(`admin:disputes:${id}:status`, 'REVERSED');
+    await this.redis.set(
+      `admin:disputes:${id}:updatedAt`,
+      new Date().toISOString(),
+    );
+    return { success: true };
+  }
+
+  private async getDisputeStatusOverrides(
+    transactions: any[],
+  ): Promise<Map<string, string>> {
+    const pairs = await Promise.all(
+      transactions.map(async (transaction) => {
+        const key = this.getDisputeKey(transaction);
+        const status = await this.redis.get(`admin:disputes:${key}:status`);
+        return [key, status] as const;
+      }),
+    );
+
+    return new Map(
+      pairs
+        .filter(([, status]) => Boolean(status))
+        .map(([key, status]) => [key, status as string]),
+    );
+  }
+
+  private getDisputeKey(transaction: any): string {
+    return transaction.transactionId || transaction.referenceId || String(transaction.id);
+  }
+
+  private buildDisputeRecord(transaction: any, overrideStatus?: string) {
+    const key = this.getDisputeKey(transaction);
+    const transactionStatus = transaction.status || 'UNKNOWN';
+    const transactionType =
+      transaction.transactionType || transaction.type || 'TRANSACTION';
+    const amount = Number(transaction.amount || 0);
+    const status =
+      overrideStatus ||
+      (transactionStatus === 'COMPLETED' ? 'RESOLVED' : 'PENDING');
+
+    return {
+      id: `DSP-${key}`,
+      disputeKey: key,
+      transactionId: key,
+      transactionInternalId: transaction.id,
+      transactionType,
+      transactionStatus,
+      type: this.getDisputeType(transactionType, transactionStatus),
+      sender:
+        transaction.senderId ||
+        transaction.fromAccountId ||
+        transaction.fromWalletId ||
+        'Source account unavailable',
+      recipient:
+        transaction.receiverId ||
+        transaction.toAccountId ||
+        transaction.toWalletId ||
+        'Destination account unavailable',
+      amount,
+      reason: this.getDisputeReason(transaction),
+      status,
+      createdAt: transaction.createdAt,
+      updatedAt: transaction.updatedAt,
+      referenceId: transaction.referenceId,
+    };
+  }
+
+  private getDisputeType(transactionType: string, transactionStatus: string) {
+    if (transactionStatus === 'FAILED') return `${transactionType} Failure`;
+    if (transactionStatus === 'CANCELLED') return `${transactionType} Cancelled`;
+    if (transactionStatus === 'PENDING') return `${transactionType} Pending Review`;
+    return `${transactionType} Review`;
+  }
+
+  private getDisputeReason(transaction: any) {
+    if (transaction.description) return transaction.description;
+    if (transaction.status === 'FAILED') {
+      return 'Finance transaction failed and requires support verification.';
+    }
+    if (transaction.status === 'CANCELLED') {
+      return 'Finance transaction was cancelled and is available for support audit.';
+    }
+    if (transaction.status === 'PENDING') {
+      return 'Finance transaction is still pending and may need operational follow-up.';
+    }
+    return 'Transaction was reviewed through the support dispute workflow.';
+  }
+
+  private async hydrateDisputeLedger(dispute: any) {
+    let ledgerEntries: any[] = [];
+
+    try {
+      ledgerEntries = await this.integrationService.forwardToGateway<any[]>(
+        'get',
+        `${INTERNAL_API_PATHS.FINANCE.TRANSACTIONS.DETAIL(dispute.transactionInternalId)}/ledger-entries`,
+      );
+    } catch (error) {
+      this.logger.warn(
+        `Unable to hydrate ledger entries for dispute ${dispute.id}: ${error.message}`,
+      );
+    }
+
+    const debitLeg = ledgerEntries.find((entry) => entry.entryType === 'DEBIT');
+    const creditLeg = ledgerEntries.find((entry) => entry.entryType === 'CREDIT');
+
+    return {
+      ...dispute,
+      debitLeg: this.mapLedgerLeg(debitLeg, 'DEBIT'),
+      creditLeg: this.mapLedgerLeg(creditLeg, 'CREDIT'),
+      ledgerEntries,
+    };
+  }
+
+  private mapLedgerLeg(entry: any, fallbackType: 'DEBIT' | 'CREDIT') {
+    return {
+      account:
+        entry?.account?.accountName ||
+        entry?.account?.id ||
+        'Ledger entry unavailable',
+      type: entry?.entryType || fallbackType,
+      amount: Number(entry?.amount || 0),
+      description: entry?.description || null,
+    };
+  }
+
+  // ==================== Dynamic Blacklist Management (IP / Hardware Keys) ====================
+
+  @Get('blacklist/nodes')
+  @Roles(AdminRole.SUPER_ADMIN, AdminRole.AUDITOR)
+  async getBlacklistNodes(): Promise<{ data: any[] }> {
+    const ipKeys = await this.redis.keys('blacklist:ip:*');
+    const hwKeys = await this.redis.keys('blacklist:hw:*');
+    
+    const records = [];
+    const dateFallback = new Date().toISOString().replace('T', ' ').substring(0, 16);
+    
+    for (const key of ipKeys) {
+      const ip = key.replace('blacklist:ip:', '');
+      const reason = await this.redis.get(`blacklist:reason:ip:${ip}`) || 'Gateway security restriction enforced.';
+      const severity = await this.redis.get(`blacklist:severity:ip:${ip}`) || 'CRITICAL';
+      const blacklistedAt = await this.redis.get(`blacklist:date:ip:${ip}`) || dateFallback;
+      const enforcedBy = await this.redis.get(`blacklist:by:ip:${ip}`) || 'Gateway Firewall';
+      records.push({
+        id: `BLK-${ip.replace(/\./g, '')}`,
+        type: 'IP',
+        target: ip,
+        reason,
+        severity,
+        blacklistedAt,
+        enforcedBy,
+        status: 'ACTIVE',
+      });
+    }
+
+    for (const key of hwKeys) {
+      const hw = key.replace('blacklist:hw:', '');
+      const reason = await this.redis.get(`blacklist:reason:hw:${hw}`) || 'Hardware signature mismatch detected.';
+      const severity = await this.redis.get(`blacklist:severity:hw:${hw}`) || 'HIGH';
+      const blacklistedAt = await this.redis.get(`blacklist:date:hw:${hw}`) || dateFallback;
+      const enforcedBy = await this.redis.get(`blacklist:by:hw:${hw}`) || 'BFF Handshake Guard';
+      records.push({
+        id: `BLK-${hw}`,
+        type: 'HARDWARE',
+        target: hw,
+        reason,
+        severity,
+        blacklistedAt,
+        enforcedBy,
+        status: 'ACTIVE',
+      });
+    }
+
+    return { data: records };
+  }
+
+  @Post('blacklist/nodes/block')
+  @Roles(AdminRole.SUPER_ADMIN, AdminRole.AUDITOR)
+  async blockNode(@Body() body: { type: 'IP' | 'HARDWARE'; target: string; reason: string; severity: string }): Promise<void> {
+    const { type, target, reason, severity } = body;
+    const dateStr = new Date().toISOString().replace('T', ' ').substring(0, 16);
+    
+    if (type === 'IP') {
+      await this.redis.set(`blacklist:ip:${target}`, '1');
+      await this.redis.set(`blacklist:reason:ip:${target}`, reason);
+      await this.redis.set(`blacklist:severity:ip:${target}`, severity);
+      await this.redis.set(`blacklist:date:ip:${target}`, dateStr);
+      await this.redis.set(`blacklist:by:ip:${target}`, 'Compliance Manual');
+    } else {
+      await this.redis.set(`blacklist:hw:${target}`, '1');
+      await this.redis.set(`blacklist:reason:hw:${target}`, reason);
+      await this.redis.set(`blacklist:severity:hw:${target}`, severity);
+      await this.redis.set(`blacklist:date:hw:${target}`, dateStr);
+      await this.redis.set(`blacklist:by:hw:${target}`, 'Compliance Manual');
+    }
+  }
+
+  @Post('blacklist/nodes/unblock')
+  @Roles(AdminRole.SUPER_ADMIN, AdminRole.AUDITOR)
+  async unblockNode(@Body() body: { type: 'IP' | 'HARDWARE'; target: string }): Promise<void> {
+    const { type, target } = body;
+    
+    if (type === 'IP') {
+      await this.redis.del(`blacklist:ip:${target}`);
+      await this.redis.del(`blacklist:reason:ip:${target}`);
+      await this.redis.del(`blacklist:severity:ip:${target}`);
+      await this.redis.del(`blacklist:date:ip:${target}`);
+      await this.redis.del(`blacklist:by:ip:${target}`);
+    } else {
+      await this.redis.del(`blacklist:hw:${target}`);
+      await this.redis.del(`blacklist:reason:hw:${target}`);
+      await this.redis.del(`blacklist:severity:hw:${target}`);
+      await this.redis.del(`blacklist:date:hw:${target}`);
+      await this.redis.del(`blacklist:by:hw:${target}`);
+    }
   }
 }

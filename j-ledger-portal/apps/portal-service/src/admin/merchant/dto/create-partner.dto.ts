@@ -6,6 +6,7 @@ import {
   IsObject,
   ValidateNested,
   Matches,
+  IsBoolean,
 } from 'class-validator';
 import { Type } from 'class-transformer';
 
@@ -97,4 +98,12 @@ export class UpdatePartnerDto {
   @ValidateNested()
   @Type(() => PartnerProfileDto)
   profile?: PartnerProfileDto;
+
+  @IsBoolean()
+  @IsOptional()
+  isPaymentEnabled?: boolean;
+
+  @IsBoolean()
+  @IsOptional()
+  isLoyaltyEnabled?: boolean;
 }

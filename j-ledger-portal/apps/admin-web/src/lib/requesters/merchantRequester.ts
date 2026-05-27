@@ -101,7 +101,7 @@ export const merchantRequester = {
 
   rotateTerminalSecret: async (terminalId: string) => {
     return apiClient.post<any>(
-      `/admin/merchants/terminals/${terminalId}/rotate`,
+      `/api/admin/merchants/terminals/${terminalId}/rotate`,
     );
   },
 };

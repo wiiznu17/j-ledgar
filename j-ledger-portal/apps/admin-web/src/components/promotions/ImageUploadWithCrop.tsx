@@ -190,7 +190,7 @@ export function ImageUploadWithCrop({
 
       {/* Cropping Dialog */}
       <Dialog open={isCropping} onOpenChange={setIsCropping}>
-        <DialogContent className="sm:max-w-[700px] w-[95vw] p-0 overflow-hidden rounded-[2.5rem] border-none bg-card text-card-foreground shadow-2xl">
+        <DialogContent className="sm:max-w-3xl w-[95vw] p-0 overflow-hidden rounded-[2.5rem] border-none bg-card text-card-foreground shadow-2xl">
           <div className="p-8 pb-0">
             <DialogHeader>
               <DialogTitle className="text-2xl font-black text-foreground tracking-tight">

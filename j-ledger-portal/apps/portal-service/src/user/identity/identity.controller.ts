@@ -299,6 +299,16 @@ export class IdentityController {
   }
 
   @UseGuards(JwtAuthGuard)
+  @Post('pay-token')
+  @HttpCode(HttpStatus.OK)
+  async generatePayToken(@Req() req: AuthenticatedRequest) {
+    if (!req.user?.sub) {
+      throw new UnauthorizedException('User is not authenticated');
+    }
+    return this.identityService.createPayToken(req.user.sub);
+  }
+
+  @UseGuards(JwtAuthGuard)
   @Get('profile')
   async getProfile(@Req() req: AuthenticatedRequest) {
     if (!req.user?.sub) {

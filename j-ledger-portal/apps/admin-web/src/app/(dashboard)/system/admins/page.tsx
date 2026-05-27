@@ -250,7 +250,7 @@ export default function UsersPage() {
               </Button>
             }
           />
-          <DialogContent className="sm:max-w-[425px] bg-card text-foreground border-border rounded-[2rem] overflow-hidden">
+          <DialogContent className="sm:max-w-md bg-card text-foreground border-border rounded-[2rem] overflow-hidden">
             <form onSubmit={handleCreateUser} className="space-y-5">
               <DialogHeader>
                 <DialogTitle className="text-lg font-black tracking-tight text-foreground flex items-center gap-2">

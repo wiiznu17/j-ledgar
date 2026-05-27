@@ -67,6 +67,7 @@ export default function PartnerDetailPage({
   const [isRejectDialogOpen, setIsRejectDialogOpen] = useState(false);
   const [selectedAppId, setSelectedAppId] = useState<string | null>(null);
   const [rejectionNote, setRejectionNote] = useState('');
+  const [updatingCapabilities, setUpdatingCapabilities] = useState(false);
 
   const handleReview = async (
     id: string,
@@ -118,6 +119,35 @@ export default function PartnerDetailPage({
       return;
     }
     processReview(selectedAppId, 'REJECTED', rejectionNote);
+  };
+
+  const handleToggleCapability = async (
+    field: 'isPaymentEnabled' | 'isLoyaltyEnabled',
+  ) => {
+    try {
+      setUpdatingCapabilities(true);
+      const updatedVal = !partner[field];
+
+      const promise = merchantRequester.updatePartner(partnerId, {
+        [field]: updatedVal,
+      });
+
+      toast.promise(promise, {
+        loading: 'Updating capability...',
+        success: () => {
+          fetchData();
+          return `${
+            field === 'isPaymentEnabled' ? 'Payment processing' : 'Loyalty rewards'
+          } capability updated successfully`;
+        },
+        error: 'Failed to update merchant capability',
+      });
+    } catch (error) {
+      console.error(`Error toggling capability ${field}`, error);
+      toast.error('Failed to update merchant capability');
+    } finally {
+      setUpdatingCapabilities(false);
+    }
   };
 
   const fetchData = async () => {
@@ -517,16 +547,32 @@ export default function PartnerDetailPage({
             <CardContent className="p-6 pt-0 space-y-4">
               <div className="p-4 rounded-2xl bg-muted border border-border flex items-center gap-4">
                 <div
-                  className={`p-2 rounded-lg ${partner.status === 'ACTIVE' ? 'bg-emerald-500/15 text-emerald-600 dark:text-emerald-400' : 'bg-amber-500/15 text-amber-600 dark:text-amber-400'}`}
+                  className={`p-2 rounded-lg ${
+                    partner.status === 'ACTIVE'
+                      ? 'bg-emerald-500/15 text-emerald-600 dark:text-emerald-400'
+                      : partner.status === 'REJECTED'
+                      ? 'bg-rose-500/15 text-rose-600 dark:text-rose-400'
+                      : 'bg-amber-500/15 text-amber-600 dark:text-amber-400'
+                  }`}
                 >
-                  <ShieldCheck className="w-5 h-5" />
+                  {partner.status === 'ACTIVE' ? (
+                    <ShieldCheck className="w-5 h-5" />
+                  ) : partner.status === 'REJECTED' ? (
+                    <ShieldAlert className="w-5 h-5" />
+                  ) : (
+                    <Shield className="w-5 h-5 animate-pulse" />
+                  )}
                 </div>
                 <div>
                   <div className="text-xs font-bold text-foreground uppercase">
                     Verification Level
                   </div>
                   <div className="text-[10px] text-muted-foreground">
-                    Fully verified tax entity
+                    {partner.status === 'ACTIVE'
+                      ? 'Fully verified tax entity'
+                      : partner.status === 'REJECTED'
+                      ? 'Verification failed - Requires review'
+                      : 'Awaiting compliance review'}
                   </div>
                 </div>
               </div>
@@ -598,16 +644,20 @@ export default function PartnerDetailPage({
                       Payment Processing
                     </span>
                   </div>
-                  <Badge
-                    variant={partner.isPaymentEnabled ? 'default' : 'secondary'}
-                    className={
-                      partner.isPaymentEnabled
-                        ? 'bg-emerald-600 hover:bg-emerald-700 text-white text-[10px]'
-                        : 'text-[10px]'
-                    }
+                  <button
+                    onClick={() => handleToggleCapability('isPaymentEnabled')}
+                    disabled={updatingCapabilities || partner.status !== 'ACTIVE'}
+                    className={`relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 ${
+                      partner.isPaymentEnabled ? 'bg-emerald-600' : 'bg-slate-300 dark:bg-slate-700'
+                    } ${partner.status !== 'ACTIVE' ? 'opacity-50 cursor-not-allowed' : ''}`}
+                    title={partner.status !== 'ACTIVE' ? 'Requires partner to be active' : ''}
                   >
-                    {partner.isPaymentEnabled ? 'Enabled' : 'Disabled'}
-                  </Badge>
+                    <span
+                      className={`pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow-lg ring-0 transition duration-200 ease-in-out ${
+                        partner.isPaymentEnabled ? 'translate-x-5' : 'translate-x-0'
+                      }`}
+                    />
+                  </button>
                 </div>
                 <div className="flex items-center justify-between p-3 rounded-xl bg-muted ring-1 ring-border">
                   <div className="flex items-center gap-2">
@@ -616,16 +666,20 @@ export default function PartnerDetailPage({
                       Loyalty Rewards
                     </span>
                   </div>
-                  <Badge
-                    variant={partner.isLoyaltyEnabled ? 'default' : 'secondary'}
-                    className={
-                      partner.isLoyaltyEnabled
-                        ? 'bg-emerald-600 hover:bg-emerald-700 text-white text-[10px]'
-                        : 'text-[10px]'
-                    }
+                  <button
+                    onClick={() => handleToggleCapability('isLoyaltyEnabled')}
+                    disabled={updatingCapabilities || partner.status !== 'ACTIVE'}
+                    className={`relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 ${
+                      partner.isLoyaltyEnabled ? 'bg-emerald-600' : 'bg-slate-300 dark:bg-slate-700'
+                    } ${partner.status !== 'ACTIVE' ? 'opacity-50 cursor-not-allowed' : ''}`}
+                    title={partner.status !== 'ACTIVE' ? 'Requires partner to be active' : ''}
                   >
-                    {partner.isLoyaltyEnabled ? 'Enabled' : 'Disabled'}
-                  </Badge>
+                    <span
+                      className={`pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow-lg ring-0 transition duration-200 ease-in-out ${
+                        partner.isLoyaltyEnabled ? 'translate-x-5' : 'translate-x-0'
+                      }`}
+                    />
+                  </button>
                 </div>
               </div>
             </CardContent>
@@ -699,7 +753,7 @@ export default function PartnerDetailPage({
 
       {/* Create Merchant Modal */}
       <Dialog open={isMerchantModalOpen} onOpenChange={setIsMerchantModalOpen}>
-        <DialogContent className="sm:max-w-[450px] rounded-[2rem] border-none shadow-2xl p-0 overflow-hidden bg-card text-card-foreground">
+        <DialogContent className="sm:max-w-md rounded-[2rem] border-none shadow-2xl p-0 overflow-hidden bg-card text-card-foreground">
           <form onSubmit={handleCreateMerchant}>
             <div className="p-8 pb-4">
               <DialogHeader>
@@ -774,7 +828,7 @@ export default function PartnerDetailPage({
       </Dialog>
 
       <Dialog open={isRejectDialogOpen} onOpenChange={setIsRejectDialogOpen}>
-        <DialogContent className="sm:max-w-[425px] bg-card text-card-foreground border border-border">
+        <DialogContent className="sm:max-w-md bg-card text-card-foreground border border-border">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2 text-rose-600 dark:text-rose-400">
               <AlertCircle className="w-5 h-5" />

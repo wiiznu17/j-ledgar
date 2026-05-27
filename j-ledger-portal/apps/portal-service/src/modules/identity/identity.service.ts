@@ -1131,6 +1131,195 @@ export class IdentityService {
     };
   }
 
+  async findAllUserDevices(
+    page: number = 1,
+    limit: number = 10,
+    filters: {
+      search?: string;
+      os?: string;
+      trustLevel?: string;
+    } = {},
+  ) {
+    const safePage = Math.max(1, Number(page) || 1);
+    const safeLimit = Math.min(Math.max(1, Number(limit) || 10), 100);
+    const skip = (safePage - 1) * safeLimit;
+    const search = filters.search?.trim();
+
+    const where: any = {
+      ...(filters.os &&
+        filters.os !== 'ALL' && {
+          OR: [
+            {
+              osVersion: {
+                contains: filters.os,
+                mode: 'insensitive',
+              },
+            },
+            {
+              deviceType: {
+                contains: filters.os,
+                mode: 'insensitive',
+              },
+            },
+          ],
+        }),
+      ...(filters.trustLevel &&
+        filters.trustLevel !== 'ALL' && {
+          trustLevel: filters.trustLevel,
+        }),
+      ...(search && {
+        AND: [
+          {
+            OR: [
+              { id: { contains: search, mode: 'insensitive' } },
+              { deviceIdentifier: { contains: search, mode: 'insensitive' } },
+              { deviceName: { contains: search, mode: 'insensitive' } },
+              { deviceType: { contains: search, mode: 'insensitive' } },
+              { osVersion: { contains: search, mode: 'insensitive' } },
+              { appVersion: { contains: search, mode: 'insensitive' } },
+              { userId: { contains: search, mode: 'insensitive' } },
+              { user: { email: { contains: search, mode: 'insensitive' } } },
+              {
+                user: {
+                  phoneNumber: { contains: search, mode: 'insensitive' },
+                },
+              },
+            ],
+          },
+        ],
+      }),
+    };
+
+    const [devices, total, stats] = await Promise.all([
+      this.prisma.userDevice.findMany({
+        where,
+        include: {
+          user: {
+            select: {
+              id: true,
+              email: true,
+              phoneNumber: true,
+              status: true,
+            },
+          },
+        },
+        orderBy: [{ lastSeenAt: 'desc' }, { createdAt: 'desc' }],
+        skip,
+        take: safeLimit,
+      }),
+      this.prisma.userDevice.count({ where }),
+      this.prisma.userDevice.groupBy({
+        by: ['trustLevel'],
+        _count: { _all: true },
+      }),
+    ]);
+
+    const latestSessions = devices.length
+      ? await this.prisma.refreshSession.findMany({
+          where: {
+            deviceId: { in: devices.map((device) => device.id) },
+          },
+          orderBy: { lastSeenAt: 'desc' },
+          distinct: ['deviceId'],
+          select: {
+            deviceId: true,
+            ipAddress: true,
+            location: true,
+            userAgent: true,
+            revokedAt: true,
+            lastSeenAt: true,
+          },
+        })
+      : [];
+
+    const sessionsByDeviceId = new Map(
+      latestSessions.map((session) => [session.deviceId, session]),
+    );
+
+    const data = devices.map((device) => {
+      const session = sessionsByDeviceId.get(device.id);
+
+      return {
+        id: device.id,
+        userId: device.userId,
+        email: device.user.email,
+        phoneNumber: device.user.phoneNumber,
+        userStatus: device.user.status,
+        deviceName: device.deviceName,
+        deviceIdentifier: device.deviceIdentifier,
+        deviceType: device.deviceType,
+        osVersion: device.osVersion,
+        appVersion: device.appVersion,
+        trustLevel: device.trustLevel,
+        lastSeenAt: device.lastSeenAt,
+        createdAt: device.createdAt,
+        updatedAt: device.updatedAt,
+        lastIp: session?.ipAddress || null,
+        lastLocation: session?.location || null,
+        userAgent: session?.userAgent || null,
+        sessionRevokedAt: session?.revokedAt || null,
+      };
+    });
+
+    return {
+      data,
+      pagination: {
+        page: safePage,
+        limit: safeLimit,
+        total,
+        totalPages: Math.max(1, Math.ceil(total / safeLimit)),
+      },
+      stats: {
+        total: stats.reduce((sum, item) => sum + item._count._all, 0),
+        trusted:
+          stats.find((item) => item.trustLevel === DeviceTrustLevel.TRUSTED)
+            ?._count._all || 0,
+        untrusted:
+          stats.find((item) => item.trustLevel === DeviceTrustLevel.UNTRUSTED)
+            ?._count._all || 0,
+        unknown:
+          stats.find((item) => item.trustLevel === DeviceTrustLevel.UNKNOWN)
+            ?._count._all || 0,
+      },
+    };
+  }
+
+  async revokeUserDevice(deviceId: string) {
+    const device = await this.prisma.userDevice.update({
+      where: { id: deviceId },
+      data: { trustLevel: DeviceTrustLevel.UNTRUSTED },
+    });
+
+    await this.prisma.refreshSession.updateMany({
+      where: {
+        deviceId,
+        revokedAt: null,
+      },
+      data: { revokedAt: new Date() },
+    });
+
+    await this.logSecurityEvent(device.userId, NotificationEventType.LOGOUT, {
+      action: 'DEVICE_REVOKED',
+      deviceId,
+    });
+
+    return device;
+  }
+
+  async reactivateUserDevice(deviceId: string) {
+    const device = await this.prisma.userDevice.update({
+      where: { id: deviceId },
+      data: { trustLevel: DeviceTrustLevel.TRUSTED },
+    });
+
+    await this.logSecurityEvent(device.userId, NotificationEventType.LOGIN_SUCCESS, {
+      action: 'DEVICE_REACTIVATED',
+      deviceId,
+    });
+
+    return device;
+  }
+
   // ==================== Placeholder Methods ====================
 
   async acceptTerms(
@@ -2156,6 +2345,21 @@ export class IdentityService {
   async reportSuspiciousActivityToAmlo(activityId: string, userId: string) {
     // TODO: Implement AMLO reporting logic
     return { success: true };
+  }
+
+  async createPayToken(userId: string): Promise<{ token: string; expiresAt: string }> {
+    const token = 'PAY-' + require('crypto').randomBytes(8).toString('hex').toUpperCase();
+    const ttlSeconds = 60; // 1-minute expiration
+    const expiresAt = new Date(Date.now() + ttlSeconds * 1000).toISOString();
+    
+    // Store token in Redis
+    await this.redis.set(`pay_token:${token}`, userId, 'EX', ttlSeconds);
+    this.logger.log(`Generated dynamic pay token for user ${userId}: ${token}`);
+    
+    return {
+      token,
+      expiresAt,
+    };
   }
 
   // ==================== Private Helpers ====================
