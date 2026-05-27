@@ -2,6 +2,7 @@ package com.jledger.finance.controller.compliance;
 
 import com.jledger.finance.domain.entity.SuspiciousActivity;
 import com.jledger.finance.domain.enums.SuspiciousActivityStatus;
+import com.jledger.finance.domain.enums.SuspiciousActivityType;
 import com.jledger.finance.service.compliance.AmlMonitoringService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
@@ -23,12 +24,22 @@ public class AmlMonitoringController {
     private final AmlMonitoringService amlMonitoringService;
 
     @GetMapping("/suspicious-activities")
-    @Operation(summary = "List all suspicious activities", description = "Retrieves all suspicious activities in the system with pagination")
+    @Operation(summary = "List all suspicious activities with optional filters", description = "Retrieves suspicious activities in the system filtered by criteria with pagination")
     public ResponseEntity<org.springframework.data.domain.Page<SuspiciousActivity>> getAllSuspiciousActivities(
             @RequestParam(defaultValue = "0") int page,
-            @RequestParam(defaultValue = "50") int size) {
-        return ResponseEntity.ok(amlMonitoringService.getAllSuspiciousActivities(
-                org.springframework.data.domain.PageRequest.of(page, size)));
+            @RequestParam(defaultValue = "50") int size,
+            @RequestParam(required = false) SuspiciousActivityStatus status,
+            @RequestParam(required = false) UUID userId,
+            @RequestParam(required = false) SuspiciousActivityType activityType,
+            @RequestParam(required = false) Integer minRiskScore,
+            @RequestParam(required = false) Integer maxRiskScore) {
+        return ResponseEntity.ok(amlMonitoringService.getAllSuspiciousActivitiesWithFilters(
+                status,
+                userId,
+                activityType,
+                minRiskScore,
+                maxRiskScore,
+                org.springframework.data.domain.PageRequest.of(page, size, org.springframework.data.domain.Sort.by("createdAt").descending())));
     }
 
     @GetMapping("/suspicious-activities/{userId}")

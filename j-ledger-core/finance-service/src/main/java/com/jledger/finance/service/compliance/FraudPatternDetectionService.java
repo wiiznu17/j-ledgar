@@ -1,7 +1,9 @@
 package com.jledger.finance.service.compliance;
 
 import com.jledger.finance.domain.entity.Transaction;
+import com.jledger.finance.domain.entity.Wallet;
 import com.jledger.finance.repository.transaction.TransactionRepository;
+import com.jledger.finance.repository.wallet.WalletRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -23,6 +25,7 @@ public class FraudPatternDetectionService {
 
     private final TransactionRepository transactionRepository;
     private final AmlMonitoringService amlMonitoringService;
+    private final WalletRepository walletRepository;
 
     private static final int STRUCTURING_THRESHOLD = 5;
     private static final BigDecimal STRUCTURING_AMOUNT_MAX = new BigDecimal("99000");
@@ -172,12 +175,24 @@ public class FraudPatternDetectionService {
         allPatterns.addAll(detectIntegration(walletId));
         allPatterns.addAll(detectCashOut(walletId));
         
+        java.util.UUID userId = java.util.UUID.randomUUID();
+        try {
+            Wallet wallet = walletRepository.findById(walletId).orElse(null);
+            if (wallet != null && wallet.getUserId() != null) {
+                userId = java.util.UUID.fromString(wallet.getUserId());
+            }
+        } catch (Exception e) {
+            log.error("Failed to map walletId={} to userId for Fraud pattern detection", walletId, e);
+        }
+
+        final java.util.UUID finalUserId = userId;
+
         // Report high-risk patterns to AML
         allPatterns.stream()
             .filter(p -> p.riskScore >= 60)
             .forEach(pattern -> {
                 amlMonitoringService.recordSuspiciousActivity(
-                    java.util.UUID.randomUUID(), // TODO: Map walletId to userId
+                    finalUserId,
                     pattern.type,
                     pattern.description,
                     null

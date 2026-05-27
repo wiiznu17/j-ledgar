@@ -4,9 +4,13 @@ import com.jledger.finance.domain.entity.Transaction;
 import com.jledger.finance.dto.TransferRequest;
 import com.jledger.finance.exception.ConcurrentOperationException;
 import com.jledger.finance.service.system.RedisIdempotencyService;
+import com.jledger.finance.service.compliance.KycComplianceService;
+import com.jledger.finance.service.compliance.TransactionLimitService;
+import com.jledger.finance.service.compliance.TransactionRateLimitService;
 
 import java.math.BigDecimal;
 import java.math.RoundingMode;
+import java.util.UUID;
 import java.util.concurrent.TimeUnit;
 import lombok.RequiredArgsConstructor;
 import org.redisson.api.RLock;
@@ -34,6 +38,9 @@ public class TransferService {
     private final RedissonClient redissonClient;
     private final RedisIdempotencyService redisIdempotencyService;
     private final WalletService walletService;
+    private final KycComplianceService kycComplianceService;
+    private final TransactionLimitService transactionLimitService;
+    private final TransactionRateLimitService transactionRateLimitService;
 
     public Transaction executeTransfer(String idempotencyKey, TransferRequest request) {
         validateIdempotencyKey(idempotencyKey);
@@ -43,6 +50,22 @@ public class TransferService {
         return redisIdempotencyService.getIfProcessed(idempotencyKey)
                 .orElseGet(() -> {
                     BigDecimal normalizedAmount = normalizeAmount(request.amount());
+
+                    // A. Run Compliance Checks (Pre-lock to avoid resource starvation)
+                    UUID senderAccountId = UUID.fromString(request.fromAccountId());
+                    
+                    boolean isSettlement = false;
+                    if (request.metadata() instanceof java.util.Map<?, ?> metaMap) {
+                        isSettlement = Boolean.TRUE.equals(metaMap.get("settlementRun")) || "true".equals(String.valueOf(metaMap.get("settlementRun")));
+                    }
+
+                    if (!isSettlement) {
+                        transactionRateLimitService.checkRateLimit(senderAccountId);
+                        kycComplianceService.checkKycCompliance(senderAccountId);
+                        transactionLimitService.checkTransactionLimits(senderAccountId, normalizedAmount);
+                    } else {
+                        LOGGER.info("[Settlement] Bypassing compliance limits for settlement transfer of amount={} from={}", normalizedAmount, senderAccountId);
+                    }
 
                     // Sort account IDs to prevent deadlocks
                     String firstAccountId = request.fromAccountId().compareTo(request.toAccountId()) <= 0 
@@ -72,6 +95,9 @@ public class TransferService {
                             normalizedAmount,
                             request.metadata()
                         );
+
+                        // B. Record limits post-commit
+                        transactionLimitService.recordTransaction(senderAccountId, normalizedAmount);
 
                         // 2. Cache successful result
                         redisIdempotencyService.cacheResponse(idempotencyKey, transaction);

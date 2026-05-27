@@ -4,6 +4,10 @@ import com.jledger.finance.domain.entity.Transaction;
 import com.jledger.finance.dto.TransferRequest;
 import com.jledger.finance.exception.ConcurrentOperationException;
 import com.jledger.finance.service.system.RedisIdempotencyService;
+import com.jledger.finance.service.compliance.KycComplianceService;
+import com.jledger.finance.service.compliance.TransactionLimitService;
+import com.jledger.finance.service.compliance.TransactionRateLimitService;
+import java.util.UUID;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
@@ -38,6 +42,15 @@ class TransferServiceTest {
     @Mock
     private WalletService walletService;
 
+    @Mock
+    private KycComplianceService kycComplianceService;
+
+    @Mock
+    private TransactionLimitService transactionLimitService;
+
+    @Mock
+    private TransactionRateLimitService transactionRateLimitService;
+
     @InjectMocks
     private TransferService transferService;
 
@@ -47,8 +60,8 @@ class TransferServiceTest {
     @Mock
     private RLock secondLock;
 
-    private static final String SENDER_WALLET_ID = "W1715000000";
-    private static final String RECEIVER_WALLET_ID = "W1715000001";
+    private static final String SENDER_WALLET_ID = "11111111-1111-1111-1111-111111111111";
+    private static final String RECEIVER_WALLET_ID = "22222222-2222-2222-2222-222222222222";
     private static final String IDEMPOTENCY_KEY = "test-idempotency-key-12345";
 
     @BeforeEach
@@ -107,11 +120,15 @@ class TransferServiceTest {
 
             // Verify
             verify(redisIdempotencyService).getIfProcessed(IDEMPOTENCY_KEY);
+            verify(transactionRateLimitService).checkRateLimit(UUID.fromString(SENDER_WALLET_ID));
+            verify(kycComplianceService).checkKycCompliance(UUID.fromString(SENDER_WALLET_ID));
+            verify(transactionLimitService).checkTransactionLimits(UUID.fromString(SENDER_WALLET_ID), new BigDecimal("250.5000"));
             verify(redissonClient).getLock("account_lock:" + SENDER_WALLET_ID);
             verify(redissonClient).getLock("account_lock:" + RECEIVER_WALLET_ID);
             verify(firstLock).tryLock(3L, 10L, TimeUnit.SECONDS);
             verify(secondLock).tryLock(3L, 10L, TimeUnit.SECONDS);
             verify(walletService).transferByWalletId(SENDER_WALLET_ID, RECEIVER_WALLET_ID, new BigDecimal("250.5000"), null);
+            verify(transactionLimitService).recordTransaction(UUID.fromString(SENDER_WALLET_ID), new BigDecimal("250.5000"));
             verify(redisIdempotencyService).cacheResponse(IDEMPOTENCY_KEY, expectedTransaction);
             
             // Verify lock release in finally block
@@ -293,6 +310,97 @@ class TransferServiceTest {
             assertThatThrownBy(() -> transferService.executeTransfer(IDEMPOTENCY_KEY, longCurrency))
                     .isInstanceOf(IllegalArgumentException.class)
                     .hasMessageContaining("Currency must be a 3-letter uppercase code");
+        }
+
+        @Test
+        @DisplayName("Should throw ConflictException when KYC compliance check fails")
+        void shouldThrowExceptionWhenKycCheckFails() {
+            // Arrange
+            TransferRequest request = new TransferRequest(
+                    SENDER_WALLET_ID,
+                    RECEIVER_WALLET_ID,
+                    new BigDecimal("100.0000"),
+                    "THB",
+                    null
+            );
+
+            when(redisIdempotencyService.getIfProcessed(IDEMPOTENCY_KEY))
+                    .thenReturn(Optional.empty());
+
+            doThrow(new com.jledger.finance.exception.ConflictException("KYC verification required"))
+                    .when(kycComplianceService).checkKycCompliance(UUID.fromString(SENDER_WALLET_ID));
+
+            // Act & Assert
+            assertThatThrownBy(() -> transferService.executeTransfer(IDEMPOTENCY_KEY, request))
+                    .isInstanceOf(com.jledger.finance.exception.ConflictException.class)
+                    .hasMessageContaining("KYC verification required");
+
+            // Verify
+            verify(transactionRateLimitService).checkRateLimit(UUID.fromString(SENDER_WALLET_ID));
+            verify(kycComplianceService).checkKycCompliance(UUID.fromString(SENDER_WALLET_ID));
+            verifyNoInteractions(redissonClient);
+            verifyNoInteractions(walletService);
+        }
+
+        @Test
+        @DisplayName("Should throw ConflictException when transaction rate limit is exceeded")
+        void shouldThrowExceptionWhenRateLimitExceeded() {
+            // Arrange
+            TransferRequest request = new TransferRequest(
+                    SENDER_WALLET_ID,
+                    RECEIVER_WALLET_ID,
+                    new BigDecimal("100.0000"),
+                    "THB",
+                    null
+            );
+
+            when(redisIdempotencyService.getIfProcessed(IDEMPOTENCY_KEY))
+                    .thenReturn(Optional.empty());
+
+            doThrow(new com.jledger.finance.exception.ConflictException("Transaction rate limit exceeded"))
+                    .when(transactionRateLimitService).checkRateLimit(UUID.fromString(SENDER_WALLET_ID));
+
+            // Act & Assert
+            assertThatThrownBy(() -> transferService.executeTransfer(IDEMPOTENCY_KEY, request))
+                    .isInstanceOf(com.jledger.finance.exception.ConflictException.class)
+                    .hasMessageContaining("Transaction rate limit exceeded");
+
+            // Verify
+            verify(transactionRateLimitService).checkRateLimit(UUID.fromString(SENDER_WALLET_ID));
+            verifyNoInteractions(kycComplianceService);
+            verifyNoInteractions(redissonClient);
+            verifyNoInteractions(walletService);
+        }
+
+        @Test
+        @DisplayName("Should throw ConflictException when daily/monthly transaction limit is exceeded")
+        void shouldThrowExceptionWhenDailyMonthlyLimitExceeded() {
+            // Arrange
+            TransferRequest request = new TransferRequest(
+                    SENDER_WALLET_ID,
+                    RECEIVER_WALLET_ID,
+                    new BigDecimal("100.0000"),
+                    "THB",
+                    null
+            );
+
+            when(redisIdempotencyService.getIfProcessed(IDEMPOTENCY_KEY))
+                    .thenReturn(Optional.empty());
+
+            doThrow(new com.jledger.finance.exception.ConflictException("Transaction would exceed daily limit"))
+                    .when(transactionLimitService).checkTransactionLimits(UUID.fromString(SENDER_WALLET_ID), new BigDecimal("100.0000"));
+
+            // Act & Assert
+            assertThatThrownBy(() -> transferService.executeTransfer(IDEMPOTENCY_KEY, request))
+                    .isInstanceOf(com.jledger.finance.exception.ConflictException.class)
+                    .hasMessageContaining("Transaction would exceed daily limit");
+
+            // Verify
+            verify(transactionRateLimitService).checkRateLimit(UUID.fromString(SENDER_WALLET_ID));
+            verify(kycComplianceService).checkKycCompliance(UUID.fromString(SENDER_WALLET_ID));
+            verify(transactionLimitService).checkTransactionLimits(UUID.fromString(SENDER_WALLET_ID), new BigDecimal("100.0000"));
+            verifyNoInteractions(redissonClient);
+            verifyNoInteractions(walletService);
         }
     }
 }

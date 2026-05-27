@@ -9,6 +9,7 @@ import com.jledger.finance.domain.entity.Wallet;
 import com.jledger.finance.domain.enums.NotificationEventType;
 import com.jledger.finance.domain.enums.TransactionStatus;
 import com.jledger.finance.domain.enums.TransactionType;
+import com.jledger.finance.domain.enums.WalletStatus;
 import com.jledger.finance.repository.system.IntegrationOutboxRepository;
 import com.jledger.finance.repository.transaction.TransactionRepository;
 import com.jledger.finance.repository.wallet.LinkedBankAccountRepository;
@@ -194,14 +195,14 @@ public class WalletService {
     public Wallet freezeWallet(String userId) {
         Wallet wallet = walletRepository.findByUserId(userId)
                 .orElseThrow(() -> new ResourceNotFoundException("Wallet not found"));
-        wallet.setStatus("FROZEN");
+        wallet.setStatus(WalletStatus.FROZEN);
         return walletRepository.save(Objects.requireNonNull(wallet));
     }
 
     public Wallet unfreezeWallet(String userId) {
         Wallet wallet = walletRepository.findByUserId(userId)
                 .orElseThrow(() -> new ResourceNotFoundException("Wallet not found"));
-        wallet.setStatus("ACTIVE");
+        wallet.setStatus(WalletStatus.ACTIVE);
         return walletRepository.save(Objects.requireNonNull(wallet));
     }
 

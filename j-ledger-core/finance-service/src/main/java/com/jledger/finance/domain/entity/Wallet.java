@@ -1,5 +1,6 @@
 package com.jledger.finance.domain.entity;
 
+import com.jledger.finance.domain.enums.WalletStatus;
 import jakarta.persistence.*;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
@@ -23,8 +24,9 @@ public class Wallet {
     @Column(nullable = false, length = 3)
     private String currency = "THB";
 
+    @Enumerated(EnumType.STRING)
     @Column(nullable = false, length = 20)
-    private String status = "ACTIVE";
+    private WalletStatus status = WalletStatus.ACTIVE;
 
     @Column(name = "daily_limit", precision = 19, scale = 4)
     private BigDecimal dailyLimit = new BigDecimal("50000.0000");
@@ -74,8 +76,8 @@ public class Wallet {
     public String getCurrency() { return currency; }
     public void setCurrency(String currency) { this.currency = currency; }
 
-    public String getStatus() { return status; }
-    public void setStatus(String status) { this.status = status; }
+    public WalletStatus getStatus() { return status; }
+    public void setStatus(WalletStatus status) { this.status = status; }
 
     public BigDecimal getDailyLimit() { return dailyLimit; }
     public void setDailyLimit(BigDecimal dailyLimit) { this.dailyLimit = dailyLimit; }
@@ -96,6 +98,6 @@ public class Wallet {
     public void setAccountId(java.util.UUID accountId) { this.accountId = accountId; }
 
     // Convenience method for backward compatibility
-    public Boolean getIsActive() { return "ACTIVE".equals(status); }
-    public void setIsActive(Boolean isActive) { this.status = isActive ? "ACTIVE" : "INACTIVE"; }
+    public Boolean getIsActive() { return WalletStatus.ACTIVE.equals(status); }
+    public void setIsActive(Boolean isActive) { this.status = isActive ? WalletStatus.ACTIVE : WalletStatus.INACTIVE; }
 }

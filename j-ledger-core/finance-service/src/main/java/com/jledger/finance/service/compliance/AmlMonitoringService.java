@@ -2,10 +2,12 @@ package com.jledger.finance.service.compliance;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.jledger.finance.domain.entity.SuspiciousActivity;
+import com.jledger.finance.domain.entity.Wallet;
 import com.jledger.finance.domain.enums.SuspiciousActivityStatus;
 import com.jledger.finance.domain.enums.SuspiciousActivityType;
 import com.jledger.finance.repository.transaction.TransactionRepository;
 import com.jledger.finance.repository.compliance.SuspiciousActivityRepository;
+import com.jledger.finance.repository.wallet.WalletRepository;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.HashMap;
@@ -24,6 +26,7 @@ public class AmlMonitoringService {
 
     private final SuspiciousActivityRepository suspiciousActivityRepository;
     private final TransactionRepository transactionRepository;
+    private final WalletRepository walletRepository;
     private final ObjectMapper objectMapper;
 
     private static final BigDecimal LARGE_TRANSACTION_THRESHOLD = new BigDecimal("100000");
@@ -44,9 +47,19 @@ public class AmlMonitoringService {
         );
 
         if (!detections.isEmpty()) {
+            UUID userId = UUID.randomUUID(); // Fallback to random if not found
+            try {
+                Wallet wallet = walletRepository.findById(walletId).orElse(null);
+                if (wallet != null && wallet.getUserId() != null) {
+                    userId = UUID.fromString(wallet.getUserId());
+                }
+            } catch (Exception e) {
+                log.error("Failed to map walletId={} to userId for AML check", walletId, e);
+            }
+
             for (SuspiciousActivityDetection detection : detections) {
                 SuspiciousActivity activity = SuspiciousActivity.builder()
-                    .userId(UUID.randomUUID()) // TODO: Map walletId to userId
+                    .userId(userId)
                     .transferId(transferId)
                     .activityType(detection.type)
                     .status(SuspiciousActivityStatus.FLAGGED)
@@ -172,6 +185,24 @@ public class AmlMonitoringService {
 
     public org.springframework.data.domain.Page<SuspiciousActivity> getAllSuspiciousActivities(org.springframework.data.domain.Pageable pageable) {
         return suspiciousActivityRepository.findAll(pageable);
+    }
+
+    public org.springframework.data.domain.Page<SuspiciousActivity> getAllSuspiciousActivitiesWithFilters(
+        SuspiciousActivityStatus status,
+        UUID userId,
+        SuspiciousActivityType activityType,
+        Integer minRiskScore,
+        Integer maxRiskScore,
+        org.springframework.data.domain.Pageable pageable
+    ) {
+        return suspiciousActivityRepository.findAllWithFilters(
+            status,
+            userId,
+            activityType,
+            minRiskScore,
+            maxRiskScore,
+            pageable
+        );
     }
 
     @Transactional

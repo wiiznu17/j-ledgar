@@ -1,6 +1,7 @@
 package com.jledger.finance.service.compliance;
 
 import com.jledger.finance.domain.entity.Wallet;
+import com.jledger.finance.domain.enums.WalletStatus;
 import com.jledger.finance.repository.wallet.WalletRepository;
 
 import lombok.RequiredArgsConstructor;
@@ -24,10 +25,6 @@ import org.springframework.transaction.annotation.Transactional;
 @RequiredArgsConstructor
 public class AccountFreezeService {
 
-    private static final String ACTIVE_STATUS = "ACTIVE";
-    private static final String FROZEN_STATUS = "FROZEN";
-    private static final String CLOSED_STATUS = "CLOSED";
-
     private final WalletRepository walletRepository;
     // private final AmlMonitoringService amlMonitoringService; // TODO: Uncomment after AML service refactor
 
@@ -44,16 +41,16 @@ public class AccountFreezeService {
         Wallet wallet = walletRepository.findById(walletId)
                 .orElseThrow(() -> new IllegalArgumentException("Wallet not found"));
 
-        if (CLOSED_STATUS.equals(wallet.getStatus())) {
+        if (WalletStatus.CLOSED == wallet.getStatus()) {
             throw new IllegalStateException("Cannot freeze a closed wallet");
         }
 
-        if (FROZEN_STATUS.equals(wallet.getStatus())) {
+        if (WalletStatus.FROZEN == wallet.getStatus()) {
             log.warn("Wallet {} is already frozen", walletId);
             return wallet;
         }
 
-        wallet.setStatus(FROZEN_STATUS);
+        wallet.setStatus(WalletStatus.FROZEN);
         walletRepository.save(wallet);
 
         log.warn("Wallet {} frozen by {} for reason: {}", walletId, frozenBy, reason);
@@ -83,16 +80,16 @@ public class AccountFreezeService {
         Wallet wallet = walletRepository.findById(walletId)
                 .orElseThrow(() -> new IllegalArgumentException("Wallet not found"));
 
-        if (CLOSED_STATUS.equals(wallet.getStatus())) {
+        if (WalletStatus.CLOSED == wallet.getStatus()) {
             throw new IllegalStateException("Cannot unfreeze a closed wallet");
         }
 
-        if (ACTIVE_STATUS.equals(wallet.getStatus())) {
+        if (WalletStatus.ACTIVE == wallet.getStatus()) {
             log.warn("Wallet {} is already active", walletId);
             return wallet;
         }
 
-        wallet.setStatus(ACTIVE_STATUS);
+        wallet.setStatus(WalletStatus.ACTIVE);
         walletRepository.save(wallet);
 
         log.info("Wallet {} unfrozen by {} for reason: {}", walletId, unfrozenBy, reason);
@@ -108,7 +105,7 @@ public class AccountFreezeService {
      */
     public boolean isAccountFrozen(Long walletId) {
         return walletRepository.findById(walletId)
-                .map(wallet -> FROZEN_STATUS.equals(wallet.getStatus()))
+                .map(wallet -> WalletStatus.FROZEN == wallet.getStatus())
                 .orElse(false);
     }
 

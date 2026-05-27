@@ -196,7 +196,7 @@ class WalletServiceTest {
             wallet.setId(WALLET_ID);
             wallet.setUserId(USER_ID);
             wallet.setBalance(new BigDecimal("100.0000"));
-            wallet.setStatus("ACTIVE");
+            wallet.setStatus(WalletStatus.ACTIVE);
 
             when(walletRepository.findByUserId(USER_ID)).thenReturn(Optional.of(wallet));
             when(walletRepository.save(any(Wallet.class))).thenAnswer(invocation -> invocation.getArgument(0));
@@ -217,7 +217,7 @@ class WalletServiceTest {
             wallet.setId(WALLET_ID);
             wallet.setUserId(USER_ID);
             wallet.setBalance(new BigDecimal("100.0000"));
-            wallet.setStatus("ACTIVE");
+            wallet.setStatus(WalletStatus.ACTIVE);
 
             when(walletRepository.findByUserId(USER_ID)).thenReturn(Optional.of(wallet));
             when(walletRepository.save(any(Wallet.class))).thenAnswer(invocation -> invocation.getArgument(0));
@@ -237,7 +237,7 @@ class WalletServiceTest {
             Wallet wallet = new Wallet();
             wallet.setId(WALLET_ID);
             wallet.setUserId(USER_ID);
-            wallet.setStatus("INACTIVE");
+            wallet.setStatus(WalletStatus.INACTIVE);
 
             when(walletRepository.findByUserId(USER_ID)).thenReturn(Optional.of(wallet));
 
@@ -255,7 +255,7 @@ class WalletServiceTest {
             wallet.setId(WALLET_ID);
             wallet.setUserId(USER_ID);
             wallet.setBalance(new BigDecimal("20.0000"));
-            wallet.setStatus("ACTIVE");
+            wallet.setStatus(WalletStatus.ACTIVE);
 
             when(walletRepository.findByUserId(USER_ID)).thenReturn(Optional.of(wallet));
 
@@ -369,7 +369,7 @@ class WalletServiceTest {
             wallet.setId(WALLET_ID);
             wallet.setUserId(USER_ID);
             wallet.setBalance(new BigDecimal("10.0000"));
-            wallet.setStatus("ACTIVE");
+            wallet.setStatus(WalletStatus.ACTIVE);
             wallet.setCurrency("THB");
 
             LinkedBankAccount bankAccount = new LinkedBankAccount();
@@ -414,7 +414,7 @@ class WalletServiceTest {
             Wallet wallet = new Wallet();
             wallet.setId(WALLET_ID);
             wallet.setUserId(USER_ID);
-            wallet.setStatus("ACTIVE");
+            wallet.setStatus(WalletStatus.ACTIVE);
 
             LinkedBankAccount bankAccount = new LinkedBankAccount();
             bankAccount.setId(7007L);
@@ -466,7 +466,7 @@ class WalletServiceTest {
             wallet.setUserId(USER_ID);
             wallet.setBalance(new BigDecimal("50.0000"));
             wallet.setCurrency("THB");
-            wallet.setStatus("ACTIVE");
+            wallet.setStatus(WalletStatus.ACTIVE);
 
             Account systemAccount = new Account();
             systemAccount.setId(UUID.fromString(SYSTEM_ACCOUNT_ID));
@@ -512,13 +512,13 @@ class WalletServiceTest {
             fromWallet.setId(WALLET_ID);
             fromWallet.setUserId(USER_ID);
             fromWallet.setBalance(new BigDecimal("500.0000"));
-            fromWallet.setStatus("ACTIVE");
+            fromWallet.setStatus(WalletStatus.ACTIVE);
             fromWallet.setCurrency("THB");
 
             Wallet toWallet = new Wallet();
             toWallet.setId(6006L);
             toWallet.setUserId(RECIPIENT_USER_ID);
-            toWallet.setStatus("ACTIVE");
+            toWallet.setStatus(WalletStatus.ACTIVE);
 
             when(walletRepository.findByUserId(USER_ID)).thenReturn(Optional.of(fromWallet));
             

@@ -1,6 +1,7 @@
 package com.jledger.finance.service.compliance;
 
 import com.jledger.finance.domain.entity.Wallet;
+import com.jledger.finance.domain.enums.WalletStatus;
 import com.jledger.finance.repository.wallet.WalletRepository;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
@@ -40,7 +41,7 @@ class AccountFreezeServiceTest {
             // Arrange
             Wallet wallet = new Wallet();
             wallet.setId(WALLET_ID);
-            wallet.setStatus("ACTIVE");
+            wallet.setStatus(WalletStatus.ACTIVE);
 
             when(walletRepository.findById(WALLET_ID)).thenReturn(Optional.of(wallet));
             when(walletRepository.save(wallet)).thenReturn(wallet);
@@ -50,7 +51,7 @@ class AccountFreezeServiceTest {
 
             // Assert
             assertThat(result).isNotNull();
-            assertThat(result.getStatus()).isEqualTo("FROZEN");
+            assertThat(result.getStatus()).isEqualTo(WalletStatus.FROZEN);
             verify(walletRepository).findById(WALLET_ID);
             verify(walletRepository).save(wallet);
         }
@@ -75,7 +76,7 @@ class AccountFreezeServiceTest {
             // Arrange
             Wallet closedWallet = new Wallet();
             closedWallet.setId(WALLET_ID);
-            closedWallet.setStatus("CLOSED");
+            closedWallet.setStatus(WalletStatus.CLOSED);
 
             when(walletRepository.findById(WALLET_ID)).thenReturn(Optional.of(closedWallet));
 
@@ -93,7 +94,7 @@ class AccountFreezeServiceTest {
             // Arrange
             Wallet alreadyFrozenWallet = new Wallet();
             alreadyFrozenWallet.setId(WALLET_ID);
-            alreadyFrozenWallet.setStatus("FROZEN");
+            alreadyFrozenWallet.setStatus(WalletStatus.FROZEN);
 
             when(walletRepository.findById(WALLET_ID)).thenReturn(Optional.of(alreadyFrozenWallet));
 
@@ -102,7 +103,7 @@ class AccountFreezeServiceTest {
 
             // Assert
             assertThat(result).isNotNull();
-            assertThat(result.getStatus()).isEqualTo("FROZEN");
+            assertThat(result.getStatus()).isEqualTo(WalletStatus.FROZEN);
             verify(walletRepository, never()).save(any());
         }
     }
@@ -117,7 +118,7 @@ class AccountFreezeServiceTest {
             // Arrange
             Wallet frozenWallet = new Wallet();
             frozenWallet.setId(WALLET_ID);
-            frozenWallet.setStatus("FROZEN");
+            frozenWallet.setStatus(WalletStatus.FROZEN);
 
             when(walletRepository.findById(WALLET_ID)).thenReturn(Optional.of(frozenWallet));
             when(walletRepository.save(frozenWallet)).thenReturn(frozenWallet);
@@ -127,7 +128,7 @@ class AccountFreezeServiceTest {
 
             // Assert
             assertThat(result).isNotNull();
-            assertThat(result.getStatus()).isEqualTo("ACTIVE");
+            assertThat(result.getStatus()).isEqualTo(WalletStatus.ACTIVE);
             verify(walletRepository).findById(WALLET_ID);
             verify(walletRepository).save(frozenWallet);
         }
@@ -138,7 +139,7 @@ class AccountFreezeServiceTest {
             // Arrange
             Wallet closedWallet = new Wallet();
             closedWallet.setId(WALLET_ID);
-            closedWallet.setStatus("CLOSED");
+            closedWallet.setStatus(WalletStatus.CLOSED);
 
             when(walletRepository.findById(WALLET_ID)).thenReturn(Optional.of(closedWallet));
 
@@ -156,7 +157,7 @@ class AccountFreezeServiceTest {
             // Arrange
             Wallet activeWallet = new Wallet();
             activeWallet.setId(WALLET_ID);
-            activeWallet.setStatus("ACTIVE");
+            activeWallet.setStatus(WalletStatus.ACTIVE);
 
             when(walletRepository.findById(WALLET_ID)).thenReturn(Optional.of(activeWallet));
 
@@ -165,7 +166,7 @@ class AccountFreezeServiceTest {
 
             // Assert
             assertThat(result).isNotNull();
-            assertThat(result.getStatus()).isEqualTo("ACTIVE");
+            assertThat(result.getStatus()).isEqualTo(WalletStatus.ACTIVE);
             verify(walletRepository, never()).save(any());
         }
     }
@@ -178,7 +179,7 @@ class AccountFreezeServiceTest {
         @DisplayName("Should return true if wallet exists and is FROZEN")
         void shouldReturnTrueIfWalletIsFrozen() {
             Wallet frozenWallet = new Wallet();
-            frozenWallet.setStatus("FROZEN");
+            frozenWallet.setStatus(WalletStatus.FROZEN);
 
             when(walletRepository.findById(WALLET_ID)).thenReturn(Optional.of(frozenWallet));
 
@@ -191,7 +192,7 @@ class AccountFreezeServiceTest {
         @DisplayName("Should return false if wallet exists and is ACTIVE")
         void shouldReturnFalseIfWalletIsActive() {
             Wallet activeWallet = new Wallet();
-            activeWallet.setStatus("ACTIVE");
+            activeWallet.setStatus(WalletStatus.ACTIVE);
 
             when(walletRepository.findById(WALLET_ID)).thenReturn(Optional.of(activeWallet));
 
@@ -221,7 +222,7 @@ class AccountFreezeServiceTest {
             // Arrange
             Wallet wallet = new Wallet();
             wallet.setId(WALLET_ID);
-            wallet.setStatus("ACTIVE");
+            wallet.setStatus(WalletStatus.ACTIVE);
             String activityId = "AML-999-XYZ";
 
             when(walletRepository.findById(WALLET_ID)).thenReturn(Optional.of(wallet));
@@ -232,9 +233,9 @@ class AccountFreezeServiceTest {
 
             // Assert
             assertThat(result).isNotNull();
-            assertThat(result.getStatus()).isEqualTo("FROZEN");
+            assertThat(result.getStatus()).isEqualTo(WalletStatus.FROZEN);
             verify(walletRepository).save(argThat(w -> 
-                "FROZEN".equals(w.getStatus()) && WALLET_ID.equals(w.getId())
+                WalletStatus.FROZEN == w.getStatus() && WALLET_ID.equals(w.getId())
             ));
         }
 
@@ -244,7 +245,7 @@ class AccountFreezeServiceTest {
             // Arrange
             Wallet wallet = new Wallet();
             wallet.setId(WALLET_ID);
-            wallet.setStatus("FROZEN");
+            wallet.setStatus(WalletStatus.FROZEN);
 
             when(walletRepository.findById(WALLET_ID)).thenReturn(Optional.of(wallet));
             when(walletRepository.save(any())).thenAnswer(invocation -> invocation.getArgument(0));
@@ -254,9 +255,9 @@ class AccountFreezeServiceTest {
 
             // Assert
             assertThat(result).isNotNull();
-            assertThat(result.getStatus()).isEqualTo("ACTIVE");
+            assertThat(result.getStatus()).isEqualTo(WalletStatus.ACTIVE);
             verify(walletRepository).save(argThat(w ->
-                "ACTIVE".equals(w.getStatus()) && WALLET_ID.equals(w.getId())
+                WalletStatus.ACTIVE == w.getStatus() && WALLET_ID.equals(w.getId())
             ));
         }
     }
