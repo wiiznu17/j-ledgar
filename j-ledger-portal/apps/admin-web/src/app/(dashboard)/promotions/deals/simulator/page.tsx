@@ -4,10 +4,10 @@ import React, { useState, useEffect } from 'react';
 import { promotionsRequester } from '@/lib/requesters';
 import { ChevronRight } from 'lucide-react';
 import { toast } from 'sonner';
-import { SimulatorDeal, PosSlip } from './components/types';
-import { PhoneEmulator } from './components/PhoneEmulator';
-import { PosEmulator } from './components/PosEmulator';
-import { ThermalSlip } from './components/ThermalSlip';
+import { SimulatorDeal, PosSlip } from '@/components/promotions/simulator/types';
+import { PhoneEmulator } from '@/components/promotions/simulator/PhoneEmulator';
+import { PosEmulator } from '@/components/promotions/simulator/PosEmulator';
+import { ThermalSlip } from '@/components/promotions/simulator/ThermalSlip';
 
 const mockCatalog: SimulatorDeal[] = [
   {
