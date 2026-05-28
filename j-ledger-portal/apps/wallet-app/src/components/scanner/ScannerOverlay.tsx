@@ -28,7 +28,7 @@ export const ScannerOverlay: React.FC<ScannerOverlayProps> = ({
           </View>
           <View className="bg-black/40 px-4 py-1.5 rounded-full">
             <Text className="text-white/70 font-manrope text-[10px]">
-              Supports: JLEDGER QR only
+              Supports: P-Wallet QR only
             </Text>
           </View>
         </View>

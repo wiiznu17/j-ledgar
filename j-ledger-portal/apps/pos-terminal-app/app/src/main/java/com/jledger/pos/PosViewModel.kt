@@ -295,7 +295,7 @@ class PosViewModel(application: Application) : AndroidViewModel(application) {
 
             val receipt = StringBuilder()
             receipt.append("================================\n")
-            receipt.append("        J-LEDGER FINTECH        \n")
+            receipt.append("        P-WALLET FINTECH        \n")
             receipt.append("      SMART POS TRANSACTION     \n")
             receipt.append("================================\n")
             receipt.append("DATE: $dateStr\n")

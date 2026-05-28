@@ -25,7 +25,7 @@ export const validateAndParseQR = (rawData: string): ValidationResult => {
           code: 'INVALID_QR',
           message:
             parsed.error ||
-            'This QR code format is not supported. Only JLEDGER QR codes are accepted.',
+            'This QR code format is not supported. Only P-Wallet QR codes are accepted.',
           field: 'format',
         },
       };

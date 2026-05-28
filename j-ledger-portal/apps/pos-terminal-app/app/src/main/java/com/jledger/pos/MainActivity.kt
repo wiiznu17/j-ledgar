@@ -234,7 +234,7 @@ fun DashboardScreen(viewModel: PosViewModel) {
         ) {
             Column {
                 Text(
-                    text = "J-LEDGER POS",
+                    text = "P-WALLET POS",
                     fontSize = 16.sp,
                     fontWeight = FontWeight.ExtraBold,
                     color = MaterialTheme.colorScheme.primary
@@ -583,7 +583,7 @@ fun DealsPreviewScreen(viewModel: PosViewModel) {
                     color = Color.Gray
                 )
                 Text(
-                    text = deal?.customerName ?: "J-Ledger Loyalty Member",
+                    text = deal?.customerName ?: "P-Wallet Loyalty Member",
                     fontSize = 14.sp,
                     fontWeight = FontWeight.Bold,
                     color = Color.White

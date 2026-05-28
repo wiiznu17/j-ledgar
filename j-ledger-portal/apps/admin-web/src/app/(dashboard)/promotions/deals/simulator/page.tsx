@@ -405,7 +405,7 @@ export default function DealsSimulatorPage() {
             {posSlip && (
               <div className="bg-white text-slate-900 p-4 rounded-xl border border-slate-300 font-mono text-[9px] space-y-2 leading-relaxed shadow-sm animate-in slide-in-from-top-6 duration-700">
                 <div className="text-center border-b border-dashed border-slate-400 pb-2">
-                  <h5 className="font-bold">*** J-LEDGER SLIP ***</h5>
+                  <h5 className="font-bold">*** P-WALLET SLIP ***</h5>
                   <span>MERCHANT SETTLEMENT RECEIPT</span>
                 </div>
 

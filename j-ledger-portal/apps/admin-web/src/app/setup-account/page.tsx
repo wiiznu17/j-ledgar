@@ -253,7 +253,7 @@ function SetupAccountForm() {
             <div className="flex items-center justify-end gap-6 text-right">
               <div className="flex flex-col">
                 <span className="text-indigo-600 dark:text-indigo-400 font-bold text-xs uppercase tracking-widest">
-                  J-Ledger Onboarding
+                  P-Wallet Onboarding
                 </span>
                 <h1 className="text-3xl font-bold text-foreground mt-1">
                   Setup Account

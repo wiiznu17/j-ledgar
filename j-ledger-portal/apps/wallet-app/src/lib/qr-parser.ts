@@ -63,13 +63,13 @@ export const parseQRData = (data: string): ParsedQR => {
       type: 'UNSUPPORTED',
       recipient: '',
       error:
-        'PromptPay QR is not supported yet. Please use JLEDGER QR codes only.',
+        'PromptPay QR is not supported yet. Please use P-Wallet QR codes only.',
     };
   }
 
   return {
     type: 'UNSUPPORTED',
     recipient: '',
-    error: 'Invalid QR format. Only JLEDGER QR codes are supported.',
+    error: 'Invalid QR format. Only P-Wallet QR codes are supported.',
   };
 };

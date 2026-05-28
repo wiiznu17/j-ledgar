@@ -22,7 +22,7 @@ export const ScannerMenu: React.FC<ScannerMenuProps> = ({
       >
         <View className="bg-[#1a1a1a]/60 px-4 py-2 rounded-full border border-white/10">
           <Text className="text-white/50 font-manrope text-[10px]">
-            Only JLEDGER QR codes are supported
+            Only P-Wallet QR codes are supported
           </Text>
         </View>
       </View>

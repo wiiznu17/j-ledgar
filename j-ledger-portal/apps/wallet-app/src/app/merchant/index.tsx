@@ -113,7 +113,7 @@ export default function MerchantDashboard() {
                 ? 'Your merchant application is currently being reviewed by our team. We will notify you once it is approved.'
                 : isRejected
                   ? `Reason: ${data.rejectionReason || 'Please review your information and try again.'}`
-                  : 'Grow your business with J-Ledger. Accept payments, manage terminals, and run loyalty programs directly from your wallet.'}
+                  : 'Grow your business with P-Wallet. Accept payments, manage terminals, and run loyalty programs directly from your wallet.'}
             </Text>
           </View>
 

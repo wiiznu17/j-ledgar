@@ -661,7 +661,7 @@ export default function SettlementPage() {
               {/* Receipt Visual layout */}
               <div className="bg-white text-slate-900 p-6 rounded-2xl border border-slate-200 font-mono text-xs space-y-4 leading-normal shadow-xs">
                 <div className="text-center border-b border-dashed border-slate-400 pb-3">
-                  <h4 className="font-black text-sm">*** J-LEDGER SETTLEMENT ***</h4>
+                  <h4 className="font-black text-sm">*** P-WALLET SETTLEMENT ***</h4>
                   <span className="text-[10px] text-slate-500 uppercase tracking-wider">Midnight sweep payout receipt</span>
                 </div>
 
