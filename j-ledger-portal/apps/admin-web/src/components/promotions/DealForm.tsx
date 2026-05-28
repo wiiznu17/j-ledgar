@@ -66,6 +66,7 @@ export function DealForm({
 }: DealFormProps) {
   const router = useRouter();
   const [loading, setLoading] = useState(false);
+  const [isLoadingMeta, setIsLoadingMeta] = useState(true);
   const [imageFile, setImageFile] = useState<File | null>(null);
   const [brands, setBrands] = useState<any[]>([]);
   const [categories, setCategories] = useState<any[]>([]);
@@ -93,6 +94,7 @@ export function DealForm({
 
   const fetchMeta = async () => {
     try {
+      setIsLoadingMeta(true);
       const [b, c] = await Promise.all([
         promotionsRequester.getBrands(),
         promotionsRequester.getCategories(),
@@ -101,6 +103,8 @@ export function DealForm({
       setCategories(c);
     } catch (error) {
       toast.error('Failed to load metadata');
+    } finally {
+      setIsLoadingMeta(false);
     }
   };
 
@@ -351,16 +355,16 @@ export function DealForm({
                         </span>
                       ) : (
                         <span className="text-muted-foreground">
-                          {brands.length === 0 ? 'Loading...' : 'Select Brand'}
+                          {isLoadingMeta ? 'Loading...' : 'Select Brand'}
                         </span>
                       )}
                     </SelectTrigger>
                     <SelectContent className="rounded-xl bg-card border-border">
                       {brands.map((b) => (
                         <SelectItem
-                          key={b.id}
-                          value={b.id}
-                          className="font-bold py-1.5 text-foreground hover:bg-muted"
+                           key={b.id}
+                           value={b.id}
+                           className="font-bold py-1.5 text-foreground hover:bg-muted"
                         >
                           {b.name}
                         </SelectItem>
@@ -387,18 +391,16 @@ export function DealForm({
                         </span>
                       ) : (
                         <span className="text-muted-foreground">
-                          {categories.length === 0
-                            ? 'Loading...'
-                            : 'Select Category'}
+                          {isLoadingMeta ? 'Loading...' : 'Select Category'}
                         </span>
                       )}
                     </SelectTrigger>
                     <SelectContent className="rounded-xl bg-card border-border">
                       {categories.map((c) => (
                         <SelectItem
-                          key={c.id}
-                          value={c.id}
-                          className="font-bold py-1.5 text-foreground hover:bg-muted"
+                           key={c.id}
+                           value={c.id}
+                           className="font-bold py-1.5 text-foreground hover:bg-muted"
                         >
                           {c.name}
                         </SelectItem>

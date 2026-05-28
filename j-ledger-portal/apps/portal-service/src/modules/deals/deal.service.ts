@@ -241,6 +241,7 @@ export class DealService {
         logoUrl: data.logoUrl,
         description: data.description,
         website: data.website,
+        partnerId: data.partnerId,
       },
     });
   }

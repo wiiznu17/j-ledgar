@@ -30,6 +30,10 @@ export class CreateBrandDto {
   @IsString()
   @IsOptional()
   logoUrl?: string;
+
+  @IsString()
+  @IsOptional()
+  partnerId?: string | null;
 }
 
 export class UpdateBrandDto extends CreateBrandDto {}

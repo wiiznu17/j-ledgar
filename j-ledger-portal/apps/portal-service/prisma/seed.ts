@@ -511,6 +511,38 @@ async function main() {
     });
   }
 
+  // 5.5. Seed Deal Categories & General Brands
+  console.log('🏷️ Seeding deal categories & general brands...');
+  const categories = [
+    { name: 'Food & Beverage', description: 'Dining, cafes, and food delivery', order: 1 },
+    { name: 'Shopping', description: 'Retail, fashion, and lifestyle', order: 2 },
+    { name: 'Travel', description: 'Flights, hotels, and tours', order: 3 },
+    { name: 'Entertainment', description: 'Movies, games, and events', order: 4 },
+    { name: 'Services', description: 'Utility, telco, and insurance', order: 5 },
+  ];
+  for (const cat of categories) {
+    await prisma.dealCategory.upsert({
+      where: { name: cat.name },
+      update: {},
+      create: cat,
+    });
+  }
+
+  const generalBrands = [
+    { name: 'Starbucks', website: 'https://www.starbucks.co.th', description: 'Coffee and snacks' },
+    { name: 'Grab', website: 'https://www.grab.com', description: 'Transport and food' },
+    { name: 'Major Cineplex', website: 'https://www.majorcineplex.com', description: 'Movies and entertainment' },
+    { name: 'Lazada', website: 'https://www.lazada.co.th', description: 'Online shopping' },
+    { name: 'AIS', website: 'https://www.ais.th', description: 'Telecommunication' },
+  ];
+  for (const brand of generalBrands) {
+    await prisma.brand.upsert({
+      where: { name: brand.name },
+      update: {},
+      create: brand,
+    });
+  }
+
   // 6. System Ecosystem Seed
   console.log('🏛️ Seeding system ecosystem...');
   const systemPartner = await prisma.partner.upsert({

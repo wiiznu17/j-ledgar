@@ -253,10 +253,12 @@ export default function PromotionSettingsPage() {
         finalLogoUrl = url;
       }
 
-      // Convert 'none' back to null for API
+      // Convert 'none' back to null for API, and empty strings to undefined to satisfy class-validator IsOptional
       const submissionData = {
-        ...brandForm,
-        logoUrl: finalLogoUrl,
+        name: brandForm.name,
+        description: brandForm.description?.trim() || undefined,
+        website: brandForm.website?.trim() || undefined,
+        logoUrl: finalLogoUrl || undefined,
         partnerId: brandForm.partnerId === 'none' ? null : brandForm.partnerId,
       };
 
@@ -595,7 +597,7 @@ export default function PromotionSettingsPage() {
       <Dialog open={isBrandModalOpen} onOpenChange={setIsBrandModalOpen}>
         <DialogContent className="sm:max-w-6xl w-[95vw] p-0 overflow-hidden rounded-3xl border border-border bg-card text-card-foreground shadow-2xl">
           <form onSubmit={handleBrandSubmit}>
-            <div className="p-8 pb-4">
+            <div className="p-6 sm:p-8 pb-4">
               <DialogHeader>
                 <DialogTitle className="text-2xl font-black text-foreground">
                   {editingItem ? 'Edit Brand' : 'Add New Brand'}
@@ -606,7 +608,7 @@ export default function PromotionSettingsPage() {
               </DialogHeader>
             </div>
 
-            <div className="p-8 pt-2 grid grid-cols-1 md:grid-cols-5 gap-8">
+            <div className="p-6 sm:p-8 pt-2 grid grid-cols-1 md:grid-cols-5 gap-6 sm:gap-8 max-h-[60vh] md:max-h-[none] overflow-y-auto custom-scrollbar">
               <div className="md:col-span-2">
                 <ImageUploadWithCrop
                   label="Brand Logo"
@@ -628,7 +630,7 @@ export default function PromotionSettingsPage() {
                     colorClass="bg-indigo-500/10 text-indigo-600 dark:text-indigo-400"
                   />
                   <div className="space-y-4">
-                    <div className="grid grid-cols-2 gap-4">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                       <div className="space-y-2">
                         <Label
                           htmlFor="b-name"
@@ -823,7 +825,7 @@ export default function PromotionSettingsPage() {
               </div>
             </div>
 
-            <div className="p-8 pt-4 bg-muted/30 border-t border-border">
+            <div className="p-6 sm:p-8 pt-4 bg-muted/30 border-t border-border">
               <DialogFooter>
                 <Button
                   type="button"

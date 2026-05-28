@@ -52,11 +52,13 @@ export function ImageUploadWithCrop({
 
       if (!['image/jpeg', 'image/png', 'image/webp'].includes(file.type)) {
         toast.error('Invalid file format. Please use JPG, PNG or WebP.');
+        e.target.value = '';
         return;
       }
 
       if (file.size > maxSizeMB * 1024 * 1024) {
         toast.error(`File is too large. Maximum size is ${maxSizeMB}MB.`);
+        e.target.value = '';
         return;
       }
 
@@ -66,6 +68,7 @@ export function ImageUploadWithCrop({
         setIsCropping(true);
       });
       reader.readAsDataURL(file);
+      e.target.value = ''; // Reset file input value to allow re-selection of same file
     }
   };
 
@@ -189,7 +192,15 @@ export function ImageUploadWithCrop({
       />
 
       {/* Cropping Dialog */}
-      <Dialog open={isCropping} onOpenChange={setIsCropping}>
+      <Dialog 
+        open={isCropping} 
+        onOpenChange={(open) => {
+          setIsCropping(open);
+          if (!open) {
+            setImageSrc(null);
+          }
+        }}
+      >
         <DialogContent className="sm:max-w-3xl w-[95vw] p-0 overflow-hidden rounded-[2.5rem] border-none bg-card text-card-foreground shadow-2xl">
           <div className="p-8 pb-0">
             <DialogHeader>
@@ -240,7 +251,10 @@ export function ImageUploadWithCrop({
               <Button
                 type="button"
                 variant="ghost"
-                onClick={() => setIsCropping(false)}
+                onClick={() => {
+                  setIsCropping(false);
+                  setImageSrc(null);
+                }}
                 className="rounded-xl px-6 font-bold text-muted-foreground hover:text-foreground"
               >
                 Cancel
