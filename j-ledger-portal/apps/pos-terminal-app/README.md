@@ -1,7 +1,7 @@
 # 🏦 J-Ledger POS: Smart Android Terminal Client 💳
 
-> **แผนสถาปัตยกรรมและการพัฒนาซอฟต์แวร์เครื่องรับชำระเงินอัจฉริยะระบบ Android (Smart POS Terminal)**
-> โปรเจกต์นี้จะติดตั้งอยู่บนฮาร์ดแวร์เครื่องรูดบัตรอัจฉริยะ (เช่นเครื่องแบรนด์ PAX หรือ Verifone) ทำหน้าที่เป็นจุดรับชำระเงินของร้านค้า (In-Store Payment Terminal) เชื่อมต่อ API Gateway หลังบ้านอย่างปลอดภัยด้วยลายเซ็นดิจิทัล HMAC SHA-256 และสั่งพิมพ์ใบเสร็จผ่านระบบบัสภายในระบบปฏิบัติการ Android (IPC via AIDL)
+> **ซอฟต์แวร์เครื่องรับชำระเงินอัจฉริยะระบบ Android (Smart POS Terminal)**
+> โปรเจกต์นี้จะติดตั้งอยู่บนฮาร์ดแวร์เครื่องรูดบัตรอัจฉริยะ (เช่นเครื่องแบรนด์ PAX หรือ Verifone) ทำหน้าที่เป็นจุดรับชำระเงินและใช้สิทธิ์ Deal ของร้านค้า (In-Store Payment & Deal Redemption Terminal) เชื่อมต่อ API Gateway หลังบ้านอย่างปลอดภัยด้วยลายเซ็นดิจิทัล HMAC SHA-256 พร้อม Nonce ป้องกัน Replay Attack และสั่งพิมพ์ใบเสร็จผ่านระบบบัสภายในระบบปฏิบัติการ Android (IPC via AIDL)
 
 ---
 
@@ -13,10 +13,21 @@
 [ J-Ledger POS Application (Process A) ]
          │
          ├──► [ Presentation Layer ] (Jetpack Compose UI)
+         │         ├── PaymentScreen (Numpad + ยอดเงิน)
+         │         ├── ScannerScreen (CameraX QR Scanner)
+         │         ├── DealRedemptionScreen (สแกน/กรอก Deal Code)
+         │         └── DealPreviewScreen (Preview + Confirm Use)
+         │
          ├──► [ Domain Layer ] (Use Cases & Business Logic)
          └──► [ Data Layer ] (Retrofit API Client & Secure Store)
                   │
                   ├───► [ Android Keystore ] (เก็บกุญแจลับระดับฮาร์ดแวร์)
+                  │
+                  ├───► [ HMAC-SHA256 Interceptor ] ── Headers: ──►
+                  │       X-JLedger-Terminal-Id
+                  │       X-JLedger-Signature (hex)
+                  │       X-JLedger-Timestamp (epoch seconds)
+                  │       X-JLedger-Nonce (unique per request)
                   │
                   ├───► [ IPC: AIDL Inter-Process ] (ส่งคำขอพิมพ์ข้ามโปรเซส)
                   │          │
@@ -39,90 +50,118 @@
 
 ---
 
-## 🚀 3. แผนงานการพัฒนา (Development Roadmap)
+## 📡 3. API Endpoints ที่เชื่อมต่อ (Backend API Contract)
 
-เมื่อรันระบบ Compliance หลักฝั่งหลังบ้านตามแผน `docs/IMPLEMENTED_VS_PLANNED.md` เสร็จสมบูรณ์แล้ว ให้เริ่มลงมือสร้างแอปพลิเคชัน POS ตัวนี้ตามขั้นตอนดังนี้ครับ:
+### Authentication
+ทุก Request ต้องมี 4 headers:
 
-### Phase 1: การผูกอุปกรณ์และจัดเก็บคีย์ลับ (Secure Provisioning)
-1.  **เป้าหมาย:** บันทึก `terminalId` และ `secretKey` (ที่ได้จากการจำลองสร้างเครื่อง POS หลังร้านในแอป Wallet) ลงเครื่องอย่างปลอดภัย
-2.  **สิ่งที่ต้องเขียน:** หน้าจอลงทะเบียนเครื่อง POS รับข้อมูลผูกคีย์ จากนั้นใช้คลาส `KeyStore` ของ Android ในการเข้ารหัสข้อมูลเก็บลงใน `EncryptedSharedPreferences` ของแอป
+| Header | Description |
+|---|---|
+| `X-JLedger-Terminal-Id` | Terminal UUID |
+| `X-JLedger-Signature` | HMAC-SHA256 hex signature |
+| `X-JLedger-Timestamp` | Unix epoch seconds |
+| `X-JLedger-Nonce` | Unique random string (single-use) |
 
-### Phase 2: ระบบความปลอดภัยธุรกรรมชำระเงิน (HMAC Signature Interceptor)
-1.  **เป้าหมาย:** สื่อสารกับ NestJS API ด้วยระบบการเซ็นลายเซ็นดิจิทัลตามมาตรฐานความปลอดภัย FinTech
-2.  **สิ่งที่ต้องเขียน:** เขียนคลาส OkHttp `Interceptor` คอยดึง Payload ธุรกรรมมาสร้าง Signature ทุกครั้งก่อนส่งออกไป
-
-#### 📝 โค้ดต้นแบบการสร้าง HMAC Signature ใน Kotlin:
-```kotlin
-package com.jledger.pos.security
-
-import android.util.Base64
-import java.security.SignatureException
-import javax.crypto.Mac
-import javax.crypto.spec.SecretKeySpec
-
-object HmacSigner {
-    private const val HMAC_SHA256_ALGORITHM = "HmacSHA256"
-
-    /**
-     * คำนวณลายเซ็นดิจิทัลสำหรับความปลอดภัยของธุรกรรม
-     */
-    fun calculateSignature(payload: String, secretKey: String): String {
-        return try {
-            val signingKey = SecretKeySpec(secretKey.toByteArray(), HMAC_SHA256_ALGORITHM)
-            val mac = Mac.getInstance(HMAC_SHA256_ALGORITHM)
-            mac.init(signingKey)
-            val rawHmac = mac.doFinal(payload.toByteArray())
-            Base64.encodeToString(rawHmac, Base64.NO_WRAP)
-        } catch (e: Exception) {
-            throw SignatureException("Failed to generate HMAC SHA256 signature", e)
-        }
-    }
-}
+**Signature Formula:**
+```
+message = "${METHOD}:${path}:${timestamp}:${nonce}"
+signature = HMAC-SHA256(message, secretKey) → hex
 ```
 
-### Phase 3: ฟังก์ชันรับเงินหน้าร้านค้า (Transaction & QR Scanner)
-1.  **เป้าหมาย:** ร้านค้ากรอกจำนวนยอดเงิน แล้วเลือกว่าจะสร้าง Dynamic QR เพื่อให้ลูกค้าสแกนจ่าย หรือสแกนกระเป๋าของลูกค้าเพื่อหักเงิน
-2.  **สิ่งที่ต้องเขียน:** 
-    *   หน้าแป้นพิมพ์ยอดเงิน (Numpad) กดป้อนเงิน
-    *   ระบบสแกนกล้องหลัง (CameraX + ML Kit) ตรวจจับรหัส QR กระเป๋าผู้ใช้ส่งไปตัดเงินที่ API หลังบ้านปลายทาง `/merchant/terminal/payment`
+### Endpoints
 
-### Phase 4: ระบบจำลองเครื่องพิมพ์ใบเสร็จ (Thermal Printer Service via AIDL)
-1.  **เป้าหมาย:** เครื่อง POS จริงจะส่งข้อมูลใบเสร็จข้ามโปรเซส (IPC) เพื่อความปลอดภัย แอปหน้าร้านจะไม่คุยกับเครื่องพิมพ์ตรง ๆ แต่จะคุยผ่าน Service ไดรเวอร์ระบบ
-2.  **สิ่งที่ต้องเขียน:** เขียนไฟล์ **AIDL** เพื่อสร้างอินเตอร์เฟสสื่อสาร และสร้าง Mock Service สำหรับรับคำสั่งพิมพ์สลิปและโชว์ใบเสร็จจำลองบนหน้าจอ
+| Method | Path | Description |
+|---|---|---|
+| `POST` | `/api/v1/terminal/payment` | POS Payment (ตัดเงินลูกค้า) |
+| `POST` | `/api/v1/terminal/loyalty/redeem` | Loyalty Points Redemption |
+| `GET` | `/api/merchant/deals/redemptions/:code/verify` | Preview Deal ก่อนยืนยัน |
+| `POST` | `/api/merchant/deals/redemptions/:code/use` | ยืนยันใช้ Deal Code |
 
-#### 📝 โค้ดต้นแบบอินเตอร์เฟส AIDL (`IPrinterService.aidl`):
-สร้างไว้ที่โฟลเดอร์ `src/main/aidl/com/jledger/pos/IPrinterService.aidl`
-```aidl
-package com.jledger.pos;
+---
 
-interface IPrinterService {
-    /**
-     * ดึงสถานะปัจจุบันของเครื่องพิมพ์ (0: พร้อมใช้งาน, 1: กระดาษหมด, 2: ร้อนเกินกำหนด)
-     */
-    int getPrinterStatus();
+## 🚀 4. แผนงานการพัฒนา (Development Roadmap)
 
-    /**
-     * สั่งพิมพ์ข้อความตัวอักษรลงบนกระดาษความร้อน
-     */
-    void printText(String text);
+| Phase | ชื่อ | สถานะ |
+|---|---|---|
+| 1 | 🔒 Secure Device Provisioning (ลงทะเบียนเครื่อง + เก็บคีย์ลับ) | 📋 Planned |
+| 2 | 🔑 HMAC-SHA256 + Nonce Interceptor (ระบบเซ็นลายเซ็น) | 📋 Planned |
+| 3 | 📷 CameraX QR Scanner + POS Payment (รับชำระเงิน) | 📋 Planned |
+| 4 | 🎁 Deal Redemption Flow (Verify → Use 2 ขั้นตอน) | 📋 Planned |
+| 5 | 🖨️ Thermal Printer via AIDL (พิมพ์ใบเสร็จ) | 📋 Planned |
 
-    /**
-     * สั่งพิมพ์รูปภาพโลโก้หรือบาร์โค้ดสลิปธุรกรรม
-     */
-    void printBitmap(in byte[] bitmapData);
+> 📖 ดูรายละเอียดเชิงลึกของแต่ละ Phase ได้ที่ [PLAN.md](./PLAN.md)
 
-    /**
-     * สั่งตัดกระดาษสลิปความร้อน
-     */
-    void cutPaper();
-}
+---
+
+## 🏃 5. การเริ่มพัฒนา (Getting Started)
+
+### Prerequisites
+*   Android Studio Hedgehog (2023.1+) หรือใหม่กว่า
+*   JDK 17
+*   Android SDK 34
+*   เครื่อง POS จริง (PAX/Verifone) หรือ Android Emulator API 26+
+
+### Build & Run
+```bash
+# Clone monorepo
+git clone <repository-url>
+cd j-ledger-portal/apps/pos-terminal-app
+
+# Open in Android Studio
+# File → Open → select pos-terminal-app folder
+
+# Build
+./gradlew assembleDebug
+
+# Run on device
+./gradlew installDebug
+```
+
+### 🔧 Missing Dependencies to Add
+เพิ่มใน `app/build.gradle.kts` ก่อนเริ่มพัฒนา Phase 1:
+```kotlin
+// Security — EncryptedSharedPreferences
+implementation("androidx.security:security-crypto:1.1.0-alpha06")
+
+// Navigation — Multi-screen flow
+implementation("androidx.navigation:navigation-compose:2.7.7")
+
+// Lifecycle — ViewModel + Compose integration
+implementation("androidx.lifecycle:lifecycle-viewmodel-compose:2.7.0")
 ```
 
 ---
 
-## 🔒 4. เช็คลิสต์ตรวจสอบความปลอดภัย (Terminal Audit Checklist)
+## 🔒 6. เช็คลิสต์ตรวจสอบความปลอดภัย (Terminal Audit Checklist)
 
 ก่อนนำแอป POS เสนอให้ทีมประเมินผล Digio ตรวจสอบความปลอดภัยตามเกณฑ์ด้านการเงินเหล่านี้:
-*   [ ] **Root Status Block:** แอปต้องไม่สามารถเปิดทำงานได้ถ้าตรวจพบว่าอุปกรณ์ถูก Root หรืออยู่ใน Debug Mode
-*   [ ] **No Logging PAN/Token:** ต้องกรองเอาข้อมูลส่วนบุคคลและข้อมูลบัตรเครดิตออกไม่ให้ปรากฏลงใน `Logcat` ของแอปพลิเคชัน
-*   [ ] **Encrypted Storage:** ข้อมูลแคชยอดเงินที่ค้างอยู่ของร้านค้าต้องเข้ารหัสไว้ตลอดเวลา ไม่สามารถเปิดอ่านด้วยแอปแฮกเกอร์อื่นได้
+- [ ] **Root Status Block:** แอปต้องไม่สามารถเปิดทำงานได้ถ้าตรวจพบว่าอุปกรณ์ถูก Root หรืออยู่ใน Debug Mode
+- [ ] **No Logging PAN/Token:** ต้องกรองเอาข้อมูลส่วนบุคคลและข้อมูลบัตรเครดิตออกไม่ให้ปรากฏลงใน `Logcat` ของแอปพลิเคชัน
+- [ ] **Encrypted Storage:** ข้อมูลแคชยอดเงินที่ค้างอยู่ของร้านค้าต้องเข้ารหัสไว้ตลอดเวลา ไม่สามารถเปิดอ่านด้วยแอปแฮกเกอร์อื่นได้
+- [ ] **HMAC Signature:** ทุก request ต้องเซ็น HMAC-SHA256 ด้วย `"${METHOD}:${path}:${timestamp}:${nonce}"` format
+- [ ] **Nonce Uniqueness:** ทุก request ต้องมี nonce ที่ไม่ซ้ำกัน (Backend Redis SET NX EX 600s)
+- [ ] **Timestamp Window:** Request ต้องถูกส่งภายใน ±5 นาทีจากเวลาจริง
+- [ ] **ProGuard/R8:** Release build ต้องเปิด `isMinifyEnabled = true`
+
+---
+
+## 📂 7. โครงสร้างโปรเจกต์ปัจจุบัน (Current Project Structure)
+
+```
+pos-terminal-app/
+├── PLAN.md                          ← แผนพัฒนาเชิงลึก (5 Phases)
+├── README.md                        ← เอกสารนี้
+├── build.gradle.kts                 ← Root Gradle config
+├── settings.gradle.kts              ← Module registration
+└── app/
+    ├── build.gradle.kts             ← Dependencies & build config
+    └── src/main/
+        ├── AndroidManifest.xml      ← Permissions & Service registration
+        ├── aidl/
+        │   └── com/jledger/pos/
+        │       └── IPrinterService.aidl    ← Printer IPC interface
+        └── java/com/jledger/pos/
+            ├── MainActivity.kt              ← Main UI (Numpad + Compliance)
+            └── service/
+                └── PrinterMockDriverService.kt  ← Mock printer service
+```

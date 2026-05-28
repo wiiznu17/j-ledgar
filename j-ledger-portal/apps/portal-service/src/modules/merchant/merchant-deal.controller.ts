@@ -11,7 +11,7 @@ import {
 import { MerchantService } from './merchant.service';
 import { TerminalAuthGuard } from '../../core/common/guards/terminal-auth.guard';
 
-@Controller('api/merchant/deals')
+@Controller('merchant/deals')
 export class MerchantDealController {
   constructor(private readonly merchantService: MerchantService) {}
 

@@ -18,7 +18,7 @@ server {
         end
         
         -- Authenticate with Redis using the environment variable
-        local redis_password = "***REMOVED_SECRET***"
+        local redis_password = os.getenv("REDIS_PASSWORD")
         if redis_password and redis_password ~= "" then
             local ok_auth, err_auth = red:auth(redis_password)
             if not ok_auth then
