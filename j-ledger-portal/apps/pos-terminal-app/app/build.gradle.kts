@@ -76,7 +76,12 @@ dependencies {
     implementation("com.squareup.okhttp3:okhttp:4.12.0")
     implementation("com.squareup.okhttp3:logging-interceptor:4.12.0")
 
+    // Jetpack Navigation & ViewModel
+    implementation("androidx.navigation:navigation-compose:2.7.7")
+    implementation("androidx.lifecycle:lifecycle-viewmodel-compose:2.7.0")
+
     // Security & Keystore
+    implementation("androidx.security:security-crypto:1.1.0-alpha06")
     implementation("com.scottyab:rootbeer-lib:0.1.0")
 
     // Local Testing
