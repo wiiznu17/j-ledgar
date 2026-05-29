@@ -47,8 +47,13 @@ const createAxiosInstance = (): AxiosInstance => {
     },
   });
 
-  // Request interceptor for auth injection (server-side only)
+  // Request interceptor for auth injection (server-side only) and auto-versioning
   instance.interceptors.request.use(async (config) => {
+    // Auto Versioning: Transform '/api/...' to '/api/v1/...' if not already versioned
+    if (config.url && config.url.startsWith('/api/') && !config.url.startsWith('/api/v1/')) {
+      config.url = config.url.replace('/api/', '/api/v1/');
+    }
+
     const isServer = typeof window === 'undefined';
 
     if (isServer) {

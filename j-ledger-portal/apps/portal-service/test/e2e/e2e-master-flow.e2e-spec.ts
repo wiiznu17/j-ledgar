@@ -62,7 +62,7 @@ describe('Phase E: E2E Master Flow - Merchant Integration', () => {
     app.useGlobalPipes(
       new ValidationPipe({ whitelist: true, forbidNonWhitelisted: true }),
     );
-    app.setGlobalPrefix('api');
+    app.setGlobalPrefix('api/v1');
     await app.init();
 
     prisma = moduleFixture.get<PrismaService>(PrismaService);
@@ -125,7 +125,7 @@ describe('Phase E: E2E Master Flow - Merchant Integration', () => {
 
     // 2. Admin Approves Merchant Application
     const reviewRes = await request(app.getHttpServer())
-      .put(`/api/admin/merchants/applications/${application.id}/review`)
+      .put(`/api/v1/admin/merchants/applications/${application.id}/review`)
       .set('Authorization', 'Bearer mock-admin-token')
       .send({ status: 'APPROVED', note: 'Looks good' });
 
@@ -140,7 +140,7 @@ describe('Phase E: E2E Master Flow - Merchant Integration', () => {
 
     // 3. Admin Creates a Terminal for the Merchant
     const terminalRes = await request(app.getHttpServer())
-      .post(`/api/admin/merchants/${merchantId}/terminals`)
+      .post(`/api/v1/admin/merchants/${merchantId}/terminals`)
       .set('Authorization', 'Bearer mock-admin-token')
       .send({ name: 'Flow Terminal', hardwareId: terminalId });
 
@@ -202,7 +202,7 @@ describe('Phase E: E2E Master Flow - Merchant Integration', () => {
 
     // 5. Merchant Checks Dashboard Data (Wallet App simulation)
     const dashboardRes = await request(app.getHttpServer())
-      .get('/api/merchant/dashboard')
+      .get('/api/v1/merchant/dashboard')
       .set('x-mock-user', testUserId);
 
     expect(dashboardRes.status).toBe(200);

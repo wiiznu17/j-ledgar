@@ -27,7 +27,7 @@ describe('Merchant Runtime Concurrency (e2e)', () => {
 
     app = moduleFixture.createNestApplication();
     app.useGlobalPipes(new ValidationPipe({ whitelist: true }));
-    app.setGlobalPrefix('api');
+    app.setGlobalPrefix('api/v1');
     await app.init();
 
     prisma = moduleFixture.get<PrismaService>(PrismaService);

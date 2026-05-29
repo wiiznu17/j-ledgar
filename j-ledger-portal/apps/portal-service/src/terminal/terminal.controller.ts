@@ -13,7 +13,7 @@ import { TerminalAuthGuard } from '../core/common/guards/terminal-auth.guard';
 import { TerminalPaymentDto } from './dto/terminal-payment.dto';
 import { TerminalRedeemDto } from './dto/terminal-redeem.dto';
 
-@Controller('v1/terminal')
+@Controller('terminal')
 @UseGuards(TerminalAuthGuard)
 export class TerminalController {
   constructor(private readonly merchantService: MerchantService) {}

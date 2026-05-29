@@ -29,7 +29,7 @@ describe('Merchant API Contract (e2e)', () => {
     app.useGlobalPipes(
       new ValidationPipe({ whitelist: true, forbidNonWhitelisted: true }),
     );
-    app.setGlobalPrefix('api');
+    app.setGlobalPrefix('api/v1');
     await app.init();
 
     prisma = moduleFixture.get<PrismaService>(PrismaService);
@@ -181,7 +181,7 @@ describe('Merchant API Contract (e2e)', () => {
       });
 
       const response = await request(app.getHttpServer())
-        .put(`/api/admin/merchants/applications/${appRecord.id}/review`)
+        .put(`/api/v1/admin/merchants/applications/${appRecord.id}/review`)
         .set('Authorization', 'Bearer dummy-admin-token') // Bypass actual JWT check for this contract test if possible, or use a real one
         .send({ status: 'INVALID_STATUS', note: 'test' });
 

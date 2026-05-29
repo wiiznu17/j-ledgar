@@ -47,7 +47,7 @@ export async function proxy(request: NextRequest) {
       try {
         console.log('[Proxy] Attempting token refresh for user:', userId);
         const refreshResponse = await fetch(
-          `${internalApiBaseUrl}/api/admin/auth/refresh`,
+          `${internalApiBaseUrl}/api/v1/admin/auth/refresh`,
           {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },

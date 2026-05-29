@@ -97,11 +97,11 @@
 
 ### 4. API Versioning
 
-- [ ] เพิ่ม global prefix `/api/v1/` แทน `/api/` เพื่อรองรับ breaking changes ในอนาคต
-- [ ] หรือใช้ NestJS `@ApiVersion()` / URI versioning strategy
-- [ ] อัปเดต Nginx proxy routes ให้สอดคล้อง
-- [ ] อัปเดต admin-web requester URLs
-- [ ] อัปเดต wallet-app API client URLs
+- [x] เพิ่ม global prefix `/api/v1/` แทน `/api/` เพื่อรองรับ breaking changes ในอนาคต
+- [x] หรือใช้ NestJS `@ApiVersion()` / URI versioning strategy (เปิดใช้งาน Global prefix `/api/v1/` สำเร็จ)
+- [x] อัปเดต Nginx proxy routes ให้สอดคล้อง (ย้าย location blocks ทั้งหมดเข้าหา `/api/v1/` และเพิ่ม v1 finance-service proxy)
+- [x] อัปเดต admin-web requester URLs (ติดตั้ง Axios Path Auto Versioning Interceptor และ middleware proxy/next.config rewrites สำเร็จ)
+- [x] อัปเดต wallet-app API client URLs (ปรับปรุง baseURL ใน Expo axios.ts เป็น `/api/v1` สำเร็จ)
 
 ---
 

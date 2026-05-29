@@ -69,12 +69,12 @@ const getBaseUrl = () => {
   if (__DEV__) {
     // Use localhost for iOS simulator on same machine, or IP for real device
     const baseUrl = process.env.EXPO_PUBLIC_API_URL || 'http://localhost:3000';
-    // Ensure /api suffix
-    return baseUrl.endsWith('/api') ? baseUrl : `${baseUrl}/api`;
+    // Ensure /api/v1 suffix
+    return baseUrl.endsWith('/api/v1') ? baseUrl : `${baseUrl}/api/v1`;
   }
   const baseUrl = process.env.EXPO_PUBLIC_API_URL || 'https://api.jledger.io';
-  // Ensure /api suffix
-  return baseUrl.endsWith('/api') ? baseUrl : `${baseUrl}/api`;
+  // Ensure /api/v1 suffix
+  return baseUrl.endsWith('/api/v1') ? baseUrl : `${baseUrl}/api/v1`;
 };
 
 export const api = axios.create({

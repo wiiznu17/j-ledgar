@@ -50,7 +50,7 @@ describe('Phase E: Security & Observability Audit', () => {
     app.useGlobalPipes(
       new ValidationPipe({ whitelist: true, forbidNonWhitelisted: true }),
     );
-    app.setGlobalPrefix('api');
+    app.setGlobalPrefix('api/v1');
     await app.init();
 
     prisma = moduleFixture.get<PrismaService>(PrismaService);
@@ -99,7 +99,7 @@ describe('Phase E: Security & Observability Audit', () => {
   describe('Data Privacy (No Secret Leaks)', () => {
     it('should NOT leak secretKey when merchant lists their terminals', async () => {
       const res = await request(app.getHttpServer())
-        .get('/api/merchant/terminals')
+        .get('/api/v1/merchant/terminals')
         .set('x-mock-user', testUserId);
 
       expect(res.status).toBe(200);
@@ -117,7 +117,7 @@ describe('Phase E: Security & Observability Audit', () => {
 
     it('should NOT leak secretKey when admin lists terminals', async () => {
       const res = await request(app.getHttpServer())
-        .get(`/api/admin/merchants/${merchantId}/terminals`)
+        .get(`/api/v1/admin/merchants/${merchantId}/terminals`)
         .set('Authorization', 'Bearer mock-admin-token');
 
       expect(res.status).toBe(200);
