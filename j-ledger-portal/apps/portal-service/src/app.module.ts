@@ -17,6 +17,9 @@ import { BannerModule } from './modules/banners/banner.module';
 import { MerchantModule } from './modules/merchant/merchant.module';
 import { HealthController } from './core/health/health.controller';
 import { ScheduleModule } from '@nestjs/schedule';
+import { ThrottlerModule, ThrottlerGuard } from '@nestjs/throttler';
+import { APP_GUARD } from '@nestjs/core';
+import { ThrottlerStorageRedisService } from './core/redis/throttler-storage-redis.service';
 
 @Module({
   imports: [
@@ -25,6 +28,54 @@ import { ScheduleModule } from '@nestjs/schedule';
     RedisModule,
     ConfigModule.forRoot({
       isGlobal: true,
+    }),
+    ThrottlerModule.forRootAsync({
+      inject: [ThrottlerStorageRedisService],
+      useFactory: (storage: ThrottlerStorageRedisService) => ({
+        throttlers: [
+          {
+            name: 'default',
+            ttl: 60000,
+            limit: 60,
+          },
+          {
+            name: 'otp-send',
+            ttl: 60000,
+            limit: 3,
+          },
+          {
+            name: 'otp-verify',
+            ttl: 300000,
+            limit: 3,
+          },
+          {
+            name: 'login',
+            ttl: 900000,
+            limit: 3,
+          },
+          {
+            name: 'refreshToken',
+            ttl: 60000,
+            limit: 10,
+          },
+          {
+            name: 'pinVerify',
+            ttl: 300000,
+            limit: 5,
+          },
+          {
+            name: 'biometricVerify',
+            ttl: 60000,
+            limit: 10,
+          },
+          {
+            name: 'accountDeletion',
+            ttl: 3600000,
+            limit: 2,
+          },
+        ],
+        storage,
+      }),
     }),
     IdentityModule,
     KycModule,
@@ -41,5 +92,12 @@ import { ScheduleModule } from '@nestjs/schedule';
     MerchantModule,
   ],
   controllers: [HealthController],
+  providers: [
+    {
+      provide: APP_GUARD,
+      useClass: ThrottlerGuard,
+    },
+  ],
 })
 export class AppModule {}
+

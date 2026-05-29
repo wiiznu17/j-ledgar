@@ -11,6 +11,7 @@ import {
   Get,
   Put,
 } from '@nestjs/common';
+import { Throttle } from '@nestjs/throttler';
 import { AdminService } from '../services/admin.service';
 import { JwtService } from '@nestjs/jwt';
 import * as bcrypt from 'bcryptjs';
@@ -28,6 +29,7 @@ export class AdminAuthController {
 
   @Post('login')
   @HttpCode(HttpStatus.OK)
+  @Throttle({ default: { limit: 5, ttl: 900000 } })
   @AuditLog(AuditAction.LOGIN, ResourceType.ADMIN_USER, 'Staff login')
   async login(@Body() dto: LoginRequest): Promise<AuthResponse> {
     const staff = await this.adminService.findByEmail(dto.email);
@@ -72,6 +74,7 @@ export class AdminAuthController {
 
   @Post('refresh')
   @HttpCode(HttpStatus.OK)
+  @Throttle({ default: { limit: 10, ttl: 60000 } })
   async refresh(@Body() dto: RefreshTokenRequest): Promise<AuthResponse> {
     const staff = await this.adminService.findByIdInternal(dto.userId);
     if (!staff || !staff.isActive || !staff.refreshTokenHash) {
@@ -136,6 +139,7 @@ export class AdminAuthController {
 
   @Post('reset-password/validate')
   @HttpCode(HttpStatus.OK)
+  @Throttle({ default: { limit: 5, ttl: 300000 } })
   async validateToken(@Body() body: { token: string }) {
     const isValid = await this.adminService.validateResetToken(body.token);
     if (!isValid) {
@@ -146,6 +150,7 @@ export class AdminAuthController {
 
   @Post('reset-password/confirm')
   @HttpCode(HttpStatus.OK)
+  @Throttle({ default: { limit: 3, ttl: 900000 } })
   async confirmReset(@Body() body: { token: string; password: string }) {
     try {
       return await this.adminService.resetPasswordWithToken(
@@ -159,6 +164,7 @@ export class AdminAuthController {
 
   @Post('activate/validate')
   @HttpCode(HttpStatus.OK)
+  @Throttle({ default: { limit: 5, ttl: 300000 } })
   async validateInviteToken(@Body() body: { token: string }) {
     const isValid = await this.adminService.validateResetToken(body.token);
     if (!isValid) {
@@ -169,6 +175,7 @@ export class AdminAuthController {
 
   @Post('activate/confirm')
   @HttpCode(HttpStatus.OK)
+  @Throttle({ default: { limit: 3, ttl: 900000 } })
   async confirmActivation(@Body() body: { token: string; password: string }) {
     try {
       return await this.adminService.resetPasswordWithToken(

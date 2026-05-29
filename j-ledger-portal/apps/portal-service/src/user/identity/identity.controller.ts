@@ -177,7 +177,10 @@ export class IdentityController {
 
   @Post('refresh')
   @HttpCode(HttpStatus.OK)
-  @Throttle({ default: {}, refreshToken: {} })
+  @Throttle({
+    default: { limit: 60, ttl: 60000 },
+    refreshToken: { limit: 10, ttl: 60000 },
+  })
   async refresh(@Body() body: RefreshTokenDto, @Req() req: Request) {
     return this.identityService.refresh(body, {
       ip: req.ip,
@@ -221,7 +224,10 @@ export class IdentityController {
   @UseGuards(JwtAuthGuard)
   @Post('pin/verify')
   @HttpCode(HttpStatus.OK)
-  @Throttle({ default: {}, pinVerify: {} })
+  @Throttle({
+    default: { limit: 60, ttl: 60000 },
+    pinVerify: { limit: 5, ttl: 300000 },
+  })
   async verifyPin(
     @Body() body: PinVerifyDto,
     @Req() req: AuthenticatedRequest,
@@ -235,7 +241,10 @@ export class IdentityController {
   @UseGuards(JwtAuthGuard)
   @Post('biometric/challenge')
   @HttpCode(HttpStatus.OK)
-  @Throttle({ default: {}, biometricVerify: {} })
+  @Throttle({
+    default: { limit: 60, ttl: 60000 },
+    biometricVerify: { limit: 10, ttl: 60000 },
+  })
   async generateBiometricChallenge(@Req() req: AuthenticatedRequest) {
     if (!req.user?.sub) {
       throw new UnauthorizedException('User is not authenticated');
@@ -246,7 +255,10 @@ export class IdentityController {
   @UseGuards(JwtAuthGuard)
   @Post('biometric/verify')
   @HttpCode(HttpStatus.OK)
-  @Throttle({ default: {}, biometricVerify: {} })
+  @Throttle({
+    default: { limit: 60, ttl: 60000 },
+    biometricVerify: { limit: 10, ttl: 60000 },
+  })
   async verifyBiometric(
     @Body() body: BiometricVerifyDto,
     @Req() req: AuthenticatedRequest,
@@ -341,7 +353,10 @@ export class IdentityController {
   @UseGuards(JwtAuthGuard)
   @Post('account/delete-request')
   @HttpCode(HttpStatus.OK)
-  @Throttle({ default: {}, accountDeletion: {} })
+  @Throttle({
+    default: { limit: 60, ttl: 60000 },
+    accountDeletion: { limit: 2, ttl: 3600000 },
+  })
   async requestAccountDeletion(@Req() req: AuthenticatedRequest) {
     if (!req.user?.sub) {
       throw new UnauthorizedException('User is not authenticated');
@@ -355,7 +370,10 @@ export class IdentityController {
   @UseGuards(JwtAuthGuard)
   @Post('account/delete-confirm')
   @HttpCode(HttpStatus.OK)
-  @Throttle({ default: {}, accountDeletion: {} })
+  @Throttle({
+    default: { limit: 60, ttl: 60000 },
+    accountDeletion: { limit: 2, ttl: 3600000 },
+  })
   async confirmAccountDeletion(@Req() req: AuthenticatedRequest) {
     if (!req.user?.sub) {
       throw new UnauthorizedException('User is not authenticated');

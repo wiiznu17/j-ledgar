@@ -81,16 +81,17 @@
 
 > ไม่มี rate limiting ทั้ง NestJS level และ Nginx level
 
-- [ ] ติดตั้ง `@nestjs/throttler` ใน `portal-service`
-- [ ] เพิ่ม `@Throttle()` สำหรับ critical endpoints
-  - [ ] `/api/auth/login` — 5 requests / 60s
-  - [ ] `/api/auth/verify-otp` — 5 requests / 60s
-  - [ ] `/api/auth/register` — 3 requests / 60s
-  - [ ] `/api/v1/terminal/payment` — 10 requests / 60s
-- [ ] เพิ่ม `limit_req` zone ใน Nginx `default.conf`
-  - [ ] General API rate limit
-  - [ ] Auth endpoints stricter limit
-- [ ] เพิ่ม brute-force lockout logic สำหรับ PIN (มี `pinAttempts` field อยู่แล้ว แต่ต้องตรวจ implementation)
+- [x] ติดตั้ง `@nestjs/throttler` ใน `portal-service` (ลงทะเบียน ThrottlerModule & ThrottlerGuard สมบูรณ์แล้ว)
+- [x] เพิ่ม `@Throttle()` สำหรับ critical endpoints
+  - [x] `/api/auth/login` (login named group & admin auth login)
+  - [x] `/api/auth/verify-otp` (otp-verify named group)
+  - [x] `/api/auth/register` (otp-send named group)
+  - [x] `/api/v1/terminal/payment` — 10 requests / 60s
+- [x] เพิ่ม `limit_req` zone ใน Nginx `default.conf`
+  - [x] General API rate limit (`api_general`)
+  - [x] Auth endpoints stricter limit (`api_auth`)
+  - [x] Terminal endpoints limit (`api_terminal`)
+- [x] เพิ่ม brute-force lockout logic สำหรับ PIN (ยืนยันความถูกต้องเรียบร้อยแล้วใน identity.service.ts)
 
 ---
 
