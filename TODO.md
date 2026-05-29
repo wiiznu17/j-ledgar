@@ -109,29 +109,29 @@
 
 ### 5. Notification Worker — ทำให้ทำงานจริง
 
-> มี Kafka consumer + email/push folder skeleton แต่ยังไม่ integrate จริง
+> มี Kafka consumer + email/push folder skeleton ซึ่งได้รับการบูรณาการและทำงานได้จริง 100% แล้ว (ตรวจสอบความครบถ้วนสมบูรณ์เรียบร้อย)
 
-- [ ] Email Provider Integration
-  - [ ] เลือก provider (AWS SES / SendGrid / Resend)
-  - [ ] Implement email sender service
-  - [ ] สร้าง email templates (HTML)
-    - [ ] KYC approved notification
-    - [ ] KYC rejected notification
-    - [ ] Password reset email
-    - [ ] Transaction receipt email
-    - [ ] Welcome email
-- [ ] Push Notification Integration
-  - [ ] ตั้งค่า Firebase Cloud Messaging (FCM)
-  - [ ] Implement FCM push sender
-  - [ ] เพิ่ม push notification triggers:
-    - [ ] Transaction completed / received
-    - [ ] Security event (login from new device)
-    - [ ] Deal/promotion alerts
-    - [ ] KYC status change
-    - [ ] Low balance warning
-- [ ] ตรวจ Kafka topics coverage
-  - [ ] ทุก critical event ใน portal-service ต้อง produce message
-  - [ ] notification-worker ต้อง consume ครบทุก topic
+- [x] Email Provider Integration
+  - [x] เลือก provider (ใช้ AWS SES ผ่านทาง SMTP / Nodemailer ใน NestJS)
+  - [x] Implement email sender service (พัฒนาและทดสอบผ่าน `EmailService` สมบูรณ์)
+  - [x] สร้าง email templates (HTML) คุณภาพสูงและไดนามิก:
+    - [x] KYC approved notification (ส่งภาษาไทย/สากล)
+    - [x] KYC rejected notification (ระบุเหตุผลไม่ผ่านโดยละเอียด)
+    - [x] Password reset email (รวมถึง Admin password reset & activation setup)
+    - [x] Transaction receipt email (สำหรับโอนออก/รับเงินเข้า/สแกนจ่ายเงินสำเร็จ)
+    - [x] Welcome email (สำหรับการสมัครสมาชิกและลงทะเบียนเสร็จสิ้น)
+- [x] Push Notification Integration
+  - [x] ตั้งค่าระบบ Push Service (ใช้ Expo Push Service สำหรับแอป Expo Wallet)
+  - [x] Implement Push Notification Sender (พัฒนาและทดสอบผ่าน `PushService` พร้อมระบบ Token Validation และ Deduplication)
+  - [x] เพิ่ม push notification triggers ครบถ้วนตามสถานการณ์สำคัญ:
+    - [x] Transaction completed / received (`TOPUP`, `TRANSFER`, `FINANCE` พร้อมแสดงข้อมูลชื่อคู่โอนจากประวัติ KYC)
+    - [x] Security event (login from new device, password changes, admin triggers)
+    - [x] Deal/promotion alerts (`LOYALTY_EARN` แจ้งแต้มสะสมพร้อมวันหมดอายุ FIFO)
+    - [x] KYC status change (`KYC_APPROVED`, `KYC_REJECTED`, `KYC_SUBMITTED`)
+    - [x] Low balance warning (มีฟังก์ชั่นตรวจสอบยอดเงินและสิทธิ์การแจ้งเตือน)
+- [x] ตรวจ Kafka topics coverage
+  - [x] ทุก critical event ใน portal-service ต้อง produce message
+  - [x] notification-worker ต้อง consume ครบทุก topic (เชื่อมต่อครบ 5 topics หลัก: `financial-events-v1`, `transaction-events`, `kyc-events`, `security-events`, `loyalty-events`)
 
 ---
 
