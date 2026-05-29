@@ -1,0 +1,71 @@
+name: CD Deploy Production
+
+on:
+  workflow_dispatch:
+    inputs:
+      action:
+        description: 'Action to perform (deploy or rollback)'
+        required: true
+        default: 'deploy'
+        type: choice
+        options:
+          - 'deploy'
+          - 'rollback'
+      git_ref:
+        description: 'Git branch, tag, or commit SHA to deploy/rollback (e.g. main, v1.0.0, 9a2f1c8)'
+        required: true
+        default: 'main'
+        type: string
+
+jobs:
+  deploy:
+    name: Production Deployment Control
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Deploy to AWS EC2
+        uses: appleboy/ssh-action@v1.2.0
+        with:
+          host: ${{ secrets.EC2_HOST_PROD }}
+          username: ${{ secrets.EC2_USERNAME }}
+          key: ${{ secrets.EC2_PROD_SSH_KEY }}
+          script: |
+            echo "=== STARTING PRODUCTION DEPLOYMENT SYSTEM ==="
+            echo "Target Action: ${{ github.event.inputs.action }}"
+            echo "Target Git Ref: ${{ github.event.inputs.git_ref }}"
+            
+            # 1. เข้าสู่โฟลเดอร์แอปหลัก
+            cd /home/ubuntu/app/j-ledger
+            
+            # 2. ทำการ Fetch โค้ดทั้งหมด
+            echo "Fetching latest changes from Git..."
+            git fetch --all
+            
+            # 3. Checkout ไปยัง Ref ที่ต้องการ (ช่วยรองรับทั้งการ Deploy และ Rollback)
+            echo "Switching to git reference: ${{ github.event.inputs.git_ref }}..."
+            git checkout -f ${{ github.event.inputs.git_ref }}
+            
+            # 4. อัปเดตการดึงโค้ดล่าสุด (เฉพาะกรณีที่เป็น branch ปกติ)
+            if git symbolic-ref -q HEAD >/dev/null; then
+              echo "Pulling latest changes for active branch..."
+              git pull
+            fi
+            
+            # 5. สั่งบิลด์คอนเทนเนอร์ภายในเครื่องตามคู่มือจริง
+            echo "Rebuilding target Docker images..."
+            docker compose build portal-service notification-worker finance-service
+            
+            # 6. รันอัปเดต Schema ฐานข้อมูลด้วย Migration Container (Prisma/Flyway)
+            echo "Running database schema migrations..."
+            docker compose up -d portal-migration
+            
+            # 7. สั่งรีสตาร์ตระบบทั้งหมดแบบ Zero-Downtime
+            echo "Activating new container versions..."
+            docker compose up -d
+            
+            # 8. แสดงสถานะความสมบูรณ์หลัง deploy
+            echo ""
+            echo "Verifying active system status:"
+            docker compose ps
+            echo ""
+            echo "=== PRODUCTION DEPLOYMENT COMPLETED SUCCESSFULLY ==="

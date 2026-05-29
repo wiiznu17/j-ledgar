@@ -1,0 +1,27 @@
+name: CD Connection Dry-Run
+
+on:
+  workflow_dispatch:
+
+jobs:
+  ssh-dryrun:
+    name: Verify EC2 SSH Connection
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: SSH Connection Dry-Run
+        uses: appleboy/ssh-action@v1.2.0
+        with:
+          host: ${{ secrets.EC2_HOST_PROD }}
+          username: ${{ secrets.EC2_USERNAME }}
+          key: ${{ secrets.EC2_PROD_SSH_KEY }}
+          script: |
+            echo "=== SSH CONNECTION SUCCESSFUL ==="
+            echo "Verifying Docker and Docker Compose environment on EC2..."
+            docker --version
+            docker compose version
+            echo ""
+            echo "Listing current running Docker containers:"
+            docker compose -f /home/ubuntu/app/j-ledger/docker-compose.yml ps
+            echo ""
+            echo "=== DRY-RUN VERIFICATION COMPLETED ==="

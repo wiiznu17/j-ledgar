@@ -10,6 +10,7 @@
     "lint": "turbo run lint",
     "format": "prettier --write \"**/*.{ts,tsx,md}\"",
     "check-types": "turbo run check-types",
+    "test": "turbo run test",
     "postinstall": "if [ \"$VERCEL\" = \"1\" ]; then echo 'Skipping turbo generate on Vercel'; else turbo run generate; fi",
     "system:reset": "docker exec -e PGPASSWORD=$$POSTGRES_PASSWORD jledger-postgres psql -U $$POSTGRES_USER -d $$POSTGRES_DB -c 'DROP SCHEMA IF EXISTS finance CASCADE; CREATE SCHEMA finance; GRANT ALL ON SCHEMA finance TO $$POSTGRES_USER;' && cd .. && docker compose -f docker-compose.yml -f docker-compose.dev.yml run --rm finance-migration && cd j-ledger-portal/apps/portal-service && npx prisma migrate reset --force"
   },
