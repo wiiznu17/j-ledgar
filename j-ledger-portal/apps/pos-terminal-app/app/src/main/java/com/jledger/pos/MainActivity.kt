@@ -88,7 +88,7 @@ class MainActivity : ComponentActivity() {
         
         // Ensure ViewModel unbinds printer connection to prevent service leaks
         try {
-            val viewModel = viewModel<PosViewModel>()
+            val viewModel = androidx.lifecycle.ViewModelProvider(this).get(PosViewModel::class.java)
             viewModel.unbindPrinter()
         } catch (e: Exception) {
             Log.e("MainActivity", "Failed to unbind printer during destroy", e)
@@ -262,7 +262,6 @@ fun DashboardScreen(viewModel: PosViewModel) {
             selectedTabIndex = viewModel.activeScanMode.ordinal,
             containerColor = Color(0xFF1E293B),
             contentColor = Color.White,
-            shape = RoundedCornerShape(12.dp),
             modifier = Modifier
                 .fillMaxWidth()
                 .clip(RoundedCornerShape(12.dp))
@@ -782,4 +781,25 @@ fun handleNumpadInput(current: String, key: String): String {
     val added = clean + key
     val parsed = added.toDouble() / 100.0
     return String.format("%.2f", parsed)
+}
+
+@Composable
+fun ComplianceIndicator(label: String, isValid: Boolean) {
+    Row(
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(4.dp)
+    ) {
+        Box(
+            modifier = Modifier
+                .size(8.dp)
+                .clip(CircleShape)
+                .background(if (isValid) Color(0xFF10B981) else Color.Red)
+        )
+        Text(
+            text = label,
+            color = Color.White,
+            fontSize = 11.sp,
+            fontWeight = FontWeight.Bold
+        )
+    }
 }
