@@ -46,6 +46,11 @@
 - [x] เขียน unit tests สำหรับ `banner.service.ts` (1KB, มี unit test แล้ว)
 - [x] เขียน unit tests สำหรับ `notification.service.ts` (4KB, มี unit test แล้ว)
 - [x] เขียน unit tests สำหรับ `kafka-producer.service.ts` (1KB, มี unit test แล้ว)
+- [x] เขียน unit tests สำหรับ `notification-worker` (4 Services, มี unit test แล้ว)
+  - [x] `email.service.ts` — Mock nodemailer mail transport
+  - [x] `push.service.ts` — Expo Server SDK push notifications
+  - [x] `notification.service.ts` — Event persistence and multi-channel routing
+  - [x] `kafka.service.ts` — Consumer lifecycle subscription and admin interceptors
 - [ ] เขียน E2E tests สำหรับ critical API flows
 
 ---
