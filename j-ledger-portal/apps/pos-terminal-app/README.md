@@ -83,17 +83,17 @@ signature = HMAC-SHA256(message, secretKey) → hex
 
 | Phase | ชื่อ | สถานะ |
 |---|---|---|
-| 1 | 🔒 Secure Device Provisioning (ลงทะเบียนเครื่อง + เก็บคีย์ลับ) | 📋 Planned |
-| 2 | 🔑 HMAC-SHA256 + Nonce Interceptor (ระบบเซ็นลายเซ็น) | 📋 Planned |
-| 3 | 📷 CameraX QR Scanner + POS Payment (รับชำระเงิน) | 📋 Planned |
-| 4 | 🎁 Deal Redemption Flow (Verify → Use 2 ขั้นตอน) | 📋 Planned |
-| 5 | 🖨️ Thermal Printer via AIDL (พิมพ์ใบเสร็จ) | 📋 Planned |
+| 1 | 🔒 Secure Device Provisioning (ลงทะเบียนเครื่อง + เก็บคีย์ลับ) | ✅ Completed |
+| 2 | 🔑 HMAC-SHA256 + Nonce Interceptor (ระบบเซ็นลายเซ็น) | ✅ Completed |
+| 3 | 📷 CameraX QR Scanner + POS Payment (รับชำระเงิน) | ✅ Completed |
+| 4 | 🎁 Deal Redemption Flow (Verify → Use 2 ขั้นตอน) | ✅ Completed |
+| 5 | 🖨️ Thermal Printer via AIDL (พิมพ์ใบเสร็จ) | ✅ Completed |
 
-> 📖 ดูรายละเอียดเชิงลึกของแต่ละ Phase ได้ที่ [PLAN.md](./PLAN.md)
+> 📖 ดูรายละเอียดการทดสอบและรันแอปพลิเคชันอย่างละเอียดได้ที่คู่มือ [RUN_GUIDE.md](./RUN_GUIDE.md)
 
 ---
 
-## 🏃 5. การเริ่มพัฒนา (Getting Started)
+## 🏃 5. การเริ่มรันแอปพลิเคชัน (Getting Started)
 
 ### Prerequisites
 *   Android Studio Hedgehog (2023.1+) หรือใหม่กว่า
