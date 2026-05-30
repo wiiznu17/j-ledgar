@@ -176,9 +176,9 @@
 - [ ] Implement saved billers
 
 #### 7.2 Favorite Recipients
-- [ ] สร้าง `FavoriteRecipient` model ใน schema.prisma
-- [ ] สร้าง API endpoints (CRUD)
-- [ ] เพิ่ม UI ในหน้า transfer ให้เลือกจาก favorites
+- [x] สร้าง `FavoriteRecipient` model ใน schema.prisma
+- [x] สร้าง API endpoints (CRUD)
+- [x] เพิ่ม UI ในหน้า transfer ให้เลือกจาก favorites
 
 #### 7.3 Transfer Request (ขอเงิน)
 - [ ] สร้าง `TransferRequest` model
@@ -186,18 +186,18 @@
 - [ ] สร้าง UI screens
 
 #### 7.4 Biometric Login
-- [ ] Integrate `expo-local-authentication` (Fingerprint / Face ID)
-- [ ] เพิ่ม biometric toggle ในหน้า settings
-- [ ] ใช้ biometric แทน PIN สำหรับ login + confirm transaction
+- [x] Integrate `expo-local-authentication` (Fingerprint / Face ID)
+- [x] เพิ่ม biometric toggle ในหน้า settings
+- [x] ใช้ biometric แทน PIN สำหรับ login + confirm transaction
 
 #### 7.5 PIN Change / Reset
-- [ ] สร้างหน้า Change PIN (ใส่ PIN เก่า → ตั้ง PIN ใหม่)
-- [ ] สร้างหน้า Reset PIN (ยืนยัน OTP → ตั้ง PIN ใหม่)
-- [ ] เพิ่มเมนูใน profile/settings
+- [x] สร้างหน้า Change PIN (ใส่ PIN เก่า → ตั้ง PIN ใหม่)
+- [x] สร้างหน้า Reset PIN (ยืนยัน OTP → ตั้ง PIN ใหม่)
+- [x] เพิ่มเมนูใน profile/settings
 
 #### 7.6 Static QR Code
-- [ ] สร้าง permanent QR code สำหรับรับเงิน (ไม่หมดอายุ)
-- [ ] แยก tab "รับเงิน" vs "จ่ายเงิน" ใน my-qr.tsx
+- [x] สร้าง permanent QR code สำหรับรับเงิน (ไม่หมดอายุ)
+- [x] แยก tab "รับเงิน" vs "จ่ายเงิน" ใน my-qr.tsx
 
 #### 7.7 Merchant Nearby / Search
 - [ ] สร้างหน้าค้นหาร้านค้าใกล้ตัว (Map view)
@@ -205,8 +205,8 @@
 - [ ] แสดง merchant list + category filter
 
 #### 7.8 Export Statement
-- [ ] สร้างหน้า export statement (เลือกเดือน → ดาวน์โหลด PDF)
-- [ ] Backend: generate PDF statement endpoint
+- [x] สร้างหน้า export statement (เลือกเดือน → ดาวน์โหลด PDF)
+- [x] Backend: generate PDF statement endpoint
 
 ---
 
@@ -246,7 +246,7 @@
     approvedBy, status, createdAt, updatedAt
   }
   ```
-- [ ] `FavoriteRecipient` — saved transfer recipients
+- [x] `FavoriteRecipient` — saved transfer recipients
   ```
   model FavoriteRecipient {
     id, userId, recipientPhone, recipientName, 

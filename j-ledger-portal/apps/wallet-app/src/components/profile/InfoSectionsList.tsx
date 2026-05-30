@@ -6,6 +6,7 @@ import {
   MapPin,
   Briefcase,
   ShieldCheck,
+  AlertCircle,
 } from 'lucide-react-native';
 import { DataSection, InfoItem } from './ProfileUIAtoms';
 
@@ -86,8 +87,36 @@ export function InfoSectionsList({ formData, onEdit }: InfoSectionsListProps) {
         icon={<Phone color="#3b82f6" />}
         onEdit={() => onEdit('CONTACT')}
       >
-        <View className="space-y-4">
-          <InfoItem label="Verified Email" value={formData.email} />
+        <View className="space-y-4 gap-y-4">
+          <View className="flex-row justify-between items-center">
+            <InfoItem 
+              label="Email Address" 
+              value={formData.email || 'ยังไม่ได้ระบุอีเมล'} 
+              valueClass={formData.email ? 'text-gray-800' : 'text-gray-400 italic'}
+            />
+            {formData.email ? (
+              <View className={`px-2 py-0.5 rounded-full flex-row items-center gap-1 ${
+                formData.emailVerified ? 'bg-green-50 border border-green-100' : 'bg-amber-50 border border-amber-100'
+              }`}>
+                {formData.emailVerified ? (
+                  <>
+                    <ShieldCheck size={10} color="#22c55e" />
+                    <Text className="text-[8px] font-black uppercase tracking-widest text-green-600">Verified</Text>
+                  </>
+                ) : (
+                  <>
+                    <AlertCircle size={10} color="#f59e0b" />
+                    <Text className="text-[8px] font-black uppercase tracking-widest text-amber-600">Unverified</Text>
+                  </>
+                )}
+              </View>
+            ) : (
+              <View className="px-2 py-0.5 bg-red-50 border border-red-100 rounded-full">
+                <Text className="text-[8px] font-black uppercase tracking-widest text-red-500">Unverified</Text>
+              </View>
+            )}
+          </View>
+
           <View className="flex-row justify-between items-center">
             <InfoItem label="Mobile Number" value={maskPhone(formData.phone)} />
             <View className="bg-blue-50 px-2 py-1 rounded-md">

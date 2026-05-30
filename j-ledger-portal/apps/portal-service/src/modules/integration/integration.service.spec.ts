@@ -17,6 +17,7 @@ import {
 import { TopupOrderStatus } from '@prisma/client';
 import { HttpException, HttpStatus } from '@nestjs/common';
 import Stripe from 'stripe';
+import { REDIS_CLIENT } from '../../core/common/constants';
 
 const mockStripeInstance = {
   balance: {
@@ -41,6 +42,7 @@ describe('IntegrationService', () => {
   let bannerService: any;
   let httpService: any;
   let configService: any;
+  let redis: any;
 
   beforeEach(async () => {
     prisma = createMockPrismaService();
@@ -59,6 +61,11 @@ describe('IntegrationService', () => {
       FINANCE_SERVICE_URL: 'http://localhost:8081',
       JLEDGER_INTERNAL_SECRET: 'mock_internal_secret',
     });
+    redis = {
+      set: jest.fn(),
+      get: jest.fn(),
+      del: jest.fn(),
+    };
 
     const module: TestingModule = await Test.createTestingModule({
       providers: [
@@ -90,6 +97,10 @@ describe('IntegrationService', () => {
         {
           provide: ConfigService,
           useValue: configService,
+        },
+        {
+          provide: REDIS_CLIENT,
+          useValue: redis,
         },
       ],
     }).compile();
@@ -349,6 +360,118 @@ describe('IntegrationService', () => {
       });
 
       expect(result.transactionId).toBe('txn-p2p-success');
+    });
+  });
+
+  describe('FavoriteRecipients CRUD', () => {
+    describe('getFavoriteRecipients', () => {
+      it('should return all favorite recipients for a user', async () => {
+        const mockFavorites = [
+          { id: 'fav-1', userId: 'user-1', recipientPhone: '0812345678', recipientName: 'Somsri', nickname: 'Mom' },
+        ];
+        prisma.favoriteRecipient.findMany.mockResolvedValue(mockFavorites);
+
+        const result = await service.getFavoriteRecipients('user-1');
+
+        expect(prisma.favoriteRecipient.findMany).toHaveBeenCalledWith({
+          where: { userId: 'user-1' },
+          orderBy: { createdAt: 'desc' },
+        });
+        expect(result).toEqual(mockFavorites);
+      });
+    });
+
+    describe('addFavoriteRecipient', () => {
+      it('should throw HttpException if recipient phone is not registered', async () => {
+        prisma.user.findFirst.mockResolvedValue(null);
+
+        await expect(
+          service.addFavoriteRecipient('user-1', { recipientPhone: '0812345678', nickname: 'Mom' }),
+        ).rejects.toThrow(new HttpException('เบอร์โทรศัพท์ปลายทางไม่ได้ลงทะเบียนในระบบ P-Wallet', HttpStatus.NOT_FOUND));
+      });
+
+      it('should throw HttpException if trying to add oneself', async () => {
+        prisma.user.findFirst.mockResolvedValue({ id: 'user-1', phoneNumber: '0812345678' });
+
+        await expect(
+          service.addFavoriteRecipient('user-1', { recipientPhone: '0812345678', nickname: 'Self' }),
+        ).rejects.toThrow(new HttpException('ไม่สามารถเพิ่มเบอร์ของตนเองเป็นรายการโปรดได้', HttpStatus.BAD_REQUEST));
+      });
+
+      it('should successfully upsert favorite recipient with real name from KYC', async () => {
+        prisma.user.findFirst.mockResolvedValue({ id: 'user-recipient', phoneNumber: '0812345678' });
+        prisma.kYCData.findUnique.mockResolvedValue({ idCardName: 'Somsri Rakdee' });
+        prisma.favoriteRecipient.upsert.mockResolvedValue({ id: 'fav-1' });
+
+        const result = await service.addFavoriteRecipient('user-1', { recipientPhone: '0812345678', nickname: 'Mom' });
+
+        expect(prisma.favoriteRecipient.upsert).toHaveBeenCalledWith({
+          where: {
+            userId_recipientPhone: {
+              userId: 'user-1',
+              recipientPhone: '0812345678',
+            },
+          },
+          update: {
+            recipientName: 'Somsri Rakdee',
+            nickname: 'Mom',
+          },
+          create: {
+            userId: 'user-1',
+            recipientPhone: '0812345678',
+            recipientName: 'Somsri Rakdee',
+            nickname: 'Mom',
+          },
+        });
+        expect(result).toBeDefined();
+      });
+    });
+
+    describe('deleteFavoriteRecipient', () => {
+      it('should throw HttpException if favorite recipient not found', async () => {
+        prisma.favoriteRecipient.findFirst.mockResolvedValue(null);
+
+        await expect(
+          service.deleteFavoriteRecipient('user-1', 'invalid-fav-id'),
+        ).rejects.toThrow(new HttpException('ไม่พบรายการผู้รับที่ชื่นชอบ', HttpStatus.NOT_FOUND));
+      });
+
+      it('should successfully delete favorite recipient', async () => {
+        prisma.favoriteRecipient.findFirst.mockResolvedValue({ id: 'fav-1', userId: 'user-1' });
+        prisma.favoriteRecipient.delete.mockResolvedValue({});
+
+        const result = await service.deleteFavoriteRecipient('user-1', 'fav-1');
+
+        expect(prisma.favoriteRecipient.delete).toHaveBeenCalledWith({
+          where: { id: 'fav-1' },
+        });
+        expect(result.success).toBe(true);
+      });
+    });
+
+    describe('requestStatementExport', () => {
+      it('should throw HttpException if email is not verified', async () => {
+        prisma.user.findUnique.mockResolvedValue({ id: 'user-1', email: 'test@example.com' });
+        prisma.userSetting.findUnique.mockResolvedValue(null); // not verified
+
+        await expect(
+          service.requestStatementExport('user-1', { year: 2026, month: 5 }),
+        ).rejects.toThrow(HttpException);
+      });
+
+      it('should successfully store approval request on verified email', async () => {
+        prisma.user.findUnique.mockResolvedValue({ id: 'user-1', email: 'test@example.com' });
+        prisma.userSetting.findUnique.mockResolvedValue({ key: 'email_verified', value: 'true' });
+        redis.set.mockResolvedValue('OK');
+
+        const result = await service.requestStatementExport('user-1', { year: 2026, month: 5 });
+
+        expect(redis.set).toHaveBeenCalledWith(
+          expect.stringMatching(/^admin:approvals:item:APR-/),
+          expect.stringContaining('"category":"SECURITY"'),
+        );
+        expect(result.success).toBe(true);
+      });
     });
   });
 });

@@ -33,6 +33,7 @@ interface AuthState {
   verifyPin: (pin: string) => Promise<boolean>;
   refreshSession: () => Promise<boolean>;
   unlockWithPin: (pin: string) => Promise<boolean>;
+  unlockWithBiometrics: () => Promise<boolean>;
   lockSession: () => void;
   updateActivity: () => void;
   initialize: () => Promise<void>;
@@ -195,6 +196,20 @@ export const useAuthStore = create<AuthState>((set, get) => ({
       });
     }
     return isValid;
+  },
+
+  unlockWithBiometrics: async (): Promise<boolean> => {
+    if (isWeb) {
+      localStorage.removeItem(SESSION_LOCKED_KEY);
+    } else {
+      await SecureStore.deleteItemAsync(SESSION_LOCKED_KEY);
+    }
+    set({
+      needsPinVerification: false,
+      lastActiveAt: Date.now(),
+      isAuthenticated: true,
+    });
+    return true;
   },
 
   lockSession: async () => {

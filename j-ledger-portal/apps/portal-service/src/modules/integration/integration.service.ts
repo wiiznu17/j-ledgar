@@ -11,6 +11,8 @@ import { Inject, forwardRef } from '@nestjs/common';
 import { LoyaltyService } from '../loyalty/loyalty.service';
 import { BannerService } from '../banners/banner.service';
 import { INTERNAL_API_PATHS } from '@repo/dto';
+import { REDIS_CLIENT } from '../../core/common/constants';
+import Redis from 'ioredis';
 
 @Injectable()
 export class IntegrationService {
@@ -33,6 +35,7 @@ export class IntegrationService {
     private readonly billingService: BillingService,
     private readonly loyaltyService: LoyaltyService,
     private readonly bannerService: BannerService,
+    @Inject(REDIS_CLIENT) private readonly redis: Redis,
   ) {
     this.apiGatewayUrl = this.configService.get<string>(
       'FINANCE_SERVICE_URL',
@@ -950,6 +953,78 @@ export class IntegrationService {
     }
   }
 
+  async getFavoriteRecipients(userId: string): Promise<any[]> {
+    return this.prisma.favoriteRecipient.findMany({
+      where: { userId },
+      orderBy: { createdAt: 'desc' },
+    });
+  }
+
+  async addFavoriteRecipient(
+    userId: string,
+    body: { recipientPhone: string; nickname?: string },
+  ): Promise<any> {
+    const phone = this.normalizePhone(body.recipientPhone);
+    const recipientUser = await this.findUserByPhone(phone);
+    if (!recipientUser) {
+      throw new HttpException(
+        'เบอร์โทรศัพท์ปลายทางไม่ได้ลงทะเบียนในระบบ P-Wallet',
+        HttpStatus.NOT_FOUND,
+      );
+    }
+
+    if (recipientUser.id === userId) {
+      throw new HttpException(
+        'ไม่สามารถเพิ่มเบอร์ของตนเองเป็นรายการโปรดได้',
+        HttpStatus.BAD_REQUEST,
+      );
+    }
+
+    const recipientProfile = await this.prisma.kYCData
+      .findUnique({ where: { userId: recipientUser.id } })
+      .catch(() => null);
+    
+    const recipientName = recipientProfile?.idCardName || phone;
+
+    return this.prisma.favoriteRecipient.upsert({
+      where: {
+        userId_recipientPhone: {
+          userId,
+          recipientPhone: phone,
+        },
+      },
+      update: {
+        recipientName,
+        nickname: body.nickname || null,
+      },
+      create: {
+        userId,
+        recipientPhone: phone,
+        recipientName,
+        nickname: body.nickname || null,
+      },
+    });
+  }
+
+  async deleteFavoriteRecipient(userId: string, id: string): Promise<any> {
+    const favorite = await this.prisma.favoriteRecipient.findFirst({
+      where: { id, userId },
+    });
+
+    if (!favorite) {
+      throw new HttpException(
+        'ไม่พบรายการผู้รับที่ชื่นชอบ',
+        HttpStatus.NOT_FOUND,
+      );
+    }
+
+    await this.prisma.favoriteRecipient.delete({
+      where: { id },
+    });
+
+    return { success: true };
+  }
+
   async processStripeWebhook(signature: string | undefined, rawBody: Buffer) {
     if (!this.stripe) {
       throw new HttpException(
@@ -1315,5 +1390,80 @@ export class IntegrationService {
     return this.prisma.user.findFirst({
       where: { phoneNumber: { in: candidates } },
     });
+  }
+
+  async requestStatementExport(userId: string, body: { year: number; month: number }) {
+    if (!userId) {
+      throw new HttpException(
+        { message: 'Unauthorized' },
+        HttpStatus.UNAUTHORIZED,
+      );
+    }
+
+    const user = await this.prisma.user.findUnique({
+      where: { id: userId },
+    });
+
+    if (!user) {
+      throw new HttpException(
+        { message: 'User not found' },
+        HttpStatus.BAD_REQUEST,
+      );
+    }
+
+    if (!user.email) {
+      throw new HttpException(
+        { message: 'กรุณากรอกและยืนยันที่อยู่อีเมลในโปรไฟล์ก่อนร้องขอประวัติการเดินบัญชี' },
+        HttpStatus.BAD_REQUEST,
+      );
+    }
+
+    // Check if email is verified in UserSetting
+    const verificationSetting = await this.prisma.userSetting.findUnique({
+      where: {
+        userId_key: {
+          userId,
+          key: 'email_verified',
+        },
+      },
+    });
+
+    if (!verificationSetting || verificationSetting.value !== 'true') {
+      throw new HttpException(
+        { message: 'กรุณายันยืนที่อยู่อีเมลในโปรไฟล์ก่อนร้องขอประวัติการเดินบัญชี' },
+        HttpStatus.BAD_REQUEST,
+      );
+    }
+
+    // Create a Maker-Checker Approval Request
+    const id = `APR-${randomUUID()}`;
+    const record = {
+      id,
+      category: 'SECURITY',
+      action: 'EXPORT_STATEMENT',
+      initiatorId: userId,
+      initiatorEmail: user.email,
+      target: 'EXPORT_STATEMENT',
+      payload: {
+        userId,
+        year: body.year,
+        month: body.month,
+        email: user.email,
+      },
+      status: 'PENDING',
+      reason: `Request Statement Export for ${body.month}/${body.year}`,
+      notes: null,
+      createdAt: new Date().toISOString(),
+    };
+
+    // Save key in Redis: admin:approvals:item:APR-...
+    const key = `admin:approvals:item:${id}`;
+    await this.redis.set(key, JSON.stringify(record));
+
+    return {
+      success: true,
+      message: 'ส่งคำขอส่งออกรายการเดินบัญชีเรียบร้อยแล้ว กรุณารอผู้ดูแลระบบอนุมัติ',
+      approvalId: id,
+    };
   }
 }

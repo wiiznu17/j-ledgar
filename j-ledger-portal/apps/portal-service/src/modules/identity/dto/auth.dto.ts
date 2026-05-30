@@ -298,3 +298,39 @@ export class BiometricVerifyDto {
   @IsOptional()
   biometricType?: 'FINGERPRINT' | 'FACE_ID' | 'IRIS' | 'BIOMETRIC';
 }
+
+export class RequestEmailVerifyDto {
+  @IsEmail()
+  @IsNotEmpty()
+  email!: string;
+}
+
+export class ConfirmEmailVerifyDto {
+  @IsEmail()
+  @IsNotEmpty()
+  email!: string;
+
+  @IsString()
+  @Matches(/^\d{6}$/, { message: 'OTP must be a 6-digit number' })
+  otp!: string;
+}
+
+export class ChangePinDto {
+  @IsString()
+  @Matches(/^\d{6}$/, { message: 'PIN must be a 6-digit number' })
+  oldPin!: string;
+
+  @IsString()
+  @Matches(/^\d{6}$/, { message: 'PIN must be a 6-digit number' })
+  newPin!: string;
+}
+
+export class ResetPinDto {
+  @IsString()
+  @Matches(/^\d{6}$/, { message: 'OTP must be a 6-digit number' })
+  otp!: string;
+
+  @IsString()
+  @Matches(/^\d{6}$/, { message: 'PIN must be a 6-digit number' })
+  newPin!: string;
+}

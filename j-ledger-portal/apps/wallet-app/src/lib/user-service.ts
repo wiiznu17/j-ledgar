@@ -28,6 +28,7 @@ export interface UserProfile {
   id: string;
   phoneNumber: string;
   email?: string;
+  emailVerified?: boolean;
   status: string;
   registrationState: string;
   ledgerAccountId?: string;
@@ -96,6 +97,21 @@ export const UserProfileService = {
 
   getPayToken: async (): Promise<{ token: string; expiresAt: string }> => {
     const response = await api.post('/identity/pay-token');
+    return response.data;
+  },
+
+  requestEmailVerification: async (
+    email: string,
+  ): Promise<{ success: boolean; message: string }> => {
+    const response = await api.post('/identity/email/verify-request', { email });
+    return response.data;
+  },
+
+  confirmEmailVerification: async (
+    email: string,
+    otp: string,
+  ): Promise<{ success: boolean; message: string }> => {
+    const response = await api.post('/identity/email/verify-confirm', { email, otp });
     return response.data;
   },
 };

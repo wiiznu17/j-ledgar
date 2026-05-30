@@ -30,6 +30,7 @@ model User {
   userConsents      UserConsent[]
   userDevices       UserDevice[]
   userSettings      UserSetting[]
+  favoriteRecipients FavoriteRecipient[]
 
   @@index([phoneNumber])
   @@index([status])
@@ -275,6 +276,21 @@ model UserSetting {
 
   @@unique([userId, key])
   @@map("user_settings")
+  @@schema("identity")
+}
+
+model FavoriteRecipient {
+  id             String   @id @default(uuid())
+  userId         String
+  recipientPhone String   @db.VarChar(15)
+  recipientName  String?  @db.VarChar(100)
+  nickname       String?  @db.VarChar(50)
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+  user           User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, recipientPhone])
+  @@map("favorite_recipients")
   @@schema("identity")
 }
 

@@ -16,14 +16,15 @@ import { InvoiceView } from '@/components/billing/InvoiceView';
 import ViewShot from 'react-native-view-shot';
 import * as MediaLibrary from 'expo-media-library';
 import * as Haptics from 'expo-haptics';
-import { Download, Share2, Home, CheckCircle2 } from 'lucide-react-native';
+import { Download, Share2, Home, CheckCircle2, Heart } from 'lucide-react-native';
 import { MotiView } from 'moti';
 
 export default function TransferSuccessScreen() {
   const router = useRouter();
-  const { transactionId } = useLocalSearchParams<{ transactionId: string }>();
+  const { transactionId, recipient, recipientName, merchantName } = useLocalSearchParams<any>();
   const viewShotRef = useRef<ViewShot>(null);
   const [isSaving, setIsSaving] = useState(false);
+  const [isSavingFavorite, setIsSavingFavorite] = useState(false);
 
   // Auto-trigger Haptic Success Feedback on mount
   useEffect(() => {
@@ -85,6 +86,23 @@ export default function TransferSuccessScreen() {
       }
     } catch (error) {
       console.error('Failed to share receipt:', error);
+    }
+  };
+
+  const handleSaveFavorite = async () => {
+    try {
+      setIsSavingFavorite(true);
+      await api.post('/api/v1/integration/p2p/favorites', {
+        recipientPhone: recipient,
+        nickname: recipientName,
+      });
+      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+      Alert.alert('Success', 'Added to your favorites!');
+    } catch (error) {
+      console.error('Failed to save favorite:', error);
+      Alert.alert('Error', 'Failed to add favorite.');
+    } finally {
+      setIsSavingFavorite(false);
     }
   };
 
@@ -177,6 +195,26 @@ export default function TransferSuccessScreen() {
                 Share E-Slip
               </Text>
             </TouchableOpacity>
+
+            {!merchantName && recipient && (
+              <TouchableOpacity
+                onPress={handleSaveFavorite}
+                disabled={isSavingFavorite}
+                activeOpacity={0.7}
+                className="w-full h-16 bg-purple-50 border border-purple-100 rounded-2xl flex-row items-center justify-center gap-2 active:scale-95"
+              >
+                {isSavingFavorite ? (
+                  <ActivityIndicator color="#a855f7" />
+                ) : (
+                  <>
+                    <Heart size={18} color="#a855f7" fill="#a855f7" />
+                    <Text className="text-sm font-manrope font-black text-[#a855f7] uppercase tracking-widest">
+                      Save as Favorite
+                    </Text>
+                  </>
+                )}
+              </TouchableOpacity>
+            )}
 
             <TouchableOpacity
               onPress={() => router.replace('/(tabs)')}

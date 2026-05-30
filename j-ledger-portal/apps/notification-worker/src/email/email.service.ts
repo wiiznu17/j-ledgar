@@ -17,13 +17,19 @@ export class EmailService {
     });
   }
 
-  async sendEmail(to: string, subject: string, html: string): Promise<void> {
+  async sendEmail(
+    to: string,
+    subject: string,
+    html: string,
+    attachments?: Array<{ filename: string; content: string | Buffer; contentType?: string }>,
+  ): Promise<void> {
     try {
       await this.transporter.sendMail({
         from: process.env.SMTP_FROM || 'noreply@jledger.io',
         to,
         subject,
         html,
+        attachments,
       });
     } catch (error) {
       console.error('Failed to send email:', error);

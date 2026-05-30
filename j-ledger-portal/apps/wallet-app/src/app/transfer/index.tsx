@@ -39,6 +39,58 @@ export default function TransferScreen() {
   const [recipientNotFound, setRecipientNotFound] = React.useState(false);
   const [merchant, setMerchant] = React.useState<any>(null);
   const [isLoadingMerchant, setIsLoadingMerchant] = React.useState(false);
+  const [favorites, setFavorites] = React.useState<any[]>([]);
+  const [isLoadingFavorites, setIsLoadingFavorites] = React.useState(false);
+
+  React.useEffect(() => {
+    if (!recipient && !(params.merchantId || params.paymentId)) {
+      loadFavorites();
+    }
+  }, [recipient]);
+
+  const loadFavorites = async () => {
+    try {
+      setIsLoadingFavorites(true);
+      const res = await api.get('/integration/p2p/favorites');
+      setFavorites(res.data || []);
+    } catch (err) {
+      console.error('Failed to load favorites:', err);
+    } finally {
+      setIsLoadingFavorites(false);
+    }
+  };
+
+  const handleSelectFavorite = async (phone: string) => {
+    setIsSubmitting(true);
+    setRecipientNotFound(false);
+    
+    // Format phone for search field display
+    const cleaned = phone.replace(/\D/g, '');
+    let formatted = cleaned;
+    if (cleaned.length > 3 && cleaned.length <= 6) {
+      formatted = `${cleaned.slice(0, 3)}-${cleaned.slice(3)}`;
+    } else if (cleaned.length > 6) {
+      formatted = `${cleaned.slice(0, 3)}-${cleaned.slice(3, 6)}-${cleaned.slice(6, 10)}`;
+    }
+    setSearch(formatted);
+
+    try {
+      const res = await api.post('/integration/p2p/preview', {
+        recipientPhone: phone,
+        amount: parseFloat(amount) || 1, // Just for preview
+      });
+      const preview = res.data || {};
+      setRecipient({
+        phone: phone,
+        displayName: preview?.recipient?.displayName || 'Unknown User',
+        phoneMasked: preview?.recipient?.phoneMasked || phone,
+      });
+    } catch (err: any) {
+      setRecipientNotFound(true);
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
 
   React.useEffect(() => {
     // Handle params from QR scan (validated by qr-validation)
@@ -234,6 +286,44 @@ export default function TransferScreen() {
                 />
               )}
             </MotiView>
+
+            {/* Favorite Recipients Horizontal list */}
+            {!recipient && !(params.merchantId || params.paymentId) && favorites.length > 0 && (
+              <MotiView
+                from={{ opacity: 0, translateY: 10 }}
+                animate={{ opacity: 1, translateY: 0 }}
+                className="mb-6"
+              >
+                <Text className="text-[10px] font-manrope font-black text-gray-400 uppercase tracking-widest mb-3 ml-1">
+                  Favorite Contacts
+                </Text>
+                <ScrollView
+                  horizontal
+                  showsHorizontalScrollIndicator={false}
+                  contentContainerStyle={{ gap: 12, paddingLeft: 4 }}
+                >
+                  {favorites.map((fav) => (
+                    <TouchableOpacity
+                      key={fav.id}
+                      onPress={() => handleSelectFavorite(fav.recipientPhone)}
+                      className="items-center w-16 active:scale-95 transition-all"
+                    >
+                      <View className="w-12 h-12 rounded-full bg-purple-50 border border-purple-100 items-center justify-center mb-1 shadow-sm">
+                        <Text className="font-manrope font-black text-purple-500 text-sm">
+                          {(fav.nickname || fav.recipientName || 'U').slice(0, 2).toUpperCase()}
+                        </Text>
+                      </View>
+                      <Text
+                        numberOfLines={1}
+                        className="text-[10px] font-manrope font-black text-gray-600 text-center w-full"
+                      >
+                        {fav.nickname || fav.recipientName}
+                      </Text>
+                    </TouchableOpacity>
+                  ))}
+                </ScrollView>
+              </MotiView>
+            )}
 
             {/* Amount Card */}
             <TransactionAmountCard

@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react';
-import { ActivityIndicator, Text, View } from 'react-native';
+import { ActivityIndicator, Text, View, TouchableOpacity, Alert } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { useFocusEffect } from '@react-navigation/native';
@@ -26,7 +26,31 @@ export default function HistoryScreen() {
   const [isLoadingMore, setIsLoadingMore] = useState(false);
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [error, setError] = useState('');
+  const [showExportModal, setShowExportModal] = useState(false);
+  const [selectedMonth, setSelectedMonth] = useState(new Date().getMonth() + 1);
+  const [selectedYear, setSelectedYear] = useState(new Date().getFullYear());
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  const handleExportStatement = async () => {
+    setIsLoading(true);
+    setShowExportModal(false);
+    try {
+      await api.post('/integration/history/export-request', {
+        year: selectedYear,
+        month: selectedMonth,
+      });
+      Alert.alert(
+        'ส่งคำขอสำเร็จ',
+        'คำร้องขอส่งออกรายการเดินบัญชีของคุณได้รับการส่งให้ผู้ดูแลระบบตรวจสอบแล้ว ไฟล์ PDF จะจัดส่งไปยังอีเมลของคุณเมื่อได้รับการอนุมัติ',
+        [{ text: 'ตกลง' }]
+      );
+    } catch (err: any) {
+      const msg = err.response?.data?.message || 'ไม่สามารถทำรายการได้ กรุณาลองใหม่อีกครั้ง';
+      Alert.alert('เกิดข้อผิดพลาด', msg, [{ text: 'ตกลง' }]);
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   const fetchHistory = useCallback(
     async (targetPage: number, replace = false) => {
@@ -117,7 +141,7 @@ export default function HistoryScreen() {
 
   return (
     <SafeAreaView className="flex-1 bg-transparent" edges={['top']}>
-      <HistoryHeader onBack={() => router.back()} />
+      <HistoryHeader onBack={() => router.back()} onExportPress={() => setShowExportModal(true)} />
 
       <HistoryCategoryTabs
         categories={HISTORY_FILTERS}
@@ -151,6 +175,76 @@ export default function HistoryScreen() {
           });
         }}
       />
+
+      {/* Export Statement Modal */}
+      {showExportModal && (
+        <View className="absolute inset-0 bg-black/40 z-50 items-center justify-center px-6">
+          <View className="bg-white rounded-[2.5rem] w-full max-w-sm p-7 border border-gray-100 shadow-2xl">
+            <Text className="text-xl font-manrope font-black text-gray-800 mb-2 text-center">
+              Request Statement
+            </Text>
+            <Text className="text-xs font-manrope font-bold text-gray-400 mb-8 text-center leading-relaxed">
+              ขอรายการเดินบัญชี PDF จัดส่งทางอีเมลหลังจากแอดมินอนุมัติ
+            </Text>
+
+            {/* Month Selection */}
+            <Text className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-3 px-1">Select Month</Text>
+            <View className="flex-row flex-wrap justify-between gap-y-2 mb-6">
+              {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12].map((m) => (
+                <TouchableOpacity
+                  key={m}
+                  onPress={() => setSelectedMonth(m)}
+                  className={`w-[23%] h-10 rounded-xl items-center justify-center border ${
+                    selectedMonth === m ? 'bg-pink-50 border-pink-200' : 'bg-gray-50 border-gray-100'
+                  }`}
+                >
+                  <Text className={`font-manrope font-bold text-[10px] ${selectedMonth === m ? 'text-[#f48fb1]' : 'text-gray-600'}`}>
+                    {new Date(2000, m - 1, 1).toLocaleString('default', { month: 'short' })}
+                  </Text>
+                </TouchableOpacity>
+              ))}
+            </View>
+
+            {/* Year Selection */}
+            <Text className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-3 px-1">Select Year</Text>
+            <View className="flex-row gap-2 mb-10">
+              {[2025, 2026, 2027].map((yr) => (
+                <TouchableOpacity
+                  key={yr}
+                  onPress={() => setSelectedYear(yr)}
+                  className={`flex-1 h-12 rounded-2xl items-center justify-center border ${
+                    selectedYear === yr ? 'bg-pink-50 border-pink-200' : 'bg-gray-50 border-gray-100'
+                  }`}
+                >
+                  <Text className={`font-manrope font-black text-sm ${selectedYear === yr ? 'text-[#f48fb1]' : 'text-gray-800'}`}>
+                    {yr}
+                  </Text>
+                </TouchableOpacity>
+              ))}
+            </View>
+
+            {/* Action Buttons */}
+            <View className="flex-row gap-3">
+              <TouchableOpacity
+                onPress={() => setShowExportModal(false)}
+                className="flex-1 h-14 bg-gray-50 rounded-2xl border border-gray-100 items-center justify-center active:bg-gray-100"
+              >
+                <Text className="text-gray-500 font-manrope font-black text-xs uppercase tracking-widest">
+                  Cancel
+                </Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                onPress={handleExportStatement}
+                className="flex-1 h-14 bg-[#f48fb1] rounded-2xl items-center justify-center shadow-lg shadow-pink-100 active:scale-95 transition-all"
+              >
+                <Text className="text-white font-manrope font-black text-xs uppercase tracking-widest">
+                  Request
+                </Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </View>
+      )}
     </SafeAreaView>
   );
 }

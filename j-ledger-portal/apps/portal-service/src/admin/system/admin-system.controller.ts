@@ -14,12 +14,13 @@ import { AdminRolesGuard } from '../guards/admin-roles.guard';
 import { AdminPermissionsGuard } from '../guards/admin-permissions.guard';
 import { ReportingService } from '../../modules/reporting/reporting.service';
 import { FinanceService } from '../../modules/integration/finance.service';
-import { AdminPaginatedResponse, Permission } from '@repo/dto';
+import { AdminPaginatedResponse, Permission, KafkaTopic } from '@repo/dto';
 import { Permissions as RequirePermissions } from '../decorators/permissions.decorator';
 import { AuditLog } from '../decorators/audit.decorator';
 import { ResourceType } from '../../modules/audit/audit.service';
 import { REDIS_CLIENT } from '../../core/common/constants';
 import Redis from 'ioredis';
+import { KafkaProducerService } from '../../modules/notification/kafka-producer.service';
 
 @Controller('admin/system')
 @UseGuards(AdminJwtGuard, AdminRolesGuard, AdminPermissionsGuard)
@@ -28,6 +29,7 @@ export class AdminSystemController {
     private readonly reportingService: ReportingService,
     private readonly financeService: FinanceService,
     @Inject(REDIS_CLIENT) private readonly redis: Redis,
+    private readonly kafkaProducer: KafkaProducerService,
   ) {}
 
   @Get('settings')
@@ -195,12 +197,56 @@ export class AdminSystemController {
     }
 
     const current = JSON.parse(raw);
-    if (
-      body.decision === 'APPROVED' &&
-      current.target === 'SYSTEM_SETTINGS' &&
-      current.payload
-    ) {
-      await this.financeService.updateSystemSettings(current.payload);
+    if (body.decision === 'APPROVED') {
+      if (current.target === 'SYSTEM_SETTINGS' && current.payload) {
+        await this.financeService.updateSystemSettings(current.payload);
+      } else if (current.action === 'EXPORT_STATEMENT' && current.payload) {
+        const { userId, year, month, email } = current.payload;
+        
+        // Fetch transactions for the statement period
+        const txs = await this.financeService.getTransactions(userId, {
+          page: 0,
+          size: 100,
+        });
+
+        // Filter transactions by month/year if possible
+        const filteredTxs = txs.filter((t: any) => {
+          if (!t.createdAt) return false;
+          const d = new Date(t.createdAt);
+          return d.getFullYear() === Number(year) && (d.getMonth() + 1) === Number(month);
+        });
+
+        // Format a beautiful text listing of transactions
+        let txText = '';
+        if (filteredTxs.length === 0) {
+          txText = 'No transactions found for this period.';
+        } else {
+          txText = filteredTxs.map((t: any) => {
+            const date = new Date(t.createdAt).toLocaleDateString();
+            const type = t.type || 'TRANSFER';
+            const amount = t.amount ? t.amount.toFixed(2) : '0.00';
+            const direction = t.direction || 'OUT';
+            const note = t.note ? ` (${t.note})` : '';
+            return `${date} | ${type} | ${direction} | ${amount} THB${note}`;
+          }).join('\n');
+        }
+
+        // Generate mock PDF attachment
+        const title = `P-Wallet Statement - ${month}/${year}`;
+        const content = `User ID: ${userId}\nStatement Period: ${month}/${year}\n\nTransactions:\n---------------------------------\n${txText}`;
+        
+        // We will emit the security event, and the notification-worker will send the email with this statement content!
+        await this.kafkaProducer.emit(KafkaTopic.SECURITY_EVENTS, {
+          userId,
+          eventType: 'STATEMENT_EXPORT_READY',
+          metadata: {
+            email,
+            year,
+            month,
+            statementText: content,
+          },
+        });
+      }
     }
 
     const updated = {

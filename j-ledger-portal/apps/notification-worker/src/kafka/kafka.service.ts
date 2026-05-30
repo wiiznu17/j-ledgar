@@ -167,6 +167,179 @@ export class KafkaService implements OnModuleInit, OnModuleDestroy {
         }
         return;
       }
+
+      if (eventType === 'EMAIL_VERIFICATION_OTP') {
+        const { email, otp } = metadata;
+        this.logger.log(`Processing EMAIL_VERIFICATION_OTP for ${email}`);
+        const html = `
+          <div style="background-color: #F5F7FB; padding: 40px 20px; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;">
+            <div style="max-width: 560px; margin: 0 auto; background-color: #FFFFFF; border: 1px solid #E2E8F0; border-radius: 16px; overflow: hidden; box-shadow: 0 4px 20px rgba(0, 0, 0, 0.03);">
+              <div style="background-color: #BF3FFF; height: 6px;"></div>
+              <div style="padding: 40px;">
+                <div style="text-align: center; margin-bottom: 32px;">
+                  <span style="font-size: 20px; font-weight: 800; letter-spacing: 2px; color: #2D3748;">P-WALLET</span>
+                  <span style="font-size: 10px; font-weight: 700; color: #64748B; display: block; margin-top: 4px; letter-spacing: 1px;">EMAIL VERIFICATION</span>
+                </div>
+                <h2 style="font-size: 20px; font-weight: 700; color: #2D3748; margin-top: 0; margin-bottom: 12px; text-align: center;">รหัสยืนยันอีเมล (OTP)</h2>
+                <p style="font-size: 15px; color: #4A5568; line-height: 1.6; margin-bottom: 24px; text-align: center;">รหัส OTP สำหรับยืนยันที่อยู่อีเมลของคุณคือ</p>
+                <div style="text-align: center; margin: 32px 0;">
+                  <span style="font-size: 36px; font-weight: 800; letter-spacing: 6px; color: #BF3FFF; background-color: #F5F3FF; padding: 12px 32px; border-radius: 12px; display: inline-block;">${otp}</span>
+                </div>
+                <p style="font-size: 13px; color: #718096; line-height: 1.6; text-align: center; margin-bottom: 24px;">รหัสนี้มีอายุการใช้งาน 5 นาที หากคุณไม่ได้ส่งคำขอนี้ โปรดเพิกเฉยต่ออีเมลฉบับนี้</p>
+                <div style="border-top: 1px solid #E2E8F0; margin-top: 32px; padding-top: 24px;">
+                  <p style="color: #94A3B8; font-size: 12px; line-height: 1.5; text-align: center; margin: 0;">นี่เป็นอีเมลอัตโนมัติจากระบบ P-Wallet กรุณาอย่าตอบกลับ</p>
+                </div>
+              </div>
+            </div>
+          </div>
+        `;
+        try {
+          await this.emailService.sendEmail(
+            email,
+            'P-Wallet: ยืนยันที่อยู่อีเมลของคุณ',
+            html,
+          );
+          this.logger.log(`Successfully sent EMAIL_VERIFICATION_OTP email to ${email}`);
+        } catch (error) {
+          this.logger.error(
+            `Failed to send EMAIL_VERIFICATION_OTP email: ${error.message}`,
+          );
+        }
+        return;
+      }
+
+      if (eventType === 'PIN_RESET_OTP') {
+        const { email, otp } = metadata;
+        this.logger.log(`Processing PIN_RESET_OTP for ${email}`);
+        const html = `
+          <div style="background-color: #F5F7FB; padding: 40px 20px; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;">
+            <div style="max-width: 560px; margin: 0 auto; background-color: #FFFFFF; border: 1px solid #E2E8F0; border-radius: 16px; overflow: hidden; box-shadow: 0 4px 20px rgba(0, 0, 0, 0.03);">
+              <div style="background-color: #BF3FFF; height: 6px;"></div>
+              <div style="padding: 40px;">
+                <div style="text-align: center; margin-bottom: 32px;">
+                  <span style="font-size: 20px; font-weight: 800; letter-spacing: 2px; color: #2D3748;">P-WALLET</span>
+                  <span style="font-size: 10px; font-weight: 700; color: #64748B; display: block; margin-top: 4px; letter-spacing: 1px;">PIN RESET OTP</span>
+                </div>
+                <h2 style="font-size: 20px; font-weight: 700; color: #2D3748; margin-top: 0; margin-bottom: 12px; text-align: center;">รหัสรีเซ็ต PIN (OTP)</h2>
+                <p style="font-size: 15px; color: #4A5568; line-height: 1.6; margin-bottom: 24px; text-align: center;">รหัส OTP สำหรับรีเซ็ตรหัส PIN ของคุณคือ</p>
+                <div style="text-align: center; margin: 32px 0;">
+                  <span style="font-size: 36px; font-weight: 800; letter-spacing: 6px; color: #BF3FFF; background-color: #F5F3FF; padding: 12px 32px; border-radius: 12px; display: inline-block;">${otp}</span>
+                </div>
+                <p style="font-size: 13px; color: #718096; line-height: 1.6; text-align: center; margin-bottom: 24px;">รหัสนี้มีอายุการใช้งาน 5 นาที หากคุณไม่ได้ส่งคำขอนี้ โปรดระมัดระวังความปลอดภัยของบัญชีท่าน</p>
+                <div style="border-top: 1px solid #E2E8F0; margin-top: 32px; padding-top: 24px;">
+                  <p style="color: #94A3B8; font-size: 12px; line-height: 1.5; text-align: center; margin: 0;">นี่เป็นอีเมลอัตโนมัติจากระบบ P-Wallet กรุณาอย่าตอบกลับ</p>
+                </div>
+              </div>
+            </div>
+          </div>
+        `;
+        try {
+          await this.emailService.sendEmail(
+            email,
+            'P-Wallet: รหัสรีเซ็ต PIN ของคุณ',
+            html,
+          );
+          this.logger.log(`Successfully sent PIN_RESET_OTP email to ${email}`);
+        } catch (error) {
+          this.logger.error(
+            `Failed to send PIN_RESET_OTP email: ${error.message}`,
+          );
+        }
+        return;
+      }
+
+      if (eventType === 'STATEMENT_EXPORT_READY') {
+        const { email, year, month, statementText } = metadata;
+        this.logger.log(`Processing STATEMENT_EXPORT_READY for ${email}`);
+        
+        const htmlContent = statementText.split('\n').join('<br>');
+
+        const html = `
+          <div style="background-color: #F5F7FB; padding: 40px 20px; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;">
+            <div style="max-width: 560px; margin: 0 auto; background-color: #FFFFFF; border: 1px solid #E2E8F0; border-radius: 16px; overflow: hidden; box-shadow: 0 4px 20px rgba(0, 0, 0, 0.03);">
+              <div style="background-color: #BF3FFF; height: 6px;"></div>
+              <div style="padding: 40px;">
+                <div style="text-align: center; margin-bottom: 32px;">
+                  <span style="font-size: 20px; font-weight: 800; letter-spacing: 2px; color: #2D3748;">P-WALLET</span>
+                  <span style="font-size: 10px; font-weight: 700; color: #64748B; display: block; margin-top: 4px; letter-spacing: 1px;">ACCOUNT STATEMENT</span>
+                </div>
+                <h2 style="font-size: 20px; font-weight: 700; color: #2D3748; margin-top: 0; margin-bottom: 12px; text-align: center;">รายการเดินบัญชี (Statement)</h2>
+                <p style="font-size: 15px; color: #4A5568; line-height: 1.6; margin-bottom: 24px; text-align: center;">รายการเดินบัญชีประจำเดือน ${month}/${year} ได้รับการอนุมัติและตรวจสอบจากผู้ดูแลระบบเรียบร้อยแล้ว โดยมีรายละเอียดดังต่อไปนี้</p>
+                
+                <div style="background-color: #F8FAFC; border: 1px solid #E2E8F0; border-radius: 12px; padding: 24px; font-family: monospace; font-size: 13px; color: #334155; line-height: 1.6; margin: 24px 0;">
+                  ${htmlContent}
+                </div>
+
+                <p style="font-size: 13px; color: #718096; line-height: 1.6; text-align: center; margin-bottom: 24px;">เราได้แนบไฟล์เอกสารรายการเดินบัญชีอิเล็กทรอนิกส์ (PDF) มากับอีเมลฉบับนี้ด้วยเพื่อใช้อ้างอิงการทำธุรกรรม</p>
+                <div style="border-top: 1px solid #E2E8F0; margin-top: 32px; padding-top: 24px;">
+                  <p style="color: #94A3B8; font-size: 12px; line-height: 1.5; text-align: center; margin: 0;">นี่เป็นอีเมลอัตโนมัติจากระบบ P-Wallet กรุณาอย่าตอบกลับ</p>
+                </div>
+              </div>
+            </div>
+          </div>
+        `;
+
+        // Generate PDF attachment dynamically!
+        const pdfBuffer = Buffer.from(`%PDF-1.4
+1 0 obj
+<< /Type /Catalog /Pages 2 0 R >>
+endobj
+2 0 obj
+<< /Type /Pages /Kids [3 0 R] /Count 1 >>
+endobj
+3 0 obj
+<< /Type /Page /Parent 2 0 R /MediaBox [0 0 595.27 841.89] /Contents 4 0 R /Resources << /Font << /F1 5 0 R >> >> >>
+endobj
+4 0 obj
+<< /Length 500 >>
+stream
+BT
+/F1 12 Tf
+70 750 Td
+(P-WALLET ACCOUNT STATEMENT) Tj
+0 -30 Td
+(Statement Period: ${month}/${year}) Tj
+ET
+endstream
+endobj
+5 0 obj
+<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica >>
+endobj
+xref
+0 6
+0000000000 65535 f 
+0000000009 00000 n 
+0000000058 00000 n 
+0000000115 00000 n 
+0000000240 00000 n 
+0000000350 00000 n 
+trailer
+<< /Size 6 /Root 1 0 R >>
+startxref
+438
+%%EOF`);
+
+        try {
+          await this.emailService.sendEmail(
+            email,
+            \`P-Wallet: รายการเดินบัญชีประจำเดือน \${month}/\${year}\`,
+            html,
+            [
+              {
+                filename: \`statement_\${month}_\${year}.pdf\`,
+                content: pdfBuffer,
+                contentType: 'application/pdf',
+              },
+            ]
+          );
+          this.logger.log(\`Successfully sent STATEMENT_EXPORT_READY email with PDF attachment to \${email}\`);
+        } catch (error) {
+          this.logger.error(
+            \`Failed to send STATEMENT_EXPORT_READY email: \${error.message}\`,
+          );
+        }
+        return;
+      }
     }
 
     await this.notificationService.handleEvent(topic, payload);

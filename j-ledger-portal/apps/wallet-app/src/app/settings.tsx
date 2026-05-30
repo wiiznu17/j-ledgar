@@ -24,12 +24,14 @@ import { useRouter } from 'expo-router';
 import { MotiView } from 'moti';
 import { Header } from '@/components/common/Header';
 import { GlassPanel } from '@/components/common/GlassPanel';
+import { useAuthStore } from '../store/auth';
 
 const { width } = Dimensions.get('window');
 
 export default function SettingsScreen() {
   const [isDarkMode, setIsDarkMode] = React.useState(false);
-  const [isBiometric, setIsBiometric] = React.useState(true);
+  const biometricEnabled = useAuthStore((state) => state.biometricEnabled);
+  const setBiometricEnabled = useAuthStore((state) => state.setBiometricEnabled);
   const router = useRouter();
 
   const renderSettingItem = (
@@ -37,13 +39,19 @@ export default function SettingsScreen() {
     title: string,
     subtitle?: string,
     rightElement?: React.ReactNode,
+    onPress?: () => void,
   ) => (
-    <View className="flex-row items-center justify-between py-5 border-b border-outline-variant/10">
+    <TouchableOpacity
+      disabled={!onPress}
+      onPress={onPress}
+      activeOpacity={0.7}
+      className="flex-row items-center justify-between py-5 border-b border-outline-variant/10"
+    >
       <View className="flex-row items-center gap-5">
         <View className="w-12 h-12 rounded-2xl bg-[#eff0f7] items-center justify-center border border-outline-variant/5">
           {React.cloneElement(icon, { size: 22, color: '#4855a5' })}
         </View>
-        <View>
+        <View className="flex-1">
           <Text className="text-base font-manrope font-black text-on-surface">
             {title}
           </Text>
@@ -59,7 +67,7 @@ export default function SettingsScreen() {
       ) : (
         <ChevronRight size={18} color="#4855a530" />
       )}
-    </View>
+    </TouchableOpacity>
   );
 
   return (
@@ -109,14 +117,16 @@ export default function SettingsScreen() {
             <Lock />,
             'Change Secret PIN',
             'Update your 6-digit access',
+            undefined,
+            () => router.push('/profile/change-pin' as any),
           )}
           {renderSettingItem(
             <Fingerprint />,
             'Biometrics',
             'Face ID & Touch ID',
             <Switch
-              value={isBiometric}
-              onValueChange={setIsBiometric}
+              value={biometricEnabled}
+              onValueChange={setBiometricEnabled}
               trackColor={{ false: '#e2e8f0', true: '#4855a5' }}
               thumbColor="#fff"
             />,

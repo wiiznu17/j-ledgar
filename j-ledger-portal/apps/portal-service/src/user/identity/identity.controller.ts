@@ -30,6 +30,10 @@ import {
   RegisterProfileDto,
   RegisterVerifyOtpDto,
   WithdrawConsentDto,
+  RequestEmailVerifyDto,
+  ConfirmEmailVerifyDto,
+  ChangePinDto,
+  ResetPinDto,
 } from '../../modules/identity/dto/auth.dto';
 import { UpdateAddressDto } from '../../modules/identity/dto/address.dto';
 import type { Request } from 'express';
@@ -239,6 +243,44 @@ export class IdentityController {
   }
 
   @UseGuards(JwtAuthGuard)
+  @Post('pin/change')
+  @HttpCode(HttpStatus.OK)
+  async changePin(
+    @Body() body: ChangePinDto,
+    @Req() req: AuthenticatedRequest,
+  ) {
+    if (!req.user?.sub) {
+      throw new UnauthorizedException('User is not authenticated');
+    }
+    return this.identityService.changePin(req.user.sub, body);
+  }
+
+  @UseGuards(JwtAuthGuard)
+  @Post('pin/reset-request')
+  @HttpCode(HttpStatus.OK)
+  async resetPinRequest(
+    @Req() req: AuthenticatedRequest,
+  ) {
+    if (!req.user?.sub) {
+      throw new UnauthorizedException('User is not authenticated');
+    }
+    return this.identityService.resetPinRequest(req.user.sub);
+  }
+
+  @UseGuards(JwtAuthGuard)
+  @Post('pin/reset')
+  @HttpCode(HttpStatus.OK)
+  async resetPin(
+    @Body() body: ResetPinDto,
+    @Req() req: AuthenticatedRequest,
+  ) {
+    if (!req.user?.sub) {
+      throw new UnauthorizedException('User is not authenticated');
+    }
+    return this.identityService.resetPin(req.user.sub, body);
+  }
+
+  @UseGuards(JwtAuthGuard)
   @Post('biometric/challenge')
   @HttpCode(HttpStatus.OK)
   @Throttle({
@@ -382,6 +424,34 @@ export class IdentityController {
       ip: req.ip,
       userAgent: this.singleHeader(req.headers['user-agent']),
     });
+  }
+
+  @UseGuards(JwtAuthGuard)
+  @Post('email/verify-request')
+  @HttpCode(HttpStatus.OK)
+  @Throttle({ default: { limit: 3, ttl: 60000 } })
+  async requestEmailVerification(
+    @Req() req: AuthenticatedRequest,
+    @Body() body: RequestEmailVerifyDto,
+  ) {
+    if (!req.user?.sub) {
+      throw new UnauthorizedException('User is not authenticated');
+    }
+    return this.identityService.requestEmailVerification(req.user.sub, body.email);
+  }
+
+  @UseGuards(JwtAuthGuard)
+  @Post('email/verify-confirm')
+  @HttpCode(HttpStatus.OK)
+  @Throttle({ default: { limit: 5, ttl: 60000 } })
+  async confirmEmailVerification(
+    @Req() req: AuthenticatedRequest,
+    @Body() body: ConfirmEmailVerifyDto,
+  ) {
+    if (!req.user?.sub) {
+      throw new UnauthorizedException('User is not authenticated');
+    }
+    return this.identityService.confirmEmailVerification(req.user.sub, body.email, body.otp);
   }
 
   @UseGuards(JwtAuthGuard)

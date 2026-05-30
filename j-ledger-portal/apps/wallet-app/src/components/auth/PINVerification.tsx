@@ -6,12 +6,18 @@ import {
   ActivityIndicator,
   Alert,
 } from 'react-native';
-import { Lock, AlertTriangle, Clock } from 'lucide-react-native';
+import { useRouter } from 'expo-router';
+import { Lock, AlertTriangle, Clock, Fingerprint } from 'lucide-react-native';
 import { PINLayout, PINBackButton } from '../common/PINLayout';
 import { PINInput } from '../common/PINInput';
 import { useAuthStore } from '../../store/auth';
 import { Palette } from '@/constants/theme';
 import { useScreenCaptureProtection } from '@/hooks/useScreenCaptureProtection';
+import {
+  isBiometricAvailable,
+  isBiometricEnrolled,
+  authenticateWithBiometric,
+} from '../../lib/biometric-auth';
 
 interface PINVerificationProps {
   onSuccess: () => void;
@@ -34,6 +40,7 @@ export const PINVerification: React.FC<PINVerificationProps> = ({
   // Prevent screen capture on PIN verification
   useScreenCaptureProtection();
 
+  const router = useRouter();
   const [pin, setPin] = useState('');
   const [isVerifying, setIsVerifying] = useState(false);
   const [attempts, setAttempts] = useState(0);
@@ -46,6 +53,41 @@ export const PINVerification: React.FC<PINVerificationProps> = ({
   );
   const verifyPin = useAuthStore((state) => state.verifyPin);
   const unlockWithPin = useAuthStore((state) => state.unlockWithPin);
+  const biometricEnabled = useAuthStore((state) => state.biometricEnabled);
+  const [biometricAvailable, setBiometricAvailable] = useState(false);
+
+  useEffect(() => {
+    const checkBiometric = async () => {
+      const available = await isBiometricAvailable();
+      const enrolled = await isBiometricEnrolled();
+      setBiometricAvailable(available && enrolled);
+    };
+    checkBiometric();
+  }, []);
+
+  const handleBiometricAuth = async () => {
+    if (isVerifying || isSuspended) return;
+    try {
+      const result = await authenticateWithBiometric();
+      if (result.success) {
+        if (useUnlock) {
+          await useAuthStore.getState().unlockWithBiometrics();
+        }
+        onSuccess();
+      }
+    } catch (err) {
+      console.warn('[Biometric] Auth error:', err);
+    }
+  };
+
+  useEffect(() => {
+    if (useUnlock && biometricEnabled && biometricAvailable) {
+      const timer = setTimeout(() => {
+        handleBiometricAuth();
+      }, 800);
+      return () => clearTimeout(timer);
+    }
+  }, [biometricEnabled, biometricAvailable]);
 
   // Update remaining suspension time
   React.useEffect(() => {
@@ -217,6 +259,21 @@ export const PINVerification: React.FC<PINVerificationProps> = ({
             onComplete={handlePINComplete}
           />
 
+          {/* Biometrics quick trigger icon */}
+          {biometricEnabled && biometricAvailable && (
+            <View className="items-center mt-4 mb-2">
+              <TouchableOpacity
+                onPress={handleBiometricAuth}
+                className="w-12 h-12 bg-pink-50 rounded-full items-center justify-center border border-pink-100 shadow-sm active:bg-pink-100"
+              >
+                <Fingerprint size={24} color={Palette.primary.DEFAULT} />
+              </TouchableOpacity>
+              <Text className="text-[10px] font-manrope font-bold text-gray-400 mt-2 uppercase tracking-wider">
+                Tap to scan face / fingerprint
+              </Text>
+            </View>
+          )}
+
           {/* Attempts Counter */}
           {attempts > 0 && (
             <View className="mt-8 items-center">
@@ -238,6 +295,16 @@ export const PINVerification: React.FC<PINVerificationProps> = ({
               </Text>
             </View>
           )}
+
+          {/* Forgot PIN Link */}
+          <TouchableOpacity
+            onPress={() => router.push('/profile/reset-pin' as any)}
+            className="mt-6 items-center"
+          >
+            <Text className="text-[#f48fb1] font-manrope font-bold text-xs underline">
+              Forgot PIN? / ลืมรหัส PIN?
+            </Text>
+          </TouchableOpacity>
         </View>
       )}
     </PINLayout>

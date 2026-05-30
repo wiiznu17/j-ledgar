@@ -25,6 +25,7 @@ interface FormData {
   avatar: any;
   phone: string;
   email: string;
+  emailVerified: boolean;
   kycTier: string;
   idNumber: string;
   dob: string;
@@ -63,6 +64,7 @@ const DEFAULT_FORM_DATA: FormData = {
   avatar: require('../../../assets/images/logo/logo.png'),
   phone: '',
   email: '',
+  emailVerified: false,
   kycTier: 'Standard',
   idNumber: '',
   dob: '',
@@ -118,6 +120,7 @@ export default function ProfileInformationScreen() {
             : `${profile.profile?.firstName || ''} ${profile.profile?.lastName || ''}`.trim(),
         phone: profile.phoneNumber || '',
         email: profile.email || '',
+        emailVerified: !!profile.emailVerified,
         kycTier:
           profile.registrationState === RegistrationState.COMPLETED
             ? 'Premium Tier'

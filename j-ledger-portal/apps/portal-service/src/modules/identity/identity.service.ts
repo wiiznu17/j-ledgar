@@ -2068,6 +2068,130 @@ export class IdentityService {
     return this.generateAuthResponse(user, device?.id, null, true);
   }
 
+  async changePin(userId: string, dto: any) {
+    const user = await this.prisma.user.findUnique({
+      where: { id: userId },
+    });
+
+    if (!user) {
+      throw new BadRequestException('User not found');
+    }
+
+    if (!user.pinHash) {
+      throw new BadRequestException('PIN not set');
+    }
+
+    const isPinValid = await bcrypt.compare(dto.oldPin, user.pinHash);
+    if (!isPinValid) {
+      throw new BadRequestException('รหัส PIN เดิมไม่ถูกต้อง');
+    }
+
+    const pinHash = await bcrypt.hash(dto.newPin, 10);
+    await this.prisma.user.update({
+      where: { id: userId },
+      data: {
+        pinHash,
+        pinAttempts: 0,
+        pinLockedUntil: null,
+      },
+    });
+
+    await this.logSecurityEvent(userId, NotificationEventType.PIN_SETUP, { action: 'change' });
+    return { success: true, message: 'เปลี่ยนรหัส PIN เรียบร้อยแล้ว' };
+  }
+
+  async resetPinRequest(userId: string) {
+    const user = await this.prisma.user.findUnique({
+      where: { id: userId },
+    });
+
+    if (!user) {
+      throw new BadRequestException('User not found');
+    }
+
+    if (!user.email) {
+      throw new BadRequestException('กรุณายืนยันอีเมลในระบบก่อนทำรายการรีเซ็ต PIN');
+    }
+
+    // Check if email is verified
+    const verificationSetting = await this.prisma.userSetting.findUnique({
+      where: {
+        userId_key: {
+          userId,
+          key: 'email_verified',
+        },
+      },
+    });
+
+    if (!verificationSetting || verificationSetting.value !== 'true') {
+      throw new BadRequestException('กรุณายืนยันอีเมลในระบบก่อนทำรายการรีเซ็ต PIN');
+    }
+
+    // Generate 6-digit OTP code
+    const otp = Math.floor(100000 + Math.random() * 900000).toString();
+
+    // Store in Redis with 5 minutes TTL
+    const redisKey = `pin_reset:otp:${userId}`;
+    await this.redis.set(
+      redisKey,
+      JSON.stringify({ email: user.email, otp }),
+      'EX',
+      300,
+    );
+
+    // Emit event to Kafka for sending mail
+    await this.kafkaProducer.emit(KafkaTopic.SECURITY_EVENTS, {
+      userId,
+      eventType: 'PIN_RESET_OTP',
+      metadata: {
+        email: user.email,
+        otp,
+      },
+    });
+
+    this.logger.log(`[ResetPIN] Generated reset OTP for user ${userId}: ${otp}`);
+    return { success: true, message: 'ส่งรหัส OTP สำหรับรีเซ็ต PIN ไปยังอีเมลของท่านแล้ว' };
+  }
+
+  async resetPin(userId: string, dto: any) {
+    const user = await this.prisma.user.findUnique({
+      where: { id: userId },
+    });
+
+    if (!user) {
+      throw new BadRequestException('User not found');
+    }
+
+    const redisKey = `pin_reset:otp:${userId}`;
+    const otpDataString = await this.redis.get(redisKey);
+
+    if (!otpDataString) {
+      throw new BadRequestException('รหัส OTP หมดอายุหรือไม่มีความถูกต้อง');
+    }
+
+    const { otp } = JSON.parse(otpDataString);
+    if (otp !== dto.otp) {
+      throw new BadRequestException('รหัส OTP ไม่ถูกต้อง');
+    }
+
+    // Delete from Redis
+    await this.redis.del(redisKey);
+
+    // Update PIN
+    const pinHash = await bcrypt.hash(dto.newPin, 10);
+    await this.prisma.user.update({
+      where: { id: userId },
+      data: {
+        pinHash,
+        pinAttempts: 0,
+        pinLockedUntil: null,
+      },
+    });
+
+    await this.logSecurityEvent(userId, NotificationEventType.PIN_SETUP, { action: 'reset' });
+    return { success: true, message: 'รีเซ็ตรหัส PIN เรียบร้อยแล้ว' };
+  }
+
   private async generateAuthResponse(
     user: any,
     deviceId?: string,
@@ -2147,7 +2271,7 @@ export class IdentityService {
         where: { id: userId },
         include: {
           userSettings: {
-            where: { key: 'profile' },
+            where: { key: { in: ['profile', 'email_verified'] } },
           },
         },
       }),
@@ -2165,7 +2289,10 @@ export class IdentityService {
       throw new BadRequestException('User not found');
     }
 
-    const profileSetting = user.userSettings[0];
+    const profileSetting = user.userSettings.find((s) => s.key === 'profile');
+    const emailVerifiedSetting = user.userSettings.find((s) => s.key === 'email_verified');
+    const emailVerified = emailVerifiedSetting?.value === 'true';
+
     let profileData: any = {};
 
     if (profileSetting) {
@@ -2184,6 +2311,7 @@ export class IdentityService {
       id: user.id,
       phoneNumber: user.phoneNumber,
       email: user.email,
+      emailVerified,
       status: user.status,
       registrationState: user.registrationState,
       ledgerAccountId: user.ledgerAccountId,
@@ -2359,6 +2487,108 @@ export class IdentityService {
     return {
       token,
       expiresAt,
+    };
+  }
+
+  async requestEmailVerification(userId: string, email: string): Promise<{ success: boolean; message: string }> {
+    // 1. Check if email is already in use by another user
+    const existingUser = await this.prisma.user.findFirst({
+      where: { email, id: { not: userId } },
+    });
+    if (existingUser) {
+      throw new BadRequestException('Email address is already in use by another account');
+    }
+
+    // 2. Generate a 6-digit OTP
+    const otp = Math.floor(100000 + Math.random() * 900000).toString();
+    const ttlSeconds = 300; // 5 minutes
+
+    // 3. Store OTP in Redis
+    const redisKey = `email_verification:otp:${userId}`;
+    await this.redis.set(redisKey, JSON.stringify({ email, otp }), 'EX', ttlSeconds);
+    this.logger.log(`Generated email verification OTP for user ${userId} to email ${email}`);
+
+    // 4. Emit Kafka Event for notification worker to send email
+    try {
+      await this.kafkaProducer.emit(KafkaTopic.SECURITY_EVENTS, {
+        userId,
+        eventType: 'EMAIL_VERIFICATION_OTP',
+        metadata: {
+          email,
+          otp,
+        },
+        timestamp: new Date().toISOString(),
+        referenceId: `email-verify-${Date.now()}`,
+      });
+      this.logger.log(`Published EMAIL_VERIFICATION_OTP event to Kafka for user ${userId}`);
+    } catch (error) {
+      this.logger.error(`Failed to publish EMAIL_VERIFICATION_OTP event: ${error.message}`);
+      throw new InternalServerErrorException('Failed to process email verification request');
+    }
+
+    return {
+      success: true,
+      message: 'Verification OTP sent to your email',
+    };
+  }
+
+  async confirmEmailVerification(userId: string, email: string, otp: string): Promise<{ success: boolean; message: string }> {
+    const redisKey = `email_verification:otp:${userId}`;
+    const rawData = await this.redis.get(redisKey);
+
+    if (!rawData) {
+      throw new BadRequestException('OTP has expired or was not requested');
+    }
+
+    const { email: storedEmail, otp: storedOtp } = JSON.parse(rawData);
+
+    if (storedOtp !== otp) {
+      throw new BadRequestException('Invalid verification code');
+    }
+
+    if (storedEmail.toLowerCase() !== email.toLowerCase()) {
+      throw new BadRequestException('Email address mismatch');
+    }
+
+    // Check again if the email was taken while waiting
+    const existingUser = await this.prisma.user.findFirst({
+      where: { email, id: { not: userId } },
+    });
+    if (existingUser) {
+      throw new BadRequestException('Email address is already in use by another account');
+    }
+
+    // Clean up Redis
+    await this.redis.del(redisKey);
+
+    // Update User Email & UserSetting
+    await this.prisma.$transaction(async (tx) => {
+      await tx.user.update({
+        where: { id: userId },
+        data: { email },
+      });
+
+      await tx.userSetting.upsert({
+        where: {
+          userId_key: {
+            userId,
+            key: 'email_verified',
+          },
+        },
+        update: { value: 'true' },
+        create: {
+          userId,
+          key: 'email_verified',
+          value: 'true',
+        },
+      });
+    });
+
+    this.logger.log(`User ${userId} successfully verified email ${email}`);
+
+    return {
+      success: true,
+      message: 'Email address verified successfully',
     };
   }
 

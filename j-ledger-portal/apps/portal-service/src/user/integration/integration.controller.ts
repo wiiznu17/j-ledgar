@@ -104,6 +104,27 @@ export class IntegrationController {
     return this.integrationService.transferP2P(userId, body);
   }
 
+  @Get('p2p/favorites')
+  async getFavoriteRecipients(@Req() req: any) {
+    const userId = req.user?.sub;
+    return this.integrationService.getFavoriteRecipients(userId);
+  }
+
+  @Post('p2p/favorites')
+  async addFavoriteRecipient(
+    @Req() req: any,
+    @Body() body: { recipientPhone: string; nickname?: string },
+  ) {
+    const userId = req.user?.sub;
+    return this.integrationService.addFavoriteRecipient(userId, body);
+  }
+
+  @Delete('p2p/favorites/:id')
+  async deleteFavoriteRecipient(@Req() req: any, @Param('id') id: string) {
+    const userId = req.user?.sub;
+    return this.integrationService.deleteFavoriteRecipient(userId, id);
+  }
+
   // ==================== Transaction History ====================
 
   @Get('history')
@@ -130,5 +151,14 @@ export class IntegrationController {
   ) {
     const userId = req.user?.sub;
     return this.integrationService.getTransactionDetails(transactionId, userId);
+  }
+
+  @Post('history/export-request')
+  async requestStatementExport(
+    @Req() req: any,
+    @Body() body: { year: number; month: number },
+  ) {
+    const userId = req.user?.sub;
+    return this.integrationService.requestStatementExport(userId, body);
   }
 }

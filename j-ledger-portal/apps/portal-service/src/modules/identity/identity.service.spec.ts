@@ -15,7 +15,7 @@ import {
   createMockFinanceService,
 } from '../../__tests__/test-utils';
 import { ConflictException, UnauthorizedException, BadRequestException, ForbiddenException } from '@nestjs/common';
-import { RegistrationState, UserStatus } from '@repo/dto';
+import { RegistrationState, UserStatus, KafkaTopic } from '@repo/dto';
 import * as bcrypt from 'bcryptjs';
 
 jest.mock('bcryptjs', () => ({
@@ -355,6 +355,226 @@ describe('IdentityService', () => {
 
       expect(result.token).toMatch(/^PAY-[A-Z0-9]{16}$/);
       expect(result.expiresAt).toBeDefined();
+    });
+  });
+
+  describe('emailVerification', () => {
+    describe('requestEmailVerification', () => {
+      it('should throw BadRequestException if email is already taken by another user', async () => {
+        prisma.user.findFirst.mockResolvedValue({ id: 'other-user', email: 'taken@example.com' });
+
+        await expect(
+          service.requestEmailVerification('user-1', 'taken@example.com'),
+        ).rejects.toThrow(BadRequestException);
+      });
+
+      it('should store OTP in Redis and emit Kafka event on success', async () => {
+        prisma.user.findFirst.mockResolvedValue(null);
+        redis.set.mockResolvedValue('OK');
+        kafkaProducer.emit.mockResolvedValue(undefined);
+
+        const result = await service.requestEmailVerification('user-1', 'test@example.com');
+
+        expect(redis.set).toHaveBeenCalledWith(
+          'email_verification:otp:user-1',
+          expect.stringContaining('test@example.com'),
+          'EX',
+          300,
+        );
+
+        expect(kafkaProducer.emit).toHaveBeenCalledWith(
+          expect.any(String),
+          expect.objectContaining({
+            userId: 'user-1',
+            eventType: 'EMAIL_VERIFICATION_OTP',
+            metadata: expect.objectContaining({
+              email: 'test@example.com',
+              otp: expect.stringMatching(/^\d{6}$/),
+            }),
+          }),
+        );
+
+        expect(result.success).toBe(true);
+        expect(result.message).toBeDefined();
+      });
+    });
+
+    describe('confirmEmailVerification', () => {
+      it('should throw BadRequestException if OTP is expired/missing in Redis', async () => {
+        redis.get.mockResolvedValue(null);
+
+        await expect(
+          service.confirmEmailVerification('user-1', 'test@example.com', '123456'),
+        ).rejects.toThrow(BadRequestException);
+      });
+
+      it('should throw BadRequestException on OTP mismatch', async () => {
+        redis.get.mockResolvedValue(JSON.stringify({ email: 'test@example.com', otp: '123456' }));
+
+        await expect(
+          service.confirmEmailVerification('user-1', 'test@example.com', '654321'),
+        ).rejects.toThrow(BadRequestException);
+      });
+
+      it('should throw BadRequestException on email mismatch', async () => {
+        redis.get.mockResolvedValue(JSON.stringify({ email: 'test@example.com', otp: '123456' }));
+
+        await expect(
+          service.confirmEmailVerification('user-1', 'wrong@example.com', '123456'),
+        ).rejects.toThrow(BadRequestException);
+      });
+
+      it('should clean Redis, update User & UserSetting, and return success', async () => {
+        redis.get.mockResolvedValue(JSON.stringify({ email: 'test@example.com', otp: '123456' }));
+        prisma.user.findFirst.mockResolvedValue(null);
+        redis.del.mockResolvedValue(1);
+
+        prisma.$transaction.mockImplementation(async (callback: any) => {
+          return callback(prisma);
+        });
+
+        prisma.user.update.mockResolvedValue({ id: 'user-1', email: 'test@example.com' });
+        prisma.userSetting.upsert.mockResolvedValue({ id: 'setting-1' });
+
+        const result = await service.confirmEmailVerification('user-1', 'test@example.com', '123456');
+
+        expect(redis.del).toHaveBeenCalledWith('email_verification:otp:user-1');
+        expect(prisma.user.update).toHaveBeenCalledWith({
+          where: { id: 'user-1' },
+          data: { email: 'test@example.com' },
+        });
+        expect(prisma.userSetting.upsert).toHaveBeenCalledWith({
+          where: {
+            userId_key: {
+              userId: 'user-1',
+              key: 'email_verified',
+            },
+          },
+          update: { value: 'true' },
+          create: {
+            userId: 'user-1',
+            key: 'email_verified',
+            value: 'true',
+          },
+        });
+
+        expect(result.success).toBe(true);
+      });
+    });
+  });
+
+  describe('PIN Change & Reset', () => {
+    describe('changePin', () => {
+      it('should throw BadRequestException if user not found', async () => {
+        prisma.user.findUnique.mockResolvedValue(null);
+        await expect(
+          service.changePin('user-1', { oldPin: '123456', newPin: '654321' }),
+        ).rejects.toThrow(BadRequestException);
+      });
+
+      it('should throw BadRequestException if old PIN is incorrect', async () => {
+        prisma.user.findUnique.mockResolvedValue({ id: 'user-1', pinHash: 'hashed-old' });
+        (bcrypt.compare as jest.Mock).mockResolvedValue(false);
+
+        await expect(
+          service.changePin('user-1', { oldPin: '123456', newPin: '654321' }),
+        ).rejects.toThrow(BadRequestException);
+      });
+
+      it('should update pinHash on valid old PIN', async () => {
+        prisma.user.findUnique.mockResolvedValue({ id: 'user-1', pinHash: 'hashed-old' });
+        (bcrypt.compare as jest.Mock).mockResolvedValue(true);
+        (bcrypt.hash as jest.Mock).mockResolvedValue('hashed-new');
+        prisma.user.update.mockResolvedValue({ id: 'user-1' });
+
+        const result = await service.changePin('user-1', { oldPin: '123456', newPin: '654321' });
+
+        expect(prisma.user.update).toHaveBeenCalledWith({
+          where: { id: 'user-1' },
+          data: {
+            pinHash: 'hashed-new',
+            pinAttempts: 0,
+            pinLockedUntil: null,
+          },
+        });
+        expect(result.success).toBe(true);
+      });
+    });
+
+    describe('resetPinRequest', () => {
+      it('should throw BadRequestException if email is not verified', async () => {
+        prisma.user.findUnique.mockResolvedValue({ id: 'user-1', email: 'test@example.com' });
+        prisma.userSetting.findUnique.mockResolvedValue(null); // not verified
+
+        await expect(
+          service.resetPinRequest('user-1'),
+        ).rejects.toThrow(BadRequestException);
+      });
+
+      it('should store OTP in Redis and emit Kafka event on verified email', async () => {
+        prisma.user.findUnique.mockResolvedValue({ id: 'user-1', email: 'test@example.com' });
+        prisma.userSetting.findUnique.mockResolvedValue({ key: 'email_verified', value: 'true' });
+        redis.set.mockResolvedValue('OK');
+        kafkaProducer.emit.mockResolvedValue('OK');
+
+        const result = await service.resetPinRequest('user-1');
+
+        expect(redis.set).toHaveBeenCalledWith(
+          'pin_reset:otp:user-1',
+          expect.stringContaining('"email":"test@example.com"'),
+          'EX',
+          300,
+        );
+        expect(kafkaProducer.emit).toHaveBeenCalledWith(
+          KafkaTopic.SECURITY_EVENTS,
+          expect.objectContaining({
+            userId: 'user-1',
+            eventType: 'PIN_RESET_OTP',
+          }),
+        );
+        expect(result.success).toBe(true);
+      });
+    });
+
+    describe('resetPin', () => {
+      it('should throw BadRequestException if OTP is missing/expired in Redis', async () => {
+        prisma.user.findUnique.mockResolvedValue({ id: 'user-1' });
+        redis.get.mockResolvedValue(null);
+
+        await expect(
+          service.resetPin('user-1', { otp: '123456', newPin: '654321' }),
+        ).rejects.toThrow(BadRequestException);
+      });
+
+      it('should throw BadRequestException on OTP mismatch', async () => {
+        prisma.user.findUnique.mockResolvedValue({ id: 'user-1' });
+        redis.get.mockResolvedValue(JSON.stringify({ otp: '111111' }));
+
+        await expect(
+          service.resetPin('user-1', { otp: '123456', newPin: '654321' }),
+        ).rejects.toThrow(BadRequestException);
+      });
+
+      it('should update pinHash and delete OTP on valid code', async () => {
+        prisma.user.findUnique.mockResolvedValue({ id: 'user-1' });
+        redis.get.mockResolvedValue(JSON.stringify({ otp: '123456' }));
+        redis.del.mockResolvedValue(1);
+        (bcrypt.hash as jest.Mock).mockResolvedValue('hashed-new');
+        prisma.user.update.mockResolvedValue({ id: 'user-1' });
+
+        const result = await service.resetPin('user-1', { otp: '123456', newPin: '654321' });
+
+        expect(redis.del).toHaveBeenCalledWith('pin_reset:otp:user-1');
+        expect(prisma.user.update).toHaveBeenCalledWith({
+          where: { id: 'user-1' },
+          data: {
+            pinHash: 'hashed-new',
+            pinAttempts: 0,
+            pinLockedUntil: null,
+          },
+        });
+        expect(result.success).toBe(true);
+      });
     });
   });
 });
