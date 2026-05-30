@@ -29,6 +29,8 @@ import { IntegrationService } from '../../modules/integration/integration.servic
 import { LoyaltyService } from '../../modules/loyalty/loyalty.service';
 import { REDIS_CLIENT } from '../../core/common/constants';
 import Redis from 'ioredis';
+import { PrismaService } from '../../core/prisma/prisma.service';
+import { BlacklistType, DisputeStatus } from '@prisma/client';
 
 @Controller('admin')
 @UseGuards(AdminJwtGuard, AdminRolesGuard)
@@ -39,6 +41,7 @@ export class AdminFinanceController {
     private readonly integrationService: IntegrationService,
     private readonly loyaltyService: LoyaltyService,
     @Inject(REDIS_CLIENT) private readonly redis: Redis,
+    private readonly prisma: PrismaService,
   ) {}
 
   // ==================== Account Management ====================
@@ -461,25 +464,30 @@ export class AdminFinanceController {
     const transactions = Array.isArray(response)
       ? response
       : response.content || [];
-    const disputeStatuses = await this.getDisputeStatusOverrides(transactions);
+
+    // 1. Fetch persistent disputes from DB
+    const dbDisputes = await this.prisma.dispute.findMany();
+    const dbDisputeMap = new Map(dbDisputes.map((d) => [d.transactionId, d]));
+
     const searchTerm = search?.trim().toLowerCase();
     const normalizedStatus = status && status !== 'ALL' ? status : undefined;
     const normalizedType = type && type !== 'ALL' ? type : undefined;
 
     const disputes = transactions
-      .map((transaction: any) =>
-        this.buildDisputeRecord(
+      .map((transaction: any) => {
+        const key = this.getDisputeKey(transaction);
+        const dbDispute = dbDisputeMap.get(key);
+        return this.buildDisputeRecord(
           transaction,
-          disputeStatuses.get(this.getDisputeKey(transaction)),
-        ),
-      )
+          dbDispute?.status ||
+            (transaction.status === 'COMPLETED' ? 'RESOLVED' : 'PENDING'),
+        );
+      })
       .filter((dispute: any) => {
         const defaultQueueItem =
           dispute.transactionStatus !== 'COMPLETED' ||
           dispute.status === 'REVERSED';
-        const matchesDefaultScope = normalizedStatus
-          ? true
-          : defaultQueueItem;
+        const matchesDefaultScope = normalizedStatus ? true : defaultQueueItem;
         const matchesStatus =
           !normalizedStatus || dispute.status === normalizedStatus;
         const matchesType =
@@ -497,7 +505,9 @@ export class AdminFinanceController {
             .filter(Boolean)
             .some((value) => String(value).toLowerCase().includes(searchTerm));
 
-        return matchesDefaultScope && matchesStatus && matchesType && matchesSearch;
+        return (
+          matchesDefaultScope && matchesStatus && matchesType && matchesSearch
+        );
       })
       .sort(
         (a: any, b: any) =>
@@ -529,7 +539,10 @@ export class AdminFinanceController {
           .length,
         disputedAmount: disputes
           .filter((item: any) => item.status === 'PENDING')
-          .reduce((sum: number, item: any) => sum + Number(item.amount || 0), 0),
+          .reduce(
+            (sum: number, item: any) => sum + Number(item.amount || 0),
+            0,
+          ),
       },
     };
   }
@@ -537,30 +550,26 @@ export class AdminFinanceController {
   @Post('disputes/:id/reverse')
   @Roles(AdminRole.SUPER_ADMIN, AdminRole.AUDITOR, AdminRole.SUPPORT_AGENT)
   async reverseDispute(@Param('id') id: string): Promise<{ success: boolean }> {
+    // 1. Persist to DB
+    await this.prisma.dispute.upsert({
+      where: { id }, // This is the DSP-xxx ID
+      update: { status: DisputeStatus.CLOSED, resolution: 'REVERSED' },
+      create: {
+        transactionId: id.replace('DSP-', ''),
+        userId: 'Admin', // In real app, get from token
+        reason: 'Customer requested reversal',
+        status: DisputeStatus.CLOSED,
+        resolution: 'REVERSED',
+      },
+    });
+
+    // 2. Sync to Redis for existing legacy logic
     await this.redis.set(`admin:disputes:${id}:status`, 'REVERSED');
     await this.redis.set(
       `admin:disputes:${id}:updatedAt`,
       new Date().toISOString(),
     );
     return { success: true };
-  }
-
-  private async getDisputeStatusOverrides(
-    transactions: any[],
-  ): Promise<Map<string, string>> {
-    const pairs = await Promise.all(
-      transactions.map(async (transaction) => {
-        const key = this.getDisputeKey(transaction);
-        const status = await this.redis.get(`admin:disputes:${key}:status`);
-        return [key, status] as const;
-      }),
-    );
-
-    return new Map(
-      pairs
-        .filter(([, status]) => Boolean(status))
-        .map(([key, status]) => [key, status as string]),
-    );
   }
 
   private getDisputeKey(transaction: any): string {
@@ -667,89 +676,98 @@ export class AdminFinanceController {
   @Get('blacklist/nodes')
   @Roles(AdminRole.SUPER_ADMIN, AdminRole.AUDITOR)
   async getBlacklistNodes(): Promise<{ data: any[] }> {
-    const ipKeys = await this.redis.keys('blacklist:ip:*');
-    const hwKeys = await this.redis.keys('blacklist:hw:*');
-    
-    const records = [];
-    const dateFallback = new Date().toISOString().replace('T', ' ').substring(0, 16);
-    
-    for (const key of ipKeys) {
-      const ip = key.replace('blacklist:ip:', '');
-      const reason = await this.redis.get(`blacklist:reason:ip:${ip}`) || 'Gateway security restriction enforced.';
-      const severity = await this.redis.get(`blacklist:severity:ip:${ip}`) || 'CRITICAL';
-      const blacklistedAt = await this.redis.get(`blacklist:date:ip:${ip}`) || dateFallback;
-      const enforcedBy = await this.redis.get(`blacklist:by:ip:${ip}`) || 'Gateway Firewall';
-      records.push({
-        id: `BLK-${ip.replace(/\./g, '')}`,
-        type: 'IP',
-        target: ip,
-        reason,
-        severity,
-        blacklistedAt,
-        enforcedBy,
-        status: 'ACTIVE',
-      });
-    }
+    const records = await this.prisma.blacklist.findMany({
+      where: { isActive: true },
+      orderBy: { createdAt: 'desc' },
+    });
 
-    for (const key of hwKeys) {
-      const hw = key.replace('blacklist:hw:', '');
-      const reason = await this.redis.get(`blacklist:reason:hw:${hw}`) || 'Hardware signature mismatch detected.';
-      const severity = await this.redis.get(`blacklist:severity:hw:${hw}`) || 'HIGH';
-      const blacklistedAt = await this.redis.get(`blacklist:date:hw:${hw}`) || dateFallback;
-      const enforcedBy = await this.redis.get(`blacklist:by:hw:${hw}`) || 'BFF Handshake Guard';
-      records.push({
-        id: `BLK-${hw}`,
-        type: 'HARDWARE',
-        target: hw,
-        reason,
-        severity,
-        blacklistedAt,
-        enforcedBy,
-        status: 'ACTIVE',
-      });
-    }
-
-    return { data: records };
+    return {
+      data: records.map((r) => ({
+        id: r.id,
+        type: r.type,
+        target: r.value,
+        reason: r.reason || 'Gateway security restriction enforced.',
+        severity: 'CRITICAL', // Default or could be added to model
+        blacklistedAt: r.createdAt.toISOString().replace('T', ' ').substring(0, 16),
+        enforcedBy: r.addedBy || 'Compliance Manual',
+        status: r.isActive ? 'ACTIVE' : 'INACTIVE',
+      })),
+    };
   }
 
   @Post('blacklist/nodes/block')
   @Roles(AdminRole.SUPER_ADMIN, AdminRole.AUDITOR)
-  async blockNode(@Body() body: { type: 'IP' | 'HARDWARE'; target: string; reason: string; severity: string }): Promise<void> {
-    const { type, target, reason, severity } = body;
+  async blockNode(
+    @Body()
+    body: {
+      type: 'IP' | 'HARDWARE';
+      target: string;
+      reason: string;
+      severity: string;
+    },
+  ): Promise<void> {
+    const { type, target, reason } = body;
+    const dbType = type === 'IP' ? BlacklistType.IP : BlacklistType.DEVICE;
+
+    // 1. Persist to Database
+    await this.prisma.blacklist.upsert({
+      where: {
+        type_value: {
+          type: dbType,
+          value: target,
+        },
+      },
+      update: {
+        isActive: true,
+        reason,
+        addedBy: 'Compliance Manual',
+      },
+      create: {
+        type: dbType,
+        value: target,
+        reason,
+        addedBy: 'Compliance Manual',
+        isActive: true,
+      },
+    });
+
+    // 2. Sync to Redis for high-performance gateway checks
     const dateStr = new Date().toISOString().replace('T', ' ').substring(0, 16);
-    
-    if (type === 'IP') {
-      await this.redis.set(`blacklist:ip:${target}`, '1');
-      await this.redis.set(`blacklist:reason:ip:${target}`, reason);
-      await this.redis.set(`blacklist:severity:ip:${target}`, severity);
-      await this.redis.set(`blacklist:date:ip:${target}`, dateStr);
-      await this.redis.set(`blacklist:by:ip:${target}`, 'Compliance Manual');
-    } else {
-      await this.redis.set(`blacklist:hw:${target}`, '1');
-      await this.redis.set(`blacklist:reason:hw:${target}`, reason);
-      await this.redis.set(`blacklist:severity:hw:${target}`, severity);
-      await this.redis.set(`blacklist:date:hw:${target}`, dateStr);
-      await this.redis.set(`blacklist:by:hw:${target}`, 'Compliance Manual');
-    }
+    const redisPrefix = type === 'IP' ? 'ip' : 'hw';
+
+    await this.redis.set(`blacklist:${redisPrefix}:${target}`, '1');
+    await this.redis.set(`blacklist:reason:${redisPrefix}:${target}`, reason);
+    await this.redis.set(`blacklist:date:${redisPrefix}:${target}`, dateStr);
+    await this.redis.set(
+      `blacklist:by:${redisPrefix}:${target}`,
+      'Compliance Manual',
+    );
   }
 
   @Post('blacklist/nodes/unblock')
   @Roles(AdminRole.SUPER_ADMIN, AdminRole.AUDITOR)
-  async unblockNode(@Body() body: { type: 'IP' | 'HARDWARE'; target: string }): Promise<void> {
+  async unblockNode(
+    @Body() body: { type: 'IP' | 'HARDWARE'; target: string },
+  ): Promise<void> {
     const { type, target } = body;
-    
-    if (type === 'IP') {
-      await this.redis.del(`blacklist:ip:${target}`);
-      await this.redis.del(`blacklist:reason:ip:${target}`);
-      await this.redis.del(`blacklist:severity:ip:${target}`);
-      await this.redis.del(`blacklist:date:ip:${target}`);
-      await this.redis.del(`blacklist:by:ip:${target}`);
-    } else {
-      await this.redis.del(`blacklist:hw:${target}`);
-      await this.redis.del(`blacklist:reason:hw:${target}`);
-      await this.redis.del(`blacklist:severity:hw:${target}`);
-      await this.redis.del(`blacklist:date:hw:${target}`);
-      await this.redis.del(`blacklist:by:hw:${target}`);
-    }
+    const dbType = type === 'IP' ? BlacklistType.IP : BlacklistType.DEVICE;
+
+    // 1. Update Database
+    await this.prisma.blacklist.update({
+      where: {
+        type_value: {
+          type: dbType,
+          value: target,
+        },
+      },
+      data: { isActive: false },
+    });
+
+    // 2. Remove from Redis
+    const redisPrefix = type === 'IP' ? 'ip' : 'hw';
+    await this.redis.del(`blacklist:${redisPrefix}:${target}`);
+    await this.redis.del(`blacklist:reason:${redisPrefix}:${target}`);
+    await this.redis.del(`blacklist:date:${redisPrefix}:${target}`);
+    await this.redis.del(`blacklist:by:${redisPrefix}:${target}`);
   }
 }

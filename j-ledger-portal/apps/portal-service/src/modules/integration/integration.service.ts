@@ -4,12 +4,13 @@ import { HttpService } from '@nestjs/axios';
 import { PrismaService } from '../../core/prisma/prisma.service';
 import { FinanceService } from './finance.service';
 import Stripe from 'stripe';
-import { TopupOrderStatus } from '@prisma/client';
+import { TopupOrderStatus, FraudRuleAction } from '@prisma/client';
 import { createHash, randomUUID } from 'crypto';
 import { BillingService } from '../billing/billing.service';
 import { Inject, forwardRef } from '@nestjs/common';
 import { LoyaltyService } from '../loyalty/loyalty.service';
 import { BannerService } from '../banners/banner.service';
+import { FraudService } from '../fraud/fraud.service';
 import { INTERNAL_API_PATHS } from '@repo/dto';
 import { REDIS_CLIENT } from '../../core/common/constants';
 import Redis from 'ioredis';
@@ -35,6 +36,7 @@ export class IntegrationService {
     private readonly billingService: BillingService,
     private readonly loyaltyService: LoyaltyService,
     private readonly bannerService: BannerService,
+    private readonly fraudService: FraudService,
     @Inject(REDIS_CLIENT) private readonly redis: Redis,
   ) {
     this.apiGatewayUrl = this.configService.get<string>(
@@ -793,6 +795,27 @@ export class IntegrationService {
           message: `Transfer exceeds your wallet's daily limit of ฿${Number(userWallet.dailyLimit).toLocaleString()}`,
         },
         HttpStatus.BAD_REQUEST,
+      );
+    }
+
+    // 3. Fraud Detection Evaluation
+    const fraudResult = await this.fraudService.evaluateTransaction({
+      userId,
+      amount,
+      type: 'P2P_TRANSFER',
+      metadata: { recipientPhone },
+    });
+
+    if (fraudResult && fraudResult.action === FraudRuleAction.BLOCK) {
+      this.logger.error(
+        `[P2PTransfer] BLOCKED by fraud rule for user ${userId}`,
+      );
+      throw new HttpException(
+        {
+          message:
+            'Transaction blocked due to suspicious activity. Please contact support.',
+        },
+        HttpStatus.FORBIDDEN,
       );
     }
 

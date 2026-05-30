@@ -279,3 +279,30 @@ export enum AppPath {
   TRANSACTION_DETAIL = '/transaction',
   LOYALTY = '/loyalty',
 }
+
+export enum FraudRuleType {
+  VELOCITY = 'VELOCITY',
+  AMOUNT = 'AMOUNT',
+  LOCATION = 'LOCATION',
+  NEW_DEVICE = 'NEW_DEVICE',
+}
+
+export enum FraudRuleAction {
+  BLOCK = 'BLOCK',
+  FLAG = 'FLAG',
+  HOLD = 'HOLD',
+}
+
+export enum ScheduledTransferStatus {
+  ACTIVE = 'ACTIVE',
+  PAUSED = 'PAUSED',
+  CANCELLED = 'CANCELLED',
+  COMPLETED = 'COMPLETED',
+}
+
+export enum ScheduledTransferFrequency {
+  ONCE = 'ONCE',
+  DAILY = 'DAILY',
+  WEEKLY = 'WEEKLY',
+  MONTHLY = 'MONTHLY',
+}

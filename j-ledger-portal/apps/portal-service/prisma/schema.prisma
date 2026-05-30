@@ -9,27 +9,27 @@ datasource db {
 }
 
 model User {
-  id                String                  @id @default(uuid())
-  phoneNumber       String                  @unique @db.VarChar(15)
-  email             String?                 @unique
-  passwordHash      String?
-  pinHash           String?
-  biometricKey      String?
-  status            UserStatus              @default(INACTIVE)
-  registrationState RegistrationState       @default(PENDING)
-  pinAttempts       Int                     @default(0)
-  pinLockedUntil    DateTime?
-  ledgerAccountId   String?
-  createdAt         DateTime                @default(now())
-  updatedAt         DateTime                @updatedAt
-  notificationPrefs NotificationPreference?
-  notifications     Notification[]
-  otpChallenges     OtpChallenge[]
-  refreshSessions   RefreshSession[]
-  securityEvents    SecurityEvent[]
-  userConsents      UserConsent[]
-  userDevices       UserDevice[]
-  userSettings      UserSetting[]
+  id                 String                  @id @default(uuid())
+  phoneNumber        String                  @unique @db.VarChar(15)
+  email              String?                 @unique
+  passwordHash       String?
+  pinHash            String?
+  biometricKey       String?
+  status             UserStatus              @default(INACTIVE)
+  registrationState  RegistrationState       @default(PENDING)
+  pinAttempts        Int                     @default(0)
+  pinLockedUntil     DateTime?
+  ledgerAccountId    String?
+  createdAt          DateTime                @default(now())
+  updatedAt          DateTime                @updatedAt
+  notificationPrefs  NotificationPreference?
+  notifications      Notification[]
+  otpChallenges      OtpChallenge[]
+  refreshSessions    RefreshSession[]
+  securityEvents     SecurityEvent[]
+  userConsents       UserConsent[]
+  userDevices        UserDevice[]
+  userSettings       UserSetting[]
   favoriteRecipients FavoriteRecipient[]
 
   @@index([phoneNumber])
@@ -141,18 +141,18 @@ model Deal {
 }
 
 model DealRedemption {
-  id             String           @id @default(uuid())
-  dealId         String
-  userId         String
-  pointsSpent    Int
-  redemptionCode String           @unique
-  status         RedemptionStatus @default(REDEEMED)
-  expiresAt      DateTime?
-  usedAt         DateTime?
-  createdAt      DateTime         @default(now())
-  updatedAt      DateTime         @updatedAt
+  id               String           @id @default(uuid())
+  dealId           String
+  userId           String
+  pointsSpent      Int
+  redemptionCode   String           @unique
+  status           RedemptionStatus @default(REDEEMED)
+  expiresAt        DateTime?
+  usedAt           DateTime?
+  createdAt        DateTime         @default(now())
+  updatedAt        DateTime         @updatedAt
   usedAtMerchantId String?
-  deal           Deal             @relation(fields: [dealId], references: [id])
+  deal             Deal             @relation(fields: [dealId], references: [id])
 
   @@index([dealId])
   @@index([userId])
@@ -352,7 +352,6 @@ model Address {
   @@schema("identity")
 }
 
-
 model KYCDocument {
   id           String            @id @default(uuid())
   userId       String
@@ -514,24 +513,24 @@ enum PartnerType {
 }
 
 model Partner {
-  id              String               @id @default(uuid())
-  userId          String?
-  name            String
-  taxId           String?              @unique
-  type            PartnerType          @default(SME)
-  financeAccounts Json?                // { available: UUID, pending: UUID, fee: UUID }
-  isPaymentEnabled Boolean             @default(true)
-  isLoyaltyEnabled Boolean             @default(true)
-  feeRate         Decimal              @default(0.03) @db.Decimal(19, 4)
-  dailyReceiveLimit Decimal            @default(1000000) @db.Decimal(19, 4)
-  status          PartnerStatus        @default(PENDING_REVIEW)
-  metadata        Json?
-  createdAt       DateTime             @default(now())
-  updatedAt       DateTime             @updatedAt
-  merchants       Merchant[]
-  applications    MerchantApplication[]
-  profile         PartnerProfile?
-  invoices        Invoice[]
+  id                String                @id @default(uuid())
+  userId            String?
+  name              String
+  taxId             String?               @unique
+  type              PartnerType           @default(SME)
+  financeAccounts   Json? // { available: UUID, pending: UUID, fee: UUID }
+  isPaymentEnabled  Boolean               @default(true)
+  isLoyaltyEnabled  Boolean               @default(true)
+  feeRate           Decimal               @default(0.03) @db.Decimal(19, 4)
+  dailyReceiveLimit Decimal               @default(1000000) @db.Decimal(19, 4)
+  status            PartnerStatus         @default(PENDING_REVIEW)
+  metadata          Json?
+  createdAt         DateTime              @default(now())
+  updatedAt         DateTime              @updatedAt
+  merchants         Merchant[]
+  applications      MerchantApplication[]
+  profile           PartnerProfile?
+  invoices          Invoice[]
 
   @@index([userId])
   @@index([status])
@@ -540,39 +539,39 @@ model Partner {
 }
 
 model PartnerProfile {
-  id              String   @id @default(uuid())
-  partnerId       String   @unique
-  partner         Partner  @relation(fields: [partnerId], references: [id])
-  businessNameEn  String?
-  category        String?
-  contactName     String?
-  email           String?
-  phone           String?
-  address         String?
-  addressDetail   String?
-  location        Json?    // { lat, lng }
-  website         String?
-  logoUrl         String?
-  createdAt       DateTime @default(now())
-  updatedAt       DateTime @updatedAt
+  id             String   @id @default(uuid())
+  partnerId      String   @unique
+  partner        Partner  @relation(fields: [partnerId], references: [id])
+  businessNameEn String?
+  category       String?
+  contactName    String?
+  email          String?
+  phone          String?
+  address        String?
+  addressDetail  String?
+  location       Json? // { lat, lng }
+  website        String?
+  logoUrl        String?
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
 
   @@map("partner_profiles")
   @@schema("merchant")
 }
 
 model Merchant {
-  id         String   @id @default(uuid())
-  partnerId  String
-  name       String
-  category   String?
-  location   Json?    // { lat, lng }
-  address    String?
-  isActive   Boolean  @default(true)
-  createdAt  DateTime @default(now())
-  updatedAt  DateTime @updatedAt
-  partner    Partner  @relation(fields: [partnerId], references: [id])
-  terminals  Terminal[]
-  payments   MerchantPayment[]
+  id        String            @id @default(uuid())
+  partnerId String
+  name      String
+  category  String?
+  location  Json? // { lat, lng }
+  address   String?
+  isActive  Boolean           @default(true)
+  createdAt DateTime          @default(now())
+  updatedAt DateTime          @updatedAt
+  partner   Partner           @relation(fields: [partnerId], references: [id])
+  terminals Terminal[]
+  payments  MerchantPayment[]
 
   @@index([partnerId])
   @@map("merchants")
@@ -580,15 +579,15 @@ model Merchant {
 }
 
 model Terminal {
-  id         String         @id @default(uuid())
+  id         String            @id @default(uuid())
   merchantId String
   name       String?
-  secretKey  String         @unique // HMAC Secret
-  hardwareId String?        @unique
-  status     TerminalStatus @default(ACTIVE)
-  createdAt  DateTime       @default(now())
-  updatedAt  DateTime       @updatedAt
-  merchant   Merchant       @relation(fields: [merchantId], references: [id])
+  secretKey  String            @unique // HMAC Secret
+  hardwareId String?           @unique
+  status     TerminalStatus    @default(ACTIVE)
+  createdAt  DateTime          @default(now())
+  updatedAt  DateTime          @updatedAt
+  merchant   Merchant          @relation(fields: [merchantId], references: [id])
   payments   MerchantPayment[]
 
   @@index([merchantId])
@@ -606,22 +605,22 @@ enum MerchantPaymentStatus {
 }
 
 model MerchantPayment {
-  id              String                @id @default(uuid())
-  merchantId      String
-  terminalId      String?
-  amount          Decimal               @db.Decimal(19, 4)
-  currency        String                @default("THB")
-  status          MerchantPaymentStatus @default(PENDING)
-  idempotencyKey  String                @unique
-  referenceId     String?               @unique // External reference or txn ID
-  note            String?
-  metadata        Json?
-  expiresAt       DateTime
-  createdAt       DateTime              @default(now())
-  updatedAt       DateTime              @updatedAt
+  id             String                @id @default(uuid())
+  merchantId     String
+  terminalId     String?
+  amount         Decimal               @db.Decimal(19, 4)
+  currency       String                @default("THB")
+  status         MerchantPaymentStatus @default(PENDING)
+  idempotencyKey String                @unique
+  referenceId    String?               @unique // External reference or txn ID
+  note           String?
+  metadata       Json?
+  expiresAt      DateTime
+  createdAt      DateTime              @default(now())
+  updatedAt      DateTime              @updatedAt
 
-  merchant        Merchant              @relation(fields: [merchantId], references: [id])
-  terminal        Terminal?             @relation(fields: [terminalId], references: [id])
+  merchant Merchant  @relation(fields: [merchantId], references: [id])
+  terminal Terminal? @relation(fields: [terminalId], references: [id])
 
   @@map("merchant_payments")
   @@schema("merchant")
@@ -630,11 +629,11 @@ model MerchantPayment {
 model TerminalIdempotencyRecord {
   id              String   @id @default(uuid())
   terminalId      String
-  operation       String   // PAYMENT | REDEEM
+  operation       String // PAYMENT | REDEEM
   idempotencyKey  String
-  requestHash     String   // SHA256 of the request body
+  requestHash     String // SHA256 of the request body
   responsePayload Json
-  status          Int      // HTTP status code
+  status          Int // HTTP status code
   createdAt       DateTime @default(now())
   expiresAt       DateTime
 
@@ -645,30 +644,30 @@ model TerminalIdempotencyRecord {
 }
 
 model MerchantApplication {
-  id             String            @id @default(uuid())
-  partnerId      String
-  userId         String
-  businessName   String
-  businessNameEn String?
-  category       String
-  salesChannel   String            @default("PHYSICAL_STORE")
-  contactName    String
-  email          String
-  phone          String
-  taxId          String
-  address        String
-  addressDetail  String?
+  id                String            @id @default(uuid())
+  partnerId         String
+  userId            String
+  businessName      String
+  businessNameEn    String?
+  category          String
+  salesChannel      String            @default("PHYSICAL_STORE")
+  contactName       String
+  email             String
+  phone             String
+  taxId             String
+  address           String
+  addressDetail     String?
   ownerIdCardNumber String?
   ownerBirthDate    String?
-  location       Json?             // { lat, lng }
-  images         String[]          @default([])
-  status         ApplicationStatus @default(PENDING)
+  location          Json? // { lat, lng }
+  images            String[]          @default([])
+  status            ApplicationStatus @default(PENDING)
 
-  reviewNote     String?
-  reviewedBy     String?
-  createdAt      DateTime          @default(now())
-  updatedAt      DateTime          @updatedAt
-  partner        Partner           @relation(fields: [partnerId], references: [id])
+  reviewNote String?
+  reviewedBy String?
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+  partner    Partner  @relation(fields: [partnerId], references: [id])
 
   @@index([partnerId])
   @@index([userId])
@@ -676,7 +675,6 @@ model MerchantApplication {
   @@map("merchant_applications")
   @@schema("merchant")
 }
-
 
 model TopupOrder {
   id                    String           @id @default(uuid())
@@ -775,6 +773,93 @@ model InvoiceItem {
 
   @@map("invoice_items")
   @@schema("billing")
+}
+
+model ApprovalRequest {
+  id          String                @id @default(uuid())
+  requestType ApprovalRequestType
+  requestData Json // The payload/diff of the change
+  requestedBy String // Staff ID
+  approvedBy  String? // Staff ID
+  status      ApprovalRequestStatus @default(PENDING)
+  notes       String?
+  createdAt   DateTime              @default(now())
+  updatedAt   DateTime              @updatedAt
+
+  @@index([status])
+  @@index([requestedBy])
+  @@map("approval_requests")
+  @@schema("admin")
+}
+
+model Blacklist {
+  id        String        @id @default(uuid())
+  type      BlacklistType
+  value     String // The phone number, IP, etc.
+  reason    String?
+  addedBy   String? // Staff ID
+  isActive  Boolean       @default(true)
+  expiresAt DateTime?
+  createdAt DateTime      @default(now())
+  updatedAt DateTime      @updatedAt
+
+  @@unique([type, value])
+  @@index([isActive])
+  @@map("blacklists")
+  @@schema("admin")
+}
+
+model FraudRule {
+  id          String          @id @default(uuid())
+  name        String          @unique
+  description String?
+  ruleType    FraudRuleType
+  condition   Json // Thresholds and parameters
+  action      FraudRuleAction
+  severity    String // HIGH, MEDIUM, LOW
+  isActive    Boolean         @default(true)
+  createdAt   DateTime        @default(now())
+  updatedAt   DateTime        @updatedAt
+
+  @@map("fraud_rules")
+  @@schema("admin")
+}
+
+model Dispute {
+  id            String        @id @default(uuid())
+  transactionId String // Refers to Core Ledger transaction
+  userId        String
+  merchantId    String?
+  reason        String
+  status        DisputeStatus @default(OPEN)
+  resolution    String?
+  resolvedBy    String? // Staff ID
+  createdAt     DateTime      @default(now())
+  updatedAt     DateTime      @updatedAt
+
+  @@index([userId])
+  @@index([transactionId])
+  @@map("disputes")
+  @@schema("admin")
+}
+
+model ScheduledTransfer {
+  id              String                     @id @default(uuid())
+  userId          String
+  recipientPhone  String                     @db.VarChar(15)
+  amount          Decimal                    @db.Decimal(19, 4)
+  frequency       ScheduledTransferFrequency
+  nextExecutionAt DateTime
+  status          ScheduledTransferStatus    @default(ACTIVE)
+  note            String?
+  createdAt       DateTime                   @default(now())
+  updatedAt       DateTime                   @updatedAt
+
+  @@index([userId])
+  @@index([nextExecutionAt])
+  @@index([status])
+  @@map("scheduled_transfers")
+  @@schema("integration")
 }
 
 enum PointTransactionType {
@@ -927,7 +1012,6 @@ enum BankStatus {
   @@schema("integration")
 }
 
-
 enum PartnerStatus {
   PENDING_REVIEW
   ACTIVE
@@ -968,4 +1052,77 @@ enum InvoiceStatus {
   CANCELLED
 
   @@schema("billing")
+}
+
+enum ApprovalRequestType {
+  LIMIT_UPDATE
+  PARTNER_APPROVAL
+  FEE_UPDATE
+  BLACKLIST_ADD
+  MANUAL_ADJUSTMENT
+
+  @@schema("admin")
+}
+
+enum ApprovalRequestStatus {
+  PENDING
+  APPROVED
+  REJECTED
+  CANCELLED
+
+  @@schema("admin")
+}
+
+enum BlacklistType {
+  PHONE
+  IP
+  DEVICE
+  ACCOUNT
+
+  @@schema("admin")
+}
+
+enum FraudRuleType {
+  VELOCITY
+  AMOUNT
+  LOCATION
+  NEW_DEVICE
+
+  @@schema("admin")
+}
+
+enum DisputeStatus {
+  OPEN
+  UNDER_REVIEW
+  WON
+  LOST
+  CLOSED
+
+  @@schema("admin")
+}
+
+enum ScheduledTransferStatus {
+  ACTIVE
+  PAUSED
+  CANCELLED
+  COMPLETED
+
+  @@schema("integration")
+}
+
+enum ScheduledTransferFrequency {
+  ONCE
+  DAILY
+  WEEKLY
+  MONTHLY
+
+  @@schema("integration")
+}
+
+enum FraudRuleAction {
+  BLOCK
+  FLAG
+  HOLD
+
+  @@schema("admin")
 }

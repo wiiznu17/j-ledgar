@@ -138,6 +138,8 @@
 ### 6. Admin Web — เติม Backend API สำหรับ UI-Only Pages
 
 > ตรวจสอบความถูกต้องสมบูรณ์แล้วใน Codebase & Database: หน้าจอทั้งหมดเชื่อมต่อกับ Real APIs ครบถ้วน 100% แล้ว โดยใช้สถาปัตยกรรมประสิทธิภาพสูงที่ปลอดภัยที่สุดและไม่ต้องแก้ไของค์ประกอบฐานข้อมูล Monorepo ให้เกิดความเสี่ยง (Zero DB Migration)
+>
+> **Note:** Approval, Blacklist, and Dispute workflows have been refactored to use persistent database storage instead of temporary Redis keys.
 
 - [x] 6.1 AML (Anti-Money Laundering)
   - [x] ตรวจสอบพบตาราง `suspicious_activities` ใน PostgreSQL ของ Java `finance-service` อยู่แล้ว
@@ -147,16 +149,16 @@
   - [x] ใช้ฐานข้อมูล `suspicious_activities` ร่วมกับ Heuristics filtering กรองเฉพาะ High-risk categories ในระดับหน้าจอ
   - [x] เชื่อมโยงหน้า `/risk/fraud` กับ Real API ปลอดภัยและเรียบร้อย
 - [x] 6.3 Blacklist Management
-  - [x] เก็บรักษาข้อมูลใน Redis 100% ตามสถาปัตยกรรมเดิม (มีประสิทธิภาพสูงสุด ป้องกันปัญหาคอขวดที่ Postgres โดย Nginx Gateway/Firewall สามารถดึงตรวจสอบได้ในระดับเสี้ยววินาที)
-  - [x] พัฒนา API endpoints ใน NestJS BFF (`admin-finance.controller.ts`) สำหรับสั่ง block/unblock ใน Redis
+  - [x] พัฒนาโมเดล `Blacklist` ในฐานข้อมูล PostgreSQL เพื่อการจัดเก็บข้อมูลแบบถาวรและตรวจสอบย้อนกลับได้
+  - [x] พัฒนา API endpoints ใน NestJS BFF (`admin-finance.controller.ts`) สำหรับจัดการข้อมูล Blacklist ในฐานข้อมูล
   - [x] เชื่อมโยงหน้า `/risk/blacklist` กับ Real API ครบถ้วนสมบูรณ์
 - [x] 6.4 Disputes / Chargebacks
-  - [x] จัดการข้อมูลการโต้แย้งธุรกรรมผ่าน Redis Status Overrides ประสิทธิภาพสูง
-  - [x] พัฒนา API ใน NestJS BFF สำหรับดึงประวัติ Ledger Hydration และส่งคำร้องขอ Reversal
+  - [x] พัฒนาโมเดล `Dispute` ในฐานข้อมูล PostgreSQL เพื่อรองรับ Workflow การจัดการข้อโต้แย้งที่สมบูรณ์
+  - [x] พัฒนา API ใน NestJS BFF สำหรับจัดการสถานะและประวัติการโต้แย้งธุรกรรม
   - [x] เชื่อมโยงหน้า `/support/disputes` กับ Real API เรียบร้อย
 - [x] 6.5 Approval Workflow
   - [x] พัฒนาเมธอด `getApprovals`, `createApproval`, และ `decideApproval` ใน BFF (`admin-system.controller.ts`) 
-  - [x] พักข้อมูล Parameter Diffs บน Redis temporary keys (`admin:approvals:item:...`) อย่างปลอดภัย
+  - [x] พัฒนาโมเดล `ApprovalRequest` เพื่อจัดเก็บ Parameter Diffs และสถานะ Maker-Checker ในฐานข้อมูลอย่างถาวร
   - [x] เชื่อมโยงหน้า `/system/approvals` กับ Real API ในแบบ Maker-Checker สมบูรณ์
 - [x] 6.6 Outbox Pattern
   - [x] ใช้ตาราง `integration_outbox` ในฐานข้อมูล Postgres ของ Java และ BFF endpoints (`admin-system.controller.ts` `@Get('outbox')` & `@Post('outbox/:id/retry')`) ร่วมกับ `ReportingService`
@@ -164,6 +166,9 @@
 - [x] 6.7 Reconciliation
   - [x] ตรวจสอบพบ API endpoints (`reconciliation/reports` & `runReconciliation`) ใน BFF ที่ทำการส่งต่อไปยัง Java backend
   - [x] เชื่อมโยงหน้า `/finance/reconcile` กับ Real API ในการรัน Solvency analytics และออกประวัติ Reconciled ratio รายวันเรียบร้อย 100%
+- [x] 6.8 Fraud Rules Management
+  - [x] Backend: `FraudRule` CRUD & API evaluation logic
+  - [x] Frontend: Management UI to define dynamic risk parameters
 
 ---
 
@@ -208,38 +213,44 @@
 - [x] สร้างหน้า export statement (เลือกเดือน → ดาวน์โหลด PDF)
 - [x] Backend: generate PDF statement endpoint
 
+#### 7.9 Scheduled Transfers
+- [x] **7.9 Scheduled Transfers**
+  - [x] Backend: `ScheduledTransfer` service & controller with Cron job
+  - [x] Frontend: "Schedule" UI in transfer flow
+  - [x] Frontend: Management screen to view/cancel schedules
+
 ---
 
 ### 8. Database — Missing Models
 
-- [ ] `Dispute` — dispute/chargeback tracking
+- [x] `Dispute` — dispute/chargeback tracking
   ```
   model Dispute {
     id, transactionId, userId, merchantId, reason, status, 
     resolution, resolvedBy, createdAt, updatedAt
   }
   ```
-- [ ] `FraudRule` — configurable fraud detection rules
+- [x] `FraudRule` — configurable fraud detection rules
   ```
   model FraudRule {
     id, name, description, ruleType, condition (JSON), 
     action, severity, isActive, createdAt, updatedAt
   }
   ```
-- [ ] `Blacklist` — blocked entities
+- [x] `Blacklist` — blocked entities
   ```
   model Blacklist {
     id, type (PHONE/IP/DEVICE/ACCOUNT), value, reason, 
     addedBy, isActive, createdAt, expiresAt
   }
   ```
-- [ ] `SystemSetting` — global system configuration
+- [x] `SystemSetting` — global system configuration (verified in finance-service)
   ```
   model SystemSetting {
     id, key (unique), value, description, updatedBy, updatedAt
   }
   ```
-- [ ] `ApprovalRequest` — maker-checker workflow
+- [x] `ApprovalRequest` — maker-checker workflow
   ```
   model ApprovalRequest {
     id, requestType, requestData (JSON), requestedBy, 
@@ -253,7 +264,7 @@
     nickname, createdAt
   }
   ```
-- [ ] `ScheduledTransfer` — future-dated transfers
+- [x] `ScheduledTransfer` — future-dated transfers
   ```
   model ScheduledTransfer {
     id, userId, recipientPhone, amount, frequency, 

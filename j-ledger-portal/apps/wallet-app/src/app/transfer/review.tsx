@@ -15,6 +15,7 @@ import {
   ShieldCheck,
   Wallet,
   UserCircle,
+  CalendarClock,
 } from 'lucide-react-native';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import { MotiView, AnimatePresence } from 'moti';
@@ -40,6 +41,7 @@ import { MerchantService } from '@/lib/merchant-service';
 import { TransactionReviewCard } from '@/components/transaction/TransactionReviewCard';
 import { StickyActionArea } from '@/components/transaction/StickyActionArea';
 import { ProcessingPortal } from '@/components/transaction/ProcessingPortal';
+import { Alert } from 'react-native';
 
 const { width } = Dimensions.get('window');
 
@@ -57,6 +59,9 @@ export default function ReviewTransferScreen() {
     merchantName,
     recipientName,
     recipientMasked,
+    isScheduled,
+    frequency,
+    scheduledDate,
   } = useLocalSearchParams<{
     merchantId?: string;
     paymentId?: string;
@@ -66,6 +71,9 @@ export default function ReviewTransferScreen() {
     merchantName?: string;
     recipientName?: string;
     recipientMasked?: string;
+    isScheduled?: string;
+    frequency?: string;
+    scheduledDate?: string;
   }>();
   const [isProcessing, setIsProcessing] = useState(false);
   const [isConfirming, setIsConfirming] = useState(false);
@@ -175,6 +183,24 @@ export default function ReviewTransferScreen() {
 
       const formattedNote = `${note || ''} [Loc: ${locationStr}]`.trim();
       let result: any;
+
+      if (isScheduled === 'true') {
+        // Scheduled Transfer Flow
+        const res = await api.post('/integration/scheduled-transfers', {
+          recipientPhone: recipient,
+          amount: transferAmount,
+          note: formattedNote,
+          frequency: frequency,
+          startDate: scheduledDate,
+        });
+        setIsProcessing(false);
+        Alert.alert(
+          'Success',
+          'Your scheduled transfer has been set up successfully.',
+          [{ text: 'OK', onPress: () => router.replace('/(tabs)/profile' as any) }]
+        );
+        return;
+      }
 
       if (paymentId) {
         // Dynamic QR Payment Flow
@@ -315,6 +341,27 @@ export default function ReviewTransferScreen() {
             fee={fee}
             note={note as string}
           />
+
+          {/* Schedule Details Card */}
+          {isScheduled === 'true' && (
+            <MotiView
+              from={{ opacity: 0, scale: 0.95 }}
+              animate={{ opacity: 1, scale: 1 }}
+              className="bg-indigo-50/50 p-5 rounded-3xl border border-indigo-100 flex-row items-center gap-4 shadow-sm mb-4"
+            >
+              <View className="w-12 h-12 rounded-2xl bg-white items-center justify-center border border-indigo-100 shadow-sm">
+                <CalendarClock size={24} color="#6366f1" />
+              </View>
+              <View className="flex-1">
+                <Text className="text-[10px] font-manrope font-black text-indigo-500 uppercase tracking-widest mb-1">
+                  Scheduled Transfer
+                </Text>
+                <Text className="text-xs font-manrope font-bold text-gray-700">
+                  {frequency} • Starts {new Date(scheduledDate!).toLocaleDateString('en-US', { day: 'numeric', month: 'long' })}
+                </Text>
+              </View>
+            </MotiView>
+          )}
 
           {/* Trust Banner */}
           <View className="bg-green-50/50 p-5 rounded-2xl border border-green-100/50 flex-row items-center gap-4 shadow-sm mb-4">

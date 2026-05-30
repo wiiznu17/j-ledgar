@@ -22,6 +22,7 @@ import {
   Smartphone,
   CreditCard,
   Store,
+  CalendarClock,
 } from 'lucide-react-native';
 import { MotiView } from 'moti';
 import { useRouter } from 'expo-router';
@@ -273,6 +274,13 @@ export default function SettingsScreen() {
               iconBg="bg-blue-50"
               label="My Information Profile"
               onPress={() => router.push('/profile/information' as any)}
+            />
+            <Divider />
+            <SettingItem
+              icon={<CalendarClock size={20} color="#6366f1" />}
+              iconBg="bg-indigo-50"
+              label="Scheduled Transfers"
+              onPress={() => router.push('/transfer/scheduled' as any)}
             />
           </View>
         </View>

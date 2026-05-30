@@ -21,6 +21,8 @@ import { ResourceType } from '../../modules/audit/audit.service';
 import { REDIS_CLIENT } from '../../core/common/constants';
 import Redis from 'ioredis';
 import { KafkaProducerService } from '../../modules/notification/kafka-producer.service';
+import { PrismaService } from '../../core/prisma/prisma.service';
+import { ApprovalRequestStatus, ApprovalRequestType } from '@prisma/client';
 
 @Controller('admin/system')
 @UseGuards(AdminJwtGuard, AdminRolesGuard, AdminPermissionsGuard)
@@ -30,6 +32,7 @@ export class AdminSystemController {
     private readonly financeService: FinanceService,
     @Inject(REDIS_CLIENT) private readonly redis: Redis,
     private readonly kafkaProducer: KafkaProducerService,
+    private readonly prisma: PrismaService,
   ) {}
 
   @Get('settings')
@@ -77,72 +80,69 @@ export class AdminSystemController {
   ): Promise<AdminPaginatedResponse<any> & { stats: any }> {
     const safePage = Math.max(1, Number(page) || 1);
     const safeLimit = Math.min(Math.max(1, Number(limit) || 10), 100);
-    const keys = await this.redis.keys('admin:approvals:item:*');
-    const rows = (
-      await Promise.all(
-        keys.map(async (key) => {
-          const raw = await this.redis.get(key);
-          if (!raw) return null;
+    const skip = (safePage - 1) * safeLimit;
 
-          try {
-            return JSON.parse(raw);
-          } catch {
-            return null;
-          }
-        }),
-      )
-    ).filter(Boolean);
-
+    const normalizedStatus =
+      status && status !== 'ALL' ? (status as ApprovalRequestStatus) : undefined;
     const searchTerm = search?.trim().toLowerCase();
-    const normalizedStatus = status && status !== 'ALL' ? status : undefined;
-    const normalizedCategory =
-      category && category !== 'ALL' ? category : undefined;
 
-    const filtered = rows
-      .filter((item: any) => {
-        const matchesStatus =
-          !normalizedStatus || item.status === normalizedStatus;
-        const matchesCategory =
-          !normalizedCategory || item.category === normalizedCategory;
-        const matchesSearch =
-          !searchTerm ||
-          [
-            item.id,
-            item.action,
-            item.proposedBy,
-            item.reason,
-            item.originalValue,
-            item.proposedValue,
-          ]
-            .filter(Boolean)
-            .some((value) => String(value).toLowerCase().includes(searchTerm));
+    const where: any = {
+      ...(normalizedStatus && { status: normalizedStatus }),
+    };
 
-        return matchesStatus && matchesCategory && matchesSearch;
-      })
-      .sort(
-        (a: any, b: any) =>
-          new Date(b.proposedAt).getTime() - new Date(a.proposedAt).getTime(),
-      );
+    if (searchTerm) {
+      where.OR = [
+        { id: { contains: searchTerm, mode: 'insensitive' } },
+        { notes: { contains: searchTerm, mode: 'insensitive' } },
+        { requestedBy: { contains: searchTerm, mode: 'insensitive' } },
+      ];
+    }
 
-    const start = (safePage - 1) * safeLimit;
-    const data = filtered.slice(start, start + safeLimit);
+    const [rows, total] = await Promise.all([
+      this.prisma.approvalRequest.findMany({
+        where,
+        skip,
+        take: safeLimit,
+        orderBy: { createdAt: 'desc' },
+      }),
+      this.prisma.approvalRequest.count({ where }),
+    ]);
+
+    const stats = await this.prisma.approvalRequest.groupBy({
+      by: ['status'],
+      _count: true,
+    });
+
+    const statsMap = {
+      pending: stats.find((s) => s.status === 'PENDING')?._count || 0,
+      approved: stats.find((s) => s.status === 'APPROVED')?._count || 0,
+      rejected: stats.find((s) => s.status === 'REJECTED')?._count || 0,
+    };
+
+    // Map DB model to UI expectations
+    const data = rows.map((row) => ({
+      ...row,
+      target: (row.requestData as any)?.target || 'SYSTEM_SETTINGS',
+      category: (row.requestData as any)?.category || 'SECURITY',
+      action: (row.requestData as any)?.action || row.requestType,
+      proposedBy: row.requestedBy,
+      proposedAt: row.createdAt.toISOString(),
+      originalValue: (row.requestData as any)?.originalValue || 'N/A',
+      proposedValue: (row.requestData as any)?.proposedValue || 'N/A',
+      payload: (row.requestData as any)?.payload || null,
+      reason:
+        (row.requestData as any)?.reason || row.notes || 'No reason provided',
+    }));
 
     return {
       data,
       pagination: {
         page: safePage,
         limit: safeLimit,
-        total: filtered.length,
-        totalPages: Math.max(1, Math.ceil(filtered.length / safeLimit)),
+        total,
+        totalPages: Math.ceil(total / safeLimit),
       },
-      stats: {
-        pending: filtered.filter((item: any) => item.status === 'PENDING')
-          .length,
-        approved: filtered.filter((item: any) => item.status === 'APPROVED')
-          .length,
-        rejected: filtered.filter((item: any) => item.status === 'REJECTED')
-          .length,
-      },
+      stats: statsMap,
     };
   }
 
@@ -154,28 +154,26 @@ export class AdminSystemController {
     'Created system approval request',
   )
   async createApproval(@Body() body: any) {
-    const id =
-      body.id ||
-      `APR-${Date.now().toString(36).toUpperCase()}-${Math.random()
-        .toString(36)
-        .slice(2, 6)
-        .toUpperCase()}`;
-    const record = {
-      id,
-      target: body.target || 'SYSTEM_SETTINGS',
-      category: body.category || 'SECURITY',
-      action: body.action || 'System Change Request',
-      proposedBy: body.proposedBy || 'Admin Operator',
-      proposedAt: body.proposedAt || new Date().toISOString(),
-      originalValue: body.originalValue || 'N/A',
-      proposedValue: body.proposedValue || 'N/A',
-      payload: body.payload || null,
-      status: 'PENDING',
-      reason: body.reason || 'No reason provided',
-      notes: body.notes || null,
-    };
+    const requestType = this.mapActionToType(body.action);
 
-    await this.redis.set(`admin:approvals:item:${id}`, JSON.stringify(record));
+    const record = await this.prisma.approvalRequest.create({
+      data: {
+        requestType,
+        requestedBy: body.proposedBy || 'Admin Operator',
+        status: ApprovalRequestStatus.PENDING,
+        notes: body.reason || null,
+        requestData: {
+          target: body.target || 'SYSTEM_SETTINGS',
+          category: body.category || 'SECURITY',
+          action: body.action || 'System Change Request',
+          originalValue: body.originalValue || 'N/A',
+          proposedValue: body.proposedValue || 'N/A',
+          payload: body.payload || null,
+          reason: body.reason || 'No reason provided',
+        },
+      },
+    });
+
     return { data: record };
   }
 
@@ -190,19 +188,24 @@ export class AdminSystemController {
     @Param('id') id: string,
     @Body() body: { decision: 'APPROVED' | 'REJECTED'; notes?: string },
   ) {
-    const key = `admin:approvals:item:${id}`;
-    const raw = await this.redis.get(key);
-    if (!raw) {
+    const current = await this.prisma.approvalRequest.findUnique({
+      where: { id },
+    });
+
+    if (!current) {
       return { data: null };
     }
 
-    const current = JSON.parse(raw);
     if (body.decision === 'APPROVED') {
-      if (current.target === 'SYSTEM_SETTINGS' && current.payload) {
-        await this.financeService.updateSystemSettings(current.payload);
-      } else if (current.action === 'EXPORT_STATEMENT' && current.payload) {
-        const { userId, year, month, email } = current.payload;
-        
+      const requestData = current.requestData as any;
+      if (requestData.target === 'SYSTEM_SETTINGS' && requestData.payload) {
+        await this.financeService.updateSystemSettings(requestData.payload);
+      } else if (
+        requestData.action === 'EXPORT_STATEMENT' &&
+        requestData.payload
+      ) {
+        const { userId, year, month, email } = requestData.payload;
+
         // Fetch transactions for the statement period
         const txs = await this.financeService.getTransactions(userId, {
           page: 0,
@@ -213,7 +216,9 @@ export class AdminSystemController {
         const filteredTxs = txs.filter((t: any) => {
           if (!t.createdAt) return false;
           const d = new Date(t.createdAt);
-          return d.getFullYear() === Number(year) && (d.getMonth() + 1) === Number(month);
+          return (
+            d.getFullYear() === Number(year) && d.getMonth() + 1 === Number(month)
+          );
         });
 
         // Format a beautiful text listing of transactions
@@ -221,20 +226,21 @@ export class AdminSystemController {
         if (filteredTxs.length === 0) {
           txText = 'No transactions found for this period.';
         } else {
-          txText = filteredTxs.map((t: any) => {
-            const date = new Date(t.createdAt).toLocaleDateString();
-            const type = t.type || 'TRANSFER';
-            const amount = t.amount ? t.amount.toFixed(2) : '0.00';
-            const direction = t.direction || 'OUT';
-            const note = t.note ? ` (${t.note})` : '';
-            return `${date} | ${type} | ${direction} | ${amount} THB${note}`;
-          }).join('\n');
+          txText = filteredTxs
+            .map((t: any) => {
+              const date = new Date(t.createdAt).toLocaleDateString();
+              const type = t.type || 'TRANSFER';
+              const amount = t.amount ? t.amount.toFixed(2) : '0.00';
+              const direction = t.direction || 'OUT';
+              const note = t.note ? ` (${t.note})` : '';
+              return `${date} | ${type} | ${direction} | ${amount} THB${note}`;
+            })
+            .join('\n');
         }
 
         // Generate mock PDF attachment
-        const title = `P-Wallet Statement - ${month}/${year}`;
         const content = `User ID: ${userId}\nStatement Period: ${month}/${year}\n\nTransactions:\n---------------------------------\n${txText}`;
-        
+
         // We will emit the security event, and the notification-worker will send the email with this statement content!
         await this.kafkaProducer.emit(KafkaTopic.SECURITY_EVENTS, {
           userId,
@@ -249,15 +255,25 @@ export class AdminSystemController {
       }
     }
 
-    const updated = {
-      ...current,
-      status: body.decision,
-      notes: body.notes || 'Actioned by Admin Checker',
-      actionedAt: new Date().toISOString(),
-    };
+    const updated = await this.prisma.approvalRequest.update({
+      where: { id },
+      data: {
+        status: body.decision as ApprovalRequestStatus,
+        notes: body.notes || 'Actioned by Admin Checker',
+        approvedBy: 'Admin Checker', // This should come from req.user.sub in a real app
+      },
+    });
 
-    await this.redis.set(key, JSON.stringify(updated));
     return { data: updated };
+  }
+
+  private mapActionToType(action: string): ApprovalRequestType {
+    if (action === 'EXPORT_STATEMENT')
+      return ApprovalRequestType.MANUAL_ADJUSTMENT; // Closest type
+    if (action?.includes('LIMIT')) return ApprovalRequestType.LIMIT_UPDATE;
+    if (action?.includes('PARTNER')) return ApprovalRequestType.PARTNER_APPROVAL;
+    if (action?.includes('FEE')) return ApprovalRequestType.FEE_UPDATE;
+    return ApprovalRequestType.MANUAL_ADJUSTMENT;
   }
 
   @Get('outbox')

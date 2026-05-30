@@ -350,4 +350,18 @@ export const adminApi = {
     unblockNode: (data: { type: 'IP' | 'HARDWARE'; target: string }) =>
       apiClient.post<void>('/api/admin/blacklist/nodes/unblock', data),
   },
+
+  // Fraud Rules
+  fraudRules: {
+    findAll: () =>
+      apiClient.get<{ data: any[] }>('/api/admin/fraud-rules'),
+    findOne: (id: string) =>
+      apiClient.get<{ data: any }>(`/api/admin/fraud-rules/${id}`),
+    create: (data: any) =>
+      apiClient.post<{ data: any }>('/api/admin/fraud-rules', data),
+    update: (id: string, data: any) =>
+      apiClient.put<{ data: any }>(`/api/admin/fraud-rules/${id}`, data),
+    remove: (id: string) =>
+      apiClient.delete<any>(`/api/admin/fraud-rules/${id}`),
+  },
 };

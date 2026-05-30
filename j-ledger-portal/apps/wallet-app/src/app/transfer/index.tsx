@@ -19,7 +19,7 @@ import { TransactionAmountCard } from '@/components/transaction/TransactionAmoun
 import { StickyActionArea } from '@/components/transaction/StickyActionArea';
 import { TransactionRecipientCard } from '@/components/transaction/TransactionRecipientCard';
 import { TransactionSearchArea } from '@/components/transaction/TransactionSearchArea';
-import { ChevronLeft, Info } from 'lucide-react-native';
+import { ChevronLeft, Info, CalendarClock, Clock } from 'lucide-react-native';
 
 export default function TransferScreen() {
   const router = useRouter();
@@ -35,6 +35,9 @@ export default function TransferScreen() {
   const [search, setSearch] = React.useState('');
   const [amount, setAmount] = React.useState('');
   const [note, setNote] = React.useState('');
+  const [isScheduled, setIsScheduled] = React.useState(false);
+  const [scheduledFrequency, setFrequency] = React.useState('ONCE');
+  const [scheduledDate, setScheduledDate] = React.useState(new Date(Date.now() + 86400000)); // Tomorrow
   const [isSubmitting, setIsSubmitting] = React.useState(false);
   const [recipientNotFound, setRecipientNotFound] = React.useState(false);
   const [merchant, setMerchant] = React.useState<any>(null);
@@ -187,15 +190,22 @@ export default function TransferScreen() {
   const handleNext = () => {
     if (isSubmitting) return;
 
+    const baseParams = {
+      amount,
+      note,
+      isScheduled: isScheduled ? 'true' : 'false',
+      frequency: scheduledFrequency,
+      scheduledDate: scheduledDate.toISOString(),
+    };
+
     if (params.merchantId || params.paymentId) {
       // Merchant Pay logic remains
       router.push({
         pathname: '/transfer/review',
         params: {
+          ...baseParams,
           merchantId: params.merchantId,
           paymentId: params.paymentId,
-          amount,
-          note,
           merchantName: merchant?.merchantName,
         },
       } as any);
@@ -211,9 +221,8 @@ export default function TransferScreen() {
     router.push({
       pathname: '/transfer/review',
       params: {
+        ...baseParams,
         recipient: recipient.phone,
-        amount,
-        note,
         recipientName: recipient.displayName,
         recipientMasked: recipient.phoneMasked,
       },
@@ -347,6 +356,70 @@ export default function TransferScreen() {
                   style={{ paddingVertical: 4 }}
                 />
               </View>
+            </View>
+
+            {/* Scheduling Options */}
+            <View className="mb-6">
+              <View className="flex-row items-center justify-between px-1 mb-3">
+                <Text className="text-[10px] font-manrope font-black text-gray-400 uppercase tracking-widest">
+                  Transfer Schedule
+                </Text>
+                <TouchableOpacity
+                  onPress={() => setIsScheduled(!isScheduled)}
+                  className={`px-3 py-1 rounded-full border ${isScheduled ? 'bg-indigo-50 border-indigo-100' : 'bg-gray-50 border-gray-100'}`}
+                >
+                  <Text className={`text-[10px] font-manrope font-black ${isScheduled ? 'text-indigo-500' : 'text-gray-400'}`}>
+                    {isScheduled ? 'ON' : 'OFF'}
+                  </Text>
+                </TouchableOpacity>
+              </View>
+
+              {isScheduled && (
+                <MotiView
+                  from={{ opacity: 0, height: 0 }}
+                  animate={{ opacity: 1, height: 160 }}
+                  className="bg-white rounded-3xl border border-indigo-50 p-4 overflow-hidden shadow-sm"
+                >
+                  {/* Frequency Selection */}
+                  <View className="flex-row gap-2 mb-4">
+                    {['ONCE', 'DAILY', 'WEEKLY', 'MONTHLY'].map((f) => (
+                      <TouchableOpacity
+                        key={f}
+                        onPress={() => setFrequency(f)}
+                        className={`flex-1 py-2 rounded-xl items-center justify-center border ${scheduledFrequency === f ? 'bg-indigo-500 border-indigo-500' : 'bg-gray-50 border-gray-100'}`}
+                      >
+                        <Text className={`text-[9px] font-black uppercase ${scheduledFrequency === f ? 'text-white' : 'text-gray-500'}`}>
+                          {f === 'ONCE' ? 'Once' : f.charAt(0) + f.slice(1).toLowerCase()}
+                        </Text>
+                      </TouchableOpacity>
+                    ))}
+                  </View>
+
+                  {/* Date Selection Display */}
+                  <View className="flex-row items-center gap-4 bg-gray-50 p-3 rounded-2xl">
+                    <View className="w-10 h-10 rounded-full bg-white items-center justify-center shadow-xs">
+                      <CalendarClock size={18} color="#6366f1" />
+                    </View>
+                    <View className="flex-1">
+                      <Text className="text-[9px] font-black text-gray-400 uppercase">First Execution Date</Text>
+                      <Text className="text-sm font-manrope font-black text-gray-800">
+                        {scheduledDate.toLocaleDateString('en-US', { day: 'numeric', month: 'long', year: 'numeric' })}
+                      </Text>
+                    </View>
+                    <TouchableOpacity
+                      onPress={() => {
+                        // In real app, open date picker. Here we just add 1 day as mock interaction
+                        const next = new Date(scheduledDate);
+                        next.setDate(next.getDate() + 1);
+                        setScheduledDate(next);
+                      }}
+                      className="px-4 py-2 bg-white border border-gray-100 rounded-xl"
+                    >
+                      <Text className="text-[10px] font-black text-indigo-500">+1 Day</Text>
+                    </TouchableOpacity>
+                  </View>
+                </MotiView>
+              )}
             </View>
 
             {/* Recipient Not Found Warning */}

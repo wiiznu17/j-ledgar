@@ -130,6 +130,12 @@ const navigationGroups: NavigationGroup[] = [
         requiredPermission: Permission.VIEW_SUSPICIOUS_ACTIVITIES,
       },
       {
+        name: 'Fraud Rules',
+        href: '/risk/fraud/rules',
+        icon: SlidersHorizontal,
+        requiredPermission: Permission.MANAGE_SYSTEM_SETTINGS,
+      },
+      {
         name: 'Blacklist',
         href: '/risk/blacklist',
         icon: Ban,

@@ -8,6 +8,10 @@ import {
   AuditAction,
   ResourceType,
   SuspiciousActivityStatus,
+  FraudRuleType,
+  FraudRuleAction,
+  ScheduledTransferStatus,
+  ScheduledTransferFrequency,
 } from '../enums';
 
 export interface WalletUser {
@@ -200,4 +204,30 @@ export interface TreasurySummary {
   totalCustomerLiability: number;
   reserveRatio: number;
   bankAccounts: TreasuryBankAccount[];
+}
+
+export interface FraudRuleDto {
+  id: string;
+  name: string;
+  description: string | null;
+  ruleType: FraudRuleType;
+  condition: Record<string, any>;
+  action: FraudRuleAction;
+  severity: string;
+  isActive: boolean;
+  createdAt: string | Date;
+  updatedAt: string | Date;
+}
+
+export interface ScheduledTransferDto {
+  id: string;
+  userId: string;
+  recipientPhone: string;
+  amount: number;
+  frequency: ScheduledTransferFrequency;
+  nextExecutionAt: string | Date;
+  status: ScheduledTransferStatus;
+  note: string | null;
+  createdAt: string | Date;
+  updatedAt: string | Date;
 }

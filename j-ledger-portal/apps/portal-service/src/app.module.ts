@@ -15,6 +15,8 @@ import { LoyaltyModule } from './modules/loyalty/loyalty.module';
 import { DealModule } from './modules/deals/deal.module';
 import { BannerModule } from './modules/banners/banner.module';
 import { MerchantModule } from './modules/merchant/merchant.module';
+import { FraudModule } from './modules/fraud/fraud.module';
+import { ScheduledTransferModule } from './modules/scheduled-transfer/scheduled-transfer.module';
 import { HealthController } from './core/health/health.controller';
 import { ScheduleModule } from '@nestjs/schedule';
 import { ThrottlerModule, ThrottlerGuard } from '@nestjs/throttler';
@@ -90,6 +92,8 @@ import { ThrottlerStorageRedisService } from './core/redis/throttler-storage-red
     DealModule,
     BannerModule,
     MerchantModule,
+    FraudModule,
+    ScheduledTransferModule,
   ],
   controllers: [HealthController],
   providers: [
