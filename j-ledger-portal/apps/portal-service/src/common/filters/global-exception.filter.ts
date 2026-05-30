@@ -23,8 +23,9 @@ export class GlobalExceptionFilter implements ExceptionFilter {
         : HttpStatus.INTERNAL_SERVER_ERROR;
 
     const isProduction = process.env.NODE_ENV === 'production';
+    const traceId = (request as any).id;
 
-    // Log full error for debugging (with masking of sensitive data if needed)
+    // Log full error for debugging
     this.logger.error({
       timestamp: new Date().toISOString(),
       path: request.url,
@@ -48,6 +49,7 @@ export class GlobalExceptionFilter implements ExceptionFilter {
           ? exception.message
           : 'Internal server error',
       timestamp: new Date().toISOString(),
+      traceId,
       // Only include path in development for debugging
       ...(process.env.NODE_ENV !== 'production' && { path: request.url }),
     });

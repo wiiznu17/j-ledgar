@@ -291,16 +291,17 @@
 
 ### 10. DevOps & Observability
 
-- [ ] ติดตั้ง structured logging (Winston / Pino)
-  - [ ] JSON format logging
-  - [ ] Request ID tracking
-  - [ ] Log levels per environment
+- [x] **Distributed Tracing & Structured Logging**
+  - [x] Nginx: Generate `$request_id` and log as JSON.
+  - [x] Portal Service (Node): Install `nestjs-pino`, use JSON logs, and propagate `X-Trace-Id`.
+  - [x] Finance Service (Java): Use `MDC` Filter and `LogstashEncoder` for unified JSON logging.
+  - [x] Cross-Service: Axios interceptor to forward Trace ID from Portal to Finance.
+  - [x] API Contract: Include `traceId` in Global Exception Filter responses.
 - [ ] ตั้งค่า Prometheus metrics endpoint
   - [ ] HTTP request duration
   - [ ] Active connections
   - [ ] Error rates
   - [ ] Business metrics (transactions/sec, active users)
-- [ ] ตั้งค่า OpenTelemetry distributed tracing
 - [ ] ตั้งค่า Sentry error tracking
 - [ ] ตั้งค่า database backup automation (pg_dump cron)
 - [ ] ตั้งค่า SSL cert auto-renewal (Let's Encrypt / cert-bot)

@@ -1,4 +1,4 @@
-import { Module } from '@nestjs/common';
+import { Module, NestModule, MiddlewareConsumer, RequestMethod } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
 import { PrismaModule } from './core/prisma/prisma.module';
 import { RedisModule } from './core/redis/redis.module';
@@ -22,9 +22,25 @@ import { ScheduleModule } from '@nestjs/schedule';
 import { ThrottlerModule, ThrottlerGuard } from '@nestjs/throttler';
 import { APP_GUARD } from '@nestjs/core';
 import { ThrottlerStorageRedisService } from './core/redis/throttler-storage-redis.service';
+import { LoggerModule } from 'nestjs-pino';
+import { TraceMiddleware } from './core/common/middleware/trace.middleware';
 
 @Module({
   imports: [
+    LoggerModule.forRoot({
+      pinoHttp: {
+        customProps: () => ({
+          service: 'portal-service',
+        }),
+        transport:
+          process.env.NODE_ENV !== 'production'
+            ? { target: 'pino-pretty', options: { colorize: true } }
+            : undefined,
+        autoLogging: true,
+        genReqId: (req: any) =>
+          req.headers['x-trace-id'] || req.id || Math.random().toString(36).slice(2, 9),
+      },
+    }),
     ScheduleModule.forRoot(),
     PrismaModule,
     RedisModule,
@@ -103,5 +119,10 @@ import { ThrottlerStorageRedisService } from './core/redis/throttler-storage-red
     },
   ],
 })
-export class AppModule {}
-
+export class AppModule implements NestModule {
+  configure(consumer: MiddlewareConsumer) {
+    consumer
+      .apply(TraceMiddleware)
+      .forRoutes({ path: '*', method: RequestMethod.ALL });
+  }
+}

@@ -2,6 +2,7 @@ import { Injectable, Logger, HttpException, HttpStatus } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { HttpService } from '@nestjs/axios';
 import { URLSearchParams } from 'url';
+import { TraceStorage } from '../../core/common/trace-storage';
 
 interface CreateWalletRequest {
   userId: string;
@@ -605,8 +606,10 @@ export class FinanceService {
     const internalSecret = this.configService.get<string>(
       'JLEDGER_INTERNAL_SECRET',
     );
+    const traceId = TraceStorage.getTraceId();
     return {
       'X-Internal-Secret': internalSecret || '',
+      ...(traceId && { 'X-Trace-Id': traceId }),
     };
   }
 
