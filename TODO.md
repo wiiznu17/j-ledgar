@@ -278,14 +278,15 @@
 
 ### 9. Security Hardening
 
-- [ ] ติดตั้ง `helmet` (NestJS security headers)
-- [ ] ตั้งค่า CORS policy อย่างชัดเจนใน `main.ts`
-- [ ] เพิ่ม global input sanitization pipe (XSS prevention)
+- [x] Installed and configured `helmet` for secure HTTP headers (CSP, HSTS, etc.).
+- [x] Configured Global `ValidationPipe` for strict input sanitization (Whitelist & Non-whitelisted rejection).
+- [x] Registered Global `ClassSerializerInterceptor` to automatically strip sensitive data (e.g., @Exclude() fields) from API responses.
+- [x] Verified CORS policy with environment-aware allowed origins.
+- [x] Confirmed SQL Injection protection by exclusively using Prisma ORM (no raw queries found).
 - [ ] เพิ่ม request logging middleware (automatic audit trail)
 - [ ] ย้ายจาก `.env` files → secrets manager (AWS Secrets Manager / Vault)
 - [ ] ตรวจสอบ JWT refresh token rotation implementation
 - [ ] เพิ่ม CSRF protection สำหรับ admin-web
-- [ ] ตรวจ SQL injection protection (Prisma ปกติป้องกันอยู่แล้ว แต่ตรวจ raw queries)
 
 ---
 
@@ -352,3 +353,4 @@
   - [x] Backend: Global `TransformInterceptor` to wrap success responses in `{ success, data, meta }`.
   - [x] Backend: Refactored `GlobalExceptionFilter` for standardized error format.
   - [x] Frontend: Added response interceptors in `wallet-app` and `admin-web` to transparently unwrap data and maintain backward compatibility.
+- [x] Security Hardening — helmet, strict validation, CORS, and SQLi protection

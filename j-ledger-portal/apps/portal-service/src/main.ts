@@ -1,7 +1,9 @@
 import { NestFactory } from '@nestjs/core';
-import { RequestMethod, ValidationPipe } from '@nestjs/common';
+import { RequestMethod, ValidationPipe, ClassSerializerInterceptor } from '@nestjs/common';
+import { Reflector } from '@nestjs/core';
 import { AppModule } from './app.module';
 import cookieParser from 'cookie-parser';
+import helmet from 'helmet';
 import { GlobalExceptionFilter } from './common/filters/global-exception.filter';
 import { TransformInterceptor } from './common/interceptors/transform.interceptor';
 import { Logger } from 'nestjs-pino';
@@ -17,9 +19,18 @@ async function bootstrap() {
   // Use Pino Logger as global logger
   app.useLogger(app.get(Logger));
 
-  // Swagger Documentation Setup
   const nodeEnv = (process.env.NODE_ENV || 'development').toLowerCase();
   const isProduction = nodeEnv === 'production';
+
+  // Secure HTTP Headers
+  app.use(
+    helmet({
+      contentSecurityPolicy: isProduction ? undefined : false,
+      crossOriginEmbedderPolicy: true,
+    }),
+  );
+
+  // Swagger Documentation Setup
 
   // Only enable Swagger in non-production environments to prevent API structure exposure
   if (!isProduction) {
@@ -43,7 +54,10 @@ async function bootstrap() {
   );
 
   app.useGlobalFilters(new GlobalExceptionFilter());
-  app.useGlobalInterceptors(new TransformInterceptor() as any);
+  app.useGlobalInterceptors(
+    new TransformInterceptor() as any,
+    new ClassSerializerInterceptor(app.get(Reflector)),
+  );
 
   app.setGlobalPrefix('api/v1', {
     exclude: [{ path: 'health', method: RequestMethod.GET }],
