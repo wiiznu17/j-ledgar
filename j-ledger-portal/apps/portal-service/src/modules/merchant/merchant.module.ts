@@ -1,9 +1,5 @@
 import { Module } from '@nestjs/common';
 import { MerchantService } from './merchant.service';
-import { TerminalController } from '../../terminal/terminal.controller';
-import { AdminMerchantController } from '../../admin/merchant/admin-merchant.controller';
-import { MerchantController } from '../../user/merchant/merchant.controller';
-import { MerchantDealController } from './merchant-deal.controller';
 import { IntegrationModule } from '../integration/integration.module';
 import { AuditModule } from '../audit/audit.module';
 import { AdminModule } from '../../admin/admin.module';
@@ -12,12 +8,7 @@ import { TerminalIdempotencyService } from './security/terminal-idempotency.serv
 
 @Module({
   imports: [IntegrationModule, AuditModule, AdminModule],
-  controllers: [
-    TerminalController,
-    AdminMerchantController,
-    MerchantController,
-    MerchantDealController,
-  ],
+  controllers: [],
   providers: [
     MerchantService,
     TerminalNonceService,

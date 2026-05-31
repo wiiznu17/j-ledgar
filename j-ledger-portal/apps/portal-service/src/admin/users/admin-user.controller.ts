@@ -10,7 +10,7 @@ import {
 } from '@nestjs/common';
 import { IdentityService } from '../../modules/identity/identity.service';
 import { LoyaltyService } from '../../modules/loyalty/loyalty.service';
-import { AdminService } from '../services/admin.service';
+import { AdminService } from '../../modules/admin/admin.service';
 import {
   AdminPaginatedResponse,
   PaginatedResponse,

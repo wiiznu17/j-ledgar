@@ -8,11 +8,11 @@ import {
   HttpCode,
   HttpStatus,
 } from '@nestjs/common';
-import { MerchantService } from './merchant.service';
-import { TerminalAuthGuard } from '../../core/common/guards/terminal-auth.guard';
+import { MerchantService } from '../modules/merchant/merchant.service';
+import { TerminalAuthGuard } from '../core/common/guards/terminal-auth.guard';
 
 @Controller('merchant/deals')
-export class MerchantDealController {
+export class TerminalDealController {
   constructor(private readonly merchantService: MerchantService) {}
 
   @Get('redemptions/:code/verify')

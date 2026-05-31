@@ -1,6 +1,5 @@
 import { Module } from '@nestjs/common';
 import { KycService } from './kyc.service';
-import { KycController } from '../../user/kyc/kyc.controller';
 import { IntegrationModule } from '../integration/integration.module';
 import { JwtModule } from '@nestjs/jwt';
 import { ConfigModule } from '@nestjs/config';
@@ -19,7 +18,6 @@ import { AwsRekognitionService } from './services/face.service';
     IdentityModule,
     NotificationModule,
   ],
-  controllers: [KycController],
   providers: [
     KycService,
     S3Service,

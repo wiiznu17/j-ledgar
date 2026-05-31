@@ -1,8 +1,8 @@
 import { Module } from '@nestjs/common';
 import { APP_INTERCEPTOR } from '@nestjs/core';
-import { AdminService } from './services/admin.service';
+import { AdminService } from '../modules/admin/admin.service';
 import { AuditInterceptor } from './interceptors/audit.interceptor';
-import { MailService } from './services/mail.service';
+import { MailService } from '../modules/admin/mail.service';
 import { AdminStaffController } from './staff/admin-staff.controller';
 import { AdminCommonController } from './common/admin-common.controller';
 import { AdminAuthController } from './auth/admin-auth.controller';
@@ -10,6 +10,7 @@ import { AdminSystemController } from './system/admin-system.controller';
 import { AdminReconciliationController } from './reconciliation/admin-reconciliation.controller';
 import { AdminFinanceController } from './finance/admin-finance.controller';
 import { AdminUserController } from './users/admin-user.controller';
+import { AdminMerchantController } from './merchant/admin-merchant.controller';
 import { AdminBannerController } from './banners/admin-banner.controller';
 import { AdminDealController } from './deals/admin-deal.controller';
 import { AdminAuditController } from './audit/admin-audit.controller';
@@ -64,6 +65,7 @@ import { AdminJwtStrategy } from './strategies/admin-jwt.strategy';
     AdminReconciliationController,
     AdminFinanceController,
     AdminUserController,
+    AdminMerchantController,
     AdminBannerController,
     AdminDealController,
     AdminAuditController,

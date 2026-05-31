@@ -2,7 +2,7 @@ import { Injectable, CanActivate, ExecutionContext } from '@nestjs/common';
 import { Reflector } from '@nestjs/core';
 import { Permission } from '@repo/dto';
 import { PERMISSIONS_KEY } from '../decorators/permissions.decorator';
-import { AdminService } from '../services/admin.service';
+import { AdminService } from '../../modules/admin/admin.service';
 
 @Injectable()
 export class AdminPermissionsGuard implements CanActivate {

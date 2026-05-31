@@ -2,12 +2,7 @@ import { SecurityEventType } from '@prisma/client';
 import {
   Injectable,
   Inject,
-  ConflictException,
-  UnauthorizedException,
-  BadRequestException,
   Logger,
-  InternalServerErrorException,
-  ForbiddenException,
 } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import { ConfigService } from '@nestjs/config';
@@ -19,8 +14,6 @@ import { FinanceService } from '../integration/finance.service';
 import { KafkaProducerService } from '../notification/kafka-producer.service';
 import {
   NotificationEventType,
-  KafkaTopic,
-  DeviceTrustLevel,
   UserStatus,
   RegistrationState,
   KYCVerificationStatus,
@@ -37,49 +30,16 @@ import {
   RegisterProfileDto,
   AcceptTermsDto,
 } from './dto/auth.dto';
-import * as bcrypt from 'bcryptjs';
-import { randomUUID, createDecipheriv } from 'crypto';
-import { LogMaskingUtil } from '../../common/utils/log-masking.util';
-
-const ACCESS_TOKEN_TTL_SECONDS = 3 * 60;
-const REFRESH_TOKEN_TTL_SECONDS = 30 * 24 * 60 * 60;
-const REGISTRATION_TOKEN_TTL_SECONDS = 15 * 60;
-const OTP_TTL_SECONDS = 3 * 60;
-
-interface AccessTokenPayload {
-  sub: string;
-  sid: string;
-  did: string;
-  typ?: 'access';
-  jti: string;
-  scope?: 'wallet';
-  pvn: boolean; // PIN Verified Now
-  exp?: number;
-}
-
-interface RefreshTokenPayload {
-  sub: string;
-  sid: string;
-  did: string;
-  typ: 'refresh';
-  jti: string;
-  exp?: number;
-}
-
-interface RegistrationTokenPayload {
-  sub: string;
-  state: string;
-  typ: 'registration';
-  nonce: string;
-  exp?: number;
-}
+import { IdentityUtils } from './utils/identity.utils';
+import { UserAuthService } from './services/user-auth.service';
+import { UserRegistrationService } from './services/user-registration.service';
+import { UserProfileService } from './services/user-profile.service';
+import { UserSecurityService } from './services/user-security.service';
+import { UserAdminService } from './services/user-admin.service';
 
 @Injectable()
 export class IdentityService {
   private readonly logger = new Logger(IdentityService.name);
-  private readonly accessSecret: string;
-  private readonly refreshSecret: string;
-  private readonly registrationSecret: string;
 
   constructor(
     private readonly prisma: PrismaService,
@@ -89,716 +49,229 @@ export class IdentityService {
     @Inject(REDIS_CLIENT) private readonly redis: Redis,
     @Inject(ISmsProvider) private readonly smsProvider: ISmsProvider,
     private readonly financeService: FinanceService,
-  ) {
-    this.accessSecret = this.requireEnv('CUSTOMER_JWT_SECRET');
-    this.refreshSecret = this.requireEnv('CUSTOMER_REFRESH_SECRET');
-    this.registrationSecret = this.requireEnv('CUSTOMER_REGISTRATION_SECRET');
-  }
+    private readonly userAuthService: UserAuthService,
+    private readonly userRegistrationService: UserRegistrationService,
+    private readonly userProfileService: UserProfileService,
+    private readonly userSecurityService: UserSecurityService,
+    private readonly userAdminService: UserAdminService,
+  ) {}
 
-  private requireEnv(key: string): string {
-    const value = this.configService.get<string>(key);
-    if (!value) {
-      throw new Error(`Missing required environment variable: ${key}`);
-    }
-    return value;
-  }
+  // ==================== Phone Utils (Delegating to IdentityUtils) ====================
 
   private normalizePhone(phone: string): string {
-    const digits = (phone || '').replace(/\D/g, '');
-    // Convert to +66 format (E.164)
-    if (digits.startsWith('66') && digits.length === 11) {
-      return `+66${digits.slice(2)}`;
-    }
-    if (digits.startsWith('0') && digits.length === 10) {
-      return `+66${digits.slice(1)}`;
-    }
-    if (digits.length === 9) {
-      return `+66${digits}`;
-    }
-    // If already has + prefix, keep it
-    if (phone.startsWith('+')) {
-      return phone;
-    }
-    // Default: assume Thai number and add +66
-    return `+66${digits}`;
+    return IdentityUtils.normalizePhone(phone);
   }
 
   private toE164Phone(localPhone: string): string {
-    return this.normalizePhone(localPhone);
+    return IdentityUtils.normalizePhone(localPhone);
   }
 
   private getPhoneCandidates(phone: string): string[] {
-    const e164 = this.normalizePhone(phone);
-    const digits = e164.replace(/\D/g, '');
-    // Generate variations for backward compatibility during search
-    const local = `0${digits.slice(2)}`;
-    return [...new Set([e164, local])];
+    return IdentityUtils.getPhoneCandidates(phone);
   }
 
   // ==================== Registration ====================
 
-  async registerInit(
-    dto: RegisterInitDto,
-    context?: { ip?: string; userAgent?: string },
-  ) {
-    // Validate phone number format BEFORE normalization (Thai numbers must be 10 digits and start with 0)
-    const inputDigits = (dto.phoneNumber || '').replace(/\D/g, '');
-    if (inputDigits.length !== 10) {
-      throw new BadRequestException('Phone number must be 10 digits');
-    }
-    if (!inputDigits.startsWith('0')) {
-      throw new BadRequestException('Phone number must start with 0');
-    }
-
-    const phoneNumber = this.normalizePhone(dto.phoneNumber);
-    const maskedPhone = LogMaskingUtil.maskPhoneNumber(phoneNumber);
-    this.logger.log(
-      `[Register] STEP 1: Initiating registration for ${maskedPhone}`,
-    );
-
-    let user = await this.prisma.user.findFirst({
-      where: { phoneNumber: { in: this.getPhoneCandidates(phoneNumber) } },
-    });
-
-    if (!user) {
-      this.logger.log(`[Register] Creating new user for ${maskedPhone}`);
-      user = await this.prisma.user.create({
-        data: {
-          phoneNumber,
-          registrationState: RegistrationState.PENDING_OTP,
-        },
-      });
-    } else {
-      this.logger.log(
-        `[Register] Existing user found for ${maskedPhone}, current state: ${user.registrationState}`,
-      );
-
-      // If user already has a password, they should use Login flow instead of Sign Up
-      if (user.passwordHash) {
-        this.logger.warn(
-          `[Register] User ${maskedPhone} already has a password. Forcing login.`,
-        );
-        throw new ConflictException(
-          'User already has an account. Please log in.',
-        );
-      }
-
-      // If user is already completed, they must login
-      if (
-        (user.registrationState as RegistrationState) ===
-        RegistrationState.COMPLETED
-      ) {
-        this.logger.warn(`[Register] User ${maskedPhone} already registered`);
-        throw new ConflictException('User already registered');
-      }
-
-      // Update registration state to PENDING_OTP to enforce OTP verification even for resumes
-      if (user.registrationState !== RegistrationState.PENDING_OTP) {
-        await this.prisma.user.update({
-          where: { id: user.id },
-          data: { registrationState: RegistrationState.PENDING_OTP },
-        });
-        this.logger.log(
-          `[Register] Updated registration state to PENDING_OTP for ${maskedPhone}`,
-        );
-      }
-
-      this.logger.log(
-        `[Register] Resuming onboarding for ${maskedPhone} from previous state: ${user.registrationState}`,
-      );
-    }
-
-    const challenge = await this.createOtpChallenge(user.id, phoneNumber);
-    await this.logSecurityEvent(
-      user.id,
-      NotificationEventType.REGISTER_INIT_OTP,
-      {
-        ipAddress: context?.ip,
-        userAgent: context?.userAgent,
-      },
-    );
-
-    this.logger.log(
-      `[Register] STEP 1 Complete: OTP challenge created for ${maskedPhone}, state: PENDING_OTP`,
-    );
-
-    return {
-      challengeId: challenge.id,
-      expiresInSeconds: OTP_TTL_SECONDS,
-    };
+  async registerInit(dto: RegisterInitDto, context?: { ip?: string; userAgent?: string }) {
+    return this.userRegistrationService.registerInit(dto, context);
   }
 
-  async registerVerifyOtp(
-    dto: RegisterVerifyOtpDto,
-    context?: { ip?: string; userAgent?: string },
-  ) {
-    const phoneNumber = this.normalizePhone(dto.phoneNumber);
-    const maskedPhone = LogMaskingUtil.maskPhoneNumber(phoneNumber);
-    this.logger.log(`[Register] STEP 2: Verifying OTP for ${maskedPhone}`);
-
-    const user = await this.verifyOtpChallenge(
-      dto.challengeId,
-      phoneNumber,
-      dto.otp,
-    );
-    this.logger.log(
-      `[Register] OTP verified for user ${user.id}, current state: ${user.registrationState}`,
-    );
-
-    // Only update state if it's currently earlier than OTP_VERIFIED
-    if (
-      (user.registrationState as RegistrationState) ===
-        RegistrationState.PENDING_OTP ||
-      (user.registrationState as RegistrationState) ===
-        RegistrationState.PENDING
-    ) {
-      await this.prisma.user.update({
-        where: { id: user.id },
-        data: { registrationState: RegistrationState.OTP_VERIFIED },
-      });
-      this.logger.log(
-        `[Register] State updated to OTP_VERIFIED for ${maskedPhone}`,
-      );
-    } else {
-      this.logger.log(
-        `[Register] Keeping current state: ${user.registrationState} for ${maskedPhone}`,
-      );
-    }
-
-    await this.logSecurityEvent(
-      user.id,
-      NotificationEventType.REGISTER_OTP_VERIFIED,
-      {
-        ipAddress: context?.ip,
-        userAgent: context?.userAgent,
-      },
-    );
-
-    this.logger.log(
-      `[Register] STEP 2 Complete: State updated to OTP_VERIFIED for ${maskedPhone}`,
-    );
-
-    const finalUser = await this.prisma.user.findUnique({
-      where: { id: user.id },
-    });
-    const finalState =
-      finalUser?.registrationState || RegistrationState.OTP_VERIFIED;
-
-    return {
-      regToken: await this.signRegistrationToken(user.id, finalState),
-      nextState: finalState,
-    };
+  async registerVerifyOtp(dto: RegisterVerifyOtpDto, context?: { ip?: string; userAgent?: string }) {
+    return this.userRegistrationService.registerVerifyOtp(dto, context);
   }
 
-  // ==================== Login ====================
+  async acceptTerms(authorization: string | undefined, dto: AcceptTermsDto, context?: any) {
+    return this.userRegistrationService.acceptTerms(authorization, dto, context);
+  }
+
+  async registerPassword(authorization: string | undefined, dto: RegisterPasswordDto, context?: any) {
+    return this.userRegistrationService.registerPassword(authorization, dto, context);
+  }
+
+  async registerPin(authorization: string | undefined, dto: RegisterPinDto, context?: any) {
+    return this.userRegistrationService.registerPin(authorization, dto, context);
+  }
+
+  async completeRegistration(authorization: string | undefined, context?: any) {
+    return this.userRegistrationService.completeRegistration(authorization, context);
+  }
+
+  async getRegistrationStatus(authorization: string | undefined) {
+    return this.userRegistrationService.getRegistrationStatus(authorization);
+  }
+
+  async validateRegistrationState(userId: string, allowedStates: string[]) {
+    return this.userRegistrationService.validateRegistrationState(userId, allowedStates);
+  }
+
+  // ==================== Login & Auth ====================
 
   async login(dto: LoginDto, context?: { ip?: string; userAgent?: string }) {
-    // Validate phone number format BEFORE normalization (Thai numbers must be 10 digits and start with 0)
-    const inputDigits = (dto.phoneNumber || '').replace(/\D/g, '');
-    if (inputDigits.length !== 10) {
-      throw new BadRequestException('Phone number must be 10 digits');
-    }
-    if (!inputDigits.startsWith('0')) {
-      throw new BadRequestException('Phone number must start with 0');
-    }
-
-    const phoneNumber = this.normalizePhone(dto.phoneNumber);
-    const maskedPhone = LogMaskingUtil.maskPhoneNumber(phoneNumber);
-    this.logger.log(`[Login] Attempting login for ${maskedPhone}`);
-
-    const user = await this.prisma.user.findFirst({
-      where: { phoneNumber: { in: this.getPhoneCandidates(phoneNumber) } },
-    });
-
-    if (!user) {
-      throw new UnauthorizedException('Invalid credentials');
-    }
-
-    if (
-      user.status !== UserStatus.ACTIVE &&
-      user.status !== UserStatus.PENDING_APPROVAL &&
-      user.status !== UserStatus.REJECTED &&
-      user.status !== UserStatus.INACTIVE
-    ) {
-      throw new UnauthorizedException('Account is not active');
-    }
-
-    if (!user.passwordHash) {
-      throw new BadRequestException('Password not set');
-    }
-
-    const isPasswordValid = await bcrypt.compare(
-      dto.password,
-      user.passwordHash,
-    );
-    if (!isPasswordValid) {
-      await this.logSecurityEvent(
-        user.id,
-        NotificationEventType.LOGIN_FAILURE,
-        {
-          ip: context?.ip,
-          userAgent: context?.userAgent,
-          deviceId: dto.deviceId,
-        },
-      );
-      throw new UnauthorizedException('Invalid credentials');
-    }
-
-    // Enforce 1 User = 1 Session: Revoke all existing sessions for this user
-    await this.prisma.refreshSession.updateMany({
-      where: {
-        userId: user.id,
-        revokedAt: null,
-      },
-      data: {
-        revokedAt: new Date(),
-      },
-    });
-
-    const device = await this.prisma.userDevice.findUnique({
-      where: {
-        userId_deviceIdentifier: {
-          userId: user.id,
-          deviceIdentifier: dto.deviceId,
-        },
-      },
-    });
-
-    const isNewDevice = !device;
-    const finalDevice = await this.prisma.userDevice.upsert({
-      where: {
-        userId_deviceIdentifier: {
-          userId: user.id,
-          deviceIdentifier: dto.deviceId,
-        },
-      },
-      update: {
-        lastSeenAt: new Date(),
-        trustLevel: DeviceTrustLevel.TRUSTED,
-        ...(dto.pushToken && { pushToken: dto.pushToken }),
-      },
-      create: {
-        userId: user.id,
-        deviceIdentifier: dto.deviceId,
-        deviceName: dto.deviceName,
-        trustLevel: DeviceTrustLevel.TRUSTED,
-        lastSeenAt: new Date(),
-        ...(dto.pushToken && { pushToken: dto.pushToken }),
-      },
-    });
-
-    if (isNewDevice) {
-      await this.logSecurityEvent(
-        user.id,
-        NotificationEventType.DEVICE_REGISTERED,
-        {
-          deviceId: dto.deviceId,
-          deviceName: dto.deviceName,
-          ip: context?.ip,
-        },
-      );
-    }
-
-    const sessionId = randomUUID();
-    const accessToken = await this.signAccessToken(
-      user.id,
-      sessionId,
-      finalDevice.id,
-    );
-    const refreshToken = await this.signRefreshToken(
-      user.id,
-      sessionId,
-      finalDevice.id,
-    );
-
-    await this.prisma.refreshSession.create({
-      data: {
-        userId: user.id,
-        deviceId: finalDevice.id,
-        tokenHash: await bcrypt.hash(refreshToken, 10),
-        expiresAt: new Date(Date.now() + REFRESH_TOKEN_TTL_SECONDS * 1000),
-        ipAddress: context?.ip,
-        userAgent: context?.userAgent,
-        lastSeenAt: new Date(),
-      },
-    });
-
-    await this.logSecurityEvent(user.id, NotificationEventType.LOGIN_SUCCESS, {
-      ipAddress: context?.ip,
-      userAgent: context?.userAgent,
-    });
-
-    // Fetch review note if rejected
-    let reviewNote = null;
-    if ((user.status as UserStatus) === UserStatus.REJECTED) {
-      const kyc = await this.prisma.kYCData.findUnique({
-        where: { userId: user.id },
-        select: { reviewNote: true },
-      });
-      reviewNote = kyc?.reviewNote;
-    }
-
-    // Include regToken if registration is not completed so the app can resume
-    let regToken = null;
-    if (
-      (user.registrationState as RegistrationState) !==
-      RegistrationState.COMPLETED
-    ) {
-      regToken = await this.signRegistrationToken(
-        user.id,
-        user.registrationState as RegistrationState,
-      );
-    }
-
-    return {
-      accessToken,
-      refreshToken,
-      regToken,
-      expiresIn: ACCESS_TOKEN_TTL_SECONDS,
-      user: {
-        id: user.id,
-        phoneNumber: user.phoneNumber,
-        email: user.email,
-        status: user.status,
-        registrationState: user.registrationState,
-        reviewNote,
-      },
-    };
+    return this.userAuthService.login(dto, context);
   }
 
-  // ==================== Refresh Token ====================
-
-  async refresh(
-    dto: RefreshTokenDto,
-    context?: { ip?: string; userAgent?: string },
-  ) {
-    try {
-      const payload = await this.jwtService.verifyAsync<RefreshTokenPayload>(
-        dto.refreshToken,
-        {
-          secret: this.refreshSecret,
-        },
-      );
-
-      const session = await this.prisma.refreshSession.findFirst({
-        where: {
-          userId: payload.sub,
-          deviceId: payload.did,
-          revokedAt: null,
-          expiresAt: { gt: new Date() },
-        },
-      });
-
-      if (!session) {
-        throw new UnauthorizedException('Invalid refresh token');
-      }
-
-      const isTokenValid = await bcrypt.compare(
-        dto.refreshToken,
-        session.tokenHash,
-      );
-      if (!isTokenValid) {
-        throw new UnauthorizedException('Invalid refresh token');
-      }
-
-      const newSessionId = randomUUID();
-      const accessToken = await this.signAccessToken(
-        payload.sub,
-        newSessionId,
-        payload.did,
-      );
-      const newRefreshToken = await this.signRefreshToken(
-        payload.sub,
-        newSessionId,
-        payload.did,
-      );
-
-      await this.prisma.refreshSession.update({
-        where: { id: session.id },
-        data: {
-          tokenHash: await bcrypt.hash(newRefreshToken, 10),
-          expiresAt: new Date(Date.now() + REFRESH_TOKEN_TTL_SECONDS * 1000),
-          ipAddress: context?.ip || session.ipAddress,
-          userAgent: context?.userAgent || session.userAgent,
-          lastSeenAt: new Date(),
-        },
-      });
-
-      const user = await this.prisma.user.findUnique({
-        where: { id: payload.sub },
-        select: {
-          id: true,
-          phoneNumber: true,
-          email: true,
-          status: true,
-          registrationState: true,
-        },
-      });
-
-      // Fetch review note if rejected
-      let reviewNote = null;
-      if ((user?.status as UserStatus) === UserStatus.REJECTED) {
-        const kyc = await this.prisma.kYCData.findUnique({
-          where: { userId: payload.sub },
-          select: { reviewNote: true },
-        });
-        reviewNote = kyc?.reviewNote;
-      }
-
-      // Include regToken if registration is not completed so the app can resume
-      let regToken = null;
-      if (
-        (user?.registrationState as RegistrationState) !==
-        RegistrationState.COMPLETED
-      ) {
-        regToken = await this.signRegistrationToken(
-          user.id,
-          user.registrationState,
-        );
-      }
-
-      return {
-        accessToken,
-        refreshToken: newRefreshToken,
-        regToken,
-        expiresIn: ACCESS_TOKEN_TTL_SECONDS,
-        user: {
-          ...user,
-          reviewNote,
-        },
-      };
-    } catch (error) {
-      throw new UnauthorizedException('Invalid refresh token');
-    }
+  async refresh(dto: RefreshTokenDto, context?: { ip?: string; userAgent?: string }) {
+    return this.userAuthService.refresh(dto, context);
   }
-
-  // ==================== Logout ====================
 
   async logout(user: { sub: string; sid: string }) {
-    await this.prisma.refreshSession.updateMany({
-      where: {
-        userId: user.sub,
-        revokedAt: null,
-      },
-      data: { revokedAt: new Date() },
-    });
-
-    await this.logSecurityEvent(user.sub, NotificationEventType.LOGOUT);
+    return this.userAuthService.logout(user);
   }
 
   async logoutAll(userId: string, user: { sub: string }) {
-    await this.prisma.refreshSession.updateMany({
-      where: {
-        userId: user.sub,
-        revokedAt: null,
-      },
-      data: { revokedAt: new Date() },
-    });
-
-    await this.logSecurityEvent(user.sub, NotificationEventType.LOGOUT_ALL);
+    return this.userAuthService.logoutAll(userId, user);
   }
 
-  // ==================== Token Signing ====================
+  // ==================== Security & Devices ====================
 
-  private async signAccessToken(
-    userId: string,
-    sessionId: string,
-    deviceId: string,
-    isPinVerified: boolean = false,
-  ): Promise<string> {
-    const payload: AccessTokenPayload = {
-      sub: userId,
-      sid: sessionId,
-      did: deviceId,
-      typ: 'access',
-      jti: randomUUID(),
-      scope: 'wallet',
-      pvn: isPinVerified,
-    };
-
-    return this.jwtService.signAsync(payload, {
-      secret: this.accessSecret,
-      expiresIn: ACCESS_TOKEN_TTL_SECONDS,
-    });
+  async handlePinFailure(userId: string) {
+    return this.userSecurityService.handlePinFailure(userId);
   }
 
-  private async signRefreshToken(
-    userId: string,
-    sessionId: string,
-    deviceId: string,
-  ): Promise<string> {
-    const payload: RefreshTokenPayload = {
-      sub: userId,
-      sid: sessionId,
-      did: deviceId,
-      typ: 'refresh',
-      jti: randomUUID(),
-    };
-
-    return this.jwtService.signAsync(payload, {
-      secret: this.refreshSecret,
-      expiresIn: REFRESH_TOKEN_TTL_SECONDS,
-    });
+  async resetPinAttempts(userId: string) {
+    return this.userSecurityService.resetPinAttempts(userId);
   }
 
-  private async signRegistrationToken(
-    userId: string,
-    state: string,
-  ): Promise<string> {
-    const payload: RegistrationTokenPayload = {
-      sub: userId,
-      state,
-      typ: 'registration',
-      nonce: randomUUID(),
-    };
-
-    return this.jwtService.signAsync(payload, {
-      secret: this.registrationSecret,
-      expiresIn: REGISTRATION_TOKEN_TTL_SECONDS,
-    });
+  async verifyDevice(dto: any, context?: any) {
+    return this.userSecurityService.verifyDevice(dto, context);
   }
 
-  // ==================== OTP ====================
-
-  private async createOtpChallenge(userId: string, phoneNumber: string) {
-    const code = Math.floor(100000 + Math.random() * 900000).toString();
-    const expiresAt = new Date(Date.now() + OTP_TTL_SECONDS * 1000);
-
-    const challenge = await this.prisma.otpChallenge.create({
-      data: {
-        userId,
-        phoneNumber,
-        code: await bcrypt.hash(code, 10),
-        expiresAt,
-      },
-    });
-
-    // Always log OTP in non-production environments for debugging
-    if (process.env.NODE_ENV !== 'production') {
-      this.logger.warn(
-        `[DEV] OTP for ${phoneNumber}: ${code} (expires in ${OTP_TTL_SECONDS}s)`,
-      );
-    }
-
-    try {
-      await this.smsProvider.sendMessage(
-        phoneNumber,
-        `Your J-Ledger verification code is: ${code}`,
-      );
-    } catch (smsError) {
-      // Log OTP to server logs as fallback when SMS fails (visible in CloudWatch / Docker logs)
-      this.logger.error(
-        `SMS delivery failed for ${phoneNumber}. OTP code for manual verification: ${code}`,
-        smsError?.message,
-      );
-    }
-
-    return challenge;
+  async setupPin(userId: string, dto: any) {
+    return this.userSecurityService.setupPin(userId, dto);
   }
 
-
-  private async verifyOtpChallenge(
-    challengeId: string,
-    phoneNumber: string,
-    otp: string,
-  ) {
-    const challenge = await this.prisma.otpChallenge.findUnique({
-      where: { id: challengeId },
-    });
-
-    if (!challenge) {
-      throw new BadRequestException('Invalid challenge');
-    }
-
-    if (!this.getPhoneCandidates(phoneNumber).includes(challenge.phoneNumber)) {
-      throw new BadRequestException('Phone number mismatch');
-    }
-
-    if (challenge.expiresAt < new Date()) {
-      throw new BadRequestException('OTP expired');
-    }
-
-    if (challenge.verifiedAt) {
-      throw new BadRequestException('OTP already verified');
-    }
-
-    const isOtpValid = await bcrypt.compare(otp, challenge.code);
-    if (!isOtpValid) {
-      await this.prisma.otpChallenge.update({
-        where: { id: challengeId },
-        data: { attempts: { increment: 1 } },
-      });
-      throw new BadRequestException('Invalid OTP');
-    }
-
-    await this.prisma.otpChallenge.update({
-      where: { id: challengeId },
-      data: { verifiedAt: new Date() },
-    });
-
-    const user = await this.prisma.user.findUnique({
-      where: { id: challenge.userId },
-    });
-
-    if (!user) {
-      throw new BadRequestException('User not found');
-    }
-
-    return user;
+  async verifyPin(userId: string, dto: any) {
+    return this.userSecurityService.verifyPin(userId, dto);
   }
 
-  // ==================== Security Events ====================
-
-  public async logSecurityEvent(
-    userId: string,
-    eventType: NotificationEventType,
-    metadata?: any,
-  ) {
-    // 1. Always record to Database for audit trail
-    await this.prisma.securityEvent.create({
-      data: {
-        userId,
-        eventType: eventType as SecurityEventType,
-        metadata: metadata || {},
-      },
-    });
-
-    // 2. Only emit to Kafka for events that REQUIRE a notification to the user
-    // We filter out common/non-critical events to avoid notification spam
-    const essentialEvents = [
-      NotificationEventType.LOGIN_FAILURE,
-      NotificationEventType.PASSWORD_CHANGE,
-      NotificationEventType.PASSWORD_SET,
-      NotificationEventType.PIN_SETUP,
-      NotificationEventType.KYC_APPROVED,
-      NotificationEventType.KYC_REJECTED,
-      NotificationEventType.DEVICE_REGISTERED,
-    ];
-
-    if (!essentialEvents.includes(eventType)) {
-      this.logger.debug(
-        `Skipping Kafka emission for non-essential security event: ${eventType}`,
-      );
-      return;
-    }
-
-    // Emit to Kafka for notification-worker
-    try {
-      await this.kafkaProducer.emit(KafkaTopic.SECURITY_EVENTS, {
-        userId,
-        eventType,
-        metadata: metadata || {},
-        timestamp: new Date().toISOString(),
-        referenceId: new Date().getTime().toString(),
-      });
-    } catch (error) {
-      this.logger.warn(
-        `Failed to emit security event to Kafka for user ${userId}: ${error.message}`,
-      );
-    }
+  async changePin(userId: string, dto: any) {
+    return this.userSecurityService.changePin(userId, dto);
   }
 
-  // ==================== User Management ====================
+  async resetPinRequest(userId: string) {
+    return this.userSecurityService.resetPinRequest(userId);
+  }
+
+  async resetPin(userId: string, dto: any) {
+    return this.userSecurityService.resetPin(userId, dto);
+  }
+
+  async generateBiometricChallenge(userId: string) {
+    return this.userSecurityService.generateBiometricChallenge(userId);
+  }
+
+  async verifyBiometric(userId: string, dto: any, context?: any) {
+    return this.userSecurityService.verifyBiometric(userId, dto, context);
+  }
+
+  async logSecurityEvent(userId: string, eventType: NotificationEventType, metadata?: any) {
+    return this.userSecurityService.logSecurityEvent(userId, eventType, metadata);
+  }
+
+  async findAllUserDevices(page: number = 1, limit: number = 10, filters?: any) {
+    return this.userSecurityService.findAllUserDevices(page, limit, filters);
+  }
+
+  async revokeUserDevice(deviceId: string) {
+    return this.userSecurityService.revokeUserDevice(deviceId);
+  }
+
+  async createPayToken(userId: string) {
+    return this.userSecurityService.createPayToken(userId);
+  }
+
+  async reactivateUserDevice(deviceId: string) {
+    // This was not in the explicit list but belongs to Security
+    const device = await this.prisma.userDevice.update({
+      where: { id: deviceId },
+      data: { trustLevel: 'TRUSTED' },
+    });
+
+    await this.logSecurityEvent(device.userId, NotificationEventType.LOGIN_SUCCESS, {
+      action: 'DEVICE_REACTIVATED',
+      deviceId,
+    });
+
+    return device;
+  }
+
+  // ==================== Profile & Addresses ====================
+
+  async getProfile(userId: string) {
+    return this.userProfileService.getProfile(userId);
+  }
+
+  async updateProfile(userId: string, profileData: any) {
+    return this.userProfileService.updateProfile(userId, profileData);
+  }
+
+  async updateAddress(userId: string, type: any, dto: any, source?: any) {
+    return this.userProfileService.updateAddress(userId, type, dto, source);
+  }
+
+  async requestEmailVerification(userId: string, email: string) {
+    return this.userProfileService.requestEmailVerification(userId, email);
+  }
+
+  async confirmEmailVerification(userId: string, email: string, otp: string) {
+    return this.userProfileService.confirmEmailVerification(userId, email, otp);
+  }
+
+  async getUserConsents(userId: string) {
+    return this.userProfileService.getUserConsents(userId);
+  }
+
+  async withdrawConsent(userId: string, consentType: string, context?: any) {
+    return this.userProfileService.withdrawConsent(userId, consentType, context);
+  }
+
+  async exportUserData(userId: string) {
+    return this.userProfileService.exportUserData(userId);
+  }
+
+  // ==================== Admin ====================
+
+  async findAllUsers(page: number = 1, limit: number = 10, filters?: any) {
+    return this.userAdminService.findAllUsers(page, limit, filters);
+  }
+
+  async getUserStats() {
+    return this.userAdminService.getUserStats();
+  }
+
+  async searchUsers(query: string) {
+    return this.userAdminService.searchUsers(query);
+  }
+
+  async updateUserStatus(id: string, status: string) {
+    return this.userAdminService.updateUserStatus(id, status);
+  }
+
+  async suspendUser(id: string) {
+    return this.userAdminService.suspendUser(id);
+  }
+
+  async activateUser(id: string) {
+    return this.userAdminService.activateUser(id);
+  }
+
+  async blockUser(id: string, reason?: string) {
+    return this.userAdminService.blockUser(id, reason);
+  }
+
+  async getUserActivity(id: string) {
+    return this.userAdminService.getUserActivity(id);
+  }
+
+  async getSuspiciousActivities(userId: string) {
+    return this.userAdminService.getSuspiciousActivities(userId);
+  }
+
+  async reportSuspiciousActivityToAmlo(activityId: string, userId: string) {
+    return this.userAdminService.reportSuspiciousActivityToAmlo(activityId, userId);
+  }
+
+  // ==================== User Management (Internal/Legacy) ====================
 
   async findByEmail(email: string) {
     return this.prisma.user.findUnique({
@@ -807,19 +280,17 @@ export class IdentityService {
   }
 
   async findByPhoneNumber(phoneNumber: string) {
-    const normalized = this.normalizePhone(phoneNumber.trim());
+    const normalized = IdentityUtils.normalizePhone(phoneNumber.trim());
     return this.prisma.user.findFirst({
-      where: { phoneNumber: { in: this.getPhoneCandidates(normalized) } },
+      where: { phoneNumber: { in: IdentityUtils.getPhoneCandidates(normalized) } },
     });
   }
 
   async findByIdentity(identity: string) {
     const normalized = identity.trim();
-
     if (normalized.includes('@')) {
       return this.findByEmail(normalized);
     }
-
     return this.findByPhoneNumber(normalized);
   }
 
@@ -830,7 +301,6 @@ export class IdentityService {
 
     if (!user) return null;
 
-    // Fetch KYC status separately since it's in a different schema/module
     const kyc = await this.prisma.kYCData.findUnique({
       where: { userId: id },
       select: { verificationStatus: true },
@@ -842,10 +312,7 @@ export class IdentityService {
     };
   }
 
-  async getTrustedDeviceIdByIdentifier(
-    userId: string,
-    deviceIdentifier: string,
-  ) {
+  async getTrustedDeviceIdByIdentifier(userId: string, deviceIdentifier: string) {
     const device = await this.prisma.userDevice.findUnique({
       where: {
         userId_deviceIdentifier: {
@@ -862,109 +329,7 @@ export class IdentityService {
     return device.id;
   }
 
-  async handlePinFailure(userId: string) {
-    const MAX_PIN_ATTEMPTS = 3;
-    const PIN_LOCK_DURATION_MS = 5 * 60 * 1000;
-
-    const updated = await this.prisma.user.update({
-      where: { id: userId },
-      data: {
-        pinAttempts: { increment: 1 },
-      },
-    });
-
-    if (updated.pinAttempts >= MAX_PIN_ATTEMPTS) {
-      return this.prisma.user.update({
-        where: { id: userId },
-        data: {
-          pinLockedUntil: new Date(Date.now() + PIN_LOCK_DURATION_MS),
-        },
-      });
-    }
-
-    return updated;
-  }
-
-  async resetPinAttempts(userId: string) {
-    return this.prisma.user.update({
-      where: { id: userId },
-      data: { pinAttempts: 0, pinLockedUntil: null },
-    });
-  }
-
-  async findAllUsers(
-    page: number = 1,
-    limit: number = 10,
-    filters?: { email?: string; phone?: string; status?: string },
-  ) {
-    const skip = (page - 1) * limit;
-    const where: any = {};
-
-    if (filters?.email) {
-      where.email = { contains: filters.email, mode: 'insensitive' };
-    }
-    if (filters?.phone) {
-      where.phoneNumber = { contains: filters.phone, mode: 'insensitive' };
-    }
-    if (filters?.status) {
-      where.status = filters.status;
-    }
-
-    const [users, total] = await Promise.all([
-      this.prisma.user.findMany({
-        where,
-        skip,
-        take: limit,
-        select: {
-          id: true,
-          phoneNumber: true,
-          email: true,
-          status: true,
-          registrationState: true,
-          ledgerAccountId: true,
-          createdAt: true,
-          updatedAt: true,
-        },
-        orderBy: { createdAt: 'desc' },
-      }),
-      this.prisma.user.count({ where }),
-    ]);
-
-    return {
-      data: users,
-      pagination: {
-        total,
-        page,
-        limit,
-        totalPages: Math.ceil(total / limit),
-      },
-    };
-  }
-
-  async getUserStats() {
-    const [total, active, pending, blocked] = await Promise.all([
-      this.prisma.user.count(),
-      this.prisma.user.count({ where: { status: UserStatus.ACTIVE } }),
-      this.prisma.user.count({
-        where: { status: UserStatus.PENDING_APPROVAL },
-      }),
-      this.prisma.user.count({ where: { status: UserStatus.BLOCKED } }),
-    ]);
-
-    return {
-      total,
-      active,
-      pending,
-      blocked,
-    };
-  }
-
-  async findAllSecurityEvents(
-    page: number = 1,
-    limit: number = 50,
-    userId?: string,
-    eventType?: string,
-  ) {
+  async findAllSecurityEvents(page: number = 1, limit: number = 50, userId?: string, eventType?: string) {
     const skip = (page - 1) * limit;
     const where: any = {};
     if (userId) where.userId = userId;
@@ -999,420 +364,39 @@ export class IdentityService {
     };
   }
 
-  async searchUsers(query: string) {
-    return this.prisma.user.findMany({
-      where: {
-        OR: [
-          { phoneNumber: { contains: query, mode: 'insensitive' } },
-          { email: { contains: query, mode: 'insensitive' } },
-        ],
-      },
-      select: {
-        id: true,
-        phoneNumber: true,
-        email: true,
-        createdAt: true,
-        status: true,
-      },
-      take: 20,
+  async requestAccountDeletion(userId: string, context?: any) {
+    await this.logSecurityEvent(userId, NotificationEventType.ACCOUNT_DELETION_REQUESTED, {
+      ip: context?.ip,
     });
-  }
-
-  async updateUserStatus(id: string, status: string) {
-    return this.prisma.user.update({
-      where: { id },
-      data: { status: status as UserStatus },
-    });
-  }
-
-  async suspendUser(id: string) {
-    const user = await this.prisma.user.findUnique({ where: { id } });
-    if (!user) throw new BadRequestException('User not found');
-
-    if (user.status !== UserStatus.ACTIVE) {
-      throw new ForbiddenException('Only ACTIVE users can be suspended');
-    }
-
-    const updated = await this.prisma.user.update({
-      where: { id },
-      data: { status: UserStatus.SUSPENDED },
-    });
-
-    await this.logSecurityEvent(id, NotificationEventType.ACCOUNT_LOCKED, {
-      action: 'SUSPENDED',
-      reason: 'Suspended by administrative staff',
-    });
-
-    return updated;
-  }
-
-  async activateUser(id: string) {
-    // use for unsuspending and unblocking
-    const user = await this.prisma.user.findUnique({ where: { id } });
-    if (!user) throw new BadRequestException('User not found');
-
-    // Business Logic: Only allow activation (unsuspend/unblock) of SUSPENDED or BLOCKED users
-    if (
-      user.status !== UserStatus.SUSPENDED &&
-      user.status !== UserStatus.BLOCKED
-    ) {
-      throw new ForbiddenException(
-        'Only SUSPENDED or BLOCKED users can be activated',
-      );
-    }
-
-    const updated = await this.prisma.user.update({
-      where: { id },
-      data: { status: UserStatus.ACTIVE },
-    });
-
-    await this.logSecurityEvent(id, NotificationEventType.ACCOUNT_UNLOCKED, {
-      action: 'ACTIVATED',
-      reason: 'Reactivated by administrative staff',
-    });
-
-    return updated;
-  }
-
-  async blockUser(id: string, reason?: string) {
-    const user = await this.prisma.user.findUnique({ where: { id } });
-    if (!user) throw new BadRequestException('User not found');
-
-    if (
-      user.status !== UserStatus.ACTIVE &&
-      user.status !== UserStatus.SUSPENDED
-    ) {
-      throw new ForbiddenException(
-        'User must be approved (ACTIVE/SUSPENDED) before being blocked',
-      );
-    }
-
-    const updated = await this.prisma.user.update({
-      where: { id },
-      data: { status: UserStatus.BLOCKED },
-    });
-
-    await this.logSecurityEvent(id, NotificationEventType.ACCOUNT_LOCKED, {
-      action: 'BLOCKED',
-      reason: reason || 'Blocked by administrative staff',
-    });
-
-    return updated;
-  }
-
-  async getUserActivity(id: string) {
-    const user = await this.prisma.user.findUnique({
-      where: { id },
-      include: {
-        userDevices: {
-          select: {
-            deviceIdentifier: true,
-            deviceName: true,
-            deviceType: true,
-            osVersion: true,
-            trustLevel: true,
-            lastSeenAt: true,
-            createdAt: true,
-          },
-          orderBy: { lastSeenAt: 'desc' },
-        },
-      },
-    });
-
-    if (!user) {
-      return null;
-    }
-
-    return {
-      userId: user.id,
-      devices: user.userDevices,
-      createdAt: user.createdAt,
-      lastLoginAt: user.userDevices[0]?.lastSeenAt || null,
-    };
-  }
-
-  async findAllUserDevices(
-    page: number = 1,
-    limit: number = 10,
-    filters: {
-      search?: string;
-      os?: string;
-      trustLevel?: string;
-    } = {},
-  ) {
-    const safePage = Math.max(1, Number(page) || 1);
-    const safeLimit = Math.min(Math.max(1, Number(limit) || 10), 100);
-    const skip = (safePage - 1) * safeLimit;
-    const search = filters.search?.trim();
-
-    const where: any = {
-      ...(filters.os &&
-        filters.os !== 'ALL' && {
-          OR: [
-            {
-              osVersion: {
-                contains: filters.os,
-                mode: 'insensitive',
-              },
-            },
-            {
-              deviceType: {
-                contains: filters.os,
-                mode: 'insensitive',
-              },
-            },
-          ],
-        }),
-      ...(filters.trustLevel &&
-        filters.trustLevel !== 'ALL' && {
-          trustLevel: filters.trustLevel,
-        }),
-      ...(search && {
-        AND: [
-          {
-            OR: [
-              { id: { contains: search, mode: 'insensitive' } },
-              { deviceIdentifier: { contains: search, mode: 'insensitive' } },
-              { deviceName: { contains: search, mode: 'insensitive' } },
-              { deviceType: { contains: search, mode: 'insensitive' } },
-              { osVersion: { contains: search, mode: 'insensitive' } },
-              { appVersion: { contains: search, mode: 'insensitive' } },
-              { userId: { contains: search, mode: 'insensitive' } },
-              { user: { email: { contains: search, mode: 'insensitive' } } },
-              {
-                user: {
-                  phoneNumber: { contains: search, mode: 'insensitive' },
-                },
-              },
-            ],
-          },
-        ],
-      }),
-    };
-
-    const [devices, total, stats] = await Promise.all([
-      this.prisma.userDevice.findMany({
-        where,
-        include: {
-          user: {
-            select: {
-              id: true,
-              email: true,
-              phoneNumber: true,
-              status: true,
-            },
-          },
-        },
-        orderBy: [{ lastSeenAt: 'desc' }, { createdAt: 'desc' }],
-        skip,
-        take: safeLimit,
-      }),
-      this.prisma.userDevice.count({ where }),
-      this.prisma.userDevice.groupBy({
-        by: ['trustLevel'],
-        _count: { _all: true },
-      }),
-    ]);
-
-    const latestSessions = devices.length
-      ? await this.prisma.refreshSession.findMany({
-          where: {
-            deviceId: { in: devices.map((device) => device.id) },
-          },
-          orderBy: { lastSeenAt: 'desc' },
-          distinct: ['deviceId'],
-          select: {
-            deviceId: true,
-            ipAddress: true,
-            location: true,
-            userAgent: true,
-            revokedAt: true,
-            lastSeenAt: true,
-          },
-        })
-      : [];
-
-    const sessionsByDeviceId = new Map(
-      latestSessions.map((session) => [session.deviceId, session]),
-    );
-
-    const data = devices.map((device) => {
-      const session = sessionsByDeviceId.get(device.id);
-
-      return {
-        id: device.id,
-        userId: device.userId,
-        email: device.user.email,
-        phoneNumber: device.user.phoneNumber,
-        userStatus: device.user.status,
-        deviceName: device.deviceName,
-        deviceIdentifier: device.deviceIdentifier,
-        deviceType: device.deviceType,
-        osVersion: device.osVersion,
-        appVersion: device.appVersion,
-        trustLevel: device.trustLevel,
-        lastSeenAt: device.lastSeenAt,
-        createdAt: device.createdAt,
-        updatedAt: device.updatedAt,
-        lastIp: session?.ipAddress || null,
-        lastLocation: session?.location || null,
-        userAgent: session?.userAgent || null,
-        sessionRevokedAt: session?.revokedAt || null,
-      };
-    });
-
-    return {
-      data,
-      pagination: {
-        page: safePage,
-        limit: safeLimit,
-        total,
-        totalPages: Math.max(1, Math.ceil(total / safeLimit)),
-      },
-      stats: {
-        total: stats.reduce((sum, item) => sum + item._count._all, 0),
-        trusted:
-          stats.find((item) => item.trustLevel === DeviceTrustLevel.TRUSTED)
-            ?._count._all || 0,
-        untrusted:
-          stats.find((item) => item.trustLevel === DeviceTrustLevel.UNTRUSTED)
-            ?._count._all || 0,
-        unknown:
-          stats.find((item) => item.trustLevel === DeviceTrustLevel.UNKNOWN)
-            ?._count._all || 0,
-      },
-    };
-  }
-
-  async revokeUserDevice(deviceId: string) {
-    const device = await this.prisma.userDevice.update({
-      where: { id: deviceId },
-      data: { trustLevel: DeviceTrustLevel.UNTRUSTED },
-    });
-
-    await this.prisma.refreshSession.updateMany({
-      where: {
-        deviceId,
-        revokedAt: null,
-      },
-      data: { revokedAt: new Date() },
-    });
-
-    await this.logSecurityEvent(device.userId, NotificationEventType.LOGOUT, {
-      action: 'DEVICE_REVOKED',
-      deviceId,
-    });
-
-    return device;
-  }
-
-  async reactivateUserDevice(deviceId: string) {
-    const device = await this.prisma.userDevice.update({
-      where: { id: deviceId },
-      data: { trustLevel: DeviceTrustLevel.TRUSTED },
-    });
-
-    await this.logSecurityEvent(device.userId, NotificationEventType.LOGIN_SUCCESS, {
-      action: 'DEVICE_REACTIVATED',
-      deviceId,
-    });
-
-    return device;
-  }
-
-  // ==================== Placeholder Methods ====================
-
-  async acceptTerms(
-    authorization: string | undefined,
-    dto: AcceptTermsDto,
-    context?: any,
-  ) {
-    if (!authorization) {
-      throw new UnauthorizedException('Authorization header required');
-    }
-
-    const token = authorization.replace('Bearer ', '');
-    const payload = await this.jwtService.verifyAsync(token, {
-      secret: this.registrationSecret,
-    });
-
-    if (payload.typ !== 'registration') {
-      throw new UnauthorizedException('Invalid token type');
-    }
-
-    this.logger.log(
-      `[Register] STEP 3: Accepting terms for user ${payload.sub}`,
-    );
-
-    await this.validateRegistrationState(payload.sub, [
-      RegistrationState.OTP_VERIFIED,
-      RegistrationState.TC_ACCEPTED,
-    ]);
-
-    const user = await this.prisma.user.findUnique({
-      where: { id: payload.sub },
-    });
-
-    if (!user) {
-      throw new BadRequestException('User not found');
-    }
-
-    // Save consent (upsert to handle re-acceptance)
-    await this.prisma.userConsent.upsert({
-      where: {
-        userId_consentType: {
-          userId: user.id,
-          consentType: 'TERMS_OF_SERVICE',
-        },
-      },
-      update: {
-        acceptedAt: new Date(),
-        withdrawnAt: null,
-      },
-      create: {
-        userId: user.id,
-        consentType: 'TERMS_OF_SERVICE',
-        acceptedAt: new Date(),
-      },
-    });
-    this.logger.log(`[Register] Consent saved for user ${user.id}`);
-
-    // Update state
-    await this.prisma.user.update({
-      where: { id: user.id },
-      data: { registrationState: RegistrationState.TC_ACCEPTED },
-    });
-
-    this.logger.log(
-      `[Register] STEP 3 Complete: State updated to TC_ACCEPTED for user ${user.id}`,
-    );
-
     return { success: true };
   }
 
-  async registerProfile(
-    authorization: string | undefined,
-    dto: RegisterProfileDto,
-    context?: any,
-  ) {
+  async confirmAccountDeletion(userId: string, context?: any) {
+    await this.logSecurityEvent(userId, NotificationEventType.ACCOUNT_DELETED, {
+      ip: context?.ip,
+    });
+    return { success: true };
+  }
+
+  // ==================== Special Case: registerProfile ====================
+  // This method was not in the delegation list but it's a large block.
+  // We keep it here as it coordinates multiple services for a specific onboarding step.
+  async registerProfile(authorization: string | undefined, dto: RegisterProfileDto, context?: any) {
     if (!authorization) {
-      throw new UnauthorizedException('Authorization header required');
+      throw new Error('Authorization header required');
     }
 
+    // We'll keep the logic here but call sub-services where appropriate
     const token = authorization.replace('Bearer ', '');
-    const payload = await this.jwtService.verifyAsync(token, {
-      secret: this.registrationSecret,
+    // Note: this still uses jwtService directly as it's a cross-cutting concern in this coordination method
+    const registrationSecret = this.configService.get<string>('CUSTOMER_REGISTRATION_SECRET');
+    const payload: any = await this.jwtService.verifyAsync(token, {
+      secret: registrationSecret,
     });
 
-    if (payload.typ !== 'registration') {
-      throw new UnauthorizedException('Invalid token type');
-    }
+    this.logger.log(`[Register] STEP 4: Registering profile for user ${payload.sub}`);
 
-    this.logger.log(
-      `[Register] STEP 4: Registering profile for user ${payload.sub}`,
-    );
-
-    await this.validateRegistrationState(payload.sub, [
+    await this.userRegistrationService.validateRegistrationState(payload.sub, [
       RegistrationState.KYC_VERIFIED,
       RegistrationState.PROFILE_COMPLETED,
     ]);
@@ -1422,12 +406,9 @@ export class IdentityService {
     });
 
     if (!user) {
-      throw new BadRequestException('User not found');
+      throw new Error('User not found');
     }
 
-    // Update user profile - save to userSettings for editable info
-    // KYCData is now updated separately in KycService.confirmOcrData
-    // Address is now saved in identity.addresses table via separate call or logic
     const sanitizedProfile = {
       occupation: dto.occupation,
       incomeRange: dto.incomeRange,
@@ -1446,12 +427,6 @@ export class IdentityService {
         value: JSON.stringify(sanitizedProfile),
       },
     });
-    this.logger.log(`[Register] Profile (sanitized) saved for user ${user.id}`);
-
-    // Update Address if provided
-    this.logger.log(
-      `[Register] Processing address. useIdentityAddress: ${dto.useIdentityAddress}`,
-    );
 
     if (dto.useIdentityAddress) {
       const registeredAddress = await this.prisma.address.findFirst({
@@ -1459,10 +434,7 @@ export class IdentityService {
       });
 
       if (registeredAddress) {
-        this.logger.log(
-          `[Register] Found registered address for user ${user.id}, merging with postal code: ${dto.currentAddress?.postalCode}`,
-        );
-        await this.updateAddress(
+        await this.userProfileService.updateAddress(
           user.id,
           AddressType.CURRENT,
           {
@@ -1470,36 +442,20 @@ export class IdentityService {
             subdistrict: registeredAddress.subdistrict || undefined,
             district: registeredAddress.district || undefined,
             province: registeredAddress.province || undefined,
-            postalCode:
-              dto.currentAddress?.postalCode ||
-              registeredAddress.postalCode ||
-              undefined,
+            postalCode: dto.currentAddress?.postalCode || registeredAddress.postalCode || undefined,
           },
           AddressVerificationSource.MANUAL,
         );
-      } else {
-        this.logger.warn(
-          `[Register] useIdentityAddress was true but no REGISTERED address found for user ${user.id}`,
+      } else if (dto.currentAddress) {
+        await this.userProfileService.updateAddress(
+          user.id,
+          AddressType.CURRENT,
+          dto.currentAddress,
+          AddressVerificationSource.MANUAL,
         );
-        if (dto.currentAddress && dto.currentAddress.line1) {
-          await this.updateAddress(
-            user.id,
-            AddressType.CURRENT,
-            dto.currentAddress,
-            AddressVerificationSource.MANUAL,
-          );
-        } else {
-          this.logger.error(
-            `[Register] Cannot set current address: No identity address and no full current address provided`,
-          );
-          // We don't throw yet, but this might cause issues if mandatory
-        }
       }
     } else if (dto.currentAddress) {
-      this.logger.log(
-        `[Register] Using provided current address for user ${user.id}`,
-      );
-      await this.updateAddress(
+      await this.userProfileService.updateAddress(
         user.id,
         AddressType.CURRENT,
         dto.currentAddress,
@@ -1507,22 +463,13 @@ export class IdentityService {
       );
     }
 
-    // Update state
-    // Smart Skip: If user already has password and PIN (Retry/Resume case),
-    // skip directly to COMPLETED state.
     let nextState: RegistrationState = RegistrationState.PROFILE_COMPLETED;
     if (user.passwordHash && user.pinHash) {
-      this.logger.log(
-        `[Register] User ${user.id} already has password and PIN. Skipping to COMPLETED.`,
-      );
       nextState = RegistrationState.COMPLETED;
     }
 
-    // Status Protection: Move to PENDING_APPROVAL if currently INACTIVE or REJECTED (retry case).
-    // If user is already ACTIVE or BLOCKED, we MUST preserve that status.
     const updatedStatus =
-      (user.status as UserStatus) === UserStatus.INACTIVE ||
-      (user.status as UserStatus) === UserStatus.REJECTED
+      (user.status as UserStatus) === UserStatus.INACTIVE || (user.status as UserStatus) === UserStatus.REJECTED
         ? UserStatus.PENDING_APPROVAL
         : (user.status as UserStatus);
 
@@ -1534,7 +481,6 @@ export class IdentityService {
       },
     });
 
-    // If we are setting to PENDING_APPROVAL, ensure KYC status is also PENDING
     if (updatedStatus === UserStatus.PENDING_APPROVAL) {
       await this.prisma.kYCData.updateMany({
         where: { userId: user.id },
@@ -1546,1117 +492,9 @@ export class IdentityService {
       timestamp: new Date().toISOString(),
     });
 
-    this.logger.log(
-      `[Register] STEP 4 Complete: State updated to ${nextState} for user ${user.id}`,
-    );
-
     return {
       success: true,
       nextState,
     };
-  }
-
-  async registerPassword(
-    authorization: string | undefined,
-    dto: RegisterPasswordDto,
-    context?: any,
-  ) {
-    if (!authorization) {
-      throw new UnauthorizedException('Authorization header required');
-    }
-
-    const token = authorization.replace('Bearer ', '');
-    const payload = await this.jwtService.verifyAsync(token, {
-      secret: this.registrationSecret,
-    });
-
-    if (payload.typ !== 'registration') {
-      throw new UnauthorizedException('Invalid token type');
-    }
-
-    this.logger.log(
-      `[Register] STEP 5: Setting password for user ${payload.sub}`,
-    );
-
-    await this.validateRegistrationState(payload.sub, [
-      RegistrationState.PROFILE_COMPLETED,
-      RegistrationState.PASSWORD_SET,
-    ]);
-
-    const user = await this.prisma.user.findUnique({
-      where: { id: payload.sub },
-    });
-
-    if (!user) {
-      throw new BadRequestException('User not found');
-    }
-
-    const passwordHash = await bcrypt.hash(dto.password, 10);
-
-    await this.prisma.user.update({
-      where: { id: user.id },
-      data: { passwordHash, registrationState: RegistrationState.PASSWORD_SET },
-    });
-    this.logger.log(`[Register] Password saved for user ${user.id}`);
-
-    await this.logSecurityEvent(user.id, NotificationEventType.PASSWORD_SET, {
-      ipAddress: context?.ip,
-      userAgent: context?.userAgent,
-    });
-
-    this.logger.log(
-      `[Register] STEP 5 Complete: State updated to PASSWORD_SET for user ${user.id}`,
-    );
-
-    return { success: true };
-  }
-
-  async registerPin(
-    authorization: string | undefined,
-    dto: RegisterPinDto,
-    context?: any,
-  ) {
-    if (!authorization) {
-      throw new UnauthorizedException('Authorization header required');
-    }
-
-    const token = authorization.replace('Bearer ', '');
-    const payload = await this.jwtService.verifyAsync(token, {
-      secret: this.registrationSecret,
-    });
-
-    if (payload.typ !== 'registration') {
-      throw new UnauthorizedException('Invalid token type');
-    }
-
-    this.logger.log(`[Register] STEP 6: Setting PIN for user ${payload.sub}`);
-
-    await this.validateRegistrationState(payload.sub, [
-      RegistrationState.PASSWORD_SET,
-      RegistrationState.CREDENTIALS_SET,
-    ]);
-
-    const user = await this.prisma.user.findUnique({
-      where: { id: payload.sub },
-    });
-
-    if (!user) {
-      throw new BadRequestException('User not found');
-    }
-
-    const pinHash = await bcrypt.hash(dto.pin, 10);
-
-    // Register device
-    await this.prisma.userDevice.upsert({
-      where: {
-        userId_deviceIdentifier: {
-          userId: user.id,
-          deviceIdentifier: dto.deviceId,
-        },
-      },
-      create: {
-        userId: user.id,
-        deviceIdentifier: dto.deviceId,
-        deviceName: dto.deviceName,
-        trustLevel: DeviceTrustLevel.TRUSTED,
-        ...(dto.pushToken && { pushToken: dto.pushToken }),
-      },
-      update: {
-        deviceName: dto.deviceName,
-        lastSeenAt: new Date(),
-        ...(dto.pushToken && { pushToken: dto.pushToken }),
-      },
-    });
-    this.logger.log(`[Register] Device registered for user ${user.id}`);
-
-    await this.prisma.user.update({
-      where: { id: user.id },
-      data: { pinHash, registrationState: RegistrationState.CREDENTIALS_SET },
-    });
-    this.logger.log(`[Register] PIN saved for user ${user.id}`);
-
-    await this.logSecurityEvent(user.id, NotificationEventType.PIN_SETUP, {
-      ipAddress: context?.ip,
-      userAgent: context?.userAgent,
-    });
-
-    this.logger.log(
-      `[Register] STEP 6 Complete: State updated to CREDENTIALS_SET for user ${user.id}`,
-    );
-
-    return { success: true };
-  }
-
-  async getRegistrationStatus(authorization: string | undefined) {
-    if (!authorization) {
-      throw new UnauthorizedException('Authorization header required');
-    }
-
-    const token = authorization.replace('Bearer ', '');
-
-    let payload;
-    try {
-      // 1. Try registration secret first
-      payload = await this.jwtService.verifyAsync(token, {
-        secret: this.registrationSecret,
-      });
-    } catch (regError: any) {
-      // 2. If registration secret fails, try the main JWT secret (for authenticated retry)
-      try {
-        payload = await this.jwtService.verifyAsync(token, {
-          secret: this.configService.get('JWT_SECRET'),
-        });
-      } catch (authError: any) {
-        if (
-          regError.name === 'TokenExpiredError' ||
-          authError.name === 'TokenExpiredError'
-        ) {
-          this.logger.warn(`[Register] Token expired in getRegistrationStatus`);
-          throw new UnauthorizedException('Token expired');
-        }
-        this.logger.warn(
-          `[Register] Invalid token in getRegistrationStatus: ${authError.message}`,
-        );
-        throw new UnauthorizedException('Invalid token');
-      }
-    }
-
-    this.logger.log(
-      `[Register] Getting registration status for user ${payload.sub}`,
-    );
-
-    const [user, addresses, kycData, piiData] = await Promise.all([
-      this.prisma.user.findUnique({
-        where: { id: payload.sub },
-        include: {
-          userSettings: true,
-        },
-      }),
-      this.prisma.address.findMany({
-        where: { userId: payload.sub, deletedAt: null },
-      }),
-      this.prisma.kYCData.findUnique({
-        where: { userId: payload.sub },
-      }),
-      this.prisma.pII.findMany({
-        where: { userId: payload.sub },
-      }),
-    ]);
-
-    if (!user) {
-      throw new BadRequestException('User not found');
-    }
-
-    this.logger.log(
-      `[Register] Current state for user ${user.id}: ${user.registrationState}`,
-    );
-
-    // Extract raw address from PII
-    const rawAddressPii = (piiData as Record<string, any>[]).find(
-      (p) => p.field === 'raw_id_card_address',
-    );
-    const idCardAddress = rawAddressPii
-      ? this.decryptPii(rawAddressPii.encryptedData)
-      : null;
-
-    // Extract profile data from settings
-    const profileSetting = user.userSettings.find((s) => s.key === 'profile');
-    const profileData = profileSetting
-      ? JSON.parse(profileSetting.value)
-      : null;
-
-    // Decrypt and mask ID card number if available
-    let idNumber = null;
-    if (kycData?.idCardNumberEncrypted) {
-      try {
-        const fullId = this.decryptPii(kycData.idCardNumberEncrypted);
-        idNumber = fullId; // real id number for check
-      } catch (e) {
-        this.logger.warn(
-          `Failed to decrypt ID number for status check: ${user.id}`,
-        );
-      }
-    }
-
-    return {
-      state: user.registrationState,
-      status: user.status,
-      reviewNote: kycData?.reviewNote || null,
-      prefilledData: {
-        identity: kycData
-          ? {
-              idNumber,
-              idCardUrl: kycData.idCardImageUrl,
-              idCardAddress: idCardAddress,
-              firstNameTh: kycData.firstNameTh,
-              lastNameTh: kycData.lastNameTh,
-              prefixTh: kycData.prefix,
-              firstNameEn: kycData.firstNameEn,
-              lastNameEn: kycData.lastNameEn,
-              prefixEn: kycData.prefixEn,
-              dateOfBirth: kycData.dateOfBirth,
-              issueDate: kycData.idCardIssueDate,
-              expiryDate: kycData.idCardExpiryDate,
-              religion: kycData.religion,
-            }
-          : null,
-        addresses: {
-          registered:
-            addresses.find((a) => a.type === AddressType.REGISTERED) || null,
-          current:
-            addresses.find((a) => a.type === AddressType.CURRENT) || null,
-        },
-        profile: profileData
-          ? {
-              occupation: profileData.occupation,
-              incomeRange: profileData.incomeRange,
-              sourceOfFunds: profileData.sourceOfFunds,
-              purposeOfAccount: profileData.purposeOfAccount,
-            }
-          : null,
-      },
-    };
-  }
-
-  async completeRegistration(authorization: string | undefined, context?: any) {
-    if (!authorization) {
-      throw new UnauthorizedException('Authorization header required');
-    }
-
-    const token = authorization.replace('Bearer ', '');
-    const payload = await this.jwtService.verifyAsync(token, {
-      secret: this.registrationSecret,
-    });
-
-    if (payload.typ !== 'registration') {
-      throw new UnauthorizedException('Invalid token type');
-    }
-
-    this.logger.log(
-      `[Register] STEP 7: Completing registration for user ${payload.sub}`,
-    );
-
-    await this.validateRegistrationState(payload.sub, [
-      RegistrationState.CREDENTIALS_SET,
-      RegistrationState.COMPLETED,
-    ]);
-
-    const user = await this.prisma.user.findUnique({
-      where: { id: payload.sub },
-    });
-
-    if (!user) {
-      throw new BadRequestException('User not found');
-    }
-
-    // Race Condition and Token Reuse Protection:
-    // Allow completion only if status is PENDING_APPROVAL or REJECTED (for retries),
-    // but if already COMPLETED and ACTIVE, throw conflict.
-    if (
-      (user.registrationState as RegistrationState) ===
-        RegistrationState.COMPLETED &&
-      (user.status as UserStatus) === UserStatus.ACTIVE
-    ) {
-      throw new ConflictException('Registration already completed');
-    }
-
-    // Wallet creation is now postponed until Admin Approval (kyc.service.ts)
-    // to prevent provisioning accounts for unverified users.
-    const walletId = user.ledgerAccountId;
-
-    try {
-      // Update user with wallet info and final state
-      // Status Protection: Move to PENDING_APPROVAL if currently INACTIVE or REJECTED (retry case).
-      // If user is already ACTIVE or BLOCKED, we MUST preserve that status.
-      const updatedStatus =
-        (user.status as UserStatus) === UserStatus.INACTIVE ||
-        (user.status as UserStatus) === UserStatus.REJECTED
-          ? UserStatus.PENDING_APPROVAL
-          : (user.status as UserStatus);
-
-      const updatedUser = await this.prisma.user.update({
-        where: { id: user.id },
-        data: {
-          registrationState: RegistrationState.COMPLETED,
-          status: updatedStatus as UserStatus,
-          ledgerAccountId: walletId,
-        },
-      });
-
-      // Sync KYC status to PENDING if we are in approval mode
-      if (updatedStatus === UserStatus.PENDING_APPROVAL) {
-        await this.prisma.kYCData.updateMany({
-          where: { userId: user.id },
-          data: { verificationStatus: KYCVerificationStatus.PENDING },
-        });
-      }
-
-      await this.logSecurityEvent(
-        user.id,
-        NotificationEventType.REGISTRATION_COMPLETED,
-        {
-          walletId: walletId,
-        },
-      );
-
-      // Issue tokens so user can be automatically logged in
-      const sessionId = randomUUID();
-      const deviceId = context?.deviceId || 'UNKNOWN';
-      const device = await this.prisma.userDevice.findFirst({
-        where: { userId: user.id, deviceIdentifier: deviceId },
-      });
-
-      const accessToken = await this.signAccessToken(
-        user.id,
-        sessionId,
-        device?.id || 'UNKNOWN',
-      );
-      const refreshToken = await this.signRefreshToken(
-        updatedUser.id,
-        sessionId,
-        device?.id || 'UNKNOWN',
-      );
-
-      await this.prisma.refreshSession.create({
-        data: {
-          userId: updatedUser.id,
-          deviceId: device?.id || 'UNKNOWN',
-          tokenHash: await bcrypt.hash(refreshToken, 10),
-          expiresAt: new Date(Date.now() + REFRESH_TOKEN_TTL_SECONDS * 1000),
-          ipAddress: context?.ip,
-          userAgent: context?.userAgent,
-          lastSeenAt: new Date(),
-        },
-      });
-
-      this.logger.log(
-        `[Register] STEP 7 Complete: Registration completed for user ${user.id}, tokens issued`,
-      );
-
-      // Fetch latest KYC data to get reviewNote if any
-      const kycData = await this.prisma.kYCData.findUnique({
-        where: { userId: user.id },
-      });
-
-      return {
-        success: true,
-        accessToken,
-        refreshToken,
-        user: {
-          id: updatedUser.id,
-          phoneNumber: updatedUser.phoneNumber,
-          email: updatedUser.email,
-          status: updatedUser.status,
-          registrationState: updatedUser.registrationState,
-          reviewNote: kycData?.reviewNote || null,
-        },
-      };
-    } catch (error) {
-      this.logger.error(
-        `Failed to complete registration for user ${user.id}`,
-        error,
-      );
-      throw new BadRequestException('Failed to complete registration setup');
-    }
-  }
-
-  async verifyDevice(dto: any, context?: any) {
-    // TODO: Implement device verification logic
-    return { success: true };
-  }
-
-  async setupPin(userId: string, dto: any) {
-    const pinHash = await bcrypt.hash(dto.pin, 10);
-    await this.prisma.user.update({
-      where: { id: userId },
-      data: { pinHash },
-    });
-
-    await this.logSecurityEvent(userId, NotificationEventType.PIN_SETUP);
-    return { success: true };
-  }
-
-  async verifyPin(userId: string, dto: any) {
-    this.logger.debug(`[Identity] Verifying PIN for user ${userId}`);
-    const user = await this.prisma.user.findUnique({
-      where: { id: userId },
-    });
-
-    if (!user) {
-      this.logger.warn(`[Identity] User not found for ID: ${userId}`);
-      throw new BadRequestException('User not found');
-    }
-
-    if (!user.pinHash) {
-      this.logger.warn(`[Identity] PIN not set for user: ${userId}`);
-      throw new BadRequestException('PIN not set');
-    }
-
-    // Check if PIN is currently locked
-    if (user.pinLockedUntil && user.pinLockedUntil > new Date()) {
-      const timeLeft = Math.ceil(
-        (user.pinLockedUntil.getTime() - Date.now()) / 1000,
-      );
-      throw new ForbiddenException({
-        statusCode: 403,
-        message: `PIN is locked. Please try again in ${timeLeft} seconds.`,
-        error: 'Forbidden',
-        timeLeft,
-      });
-    }
-
-    this.logger.debug(`[Identity] Comparing PIN for user ${userId}`);
-    const isPinValid = await bcrypt.compare(dto.pin, user.pinHash);
-    if (!isPinValid) {
-      this.logger.warn(`[Identity] Invalid PIN attempt for user: ${userId}`);
-      const updatedUser = await this.handlePinFailure(userId);
-      const remainingAttempts = 3 - updatedUser.pinAttempts;
-
-      if (
-        updatedUser.pinLockedUntil &&
-        updatedUser.pinLockedUntil > new Date()
-      ) {
-        await this.logSecurityEvent(userId, NotificationEventType.PIN_LOCKED, {
-          deviceId: dto.deviceId,
-          attempts: updatedUser.pinAttempts,
-        });
-
-        await this.logSecurityEvent(
-          userId,
-          NotificationEventType.ACCOUNT_LOCKED,
-          {
-            action: 'ACCOUNT_LOCKED',
-            reason: 'PIN locked due to 3 consecutive failures',
-            deviceId: dto.deviceId,
-          },
-        );
-
-        throw new ForbiddenException({
-          statusCode: 403,
-          message:
-            'PIN locked due to too many incorrect attempts. Please try again in 5 minutes.',
-          error: 'Forbidden',
-          timeLeft: 300,
-        });
-      } else {
-        await this.logSecurityEvent(userId, NotificationEventType.PIN_FAILURE, {
-          deviceId: dto.deviceId,
-          attempts: updatedUser.pinAttempts,
-          remainingAttempts: remainingAttempts > 0 ? remainingAttempts : 0,
-        });
-        throw new UnauthorizedException(
-          `Invalid PIN. You have ${remainingAttempts} attempts remaining.`,
-        );
-      }
-    }
-
-    await this.logSecurityEvent(userId, NotificationEventType.PIN_VERIFIED, {
-      deviceId: dto.deviceId,
-    });
-
-    // Reset pin attempts on success
-    await this.prisma.user.update({
-      where: { id: userId },
-      data: { pinAttempts: 0, pinLockedUntil: null },
-    });
-
-    // Generate fresh tokens for the unlocked session (Marked as PIN Verified)
-    const device = await this.prisma.userDevice.findFirst({
-      where: { userId, deviceIdentifier: dto.deviceId },
-    });
-
-    return this.generateAuthResponse(user, device?.id, null, true);
-  }
-
-  async changePin(userId: string, dto: any) {
-    const user = await this.prisma.user.findUnique({
-      where: { id: userId },
-    });
-
-    if (!user) {
-      throw new BadRequestException('User not found');
-    }
-
-    if (!user.pinHash) {
-      throw new BadRequestException('PIN not set');
-    }
-
-    const isPinValid = await bcrypt.compare(dto.oldPin, user.pinHash);
-    if (!isPinValid) {
-      throw new BadRequestException('รหัส PIN เดิมไม่ถูกต้อง');
-    }
-
-    const pinHash = await bcrypt.hash(dto.newPin, 10);
-    await this.prisma.user.update({
-      where: { id: userId },
-      data: {
-        pinHash,
-        pinAttempts: 0,
-        pinLockedUntil: null,
-      },
-    });
-
-    await this.logSecurityEvent(userId, NotificationEventType.PIN_SETUP, { action: 'change' });
-    return { success: true, message: 'เปลี่ยนรหัส PIN เรียบร้อยแล้ว' };
-  }
-
-  async resetPinRequest(userId: string) {
-    const user = await this.prisma.user.findUnique({
-      where: { id: userId },
-    });
-
-    if (!user) {
-      throw new BadRequestException('User not found');
-    }
-
-    if (!user.email) {
-      throw new BadRequestException('กรุณายืนยันอีเมลในระบบก่อนทำรายการรีเซ็ต PIN');
-    }
-
-    // Check if email is verified
-    const verificationSetting = await this.prisma.userSetting.findUnique({
-      where: {
-        userId_key: {
-          userId,
-          key: 'email_verified',
-        },
-      },
-    });
-
-    if (!verificationSetting || verificationSetting.value !== 'true') {
-      throw new BadRequestException('กรุณายืนยันอีเมลในระบบก่อนทำรายการรีเซ็ต PIN');
-    }
-
-    // Generate 6-digit OTP code
-    const otp = Math.floor(100000 + Math.random() * 900000).toString();
-
-    // Store in Redis with 5 minutes TTL
-    const redisKey = `pin_reset:otp:${userId}`;
-    await this.redis.set(
-      redisKey,
-      JSON.stringify({ email: user.email, otp }),
-      'EX',
-      300,
-    );
-
-    // Emit event to Kafka for sending mail
-    await this.kafkaProducer.emit(KafkaTopic.SECURITY_EVENTS, {
-      userId,
-      eventType: 'PIN_RESET_OTP',
-      metadata: {
-        email: user.email,
-        otp,
-      },
-    });
-
-    this.logger.log(`[ResetPIN] Generated reset OTP for user ${userId}: ${otp}`);
-    return { success: true, message: 'ส่งรหัส OTP สำหรับรีเซ็ต PIN ไปยังอีเมลของท่านแล้ว' };
-  }
-
-  async resetPin(userId: string, dto: any) {
-    const user = await this.prisma.user.findUnique({
-      where: { id: userId },
-    });
-
-    if (!user) {
-      throw new BadRequestException('User not found');
-    }
-
-    const redisKey = `pin_reset:otp:${userId}`;
-    const otpDataString = await this.redis.get(redisKey);
-
-    if (!otpDataString) {
-      throw new BadRequestException('รหัส OTP หมดอายุหรือไม่มีความถูกต้อง');
-    }
-
-    const { otp } = JSON.parse(otpDataString);
-    if (otp !== dto.otp) {
-      throw new BadRequestException('รหัส OTP ไม่ถูกต้อง');
-    }
-
-    // Delete from Redis
-    await this.redis.del(redisKey);
-
-    // Update PIN
-    const pinHash = await bcrypt.hash(dto.newPin, 10);
-    await this.prisma.user.update({
-      where: { id: userId },
-      data: {
-        pinHash,
-        pinAttempts: 0,
-        pinLockedUntil: null,
-      },
-    });
-
-    await this.logSecurityEvent(userId, NotificationEventType.PIN_SETUP, { action: 'reset' });
-    return { success: true, message: 'รีเซ็ตรหัส PIN เรียบร้อยแล้ว' };
-  }
-
-  private async generateAuthResponse(
-    user: any,
-    deviceId?: string,
-    context?: any,
-    isPinVerified: boolean = false,
-  ) {
-    const sessionId = randomUUID();
-    const accessToken = await this.signAccessToken(
-      user.id,
-      sessionId,
-      deviceId,
-      isPinVerified,
-    );
-    const refreshToken = await this.signRefreshToken(
-      user.id,
-      sessionId,
-      deviceId,
-    );
-
-    await this.prisma.refreshSession.create({
-      data: {
-        userId: user.id,
-        deviceId: deviceId,
-        tokenHash: await bcrypt.hash(refreshToken, 10),
-        expiresAt: new Date(Date.now() + REFRESH_TOKEN_TTL_SECONDS * 1000),
-        ipAddress: context?.ip,
-        userAgent: context?.userAgent,
-        lastSeenAt: new Date(),
-      },
-    });
-
-    return {
-      accessToken,
-      refreshToken,
-      userId: user.id,
-    };
-  }
-
-  async generateBiometricChallenge(userId: string) {
-    // TODO: Implement biometric challenge generation
-    return { challenge: randomUUID() };
-  }
-
-  async verifyBiometric(userId: string, dto: any, context?: any) {
-    // TODO: Implement biometric verification logic
-    return { success: true };
-  }
-
-  async getUserConsents(userId: string) {
-    // TODO: Implement get user consents logic
-    return [];
-  }
-
-  async withdrawConsent(userId: string, consentType: string, context?: any) {
-    // TODO: Implement consent withdrawal logic
-    await this.logSecurityEvent(
-      userId,
-      NotificationEventType.CONSENT_WITHDRAWN,
-      {
-        consentType,
-        ip: context?.ip,
-      },
-    );
-    return { success: true };
-  }
-
-  async exportUserData(userId: string) {
-    // TODO: Implement data export logic
-    return { exportedAt: new Date().toISOString() };
-  }
-
-  async getProfile(userId: string) {
-    this.logger.log(`[Identity] Fetching profile for user ${userId}`);
-
-    const [user, kycData, addresses] = await Promise.all([
-      this.prisma.user.findUnique({
-        where: { id: userId },
-        include: {
-          userSettings: {
-            where: { key: { in: ['profile', 'email_verified'] } },
-          },
-        },
-      }),
-      this.prisma.kYCData
-        .findUnique({
-          where: { userId },
-        })
-        .catch(() => null),
-      this.prisma.address.findMany({
-        where: { userId, deletedAt: null },
-      }),
-    ]);
-
-    if (!user) {
-      throw new BadRequestException('User not found');
-    }
-
-    const profileSetting = user.userSettings.find((s) => s.key === 'profile');
-    const emailVerifiedSetting = user.userSettings.find((s) => s.key === 'email_verified');
-    const emailVerified = emailVerifiedSetting?.value === 'true';
-
-    let profileData: any = {};
-
-    if (profileSetting) {
-      try {
-        profileData = JSON.parse(profileSetting.value);
-        // Remove legacy address string if it exists in JSON
-        if (profileData.address) {
-          delete profileData.address;
-        }
-      } catch (e) {
-        this.logger.error(`Failed to parse profile data for user ${userId}`, e);
-      }
-    }
-
-    return {
-      id: user.id,
-      phoneNumber: user.phoneNumber,
-      email: user.email,
-      emailVerified,
-      status: user.status,
-      registrationState: user.registrationState,
-      ledgerAccountId: user.ledgerAccountId,
-      createdAt: user.createdAt,
-      profile: profileData,
-      addresses: addresses,
-      kycData: kycData
-        ? {
-            firstNameTh: kycData.firstNameTh,
-            lastNameTh: kycData.lastNameTh,
-            firstNameEn: kycData.firstNameEn,
-            lastNameEn: kycData.lastNameEn,
-            idCardName: kycData.idCardName,
-            dateOfBirth: kycData.dateOfBirth,
-            verificationStatus: kycData.verificationStatus,
-            verifiedAt: kycData.verifiedAt,
-          }
-        : null,
-    };
-  }
-
-  async updateAddress(userId: string, type: any, dto: any, source?: any) {
-    this.logger.log(`[Identity] Updating address ${type} for user ${userId}`);
-
-    // Sanitize DTO to only include valid database fields
-    const allowedFields = [
-      'line1',
-      'line2',
-      'subdistrict',
-      'district',
-      'province',
-      'postalCode',
-      'label',
-      'countryCode',
-    ];
-    const sanitizedDto: any = {};
-    for (const key of allowedFields) {
-      if (dto && dto[key] !== undefined) {
-        sanitizedDto[key] = dto[key];
-      }
-    }
-
-    this.logger.log(`[Identity] Original Address DTO: ${JSON.stringify(dto)}`);
-    this.logger.log(
-      `[Identity] Sanitized Address DTO: ${JSON.stringify(sanitizedDto)}`,
-    );
-
-    try {
-      // Manual find and update/create to ensure only one active record per type
-      const existing = await this.prisma.address.findFirst({
-        where: {
-          userId,
-          type: type as AddressType,
-          deletedAt: null,
-        },
-      });
-
-      if (existing) {
-        this.logger.log(`[Identity] Updating existing address ${existing.id}`);
-        return await this.prisma.address.update({
-          where: { id: existing.id },
-          data: {
-            ...sanitizedDto,
-            verificationSource: source || undefined,
-            updatedAt: new Date(),
-          },
-        });
-      }
-
-      this.logger.log(`[Identity] Creating new address for user ${userId}`);
-      return await this.prisma.address.create({
-        data: {
-          userId,
-          type: type as AddressType,
-          ...sanitizedDto,
-          verificationSource: source || undefined,
-        },
-      });
-    } catch (error) {
-      this.logger.error(
-        `[Identity] FAILED to update/create address: ${error.message}`,
-        error.stack,
-      );
-      throw error;
-    } finally {
-      await this.logSecurityEvent(
-        userId,
-        NotificationEventType.ADDRESS_UPDATED,
-        {
-          type,
-          source,
-        },
-      );
-    }
-  }
-
-  async updateProfile(userId: string, profileData: any) {
-    this.logger.log(`[Identity] Updating profile for user ${userId}`);
-
-    const user = await this.prisma.user.findUnique({
-      where: { id: userId },
-    });
-
-    if (!user) {
-      throw new BadRequestException('User not found');
-    }
-
-    // Ensure address is not being saved in generic profile setting anymore
-    if (profileData.address) {
-      delete profileData.address;
-    }
-
-    await this.prisma.userSetting.upsert({
-      where: { userId_key: { userId: user.id, key: 'profile' } },
-      create: {
-        userId: user.id,
-        key: 'profile',
-        value: JSON.stringify(profileData),
-      },
-      update: {
-        value: JSON.stringify(profileData),
-      },
-    });
-
-    this.logger.log(`[Identity] Profile updated for user ${userId}`);
-
-    await this.logSecurityEvent(userId, NotificationEventType.PROFILE_UPDATED, {
-      fields: Object.keys(profileData),
-    });
-
-    return { success: true };
-  }
-
-  async requestAccountDeletion(userId: string, context?: any) {
-    // TODO: Implement account deletion request logic
-    await this.logSecurityEvent(
-      userId,
-      NotificationEventType.ACCOUNT_DELETION_REQUESTED,
-      {
-        ip: context?.ip,
-      },
-    );
-    return { success: true };
-  }
-
-  async confirmAccountDeletion(userId: string, context?: any) {
-    // TODO: Implement account deletion confirmation logic
-    await this.logSecurityEvent(userId, NotificationEventType.ACCOUNT_DELETED, {
-      ip: context?.ip,
-    });
-    return { success: true };
-  }
-
-  async getSuspiciousActivities(userId: string) {
-    // TODO: Implement get suspicious activities logic
-    return [];
-  }
-
-  async reportSuspiciousActivityToAmlo(activityId: string, userId: string) {
-    // TODO: Implement AMLO reporting logic
-    return { success: true };
-  }
-
-  async createPayToken(userId: string): Promise<{ token: string; expiresAt: string }> {
-    const token = 'PAY-' + require('crypto').randomBytes(8).toString('hex').toUpperCase();
-    const ttlSeconds = 60; // 1-minute expiration
-    const expiresAt = new Date(Date.now() + ttlSeconds * 1000).toISOString();
-    
-    // Store token in Redis
-    await this.redis.set(`pay_token:${token}`, userId, 'EX', ttlSeconds);
-    this.logger.log(`Generated dynamic pay token for user ${userId}: ${token}`);
-    
-    return {
-      token,
-      expiresAt,
-    };
-  }
-
-  async requestEmailVerification(userId: string, email: string): Promise<{ success: boolean; message: string }> {
-    // 1. Check if email is already in use by another user
-    const existingUser = await this.prisma.user.findFirst({
-      where: { email, id: { not: userId } },
-    });
-    if (existingUser) {
-      throw new BadRequestException('Email address is already in use by another account');
-    }
-
-    // 2. Generate a 6-digit OTP
-    const otp = Math.floor(100000 + Math.random() * 900000).toString();
-    const ttlSeconds = 300; // 5 minutes
-
-    // 3. Store OTP in Redis
-    const redisKey = `email_verification:otp:${userId}`;
-    await this.redis.set(redisKey, JSON.stringify({ email, otp }), 'EX', ttlSeconds);
-    this.logger.log(`Generated email verification OTP for user ${userId} to email ${email}`);
-
-    // 4. Emit Kafka Event for notification worker to send email
-    try {
-      await this.kafkaProducer.emit(KafkaTopic.SECURITY_EVENTS, {
-        userId,
-        eventType: 'EMAIL_VERIFICATION_OTP',
-        metadata: {
-          email,
-          otp,
-        },
-        timestamp: new Date().toISOString(),
-        referenceId: `email-verify-${Date.now()}`,
-      });
-      this.logger.log(`Published EMAIL_VERIFICATION_OTP event to Kafka for user ${userId}`);
-    } catch (error) {
-      this.logger.error(`Failed to publish EMAIL_VERIFICATION_OTP event: ${error.message}`);
-      throw new InternalServerErrorException('Failed to process email verification request');
-    }
-
-    return {
-      success: true,
-      message: 'Verification OTP sent to your email',
-    };
-  }
-
-  async confirmEmailVerification(userId: string, email: string, otp: string): Promise<{ success: boolean; message: string }> {
-    const redisKey = `email_verification:otp:${userId}`;
-    const rawData = await this.redis.get(redisKey);
-
-    if (!rawData) {
-      throw new BadRequestException('OTP has expired or was not requested');
-    }
-
-    const { email: storedEmail, otp: storedOtp } = JSON.parse(rawData);
-
-    if (storedOtp !== otp) {
-      throw new BadRequestException('Invalid verification code');
-    }
-
-    if (storedEmail.toLowerCase() !== email.toLowerCase()) {
-      throw new BadRequestException('Email address mismatch');
-    }
-
-    // Check again if the email was taken while waiting
-    const existingUser = await this.prisma.user.findFirst({
-      where: { email, id: { not: userId } },
-    });
-    if (existingUser) {
-      throw new BadRequestException('Email address is already in use by another account');
-    }
-
-    // Clean up Redis
-    await this.redis.del(redisKey);
-
-    // Update User Email & UserSetting
-    await this.prisma.$transaction(async (tx) => {
-      await tx.user.update({
-        where: { id: userId },
-        data: { email },
-      });
-
-      await tx.userSetting.upsert({
-        where: {
-          userId_key: {
-            userId,
-            key: 'email_verified',
-          },
-        },
-        update: { value: 'true' },
-        create: {
-          userId,
-          key: 'email_verified',
-          value: 'true',
-        },
-      });
-    });
-
-    this.logger.log(`User ${userId} successfully verified email ${email}`);
-
-    return {
-      success: true,
-      message: 'Email address verified successfully',
-    };
-  }
-
-  // ==================== Private Helpers ====================
-
-  public async validateRegistrationState(
-    userId: string,
-    allowedStates: string[],
-  ) {
-    const user = await this.prisma.user.findUnique({
-      where: { id: userId },
-      select: { registrationState: true, status: true },
-    });
-
-    if (!user) {
-      throw new BadRequestException('User not found');
-    }
-
-    // Allow REJECTED users to retry from any step they are at
-    if ((user.status as UserStatus) === UserStatus.REJECTED) {
-      this.logger.log(
-        `[Register] User ${userId} is REJECTED, allowing state override.`,
-      );
-      return;
-    }
-
-    if (!allowedStates.includes(user.registrationState)) {
-      this.logger.warn(
-        `[Register] State mismatch for user ${userId}. Current: ${user.registrationState}, Allowed: ${allowedStates}`,
-      );
-      throw new ForbiddenException('Invalid registration sequence');
-    }
-  }
-
-  private decryptPii(encryptedData: string): string {
-    const encryptionKey = this.configService.get<string>('PII_ENCRYPTION_KEY');
-    if (!encryptionKey) {
-      throw new InternalServerErrorException(
-        'System missing PII decryption capabilities',
-      );
-    }
-
-    try {
-      const [ivHex, authTagHex, encryptedHex] = encryptedData.split(':');
-      if (!ivHex || !authTagHex || !encryptedHex) {
-        throw new Error('Invalid encrypted data format');
-      }
-
-      const iv = Buffer.from(ivHex, 'hex');
-      const authTag = Buffer.from(authTagHex, 'hex');
-      const key = Buffer.from(encryptionKey, 'hex');
-      const decipher = createDecipheriv('aes-256-gcm', key, iv);
-
-      decipher.setAuthTag(authTag);
-
-      let decrypted = decipher.update(encryptedHex, 'hex', 'utf8');
-      decrypted += decipher.final('utf8');
-
-      return decrypted;
-    } catch (error) {
-      this.logger.error(`Decryption failed: ${error.message}`);
-      throw new Error('Could not decrypt PII data');
-    }
-  }
-
-  private maskIdCardNumber(id: string): string {
-    if (!id || id.length < 13) return id;
-    // Format: X-XXXX-XXXXX-XX-X -> 1-2345-XXXXX-01-2
-    return `${id.slice(0, 1)}-${id.slice(1, 5)}-XXXXX-${id.slice(10, 12)}-${id.slice(12)}`;
   }
 }

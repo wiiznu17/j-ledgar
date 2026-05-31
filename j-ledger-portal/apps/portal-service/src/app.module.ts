@@ -15,6 +15,8 @@ import { LoyaltyModule } from './modules/loyalty/loyalty.module';
 import { DealModule } from './modules/deals/deal.module';
 import { BannerModule } from './modules/banners/banner.module';
 import { MerchantModule } from './modules/merchant/merchant.module';
+import { TerminalModule } from './terminal/terminal.module';
+import { UserModule } from './user/user.module';
 import { FraudModule } from './modules/fraud/fraud.module';
 import { ScheduledTransferModule } from './modules/scheduled-transfer/scheduled-transfer.module';
 import { HealthController } from './core/health/health.controller';
@@ -108,6 +110,8 @@ import { TraceMiddleware } from './core/common/middleware/trace.middleware';
     DealModule,
     BannerModule,
     MerchantModule,
+    TerminalModule,
+    UserModule,
     FraudModule,
     ScheduledTransferModule,
   ],

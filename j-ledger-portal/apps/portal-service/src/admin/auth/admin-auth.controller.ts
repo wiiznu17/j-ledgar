@@ -12,7 +12,7 @@ import {
   Put,
 } from '@nestjs/common';
 import { Throttle } from '@nestjs/throttler';
-import { AdminService } from '../services/admin.service';
+import { AdminService } from '../../modules/admin/admin.service';
 import { JwtService } from '@nestjs/jwt';
 import * as bcrypt from 'bcryptjs';
 import { LoginRequest, AuthResponse, RefreshTokenRequest } from '@repo/dto';

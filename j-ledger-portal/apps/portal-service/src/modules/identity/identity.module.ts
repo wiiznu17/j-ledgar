@@ -1,7 +1,11 @@
 import { Module } from '@nestjs/common';
 import { JwtModule } from '@nestjs/jwt';
 import { IdentityService } from './identity.service';
-import { IdentityController } from '../../user/identity/identity.controller';
+import { UserAuthService } from './services/user-auth.service';
+import { UserRegistrationService } from './services/user-registration.service';
+import { UserProfileService } from './services/user-profile.service';
+import { UserSecurityService } from './services/user-security.service';
+import { UserAdminService } from './services/user-admin.service';
 import { AwsSnsSmSProviderProvider } from '../integrations/providers/sms-provider.aws-sns';
 import { JwtStrategy } from './jwt.strategy';
 import { IntegrationModule } from '../integration/integration.module';
@@ -24,8 +28,23 @@ import { NotificationModule } from '../notification/notification.module';
     IntegrationModule,
     NotificationModule,
   ],
-  providers: [IdentityService, AwsSnsSmSProviderProvider, JwtStrategy],
-  controllers: [IdentityController],
-  exports: [IdentityService],
+  providers: [
+    IdentityService,
+    UserAuthService,
+    UserRegistrationService,
+    UserProfileService,
+    UserSecurityService,
+    UserAdminService,
+    AwsSnsSmSProviderProvider,
+    JwtStrategy,
+  ],
+  exports: [
+    IdentityService,
+    UserAuthService,
+    UserRegistrationService,
+    UserProfileService,
+    UserSecurityService,
+    UserAdminService,
+  ],
 })
 export class IdentityModule {}

@@ -11,7 +11,7 @@ import {
   Req,
   BadRequestException,
 } from '@nestjs/common';
-import { AdminService } from '../services/admin.service';
+import { AdminService } from '../../modules/admin/admin.service';
 import { AdminJwtGuard } from '../guards/admin-jwt.guard';
 import { AdminRolesGuard } from '../guards/admin-roles.guard';
 import { Roles } from '../decorators/roles.decorator';

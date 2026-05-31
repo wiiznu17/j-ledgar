@@ -4,7 +4,7 @@ import { RawBodyRequest } from '@nestjs/common';
 import { Request } from 'express';
 
 @Controller('integration/topup/webhook')
-export class StripeWebhookController {
+export class IntegrationWebhookController {
   constructor(private readonly integrationService: IntegrationService) {}
 
   @Post('stripe')

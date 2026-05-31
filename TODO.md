@@ -274,9 +274,29 @@
 
 ---
 
+## 🔵 Priority 1.5 — Code Quality & Architecture Refactoring
+
+### 9. IdentityService Decomposition (God Object Refactor)
+
+- [ ] Create `UserAuthService` (Handle Login, Refresh, Logout, JWT logic)
+- [ ] Create `UserRegistrationService` (Handle multi-step Onboarding flow)
+- [ ] Create `UserProfileService` (Handle Profile, Address, and Consent management)
+- [ ] Create `UserSecurityService` (Handle PIN, Biometric, and Device security)
+- [ ] Create `UserAdminService` (Handle Administrative user management & stats)
+- [ ] Implement Facade Pattern in `IdentityService` to maintain backward compatibility
+- [ ] Verification: Ensure 100% test coverage persistence and functional parity
+- [ ] Final Cleanup: Remove monolithic legacy code from `IdentityService`
+
+### 10. System-wide Refinement
+
+- [ ] Standardized Pagination & Sorting Utility
+- [ ] Implement Domain-Specific Business Exceptions
+
+---
+
 ## 🟢 Priority 2 — Nice to Have (Phase 3)
 
-### 9. Security Hardening
+### 11. Security Hardening
 
 - [x] Installed and configured `helmet` for secure HTTP headers (CSP, HSTS, etc.).
 - [x] Configured Global `ValidationPipe` for strict input sanitization (Whitelist & Non-whitelisted rejection).
