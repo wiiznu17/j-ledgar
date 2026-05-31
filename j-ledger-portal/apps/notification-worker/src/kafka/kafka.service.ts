@@ -322,20 +322,20 @@ startxref
         try {
           await this.emailService.sendEmail(
             email,
-            \`P-Wallet: รายการเดินบัญชีประจำเดือน \${month}/\${year}\`,
+            `P-Wallet: รายการเดินบัญชีประจำเดือน ${month}/${year}`,
             html,
             [
               {
-                filename: \`statement_\${month}_\${year}.pdf\`,
+                filename: `statement_${month}_${year}.pdf`,
                 content: pdfBuffer,
                 contentType: 'application/pdf',
               },
             ]
           );
-          this.logger.log(\`Successfully sent STATEMENT_EXPORT_READY email with PDF attachment to \${email}\`);
+          this.logger.log(`Successfully sent STATEMENT_EXPORT_READY email with PDF attachment to ${email}`);
         } catch (error) {
           this.logger.error(
-            \`Failed to send STATEMENT_EXPORT_READY email: \${error.message}\`,
+            `Failed to send STATEMENT_EXPORT_READY email: ${error.message}`,
           );
         }
         return;

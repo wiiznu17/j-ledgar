@@ -7,6 +7,7 @@ import {
   Logger,
 } from '@nestjs/common';
 import { Response, Request } from 'express';
+import { ApiErrorResponse } from '@repo/dto';
 
 @Catch()
 export class GlobalExceptionFilter implements ExceptionFilter {
@@ -40,19 +41,26 @@ export class GlobalExceptionFilter implements ExceptionFilter {
           : undefined,
     });
 
-    // Return response to client (never expose stack trace in production)
-    response.status(status).json({
-      statusCode: status,
-      message: isProduction
-        ? this.getProductionMessage(status)
-        : exception instanceof Error
-          ? exception.message
-          : 'Internal server error',
-      timestamp: new Date().toISOString(),
-      traceId,
-      // Only include path in development for debugging
-      ...(process.env.NODE_ENV !== 'production' && { path: request.url }),
-    });
+    // Construct standardized error response
+    const errorResponse: ApiErrorResponse = {
+      success: false,
+      error: {
+        code: status,
+        message: isProduction
+          ? this.getProductionMessage(status)
+          : exception instanceof Error
+            ? exception.message
+            : 'Internal server error',
+      },
+      meta: {
+        traceId,
+        timestamp: new Date().toISOString(),
+        ...(process.env.NODE_ENV !== 'production' && { path: request.url }),
+      },
+    };
+
+    // Return response to client
+    response.status(status).json(errorResponse);
   }
 
   private getProductionMessage(status: number): string {

@@ -348,3 +348,7 @@
 - [x] Notification model — in-app notification system
 - [x] Rebranding — J-Ledger → P-Wallet (UI-only, internal protocols preserved)
 - [x] Git security — purged leaked credentials from history
+- [x] Global Exception Filter & Standardized API Response
+  - [x] Backend: Global `TransformInterceptor` to wrap success responses in `{ success, data, meta }`.
+  - [x] Backend: Refactored `GlobalExceptionFilter` for standardized error format.
+  - [x] Frontend: Added response interceptors in `wallet-app` and `admin-web` to transparently unwrap data and maintain backward compatibility.

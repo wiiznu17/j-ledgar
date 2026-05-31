@@ -70,23 +70,31 @@ const createAxiosInstance = (): AxiosInstance => {
     return config;
   });
 
-  // Response interceptor for error handling
+  // Response interceptor for error handling and standard envelope unwrapping
   instance.interceptors.response.use(
-    (response: AxiosResponse) => response,
+    (response: AxiosResponse) => {
+      // Automatically unwrap the standard envelope { success, data, meta }
+      if (
+        response.data &&
+        response.data.success === true &&
+        Object.prototype.hasOwnProperty.call(response.data, 'data')
+      ) {
+        // Keep meta if needed
+        (response as any).meta = response.data.meta;
+        // Replace data with actual payload
+        response.data = response.data.data;
+      }
+      return response;
+    },
     (error: AxiosError) => {
       if (error.response) {
         const status = error.response.status;
-        const data = error.response.data;
+        const data = error.response.data as any;
 
         if (status === 401 && !(error.config as any)?._retry) {
           (error.config as any)._retry = true;
 
-          // In a full implementation, we would attempt a refresh token call here.
-          // For now, if we get a 401, we treat it as an unrecoverable session error
-          // (especially common during dev DB resets) and clear the session to prevent loops.
           if (typeof window !== 'undefined') {
-            // Force redirect to login with error param
-            // The LoginPage will handle stopping the redirect loop
             window.location.href = '/login?error=Session expired';
           }
           throw new ApiError(401, 'Unauthorized', data);
@@ -95,22 +103,24 @@ const createAxiosInstance = (): AxiosInstance => {
         let errorMessage = 'API Request Failed';
         if (typeof data === 'string') {
           errorMessage = data;
-        } else if (data && typeof data === 'object' && 'message' in data) {
-          errorMessage = String(data.message);
+        } else if (data && typeof data === 'object') {
+          if (data.success === false && data.error?.message) {
+            errorMessage = String(data.error.message);
+          } else if ('message' in data) {
+            errorMessage = String(data.message);
+          }
         } else if (error.message) {
           errorMessage = error.message;
         }
 
         throw new ApiError(status, errorMessage, data);
       } else if (error.request) {
-        // Request was made but no response received
         throw new ApiError(
           0,
           'Network Error - No response received',
           error.request,
         );
       } else {
-        // Something happened in setting up the request
         throw new ApiError(0, error.message || 'Request setup failed', error);
       }
     },

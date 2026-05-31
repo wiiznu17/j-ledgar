@@ -19,7 +19,7 @@ import {
   TableRow,
 } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
-import { Switch } from '@/components/ui/switch';
+import { Checkbox } from '@/components/ui/checkbox';
 import {
   Dialog,
   DialogContent,
@@ -232,7 +232,7 @@ export default function FraudRulesPage() {
                 rules.map((rule) => (
                   <TableRow key={rule.id}>
                     <TableCell>
-                      <Switch
+                      <Checkbox
                         checked={rule.isActive}
                         onCheckedChange={() => handleToggleActive(rule)}
                       />

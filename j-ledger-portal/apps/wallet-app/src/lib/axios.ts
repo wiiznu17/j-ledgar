@@ -134,6 +134,19 @@ api.interceptors.response.use(
       `[Axios] Success: [${response.config.method?.toUpperCase()}] ${response.config.url}`,
       response.status,
     );
+
+    // Automatically unwrap the standard envelope { success, data, meta }
+    if (
+      response.data &&
+      response.data.success === true &&
+      response.data.hasOwnProperty('data')
+    ) {
+      // Keep a reference to the envelope meta if needed by any advanced logic
+      (response as any).meta = response.data.meta;
+      // Replace data with the actual payload for components
+      response.data = response.data.data;
+    }
+
     return response;
   },
   async (error) => {
@@ -165,6 +178,17 @@ api.interceptors.response.use(
           data: error.response?.data,
         },
       );
+    }
+
+    // Standardize error message extraction for components
+    if (error.response?.data && typeof error.response.data === 'object') {
+      const data = error.response.data;
+      if (data.success === false && data.error?.message) {
+        // Flatten error message for easier use in components
+        (error as any).apiMessage = data.error.message;
+      } else if (data.message) {
+        (error as any).apiMessage = data.message;
+      }
     }
 
     // If error is 401 and we haven't retried yet
