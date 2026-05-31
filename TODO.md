@@ -278,19 +278,25 @@
 
 ### 9. IdentityService Decomposition (God Object Refactor)
 
-- [ ] Create `UserAuthService` (Handle Login, Refresh, Logout, JWT logic)
-- [ ] Create `UserRegistrationService` (Handle multi-step Onboarding flow)
-- [ ] Create `UserProfileService` (Handle Profile, Address, and Consent management)
-- [ ] Create `UserSecurityService` (Handle PIN, Biometric, and Device security)
-- [ ] Create `UserAdminService` (Handle Administrative user management & stats)
-- [ ] Implement Facade Pattern in `IdentityService` to maintain backward compatibility
-- [ ] Verification: Ensure 100% test coverage persistence and functional parity
-- [ ] Final Cleanup: Remove monolithic legacy code from `IdentityService`
+- [x] Create `UserAuthService` (Handle Login, Refresh, Logout, JWT logic)
+- [x] Create `UserRegistrationService` (Handle multi-step Onboarding flow)
+- [x] Create `UserProfileService` (Handle Profile, Address, and Consent management)
+- [x] Create `UserSecurityService` (Handle PIN, Biometric, and Device security)
+- [x] Create `UserAdminService` (Handle Administrative user management & stats)
+- [x] Implement Facade Pattern in `IdentityService` to maintain backward compatibility
+- [x] Verification: Ensure 100% test coverage persistence and functional parity
+- [x] Final Cleanup: Remove monolithic legacy code from `IdentityService`
 
 ### 10. System-wide Refinement
 
+- [x] Establish "Role-Based / Pure Module" Architecture (Move business logic out of `admin/` and `user/`, remove controllers from `modules/`)
+- [x] Fix Architectural Violations: Remove direct `PrismaService` calls from `AdminFinanceController` and `AdminSystemController`.
+- [ ] Decompose Remaining God Objects (Facade Pattern):
+  - [ ] `MerchantService` (~2,300 lines) -> Profile, POS, Staff
+  - [ ] `IntegrationService` (~1,400 lines) -> Transfers, Top-ups, Webhooks
+  - [ ] `KycService` (~1,300 lines) -> Liveness, DOPA, Risk Scoring
 - [ ] Standardized Pagination & Sorting Utility
-- [ ] Implement Domain-Specific Business Exceptions
+- [ ] Implement Domain-Specific Business Exceptions (e.g., `InsufficientBalanceException`) replace generic `BadRequestException` strings.
 
 ---
 

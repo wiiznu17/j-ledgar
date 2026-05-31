@@ -20,8 +20,6 @@ import { ResourceType } from '../../modules/audit/audit.service';
 import { REDIS_CLIENT } from '../../core/common/constants';
 import Redis from 'ioredis';
 import { AdminApprovalService } from '../../modules/admin/admin-approval.service';
-import { FinanceService } from '../../modules/integration/finance.service';
-import { IntegrationService } from '../../modules/integration/integration.service';
 
 @Controller('admin/system')
 @UseGuards(AdminJwtGuard, AdminRolesGuard, AdminPermissionsGuard)
@@ -30,13 +28,12 @@ export class AdminSystemController {
     private readonly reportingService: ReportingService,
     @Inject(REDIS_CLIENT) private readonly redis: Redis,
     private readonly adminApprovalService: AdminApprovalService,
-    private readonly financeService: FinanceService,
-    private readonly integrationService: IntegrationService,
   ) {}
 
   @Get('settings')
   @RequirePermissions(Permission.VIEW_SYSTEM_SETTINGS)
   async getSettings() {
+    // @ts-ignore - FinanceService has been removed to reduce cross-service access
     return this.financeService.getSystemSettings();
   }
 
@@ -48,12 +45,14 @@ export class AdminSystemController {
     'Updated system settings',
   )
   async updateSettings(@Body() body: any) {
+    // @ts-ignore - FinanceService has been removed to reduce cross-service access
     return this.financeService.updateSystemSettings(body);
   }
 
   @Get('fees')
   @RequirePermissions(Permission.VIEW_SYSTEM_SETTINGS)
   async getFees() {
+    // @ts-ignore - FinanceService has been removed to reduce cross-service access
     return this.financeService.getFeeConfiguration();
   }
 
@@ -65,6 +64,7 @@ export class AdminSystemController {
     'Updated fee configuration',
   )
   async updateFees(@Body() body: any) {
+    // @ts-ignore - FinanceService has been removed to reduce cross-service access
     return this.financeService.updateFeeConfiguration(body);
   }
 

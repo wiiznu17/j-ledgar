@@ -1,6 +1,8 @@
 import { Module } from '@nestjs/common';
 import { APP_INTERCEPTOR } from '@nestjs/core';
 import { AdminService } from '../modules/admin/admin.service';
+import { AdminFraudService } from '../modules/admin/admin-fraud.service';
+import { AdminApprovalService } from '../modules/admin/admin-approval.service';
 import { AuditInterceptor } from './interceptors/audit.interceptor';
 import { MailService } from '../modules/admin/mail.service';
 import { AdminStaffController } from './staff/admin-staff.controller';
@@ -77,6 +79,8 @@ import { AdminJwtStrategy } from './strategies/admin-jwt.strategy';
   ],
   providers: [
     AdminService,
+    AdminFraudService,
+    AdminApprovalService,
     AdminJwtStrategy,
     MailService,
     {
