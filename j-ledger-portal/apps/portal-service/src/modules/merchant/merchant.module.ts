@@ -11,6 +11,11 @@ import { AuditModule } from '../audit/audit.module';
 import { TerminalNonceService } from './security/terminal-nonce.service';
 import { TerminalIdempotencyService } from './security/terminal-idempotency.service';
 
+import { MerchantQrPaymentService } from './services/payments/merchant-qr-payment.service';
+import { MerchantManualPaymentService } from './services/payments/merchant-manual-payment.service';
+import { MerchantTerminalPaymentService } from './services/payments/merchant-terminal-payment.service';
+import { MerchantTerminalRedemptionService } from './services/payments/merchant-terminal-redemption.service';
+
 @Module({
   imports: [IntegrationModule, AuditModule],
   controllers: [],
@@ -23,6 +28,10 @@ import { TerminalIdempotencyService } from './security/terminal-idempotency.serv
     MerchantSettlementService,
     TerminalNonceService,
     TerminalIdempotencyService,
+    MerchantQrPaymentService,
+    MerchantManualPaymentService,
+    MerchantTerminalPaymentService,
+    MerchantTerminalRedemptionService,
   ],
   exports: [
     MerchantService,
@@ -33,6 +42,10 @@ import { TerminalIdempotencyService } from './security/terminal-idempotency.serv
     MerchantSettlementService,
     TerminalNonceService,
     TerminalIdempotencyService,
+    MerchantQrPaymentService,
+    MerchantManualPaymentService,
+    MerchantTerminalPaymentService,
+    MerchantTerminalRedemptionService,
   ],
 })
 export class MerchantModule {}

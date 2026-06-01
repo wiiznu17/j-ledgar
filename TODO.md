@@ -293,7 +293,7 @@
 - [x] Fix Architectural Violations: Remove direct `PrismaService` calls from `AdminFinanceController` and `AdminSystemController`.
 - [x] Migrate `FinanceService` to Global Core Module (`src/core/finance/`) to eliminate circular/coupling dependencies.
 - [ ] Decompose Remaining God Objects (Facade Pattern):
-  - [ ] `MerchantService` (~2,300 lines) -> Profile, POS, Staff
+  - [x] `MerchantService` (~2,300 lines) -> Profile, POS, Staff
   - [x] `IntegrationService` (~1,400 lines) -> Transfers, Top-ups, Webhooks
   - [x] `KycService` (~1,300 lines) -> Liveness, DOPA, Risk Scoring
 - [ ] Standardized Pagination & Sorting Utility

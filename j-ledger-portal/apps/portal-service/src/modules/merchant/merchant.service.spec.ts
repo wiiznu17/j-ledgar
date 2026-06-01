@@ -13,6 +13,10 @@ import { AuditService } from '../audit/audit.service';
 import { TerminalIdempotencyService } from './security/terminal-idempotency.service';
 import { StorageService } from '../../core/storage/storage.service';
 import { REDIS_CLIENT } from '../../core/common/constants';
+import { MerchantQrPaymentService } from './services/payments/merchant-qr-payment.service';
+import { MerchantManualPaymentService } from './services/payments/merchant-manual-payment.service';
+import { MerchantTerminalPaymentService } from './services/payments/merchant-terminal-payment.service';
+import { MerchantTerminalRedemptionService } from './services/payments/merchant-terminal-redemption.service';
 import {
   createMockPrismaService,
   createMockFinanceService,
@@ -47,6 +51,10 @@ describe('MerchantService', () => {
         MerchantPaymentService,
         MerchantSettlementService,
         TerminalNonceService,
+        MerchantQrPaymentService,
+        MerchantManualPaymentService,
+        MerchantTerminalPaymentService,
+        MerchantTerminalRedemptionService,
         {
           provide: PrismaService,
           useValue: prisma,
