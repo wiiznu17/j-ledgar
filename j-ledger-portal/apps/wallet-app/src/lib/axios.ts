@@ -185,7 +185,9 @@ api.interceptors.response.use(
       const data = error.response.data;
       if (data.success === false && data.error?.message) {
         // Flatten error message for easier use in components
+        (error as any).apiCode = data.error.code;
         (error as any).apiMessage = data.error.message;
+        (error as any).apiDetails = data.error.details;
       } else if (data.message) {
         (error as any).apiMessage = data.message;
       }

@@ -41,16 +41,37 @@ export class GlobalExceptionFilter implements ExceptionFilter {
           : undefined,
     });
 
+    let errorCode: string | number = status;
+    let errorMessage = exception instanceof Error ? exception.message : 'Internal server error';
+    let details: any = undefined;
+
+    if (exception instanceof HttpException) {
+      const responseObj = exception.getResponse();
+      if (typeof responseObj === 'object' && responseObj !== null) {
+        errorCode = (responseObj as any).code || (responseObj as any).error || status;
+        errorMessage = (responseObj as any).message || exception.message;
+        details = (responseObj as any).details || undefined;
+
+        // ในกรณีที่เป็น NestJS Class Validation (Array error messages)
+        if (Array.isArray((responseObj as any).message)) {
+          errorCode = 'SYSTEM_VALIDATION_ERROR';
+          errorMessage = 'Validation failed';
+          details = (responseObj as any).message;
+        }
+      }
+    }
+
+    if (isProduction && status >= 500) {
+      errorMessage = this.getProductionMessage(status);
+    }
+
     // Construct standardized error response
     const errorResponse: ApiErrorResponse = {
       success: false,
       error: {
-        code: status,
-        message: isProduction
-          ? this.getProductionMessage(status)
-          : exception instanceof Error
-            ? exception.message
-            : 'Internal server error',
+        code: errorCode,
+        message: errorMessage,
+        ...(details !== undefined && { details }),
       },
       meta: {
         traceId,

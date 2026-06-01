@@ -197,6 +197,51 @@ export const parseBackendError = (error: any): TransferError => {
     };
   }
 
+  // ใช้รหัสข้อผิดพลาดทางธุรกิจที่มีความสัมพันธ์โดยตรงก่อน
+  if (error.apiCode) {
+    switch (error.apiCode) {
+      case 'FINANCE_INSUFFICIENT_BALANCE':
+        return {
+          code: 'INSUFFICIENT_FUNDS',
+          message: error.apiMessage || 'ยอดเงินในกระเป๋าของท่านไม่เพียงพอสำหรับรายการนี้',
+          details: error.apiDetails,
+          recoveryAction: 'EDIT',
+        };
+      case 'AUTH_INVALID_PIN':
+        return {
+          code: 'PIN_FAILED',
+          message: error.apiMessage || 'รหัส PIN ไม่ถูกต้อง',
+          recoveryAction: 'RETRY',
+        };
+      case 'AUTH_PIN_LOCKED':
+        return {
+          code: 'BIOMETRIC_FAILED', // หรือจัดการสถานะล็อกเฉพาะ
+          message: error.apiMessage || 'รหัส PIN ของท่านถูกระงับชั่วคราว กรุณาลองใหม่ในภายหลัง',
+          details: error.apiDetails,
+          recoveryAction: 'RETRY',
+        };
+      case 'FINANCE_INVALID_RECIPIENT':
+      case 'AUTH_USER_NOT_FOUND':
+        return {
+          code: 'INVALID_RECIPIENT',
+          message: error.apiMessage || 'ไม่พบข้อมูลผู้รับโอนเงิน',
+          recoveryAction: 'CANCEL',
+        };
+      case 'FINANCE_INVALID_AMOUNT':
+        return {
+          code: 'INVALID_AMOUNT',
+          message: error.apiMessage || 'จำนวนเงินโอนไม่ถูกต้อง',
+          recoveryAction: 'EDIT',
+        };
+      case 'SYSTEM_RATE_LIMIT_EXCEEDED':
+        return {
+          code: 'TIMEOUT',
+          message: 'ส่งคำขอบ่อยเกินไป กรุณารอสักครู่แล้วลองใหม่อีกครั้ง',
+          recoveryAction: 'RETRY',
+        };
+    }
+  }
+
   // Handle axios error response
   if (error.response) {
     const status = error.response.status;

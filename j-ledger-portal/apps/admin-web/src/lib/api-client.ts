@@ -30,6 +30,8 @@ export class ApiError extends Error {
     public status: number,
     public message: string,
     public data?: unknown,
+    public code?: string | number,
+    public details?: any,
   ) {
     super(message);
     this.name = 'ApiError';
@@ -101,11 +103,16 @@ const createAxiosInstance = (): AxiosInstance => {
         }
 
         let errorMessage = 'API Request Failed';
+        let errorCode: string | number | undefined = undefined;
+        let errorDetails: any = undefined;
+
         if (typeof data === 'string') {
           errorMessage = data;
         } else if (data && typeof data === 'object') {
-          if (data.success === false && data.error?.message) {
-            errorMessage = String(data.error.message);
+          if (data.success === false && data.error) {
+            errorMessage = String(data.error.message || 'API Request Failed');
+            errorCode = data.error.code;
+            errorDetails = data.error.details;
           } else if ('message' in data) {
             errorMessage = String(data.message);
           }
@@ -113,7 +120,7 @@ const createAxiosInstance = (): AxiosInstance => {
           errorMessage = error.message;
         }
 
-        throw new ApiError(status, errorMessage, data);
+        throw new ApiError(status, errorMessage, data, errorCode, errorDetails);
       } else if (error.request) {
         throw new ApiError(
           0,

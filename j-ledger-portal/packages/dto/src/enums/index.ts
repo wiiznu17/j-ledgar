@@ -306,3 +306,6 @@ export enum ScheduledTransferFrequency {
   WEEKLY = 'WEEKLY',
   MONTHLY = 'MONTHLY',
 }
+
+export * from './error-codes';
+

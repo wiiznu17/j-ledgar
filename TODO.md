@@ -292,12 +292,12 @@
 - [x] Establish "Role-Based / Pure Module" Architecture (Move business logic out of `admin/` and `user/`, remove controllers from `modules/`)
 - [x] Fix Architectural Violations: Remove direct `PrismaService` calls from `AdminFinanceController` and `AdminSystemController`.
 - [x] Migrate `FinanceService` to Global Core Module (`src/core/finance/`) to eliminate circular/coupling dependencies.
-- [ ] Decompose Remaining God Objects (Facade Pattern):
+- [x] Decompose Remaining God Objects (Facade Pattern):
   - [x] `MerchantService` (~2,300 lines) -> Profile, POS, Staff
   - [x] `IntegrationService` (~1,400 lines) -> Transfers, Top-ups, Webhooks
   - [x] `KycService` (~1,300 lines) -> Liveness, DOPA, Risk Scoring
 - [ ] Standardized Pagination & Sorting Utility
-- [ ] Implement Domain-Specific Business Exceptions (e.g., `InsufficientBalanceException`) replace generic `BadRequestException` strings.
+- [x] Implement Domain-Specific Business Exceptions (e.g., `InsufficientBalanceException`) replace generic `BadRequestException` strings.
 
 ---
 
