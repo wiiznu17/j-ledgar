@@ -295,7 +295,7 @@
 - [ ] Decompose Remaining God Objects (Facade Pattern):
   - [ ] `MerchantService` (~2,300 lines) -> Profile, POS, Staff
   - [x] `IntegrationService` (~1,400 lines) -> Transfers, Top-ups, Webhooks
-  - [ ] `KycService` (~1,300 lines) -> Liveness, DOPA, Risk Scoring
+  - [x] `KycService` (~1,300 lines) -> Liveness, DOPA, Risk Scoring
 - [ ] Standardized Pagination & Sorting Utility
 - [ ] Implement Domain-Specific Business Exceptions (e.g., `InsufficientBalanceException`) replace generic `BadRequestException` strings.
 

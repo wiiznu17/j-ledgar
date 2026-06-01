@@ -8,6 +8,10 @@ import { KafkaProducerService } from '../notification/kafka-producer.service';
 import { S3Service } from './services/s3.service';
 import { GoogleVisionService } from './services/ocr.service';
 import { AwsRekognitionService } from './services/face.service';
+import { KycCryptoService } from './services/kyc-crypto.service';
+import { KycDocumentService } from './services/kyc-document.service';
+import { KycAdminService } from './services/kyc-admin.service';
+import { KycProcessService } from './services/kyc-process.service';
 import {
   KYCVerificationStatus,
   RegistrationState,
@@ -56,6 +60,10 @@ describe('KycService', () => {
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         KycService,
+        KycCryptoService,
+        KycDocumentService,
+        KycAdminService,
+        KycProcessService,
         {
           provide: PrismaService,
           useValue: prisma,

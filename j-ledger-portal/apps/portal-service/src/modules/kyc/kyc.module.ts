@@ -10,6 +10,11 @@ import { S3Service } from './services/s3.service';
 import { GoogleVisionService } from './services/ocr.service';
 import { AwsRekognitionService } from './services/face.service';
 
+import { KycCryptoService } from './services/kyc-crypto.service';
+import { KycDocumentService } from './services/kyc-document.service';
+import { KycAdminService } from './services/kyc-admin.service';
+import { KycProcessService } from './services/kyc-process.service';
+
 @Module({
   imports: [
     IntegrationModule,
@@ -23,7 +28,20 @@ import { AwsRekognitionService } from './services/face.service';
     S3Service,
     GoogleVisionService,
     AwsRekognitionService,
+    KycCryptoService,
+    KycDocumentService,
+    KycAdminService,
+    KycProcessService,
   ],
-  exports: [KycService, S3Service, GoogleVisionService, AwsRekognitionService],
+  exports: [
+    KycService,
+    S3Service,
+    GoogleVisionService,
+    AwsRekognitionService,
+    KycCryptoService,
+    KycDocumentService,
+    KycAdminService,
+    KycProcessService,
+  ],
 })
 export class KycModule {}
