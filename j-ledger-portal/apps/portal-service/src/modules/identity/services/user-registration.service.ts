@@ -13,7 +13,7 @@ import { JwtService } from '@nestjs/jwt';
 import { SecurityEventType } from '@prisma/client';
 import { PrismaService } from '../../../core/prisma/prisma.service';
 import { ISmsProvider } from '../../integrations/interfaces/sms-provider.interface';
-import { FinanceService } from '../../integration/finance.service';
+import { FinanceService } from '../../../core/finance/finance.service';
 import {
   UserStatus,
   RegistrationState,

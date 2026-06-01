@@ -20,7 +20,7 @@ import { ResourceType } from '../../modules/audit/audit.service';
 import { REDIS_CLIENT } from '../../core/common/constants';
 import Redis from 'ioredis';
 import { AdminApprovalService } from '../../modules/admin/admin-approval.service';
-import { FinanceService } from '../../modules/integration/finance.service';
+import { FinanceService } from '../../core/finance/finance.service';
 import { IntegrationService } from '../../modules/integration/integration.service';
 
 @Controller('admin/system')

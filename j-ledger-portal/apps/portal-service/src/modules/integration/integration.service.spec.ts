@@ -1,7 +1,7 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { IntegrationService } from './integration.service';
 import { PrismaService } from '../../core/prisma/prisma.service';
-import { FinanceService } from './finance.service';
+import { FinanceService } from '../../core/finance/finance.service';
 import { BillingService } from '../billing/billing.service';
 import { LoyaltyService } from '../loyalty/loyalty.service';
 import { BannerService } from '../banners/banner.service';

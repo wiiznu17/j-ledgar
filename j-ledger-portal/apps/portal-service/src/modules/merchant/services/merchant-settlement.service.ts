@@ -1,7 +1,7 @@
 import { Injectable, Logger, HttpException, HttpStatus } from '@nestjs/common';
 import { Cron, CronExpression } from '@nestjs/schedule';
 import { PrismaService } from '../../../core/prisma/prisma.service';
-import { FinanceService } from '../../integration/finance.service';
+import { FinanceService } from '../../../core/finance/finance.service';
 import { AuditService, AuditAction, ResourceType } from '../../audit/audit.service';
 
 @Injectable()

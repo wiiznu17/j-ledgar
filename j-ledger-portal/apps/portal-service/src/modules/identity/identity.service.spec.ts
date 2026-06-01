@@ -1,12 +1,17 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { IdentityService } from './identity.service';
+import { UserAuthService } from './services/user-auth.service';
+import { UserRegistrationService } from './services/user-registration.service';
+import { UserProfileService } from './services/user-profile.service';
+import { UserSecurityService } from './services/user-security.service';
+import { UserAdminService } from './services/user-admin.service';
 import { PrismaService } from '../../core/prisma/prisma.service';
 import { JwtService } from '@nestjs/jwt';
 import { ConfigService } from '@nestjs/config';
 import { KafkaProducerService } from '../notification/kafka-producer.service';
 import { REDIS_CLIENT } from '../../core/common/constants';
 import { ISmsProvider } from '../integrations/interfaces/sms-provider.interface';
-import { FinanceService } from '../integration/finance.service';
+import { FinanceService } from '../../core/finance/finance.service';
 import {
   createMockPrismaService,
   createMockConfigService,
@@ -39,6 +44,7 @@ describe('IdentityService', () => {
       sign: jest.fn().mockReturnValue('mocked-token'),
       signAsync: jest.fn().mockResolvedValue('mocked-token'),
       verify: jest.fn(),
+      verifyAsync: jest.fn().mockResolvedValue({ sub: 'user-1', typ: 'registration' }),
     };
     configService = createMockConfigService();
     kafkaProducer = createMockKafkaProducer();
@@ -54,6 +60,11 @@ describe('IdentityService', () => {
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         IdentityService,
+        UserAuthService,
+        UserRegistrationService,
+        UserProfileService,
+        UserSecurityService,
+        UserAdminService,
         {
           provide: PrismaService,
           useValue: prisma,

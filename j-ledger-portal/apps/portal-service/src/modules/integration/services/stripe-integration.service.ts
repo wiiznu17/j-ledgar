@@ -2,7 +2,7 @@ import { HttpException, HttpStatus, Injectable, Logger, Inject, forwardRef } fro
 import { ConfigService } from '@nestjs/config';
 import { HttpService } from '@nestjs/axios';
 import { PrismaService } from '../../../core/prisma/prisma.service';
-import { FinanceService } from '../finance.service';
+import { FinanceService } from '../../../core/finance/finance.service';
 import Stripe from 'stripe';
 import { TopupOrderStatus } from '@prisma/client';
 import { randomUUID } from 'crypto';

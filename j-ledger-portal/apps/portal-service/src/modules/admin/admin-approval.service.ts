@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { PrismaService } from '../../core/prisma/prisma.service';
-import { FinanceService } from '../integration/finance.service';
+import { FinanceService } from '../../core/finance/finance.service';
 import { KafkaProducerService } from '../notification/kafka-producer.service';
 import { ApprovalRequestStatus, ApprovalRequestType } from '@prisma/client';
 import { KafkaTopic } from '@repo/dto';

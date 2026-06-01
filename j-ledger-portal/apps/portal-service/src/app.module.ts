@@ -26,6 +26,7 @@ import { APP_GUARD } from '@nestjs/core';
 import { ThrottlerStorageRedisService } from './core/redis/throttler-storage-redis.service';
 import { LoggerModule } from 'nestjs-pino';
 import { TraceMiddleware } from './core/common/middleware/trace.middleware';
+import { FinanceModule } from './core/finance/finance.module';
 
 @Module({
   imports: [
@@ -46,6 +47,7 @@ import { TraceMiddleware } from './core/common/middleware/trace.middleware';
     ScheduleModule.forRoot(),
     PrismaModule,
     RedisModule,
+    FinanceModule,
     ConfigModule.forRoot({
       isGlobal: true,
     }),

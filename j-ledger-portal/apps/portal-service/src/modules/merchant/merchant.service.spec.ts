@@ -1,8 +1,14 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { MerchantService } from './merchant.service';
+import { MerchantApplicationService } from './services/merchant-application.service';
+import { MerchantPartnerService } from './services/merchant-partner.service';
+import { MerchantPosService } from './services/merchant-pos.service';
+import { MerchantPaymentService } from './services/merchant-payment.service';
+import { MerchantSettlementService } from './services/merchant-settlement.service';
+import { TerminalNonceService } from './security/terminal-nonce.service';
 import { PrismaService } from '../../core/prisma/prisma.service';
 import { IntegrationService } from '../integration/integration.service';
-import { FinanceService } from '../integration/finance.service';
+import { FinanceService } from '../../core/finance/finance.service';
 import { AuditService } from '../audit/audit.service';
 import { TerminalIdempotencyService } from './security/terminal-idempotency.service';
 import { StorageService } from '../../core/storage/storage.service';
@@ -35,6 +41,12 @@ describe('MerchantService', () => {
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         MerchantService,
+        MerchantApplicationService,
+        MerchantPartnerService,
+        MerchantPosService,
+        MerchantPaymentService,
+        MerchantSettlementService,
+        TerminalNonceService,
         {
           provide: PrismaService,
           useValue: prisma,

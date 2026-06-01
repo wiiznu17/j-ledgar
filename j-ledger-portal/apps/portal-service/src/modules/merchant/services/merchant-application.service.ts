@@ -1,6 +1,6 @@
 import { Injectable, HttpException, HttpStatus, Logger } from '@nestjs/common';
 import { PrismaService } from '../../../core/prisma/prisma.service';
-import { FinanceService } from '../../integration/finance.service';
+import { FinanceService } from '../../../core/finance/finance.service';
 import {
   AuditService,
   AuditAction,

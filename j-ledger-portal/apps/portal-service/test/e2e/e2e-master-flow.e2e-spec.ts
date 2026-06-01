@@ -4,7 +4,7 @@ import request from 'supertest';
 import { AppModule } from '../../src/app.module';
 import { PrismaService } from '../../src/core/prisma/prisma.service';
 import { DbTestHelper } from '../helpers/db-test.helper';
-import { FinanceService } from '../../src/modules/integration/finance.service';
+import { FinanceService } from '../../src/core/finance/finance.service';
 import { JwtAuthGuard } from '../../src/core/common/guards/jwt-auth.guard';
 import { AdminJwtGuard } from '../../src/admin/guards/admin-jwt.guard';
 import { AdminPermissionsGuard } from '../../src/admin/guards/admin-permissions.guard';

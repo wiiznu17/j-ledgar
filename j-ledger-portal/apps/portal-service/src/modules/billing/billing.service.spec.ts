@@ -1,7 +1,7 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { BillingService } from './billing.service';
 import { PrismaService } from '../../core/prisma/prisma.service';
-import { FinanceService } from '../integration/finance.service';
+import { FinanceService } from '../../core/finance/finance.service';
 import { ConfigService } from '@nestjs/config';
 import { createMockPrismaService, createMockFinanceService, createMockConfigService } from '../../__tests__/test-utils';
 import { InvoiceStatus } from '@prisma/client';

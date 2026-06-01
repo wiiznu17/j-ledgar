@@ -2,7 +2,7 @@ import { Injectable, Logger, HttpException, HttpStatus } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { HttpService } from '@nestjs/axios';
 import { URLSearchParams } from 'url';
-import { TraceStorage } from '../../core/common/trace-storage';
+import { TraceStorage } from '../common/trace-storage';
 
 interface CreateWalletRequest {
   userId: string;

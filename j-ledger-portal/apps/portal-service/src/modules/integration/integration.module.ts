@@ -1,6 +1,5 @@
 import { Module, forwardRef } from '@nestjs/common';
 import { HttpModule } from '@nestjs/axios';
-import { FinanceService } from './finance.service';
 import { IntegrationService } from './integration.service';
 import { IntegrationWebhookController } from './integration-webhook.controller';
 import { BillingModule } from '../billing/billing.module';
@@ -22,7 +21,6 @@ import { StatementExportService } from './services/statement-export.service';
     FraudModule,
   ],
   providers: [
-    FinanceService,
     IntegrationService,
     StripeIntegrationService,
     P2PTransferService,
@@ -34,7 +32,6 @@ import { StatementExportService } from './services/statement-export.service';
   ],
   controllers: [IntegrationWebhookController],
   exports: [
-    FinanceService,
     IntegrationService,
     StripeIntegrationService,
     P2PTransferService,

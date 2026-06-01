@@ -10,7 +10,7 @@ import { PrismaService } from '../../core/prisma/prisma.service';
 import { REDIS_CLIENT } from '../../core/common/constants';
 import Redis from 'ioredis';
 import { ISmsProvider } from '../integrations/interfaces/sms-provider.interface';
-import { FinanceService } from '../integration/finance.service';
+import { FinanceService } from '../../core/finance/finance.service';
 import { KafkaProducerService } from '../notification/kafka-producer.service';
 import {
   NotificationEventType,

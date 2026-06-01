@@ -2,7 +2,7 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { KycService } from './kyc.service';
 import { PrismaService } from '../../core/prisma/prisma.service';
 import { ConfigService } from '@nestjs/config';
-import { FinanceService } from '../integration/finance.service';
+import { FinanceService } from '../../core/finance/finance.service';
 import { IdentityService } from '../identity/identity.service';
 import { KafkaProducerService } from '../notification/kafka-producer.service';
 import { S3Service } from './services/s3.service';

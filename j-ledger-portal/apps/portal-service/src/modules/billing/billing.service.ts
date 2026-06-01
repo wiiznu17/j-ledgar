@@ -5,7 +5,7 @@ import {
   BadRequestException,
 } from '@nestjs/common';
 import { PrismaService } from '../../core/prisma/prisma.service';
-import { FinanceService } from '../integration/finance.service';
+import { FinanceService } from '../../core/finance/finance.service';
 import { CreateInvoiceDto } from './dto/create-invoice.dto';
 import { InvoiceStatus } from '@prisma/client';
 import { ConfigService } from '@nestjs/config';
