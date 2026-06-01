@@ -6,6 +6,13 @@ import { IntegrationWebhookController } from './integration-webhook.controller';
 import { BillingModule } from '../billing/billing.module';
 import { BannerModule } from '../banners/banner.module';
 import { FraudModule } from '../fraud/fraud.module';
+import { StripeIntegrationService } from './services/stripe-integration.service';
+import { P2PTransferService } from './services/p2p-transfer.service';
+import { TransactionHistoryService } from './services/transaction-history.service';
+import { DashboardBffService } from './services/dashboard-bff.service';
+import { BankIntegrationService } from './services/bank-integration.service';
+import { WebhookConfigService } from './services/webhook-config.service';
+import { StatementExportService } from './services/statement-export.service';
 
 @Module({
   imports: [
@@ -14,9 +21,28 @@ import { FraudModule } from '../fraud/fraud.module';
     BannerModule,
     FraudModule,
   ],
-  providers: [FinanceService, IntegrationService],
+  providers: [
+    FinanceService,
+    IntegrationService,
+    StripeIntegrationService,
+    P2PTransferService,
+    TransactionHistoryService,
+    DashboardBffService,
+    BankIntegrationService,
+    WebhookConfigService,
+    StatementExportService,
+  ],
   controllers: [IntegrationWebhookController],
-  exports: [FinanceService, IntegrationService],
-
+  exports: [
+    FinanceService,
+    IntegrationService,
+    StripeIntegrationService,
+    P2PTransferService,
+    TransactionHistoryService,
+    DashboardBffService,
+    BankIntegrationService,
+    WebhookConfigService,
+    StatementExportService,
+  ],
 })
 export class IntegrationModule {}

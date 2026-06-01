@@ -18,14 +18,25 @@ import { TopupOrderStatus } from '@prisma/client';
 import { HttpException, HttpStatus } from '@nestjs/common';
 import Stripe from 'stripe';
 import { REDIS_CLIENT } from '../../core/common/constants';
+import { FraudService } from '../fraud/fraud.service';
+import { StripeIntegrationService } from './services/stripe-integration.service';
+import { P2PTransferService } from './services/p2p-transfer.service';
+import { TransactionHistoryService } from './services/transaction-history.service';
+import { DashboardBffService } from './services/dashboard-bff.service';
+import { BankIntegrationService } from './services/bank-integration.service';
+import { WebhookConfigService } from './services/webhook-config.service';
+import { StatementExportService } from './services/statement-export.service';
 
-const mockStripeInstance = {
+const mockStripeInstance: any = {
   balance: {
     retrieve: jest.fn(),
   },
   paymentIntents: {
     create: jest.fn(),
     retrieve: jest.fn(),
+  },
+  webhooks: {
+    constructEvent: jest.fn(),
   },
 };
 
@@ -35,6 +46,8 @@ jest.mock('stripe', () => {
 
 describe('IntegrationService', () => {
   let service: IntegrationService;
+  let stripeService: StripeIntegrationService;
+  let historyService: TransactionHistoryService;
   let prisma: any;
   let financeService: any;
   let billingService: any;
@@ -42,6 +55,7 @@ describe('IntegrationService', () => {
   let bannerService: any;
   let httpService: any;
   let configService: any;
+  let fraudService: any;
   let redis: any;
 
   beforeEach(async () => {
@@ -61,6 +75,9 @@ describe('IntegrationService', () => {
       FINANCE_SERVICE_URL: 'http://localhost:8081',
       JLEDGER_INTERNAL_SECRET: 'mock_internal_secret',
     });
+    fraudService = {
+      evaluateTransaction: jest.fn().mockResolvedValue({ action: 'ALLOW' }),
+    };
     redis = {
       set: jest.fn(),
       get: jest.fn(),
@@ -70,6 +87,13 @@ describe('IntegrationService', () => {
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         IntegrationService,
+        StripeIntegrationService,
+        P2PTransferService,
+        TransactionHistoryService,
+        DashboardBffService,
+        BankIntegrationService,
+        WebhookConfigService,
+        StatementExportService,
         {
           provide: PrismaService,
           useValue: prisma,
@@ -99,6 +123,10 @@ describe('IntegrationService', () => {
           useValue: configService,
         },
         {
+          provide: FraudService,
+          useValue: fraudService,
+        },
+        {
           provide: REDIS_CLIENT,
           useValue: redis,
         },
@@ -106,6 +134,8 @@ describe('IntegrationService', () => {
     }).compile();
 
     service = module.get<IntegrationService>(IntegrationService);
+    stripeService = module.get<StripeIntegrationService>(StripeIntegrationService);
+    historyService = module.get<TransactionHistoryService>(TransactionHistoryService);
   });
 
   afterEach(() => {
@@ -471,6 +501,148 @@ describe('IntegrationService', () => {
           expect.stringContaining('"category":"SECURITY"'),
         );
         expect(result.success).toBe(true);
+      });
+    });
+
+    describe('forwardToGateway helpers', () => {
+      it('getAccountByUserId should call forwardToGateway with correct URL', async () => {
+        const mockAccount = [{ id: 'acc-123', balance: 500 }];
+        jest.spyOn(historyService, 'forwardToGateway').mockResolvedValue(mockAccount);
+
+        const result = await service.getAccountByUserId('user-123');
+
+        expect(historyService.forwardToGateway).toHaveBeenCalledWith('get', '/api/v1/accounts/user/user-123');
+        expect(result).toEqual({ data: mockAccount[0] });
+      });
+
+      it('get should call forwardToGateway with provided path', async () => {
+        jest.spyOn(historyService, 'forwardToGateway').mockResolvedValue({ status: 'OK' });
+
+        const result = await service.get('/some/custom/path');
+
+        expect(historyService.forwardToGateway).toHaveBeenCalledWith('get', '/some/custom/path');
+        expect(result).toEqual({ data: { status: 'OK' } });
+      });
+    });
+
+    describe('Dashboard BFF and Bank Operations', () => {
+      it('getDashboardData should return aggregated data for user', async () => {
+        prisma.kYCData.findUnique.mockResolvedValue({ idCardName: 'Test User', verificationStatus: 'APPROVED' });
+        prisma.user.findUnique.mockResolvedValue({ id: 'user-123', phoneNumber: '0812345678' });
+        financeService.getWallet.mockResolvedValue({ id: 1, walletId: 'W1', balance: 1000, currency: 'THB', status: 'ACTIVE' });
+        financeService.getTransactions.mockResolvedValue([]);
+        loyaltyService.getUserBalance.mockResolvedValue({ balance: 150 });
+        bannerService.getActiveBanners.mockResolvedValue([{ id: 'banner-1' }]);
+
+        const result = await service.getDashboardData('user-123');
+
+        expect(prisma.kYCData.findUnique).toHaveBeenCalledWith({ where: { userId: 'user-123' } });
+        expect(financeService.getWallet).toHaveBeenCalledWith('user-123');
+        expect(result.user.name).toBe('Test User');
+        expect(result.wallet.balance).toBe(1000);
+        expect(result.banners).toHaveLength(1);
+        expect(result.recentTransactions).toHaveLength(0);
+      });
+
+      it('getLinkedBankAccounts should map and return accounts', async () => {
+        financeService.getLinkedBankAccounts.mockResolvedValue([
+          { id: 1, bankCode: 'SCB', bankName: 'Siam Commercial Bank', accountNumber: '123-xxx-x89', isDefault: true }
+        ]);
+
+        const result = await service.getLinkedBankAccounts('user-123');
+
+        expect(financeService.getLinkedBankAccounts).toHaveBeenCalledWith('user-123');
+        expect(result[0].bankCode).toBe('SCB');
+        expect(result[0].accountNumberMasked).toBe('123-xxx-x89');
+      });
+
+      it('topUp should perform top-up via finance-service', async () => {
+        financeService.topUp.mockResolvedValue({ transactionId: 'tx-topup-1', amount: 500, status: 'COMPLETED', createdAt: '2026-01-01' });
+        financeService.getLinkedBankAccounts.mockResolvedValue([
+          { id: 45, bankName: 'Kasikorn' }
+        ]);
+
+        const result = await service.topUp('user-123', 500, 45);
+
+        expect(financeService.topUp).toHaveBeenCalledWith('user-123', 500, 45);
+        expect(result.transactionId).toBe('tx-topup-1');
+        expect(result.bankName).toBe('Kasikorn');
+      });
+
+      it('topUp should throw error on invalid amount', async () => {
+        await expect(service.topUp('user-123', 0, 45)).rejects.toThrow(HttpException);
+      });
+    });
+
+    describe('Stripe Webhook processing', () => {
+      it('processStripeWebhook should throw error if signature is missing', async () => {
+        await expect(service.processStripeWebhook(undefined, Buffer.from(''))).rejects.toThrow('Missing stripe signature');
+      });
+
+      it('processStripeWebhook payout.paid event should call confirm payout API', async () => {
+        const mockEvent = {
+          id: 'evt_1',
+          type: 'payout.paid',
+          data: {
+            object: {
+              id: 'po_123',
+              amount: 150000,
+              arrival_date: 1774890000,
+            }
+          }
+        };
+        mockStripeInstance.webhooks = mockStripeInstance.webhooks || {};
+        mockStripeInstance.webhooks.constructEvent = jest.fn().mockReturnValue(mockEvent);
+        jest.spyOn(stripeService, 'forwardToGateway').mockResolvedValue({ success: true });
+
+        const result = await service.processStripeWebhook('sig_123', Buffer.from('raw_body'));
+
+        expect(mockStripeInstance.webhooks.constructEvent).toHaveBeenCalled();
+        expect(stripeService.forwardToGateway).toHaveBeenCalledWith(
+          'post',
+          '/api/admin/treasury/internal/payouts/stripe-confirmed',
+          expect.objectContaining({
+            stripePayoutId: 'po_123',
+            amount: '1500.0000',
+            arrivalDate: '2026-03-30T17:00:00.000Z',
+          })
+        );
+        expect(result).toEqual({ received: true });
+      });
+
+      it('processStripeWebhook payment_intent.payment_failed should update order to FAILED', async () => {
+        const mockEvent = {
+          id: 'evt_2',
+          type: 'payment_intent.payment_failed',
+          data: {
+            object: {
+              id: 'pi_fail_123',
+            }
+          }
+        };
+        mockStripeInstance.webhooks.constructEvent = jest.fn().mockReturnValue(mockEvent);
+        prisma.topupOrder.findUnique.mockResolvedValue({ id: 'order-fail', status: 'PENDING' });
+
+        await service.processStripeWebhook('sig_123', Buffer.from('raw_body'));
+
+        expect(financeService.processPaymentWebhook).toHaveBeenCalledWith('pi_fail_123', 'FAILED');
+        expect(prisma.topupOrder.update).toHaveBeenCalledWith({
+          where: { id: 'order-fail' },
+          data: { status: TopupOrderStatus.FAILED, processedEventId: 'evt_2' }
+        });
+      });
+    });
+
+    describe('Bank & Webhook CRUD Mock placeholders', () => {
+      it('should return empty arrays and mock success values for CRUD placeholders', async () => {
+        expect(await service.getBankIntegrations()).toEqual([]);
+        expect(await service.createBankIntegration({})).toEqual({ success: true });
+        expect(await service.updateBankIntegration('1', {})).toEqual({ success: true });
+        expect(await service.deleteBankIntegration('1')).toEqual({ success: true });
+
+        expect(await service.getWebhooks()).toEqual([]);
+        expect(await service.createWebhook({})).toEqual({ success: true });
+        expect(await service.deleteWebhook('1')).toEqual({ success: true });
       });
     });
   });
