@@ -33,9 +33,11 @@ import { KycModule } from '../modules/kyc/kyc.module';
 import { NotificationModule } from '../modules/notification/notification.module';
 import { JwtModule } from '@nestjs/jwt';
 import { AdminJwtStrategy } from './strategies/admin-jwt.strategy';
+import { MerchantModule } from 'src/modules/merchant/merchant.module';
 
 @Module({
   imports: [
+    MerchantModule,
     IdentityModule,
     StorageModule,
     ReportingModule,

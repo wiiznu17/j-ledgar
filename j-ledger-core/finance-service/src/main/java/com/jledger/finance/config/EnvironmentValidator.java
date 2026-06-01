@@ -1,10 +1,15 @@
 package com.jledger.finance.config;
 
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.core.env.Environment;
 import org.springframework.stereotype.Component;
 import jakarta.annotation.PostConstruct;
 
 @Component
 public class EnvironmentValidator {
+
+  @Autowired
+  private Environment environment;
 
   private static final String[] REQUIRED_ENV_VARS = {
     "JLEDGER_DATASOURCE_URL",
@@ -17,7 +22,7 @@ public class EnvironmentValidator {
   @PostConstruct
   public void validateEnvironment() {
     for (String var : REQUIRED_ENV_VARS) {
-      String value = System.getenv(var);
+      String value = environment.getProperty(var);
       if (value == null || value.trim().isEmpty()) {
         throw new IllegalStateException(
           String.format("Required environment variable not set: %s", var)

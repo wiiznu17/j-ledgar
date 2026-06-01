@@ -39,6 +39,7 @@ import { NotificationModule } from '../notification/notification.module';
     JwtStrategy,
   ],
   exports: [
+    JwtModule, // needed for guard registration-auth.guard.ts
     IdentityService,
     UserAuthService,
     UserRegistrationService,
