@@ -53,51 +53,54 @@ import { FinanceModule } from './core/finance/finance.module';
     }),
     ThrottlerModule.forRootAsync({
       inject: [ThrottlerStorageRedisService],
-      useFactory: (storage: ThrottlerStorageRedisService) => ({
-        throttlers: [
-          {
-            name: 'default',
-            ttl: 60000,
-            limit: 60,
-          },
-          {
-            name: 'otp-send',
-            ttl: 60000,
-            limit: 3,
-          },
-          {
-            name: 'otp-verify',
-            ttl: 300000,
-            limit: 3,
-          },
-          {
-            name: 'login',
-            ttl: 900000,
-            limit: 3,
-          },
-          {
-            name: 'refreshToken',
-            ttl: 60000,
-            limit: 10,
-          },
-          {
-            name: 'pinVerify',
-            ttl: 300000,
-            limit: 5,
-          },
-          {
-            name: 'biometricVerify',
-            ttl: 60000,
-            limit: 10,
-          },
-          {
-            name: 'accountDeletion',
-            ttl: 3600000,
-            limit: 2,
-          },
-        ],
-        storage,
-      }),
+      useFactory: (storage: ThrottlerStorageRedisService) => {
+        const isDev = process.env.NODE_ENV !== 'production';
+        return {
+          throttlers: [
+            {
+              name: 'default',
+              ttl: 60000,
+              limit: isDev ? 1000 : 60,
+            },
+            {
+              name: 'otp-send',
+              ttl: 60000,
+              limit: isDev ? 1000 : 3,
+            },
+            {
+              name: 'otp-verify',
+              ttl: 300000,
+              limit: isDev ? 1000 : 3,
+            },
+            {
+              name: 'login',
+              ttl: 300000,
+              limit: isDev ? 1000 : 5,
+            },
+            {
+              name: 'refreshToken',
+              ttl: 60000,
+              limit: isDev ? 1000 : 10,
+            },
+            {
+              name: 'pinVerify',
+              ttl: 300000,
+              limit: isDev ? 1000 : 5,
+            },
+            {
+              name: 'biometricVerify',
+              ttl: 60000,
+              limit: isDev ? 1000 : 10,
+            },
+            {
+              name: 'accountDeletion',
+              ttl: 3600000,
+              limit: isDev ? 1000 : 2,
+            },
+          ],
+          storage,
+        };
+      },
     }),
     IdentityModule,
     KycModule,

@@ -50,13 +50,15 @@ interface AuthenticatedRequest extends Request {
   };
 }
 
+const isDev = process.env.NODE_ENV !== 'production';
+
 @Controller('identity')
 export class IdentityController {
   constructor(private readonly identityService: IdentityService) {}
 
   @Post('register/init')
   @HttpCode(HttpStatus.OK)
-  @Throttle({ 'otp-send': { limit: 3, ttl: 60000 } })
+  @Throttle({ 'otp-send': { limit: isDev ? 1000 : 3, ttl: 60000 } })
   async registerInit(@Body() body: RegisterInitDto, @Req() req: Request) {
     return this.identityService.registerInit(body, {
       ip: req.ip,
@@ -66,7 +68,7 @@ export class IdentityController {
 
   @Post('register/verify-otp')
   @HttpCode(HttpStatus.OK)
-  @Throttle({ 'otp-verify': { limit: 3, ttl: 300000 } })
+  @Throttle({ 'otp-verify': { limit: isDev ? 1000 : 3, ttl: 300000 } })
   async registerVerifyOtp(
     @Body() body: RegisterVerifyOtpDto,
     @Req() req: Request,
@@ -151,7 +153,7 @@ export class IdentityController {
 
   @Post('login')
   @HttpCode(HttpStatus.OK)
-  @Throttle({ login: { limit: 3, ttl: 900000 } })
+  @Throttle({ login: { limit: isDev ? 1000 : 5, ttl: 300000 } })
   async login(@Body() body: LoginDto, @Req() req: Request) {
     console.log('[IdentityController] Login request:', {
       phoneNumber: body.phoneNumber,
@@ -182,8 +184,8 @@ export class IdentityController {
   @Post('refresh')
   @HttpCode(HttpStatus.OK)
   @Throttle({
-    default: { limit: 60, ttl: 60000 },
-    refreshToken: { limit: 10, ttl: 60000 },
+    default: { limit: isDev ? 1000 : 60, ttl: 60000 },
+    refreshToken: { limit: isDev ? 1000 : 10, ttl: 60000 },
   })
   async refresh(@Body() body: RefreshTokenDto, @Req() req: Request) {
     return this.identityService.refresh(body, {
@@ -229,8 +231,8 @@ export class IdentityController {
   @Post('pin/verify')
   @HttpCode(HttpStatus.OK)
   @Throttle({
-    default: { limit: 60, ttl: 60000 },
-    pinVerify: { limit: 5, ttl: 300000 },
+    default: { limit: isDev ? 1000 : 60, ttl: 60000 },
+    pinVerify: { limit: isDev ? 1000 : 5, ttl: 300000 },
   })
   async verifyPin(
     @Body() body: PinVerifyDto,
@@ -284,8 +286,8 @@ export class IdentityController {
   @Post('biometric/challenge')
   @HttpCode(HttpStatus.OK)
   @Throttle({
-    default: { limit: 60, ttl: 60000 },
-    biometricVerify: { limit: 10, ttl: 60000 },
+    default: { limit: isDev ? 1000 : 60, ttl: 60000 },
+    biometricVerify: { limit: isDev ? 1000 : 10, ttl: 60000 },
   })
   async generateBiometricChallenge(@Req() req: AuthenticatedRequest) {
     if (!req.user?.sub) {
@@ -298,8 +300,8 @@ export class IdentityController {
   @Post('biometric/verify')
   @HttpCode(HttpStatus.OK)
   @Throttle({
-    default: { limit: 60, ttl: 60000 },
-    biometricVerify: { limit: 10, ttl: 60000 },
+    default: { limit: isDev ? 1000 : 60, ttl: 60000 },
+    biometricVerify: { limit: isDev ? 1000 : 10, ttl: 60000 },
   })
   async verifyBiometric(
     @Body() body: BiometricVerifyDto,
@@ -396,8 +398,8 @@ export class IdentityController {
   @Post('account/delete-request')
   @HttpCode(HttpStatus.OK)
   @Throttle({
-    default: { limit: 60, ttl: 60000 },
-    accountDeletion: { limit: 2, ttl: 3600000 },
+    default: { limit: isDev ? 1000 : 60, ttl: 60000 },
+    accountDeletion: { limit: isDev ? 1000 : 2, ttl: 3600000 },
   })
   async requestAccountDeletion(@Req() req: AuthenticatedRequest) {
     if (!req.user?.sub) {
@@ -413,8 +415,8 @@ export class IdentityController {
   @Post('account/delete-confirm')
   @HttpCode(HttpStatus.OK)
   @Throttle({
-    default: { limit: 60, ttl: 60000 },
-    accountDeletion: { limit: 2, ttl: 3600000 },
+    default: { limit: isDev ? 1000 : 60, ttl: 60000 },
+    accountDeletion: { limit: isDev ? 1000 : 2, ttl: 3600000 },
   })
   async confirmAccountDeletion(@Req() req: AuthenticatedRequest) {
     if (!req.user?.sub) {
@@ -429,7 +431,7 @@ export class IdentityController {
   @UseGuards(JwtAuthGuard)
   @Post('email/verify-request')
   @HttpCode(HttpStatus.OK)
-  @Throttle({ default: { limit: 3, ttl: 60000 } })
+  @Throttle({ default: { limit: isDev ? 1000 : 3, ttl: 60000 } })
   async requestEmailVerification(
     @Req() req: AuthenticatedRequest,
     @Body() body: RequestEmailVerifyDto,
@@ -443,7 +445,7 @@ export class IdentityController {
   @UseGuards(JwtAuthGuard)
   @Post('email/verify-confirm')
   @HttpCode(HttpStatus.OK)
-  @Throttle({ default: { limit: 5, ttl: 60000 } })
+  @Throttle({ default: { limit: isDev ? 1000 : 5, ttl: 60000 } })
   async confirmEmailVerification(
     @Req() req: AuthenticatedRequest,
     @Body() body: ConfirmEmailVerifyDto,

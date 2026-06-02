@@ -20,6 +20,8 @@ import { AdminJwtGuard } from '../guards/admin-jwt.guard';
 import { AuditLog } from '../decorators/audit.decorator';
 import { AuditAction, ResourceType } from '../../modules/audit/audit.service';
 
+const isDev = process.env.NODE_ENV !== 'production';
+
 @Controller('admin/auth')
 export class AdminAuthController {
   constructor(
@@ -29,7 +31,7 @@ export class AdminAuthController {
 
   @Post('login')
   @HttpCode(HttpStatus.OK)
-  @Throttle({ default: { limit: 5, ttl: 900000 } })
+  @Throttle({ default: { limit: isDev ? 1000 : 5, ttl: 900000 } })
   @AuditLog(AuditAction.LOGIN, ResourceType.ADMIN_USER, 'Staff login')
   async login(@Body() dto: LoginRequest): Promise<AuthResponse> {
     const staff = await this.adminService.findByEmail(dto.email);
@@ -51,12 +53,13 @@ export class AdminAuthController {
       role: staff.staffRoles[0]?.role.name || 'SUPPORT_STAFF',
     };
 
-    const token = this.jwtService.sign(payload);
+    const token = this.jwtService.sign(payload, {
+      secret: process.env.ADMIN_JWT_SECRET,
+      expiresIn: '15m',
+    });
     const refreshToken = this.jwtService.sign(payload, {
       expiresIn: '7d',
-      secret:
-        process.env.ADMIN_REFRESH_SECRET ||
-        'jledger-admin-refresh-super-secret-2024-dev-key-32chars',
+      secret: process.env.ADMIN_REFRESH_SECRET,
     });
 
     await this.adminService.updateRefreshTokenHash(staff.id, refreshToken);
@@ -74,7 +77,7 @@ export class AdminAuthController {
 
   @Post('refresh')
   @HttpCode(HttpStatus.OK)
-  @Throttle({ default: { limit: 10, ttl: 60000 } })
+  @Throttle({ default: { limit: isDev ? 1000 : 10, ttl: 60000 } })
   async refresh(@Body() dto: RefreshTokenRequest): Promise<AuthResponse> {
     const staff = await this.adminService.findByIdInternal(dto.userId);
     if (!staff || !staff.isActive || !staff.refreshTokenHash) {
@@ -83,7 +86,10 @@ export class AdminAuthController {
 
     try {
       // Verify the refresh token
-      const decoded = this.jwtService.verify(dto.refreshToken);
+      const decoded = this.jwtService.verify(dto.refreshToken, {
+        secret:
+          process.env.ADMIN_REFRESH_SECRET
+      });
       if (decoded.sub !== staff.id) {
         throw new UnauthorizedException('Invalid token owner');
       }
@@ -103,12 +109,13 @@ export class AdminAuthController {
         role: staff.staffRoles[0]?.role.name || 'SUPPORT_STAFF',
       };
 
-      const token = this.jwtService.sign(payload);
+      const token = this.jwtService.sign(payload, {
+        secret: process.env.ADMIN_JWT_SECRET,
+        expiresIn: '15m',
+      });
       const refreshToken = this.jwtService.sign(payload, {
         expiresIn: '7d',
-        secret:
-          process.env.ADMIN_REFRESH_SECRET ||
-          'jledger-admin-refresh-super-secret-2024-dev-key-32chars',
+        secret: process.env.ADMIN_REFRESH_SECRET,
       });
 
       await this.adminService.updateRefreshTokenHash(staff.id, refreshToken);
@@ -139,7 +146,7 @@ export class AdminAuthController {
 
   @Post('reset-password/validate')
   @HttpCode(HttpStatus.OK)
-  @Throttle({ default: { limit: 5, ttl: 300000 } })
+  @Throttle({ default: { limit: isDev ? 1000 : 5, ttl: 300000 } })
   async validateToken(@Body() body: { token: string }) {
     const isValid = await this.adminService.validateResetToken(body.token);
     if (!isValid) {
@@ -150,7 +157,7 @@ export class AdminAuthController {
 
   @Post('reset-password/confirm')
   @HttpCode(HttpStatus.OK)
-  @Throttle({ default: { limit: 3, ttl: 900000 } })
+  @Throttle({ default: { limit: isDev ? 1000 : 3, ttl: 900000 } })
   async confirmReset(@Body() body: { token: string; password: string }) {
     try {
       return await this.adminService.resetPasswordWithToken(
@@ -164,7 +171,7 @@ export class AdminAuthController {
 
   @Post('activate/validate')
   @HttpCode(HttpStatus.OK)
-  @Throttle({ default: { limit: 5, ttl: 300000 } })
+  @Throttle({ default: { limit: isDev ? 1000 : 5, ttl: 300000 } })
   async validateInviteToken(@Body() body: { token: string }) {
     const isValid = await this.adminService.validateResetToken(body.token);
     if (!isValid) {
@@ -175,7 +182,7 @@ export class AdminAuthController {
 
   @Post('activate/confirm')
   @HttpCode(HttpStatus.OK)
-  @Throttle({ default: { limit: 3, ttl: 900000 } })
+  @Throttle({ default: { limit: isDev ? 1000 : 3, ttl: 900000 } })
   async confirmActivation(@Body() body: { token: string; password: string }) {
     try {
       return await this.adminService.resetPasswordWithToken(

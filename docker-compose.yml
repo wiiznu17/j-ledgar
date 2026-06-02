@@ -230,6 +230,7 @@ services:
       - STRIPE_PUBLISHABLE_KEY=${STRIPE_PUBLISHABLE_KEY}
       - ADMIN_WEB_URL=${ADMIN_WEB_URL}
       - GOOGLE_APPLICATION_CREDENTIALS_JSON=${GOOGLE_APPLICATION_CREDENTIALS_JSON}
+      - NODE_ENV=${NODE_ENV}
     networks:
       - jledger-network
     expose:
@@ -266,6 +267,7 @@ services:
       - SMTP_USER=${SMTP_USER}
       - SMTP_PASSWORD=${SMTP_PASSWORD}
       - SMTP_FROM=${SMTP_FROM}
+      - NODE_ENV=${NODE_ENV}
     healthcheck:
       test:
         [

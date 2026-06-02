@@ -16,6 +16,13 @@ async function bootstrap() {
     bufferLogs: true 
   });
 
+  // Enable 'trust proxy' so Express can extract correct client IPs behind Nginx gateway / reverse proxies
+  const expressApp = app.getHttpAdapter().getInstance();
+  if (expressApp && typeof expressApp.set === 'function') {
+    expressApp.set('trust proxy', 1);
+  }
+
+
   // Use Pino Logger as global logger
   app.useLogger(app.get(Logger));
 

@@ -56,7 +56,7 @@ import { MerchantModule } from 'src/modules/merchant/merchant.module';
         }
         return {
           secret: secret,
-          signOptions: { expiresIn: '12h' },
+          signOptions: { expiresIn: '15m' },
         };
       },
     }),
