@@ -296,7 +296,7 @@
   - [x] `MerchantService` (~2,300 lines) -> Profile, POS, Staff
   - [x] `IntegrationService` (~1,400 lines) -> Transfers, Top-ups, Webhooks
   - [x] `KycService` (~1,300 lines) -> Liveness, DOPA, Risk Scoring
-- [ ] Standardized Pagination & Sorting Utility
+- [x] Standardized Pagination & Sorting Utility
 - [x] Implement Domain-Specific Business Exceptions (e.g., `InsufficientBalanceException`) replace generic `BadRequestException` strings.
 
 ---
@@ -346,7 +346,7 @@
   - [ ] Deal catalog cache
   - [ ] Banner cache
   - [ ] Loyalty rules cache
-- [ ] ตรวจ API response pagination ให้ครบทุก list endpoint
+- [x] ตรวจ API response pagination ให้ครบทุก list endpoint
 - [ ] เพิ่ม database query optimization (EXPLAIN ANALYZE สำหรับ slow queries)
 - [ ] เตรียม horizontal scaling config
   - [ ] Kubernetes / ECS manifest

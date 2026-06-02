@@ -46,6 +46,11 @@ services:
     environment:
       ZOOKEEPER_CLIENT_PORT: 2181
       ZOOKEEPER_TICK_TIME: 2000
+    healthcheck:
+      test: ["CMD", "nc", "-z", "localhost", "2181"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
     networks:
       - jledger-network
 
@@ -57,7 +62,7 @@ services:
     container_name: jledger-kafka
     depends_on:
       zookeeper:
-        condition: service_started
+        condition: service_healthy
     environment:
       KAFKA_BROKER_ID: 1
       KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181
@@ -250,7 +255,7 @@ services:
     container_name: jledger-notification-worker
     depends_on:
       kafka:
-        condition: service_started
+        condition: service_healthy
       postgres:
         condition: service_healthy
     environment:
@@ -261,6 +266,15 @@ services:
       - SMTP_USER=${SMTP_USER}
       - SMTP_PASSWORD=${SMTP_PASSWORD}
       - SMTP_FROM=${SMTP_FROM}
+    healthcheck:
+      test:
+        [
+          "CMD-SHELL",
+          "wget --no-verbose --tries=1 --spider http://127.0.0.1:3001/health || exit 1",
+        ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
     networks:
       - jledger-network
 
@@ -281,9 +295,18 @@ services:
       - /etc/letsencrypt:/etc/letsencrypt:ro
     depends_on:
       finance-service:
-        condition: service_started
+        condition: service_healthy
       portal-service:
-        condition: service_started
+        condition: service_healthy
+    healthcheck:
+      test:
+        [
+          "CMD-SHELL",
+          "wget --no-verbose --tries=1 --spider http://127.0.0.1:80/ || exit 1",
+        ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
     networks:
       - jledger-network
 
