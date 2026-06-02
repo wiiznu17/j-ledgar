@@ -46,6 +46,22 @@ server {
         end
     }
 
+    # Security Headers (mimicking production)
+    add_header Strict-Transport-Security "max-age=31536000; includeSubDomains; preload" always;
+    add_header X-Content-Type-Options "nosniff" always;
+    add_header X-Frame-Options "DENY" always;
+    add_header X-XSS-Protection "1; mode=block" always;
+    add_header Referrer-Policy "strict-origin-when-cross-origin" always;
+    add_header Permissions-Policy "geolocation=(), microphone=(), camera=(), payment=()" always;
+    add_header Content-Security-Policy "default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval'; style-src 'self' 'unsafe-inline'; img-src 'self' data: https:; font-src 'self'" always;
+    add_header X-Trace-Id $request_id always;
+
+    # Performance & Upload limits
+    client_max_body_size 10m;
+    proxy_connect_timeout 10s;
+    proxy_read_timeout 30s;
+    proxy_send_timeout 30s;
+
     location /health {
         add_header Content-Type text/plain;
         return 200 'ok';
@@ -53,73 +69,122 @@ server {
 
     # Finance Service (Wallets, Transactions, Transfers)
     location /api/finance/ {
+        limit_req zone=api_general burst=20 nodelay;
         proxy_pass http://finance-service:8081/api/finance/;
         proxy_set_header Host $host;
         proxy_set_header X-Real-IP $remote_addr;
         proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
         proxy_set_header X-Forwarded-Proto $scheme;
+        proxy_set_header X-Trace-Id $request_id;
+    }
+
+    # Finance Service (v1 API Compatibility)
+    location /api/v1/finance/ {
+        limit_req zone=api_general burst=20 nodelay;
+        proxy_pass http://finance-service:8081/api/finance/;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+        proxy_set_header X-Trace-Id $request_id;
     }
 
     # Portal Service - Identity (Auth, Users, Sessions)
-    location /api/identity/ {
-        proxy_pass http://portal-service:3000/api/identity/;
+    location /api/v1/identity/ {
+        limit_req zone=api_auth burst=3 nodelay;
+        proxy_pass http://portal-service:3000/api/v1/identity/;
         proxy_set_header Host $host;
         proxy_set_header X-Real-IP $remote_addr;
         proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
         proxy_set_header X-Forwarded-Proto $scheme;
+        proxy_set_header X-Trace-Id $request_id;
     }
 
     # Portal Service - KYC (Documents, PII)
-    location /api/kyc/ {
-        proxy_pass http://portal-service:3000/api/kyc/;
+    location /api/v1/kyc/ {
+        limit_req zone=api_general burst=20 nodelay;
+        proxy_pass http://portal-service:3000/api/v1/kyc/;
         proxy_set_header Host $host;
         proxy_set_header X-Real-IP $remote_addr;
         proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
         proxy_set_header X-Forwarded-Proto $scheme;
+        proxy_set_header X-Trace-Id $request_id;
     }
 
     # Portal Service - Admin (Staff, Roles)
-    location /api/admin/ {
-        proxy_pass http://portal-service:3000/api/admin/;
+    location /api/v1/admin/ {
+        limit_req zone=api_auth burst=5 nodelay;
+        proxy_pass http://portal-service:3000/api/v1/admin/;
         proxy_set_header Host $host;
         proxy_set_header X-Real-IP $remote_addr;
         proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
         proxy_set_header X-Forwarded-Proto $scheme;
+        proxy_set_header X-Trace-Id $request_id;
     }
 
     # Portal Service - Integration (Banks, Merchants)
-    location /api/integration/ {
-        proxy_pass http://portal-service:3000/api/integration/;
+    location /api/v1/integration/ {
+        limit_req zone=api_general burst=20 nodelay;
+        proxy_pass http://portal-service:3000/api/v1/integration/;
         proxy_set_header Host $host;
         proxy_set_header X-Real-IP $remote_addr;
         proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
         proxy_set_header X-Forwarded-Proto $scheme;
+        proxy_set_header X-Trace-Id $request_id;
     }
 
     # Portal Service - Audit (Logs)
-    location /api/audit/ {
-        proxy_pass http://portal-service:3000/api/audit/;
+    location /api/v1/audit/ {
+        limit_req zone=api_general burst=20 nodelay;
+        proxy_pass http://portal-service:3000/api/v1/audit/;
         proxy_set_header Host $host;
         proxy_set_header X-Real-IP $remote_addr;
         proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
         proxy_set_header X-Forwarded-Proto $scheme;
+        proxy_set_header X-Trace-Id $request_id;
     }
 
     # Portal Service - Reporting (Reports)
-    location /api/reporting/ {
-        proxy_pass http://portal-service:3000/api/reporting/;
+    location /api/v1/reporting/ {
+        limit_req zone=api_general burst=20 nodelay;
+        proxy_pass http://portal-service:3000/api/v1/reporting/;
         proxy_set_header Host $host;
         proxy_set_header X-Real-IP $remote_addr;
         proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
         proxy_set_header X-Forwarded-Proto $scheme;
+        proxy_set_header X-Trace-Id $request_id;
+    }
+
+    # Portal Service - Terminal API (POS Payments & Loyalty)
+    location /api/v1/terminal/ {
+        limit_req zone=api_terminal burst=5 nodelay;
+        proxy_pass http://portal-service:3000/api/v1/terminal/;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+        proxy_set_header X-Trace-Id $request_id;
+    }
+
+    # Portal Service - Merchant Deal API (Deal Verification & Usage)
+    location /api/v1/merchant/ {
+        limit_req zone=api_general burst=20 nodelay;
+        proxy_pass http://portal-service:3000/api/v1/merchant/;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+        proxy_set_header X-Trace-Id $request_id;
     }
 
     # Portal Service Root
     location / {
+        limit_req zone=api_general burst=20 nodelay;
         proxy_pass http://portal-service:3000/;
         proxy_set_header Host $host;
         proxy_set_header X-Real-IP $remote_addr;
         proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
         proxy_set_header X-Forwarded-Proto $scheme;
+        proxy_set_header X-Trace-Id $request_id;
     }
 }
