@@ -7,6 +7,7 @@ import {
 import { PrismaService } from '../../../core/prisma/prisma.service';
 import { UserSecurityService } from './user-security.service';
 import { UserStatus, NotificationEventType } from '@repo/dto';
+import { PaginationUtility } from '../../../common/utils/pagination.util';
 
 @Injectable()
 export class UserAdminService {
@@ -22,7 +23,6 @@ export class UserAdminService {
     limit: number = 10,
     filters?: { email?: string; phone?: string; status?: string },
   ) {
-    const skip = (page - 1) * limit;
     const where: any = {};
 
     if (filters?.email) {
@@ -35,35 +35,25 @@ export class UserAdminService {
       where.status = filters.status;
     }
 
-    const [users, total] = await Promise.all([
-      this.prisma.user.findMany({
-        where,
-        skip,
-        take: limit,
-        select: {
-          id: true,
-          phoneNumber: true,
-          email: true,
-          status: true,
-          registrationState: true,
-          ledgerAccountId: true,
-          createdAt: true,
-          updatedAt: true,
-        },
-        orderBy: { createdAt: 'desc' },
-      }),
-      this.prisma.user.count({ where }),
-    ]);
-
-    return {
-      data: users,
-      pagination: {
-        total,
-        page,
-        limit,
-        totalPages: Math.ceil(total / limit),
-      },
-    };
+    return PaginationUtility.paginate(
+      (opt) =>
+        this.prisma.user.findMany({
+          where,
+          ...opt,
+          select: {
+            id: true,
+            phoneNumber: true,
+            email: true,
+            status: true,
+            registrationState: true,
+            ledgerAccountId: true,
+            createdAt: true,
+            updatedAt: true,
+          },
+        }),
+      () => this.prisma.user.count({ where }),
+      { page, limit },
+    );
   }
 
   async getUserStats() {

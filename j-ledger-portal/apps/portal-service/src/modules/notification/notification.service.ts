@@ -1,6 +1,7 @@
 import { Injectable, Logger, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '../../core/prisma/prisma.service';
 import { KafkaProducerService } from './kafka-producer.service';
+import { PaginationUtility } from '../../common/utils/pagination.util';
 
 @Injectable()
 export class NotificationService {
@@ -17,7 +18,7 @@ export class NotificationService {
     limit: number = 20,
     category?: string,
   ) {
-    const skip = (page - 1) * limit;
+    const { page: safePage, limit: safeLimit, skip, take } = PaginationUtility.getParams({ page, limit });
 
     const where: any = { userId };
 
@@ -47,7 +48,7 @@ export class NotificationService {
         where,
         orderBy: { createdAt: 'desc' },
         skip,
-        take: limit,
+        take,
       }),
       this.prisma.notification.count({ where }),
       this.prisma.notification.count({
@@ -62,9 +63,9 @@ export class NotificationService {
       items,
       meta: {
         total,
-        page,
-        limit,
-        totalPages: Math.ceil(total / limit),
+        page: safePage,
+        limit: safeLimit,
+        totalPages: Math.max(1, Math.ceil(total / safeLimit)),
         unreadCount,
       },
     };

@@ -8,6 +8,7 @@ import {
   ResourceType,
 } from '../../audit/audit.service';
 import { StorageService } from '../../../core/storage/storage.service';
+import { PaginationUtility } from '../../../common/utils/pagination.util';
 
 @Injectable()
 export class MerchantPartnerService {
@@ -22,10 +23,6 @@ export class MerchantPartnerService {
   ) {}
 
   async findAllPartners(query: any) {
-    const page = Number(query.page) || 1;
-    const limit = Number(query.limit) || 10;
-    const skip = (page - 1) * limit;
-
     const where: any = {};
     if (query.search) {
       where.OR = [
@@ -39,36 +36,32 @@ export class MerchantPartnerService {
 
     const sortBy = query.sortBy || 'createdAt';
     const sortOrder = query.sortOrder === 'asc' ? 'asc' : 'desc';
-    const orderBy: any = {};
-    if (sortBy === 'name' || sortBy === 'createdAt' || sortBy === 'status') {
-      orderBy[sortBy] = sortOrder;
-    } else {
-      orderBy.createdAt = 'desc';
-    }
+    const allowedSortFields = ['name', 'createdAt', 'status'];
+    const finalSortBy = allowedSortFields.includes(sortBy) ? sortBy : 'createdAt';
 
-    const [partners, total] = await Promise.all([
-      this.prisma.partner.findMany({
-        where,
-        skip,
-        take: limit,
-        include: {
-          _count: {
-            select: { merchants: true },
+    const result = await PaginationUtility.paginate(
+      (opts) =>
+        this.prisma.partner.findMany({
+          where,
+          ...opts,
+          include: {
+            _count: {
+              select: { merchants: true },
+            },
           },
-        },
-        orderBy,
-      }),
-      this.prisma.partner.count({ where }),
-    ]);
+        }),
+      () => this.prisma.partner.count({ where }),
+      {
+        page: query.page,
+        limit: query.limit,
+        sortBy: finalSortBy,
+        sortOrder,
+      },
+    );
 
     return {
-      data: this.maskMerchantSecrets(partners),
-      pagination: {
-        total,
-        page,
-        limit,
-        totalPages: Math.ceil(total / limit),
-      },
+      ...result,
+      data: this.maskMerchantSecrets(result.data),
     };
   }
 

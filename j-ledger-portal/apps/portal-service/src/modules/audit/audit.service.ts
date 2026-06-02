@@ -1,5 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { PrismaService } from '../../core/prisma/prisma.service';
+import { PaginationUtility } from '../../common/utils/pagination.util';
 
 export enum AuditAction {
   CREATE = 'CREATE',
@@ -131,10 +132,6 @@ export class AuditService {
     startDate?: Date;
     endDate?: Date;
   }) {
-    const page = query.page || 1;
-    const limit = query.limit || 50;
-    const skip = (page - 1) * limit;
-
     const where: any = {};
 
     if (query.adminUserId) where.adminUserId = query.adminUserId;
@@ -148,19 +145,24 @@ export class AuditService {
       if (query.endDate) where.createdAt.lte = query.endDate;
     }
 
-    const [data, total] = await Promise.all([
-      this.prisma.auditLog.findMany({
-        where,
-        skip,
-        take: limit,
-        orderBy: { createdAt: 'desc' },
-      }),
-      this.prisma.auditLog.count({ where }),
-    ]);
+    const result = await PaginationUtility.paginate(
+      (opts) =>
+        this.prisma.auditLog.findMany({
+          where,
+          ...opts,
+        }),
+      () => this.prisma.auditLog.count({ where }),
+      {
+        page: query.page,
+        limit: query.limit || 50,
+        sortBy: 'createdAt',
+        sortOrder: 'desc',
+      },
+    );
 
     // Fetch matching staff actor details in-memory to avoid complex schema changes
     const adminUserIds = Array.from(
-      new Set(data.map((log) => log.adminUserId).filter(Boolean)),
+      new Set(result.data.map((log) => log.adminUserId).filter(Boolean)),
     ) as string[];
 
     const staffMembers =
@@ -178,7 +180,7 @@ export class AuditService {
 
     const staffMap = new Map(staffMembers.map((s) => [s.id, s]));
 
-    const mappedData = data.map((log) => {
+    const mappedData = result.data.map((log) => {
       const staff = log.adminUserId ? staffMap.get(log.adminUserId) : null;
       return {
         ...log,
@@ -193,13 +195,8 @@ export class AuditService {
     });
 
     return {
+      ...result,
       data: mappedData,
-      pagination: {
-        page,
-        limit,
-        total,
-        totalPages: Math.ceil(total / limit),
-      },
     };
   }
 

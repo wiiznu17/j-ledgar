@@ -3,6 +3,7 @@ import { PrismaService } from '../../core/prisma/prisma.service';
 import { MailService } from './mail.service';
 import * as bcrypt from 'bcryptjs';
 import * as crypto from 'crypto';
+import { PaginationUtility } from '../../common/utils/pagination.util';
 
 @Injectable()
 export class AdminService {
@@ -335,7 +336,6 @@ export class AdminService {
     limit: number = 10,
     filters?: { search?: string; role?: string; status?: string },
   ) {
-    const skip = (page - 1) * limit;
     const where: any = {};
 
     if (filters?.search && filters.search.trim() !== '') {
@@ -361,39 +361,44 @@ export class AdminService {
       };
     }
 
-    const [items, total] = await Promise.all([
-      this.prisma.staff.findMany({
-        where,
-        select: {
-          id: true,
-          username: true,
-          email: true,
-          firstName: true,
-          lastName: true,
-          isActive: true,
-          resetToken: true,
-          resetTokenExpiry: true,
-          createdAt: true,
-          updatedAt: true,
-          staffRoles: {
-            select: {
-              role: {
-                select: {
-                  name: true,
+    const result = await PaginationUtility.paginate(
+      (opts) =>
+        this.prisma.staff.findMany({
+          where,
+          ...opts,
+          select: {
+            id: true,
+            username: true,
+            email: true,
+            firstName: true,
+            lastName: true,
+            isActive: true,
+            resetToken: true,
+            resetTokenExpiry: true,
+            createdAt: true,
+            updatedAt: true,
+            staffRoles: {
+              select: {
+                role: {
+                  select: {
+                    name: true,
+                  },
                 },
               },
             },
           },
-        },
-        skip,
-        take: limit,
-        orderBy: { createdAt: 'desc' },
-      }),
-      this.prisma.staff.count({ where }),
-    ]);
+        }),
+      () => this.prisma.staff.count({ where }),
+      {
+        page,
+        limit,
+        sortBy: 'createdAt',
+        sortOrder: 'desc',
+      },
+    );
 
     // Explicitly map to AdminUser DTO and flatten role
-    const flattenedItems = items.map((staff: any) => {
+    const flattenedItems = result.data.map((staff: any) => {
       const roleName = staff.staffRoles?.[0]?.role?.name || 'N/A';
       console.log('roleName', roleName);
       return {
@@ -412,13 +417,8 @@ export class AdminService {
     });
 
     return {
+      ...result,
       data: flattenedItems,
-      pagination: {
-        total,
-        page,
-        limit,
-        totalPages: Math.ceil(total / limit),
-      },
     };
   }
 
@@ -491,32 +491,26 @@ export class AdminService {
   // ==================== Role Management ====================
 
   async findAllRoles(page: number = 1, limit: number = 100) {
-    const skip = (page - 1) * limit;
-    const [data, total] = await Promise.all([
-      this.prisma.role.findMany({
-        include: {
-          rolePermissions: {
-            include: {
-              permission: true,
+    return PaginationUtility.paginate(
+      (opts) =>
+        this.prisma.role.findMany({
+          ...opts,
+          include: {
+            rolePermissions: {
+              include: {
+                permission: true,
+              },
             },
           },
-        },
-        skip,
-        take: limit,
-        orderBy: { name: 'asc' },
-      }),
-      this.prisma.role.count(),
-    ]);
-
-    return {
-      data,
-      pagination: {
-        total,
+        }),
+      () => this.prisma.role.count(),
+      {
         page,
         limit,
-        totalPages: Math.ceil(total / limit),
+        sortBy: 'name',
+        sortOrder: 'asc',
       },
-    };
+    );
   }
 
   async findRoleById(id: string) {

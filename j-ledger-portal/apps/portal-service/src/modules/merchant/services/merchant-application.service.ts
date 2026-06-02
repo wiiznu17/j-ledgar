@@ -9,6 +9,7 @@ import {
 import { StorageService } from '../../../core/storage/storage.service';
 import { ApplyMerchantDto } from '../../../user/merchant/dto/apply-merchant.dto';
 import { randomBytes } from 'crypto';
+import { PaginationUtility } from '../../../common/utils/pagination.util';
 
 @Injectable()
 export class MerchantApplicationService {
@@ -123,10 +124,6 @@ export class MerchantApplicationService {
   }
 
   async findApplications(query: any) {
-    const page = Number(query.page) || 1;
-    const limit = Number(query.limit) || 10;
-    const skip = (page - 1) * limit;
-
     const where: any = {};
     if (query.status && query.status !== 'ALL') {
       where.status = query.status;
@@ -139,28 +136,25 @@ export class MerchantApplicationService {
       ];
     }
 
-    const [applications, total] = await Promise.all([
-      this.prisma.merchantApplication.findMany({
-        where,
-        skip,
-        take: limit,
-        include: { partner: true },
-        orderBy: { createdAt: 'desc' },
-      }),
-      this.prisma.merchantApplication.count({ where }),
-    ]);
-
-    await this.presignApplicationImages(applications);
-
-    return {
-      data: applications,
-      pagination: {
-        total,
-        page,
-        limit,
-        totalPages: Math.ceil(total / limit),
+    const result = await PaginationUtility.paginate(
+      (opts) =>
+        this.prisma.merchantApplication.findMany({
+          where,
+          ...opts,
+          include: { partner: true },
+        }),
+      () => this.prisma.merchantApplication.count({ where }),
+      {
+        page: query.page,
+        limit: query.limit,
+        sortBy: 'createdAt',
+        sortOrder: 'desc',
       },
-    };
+    );
+
+    await this.presignApplicationImages(result.data);
+
+    return result;
   }
 
   async reviewApplication(

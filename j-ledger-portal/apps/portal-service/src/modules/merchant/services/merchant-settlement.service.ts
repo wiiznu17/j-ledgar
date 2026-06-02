@@ -3,6 +3,7 @@ import { Cron, CronExpression } from '@nestjs/schedule';
 import { PrismaService } from '../../../core/prisma/prisma.service';
 import { FinanceService } from '../../../core/finance/finance.service';
 import { AuditService, AuditAction, ResourceType } from '../../audit/audit.service';
+import { PaginationUtility } from '../../../common/utils/pagination.util';
 
 @Injectable()
 export class MerchantSettlementService {
@@ -139,7 +140,10 @@ export class MerchantSettlementService {
   }
 
   async getSettlementHistory(page: number = 1, limit: number = 20, search?: string, sortBy: string = 'createdAt', sortOrder: string = 'desc') {
-    const skip = Math.max(0, (Number(page) - 1) * Number(limit));
+    const { page: safePage, limit: safeLimit, skip, take } = PaginationUtility.getParams({
+      page,
+      limit,
+    });
 
     const where: any = {
       action: 'SETTLEMENT',
@@ -175,7 +179,7 @@ export class MerchantSettlementService {
         where,
         orderBy: { [orderColumn]: orderDirection },
         skip,
-        take: Number(limit),
+        take,
       }),
       this.prisma.auditLog.count({
         where,
@@ -212,10 +216,10 @@ export class MerchantSettlementService {
         totalCount: total,
       },
       pagination: {
-        page: Number(page),
-        limit: Number(limit),
+        page: safePage,
+        limit: safeLimit,
         total,
-        totalPages: Math.ceil(total / Number(limit)),
+        totalPages: Math.max(1, Math.ceil(total / safeLimit)),
       },
     };
   }

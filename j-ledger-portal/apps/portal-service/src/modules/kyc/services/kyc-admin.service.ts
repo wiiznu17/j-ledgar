@@ -12,6 +12,7 @@ import {
   RegistrationState,
   KYCVerificationStatus,
 } from '@repo/dto';
+import { PaginationUtility } from '../../../common/utils/pagination.util';
 
 @Injectable()
 export class KycAdminService {
@@ -237,6 +238,8 @@ export class KycAdminService {
       `[KYC] Fetching KYC list - status: ${status}, phone: ${phoneNumber}, dates: ${startDate} to ${endDate}`,
     );
 
+    const { page: safePage, limit: safeLimit, skip, take } = PaginationUtility.getParams({ page, limit });
+
     // 1. Build where clause for User
     const where: Record<string, any> = {};
     if (status !== 'ALL') {
@@ -263,8 +266,8 @@ export class KycAdminService {
         where,
         select: { id: true, email: true, phoneNumber: true, status: true },
         orderBy: { createdAt: 'desc' },
-        skip: (page - 1) * limit,
-        take: limit,
+        skip,
+        take,
       }),
     ]);
 
@@ -300,9 +303,9 @@ export class KycAdminService {
       stats,
       pagination: {
         total,
-        page,
-        limit,
-        totalPages: Math.ceil(total / limit),
+        page: safePage,
+        limit: safeLimit,
+        totalPages: Math.max(1, Math.ceil(total / safeLimit)),
       },
     };
   }

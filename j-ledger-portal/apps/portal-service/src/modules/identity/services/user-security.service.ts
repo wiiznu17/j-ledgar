@@ -14,6 +14,7 @@ import {
   KafkaTopic,
   DeviceTrustLevel,
 } from '@repo/dto';
+import { PaginationUtility } from '../../../common/utils/pagination.util';
 import { SecurityEventType, AddressType } from '@prisma/client';
 import * as bcrypt from 'bcryptjs';
 import { randomUUID, randomBytes } from 'crypto';
@@ -360,9 +361,7 @@ export class UserSecurityService {
       trustLevel?: string;
     } = {},
   ) {
-    const safePage = Math.max(1, Number(page) || 1);
-    const safeLimit = Math.min(Math.max(1, Number(limit) || 10), 100);
-    const skip = (safePage - 1) * safeLimit;
+    const { page: safePage, limit: safeLimit, skip, take } = PaginationUtility.getParams({ page, limit });
     const search = filters.search?.trim();
 
     const where: any = {
@@ -425,7 +424,7 @@ export class UserSecurityService {
         },
         orderBy: [{ lastSeenAt: 'desc' }, { createdAt: 'desc' }],
         skip,
-        take: safeLimit,
+        take,
       }),
       this.prisma.userDevice.count({ where }),
       this.prisma.userDevice.groupBy({

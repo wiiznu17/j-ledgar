@@ -4,6 +4,7 @@ import { FinanceService } from '../../core/finance/finance.service';
 import { KafkaProducerService } from '../notification/kafka-producer.service';
 import { ApprovalRequestStatus, ApprovalRequestType } from '@prisma/client';
 import { KafkaTopic } from '@repo/dto';
+import { PaginationUtility } from '../../common/utils/pagination.util';
 
 @Injectable()
 export class AdminApprovalService {
@@ -20,10 +21,6 @@ export class AdminApprovalService {
     status?: string,
     category?: string,
   ) {
-    const safePage = Math.max(1, Number(page) || 1);
-    const safeLimit = Math.min(Math.max(1, Number(limit) || 10), 100);
-    const skip = (safePage - 1) * safeLimit;
-
     const normalizedStatus =
       status && status !== 'ALL' ? (status as ApprovalRequestStatus) : undefined;
     const searchTerm = search?.trim().toLowerCase();
@@ -40,15 +37,20 @@ export class AdminApprovalService {
       ];
     }
 
-    const [rows, total] = await Promise.all([
-      this.prisma.approvalRequest.findMany({
-        where,
-        skip,
-        take: safeLimit,
-        orderBy: { createdAt: 'desc' },
-      }),
-      this.prisma.approvalRequest.count({ where }),
-    ]);
+    const result = await PaginationUtility.paginate(
+      (opts) =>
+        this.prisma.approvalRequest.findMany({
+          where,
+          ...opts,
+        }),
+      () => this.prisma.approvalRequest.count({ where }),
+      {
+        page,
+        limit,
+        sortBy: 'createdAt',
+        sortOrder: 'desc',
+      },
+    );
 
     const stats = await this.prisma.approvalRequest.groupBy({
       by: ['status'],
@@ -62,7 +64,7 @@ export class AdminApprovalService {
     };
 
     // Map DB model to UI expectations
-    const data = rows.map((row) => ({
+    const data = result.data.map((row) => ({
       ...row,
       target: (row.requestData as any)?.target || 'SYSTEM_SETTINGS',
       category: (row.requestData as any)?.category || 'SECURITY',
@@ -77,13 +79,8 @@ export class AdminApprovalService {
     }));
 
     return {
+      ...result,
       data,
-      pagination: {
-        page: safePage,
-        limit: safeLimit,
-        total,
-        totalPages: Math.ceil(total / safeLimit),
-      },
       stats: statsMap,
     };
   }

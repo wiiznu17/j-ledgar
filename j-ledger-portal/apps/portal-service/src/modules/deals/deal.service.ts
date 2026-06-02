@@ -3,6 +3,7 @@ import { PrismaService } from '../../core/prisma/prisma.service';
 import { LoyaltyService } from '../loyalty/loyalty.service';
 import { RedemptionStatus } from '@prisma/client';
 import { v4 as uuidv4 } from 'uuid';
+import { PaginationUtility } from '../../common/utils/pagination.util';
 import {
   CreateBrandDto,
   UpdateBrandDto,
@@ -297,10 +298,6 @@ export class DealService {
     page?: number;
     limit?: number;
   }) {
-    const page = filters.page || 1;
-    const limit = filters.limit || 10;
-    const skip = (page - 1) * limit;
-
     const where: any = {};
 
     if (filters.categoryId) where.categoryId = filters.categoryId;
@@ -310,26 +307,21 @@ export class DealService {
       where.title = { contains: filters.search, mode: 'insensitive' };
     }
 
-    const [data, total] = await Promise.all([
-      this.prisma.deal.findMany({
-        where,
-        include: { brand: true, category: true },
-        orderBy: { createdAt: 'desc' },
-        skip,
-        take: limit,
-      }),
-      this.prisma.deal.count({ where }),
-    ]);
-
-    return {
-      data,
-      pagination: {
-        total,
-        page,
-        limit,
-        totalPages: Math.ceil(total / limit),
+    return PaginationUtility.paginate(
+      (opts) =>
+        this.prisma.deal.findMany({
+          where,
+          ...opts,
+          include: { brand: true, category: true },
+        }),
+      () => this.prisma.deal.count({ where }),
+      {
+        page: filters.page,
+        limit: filters.limit,
+        sortBy: 'createdAt',
+        sortOrder: 'desc',
       },
-    };
+    );
   }
 
   async updateDeal(id: string, data: UpdateDealDto) {
@@ -390,10 +382,6 @@ export class DealService {
       search?: string;
     } = {},
   ) {
-    const page = query.page || 1;
-    const limit = query.limit || 10;
-    const skip = (page - 1) * limit;
-
     const where: any = {};
 
     if (query.status && query.status !== 'ALL') {
@@ -425,18 +413,23 @@ export class DealService {
       ];
     }
 
-    const [redemptions, total] = await Promise.all([
-      this.prisma.dealRedemption.findMany({
-        where,
-        include: { deal: true },
-        orderBy: { createdAt: 'desc' },
-        skip,
-        take: limit,
-      }),
-      this.prisma.dealRedemption.count({ where }),
-    ]);
+    const result = await PaginationUtility.paginate(
+      (opts) =>
+        this.prisma.dealRedemption.findMany({
+          where,
+          ...opts,
+          include: { deal: true },
+        }),
+      () => this.prisma.dealRedemption.count({ where }),
+      {
+        page: query.page,
+        limit: query.limit,
+        sortBy: 'createdAt',
+        sortOrder: 'desc',
+      },
+    );
 
-    const userIds = [...new Set(redemptions.map((r) => r.userId))];
+    const userIds = [...new Set(result.data.map((r) => r.userId))];
     const users = await this.prisma.user.findMany({
       where: { id: { in: userIds } },
       select: { id: true, phoneNumber: true, email: true },
@@ -444,19 +437,14 @@ export class DealService {
 
     const userMap = new Map(users.map((u) => [u.id, u]));
 
-    const data = redemptions.map((r) => ({
+    const data = result.data.map((r) => ({
       ...r,
       user: userMap.get(r.userId) || null,
     }));
 
     return {
+      ...result,
       data,
-      pagination: {
-        total,
-        page,
-        limit,
-        totalPages: Math.ceil(total / limit),
-      },
     };
   }
 }
