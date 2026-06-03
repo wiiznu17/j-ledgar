@@ -16,6 +16,7 @@ import {
   Store,
 } from 'lucide-react';
 import { toast } from 'sonner';
+import { toastApiError } from '@/lib/error-handler';
 import Link from 'next/link';
 
 import { Button } from '@/components/ui/button';
@@ -101,7 +102,7 @@ export default function CreatePartnerPage() {
       router.refresh();
     } catch (error) {
       console.error('[CREATE_PARTNER] Error:', error);
-      toast.error('Failed to create partner. Please try again.');
+      toastApiError(error, 'Failed to create partner. Please try again.');
     } finally {
       setIsLoading(false);
     }

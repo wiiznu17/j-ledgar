@@ -3,6 +3,7 @@
 import { transactionRequester } from '@/lib/requesters';
 import { cookies } from 'next/headers';
 import { TransferRequest } from '@repo/dto';
+import { ApiError } from '@/lib/api-client';
 
 export async function executeTransfer(formData: FormData) {
   const sourceAccountId = formData.get('sourceAccountId') as string;
@@ -35,6 +36,16 @@ export async function executeTransfer(formData: FormData) {
     return { success: true, data };
   } catch (err) {
     console.error('Transfer Error:', err);
+
+    if (err instanceof ApiError) {
+      return {
+        success: false,
+        error: err.message,
+        code: err.code ? String(err.code) : undefined,
+        details: err.details,
+      };
+    }
+
     const message =
       err instanceof Error
         ? err.message

@@ -2,6 +2,7 @@
 
 import { cookies, headers } from 'next/headers';
 import { redirect } from 'next/navigation';
+import { isRedirectError } from 'next/dist/client/components/redirect-error';
 import { authRequester } from '@/lib/requesters';
 import { LoginRequest, RefreshTokenRequest } from '@repo/dto';
 import { AUTH_COOKIE_NAME, PERMISSIONS_COOKIE_NAME } from '@/lib/api-config';
@@ -96,7 +97,7 @@ export async function login(formData: FormData) {
     redirect('/dashboard');
   } catch (error) {
     // Don't catch redirect errors - let them propagate
-    if (error instanceof Error && error.message === 'NEXT_REDIRECT') {
+    if (isRedirectError(error)) {
       throw error;
     }
 

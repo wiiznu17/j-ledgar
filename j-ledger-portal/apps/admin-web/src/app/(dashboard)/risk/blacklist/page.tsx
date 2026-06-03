@@ -39,6 +39,7 @@ import {
   RefreshCw,
 } from 'lucide-react';
 import { toast } from 'sonner';
+import { toastApiError } from '@/lib/error-handler';
 import { walletRequester } from '@/lib/requesters/walletRequester';
 import { adminApi } from '@/lib/admin-api';
 import {
@@ -112,7 +113,7 @@ export default function BlacklistPage() {
       setSimulatedBlocks(safeNodes);
     } catch (error) {
       console.error('[BLACKLIST] Fetch data error:', error);
-      toast.error('Failed to load active restricted wallets and nodes');
+      toastApiError(error, 'Failed to load active restricted wallets and nodes');
     } finally {
       setLoading(false);
     }
@@ -170,7 +171,8 @@ export default function BlacklistPage() {
         fetchFrozenWallets();
       }
     } catch (e) {
-      toast.error(`Failed to modify block for ${item.target}`);
+      console.error('[BLACKLIST] Toggle status error:', e);
+      toastApiError(e, `Failed to modify block for ${item.target}`);
     } finally {
       setLoading(false);
     }
@@ -206,7 +208,8 @@ export default function BlacklistPage() {
       setNewTarget('');
       setNewReason('');
     } catch (error) {
-      toast.error('Failed to enforce restriction. Verify Target Owner ID.');
+      console.error('[BLACKLIST] Add restriction error:', error);
+      toastApiError(error, 'Failed to enforce restriction. Verify Target Owner ID.');
     } finally {
       setSubmittingBlock(false);
     }
