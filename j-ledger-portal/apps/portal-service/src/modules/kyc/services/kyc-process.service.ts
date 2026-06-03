@@ -142,7 +142,6 @@ export class KycProcessService {
       where: { id: userId },
       data: { registrationState: RegistrationState.ID_CARD_UPLOADED },
     });
-    console.log('idCardNumber', idCardNumber);
     return {
       extractedData: {
         idNumber: idCardNumber, // ส่งเลขจริงกลับไปให้ตรวจ
@@ -189,7 +188,7 @@ export class KycProcessService {
         postalCode: '10310',
       },
     };
-    console.log('data from simple mode = ', extraction);
+    this.logger.debug(`[KYC] Simple mode extraction completed for user ${userId}`);
     const idCardNumber = extraction.idCardNumber;
     // In mock/simple mode, we use userId in the token to allow multiple users to test with the same mock ID
     const idCardToken = this.cryptoService.hashString(idCardNumber + userId);

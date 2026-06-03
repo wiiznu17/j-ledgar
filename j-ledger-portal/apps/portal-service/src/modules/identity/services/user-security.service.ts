@@ -299,7 +299,8 @@ export class UserSecurityService {
       },
     });
 
-    this.logger.log(`[ResetPIN] Generated reset OTP for user ${userId}: ${otp}`);
+    // ⚠️ DEV ONLY: Remove before production — OTP should be delivered via SMS/Email
+    this.logger.warn(`[ResetPIN] Generated reset OTP for user ${userId}: ${otp}`);
     return { success: true, message: 'ส่งรหัส OTP สำหรับรีเซ็ต PIN ไปยังอีเมลของท่านแล้ว' };
   }
 
@@ -532,7 +533,8 @@ export class UserSecurityService {
     
     // Store token in Redis
     await this.redis.set(`pay_token:${token}`, userId, 'EX', ttlSeconds);
-    this.logger.log(`Generated dynamic pay token for user ${userId}: ${token}`);
+    const maskedToken = token.substring(0, 8) + '...';
+    this.logger.log(`Generated dynamic pay token for user ${userId}: ${maskedToken}`);
     
     return {
       token,
