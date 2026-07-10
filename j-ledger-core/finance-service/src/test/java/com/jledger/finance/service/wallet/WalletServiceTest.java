@@ -1,5 +1,7 @@
 package com.jledger.finance.service.wallet;
 
+import com.jledger.finance.service.wallet.impl.*;
+
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.jledger.finance.domain.entity.*;
 import com.jledger.finance.domain.enums.*;
@@ -133,7 +135,7 @@ class WalletServiceTest {
                 walletCommonService
         );
 
-        walletService = new WalletService(
+        walletService = new WalletServiceImpl(
                 walletQueryService,
                 walletAdminService,
                 linkedBankAccountService,

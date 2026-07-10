@@ -1,5 +1,7 @@
 package com.jledger.finance.service.compliance;
 
+import com.jledger.finance.service.compliance.impl.AmlMonitoringServiceImpl;
+
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.jledger.finance.domain.entity.SuspiciousActivity;
@@ -46,7 +48,7 @@ class AmlMonitoringServiceTest {
     private ObjectMapper objectMapper;
 
     @InjectMocks
-    private AmlMonitoringService amlMonitoringService;
+    private AmlMonitoringServiceImpl amlMonitoringService;
 
     private static final Long WALLET_ID = 6006L;
     private static final Long TO_WALLET_ID = 6007L;

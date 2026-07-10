@@ -1,5 +1,7 @@
 package com.jledger.finance.service.compliance;
 
+import com.jledger.finance.service.compliance.impl.AccountFreezeServiceImpl;
+
 import com.jledger.finance.domain.entity.Wallet;
 import com.jledger.finance.domain.enums.WalletStatus;
 import com.jledger.finance.repository.wallet.WalletRepository;
@@ -25,7 +27,7 @@ class AccountFreezeServiceTest {
     private WalletRepository walletRepository;
 
     @InjectMocks
-    private AccountFreezeService accountFreezeService;
+    private AccountFreezeServiceImpl accountFreezeService;
 
     private static final Long WALLET_ID = 1001L;
     private static final String REASON = "Suspicious behavior detected";

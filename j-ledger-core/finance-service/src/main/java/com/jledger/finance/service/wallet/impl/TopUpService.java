@@ -1,4 +1,6 @@
-package com.jledger.finance.service.wallet;
+package com.jledger.finance.service.wallet.impl;
+
+import com.jledger.finance.service.wallet.WalletService;
 
 import com.jledger.finance.domain.entity.Account;
 import com.jledger.finance.domain.entity.LedgerEntry;

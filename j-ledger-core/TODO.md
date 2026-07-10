@@ -22,6 +22,7 @@
 - **Facade Pattern & God Object Decomposition** — แยก `WalletService` ขนาด 1,634 บรรทัดออกเป็น 7 Domain Services ย่อย ทำงานอิสระจากกัน ทำให้อ่านง่าย ปรับแต่งง่าย ไม่ชนกัน
 - **Constructor Injection** — ใช้ `@RequiredArgsConstructor` (Lombok) ในทุก Wallet Services เพื่อลด Hidden dependency และทำ Unit Test ได้ง่ายขึ้น
 - **Consistent Entity Lombok Style** — ปรับปรุง Entities ทั้งหมดให้ใช้ Lombok `@Getter`, `@Setter`, `@Builder`, `@NoArgsConstructor`, `@AllArgsConstructor` สม่ำเสมอกันทั้งโปรเจกต์
+- **Service Interface Separation & Package Restructuring** — แยก Interface และ Implementation สำหรับทุกบริการหลักและบริการย่อยในระบบ (12 บริการหลัก) พร้อมจัดโครงสร้างไดเรกทอรีให้อยู่ภายใต้ `.impl` อย่างเป็นระบบระเบียบ ป้องกัน Package Clutter และช่วยให้การทำ Mock/Unit Testing สะดวกขึ้นมาก
 - **Distributed Locking** ด้วย Redisson (deadlock prevention ทำ Account ID sorting)
 - **Idempotency** ด้วย Redis (`RedisIdempotencyService`)
 - **Transactional Outbox Pattern** พร้อม Dead Letter Queue, Max Retries
@@ -77,19 +78,19 @@ public class WalletService {
 ## 🟡 Priority 2 — High (ปรับแล้ว Architecture จะแข็งแรงขึ้นมาก)
 
 ### 2.1 ไม่มี Service Interface — ควรแยก Interface + Implementation
-- [ ] **ปัญหา:** ตอนนี้ Controller เรียก Service (Concrete class) ตรงๆ ทำให้ Mock ยาก และไม่สามารถ Swap implementation ได้
-- [ ] **แนวทาง:** สร้าง Interface สำหรับ Service สำคัญ
+- [x] **ปัญหา:** ตอนนี้ Controller เรียก Service (Concrete class) ตรงๆ ทำให้ Mock ยาก และไม่สามารถ Swap implementation ได้
+- [x] **แนวทาง:** สร้าง Interface สำหรับ Service สำคัญ
 
 ```java
 // ✅ สร้าง Interface
-public interface TransferPort {
+public interface TransferService {
     Transaction executeTransfer(String idempotencyKey, TransferRequest request);
 }
 
 // ✅ Implementation
 @Service
 @RequiredArgsConstructor
-public class TransferService implements TransferPort {
+public class TransferServiceImpl implements TransferService {
     // ... existing code ...
 }
 ```
@@ -238,10 +239,10 @@ ENTRYPOINT ["java", "-XX:+UseContainerSupport", "-XX:MaxRAMPercentage=75", "-jar
 | Priority | จำนวน | สถานะ |
 |----------|:-----:|:-----:|
 | 🔴 Critical | 0 | `[ ]` รอทำ |
-| 🟡 High | 4 | `[ ]` รอทำ |
+| 🟡 High | 3 | `[ ]` รอทำ |
 | 🟢 Medium | 4 | `[ ]` รอทำ |
 | 🔵 Nice-to-Have | 6 | `[ ]` รอทำ |
-| **รวม** | **14** | |
+| **รวม** | **13** | |
 
 ---
 

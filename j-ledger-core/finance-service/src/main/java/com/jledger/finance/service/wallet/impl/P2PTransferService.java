@@ -1,4 +1,6 @@
-package com.jledger.finance.service.wallet;
+package com.jledger.finance.service.wallet.impl;
+
+import com.jledger.finance.service.wallet.WalletService;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.jledger.finance.domain.entity.Account;

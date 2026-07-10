@@ -1,5 +1,7 @@
 package com.jledger.finance.service.ledger;
 
+import com.jledger.finance.service.ledger.impl.AccountServiceImpl;
+
 import com.jledger.finance.domain.entity.Account;
 import com.jledger.finance.domain.enums.AccountType;
 import com.jledger.finance.exception.ResourceNotFoundException;
@@ -29,7 +31,7 @@ class AccountServiceTest {
     private AccountRepository accountRepository;
 
     @InjectMocks
-    private AccountService accountService;
+    private AccountServiceImpl accountService;
 
     private static final UUID ACCOUNT_ID = UUID.randomUUID();
     private static final UUID USER_ID = UUID.randomUUID();

@@ -1,4 +1,4 @@
-package com.jledger.finance.service.wallet;
+package com.jledger.finance.service.wallet.impl;
 
 import com.jledger.finance.domain.entity.LinkedBankAccount;
 import com.jledger.finance.exception.ResourceNotFoundException;

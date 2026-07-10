@@ -1,5 +1,7 @@
 package com.jledger.finance.service.transaction;
 
+import com.jledger.finance.service.transaction.impl.MerchantPaymentServiceImpl;
+
 import com.jledger.finance.domain.entity.Transaction;
 import com.jledger.finance.domain.entity.Wallet;
 import com.jledger.finance.dto.MerchantMultiPayRequest;
@@ -42,7 +44,7 @@ class MerchantPaymentServiceTest {
     private RedisIdempotencyService redisIdempotencyService;
 
     @InjectMocks
-    private MerchantPaymentService merchantPaymentService;
+    private MerchantPaymentServiceImpl merchantPaymentService;
 
     private static final String SENDER_WALLET_ID = "W11111";
     private static final String MERCHANT_WALLET_ID = "W88888";

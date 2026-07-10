@@ -1,5 +1,7 @@
 package com.jledger.finance.service.transaction;
 
+import com.jledger.finance.service.transaction.impl.PaymentServiceImpl;
+
 import com.jledger.finance.domain.entity.Account;
 import com.jledger.finance.domain.entity.PaymentTransaction;
 import com.jledger.finance.dto.PaymentCreateRequest;
@@ -39,7 +41,7 @@ class PaymentServiceTest {
     private WalletService walletService;
 
     @InjectMocks
-    private PaymentService paymentService;
+    private PaymentServiceImpl paymentService;
 
     private static final UUID ACCOUNT_ID = UUID.randomUUID();
     private static final UUID USER_ID = UUID.randomUUID();

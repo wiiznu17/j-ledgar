@@ -1,5 +1,7 @@
 package com.jledger.finance.service.ledger;
 
+import com.jledger.finance.service.ledger.impl.ReconciliationServiceImpl;
+
 import com.jledger.finance.domain.entity.Account;
 import com.jledger.finance.domain.entity.ReconciliationReport;
 import com.jledger.finance.repository.ledger.AccountRepository;
@@ -44,7 +46,7 @@ class ReconciliationServiceTest {
     private RLock lock;
 
     @InjectMocks
-    private ReconciliationService reconciliationService;
+    private ReconciliationServiceImpl reconciliationService;
 
     private static final UUID SYSTEM_BANK_ACCOUNT_ID = UUID.fromString("00000000-0000-0000-0000-000000000000");
     private static final String RECONCILIATION_LOCK_KEY = "reconciliation:nightly_lock";

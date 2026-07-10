@@ -1,5 +1,7 @@
 package com.jledger.finance.service.compliance;
 
+import com.jledger.finance.service.compliance.impl.TransactionLimitServiceImpl;
+
 import com.jledger.finance.domain.entity.TransactionLimit;
 import com.jledger.finance.domain.enums.TransactionLimitType;
 import com.jledger.finance.exception.ConflictException;
@@ -36,7 +38,7 @@ class TransactionLimitServiceTest {
     private TransactionRepository transactionRepository;
 
     @InjectMocks
-    private TransactionLimitService transactionLimitService;
+    private TransactionLimitServiceImpl transactionLimitService;
 
     private static final UUID ACCOUNT_ID = UUID.randomUUID();
     private static final BigDecimal DEFAULT_PER_TX_LIMIT = new BigDecimal("500000");

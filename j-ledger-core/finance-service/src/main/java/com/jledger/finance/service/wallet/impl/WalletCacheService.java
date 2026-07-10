@@ -1,4 +1,4 @@
-package com.jledger.finance.service.wallet;
+package com.jledger.finance.service.wallet.impl;
 
 import com.jledger.finance.domain.entity.Wallet;
 import lombok.RequiredArgsConstructor;

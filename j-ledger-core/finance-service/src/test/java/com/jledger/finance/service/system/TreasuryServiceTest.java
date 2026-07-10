@@ -1,5 +1,7 @@
 package com.jledger.finance.service.system;
 
+import com.jledger.finance.service.system.impl.TreasuryServiceImpl;
+
 import com.jledger.finance.domain.entity.Transaction;
 import com.jledger.finance.domain.entity.TreasuryBankAccount;
 import com.jledger.finance.domain.entity.TreasuryPayout;
@@ -47,7 +49,7 @@ class TreasuryServiceTest {
     private WalletRepository walletRepository;
 
     @InjectMocks
-    private TreasuryService treasuryService;
+    private TreasuryServiceImpl treasuryService;
 
     @Nested
     @DisplayName("getSummary Method Tests")

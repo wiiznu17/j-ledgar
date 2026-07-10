@@ -1,5 +1,7 @@
 package com.jledger.finance.service.wallet;
 
+import com.jledger.finance.service.wallet.impl.TransferServiceImpl;
+
 import com.jledger.finance.domain.entity.Transaction;
 import com.jledger.finance.dto.TransferRequest;
 import com.jledger.finance.exception.ConcurrentOperationException;
@@ -52,7 +54,7 @@ class TransferServiceTest {
     private TransactionRateLimitService transactionRateLimitService;
 
     @InjectMocks
-    private TransferService transferService;
+    private TransferServiceImpl transferService;
 
     @Mock
     private RLock firstLock;
