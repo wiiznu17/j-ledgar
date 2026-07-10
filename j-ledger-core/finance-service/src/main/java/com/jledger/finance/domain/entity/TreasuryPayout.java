@@ -3,9 +3,15 @@ package com.jledger.finance.domain.entity;
 import jakarta.persistence.*;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
+import lombok.*;
 
 @Entity
 @Table(name = "treasury_payouts", schema = "finance")
+@Getter
+@Setter
+@NoArgsConstructor
+@AllArgsConstructor
+@Builder
 public class TreasuryPayout {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -18,9 +24,11 @@ public class TreasuryPayout {
     private BigDecimal amount;
 
     @Column(nullable = false, length = 3)
+    @Builder.Default
     private String currency = "THB";
 
     @Column(nullable = false, length = 20)
+    @Builder.Default
     private String status = "PENDING"; // PENDING, COMPLETED, FAILED
 
     @ManyToOne(fetch = FetchType.EAGER)
@@ -49,35 +57,4 @@ public class TreasuryPayout {
     protected void onUpdate() {
         updatedAt = LocalDateTime.now();
     }
-
-    // Getters and Setters
-    public Long getId() { return id; }
-    public void setId(Long id) { this.id = id; }
-
-    public String getStripePayoutId() { return stripePayoutId; }
-    public void setStripePayoutId(String stripePayoutId) { this.stripePayoutId = stripePayoutId; }
-
-    public BigDecimal getAmount() { return amount; }
-    public void setAmount(BigDecimal amount) { this.amount = amount; }
-
-    public String getCurrency() { return currency; }
-    public void setCurrency(String currency) { this.currency = currency; }
-
-    public String getStatus() { return status; }
-    public void setStatus(String status) { this.status = status; }
-
-    public TreasuryBankAccount getDestinationAccount() { return destinationAccount; }
-    public void setDestinationAccount(TreasuryBankAccount destinationAccount) { this.destinationAccount = destinationAccount; }
-
-    public LocalDateTime getArrivalDate() { return arrivalDate; }
-    public void setArrivalDate(LocalDateTime arrivalDate) { this.arrivalDate = arrivalDate; }
-
-    public String getNote() { return note; }
-    public void setNote(String note) { this.note = note; }
-
-    public LocalDateTime getCreatedAt() { return createdAt; }
-    public void setCreatedAt(LocalDateTime createdAt) { this.createdAt = createdAt; }
-
-    public LocalDateTime getUpdatedAt() { return updatedAt; }
-    public void setUpdatedAt(LocalDateTime updatedAt) { this.updatedAt = updatedAt; }
 }

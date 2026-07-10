@@ -21,6 +21,7 @@
 ### ✅ สิ่งที่ทำได้ดีแล้ว (จุดแข็ง)
 - **Facade Pattern & God Object Decomposition** — แยก `WalletService` ขนาด 1,634 บรรทัดออกเป็น 7 Domain Services ย่อย ทำงานอิสระจากกัน ทำให้อ่านง่าย ปรับแต่งง่าย ไม่ชนกัน
 - **Constructor Injection** — ใช้ `@RequiredArgsConstructor` (Lombok) ในทุก Wallet Services เพื่อลด Hidden dependency และทำ Unit Test ได้ง่ายขึ้น
+- **Consistent Entity Lombok Style** — ปรับปรุง Entities ทั้งหมดให้ใช้ Lombok `@Getter`, `@Setter`, `@Builder`, `@NoArgsConstructor`, `@AllArgsConstructor` สม่ำเสมอกันทั้งโปรเจกต์
 - **Distributed Locking** ด้วย Redisson (deadlock prevention ทำ Account ID sorting)
 - **Idempotency** ด้วย Redis (`RedisIdempotencyService`)
 - **Transactional Outbox Pattern** พร้อม Dead Letter Queue, Max Retries
@@ -68,8 +69,8 @@ public class WalletService {
 ```
 
 ### 1.3 Entity ใช้ Manual Getters/Setters — ทำให้ไม่ Immutable
-- [ ] **ปัญหา:** `Transaction.java` มี manual getters/setters 50+ บรรทัด ขณะที่ Entity อื่นใช้ Lombok `@Builder` แล้ว ทำให้โค้ดไม่สม่ำเสมอ (Inconsistent style)
-- [ ] **แนวทาง:** ทุก Entity ควรใช้ Lombok `@Getter`, `@Setter`, `@Builder`, `@NoArgsConstructor`, `@AllArgsConstructor` เหมือนกันหมด
+- [x] **ปัญหา:** `Transaction.java` มี manual getters/setters 50+ บรรทัด ขณะที่ Entity อื่นใช้ Lombok `@Builder` แล้ว ทำให้โค้ดไม่สม่ำเสมอ (Inconsistent style)
+- [x] **แนวทาง:** ทุก Entity ควรใช้ Lombok `@Getter`, `@Setter`, `@Builder`, `@NoArgsConstructor`, `@AllArgsConstructor` เหมือนกันหมด
 
 ---
 
@@ -236,11 +237,11 @@ ENTRYPOINT ["java", "-XX:+UseContainerSupport", "-XX:MaxRAMPercentage=75", "-jar
 
 | Priority | จำนวน | สถานะ |
 |----------|:-----:|:-----:|
-| 🔴 Critical | 1 | `[ ]` รอทำ |
+| 🔴 Critical | 0 | `[ ]` รอทำ |
 | 🟡 High | 4 | `[ ]` รอทำ |
 | 🟢 Medium | 4 | `[ ]` รอทำ |
 | 🔵 Nice-to-Have | 6 | `[ ]` รอทำ |
-| **รวม** | **15** | |
+| **รวม** | **14** | |
 
 ---
 
