@@ -14,10 +14,24 @@ public class TransactionEventConsumer {
     private static final Logger LOGGER = LoggerFactory.getLogger(TransactionEventConsumer.class);
     private final ObjectMapper objectMapper = new ObjectMapper();
 
+    @org.springframework.kafka.annotation.RetryableTopic(
+        attempts = "3",
+        backoff = @org.springframework.retry.annotation.Backoff(delay = 2000, multiplier = 2.0),
+        topicSuffixingStrategy = org.springframework.kafka.retrytopic.TopicSuffixingStrategy.SUFFIX_WITH_INDEX_VALUE,
+        exclude = {com.fasterxml.jackson.core.JsonProcessingException.class}
+    )
     @KafkaListener(topics = "${jledger.outbox.topic:financial-events-v1}", groupId = "finance-analytics-group")
     public void consumeTransactionEvent(String message) {
         try {
-            JsonNode event = objectMapper.readTree(message);
+            JsonNode event;
+            try {
+                event = objectMapper.readTree(message);
+            } catch (com.fasterxml.jackson.core.JsonProcessingException e) {
+                LOGGER.error("📢 [Kafka Consumer] Malformed JSON payload received: {}", message, e);
+                return;
+            }
+            if (event == null) return;
+
             String type = event.get("eventType").asText();
             BigDecimal amount = new BigDecimal(event.get("amount").asText());
             String userId = event.get("userId").asText();
@@ -31,6 +45,12 @@ public class TransactionEventConsumer {
 
         } catch (Exception e) {
             LOGGER.error("❌ [Kafka Consumer] Failed to process message: {}", message, e);
+            throw new RuntimeException("Error processing transaction event", e);
         }
+    }
+
+    @org.springframework.kafka.annotation.DltHandler
+    public void handleDlt(String message, @org.springframework.messaging.handler.annotation.Header(org.springframework.kafka.support.KafkaHeaders.RECEIVED_TOPIC) String topic) {
+        LOGGER.error("❌ [Kafka Consumer DLT] Event moved to DLT topic {}: {}", topic, message);
     }
 }

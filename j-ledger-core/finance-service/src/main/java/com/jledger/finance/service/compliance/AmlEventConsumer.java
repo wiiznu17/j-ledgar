@@ -22,10 +22,22 @@ public class AmlEventConsumer {
     private final WalletRepository walletRepository;
     private final ObjectMapper objectMapper;
 
+    @org.springframework.kafka.annotation.RetryableTopic(
+        attempts = "3",
+        backoff = @org.springframework.retry.annotation.Backoff(delay = 2000, multiplier = 2.0),
+        topicSuffixingStrategy = org.springframework.kafka.retrytopic.TopicSuffixingStrategy.SUFFIX_WITH_INDEX_VALUE,
+        exclude = {com.fasterxml.jackson.core.JsonProcessingException.class}
+    )
     @KafkaListener(topics = "${jledger.outbox.topic:financial-events-v1}", groupId = "finance-aml-group")
     public void consumeFinancialEvent(String message) {
         try {
-            JsonNode event = objectMapper.readTree(message);
+            JsonNode event;
+            try {
+                event = objectMapper.readTree(message);
+            } catch (com.fasterxml.jackson.core.JsonProcessingException e) {
+                log.error("📢 [AML Consumer] Malformed JSON payload received: {}", message, e);
+                return;
+            }
             if (event == null) return;
 
             // Extract core transaction details
@@ -104,6 +116,12 @@ public class AmlEventConsumer {
 
         } catch (Exception e) {
             log.error("❌ [AML Consumer] Error processing event payload: {}", message, e);
+            throw new RuntimeException("Error processing AML event", e);
         }
+    }
+
+    @org.springframework.kafka.annotation.DltHandler
+    public void handleDlt(String message, @org.springframework.messaging.handler.annotation.Header(org.springframework.kafka.support.KafkaHeaders.RECEIVED_TOPIC) String topic) {
+        log.error("❌ [AML Consumer DLT] Event moved to DLT topic {}: {}", topic, message);
     }
 }

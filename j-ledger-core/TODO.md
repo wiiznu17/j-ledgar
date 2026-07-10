@@ -169,8 +169,8 @@ public record TransferRequest(
 - [x] **แนวทาง:** เพิ่ม `@Scheduled` Cleanup Job ลบ `PROCESSED` events ที่อายุเกิน 30 วัน
 
 ### 3.5 เพิ่ม Retry Mechanism สำหรับ Kafka Consumer
-- [ ] **ปัญหา:** `AmlEventConsumer` และ `TransactionEventConsumer` ไม่มีการทำ Retry + Error handling ที่ชัดเจน
-- [ ] **แนวทาง:** ใช้ `@RetryableTopic` หรือ `DefaultErrorHandler` ของ Spring Kafka
+- [x] **ปัญหา:** `AmlEventConsumer` และ `TransactionEventConsumer` ไม่มีการทำ Retry + Error handling ที่ชัดเจน
+- [x] **แนวทาง:** ใช้ `@RetryableTopic` หรือ `DefaultErrorHandler` ของ Spring Kafka
 
 ---
 
