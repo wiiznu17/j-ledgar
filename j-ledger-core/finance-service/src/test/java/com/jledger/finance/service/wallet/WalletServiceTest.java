@@ -125,7 +125,8 @@ class WalletServiceTest {
                 linkedBankAccountService,
                 walletCacheService,
                 walletCommonService,
-                jLedgerProperties
+                jLedgerProperties,
+                objectMapper
         );
 
         P2PTransferService p2pTransferService = new P2PTransferService(

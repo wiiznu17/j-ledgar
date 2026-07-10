@@ -12,7 +12,9 @@ import com.jledger.finance.repository.transaction.TransactionRepository;
 import com.jledger.finance.repository.wallet.WalletRepository;
 import com.jledger.finance.service.system.TreasuryService;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -20,16 +22,19 @@ import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
+@Slf4j
 public class TreasuryServiceImpl implements TreasuryService {
 
     private final TreasuryBankAccountRepository bankAccountRepository;
     private final TreasuryPayoutRepository payoutRepository;
     private final TransactionRepository transactionRepository;
     private final WalletRepository walletRepository;
+    private final ObjectMapper objectMapper;
 
     @Override
     public TreasurySummaryResponse getSummary() {
@@ -109,7 +114,15 @@ public class TreasuryServiceImpl implements TreasuryService {
         tx.setStatus(TransactionStatus.COMPLETED);
         tx.setDescription("Stripe payout sweep to corporate bank account: SCB (" + destinationAccount.getAccountNumber() + ")");
         tx.setCompletedAt(arrivalDate);
-        tx.setMetadata("{\"stripePayoutId\":\"" + stripePayoutId + "\",\"note\":\"Automated payout from Stripe to SCB Main Corporate\"}");
+        try {
+            Map<String, Object> meta = Map.of(
+                    "stripePayoutId", stripePayoutId,
+                    "note", "Automated payout from Stripe to SCB Main Corporate"
+            );
+            tx.setMetadata(objectMapper.writeValueAsString(meta));
+        } catch (Exception e) {
+            throw new RuntimeException("Failed to serialize payout metadata", e);
+        }
         transactionRepository.save(tx);
     }
     

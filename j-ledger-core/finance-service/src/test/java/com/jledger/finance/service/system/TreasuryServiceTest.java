@@ -1,5 +1,6 @@
 package com.jledger.finance.service.system;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.jledger.finance.service.system.impl.TreasuryServiceImpl;
 
 import com.jledger.finance.domain.entity.Transaction;
@@ -47,6 +48,9 @@ class TreasuryServiceTest {
 
     @Mock
     private WalletRepository walletRepository;
+
+    @org.mockito.Spy
+    private ObjectMapper objectMapper = new ObjectMapper();
 
     @InjectMocks
     private TreasuryServiceImpl treasuryService;

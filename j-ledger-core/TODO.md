@@ -123,8 +123,8 @@ jledger:
 ```
 
 ### 2.4 JSON ถูกสร้างด้วย String Concatenation — เสี่ยง Injection
-- [ ] **ปัญหา:** ใน `WalletService` มีการสร้าง JSON metadata ด้วย String concatenation ตรงๆ (เช่น `"{\"reason\":\"" + reason + "\"}"`) ซึ่งเสี่ยง JSON Injection
-- [ ] **แนวทาง:** ใช้ `ObjectMapper` ที่มีอยู่แล้ว Inject เข้ามา เพื่อสร้าง JSON อย่างปลอดภัย
+- [x] **ปัญหา:** ใน `WalletService` มีการสร้าง JSON metadata ด้วย String concatenation ตรงๆ (เช่น `"{\"reason\":\"" + reason + "\"}"`) ซึ่งเสี่ยง JSON Injection
+- [x] **แนวทาง:** ใช้ `ObjectMapper` ที่มีอยู่แล้ว Inject เข้ามา เพื่อสร้าง JSON อย่างปลอดภัย
 
 ```java
 // ❌ ปัจจุบัน — เสี่ยง JSON Injection

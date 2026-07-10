@@ -458,7 +458,15 @@ public class P2PTransferService {
         transaction.setFromWalletId(wallet.getId());
         transaction.setToWalletId(null);
         transaction.setDescription("Utility bill payment to " + billerCode);
-        transaction.setMetadata("{\"billersCode\":\"" + billerCode + "\",\"accountNumber\":\"" + accountNumber + "\"}");
+        try {
+            Map<String, Object> meta = Map.of(
+                    "billersCode", billerCode,
+                    "accountNumber", accountNumber
+            );
+            transaction.setMetadata(objectMapper.writeValueAsString(meta));
+        } catch (Exception e) {
+            throw new RuntimeException("Failed to serialize bill payment metadata", e);
+        }
 
         Transaction savedTransaction = transactionRepository.save(transaction);
 
@@ -471,7 +479,15 @@ public class P2PTransferService {
             feeTx.setFromWalletId(wallet.getId());
             feeTx.setToWalletId(null);
             feeTx.setDescription("Service fee for bill payment: " + billerCode);
-            feeTx.setMetadata("{\"isFee\":true,\"parentTransactionId\":\"" + savedTransaction.getTransactionId() + "\"}");
+            try {
+                Map<String, Object> feeMeta = Map.of(
+                        "isFee", true,
+                        "parentTransactionId", savedTransaction.getTransactionId()
+                );
+                feeTx.setMetadata(objectMapper.writeValueAsString(feeMeta));
+            } catch (Exception e) {
+                throw new RuntimeException("Failed to serialize fee metadata", e);
+            }
             transactionRepository.save(feeTx);
         }
 
@@ -513,7 +529,12 @@ public class P2PTransferService {
         transaction.setFromWalletId(wallet.getId());
         transaction.setToWalletId(null);
         transaction.setDescription("Credit card payment: " + cardNumber);
-        transaction.setMetadata("{\"cardNumber\":\"" + cardNumber + "\"}");
+        try {
+            Map<String, Object> meta = Map.of("cardNumber", cardNumber);
+            transaction.setMetadata(objectMapper.writeValueAsString(meta));
+        } catch (Exception e) {
+            throw new RuntimeException("Failed to serialize credit card payment metadata", e);
+        }
 
         Transaction savedTransaction = transactionRepository.save(transaction);
 
@@ -526,7 +547,15 @@ public class P2PTransferService {
             feeTx.setFromWalletId(wallet.getId());
             feeTx.setToWalletId(null);
             feeTx.setDescription("Service fee for credit card payment: " + cardNumber);
-            feeTx.setMetadata("{\"isFee\":true,\"parentTransactionId\":\"" + savedTransaction.getTransactionId() + "\"}");
+            try {
+                Map<String, Object> feeMeta = Map.of(
+                        "isFee", true,
+                        "parentTransactionId", savedTransaction.getTransactionId()
+                );
+                feeTx.setMetadata(objectMapper.writeValueAsString(feeMeta));
+            } catch (Exception e) {
+                throw new RuntimeException("Failed to serialize fee metadata", e);
+            }
             transactionRepository.save(feeTx);
         }
 
@@ -560,7 +589,12 @@ public class P2PTransferService {
         transaction.setFromWalletId(wallet.getId());
         transaction.setToWalletId(null);
         transaction.setDescription("Mobile top-up for " + phoneNumber);
-        transaction.setMetadata("{\"phoneNumber\":\"" + phoneNumber + "\"}");
+        try {
+            Map<String, Object> meta = Map.of("phoneNumber", phoneNumber);
+            transaction.setMetadata(objectMapper.writeValueAsString(meta));
+        } catch (Exception e) {
+            throw new RuntimeException("Failed to serialize mobile top-up metadata", e);
+        }
 
         Transaction savedTransaction = transactionRepository.save(transaction);
         walletCommonService.publishTransactionEvent(userId, savedTransaction, false);
@@ -653,11 +687,10 @@ public class P2PTransferService {
     }
 
     private String buildTransferMetadata(String phone, String recipientUserId, String note, String idempotencyKey, Object extraMetadata) {
-        String escapedNote = note == null ? "" : escapeJson(note);
         Map<String, Object> metaMap = new HashMap<>();
         metaMap.put("recipientPhone", phone);
         metaMap.put("recipientUserId", recipientUserId);
-        metaMap.put("note", escapedNote);
+        metaMap.put("note", note == null ? "" : note);
         metaMap.put("idempotencyKey", idempotencyKey == null ? "" : idempotencyKey);
 
         if (extraMetadata instanceof Map<?, ?> map) {
@@ -669,21 +702,7 @@ public class P2PTransferService {
         try {
             return objectMapper.writeValueAsString(metaMap);
         } catch (Exception e) {
-            log.warn("Failed to serialize P2P metadata: {}", e.getMessage());
-            return String.format(
-                "{\"recipientPhone\":\"%s\",\"recipientUserId\":\"%s\",\"note\":\"%s\",\"idempotencyKey\":\"%s\"}",
-                escapeJson(phone),
-                escapeJson(recipientUserId),
-                escapedNote,
-                idempotencyKey == null ? "" : escapeJson(idempotencyKey)
-            );
+            throw new RuntimeException("Failed to serialize transfer metadata", e);
         }
-    }
-
-    private String escapeJson(String value) {
-        if (value == null) {
-            return "";
-        }
-        return value.replace("\\", "\\\\").replace("\"", "\\\"");
     }
 }

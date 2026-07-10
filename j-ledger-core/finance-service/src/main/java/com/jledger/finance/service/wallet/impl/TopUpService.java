@@ -16,6 +16,7 @@ import com.jledger.finance.repository.ledger.AccountRepository;
 import com.jledger.finance.repository.ledger.LedgerEntryRepository;
 import com.jledger.finance.repository.transaction.TransactionRepository;
 import com.jledger.finance.repository.wallet.WalletRepository;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.dao.DataIntegrityViolationException;
@@ -23,6 +24,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
+import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.UUID;
@@ -40,6 +42,7 @@ public class TopUpService {
     private final WalletCacheService walletCacheService;
     private final WalletCommonService walletCommonService;
     private final JLedgerProperties jLedgerProperties;
+    private final ObjectMapper objectMapper;
 
     @Transactional
     public Transaction topUpBank(String userId, BigDecimal amount, Long bankAccountId) {
@@ -85,7 +88,15 @@ public class TopUpService {
         transaction.setDescription(
                 String.format("Bank top-up from %s %s", bankAccount.getBankName(), bankAccount.getAccountNumber())
         );
-        transaction.setMetadata(buildTopUpBankMetadata(bankAccount));
+        try {
+            Map<String, Object> meta = new java.util.HashMap<>();
+            meta.put("bankAccountId", bankAccount.getId());
+            meta.put("bankCode", bankAccount.getBankCode());
+            meta.put("accountNumberMasked", bankAccount.getAccountNumber());
+            transaction.setMetadata(objectMapper.writeValueAsString(meta));
+        } catch (Exception e) {
+            log.warn("Failed to serialize bank top-up metadata", e);
+        }
 
         Transaction savedTransaction = transactionRepository.save(transaction);
         walletCommonService.publishTransactionEvent(userId, savedTransaction, true);
@@ -217,7 +228,12 @@ public class TopUpService {
         transaction.setFromAccountId(jLedgerProperties.getSystem().getAccountId());
         transaction.setToAccountId(userAccount.getId());
         transaction.setDescription("Counter top-up at " + counterCode);
-        transaction.setMetadata("{\"counterCode\":\"" + counterCode + "\"}");
+        try {
+            Map<String, Object> meta = Map.of("counterCode", counterCode);
+            transaction.setMetadata(objectMapper.writeValueAsString(meta));
+        } catch (Exception e) {
+            log.warn("Failed to serialize counter top-up metadata", e);
+        }
 
         Transaction savedTransaction = transactionRepository.save(transaction);
 
@@ -259,7 +275,12 @@ public class TopUpService {
         transaction.setFromAccountId(jLedgerProperties.getSystem().getAccountId());
         transaction.setToAccountId(userAccount.getId());
         transaction.setDescription("Cash top-up at agent " + agentId);
-        transaction.setMetadata("{\"agentId\":\"" + agentId + "\"}");
+        try {
+            Map<String, Object> meta = Map.of("agentId", agentId);
+            transaction.setMetadata(objectMapper.writeValueAsString(meta));
+        } catch (Exception e) {
+            log.warn("Failed to serialize cash top-up metadata", e);
+        }
 
         Transaction savedTransaction = transactionRepository.save(transaction);
 
@@ -268,19 +289,4 @@ public class TopUpService {
         return savedTransaction;
     }
 
-    private String buildTopUpBankMetadata(LinkedBankAccount bankAccount) {
-        return String.format(
-                "{\"bankAccountId\":%d,\"bankCode\":\"%s\",\"accountNumberMasked\":\"%s\"}",
-                bankAccount.getId(),
-                escapeJson(bankAccount.getBankCode()),
-                escapeJson(bankAccount.getAccountNumber())
-        );
-    }
-
-    private String escapeJson(String value) {
-        if (value == null) {
-            return "";
-        }
-        return value.replace("\\", "\\\\").replace("\"", "\\\"");
-    }
 }

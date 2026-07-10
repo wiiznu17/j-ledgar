@@ -178,8 +178,7 @@ public class WalletAdminService {
             Map<String, Object> metaMap = Map.of("reason", reason, "adminAdjustment", true);
             transaction.setMetadata(objectMapper.writeValueAsString(metaMap));
         } catch (Exception e) {
-            log.warn("Failed to serialize metadata for balance adjustment: {}", e.getMessage());
-            transaction.setMetadata("{\"reason\":\"" + reason + "\",\"adminAdjustment\":true}");
+            throw new RuntimeException("Failed to serialize transaction metadata", e);
         }
 
         Transaction savedTransaction = transactionRepository.save(transaction);
@@ -221,8 +220,7 @@ public class WalletAdminService {
             Map<String, Object> metaMap = Map.of("reason", reason, "adminAdjustment", true);
             transaction.setMetadata(objectMapper.writeValueAsString(metaMap));
         } catch (Exception e) {
-            log.warn("Failed to serialize metadata for adjustBalance: {}", e.getMessage());
-            transaction.setMetadata("{\"reason\":\"" + reason + "\",\"adminAdjustment\":true}");
+            throw new RuntimeException("Failed to serialize transaction metadata", e);
         }
 
         transactionRepository.save(transaction);
