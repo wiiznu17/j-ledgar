@@ -19,7 +19,7 @@ import { SecurityEventType, AddressType } from '@prisma/client';
 import * as bcrypt from 'bcryptjs';
 import { randomUUID, randomBytes } from 'crypto';
 import Redis from 'ioredis';
-import { REDIS_CLIENT } from '../../../core/common/constants';
+import { REDIS_CLIENT, REDIS_KEYS } from '../../../core/common/constants';
 import { ConfigService } from '@nestjs/config';
 import { UserAuthService } from './user-auth.service';
 
@@ -281,7 +281,7 @@ export class UserSecurityService {
     const otp = Math.floor(100000 + Math.random() * 900000).toString();
 
     // Store in Redis with 5 minutes TTL
-    const redisKey = `pin_reset:otp:${userId}`;
+    const redisKey = REDIS_KEYS.USER.PIN_RESET_OTP(userId);
     await this.redis.set(
       redisKey,
       JSON.stringify({ email: user.email, otp }),
@@ -313,7 +313,7 @@ export class UserSecurityService {
       throw new BadRequestException('User not found');
     }
 
-    const redisKey = `pin_reset:otp:${userId}`;
+    const redisKey = REDIS_KEYS.USER.PIN_RESET_OTP(userId);
     const otpDataString = await this.redis.get(redisKey);
 
     if (!otpDataString) {
@@ -532,7 +532,7 @@ export class UserSecurityService {
     const expiresAt = new Date(Date.now() + ttlSeconds * 1000).toISOString();
     
     // Store token in Redis
-    await this.redis.set(`pay_token:${token}`, userId, 'EX', ttlSeconds);
+    await this.redis.set(REDIS_KEYS.USER.PAY_TOKEN(token), userId, 'EX', ttlSeconds);
     const maskedToken = token.substring(0, 8) + '...';
     this.logger.log(`Generated dynamic pay token for user ${userId}: ${maskedToken}`);
     

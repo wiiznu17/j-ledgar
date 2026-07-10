@@ -4,7 +4,7 @@ import { IntegrationService } from '../integration/integration.service';
 import { INTERNAL_API_PATHS } from '@repo/dto';
 import { DisputeStatus, BlacklistType } from '@prisma/client';
 import Redis from 'ioredis';
-import { REDIS_CLIENT } from '../../core/common/constants';
+import { REDIS_CLIENT, REDIS_KEYS } from '../../core/common/constants';
 
 @Injectable()
 export class AdminFraudService {
@@ -129,9 +129,9 @@ export class AdminFraudService {
     });
 
     // 2. Sync to Redis for existing legacy logic
-    await this.redis.set(`admin:disputes:${id}:status`, 'REVERSED');
+    await this.redis.set(REDIS_KEYS.ADMIN.DISPUTE_STATUS(id), 'REVERSED');
     await this.redis.set(
-      `admin:disputes:${id}:updatedAt`,
+      REDIS_KEYS.ADMIN.DISPUTE_UPDATED_AT(id),
       new Date().toISOString(),
     );
     return { success: true };
@@ -291,11 +291,11 @@ export class AdminFraudService {
     const dateStr = new Date().toISOString().replace('T', ' ').substring(0, 16);
     const redisPrefix = type === 'IP' ? 'ip' : 'hw';
 
-    await this.redis.set(`blacklist:${redisPrefix}:${target}`, '1');
-    await this.redis.set(`blacklist:reason:${redisPrefix}:${target}`, reason);
-    await this.redis.set(`blacklist:date:${redisPrefix}:${target}`, dateStr);
+    await this.redis.set(REDIS_KEYS.BLACKLIST.BLOCKED(redisPrefix, target), '1');
+    await this.redis.set(REDIS_KEYS.BLACKLIST.REASON(redisPrefix, target), reason);
+    await this.redis.set(REDIS_KEYS.BLACKLIST.DATE(redisPrefix, target), dateStr);
     await this.redis.set(
-      `blacklist:by:${redisPrefix}:${target}`,
+      REDIS_KEYS.BLACKLIST.BY(redisPrefix, target),
       'Compliance Manual',
     );
   }
@@ -316,9 +316,9 @@ export class AdminFraudService {
 
     // 2. Remove from Redis
     const redisPrefix = type === 'IP' ? 'ip' : 'hw';
-    await this.redis.del(`blacklist:${redisPrefix}:${target}`);
-    await this.redis.del(`blacklist:reason:${redisPrefix}:${target}`);
-    await this.redis.del(`blacklist:date:${redisPrefix}:${target}`);
-    await this.redis.del(`blacklist:by:${redisPrefix}:${target}`);
+    await this.redis.del(REDIS_KEYS.BLACKLIST.BLOCKED(redisPrefix, target));
+    await this.redis.del(REDIS_KEYS.BLACKLIST.REASON(redisPrefix, target));
+    await this.redis.del(REDIS_KEYS.BLACKLIST.DATE(redisPrefix, target));
+    await this.redis.del(REDIS_KEYS.BLACKLIST.BY(redisPrefix, target));
   }
 }

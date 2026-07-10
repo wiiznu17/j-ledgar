@@ -1,6 +1,6 @@
 import { Injectable, Inject, HttpException, HttpStatus } from '@nestjs/common';
 import Redis from 'ioredis';
-import { REDIS_CLIENT } from '../../../core/common/constants';
+import { REDIS_CLIENT, REDIS_KEYS } from '../../../core/common/constants';
 
 @Injectable()
 export class TerminalNonceService {
@@ -25,7 +25,7 @@ export class TerminalNonceService {
     }
 
     // 2. Check and Set Nonce in Redis (Atomic SET NX EX)
-    const nonceKey = `terminal:nonce:${terminalId}:${nonce}`;
+    const nonceKey = REDIS_KEYS.MERCHANT.TERMINAL_NONCE(terminalId, nonce);
 
     // SET key value NX EX seconds
     // Returns 'OK' if set, null if already exists

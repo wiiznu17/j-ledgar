@@ -1,6 +1,6 @@
 import { Controller, Get, UseGuards, Logger, Query, Inject } from '@nestjs/common';
 import { Cron, CronExpression } from '@nestjs/schedule';
-import { REDIS_CLIENT } from '../../core/common/constants';
+import { REDIS_CLIENT, REDIS_KEYS } from '../../core/common/constants';
 import Redis from 'ioredis';
 import { AdminJwtGuard } from '../guards/admin-jwt.guard';
 import { AdminRolesGuard } from '../guards/admin-roles.guard';
@@ -12,7 +12,6 @@ import { FinanceService } from '../../core/finance/finance.service';
 @UseGuards(AdminJwtGuard, AdminRolesGuard)
 export class AdminDashboardController {
   private readonly logger = new Logger(AdminDashboardController.name);
-  private readonly CACHE_KEY = 'admin:dashboard:stats';
 
   constructor(
     private readonly integrationService: IntegrationService,
@@ -29,7 +28,7 @@ export class AdminDashboardController {
     // If no custom timeframe, try serving from Redis cache
     if (!from && !to) {
       try {
-        const cached = await this.redis.get(this.CACHE_KEY);
+        const cached = await this.redis.get(REDIS_KEYS.ADMIN.DASHBOARD_STATS);
         if (cached) {
           this.logger.log('[AdminDashboard] Serving stats from Redis cache');
           return JSON.parse(cached);
@@ -48,7 +47,7 @@ export class AdminDashboardController {
     // Save to cache if it's the default timeframe
     if (!from && !to) {
       try {
-        await this.redis.set(this.CACHE_KEY, JSON.stringify(stats), 'EX', 60);
+        await this.redis.set(REDIS_KEYS.ADMIN.DASHBOARD_STATS, JSON.stringify(stats), 'EX', 60);
       } catch (err: any) {
         this.logger.error('[AdminDashboard] Failed to save to Redis cache', err.stack);
       }
@@ -62,7 +61,7 @@ export class AdminDashboardController {
     this.logger.log('[Cron] Refreshing admin dashboard statistics cache...');
     try {
       const stats = await this.computeStats();
-      await this.redis.set(this.CACHE_KEY, JSON.stringify(stats), 'EX', 120);
+      await this.redis.set(REDIS_KEYS.ADMIN.DASHBOARD_STATS, JSON.stringify(stats), 'EX', 120);
       this.logger.log('[Cron] Successfully refreshed dashboard cache');
     } catch (err: any) {
       this.logger.error('[Cron] Failed to refresh dashboard cache', err.stack);

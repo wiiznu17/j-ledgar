@@ -7,7 +7,7 @@ import {
 } from '@nestjs/common';
 import { PrismaService } from '../../../core/prisma/prisma.service';
 import { UserSecurityService } from './user-security.service';
-import { REDIS_CLIENT } from '../../../core/common/constants';
+import { REDIS_CLIENT, REDIS_KEYS } from '../../../core/common/constants';
 import Redis from 'ioredis';
 import { KafkaProducerService } from '../../notification/kafka-producer.service';
 import {
@@ -191,7 +191,7 @@ export class UserProfileService {
     const otp = Math.floor(100000 + Math.random() * 900000).toString();
     const ttlSeconds = 300;
 
-    const redisKey = `email_verification:otp:${userId}`;
+    const redisKey = REDIS_KEYS.USER.EMAIL_VERIFICATION_OTP(userId);
     await this.redis.set(redisKey, JSON.stringify({ email, otp }), 'EX', ttlSeconds);
 
     try {
@@ -211,7 +211,7 @@ export class UserProfileService {
   }
 
   async confirmEmailVerification(userId: string, email: string, otp: string): Promise<{ success: boolean; message: string }> {
-    const redisKey = `email_verification:otp:${userId}`;
+    const redisKey = REDIS_KEYS.USER.EMAIL_VERIFICATION_OTP(userId);
     const rawData = await this.redis.get(redisKey);
 
     if (!rawData) {

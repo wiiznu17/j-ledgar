@@ -2,7 +2,7 @@ import { Injectable, HttpException, HttpStatus, Logger, Inject } from '@nestjs/c
 import { PrismaService } from '../../../../core/prisma/prisma.service';
 import { FinanceService } from '../../../../core/finance/finance.service';
 import { TerminalIdempotencyService } from '../../security/terminal-idempotency.service';
-import { REDIS_CLIENT } from '../../../../core/common/constants';
+import { REDIS_CLIENT, REDIS_KEYS } from '../../../../core/common/constants';
 import Redis from 'ioredis';
 import { randomUUID } from 'crypto';
 import { AuditAction, ResourceType } from '../../../audit/audit.service';
@@ -64,7 +64,7 @@ export class MerchantTerminalPaymentService {
     let resolvedUserId: string | null = null;
     if (body.customerToken) {
       if (body.customerToken.startsWith('PAY-')) {
-        const redisKey = `pay_token:${body.customerToken}`;
+        const redisKey = REDIS_KEYS.USER.PAY_TOKEN(body.customerToken);
         resolvedUserId = await this.redis.get(redisKey);
         if (!resolvedUserId) {
           throw new HttpException('Invalid or expired payment token', HttpStatus.BAD_REQUEST);

@@ -1,6 +1,6 @@
 import { HttpException, HttpStatus, Injectable, Inject } from '@nestjs/common';
 import { PrismaService } from '../../../core/prisma/prisma.service';
-import { REDIS_CLIENT } from '../../../core/common/constants';
+import { REDIS_CLIENT, REDIS_KEYS } from '../../../core/common/constants';
 import Redis from 'ioredis';
 import { randomUUID } from 'crypto';
 
@@ -73,7 +73,7 @@ export class StatementExportService {
       createdAt: new Date().toISOString(),
     };
 
-    const key = `admin:approvals:item:${id}`;
+    const key = REDIS_KEYS.ADMIN.APPROVAL_ITEM(id);
     await this.redis.set(key, JSON.stringify(record));
 
     return {
