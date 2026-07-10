@@ -32,4 +32,12 @@ public interface IntegrationOutboxRepository extends JpaRepository<IntegrationOu
     List<IntegrationOutbox> findByStatusAndEventTypeOrderByCreatedAtDesc(String status, String eventType);
 
     List<IntegrationOutbox> findAllByOrderByCreatedAtDesc();
+
+    @org.springframework.data.jpa.repository.Modifying
+    @org.springframework.transaction.annotation.Transactional
+    @Query("DELETE FROM IntegrationOutbox io WHERE io.status = :status AND io.createdAt < :cutoffTime")
+    int deleteByStatusAndCreatedAtBefore(
+        @Param("status") String status,
+        @Param("cutoffTime") java.time.ZonedDateTime cutoffTime
+    );
 }

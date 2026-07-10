@@ -3,6 +3,7 @@ package com.jledger.finance.service.system;
 import com.jledger.finance.domain.constant.KafkaTopic;
 import com.jledger.finance.domain.entity.IntegrationOutbox;
 import com.jledger.finance.repository.system.IntegrationOutboxRepository;
+import java.time.ZonedDateTime;
 import java.util.List;
 import java.util.concurrent.ExecutionException;
 import lombok.RequiredArgsConstructor;
@@ -31,6 +32,9 @@ public class OutboxProcessor {
 
     @Value("${jledger.outbox.max-retries:5}")
     private int maxRetries;
+
+    @Value("${jledger.outbox.cleanup.retention-days:30}")
+    private int retentionDays;
 
     /**
      * Publishes PENDING outbox events to Kafka.
@@ -81,5 +85,17 @@ public class OutboxProcessor {
                 integrationOutboxRepository.save(pendingEvent);
             }
         }
+    }
+
+    /**
+     * Periodically cleans up PROCESSED outbox events older than the configured retention days.
+     */
+    @Transactional
+    @Scheduled(cron = "${jledger.outbox.cleanup-cron:0 0 2 * * ?}")
+    public void cleanupProcessedEvents() {
+        ZonedDateTime cutoffTime = ZonedDateTime.now().minusDays(retentionDays);
+        LOGGER.info("Starting outbox cleanup for events older than {} (retention period: {} days)", cutoffTime, retentionDays);
+        int deletedCount = integrationOutboxRepository.deleteByStatusAndCreatedAtBefore(PROCESSED_STATUS, cutoffTime);
+        LOGGER.info("Successfully deleted {} processed outbox events", deletedCount);
     }
 }

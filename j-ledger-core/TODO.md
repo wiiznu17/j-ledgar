@@ -165,8 +165,8 @@ public record TransferRequest(
 - [x] **สถานะ:** ปัจจุบันระบบได้รับการแมปผ่าน Nginx Reverse Proxy (แมป `/api/v1/finance` -> `/api/finance`) ทำให้ Client สามารถเรียกใช้งานแบบ Versioned API ได้สำเร็จแล้ว โดยไม่จำเป็นต้องแก้ไข Routing ที่ฝั่ง Java code ในขณะนี้
 
 ### 3.4 Outbox Processor ควรมี Cleanup Job
-- [ ] **ปัญหา:** Event ที่สถานะ `PROCESSED` จะสะสมอยู่ใน DB ไม่มีวันถูกลบ
-- [ ] **แนวทาง:** เพิ่ม `@Scheduled` Cleanup Job ลบ `PROCESSED` events ที่อายุเกิน 30 วัน
+- [x] **ปัญหา:** Event ที่สถานะ `PROCESSED` จะสะสมอยู่ใน DB ไม่มีวันถูกลบ
+- [x] **แนวทาง:** เพิ่ม `@Scheduled` Cleanup Job ลบ `PROCESSED` events ที่อายุเกิน 30 วัน
 
 ### 3.5 เพิ่ม Retry Mechanism สำหรับ Kafka Consumer
 - [ ] **ปัญหา:** `AmlEventConsumer` และ `TransactionEventConsumer` ไม่มีการทำ Retry + Error handling ที่ชัดเจน
