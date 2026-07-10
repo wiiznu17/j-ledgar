@@ -1,5 +1,6 @@
 package com.jledger.finance.service.ledger.impl;
 
+import com.jledger.finance.config.JLedgerProperties;
 import com.jledger.finance.service.ledger.ReconciliationService;
 
 import com.jledger.finance.domain.entity.Account;
@@ -27,7 +28,6 @@ import java.util.concurrent.TimeUnit;
 public class ReconciliationServiceImpl implements ReconciliationService {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(ReconciliationServiceImpl.class);
-    private static final UUID SYSTEM_BANK_ACCOUNT_ID = UUID.fromString("00000000-0000-0000-0000-000000000000");
     private static final String STATUS_MATCHED = "MATCHED";
     private static final String STATUS_DISCREPANCY = "DISCREPANCY";
     private static final String RECONCILIATION_LOCK_KEY = "reconciliation:nightly_lock";
@@ -35,6 +35,7 @@ public class ReconciliationServiceImpl implements ReconciliationService {
     private final AccountRepository accountRepository;
     private final ReconciliationReportRepository reconciliationReportRepository;
     private final RedissonClient redissonClient;
+    private final JLedgerProperties jLedgerProperties;
 
     @Override
     @Scheduled(cron = "0 0 0 * * ?", zone = "Asia/Bangkok")
@@ -76,11 +77,11 @@ public class ReconciliationServiceImpl implements ReconciliationService {
     @Override
     @Transactional
     public ReconciliationReport executeReconciliation(LocalDate reportDate) {
-        BigDecimal systemAssets = accountRepository.findById(SYSTEM_BANK_ACCOUNT_ID)
+        BigDecimal systemAssets = accountRepository.findById(jLedgerProperties.getSystem().getAccountId())
                 .map(Account::getBalance)
                 .orElse(BigDecimal.ZERO);
 
-        BigDecimal userLiabilities = accountRepository.getSumOfBalancesExcluding(SYSTEM_BANK_ACCOUNT_ID);
+        BigDecimal userLiabilities = accountRepository.getSumOfBalancesExcluding(jLedgerProperties.getSystem().getAccountId());
 
         BigDecimal discrepancy = systemAssets.subtract(userLiabilities);
         String status = discrepancy.compareTo(BigDecimal.ZERO) == 0 ? STATUS_MATCHED : STATUS_DISCREPANCY;

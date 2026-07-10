@@ -1,5 +1,6 @@
 package com.jledger.finance.service.compliance;
 
+import com.jledger.finance.config.JLedgerProperties;
 import com.jledger.finance.service.compliance.impl.TransactionLimitServiceImpl;
 
 import com.jledger.finance.domain.entity.TransactionLimit;
@@ -36,6 +37,9 @@ class TransactionLimitServiceTest {
 
     @Mock
     private TransactionRepository transactionRepository;
+
+    @org.mockito.Spy
+    private JLedgerProperties jLedgerProperties = new JLedgerProperties();
 
     @InjectMocks
     private TransactionLimitServiceImpl transactionLimitService;

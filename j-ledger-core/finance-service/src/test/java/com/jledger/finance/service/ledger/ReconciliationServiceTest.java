@@ -1,5 +1,6 @@
 package com.jledger.finance.service.ledger;
 
+import com.jledger.finance.config.JLedgerProperties;
 import com.jledger.finance.service.ledger.impl.ReconciliationServiceImpl;
 
 import com.jledger.finance.domain.entity.Account;
@@ -44,6 +45,9 @@ class ReconciliationServiceTest {
 
     @Mock
     private RLock lock;
+
+    @org.mockito.Spy
+    private JLedgerProperties jLedgerProperties = new JLedgerProperties();
 
     @InjectMocks
     private ReconciliationServiceImpl reconciliationService;

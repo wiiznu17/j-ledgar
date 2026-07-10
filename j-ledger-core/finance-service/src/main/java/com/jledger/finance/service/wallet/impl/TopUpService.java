@@ -1,5 +1,6 @@
 package com.jledger.finance.service.wallet.impl;
 
+import com.jledger.finance.config.JLedgerProperties;
 import com.jledger.finance.service.wallet.WalletService;
 
 import com.jledger.finance.domain.entity.Account;
@@ -38,8 +39,7 @@ public class TopUpService {
     private final LinkedBankAccountService linkedBankAccountService;
     private final WalletCacheService walletCacheService;
     private final WalletCommonService walletCommonService;
-
-    private static final String SYSTEM_ACCOUNT_ID = "00000000-0000-0000-0000-000000000000";
+    private final JLedgerProperties jLedgerProperties;
 
     @Transactional
     public Transaction topUpBank(String userId, BigDecimal amount, Long bankAccountId) {
@@ -59,7 +59,7 @@ public class TopUpService {
             throw new IllegalArgumentException("Bank account is not verified");
         }
 
-        Account systemAccount = accountRepository.findByIdForUpdate(UUID.fromString(SYSTEM_ACCOUNT_ID))
+        Account systemAccount = accountRepository.findByIdForUpdate(jLedgerProperties.getSystem().getAccountId())
                 .orElseThrow(() -> new ResourceNotFoundException("System account not found"));
 
         wallet.setBalance(wallet.getBalance().add(amount));
@@ -80,7 +80,7 @@ public class TopUpService {
         transaction.setStatus(TransactionStatus.COMPLETED);
         transaction.setFromWalletId(null);
         transaction.setToWalletId(wallet.getId());
-        transaction.setFromAccountId(UUID.fromString(SYSTEM_ACCOUNT_ID));
+        transaction.setFromAccountId(jLedgerProperties.getSystem().getAccountId());
         transaction.setToAccountId(userAccount.getId());
         transaction.setDescription(
                 String.format("Bank top-up from %s %s", bankAccount.getBankName(), bankAccount.getAccountNumber())
@@ -114,7 +114,7 @@ public class TopUpService {
         }
 
         try {
-            Account systemAccount = accountRepository.findByIdForUpdate(UUID.fromString(SYSTEM_ACCOUNT_ID))
+            Account systemAccount = accountRepository.findByIdForUpdate(jLedgerProperties.getSystem().getAccountId())
                     .orElseThrow(() -> new ResourceNotFoundException("System account not found"));
 
             Wallet wallet = walletRepository.findByUserIdForUpdate(userId)
@@ -169,7 +169,7 @@ public class TopUpService {
             transaction.setStatus(TransactionStatus.COMPLETED);
             transaction.setFromWalletId(null);
             transaction.setToWalletId(wallet.getId());
-            transaction.setFromAccountId(UUID.fromString(SYSTEM_ACCOUNT_ID));
+            transaction.setFromAccountId(jLedgerProperties.getSystem().getAccountId());
             transaction.setToAccountId(userAccount.getId());
             transaction.setDescription(String.format("%s top-up credit", provider == null ? "EXTERNAL" : provider));
             transaction.setMetadata(metadataJson);
@@ -194,7 +194,7 @@ public class TopUpService {
         }
 
         Account userAccount = walletCommonService.getOrCreateLedgerAccount(userId, wallet.getCurrency());
-        Account systemAccount = accountRepository.findByIdForUpdate(UUID.fromString(SYSTEM_ACCOUNT_ID))
+        Account systemAccount = accountRepository.findByIdForUpdate(jLedgerProperties.getSystem().getAccountId())
                 .orElseThrow(() -> new ResourceNotFoundException("System account not found"));
 
         wallet.setBalance(wallet.getBalance().add(amount));
@@ -214,7 +214,7 @@ public class TopUpService {
         transaction.setStatus(TransactionStatus.COMPLETED);
         transaction.setFromWalletId(null);
         transaction.setToWalletId(wallet.getId());
-        transaction.setFromAccountId(UUID.fromString(SYSTEM_ACCOUNT_ID));
+        transaction.setFromAccountId(jLedgerProperties.getSystem().getAccountId());
         transaction.setToAccountId(userAccount.getId());
         transaction.setDescription("Counter top-up at " + counterCode);
         transaction.setMetadata("{\"counterCode\":\"" + counterCode + "\"}");
@@ -236,7 +236,7 @@ public class TopUpService {
         }
 
         Account userAccount = walletCommonService.getOrCreateLedgerAccount(userId, wallet.getCurrency());
-        Account systemAccount = accountRepository.findByIdForUpdate(UUID.fromString(SYSTEM_ACCOUNT_ID))
+        Account systemAccount = accountRepository.findByIdForUpdate(jLedgerProperties.getSystem().getAccountId())
                 .orElseThrow(() -> new ResourceNotFoundException("System account not found"));
 
         wallet.setBalance(wallet.getBalance().add(amount));
@@ -256,7 +256,7 @@ public class TopUpService {
         transaction.setStatus(TransactionStatus.COMPLETED);
         transaction.setFromWalletId(null);
         transaction.setToWalletId(wallet.getId());
-        transaction.setFromAccountId(UUID.fromString(SYSTEM_ACCOUNT_ID));
+        transaction.setFromAccountId(jLedgerProperties.getSystem().getAccountId());
         transaction.setToAccountId(userAccount.getId());
         transaction.setDescription("Cash top-up at agent " + agentId);
         transaction.setMetadata("{\"agentId\":\"" + agentId + "\"}");

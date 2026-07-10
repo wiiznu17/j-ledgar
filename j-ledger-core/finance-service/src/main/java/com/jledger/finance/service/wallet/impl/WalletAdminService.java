@@ -1,5 +1,6 @@
 package com.jledger.finance.service.wallet.impl;
 
+import com.jledger.finance.config.JLedgerProperties;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.jledger.finance.domain.entity.Account;
 import com.jledger.finance.domain.entity.LedgerEntry;
@@ -37,8 +38,7 @@ public class WalletAdminService {
     private final WalletCommonService walletCommonService;
     private final LinkedBankAccountService linkedBankAccountService;
     private final ObjectMapper objectMapper;
-
-    private static final String SYSTEM_ACCOUNT_ID = "00000000-0000-0000-0000-000000000000";
+    private final JLedgerProperties jLedgerProperties;
 
     @Transactional
     public Wallet createWallet(String userId, String currency) {
@@ -156,7 +156,7 @@ public class WalletAdminService {
         accountRepository.save(userAccount);
 
         // Update System Account (for reconciliation)
-        Account systemAccount = accountRepository.findByIdForUpdate(UUID.fromString(SYSTEM_ACCOUNT_ID))
+        Account systemAccount = accountRepository.findByIdForUpdate(jLedgerProperties.getSystem().getAccountId())
                 .orElseThrow(() -> new ResourceNotFoundException("System account not found"));
         systemAccount.setBalance(systemAccount.getBalance().add(amount));
         accountRepository.save(systemAccount);
@@ -170,7 +170,7 @@ public class WalletAdminService {
         transaction.setStatus(TransactionStatus.COMPLETED);
         transaction.setFromWalletId(null);
         transaction.setToWalletId(wallet.getId());
-        transaction.setFromAccountId(UUID.fromString(SYSTEM_ACCOUNT_ID));
+        transaction.setFromAccountId(jLedgerProperties.getSystem().getAccountId());
         transaction.setToAccountId(userAccount.getId());
         transaction.setDescription("Admin balance adjustment: " + reason);
         

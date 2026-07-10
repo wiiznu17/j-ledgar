@@ -109,8 +109,8 @@ return "TXN" + Ulid.fast().toString();
 ```
 
 ### 2.3 Hardcoded Values กระจายอยู่ทั่ว — ควรย้ายเข้า Config
-- [ ] **ปัญหา:** ค่าสำคัญๆ เช่น `DAILY_LIMIT = 1_000_000`, `TRANSACTION_LIMIT = 50_000`, `SYSTEM_ACCOUNT_ID` ถูก Hardcode ไว้ในโค้ด
-- [ ] **แนวทาง:** ย้ายเข้า `application.yml` แล้วใช้ `@Value` หรือ `@ConfigurationProperties`
+- [x] **ปัญหา:** ค่าสำคัญๆ เช่น `DAILY_LIMIT = 1_000_000`, `TRANSACTION_LIMIT = 50_000`, `SYSTEM_ACCOUNT_ID` ถูก Hardcode ไว้ในโค้ด
+- [x] **แนวทาง:** ย้ายเข้า `application.yml` แล้วใช้ `@Value` หรือ `@ConfigurationProperties`
 
 ```yaml
 # application.yml

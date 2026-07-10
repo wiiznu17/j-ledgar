@@ -42,6 +42,12 @@ spring:
 jledger:
   internal:
     secret: ${JLEDGER_INTERNAL_SECRET}
+  limits:
+    daily: 1000000
+    per-transaction: 500000
+    monthly: 5000000
+  system:
+    account-id: "00000000-0000-0000-0000-000000000000"
 
   redis:
     redisson:

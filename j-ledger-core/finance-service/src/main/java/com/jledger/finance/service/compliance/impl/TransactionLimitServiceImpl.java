@@ -1,5 +1,6 @@
 package com.jledger.finance.service.compliance.impl;
 
+import com.jledger.finance.config.JLedgerProperties;
 import com.jledger.finance.domain.entity.TransactionLimit;
 import com.jledger.finance.domain.enums.TransactionLimitType;
 import com.jledger.finance.exception.ConflictException;
@@ -21,10 +22,7 @@ import org.springframework.transaction.annotation.Transactional;
 public class TransactionLimitServiceImpl implements TransactionLimitService {
 
     private final TransactionLimitRepository transactionLimitRepository;
-
-    private static final BigDecimal DEFAULT_PER_TRANSACTION_LIMIT = new BigDecimal("500000");
-    private static final BigDecimal DEFAULT_DAILY_LIMIT = new BigDecimal("1000000");
-    private static final BigDecimal DEFAULT_MONTHLY_LIMIT = new BigDecimal("5000000");
+    private final JLedgerProperties jLedgerProperties;
 
     @Override
     @Transactional
@@ -99,9 +97,9 @@ public class TransactionLimitServiceImpl implements TransactionLimitService {
 
     private BigDecimal getDefaultLimit(TransactionLimitType limitType) {
         return switch (limitType) {
-            case PER_TRANSACTION -> DEFAULT_PER_TRANSACTION_LIMIT;
-            case DAILY -> DEFAULT_DAILY_LIMIT;
-            case MONTHLY -> DEFAULT_MONTHLY_LIMIT;
+            case PER_TRANSACTION -> jLedgerProperties.getLimits().getPerTransaction();
+            case DAILY -> jLedgerProperties.getLimits().getDaily();
+            case MONTHLY -> jLedgerProperties.getLimits().getMonthly();
         };
     }
 

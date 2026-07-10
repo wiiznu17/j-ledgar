@@ -1,5 +1,6 @@
 package com.jledger.finance.service.wallet;
 
+import com.jledger.finance.config.JLedgerProperties;
 import com.jledger.finance.service.wallet.impl.*;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -102,6 +103,8 @@ class WalletServiceTest {
                 objectMapper
         );
 
+        JLedgerProperties jLedgerProperties = new JLedgerProperties();
+
         WalletAdminService walletAdminService = new WalletAdminService(
                 walletRepository,
                 transactionRepository,
@@ -110,7 +113,8 @@ class WalletServiceTest {
                 walletCacheService,
                 walletCommonService,
                 linkedBankAccountService,
-                objectMapper
+                objectMapper,
+                jLedgerProperties
         );
 
         TopUpService topUpService = new TopUpService(
@@ -120,7 +124,8 @@ class WalletServiceTest {
                 ledgerEntryRepository,
                 linkedBankAccountService,
                 walletCacheService,
-                walletCommonService
+                walletCommonService,
+                jLedgerProperties
         );
 
         P2PTransferService p2pTransferService = new P2PTransferService(

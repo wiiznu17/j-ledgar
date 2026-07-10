@@ -20,7 +20,6 @@ import org.springframework.transaction.annotation.Transactional;
 public class PaymentServiceImpl implements PaymentService {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(PaymentServiceImpl.class);
-    private static final UUID SYSTEM_BANK_ACCOUNT_ID = UUID.fromString("00000000-0000-0000-0000-000000000000");
     private static final String DEFAULT_CURRENCY = "THB";
 
     private final PaymentTransactionRepository paymentTransactionRepository;
