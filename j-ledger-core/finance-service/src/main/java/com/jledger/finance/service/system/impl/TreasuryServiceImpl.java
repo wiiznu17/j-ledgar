@@ -114,10 +114,7 @@ public class TreasuryServiceImpl implements TreasuryService {
     }
     
     private String generateReadableTransactionId() {
-        java.time.format.DateTimeFormatter formatter = java.time.format.DateTimeFormatter.ofPattern("yyMMdd");
-        String dateStr = java.time.LocalDate.now().format(formatter);
-        int randomNum = (int) (Math.random() * 900000) + 100000;
-        return "TXN" + dateStr + randomNum;
+        return "TXN" + com.jledger.finance.util.Ulid.fast().toString();
     }
     
     @Override

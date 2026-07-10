@@ -96,8 +96,8 @@ public class TransferServiceImpl implements TransferService {
 ```
 
 ### 2.2 Transaction ID Generation มีความเสี่ยง Collision สูง
-- [ ] **ปัญหา:** `generateReadableTransactionId()` ใช้ `Math.random()` เพื่อสร้าง 6 หลัก → โอกาสชนกันสูงมากในระบบ Production (Birthday Problem)
-- [ ] **แนวทาง:** ใช้ Snowflake ID, ULID, หรือ UUID v7 (ที่เรียงตามเวลาได้) แทน `Math.random()`
+- [x] **ปัญหา:** `generateReadableTransactionId()` ใช้ `Math.random()` เพื่อสร้าง 6 หลัก → โอกาสชนกันสูงมากในระบบ Production (Birthday Problem)
+- [x] **แนวทาง:** ใช้ Snowflake ID, ULID, หรือ UUID v7 (ที่เรียงตามเวลาได้) แทน `Math.random()`
 
 ```java
 // ❌ ปัจจุบัน — มีโอกาสซ้ำกัน

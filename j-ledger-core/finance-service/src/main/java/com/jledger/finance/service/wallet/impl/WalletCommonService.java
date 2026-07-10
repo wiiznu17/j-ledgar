@@ -31,10 +31,7 @@ public class WalletCommonService {
     private final ObjectMapper objectMapper;
 
     public String generateReadableTransactionId() {
-        java.time.format.DateTimeFormatter formatter = java.time.format.DateTimeFormatter.ofPattern("yyMMdd");
-        String dateStr = java.time.LocalDate.now().format(formatter);
-        int randomNum = (int) (Math.random() * 900000) + 100000;
-        return "TXN" + dateStr + randomNum;
+        return "TXN" + com.jledger.finance.util.Ulid.fast().toString();
     }
 
     public Account getOrCreateLedgerAccount(String userId, String currency) {
