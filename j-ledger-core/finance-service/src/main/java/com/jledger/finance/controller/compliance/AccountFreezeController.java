@@ -1,6 +1,11 @@
 package com.jledger.finance.controller.compliance;
 
 import com.jledger.finance.service.compliance.AccountFreezeService;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -14,6 +19,7 @@ import java.util.Map;
 @RestController
 @RequestMapping("/api/accounts")
 @RequiredArgsConstructor
+@Tag(name = "Account Freeze API", description = "Endpoints for administrative freeze and unfreeze of wallets")
 public class AccountFreezeController {
 
     private final AccountFreezeService accountFreezeService;
@@ -26,8 +32,13 @@ public class AccountFreezeController {
      * @return the updated account status
      */
     @PostMapping("/{walletId}/freeze")
+    @Operation(summary = "Freeze a wallet account", description = "Performs an administrative freeze on a wallet account by its internal ID")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Account frozen successfully"),
+            @ApiResponse(responseCode = "404", description = "Wallet not found")
+    })
     public ResponseEntity<Map<String, Object>> freezeAccount(
-            @PathVariable Long walletId,
+            @Parameter(description = "Wallet ID") @PathVariable Long walletId,
             @RequestBody Map<String, String> body
     ) {
         String reason = body.getOrDefault("reason", "Administrative freeze");
@@ -50,8 +61,13 @@ public class AccountFreezeController {
      * @return the updated account status
      */
     @PostMapping("/{walletId}/unfreeze")
+    @Operation(summary = "Unfreeze a wallet account", description = "Performs an administrative unfreeze on a wallet account by its internal ID")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Account unfrozen successfully"),
+            @ApiResponse(responseCode = "404", description = "Wallet not found")
+    })
     public ResponseEntity<Map<String, Object>> unfreezeAccount(
-            @PathVariable Long walletId,
+            @Parameter(description = "Wallet ID") @PathVariable Long walletId,
             @RequestBody Map<String, String> body
     ) {
         String reason = body.getOrDefault("reason", "Administrative unfreeze");
@@ -73,7 +89,13 @@ public class AccountFreezeController {
      * @return the frozen status
      */
     @GetMapping("/{walletId}/frozen-status")
-    public ResponseEntity<Map<String, Object>> checkFrozenStatus(@PathVariable Long walletId) {
+    @Operation(summary = "Check if account is frozen", description = "Queries the frozen status of a wallet account")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Status retrieved successfully"),
+            @ApiResponse(responseCode = "404", description = "Wallet not found")
+    })
+    public ResponseEntity<Map<String, Object>> checkFrozenStatus(
+            @Parameter(description = "Wallet ID") @PathVariable Long walletId) {
         boolean isFrozen = accountFreezeService.isAccountFrozen(walletId);
 
         return ResponseEntity.ok(Map.of(
@@ -91,9 +113,14 @@ public class AccountFreezeController {
      * @return the updated account status
      */
     @PostMapping("/{walletId}/freeze/suspicious-activity")
+    @Operation(summary = "Freeze account due to suspicious activity", description = "Automatically freezes an account based on suspicious activity ID")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Account frozen successfully"),
+            @ApiResponse(responseCode = "404", description = "Wallet or suspicious activity not found")
+    })
     public ResponseEntity<Map<String, Object>> freezeAccountDueToSuspiciousActivity(
-            @PathVariable Long walletId,
-            @RequestParam String suspiciousActivityId
+            @Parameter(description = "Wallet ID") @PathVariable Long walletId,
+            @Parameter(description = "Suspicious activity ID") @RequestParam String suspiciousActivityId
     ) {
         var wallet = accountFreezeService.freezeAccountDueToSuspiciousActivity(walletId, suspiciousActivityId);
 
@@ -113,9 +140,14 @@ public class AccountFreezeController {
      * @return the updated account status
      */
     @PostMapping("/{walletId}/unfreeze/after-investigation")
+    @Operation(summary = "Unfreeze account after investigation", description = "Unfreezes an account once the investigation is cleared by an auditor")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Account unfrozen successfully"),
+            @ApiResponse(responseCode = "404", description = "Wallet not found")
+    })
     public ResponseEntity<Map<String, Object>> unfreezeAccountAfterInvestigation(
-            @PathVariable Long walletId,
-            @RequestParam String clearedBy
+            @Parameter(description = "Wallet ID") @PathVariable Long walletId,
+            @Parameter(description = "Cleared by username/system") @RequestParam String clearedBy
     ) {
         var wallet = accountFreezeService.unfreezeAccountAfterInvestigation(walletId, clearedBy);
 
