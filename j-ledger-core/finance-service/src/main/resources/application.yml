@@ -9,9 +9,14 @@ spring:
     bootstrap-servers: ${JLEDGER_KAFKA_BOOTSTRAP_SERVERS:kafka:29092}
 
   datasource:
-    url: ${JLEDGER_DATASOURCE_URL}
-    username: ${JLEDGER_DATASOURCE_USERNAME}
-    password: ${JLEDGER_DATASOURCE_PASSWORD}
+    primary:
+      jdbc-url: ${JLEDGER_DATASOURCE_URL}
+      username: ${JLEDGER_DATASOURCE_USERNAME}
+      password: ${JLEDGER_DATASOURCE_PASSWORD}
+    replica:
+      jdbc-url: ${JLEDGER_DATASOURCE_READ_URL:${JLEDGER_DATASOURCE_URL}}
+      username: ${JLEDGER_DATASOURCE_USERNAME}
+      password: ${JLEDGER_DATASOURCE_PASSWORD}
 
   redis:
     host: ${SPRING_REDIS_HOST:localhost}

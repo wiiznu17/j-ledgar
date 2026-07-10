@@ -233,6 +233,16 @@
 - [ ] เพิ่ม CDN สำหรับ static assets (images, logos)
 - [ ] Implement image optimization pipeline (resize, compress on upload)
 
+### MIG-06: Admin Dashboard Optimization (Redis vs Read Replica)
+- [x] **ปัญหา:** `AdminDashboardController` ทำงานหนักมาก คิวรีสด วนลูป LedgerEntries แบบ N+1 และสแกนรายการธุรกรรมสูงสุด 500 แถวมาคำนวณในแรมใหม่ทุกครั้งที่กดโหลดหน้า Dashboard
+- [x] **แนวทางแก้ไข (Dual-Tier Strategy):**
+  - [x] **1. เพิ่ม Redis caching สำหรับ Real-time Stat Cards (KPIs):**
+    - [x] เก็บสะสมตัวเลขยอดเงินกองกลาง (Total System Balance), รายได้สะสม (Total Revenue), ภาษีคงค้าง (VAT Payable) และ Active Users ลง Redis
+    - [x] ใช้ Event-driven update ผ่านการรับ Event จาก Kafka หรือใช้ Cron/Scheduled refresh ดึงจากฐานข้อมูลทุกๆ 1-5 นาที
+  - [x] **2. ใช้ Read Replica สำหรับข้อมูลขนาดใหญ่และตารางกรองข้อมูล:**
+    - [x] แยก Connection สำหรับคิวรีตารางธุรกรรมล่าสุด (Recent Transactions), กราฟยอดธุรกรรมย้อนหลัง 30 วัน (Historical charts) และคำขออนุมัติ KYC (KYC queue) ไปที่ Read Replica
+    - [x] ใช้ `@Transactional(readOnly = true)` ใน Java Core หรือแบ่ง Read Pool ใน NestJS
+
 ---
 
 ## ℹ️ Notes

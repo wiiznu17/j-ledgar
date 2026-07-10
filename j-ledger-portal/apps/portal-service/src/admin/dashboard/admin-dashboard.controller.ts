@@ -1,4 +1,7 @@
-import { Controller, Get, UseGuards, Logger, Query } from '@nestjs/common';
+import { Controller, Get, UseGuards, Logger, Query, Inject } from '@nestjs/common';
+import { Cron, CronExpression } from '@nestjs/schedule';
+import { REDIS_CLIENT } from '../../core/common/constants';
+import Redis from 'ioredis';
 import { AdminJwtGuard } from '../guards/admin-jwt.guard';
 import { AdminRolesGuard } from '../guards/admin-roles.guard';
 import { IntegrationService } from '../../modules/integration/integration.service';
@@ -9,11 +12,13 @@ import { FinanceService } from '../../core/finance/finance.service';
 @UseGuards(AdminJwtGuard, AdminRolesGuard)
 export class AdminDashboardController {
   private readonly logger = new Logger(AdminDashboardController.name);
+  private readonly CACHE_KEY = 'admin:dashboard:stats';
 
   constructor(
     private readonly integrationService: IntegrationService,
     private readonly kycService: KycService,
     private readonly financeService: FinanceService,
+    @Inject(REDIS_CLIENT) private readonly redis: Redis,
   ) {}
 
   @Get('stats')
@@ -21,10 +26,50 @@ export class AdminDashboardController {
     @Query('from') from?: string,
     @Query('to') to?: string,
   ) {
+    // If no custom timeframe, try serving from Redis cache
+    if (!from && !to) {
+      try {
+        const cached = await this.redis.get(this.CACHE_KEY);
+        if (cached) {
+          this.logger.log('[AdminDashboard] Serving stats from Redis cache');
+          return JSON.parse(cached);
+        }
+      } catch (err: any) {
+        this.logger.error('[AdminDashboard] Failed to read from Redis cache', err.stack);
+      }
+    }
+
     this.logger.log(
-      `[AdminDashboard] Fetching aggregated stats from=${from} to=${to}`,
+      `[AdminDashboard] Cache miss or custom range. Fetching aggregated stats from=${from} to=${to}`,
     );
 
+    const stats = await this.computeStats(from, to);
+
+    // Save to cache if it's the default timeframe
+    if (!from && !to) {
+      try {
+        await this.redis.set(this.CACHE_KEY, JSON.stringify(stats), 'EX', 60);
+      } catch (err: any) {
+        this.logger.error('[AdminDashboard] Failed to save to Redis cache', err.stack);
+      }
+    }
+
+    return stats;
+  }
+
+  @Cron(CronExpression.EVERY_MINUTE)
+  async refreshDashboardStatsCache() {
+    this.logger.log('[Cron] Refreshing admin dashboard statistics cache...');
+    try {
+      const stats = await this.computeStats();
+      await this.redis.set(this.CACHE_KEY, JSON.stringify(stats), 'EX', 120);
+      this.logger.log('[Cron] Successfully refreshed dashboard cache');
+    } catch (err: any) {
+      this.logger.error('[Cron] Failed to refresh dashboard cache', err.stack);
+    }
+  }
+
+  private async computeStats(from?: string, to?: string) {
     // 1. Fetch KYC Stats (filtered by date)
     const kycStats = await this.kycService.getKYCStats(from, to);
 

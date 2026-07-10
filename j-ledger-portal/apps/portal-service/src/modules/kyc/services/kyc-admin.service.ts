@@ -338,13 +338,13 @@ export class KycAdminService {
     }
 
     const [pending, approvedToday, rejectedToday] = await Promise.all([
-      this.prisma.user.count({
+      this.prisma.read.user.count({
         where: { status: UserStatus.PENDING_APPROVAL },
       }),
-      this.prisma.kYCData.count({
+      this.prisma.read.kYCData.count({
         where: approvedQuery,
       }),
-      this.prisma.kYCData.count({
+      this.prisma.read.kYCData.count({
         where: rejectedQuery,
       }),
     ]);
@@ -353,7 +353,7 @@ export class KycAdminService {
   }
 
   async getActiveUsersCount() {
-    return this.prisma.user.count({
+    return this.prisma.read.user.count({
       where: {
         status: UserStatus.ACTIVE,
       },
@@ -361,7 +361,7 @@ export class KycAdminService {
   }
 
   async getActiveUsersCountBefore(date: Date) {
-    return this.prisma.user.count({
+    return this.prisma.read.user.count({
       where: {
         status: UserStatus.ACTIVE,
         createdAt: { lt: date },

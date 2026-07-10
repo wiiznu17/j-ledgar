@@ -10,6 +10,7 @@ import org.springframework.data.domain.PageRequest;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import org.springframework.transaction.annotation.Transactional;
 import java.util.UUID;
 
 @RestController
@@ -21,6 +22,7 @@ public class LedgerEntryController {
     private final LedgerEntryRepository ledgerEntryRepository;
 
     @GetMapping("/account/{accountId}")
+    @Transactional(readOnly = true)
     @Operation(summary = "Get ledger entries for an account", description = "Returns a paginated list of credit/debit entries for a specific internal account")
     public ResponseEntity<Page<LedgerEntry>> getHistoryByAccountId(
             @PathVariable UUID accountId,

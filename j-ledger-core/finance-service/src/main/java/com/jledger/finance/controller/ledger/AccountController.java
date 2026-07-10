@@ -14,6 +14,7 @@ import org.springframework.data.domain.PageRequest;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import org.springframework.transaction.annotation.Transactional;
 import java.util.UUID;
 
 @RestController
@@ -26,6 +27,7 @@ public class AccountController {
     private final AccountService accountService;
 
     @GetMapping
+    @Transactional(readOnly = true)
     @Operation(summary = "List all internal accounts", description = "Returns a paginated list of accounts")
     public ResponseEntity<Page<Account>> getAccounts(
             @RequestParam(defaultValue = "0") int page,
@@ -37,6 +39,7 @@ public class AccountController {
     }
 
     @GetMapping("/{id}")
+    @Transactional(readOnly = true)
     @Operation(summary = "Get account by ID", description = "Returns a single account record")
     public ResponseEntity<Account> getAccountById(@PathVariable UUID id) {
         return accountRepository.findById(id)
@@ -54,6 +57,7 @@ public class AccountController {
     }
 
     @GetMapping("/user/{userId}")
+    @Transactional(readOnly = true)
     @Operation(summary = "Get account by user ID", description = "Returns the first account found for the given user ID")
     public ResponseEntity<Account> getAccountByUserId(@PathVariable UUID userId) {
         java.util.List<Account> accounts = accountRepository.findByUserId(userId);
@@ -64,6 +68,7 @@ public class AccountController {
     }
 
     @GetMapping("/type/{type}")
+    @Transactional(readOnly = true)
     @Operation(summary = "Get accounts by type", description = "Returns all accounts matching the given type")
     public ResponseEntity<java.util.List<Account>> getAccountsByType(@PathVariable String type) {
         try {
