@@ -19,6 +19,8 @@
 | **DevOps & Infrastructure** | ⭐⭐ | ⭐⭐⭐⭐ |
 
 ### ✅ สิ่งที่ทำได้ดีแล้ว (จุดแข็ง)
+- **Facade Pattern & God Object Decomposition** — แยก `WalletService` ขนาด 1,634 บรรทัดออกเป็น 7 Domain Services ย่อย ทำงานอิสระจากกัน ทำให้อ่านง่าย ปรับแต่งง่าย ไม่ชนกัน
+- **Constructor Injection** — ใช้ `@RequiredArgsConstructor` (Lombok) ในทุก Wallet Services เพื่อลด Hidden dependency และทำ Unit Test ได้ง่ายขึ้น
 - **Distributed Locking** ด้วย Redisson (deadlock prevention ทำ Account ID sorting)
 - **Idempotency** ด้วย Redis (`RedisIdempotencyService`)
 - **Transactional Outbox Pattern** พร้อม Dead Letter Queue, Max Retries
@@ -34,19 +36,19 @@
 ## 🔴 Priority 1 — Critical (แก้ก่อน เพราะกระทบ Quality ทั้งระบบ)
 
 ### 1.1 `WalletService.java` เป็น God Object — ต้อง Refactor
-- [ ] **ปัญหา:** ไฟล์เดียว 1,634 บรรทัด รวมทุกอย่าง (Top-up, Transfer, QR, Bank Account, Balance, Cache, Outbox) เป็น Anti-pattern ที่เรียกว่า "God Object"
-- [ ] **แนวทาง:** แตกออกตาม Domain Responsibility
+- [x] **ปัญหา:** ไฟล์เดียว 1,634 บรรทัด รวมทุกอย่าง (Top-up, Transfer, QR, Bank Account, Balance, Cache, Outbox) เป็น Anti-pattern ที่เรียกว่า "God Object"
+- [x] **แนวทาง:** แตกออกตาม Domain Responsibility
   - `TopUpService` — ดูแล `topUpBank()`, `topUpCash()`, `topUpCounter()`, `creditTopUpFromExternal()`
   - `P2PTransferService` — ดูแล `transferByPhone()`, `transferByWalletId()`, `previewTransfer()`
   - `WalletQueryService` — ดูแล `getWallet()`, `getTransactions()`, `getTopUpHistory()`
   - `LinkedBankAccountService` — ดูแล CRUD ของ `LinkedBankAccount`
   - `WalletAdminService` — ดูแล `freeze`, `unfreeze`, `adjustBalance`, `activate`, `deactivate`
   - `WalletCacheService` — ดูแลเรื่อง Redis Cache (Cache Invalidation Strategy)
-- [ ] **ประโยชน์:** อ่านง่าย, ทดสอบง่าย, ทุกคนแก้โค้ดไม่ชนกัน
+- [x] **ประโยชน์:** อ่านง่าย, ทดสอบง่าย, ทุกคนแก้โค้ดไม่ชนกัน
 
 ### 1.2 ใช้ `@Autowired` แบบ Field Injection — ต้องเปลี่ยนเป็น Constructor Injection
-- [ ] **ปัญหา:** ใน `WalletService` ใช้ `@Autowired` ที่ Field ทั้งหมด (9 dependencies) ซึ่งทำให้ Unit Test ต้องใช้ Reflection และมี Hidden dependencies
-- [ ] **แนวทาง:** เปลี่ยนเป็น Constructor Injection ด้วย `@RequiredArgsConstructor` (Lombok) เหมือนที่ทำใน `TransferService` ซึ่งเป็นตัวอย่างที่ดีมากอยู่แล้ว
+- [x] **ปัญหา:** ใน `WalletService` ใช้ `@Autowired` ที่ Field ทั้งหมด (9 dependencies) ซึ่งทำให้ Unit Test ต้องใช้ Reflection และมี Hidden dependencies
+- [x] **แนวทาง:** เปลี่ยนเป็น Constructor Injection ด้วย `@RequiredArgsConstructor` (Lombok) เหมือนที่ทำใน `TransferService` ซึ่งเป็นตัวอย่างที่ดีมากอยู่แล้ว
 
 ```java
 // ❌ ปัจจุบัน (WalletService)
@@ -234,11 +236,11 @@ ENTRYPOINT ["java", "-XX:+UseContainerSupport", "-XX:MaxRAMPercentage=75", "-jar
 
 | Priority | จำนวน | สถานะ |
 |----------|:-----:|:-----:|
-| 🔴 Critical | 3 | `[ ]` รอทำ |
+| 🔴 Critical | 1 | `[ ]` รอทำ |
 | 🟡 High | 4 | `[ ]` รอทำ |
 | 🟢 Medium | 4 | `[ ]` รอทำ |
 | 🔵 Nice-to-Have | 6 | `[ ]` รอทำ |
-| **รวม** | **17** | |
+| **รวม** | **15** | |
 
 ---
 

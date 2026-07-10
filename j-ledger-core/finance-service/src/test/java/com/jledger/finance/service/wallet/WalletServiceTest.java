@@ -70,7 +70,6 @@ class WalletServiceTest {
     @Mock
     private SystemService systemService;
 
-    @InjectMocks
     private WalletService walletService;
 
     private static final String USER_ID = "11111111-1111-1111-1111-111111111111";
@@ -82,6 +81,65 @@ class WalletServiceTest {
     void setUp() {
         // Standard lenient mock for Redis Template's opsForValue()
         lenient().doReturn(valueOperations).when(redisTemplate).opsForValue();
+
+        WalletCommonService walletCommonService = new WalletCommonService(
+                accountRepository,
+                ledgerEntryRepository,
+                integrationOutboxRepository,
+                jdbcTemplate,
+                objectMapper
+        );
+        WalletCacheService walletCacheService = new WalletCacheService(redisTemplate);
+        LinkedBankAccountService linkedBankAccountService = new LinkedBankAccountService(linkedBankAccountRepository);
+
+        WalletQueryService walletQueryService = new WalletQueryService(
+                walletRepository,
+                transactionRepository,
+                walletCommonService,
+                redisTemplate,
+                objectMapper
+        );
+
+        WalletAdminService walletAdminService = new WalletAdminService(
+                walletRepository,
+                transactionRepository,
+                accountRepository,
+                ledgerEntryRepository,
+                walletCacheService,
+                walletCommonService,
+                linkedBankAccountService,
+                objectMapper
+        );
+
+        TopUpService topUpService = new TopUpService(
+                walletRepository,
+                transactionRepository,
+                accountRepository,
+                ledgerEntryRepository,
+                linkedBankAccountService,
+                walletCacheService,
+                walletCommonService
+        );
+
+        P2PTransferService p2pTransferService = new P2PTransferService(
+                walletRepository,
+                transactionRepository,
+                accountRepository,
+                ledgerEntryRepository,
+                jdbcTemplate,
+                systemService,
+                objectMapper,
+                walletCacheService,
+                walletCommonService
+        );
+
+        walletService = new WalletService(
+                walletQueryService,
+                walletAdminService,
+                linkedBankAccountService,
+                topUpService,
+                p2pTransferService
+        );
     }
 
     @Nested
