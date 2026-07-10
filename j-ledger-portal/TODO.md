@@ -1,6 +1,6 @@
 # J-Ledger Portal – TODO / Code Health Checklist
 
-> สแกนเมื่อ: 2026-06-03
+> สแกนเมื่อ: 2026-06-03 (อัปเดตล่าสุด: 2026-06-24)
 > สแกนโดย: Antigravity AI Pair Programmer
 
 ---
@@ -14,6 +14,8 @@
   - **Fix**: throw error เมื่อ `JLEDGER_INTERNAL_SECRET` ไม่มี
 - [ ] `apps/portal-service/src/modules/reporting/reporting.service.ts:22` — fallback `'default_internal_secret'` hardcoded
   - **Fix**: ให้ ConfigService throw error เมื่อไม่มีค่า
+- [ ] `apps/portal-service/prisma/seed.ts:562` — fallback `'default_internal_secret'` hardcoded ใน seed script → หาก seed ถูกรันใน production โดยไม่ตั้ง env จะใช้ค่านี้
+  - **Fix**: throw error เมื่อ `JLEDGER_INTERNAL_SECRET` ไม่มี
 
 ### SEC-02: OTP/Token ถูก Log ใน Production
 - [x] `apps/portal-service/src/modules/identity/services/user-security.service.ts:302` — เปลี่ยนเป็น `this.logger.warn` + เพิ่ม comment warning (เก็บ OTP ไว้ชั่วคราวเพราะยังไม่มีระบบส่งจริง)
@@ -26,6 +28,9 @@
 - [ ] `apps/portal-service/src/modules/identity/services/user-profile.service.ts:191` — ใช้ `Math.random()` สร้าง OTP → ต้องเปลี่ยนเป็น `crypto.randomInt()`
 - [ ] `apps/portal-service/src/modules/identity/services/user-registration.service.ts:698` — ใช้ `Math.random()` สร้าง OTP → ต้องเปลี่ยนเป็น `crypto.randomInt()`
 - [ ] `apps/admin-web/src/lib/auth/csrf.ts:10` — ใช้ `Math.random()` สร้าง CSRF token → ไม่ปลอดภัยเพียงพอ
+- [ ] `apps/portal-service/src/modules/billing/billing.service.ts:54` — ใช้ `Math.random()` สร้าง Invoice number random part → อาจ collide ควรใช้ `crypto.randomBytes()`
+- [ ] `apps/portal-service/src/core/finance/finance.service.ts:379` — ใช้ `Math.random()` สร้าง Top-up reference ID → financial reference ควรใช้ `crypto.randomUUID()`
+- [ ] `apps/portal-service/src/app.module.ts:44` — fallback Trace ID ใช้ `Math.random().toString(36).slice(2, 9)` แค่ 7 ตัวอักษร → อาจ collide ควรใช้ `crypto.randomUUID()`
 
 ### SEC-04: Cookie sameSite ไม่ได้ตั้งทั้งระบบ
 - [ ] `apps/admin-web/src/app/actions/auth.ts` — cookies ทั้งหมด (admin_session, refresh_token, user_id, user_role, user_permissions) ไม่ได้ตั้ง `sameSite` → ต้องเพิ่ม `sameSite: 'lax'` หรือ `'strict'`
@@ -37,9 +42,18 @@
 ### SEC-06: KYC ID Card Deduplication Bypass
 - [ ] `apps/portal-service/src/modules/kyc/services/kyc-process.service.ts:195,316-317` — TODO comment อยู่: mock mode append userId ลง idCardToken → production ต้อง hash เฉพาะ idCardNumber เพื่อป้องกัน 1 คนใช้บัตรหลายบัญชี
 
+### SEC-07: CSRF Validation มี Destructuring Bug ⚠️ (ค้นพบเพิ่ม 2026-06-24)
+- [ ] `apps/admin-web/src/lib/auth/csrf.ts:24` — Token format = `timestamp.random.CSRF_SECRET` แต่ validation destructure เป็น `const [timestampStr, secret] = parts` ซึ่ง `secret` ได้ค่าเป็น `parts[1]` (random string) ไม่ใช่ `parts[2]` (CSRF_SECRET จริง) → **CSRF validation จะ reject ทุก valid token เสมอ**
+  - **Fix**: เปลี่ยนเป็น `const [timestampStr, , secret] = parts` หรือ refactor ทั้ง function ให้ใช้ HMAC signing แทน (รวมกับ SEC-05)
+
 ---
 
 ## 🟠 High — Code Quality & Correctness
+
+### CQ-00: Idempotency Key ใน Mobile App ถูกสุ่มใหม่ทุกครั้งที่กดปุ่ม
+- [ ] `apps/wallet-app/src/app/transfer/review.tsx:217` — ตัวแปร `idempotencyKey` ถูกสร้างแบบ random ภายในฟังก์ชัน `performTransfer` ซึ่งจะถูกเรียกใหม่ทุกครั้งที่กดปุ่มยืนยัน หรือกดปุ่ม Retry ตอนที่ Network Timeout ทำให้ Backend มองว่าเป็น Transaction ใหม่และอาจหักเงินซ้ำได้ 
+  - **Fix**: ควรย้ายการสร้าง `idempotencyKey` ไปไว้ที่ `useState` หรือ `useMemo` เพื่อให้ Key ถูกสุ่มแค่ครั้งเดียวตอนเปิดหน้าจอนี้ขึ้นมา
+
 
 ### CQ-01: proxy.ts ตรวจ JWT ซ้ำซ้อน
 - [ ] `apps/admin-web/src/proxy.ts:40-92` — เรียก `verifyToken()` (jose) แล้ว ก็ยังเรียก `jwtVerify()` อีกครั้งด้วย SECRET แยก → ซ้ำซ้อน ควรใช้ verifyToken ครั้งเดียว
@@ -58,16 +72,27 @@
 - [ ] `apps/admin-web/src/app/actions/system.ts:9` — `console.log('System Settings: ', response)`
 - [ ] `apps/admin-web/src/app/(dashboard)/dashboard/page.tsx:177` — `console.log('Liquidity Stats:', liquidityStats)`
 - [ ] `apps/admin-web/src/app/(dashboard)/system/admins/page.tsx:108` — `console.log('staffList', staffList)`
+- [ ] `apps/portal-service/src/admin/strategies/admin-jwt.strategy.ts:20,25,36,43,48` — log cookies, JWT payload, staff validation — **5 จุด** (ค้นพบเพิ่ม 2026-06-24)
+- [ ] `apps/portal-service/src/modules/identity/jwt.strategy.ts:21-23` — log JWT payload sub/typ (ค้นพบเพิ่ม 2026-06-24)
+- [ ] `apps/portal-service/src/core/finance/finance.service.ts:512` — `console.log('transferByPhone', response.data)` — log transfer data (ค้นพบเพิ่ม 2026-06-24)
+- [ ] `apps/portal-service/src/modules/merchant/services/merchant-settlement.service.ts:20,81` — `console.log('🌅 Starting daily merchant settlement...')`, `console.log('✅ Settlement completed.')` (ค้นพบเพิ่ม 2026-06-24)
+- [ ] `apps/admin-web/src/proxy.ts:48,60` — log token refresh attempts with userId (ค้นพบเพิ่ม 2026-06-24)
 - [ ] **Action**: ทั้งหมดควรใช้ structured logger (Pino) แทน console.log, หรือลบออกถ้าเป็น debug
 
 ### CQ-04: Error Console Suppression (Anti-pattern)
 - [ ] `apps/admin-web/src/app/(dashboard)/dashboard/page.tsx:42-56` — Override `console.error` และ `console.warn` เพื่อซ่อน error → ซ่อน bug จริง ควรแก้ที่ต้นเหตุ
 
 ### CQ-05: Swallowed Errors (Empty Catch Blocks)
-- [ ] `apps/portal-service/src/modules/integration/services/transaction-history.service.ts:224` — `catch {}` ว่างเปล่า
+- [ ] `apps/portal-service/src/modules/integration/services/transaction-history.service.ts:224,286,297` — `catch {}` ว่างเปล่า (3 จุด)
+- [ ] `apps/portal-service/src/modules/integration/services/p2p-transfer.service.ts:520,531` — `catch {}` ว่างเปล่า (ค้นพบเพิ่ม 2026-06-24)
+- [ ] `apps/portal-service/src/modules/merchant/services/merchant-application.service.ts:478` — `catch {}` ว่างเปล่า (ค้นพบเพิ่ม 2026-06-24)
+- [ ] `apps/portal-service/src/modules/merchant/services/merchant-partner.service.ts:350` — `catch {}` ว่างเปล่า (ค้นพบเพิ่ม 2026-06-24)
+- [ ] `apps/portal-service/src/admin/dashboard/admin-dashboard.controller.ts:105` — `catch {}` ว่างเปล่า (ค้นพบเพิ่ม 2026-06-24)
 - [ ] `apps/admin-web/src/app/(dashboard)/system/admins/page.tsx:116,201,220` — `catch {}` ไม่แสดง error
 - [ ] `apps/admin-web/src/app/(dashboard)/system/roles/page.tsx:78` — `catch {}` ไม่ handle
 - [ ] `apps/admin-web/src/app/(dashboard)/transactions/[id]/page.tsx:106` — `catch {}` ไม่ handle
+- [ ] `apps/admin-web/src/components/dashboard/TransactionDetailDrawer.tsx:142` — `catch {}` ว่างเปล่า (ค้นพบเพิ่ม 2026-06-24)
+- [ ] `apps/wallet-app/src/lib/device.utils.ts:116` — `catch {}` ว่างเปล่า (ค้นพบเพิ่ม 2026-06-24)
 
 ### CQ-06: Incomplete Feature Implementations (TODO Comments)
 - [ ] `apps/portal-service/src/modules/identity/services/user-admin.service.ts:210` — "TODO: Implement get suspicious activities logic"
@@ -106,7 +131,13 @@
 
 ### ARCH-06: Inconsistent Error Patterns in Services
 - [ ] `apps/portal-service/src/modules/kyc/services/kyc-admin.service.ts:37,156,162` — ใช้ `throw new Error(...)` แทน NestJS HttpException → GlobalExceptionFilter จะ return 500 แทน 400/409
-  - **Fix**: เปลี่ยนเป็น `throw new BadRequestException(...)` หรือ `ConflictException`
+- [ ] `apps/portal-service/src/modules/admin/admin.service.ts:206,244,275,428,538,549,562,575` — ใช้ `throw new Error(...)` 8 จุด (ค้นพบเพิ่ม 2026-06-24)
+- [ ] `apps/portal-service/src/modules/loyalty/loyalty.service.ts:150,200,204` — ใช้ `throw new Error(...)` 3 จุด (ค้นพบเพิ่ม 2026-06-24)
+- [ ] `apps/portal-service/src/modules/integration/services/stripe-integration.service.ts:107,179,241` — ใช้ `throw new Error(...)` 3 จุด (ค้นพบเพิ่ม 2026-06-24)
+- [ ] `apps/portal-service/src/modules/merchant/services/merchant-application.service.ts:246,255` — ใช้ `throw new Error(...)` 2 จุด (ค้นพบเพิ่ม 2026-06-24)
+- [ ] `apps/portal-service/src/modules/identity/identity.service.ts:386,409` — ใช้ `throw new Error(...)` 2 จุด (ค้นพบเพิ่ม 2026-06-24)
+  - **Fix**: เปลี่ยนทั้งหมดเป็น `throw new BadRequestException(...)`, `ConflictException`, `NotFoundException` ตามบริบท
+  - **Scope**: ~27 จุดทั่วทั้ง modules → ค่อยๆ fix เป็น sprint
 
 ---
 
@@ -145,6 +176,65 @@
 
 ---
 
+## 🔵 Migrated from Root TODO (ย้ายมาจาก Root TODO.md — งานที่ยังไม่ทำ)
+
+> ย้ายเมื่อ: 2026-07-10
+
+### MIG-01: E2E Tests
+- [ ] เขียน E2E tests สำหรับ critical API flows (Registration → Login → Transfer → Notification ครบ loop)
+
+### MIG-02: Wallet App — ฟีเจอร์ที่ขาด
+
+#### Bill Payment (จ่ายบิล)
+- [ ] สร้างหน้า bill payment (ค่าน้ำ, ค่าไฟ, อินเทอร์เน็ต, มือถือ)
+- [ ] Implement bill barcode scanning
+- [ ] สร้าง biller directory
+- [ ] Implement saved billers
+
+#### Transfer Request (ขอเงิน)
+- [ ] สร้าง `TransferRequest` model
+- [ ] สร้าง request money flow (ส่ง request → ผู้รับเห็น notification → อนุมัติ/ปฏิเสธ)
+- [ ] สร้าง UI screens
+
+#### Merchant Nearby / Search
+- [ ] สร้างหน้าค้นหาร้านค้าใกล้ตัว (Map view)
+- [ ] Integrate location services
+- [ ] แสดง merchant list + category filter
+
+### MIG-03: Security Hardening
+- [ ] เพิ่ม request logging middleware (automatic audit trail)
+- [ ] ย้ายจาก `.env` files → secrets manager (AWS Secrets Manager / Vault)
+- [ ] ตรวจสอบ JWT refresh token rotation implementation
+- [ ] เพิ่ม CSRF protection สำหรับ admin-web
+
+### MIG-04: DevOps & Observability
+- [ ] ตั้งค่า Prometheus metrics endpoint (NestJS ฝั่ง Portal)
+  - [ ] HTTP request duration
+  - [ ] Active connections
+  - [ ] Error rates
+  - [ ] Business metrics (transactions/sec, active users)
+- [ ] ตั้งค่า Sentry error tracking
+- [ ] ตั้งค่า database backup automation (pg_dump cron)
+- [ ] ตั้งค่า SSL cert auto-renewal (Let's Encrypt / cert-bot)
+- [ ] สร้าง Grafana dashboards
+
+### MIG-05: Performance & Scalability
+- [ ] Tune Prisma connection pooling (connection_limit, pool_timeout)
+- [ ] เพิ่ม Redis caching layer สำหรับ frequently read data
+  - [ ] User profile cache
+  - [ ] Deal catalog cache
+  - [ ] Banner cache
+  - [ ] Loyalty rules cache
+- [ ] เพิ่ม database query optimization (EXPLAIN ANALYZE สำหรับ slow queries)
+- [ ] เตรียม horizontal scaling config
+  - [ ] Kubernetes / ECS manifest
+  - [ ] Load balancer config
+  - [ ] Sticky session / stateless design verification
+- [ ] เพิ่ม CDN สำหรับ static assets (images, logos)
+- [ ] Implement image optimization pipeline (resize, compress on upload)
+
+---
+
 ## ℹ️ Notes
 
 ### สิ่งที่ทำได้ดีแล้ว ✅
@@ -161,3 +251,4 @@
 - ✅ Trace ID middleware for request tracking
 - ✅ No `dangerouslySetInnerHTML` / `innerHTML` usage (XSS safe)
 - ✅ `.env` files properly gitignored
+

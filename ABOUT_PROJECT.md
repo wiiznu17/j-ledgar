@@ -15,6 +15,7 @@ J-Ledger is a high-performance, production-ready financial ledger system designe
 │   │   ├── portal-service/       # Monolithic API (identity, kyc, admin, integration, audit, reporting modules)
 │   │   ├── notification-worker/  # Async Notifications (Kafka consumer, push, email, SMS)
 │   │   ├── admin-web/            # Admin Management Dashboard (React)
+│   │   ├── pos-terminal-app/     # POS Terminal App (React Native/Expo)
 │   │   └── wallet-app/           # Customer Mobile App (React Native/Expo)
 │   └── packages/                 # Shared packages
 ├── docker/
@@ -106,7 +107,7 @@ See [network.md](./network.md) for detailed network architecture and configurati
 
 To completely reset the database and start from scratch:
 
-````bash
+```bash
 # Stop all containers and remove volumes
 docker compose down -v
 
@@ -115,6 +116,7 @@ docker compose -f docker-compose.yml -f docker-compose.dev.yml down -v
 
 # For Mode 2 (Local Test)
 docker compose -f docker-compose.yml -f docker-compose.test.yml down -v
+```
 
 ### 🔄 Unified System Reset (Recommended for Dev)
 
@@ -129,7 +131,7 @@ cd j-ledger-core/finance-service && ./mvnw spring-boot:run
 
 # 3. Run the Smart Seeder (Run after Java is UP)
 cd j-ledger-portal/apps/portal-service && npx prisma db seed
-````
+```
 
 **This process ensures:**
 
@@ -198,7 +200,7 @@ npx prisma migrate dev --name <migration_name>
 npx prisma migrate reset
 
 # 3. เมื่อต้องการลงข้อมูลเริ่มต้น (Seed) อย่างเดียว (ไม่ล้างตาราง)
-node prisma/seed.js
+tsx prisma/seed.ts
 # หรือ
 npx prisma db seed
 ```
