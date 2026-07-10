@@ -140,8 +140,8 @@ transaction.setMetadata(objectMapper.writeValueAsString(meta));
 ## 🟢 Priority 3 — Medium (ทำให้ระบบเหมือน Production-grade จริงๆ)
 
 ### 3.1 เพิ่ม Bean Validation (`@Valid`) ที่ Request DTOs
-- [ ] **ปัญหา:** DTO เช่น `TransferRequest` ใช้ `record` แต่ไม่มี `@NotNull`, `@Positive`, `@Pattern` validation → ต้อง validate มือเองใน Service
-- [ ] **แนวทาง:** ใส่ Bean Validation Annotations ที่ DTO แล้วใช้ `@Valid` ที่ Controller
+- [x] **ปัญหา:** DTO เช่น `TransferRequest` ใช้ `record` แต่ไม่มี `@NotNull`, `@Positive`, `@Pattern` validation → ต้อง validate มือเองใน Service
+- [x] **แนวทาง:** ใส่ Bean Validation Annotations ที่ DTO แล้วใช้ `@Valid` ที่ Controller
 
 ```java
 // ✅ เพิ่ม Validation ที่ DTO

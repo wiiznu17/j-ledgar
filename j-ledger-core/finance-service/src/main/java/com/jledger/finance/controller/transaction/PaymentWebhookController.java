@@ -2,7 +2,7 @@ package com.jledger.finance.controller.transaction;
 
 import com.jledger.finance.dto.PaymentWebhookRequest;
 import com.jledger.finance.service.transaction.PaymentService;
-
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -23,7 +23,7 @@ public class PaymentWebhookController {
     private final PaymentService paymentService;
 
     @PostMapping("/payment")
-    public ResponseEntity<Map<String, String>> handlePaymentWebhook(@RequestBody PaymentWebhookRequest request) {
+    public ResponseEntity<Map<String, String>> handlePaymentWebhook(@Valid @RequestBody PaymentWebhookRequest request) {
         LOGGER.info("Received payment webhook for reference: {}", request.reference_id());
         
         try {

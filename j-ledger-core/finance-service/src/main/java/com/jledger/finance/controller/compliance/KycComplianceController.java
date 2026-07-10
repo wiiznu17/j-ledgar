@@ -7,6 +7,8 @@ import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.validation.Valid;
+import jakarta.validation.constraints.NotNull;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
@@ -29,10 +31,16 @@ public class KycComplianceController {
             @ApiResponse(responseCode = "200", description = "KYC status updated"),
             @ApiResponse(responseCode = "404", description = "Account not found")
     })
-    public ResponseEntity<Void> updateKycStatus(@RequestBody UpdateKycStatusRequest request) {
+    public ResponseEntity<Void> updateKycStatus(@Valid @RequestBody UpdateKycStatusRequest request) {
         kycComplianceService.updateKycStatus(request.accountId(), request.kycStatus());
         return ResponseEntity.ok().build();
     }
 
-    private record UpdateKycStatusRequest(UUID accountId, KycStatus kycStatus) {}
+    private record UpdateKycStatusRequest(
+        @NotNull(message = "accountId is required")
+        UUID accountId,
+
+        @NotNull(message = "kycStatus is required")
+        KycStatus kycStatus
+    ) {}
 }

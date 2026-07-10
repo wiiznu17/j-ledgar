@@ -3,7 +3,7 @@ package com.jledger.finance.controller.system;
 import com.jledger.finance.domain.entity.PaymentTransaction;
 import com.jledger.finance.dto.PaymentCreateRequest;
 import com.jledger.finance.service.transaction.PaymentService;
-
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -24,7 +24,7 @@ public class PaymentInternalController {
 
     @PostMapping
     @PreAuthorize("hasRole('INTERNAL')")
-    public ResponseEntity<PaymentTransaction> createPayment(@RequestBody PaymentCreateRequest request) {
+    public ResponseEntity<PaymentTransaction> createPayment(@Valid @RequestBody PaymentCreateRequest request) {
         LOGGER.info("Internal request to create payment: reference={}", request.referenceId());
         PaymentTransaction payment = paymentService.createPayment(request);
         return ResponseEntity.ok(payment);

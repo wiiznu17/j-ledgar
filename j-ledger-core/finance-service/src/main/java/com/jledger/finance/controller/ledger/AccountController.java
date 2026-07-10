@@ -1,11 +1,13 @@
 package com.jledger.finance.controller.ledger;
 
 import com.jledger.finance.domain.entity.Account;
+import com.jledger.finance.dto.AccountCreateRequest;
+import com.jledger.finance.dto.AccountStatusUpdateRequest;
 import com.jledger.finance.repository.ledger.AccountRepository;
 import com.jledger.finance.service.ledger.AccountService;
-
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
@@ -46,9 +48,8 @@ public class AccountController {
     @Operation(summary = "Update account status", description = "Updates the status of an internal account")
     public ResponseEntity<Account> updateStatus(
             @PathVariable UUID id,
-            @RequestBody java.util.Map<String, String> request) {
-        String status = request.get("status");
-        Account updated = accountService.updateAccountStatus(id, status);
+            @Valid @RequestBody AccountStatusUpdateRequest request) {
+        Account updated = accountService.updateAccountStatus(id, request.getStatus());
         return ResponseEntity.ok(updated);
     }
 
@@ -77,22 +78,13 @@ public class AccountController {
 
     @PostMapping
     @Operation(summary = "Create a new internal account", description = "Creates a new internal account for a user")
-    public ResponseEntity<Account> createAccount(@RequestBody java.util.Map<String, String> request) {
-        UUID userId = UUID.fromString(request.get("user_id"));
-        String accountName = request.get("account_name");
-        String currency = request.get("currency");
-        String typeStr = request.get("account_type");
-        
-        com.jledger.finance.domain.enums.AccountType accountType = null;
-        if (typeStr != null) {
-            try {
-                accountType = com.jledger.finance.domain.enums.AccountType.valueOf(typeStr.toUpperCase());
-            } catch (IllegalArgumentException e) {
-                // Fallback or ignore
-            }
-        }
-        
-        Account created = accountService.createAccount(userId, accountName, currency, accountType);
+    public ResponseEntity<Account> createAccount(@Valid @RequestBody AccountCreateRequest request) {
+        Account created = accountService.createAccount(
+            request.user_id(),
+            request.account_name(),
+            request.currency(),
+            request.account_type()
+        );
         return ResponseEntity.status(org.springframework.http.HttpStatus.CREATED).body(created);
     }
 }

@@ -8,6 +8,9 @@ import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.validation.Valid;
+import jakarta.validation.constraints.DecimalMin;
+import jakarta.validation.constraints.NotNull;
 import java.math.BigDecimal;
 import java.util.List;
 import java.util.UUID;
@@ -49,10 +52,14 @@ public class TransactionLimitController {
     public ResponseEntity<TransactionLimit> updateLimit(
             @Parameter(description = "Account ID") @PathVariable UUID accountId,
             @Parameter(description = "Limit type") @PathVariable TransactionLimitType limitType,
-            @RequestBody UpdateLimitRequest request) {
+            @Valid @RequestBody UpdateLimitRequest request) {
         TransactionLimit limit = transactionLimitService.updateLimit(accountId, limitType, request.newLimit());
         return ResponseEntity.ok(limit);
     }
 
-    private record UpdateLimitRequest(BigDecimal newLimit) {}
+    private record UpdateLimitRequest(
+        @NotNull(message = "newLimit is required")
+        @DecimalMin(value = "0.00", message = "limit must be positive or zero")
+        BigDecimal newLimit
+    ) {}
 }

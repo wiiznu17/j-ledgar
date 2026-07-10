@@ -4,6 +4,7 @@ import com.jledger.finance.domain.entity.TreasuryPayout;
 import com.jledger.finance.dto.StripePayoutConfirmedRequest;
 import com.jledger.finance.dto.TreasurySummaryResponse;
 import com.jledger.finance.service.system.TreasuryService;
+import jakarta.validation.Valid;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -30,7 +31,7 @@ public class TreasuryController {
 
     // Internal API for portal-service to confirm Stripe payouts
     @PostMapping("/internal/payouts/stripe-confirmed")
-    public ResponseEntity<Void> recordStripePayout(@RequestBody StripePayoutConfirmedRequest request) {
+    public ResponseEntity<Void> recordStripePayout(@Valid @RequestBody StripePayoutConfirmedRequest request) {
         treasuryService.recordStripePayoutConfirmed(
             request.getStripePayoutId(),
             request.getAmount(),

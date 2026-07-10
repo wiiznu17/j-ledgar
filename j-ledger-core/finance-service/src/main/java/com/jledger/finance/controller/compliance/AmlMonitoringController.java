@@ -9,6 +9,9 @@ import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.validation.Valid;
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotNull;
 import java.util.List;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
@@ -61,7 +64,7 @@ public class AmlMonitoringController {
             @ApiResponse(responseCode = "404", description = "Activity not found")
     })
     public ResponseEntity<AmloReportResponse> reportToAmlo(
-            @RequestBody AmloReportRequest request) {
+            @Valid @RequestBody AmloReportRequest request) {
         String amloReference = amlMonitoringService.reportSuspiciousActivityToAmlo(
             request.activityId(),
             request.reviewedBy()
@@ -73,7 +76,7 @@ public class AmlMonitoringController {
     @Operation(summary = "Update suspicious activity status", description = "Updates the status of a suspicious activity")
     public ResponseEntity<Void> updateSuspiciousActivityStatus(
             @PathVariable UUID id,
-            @RequestBody UpdateStatusRequest request) {
+            @Valid @RequestBody UpdateStatusRequest request) {
         amlMonitoringService.updateSuspiciousActivityStatus(
             id,
             request.status(),
@@ -83,7 +86,24 @@ public class AmlMonitoringController {
         return ResponseEntity.ok().build();
     }
 
-    private record UpdateStatusRequest(SuspiciousActivityStatus status, String reviewedBy, String description) {}
-    private record AmloReportRequest(UUID activityId, String reviewedBy) {}
+    private record UpdateStatusRequest(
+        @NotNull(message = "status is required")
+        SuspiciousActivityStatus status,
+
+        @NotBlank(message = "reviewedBy is required")
+        String reviewedBy,
+
+        @NotBlank(message = "description is required")
+        String description
+    ) {}
+
+    private record AmloReportRequest(
+        @NotNull(message = "activityId is required")
+        UUID activityId,
+
+        @NotBlank(message = "reviewedBy is required")
+        String reviewedBy
+    ) {}
+
     private record AmloReportResponse(String amloReference) {}
 }

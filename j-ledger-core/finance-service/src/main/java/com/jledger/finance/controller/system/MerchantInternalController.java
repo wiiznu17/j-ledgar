@@ -4,7 +4,7 @@ import com.jledger.finance.domain.entity.Transaction;
 import com.jledger.finance.dto.MerchantMultiPayRequest;
 import com.jledger.finance.dto.MerchantPayRequest;
 import com.jledger.finance.service.transaction.MerchantPaymentService;
-
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -21,7 +21,7 @@ public class MerchantInternalController {
     @PreAuthorize("hasRole('INTERNAL')")
     public ResponseEntity<Transaction> merchantPay(
             @RequestHeader("Idempotency-Key") String idempotencyKey,
-            @RequestBody MerchantPayRequest request
+            @Valid @RequestBody MerchantPayRequest request
     ) {
         Transaction transaction = merchantPaymentService.processMerchantPayment(idempotencyKey, request);
         return ResponseEntity.ok(transaction);
@@ -31,7 +31,7 @@ public class MerchantInternalController {
     @PreAuthorize("hasRole('INTERNAL')")
     public ResponseEntity<Transaction> merchantMultiPay(
             @RequestHeader("Idempotency-Key") String idempotencyKey,
-            @RequestBody MerchantMultiPayRequest request
+            @Valid @RequestBody MerchantMultiPayRequest request
     ) {
         Transaction transaction = merchantPaymentService.processMultiLegMerchantPayment(idempotencyKey, request);
         return ResponseEntity.ok(transaction);
